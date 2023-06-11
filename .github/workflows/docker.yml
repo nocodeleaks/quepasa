@@ -5,6 +5,7 @@ on:
     branches: 
       - "development"
       - "master"
+      - "main"
     tags:
         - v*
   pull_request:
@@ -68,8 +69,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4.1.0
         with:
-          context: .
-          file: Dockerfile
+          context: "{{defaultContext}}"
+          file: docker/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

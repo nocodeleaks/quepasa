@@ -65,7 +65,7 @@ jobs:
       #       type=semver,pattern={{major}}
           
       - name: Extract metadata (tags, labels) for Docker
-        id: meta_extract
+        id: meta
         uses: docker/metadata-action@v3
         with:
           images: | 
@@ -75,7 +75,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            
+
       - name: set docker tag
         run: |
           echo "DOCKER_TAG=aireset/quepasa:$GIT_REF" >> $GITHUB_ENV

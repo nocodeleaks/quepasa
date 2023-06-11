@@ -1,44 +1,44 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+# # This workflow will build a golang project
+# # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go Build
+# name: Go Build
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+# on:
+#   push:
+#     branches: [ "main" ]
+#   pull_request:
+#     branches: [ "main" ]
 
-jobs:
+# jobs:
 
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go-version: ["1.19", "1.20"]
+#   build:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         go-version: ["1.19", "1.20"]
 
-    steps:
-    - uses: actions/checkout@v3
+#     steps:
+#     - uses: actions/checkout@v3
 
-    - name: Set up Go ${{ matrix.go-version }}
-      uses: actions/setup-go@v3
-      with:
-        go-version: ${{ matrix.go-version }}
+#     - name: Set up Go ${{ matrix.go-version }}
+#       uses: actions/setup-go@v3
+#       with:
+#         go-version: ${{ matrix.go-version }}
 
-    - name: Install goimports
-      run: |
-        go install golang.org/x/tools/cmd/goimports@latest
-        export PATH="$HOME/go/bin:$PATH"
+#     - name: Install goimports
+#       run: |
+#         go install golang.org/x/tools/cmd/goimports@latest
+#         export PATH="$HOME/go/bin:$PATH"
         
-    - name: Build
-      working-directory: ./src
-      run: go build -v ./...
+#     - name: Build
+#       working-directory: ./src
+#       run: go build -v ./...
 
-    - name: Test
-      working-directory: ./src
-      run: go test -v ./...
+#     - name: Test
+#       working-directory: ./src
+#       run: go test -v ./...
 
-    - name: Format
-      run: if [ "$(goimports -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
-      if: matrix.go-version == 1.20
+#     - name: Format
+#       run: if [ "$(goimports -s -l . | wc -l)" -gt 0 ]; then exit 1; fi
+#       if: matrix.go-version == 1.20

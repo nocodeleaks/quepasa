@@ -31,8 +31,8 @@ env:
   WEBAPIPORT: 31000
   QUEPASA_BASIC_AUTH_USER: ${{ secrets.DOCKER_USERNAME }}
   QUEPASA_BASIC_AUTH_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  MIGRATIONS: './migrations'
-  # MIGRATIONS: '/opt/quepasa/migrations'
+  # MIGRATIONS: './migrations'
+  MIGRATIONS: '/opt/quepasa/migrations'
   WEBSOCKETSSL: false
   DEBUGJSONMESSAGES: false
   HTTPLOGS: false
@@ -63,18 +63,6 @@ jobs:
       #       type=semver,pattern={{version}}
       #       type=semver,pattern={{major}}.{{minor}}
       #       type=semver,pattern={{major}}
-          
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v3
-        with:
-          images: | 
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
 
       - name: set docker tag
         run: |
@@ -90,6 +78,23 @@ jobs:
         run: |
           echo "DOCKER_TAG=aireset/quepasa:latest" >> $GITHUB_ENV
           
+      # - name: Extract metadata (tags, labels) for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      #   with:
+      #     images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+                    
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:

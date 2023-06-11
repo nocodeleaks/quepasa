@@ -18,7 +18,8 @@ on:
     
 env:  
   REGISTRY: docker.io # Use docker.io for Docker Hub if empty  
-  IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
+  # IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
+  IMAGE_NAME: aireset/quepasa # github.repository as <account>/<repo>
   GIT_REF: ${{ github.head_ref || github.ref_name }} # ref_name to get tags/branches
   NODE_ENV: production
   APP_ENV: production
@@ -37,7 +38,7 @@ env:
   HTTPLOGS: false
   
 jobs:
-  build:
+  docker:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -56,6 +57,11 @@ jobs:
           
       - name: replace docker tag if master
         if: github.ref_name == 'master'
+        run: |
+          echo "DOCKER_TAG=aireset/quepasa:latest" >> $GITHUB_ENV
+          
+      - name: replace docker tag if main
+        if: github.ref_name == 'main'
         run: |
           echo "DOCKER_TAG=aireset/quepasa:latest" >> $GITHUB_ENV
           
@@ -78,5 +84,4 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: aireset/quepasa:latest
           labels: ${{ steps.meta.outputs.labels }}

@@ -89,8 +89,6 @@ jobs:
           images: |
             ${{ env.IMAGE_NAME }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            gmorse81/go-rest-api-kubernetes-example
-            ${{ env.REGISTRY }}/gmorse81/go-rest-api-kubernetes-example
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule

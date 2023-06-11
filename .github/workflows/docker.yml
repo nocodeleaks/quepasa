@@ -16,7 +16,8 @@ on:
     
 env:  
   REGISTRY: docker.io # Use docker.io for Docker Hub if empty  
-  IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
+  # IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
+  IMAGE_NAME: aireset/quepasa # github.repository as <account>/<repo>
   GIT_REF: ${{ github.head_ref || github.ref_name }} # ref_name to get tags/branches
   NODE_ENV: production
   APP_ENV: production

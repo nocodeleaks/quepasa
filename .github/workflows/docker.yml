@@ -62,19 +62,6 @@ jobs:
       #       type=semver,pattern={{major}}.{{minor}}
       #       type=semver,pattern={{major}}
 
-      # - name: set docker tag
-      #   run: |
-      #     echo "DOCKER_TAG=aireset/quepasa:$GIT_REF" >> $GITHUB_ENV
-          
-      # - name: replace docker tag if master
-      #   if: github.ref_name == 'master'
-      #   run: |
-      #     echo "DOCKER_TAG=aireset/quepasa:latest" >> $GITHUB_ENV
-          
-      # - name: replace docker tag if main
-      #   if: github.ref_name == 'main'
-      #   run: |
-      #     echo "DOCKER_TAG=aireset/quepasa:latest" >> $GITHUB_ENV
 
       # - name: Extract metadata (tags, labels) for Docker
       #   id: meta
@@ -98,7 +85,16 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha
-                    
+
+      - name: set docker tag
+        run: |
+          echo "DOCKER_TAG=${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
+          
+      - name: replace docker tag if master
+        if: github.ref_name == 'master' || github.ref_name == 'main' 
+        run: |
+          echo "DOCKER_TAG=${{ env.IMAGE_NAME }}:latest" >> $GITHUB_ENV
+      
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
@@ -112,5 +108,5 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.DOCKER_TAG }}
           labels: ${{ steps.meta.outputs.labels }}

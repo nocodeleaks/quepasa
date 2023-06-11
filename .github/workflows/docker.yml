@@ -29,8 +29,8 @@ env:
   WEBAPIPORT: 31000
   QUEPASA_BASIC_AUTH_USER: ${{ secrets.DOCKER_USERNAME }}
   QUEPASA_BASIC_AUTH_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  # MIGRATIONS: './migrations'
-  MIGRATIONS: '/opt/quepasa/migrations'
+  MIGRATIONS: './migrations'
+  # MIGRATIONS: '/opt/quepasa/migrations'
   WEBSOCKETSSL: false
   DEBUGJSONMESSAGES: false
   HTTPLOGS: false

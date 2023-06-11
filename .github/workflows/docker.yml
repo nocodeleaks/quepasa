@@ -88,12 +88,12 @@ jobs:
 
       - name: set docker tag
         run: |
-          echo "DOCKER_TAG=${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
+          echo "DOCKER_TAG=${IMAGE_NAME}:${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
           
       - name: replace docker tag if master
         if: github.ref_name == 'master' || github.ref_name == 'main' 
         run: |
-          echo "DOCKER_TAG=${{ env.IMAGE_NAME }}:latest" >> $GITHUB_ENV
+          echo "DOCKER_TAG=${IMAGE_NAME}:latest" >> $GITHUB_ENV
       
       - name: Login to DockerHub
         uses: docker/login-action@v2

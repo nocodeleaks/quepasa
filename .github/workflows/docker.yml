@@ -21,15 +21,20 @@ env:
   IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
   GIT_REF: ${{ github.head_ref || github.ref_name }} # ref_name to get tags/branches
   NODE_ENV: production
+  APP_ENV: production
   QUEPASA_CONTAINER_NAME: "quepasa"
   QUEPASA_HOST_NAME: "quepasa"
   QUEPASA_MEMORY_LIMIT: 512M
   QUEPASA_EXTERNAL_PORT: 31000
   QUEPASA_INTERNAL_PORT: 31000
+  WEBAPIPORT: 31000
   QUEPASA_BASIC_AUTH_USER: ${{ secrets.DOCKER_USERNAME }}
   QUEPASA_BASIC_AUTH_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   MIGRATIONS: './migrations'
+  # MIGRATIONS: '/opt/quepasa/migrations'
   WEBSOCKETSSL: false
+  DEBUGJSONMESSAGES: false
+  HTTPLOGS: false
   
 jobs:
   build:
@@ -73,5 +78,5 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: aireset/quepasa:latest
           labels: ${{ steps.meta.outputs.labels }}

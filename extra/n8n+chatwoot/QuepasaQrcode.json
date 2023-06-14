@@ -380,7 +380,7 @@
             },
             {
               "key": "qptoken",
-              "value": "={{ $node[\"TokenGenerate\"].json.Token }}"
+              "value": "={{ $node[\"TokenGenerate\"].json.qptoken }}"
             }
           ]
         }
@@ -750,13 +750,7 @@
             }
           ]
         },
-        "options": {
-          "redirect": {
-            "redirect": {
-              "followRedirects": true
-            }
-          }
-        }
+        "options": {}
       },
       "id": "0e787ee0-f7d5-4e96-a88a-6de5dcd39262",
       "name": "Ativa no Painel Quepasa",
@@ -1061,7 +1055,7 @@
   },
   "active": true,
   "settings": {},
-  "versionId": "455d4d0d-614f-47e9-957a-9bd4c82d2331",
+  "versionId": "0e3d90d7-1371-4c77-bcbf-26956ebbd7b6",
   "id": "13",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

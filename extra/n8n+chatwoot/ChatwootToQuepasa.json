@@ -12,7 +12,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -3900,
+        -4300,
         3120
       ],
       "webhookId": "ae8993fc-1ab0-4de5-90ce-0eb59a2b5c7d",
@@ -132,7 +132,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -3540,
+        -3960,
         3120
       ],
       "id": "fb36c998-7e40-42d0-950c-d4aeb3286737"
@@ -174,7 +174,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2480,
+        -2880,
         4180
       ],
       "id": "272dea24-fd98-4646-b7d4-18ae64e55712"
@@ -197,7 +197,8 @@
         2820
       ],
       "retryOnFail": true,
-      "maxTries": 2
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -309,7 +310,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1520,
+        -2200,
         4200
       ]
     },
@@ -409,7 +410,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2140,
+        -2600,
         4180
       ],
       "notesInFlow": true,
@@ -442,8 +443,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        -1820,
-        4060
+        -2400,
+        4100
       ],
       "id": "9aefb56c-0cb6-46d1-a325-9527e6d826ad",
       "continueOnFail": true,
@@ -601,7 +602,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -3720,
+        -4120,
         3120
       ]
     },
@@ -615,8 +616,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1900,
-        3740
+        -2180,
+        3880
       ]
     },
     {
@@ -628,8 +629,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -2080,
-        3740
+        -2360,
+        3880
       ],
       "continueOnFail": true
     },
@@ -650,8 +651,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2260,
-        3420
+        -2320,
+        3440
       ]
     },
     {
@@ -665,7 +666,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -1520,
+        -940,
         3500
       ],
       "credentials": {
@@ -686,7 +687,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -1320,
+        -740,
         3440
       ]
     },
@@ -701,8 +702,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -720,
-        3420
+        -220,
+        3400
       ]
     },
     {
@@ -721,8 +722,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1120,
-        3460
+        -580,
+        3440
       ]
     },
     {
@@ -741,8 +742,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2460,
-        3440
+        -2500,
+        3460
       ]
     },
     {
@@ -787,8 +788,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2260,
-        3740
+        -2540,
+        3880
       ]
     },
     {
@@ -797,23 +798,23 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2900,
-        3580
+        -3020,
+        3680
       ],
       "id": "42112e7e-37e2-4efe-8613-b38431592244"
     },
     {
       "parameters": {
         "content": "## POST RESOLVED MESSAGE\n* to disable, remove that link",
-        "height": 418.01663492117996,
-        "width": 2594.11159786878
+        "height": 565.5824733063735,
+        "width": 3071.1267498581306
       },
       "id": "a139fc83-4d5a-45fb-ac06-5633f2bd5a4e",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -2700,
+        -2760,
         3260
       ]
     },
@@ -828,8 +829,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -920,
-        3340
+        -400,
+        3320
       ],
       "credentials": {
         "postgres": {
@@ -854,7 +855,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1880,
+        -1300,
         3300
       ]
     },
@@ -874,7 +875,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2080,
+        -1460,
         3400
       ]
     },
@@ -885,7 +886,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1680,
+        -1100,
         3420
       ]
     },
@@ -909,7 +910,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1880,
+        -1300,
         3500
       ]
     },
@@ -920,7 +921,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -280,
+        160,
         3400
       ]
     },
@@ -933,8 +934,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        -2460,
-        3740
+        -2740,
+        3880
       ]
     },
     {
@@ -943,8 +944,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2640,
-        3440
+        -2680,
+        3540
       ],
       "id": "7aa4802e-a455-4063-aedc-b771509b0a9d"
     },
@@ -1052,7 +1053,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -520,
+        -40,
         3300
       ]
     },
@@ -1098,8 +1099,85 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -520,
-        3480
+        -40,
+        3460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT account_id FROM inboxes WHERE id = '{{ $json.query.inbox }}'",
+        "additionalFields": {}
+      },
+      "id": "ac9acc90-28bf-4867-a29c-bc71bcd2ea9e",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -1940,
+        3540
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{query.account}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "cd643c2c-2015-4c0c-9407-470008579bb4",
+      "name": "Account Found ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2140,
+        3420
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "query.account",
+              "value": "={{ $json.account_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d24a832f-7064-48c0-a134-b868cb0589c5",
+      "name": "Set Account in Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1780,
+        3540
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "b803bb7f-985b-42cb-9768-5aa4b6219c6f",
+      "name": "Merge Account Id",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -1620,
+        3460
       ]
     }
   ],
@@ -1535,7 +1613,7 @@
       "main": [
         [
           {
-            "node": "Skip Evaluate By Conversation Is Setted",
+            "node": "Account Found ?",
             "type": "main",
             "index": 0
           }
@@ -1705,11 +1783,71 @@
           }
         ]
       ]
+    },
+    "Account Found ?": {
+      "main": [
+        [
+          {
+            "node": "Skip Evaluate By Conversation Is Setted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Account Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "Set Account in Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Account in Query": {
+      "main": [
+        [
+          {
+            "node": "Merge Account Id",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Account Id": {
+      "main": [
+        [
+          {
+            "node": "Skip Evaluate By Conversation Is Setted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
-  "settings": {},
-  "versionId": "47a03311-2796-470b-bc6e-452a427cc867",
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 30
+  },
+  "versionId": "8e162179-8e8a-40d4-98af-e9fa56995926",
   "id": "2",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

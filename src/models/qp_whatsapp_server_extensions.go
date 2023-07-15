@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net/http"
+	"strings"
 
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -43,7 +44,7 @@ func GetServerFromBot(source QPBot) (server *QpWhatsappServer, err error) {
 
 func GetServerFromToken(token string) (server *QpWhatsappServer, err error) {
 	for _, item := range WhatsappService.Servers {
-		if item != nil && item.Token == token {
+		if item != nil && strings.ToLower(item.Token) == strings.ToLower(token) {
 			server = item
 			break
 		}

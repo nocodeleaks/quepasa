@@ -50,13 +50,13 @@
           ]
         }
       },
-      "id": "ebbcba93-b82b-4610-96ec-5ac8f57e975b",
+      "id": "5ff05bce-7061-4581-86d3-c31c934569bc",
       "name": "QP - Webhook Update",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2540,
-        -440
+        -2500,
+        720
       ],
       "continueOnFail": true
     },
@@ -68,13 +68,13 @@
         "operation": "remove",
         "url": "=https://{{$json[\"headers\"][\"host\"]}}/webhook/to-chatwoot"
       },
-      "id": "bd4e9743-51e6-4b9a-9762-2946e6d6772c",
+      "id": "af25dc68-8377-4dba-841b-cfe6986bf026",
       "name": "QP - Webhook Remove",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2540,
-        -260
+        -2500,
+        900
       ],
       "continueOnFail": true
     },
@@ -101,13 +101,13 @@
           ]
         }
       },
-      "id": "6ebd6c2d-85de-4945-9ff0-ce1cc7909bd7",
+      "id": "df5d6a12-ceb3-4522-a380-d8ea53345da2",
       "name": "Webhook Methods",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -2900,
-        -240
+        -2860,
+        920
       ]
     },
     {
@@ -119,13 +119,13 @@
         "conversationId": "={{$json[\"params\"][\"conversation_id\"]}}",
         "content": "={{$json[\"response\"]}}"
       },
-      "id": "b6bced91-5c0e-481a-b5cd-6f2c591090df",
+      "id": "25c803e1-2e47-4e31-ab5e-b7ce67a8f0ae",
       "name": "ChatWoot",
       "type": "n8n-nodes-chatwoot.chatwoot",
       "typeVersion": 1,
       "position": [
-        -600,
-        60
+        -560,
+        1220
       ]
     },
     {
@@ -141,13 +141,13 @@
         },
         "options": {}
       },
-      "id": "156e97b2-c658-490f-bdb2-b118449388fd",
+      "id": "f35bdd70-b8eb-421b-86dc-2b922a898ee2",
       "name": "Set Response From Quepasa",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1960,
-        -440
+        -1920,
+        720
       ]
     },
     {
@@ -157,19 +157,19 @@
           "string": [
             {
               "name": "response",
-              "value": "=!Invalid call, try:\n-----------------------------------------------\n/info\n/agentbot\n/webhook update\n/webhook remove\n/webhook clear"
+              "value": "=!Invalid call, try:\n-----------------------------------------------\n/agentbot\n/info\n/webcallback {destination}\n/webhook {update|remove|clear}\n"
             }
           ]
         },
         "options": {}
       },
-      "id": "6738b4c9-c9cd-4f3a-b5e3-fbbf33fff938",
+      "id": "b7cc6383-6680-4fc7-b37d-7c0b21e81e5c",
       "name": "Set Response From Invalid Start",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1940,
-        900
+        -1860,
+        2360
       ]
     },
     {
@@ -196,13 +196,13 @@
         },
         "fallbackOutput": 3
       },
-      "id": "4ad1ca4f-c9e9-4a83-9c9a-9a0cdaa9a44d",
+      "id": "155b84a4-6cbe-4a57-88bf-d5d4824aa1e0",
       "name": "Switch Start",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -3320,
-        120
+        -3280,
+        1280
       ]
     },
     {
@@ -220,24 +220,24 @@
           ]
         }
       },
-      "id": "104f1acc-d0f3-4763-9567-1f3cda0049e3",
+      "id": "f5b395c6-9261-4e77-8e78-a2ce070d7166",
       "name": "If Message Out",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -4600,
-        160
+        -4560,
+        1320
       ]
     },
     {
       "parameters": {},
-      "id": "241fa507-0bb6-4cea-9537-b7ce075bb501",
+      "id": "26041976-3978-4d10-9097-50b335e30e7d",
       "name": "Discarding Not Message Out",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -4180,
-        360
+        -4140,
+        1520
       ]
     },
     {
@@ -251,13 +251,13 @@
           ]
         }
       },
-      "id": "82a11f4d-e47e-42fa-8908-502da8035fa7",
+      "id": "b2a15ba6-b30b-4396-a975-21c6c9be6003",
       "name": "IF Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2240,
-        -260
+        -2200,
+        900
       ]
     },
     {
@@ -273,13 +273,13 @@
         },
         "options": {}
       },
-      "id": "83f562da-cdd9-49fc-81a9-1e5280964def",
+      "id": "82f9eb40-417c-43f3-ba09-5afdaba3b122",
       "name": "Set Error Response From Quepasa",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1960,
-        -160
+        -1920,
+        1000
       ]
     },
     {
@@ -288,13 +288,13 @@
         "token": "={{$json[\"query\"][\"qptoken\"]}}",
         "resource": "information"
       },
-      "id": "a41acd1b-ed4c-4cbd-8633-6f2c652eacb6",
+      "id": "815775f7-c630-4d75-9c59-15ff119484fa",
       "name": "QP - Info",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2900,
-        120
+        -2860,
+        1280
       ],
       "continueOnFail": true
     },
@@ -309,13 +309,13 @@
           ]
         }
       },
-      "id": "4e40082e-65e5-40d6-a30b-a6e3c13ac5d2",
+      "id": "76325ea4-4b90-441d-bcb3-fa99e003d308",
       "name": "IF Success1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2540,
-        120
+        -2500,
+        1280
       ]
     },
     {
@@ -331,26 +331,26 @@
         },
         "options": {}
       },
-      "id": "f47ef995-7cf2-44e5-8636-b1b43fa4b669",
+      "id": "1c553807-d87e-4966-bd3e-5503ea0cc667",
       "name": "Set Info Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1960,
-        100
+        -1920,
+        1260
       ]
     },
     {
       "parameters": {
         "functionCode": "function print(object, level) {\n    var SPACER = '-',\n        NEWLINE = '\\r\\n'\n        result = '';\n\n    level = level || 0;\n    Object.keys(object).forEach(function (key) {\n        var i = level;\n        while (i--) {\n            result += SPACER;\n        }\n        if (typeof object[key] === 'object' && object[key] !== null) {\n            result += NEWLINE + key + ' :: ' + NEWLINE + NEWLINE;\n            result += print(object[key], level + 1);\n            return;\n        }\n        result += key + ': ' + object[key] + NEWLINE;\n\n    });\n    return result;\n}\n\nfor (item of items) {\n  item.json.server = print(item.json.server);\n}\n\nreturn items;"
       },
-      "id": "a273c036-c788-4c54-97ba-48cdd8330fcd",
+      "id": "ff55f44f-bf2a-487d-8393-f7f01d4f497d",
       "name": "Json To Idented Text",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -2240,
-        100
+        -2200,
+        1260
       ]
     },
     {
@@ -360,13 +360,13 @@
         "resource": "webhook",
         "operation": "clear"
       },
-      "id": "166cc661-221f-4749-85b1-f7313d5ef153",
+      "id": "aa12dc18-84bf-4dfd-8987-ac9db044bda3",
       "name": "QP - Webhook Clear",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2540,
-        -80
+        -2500,
+        1080
       ]
     },
     {
@@ -375,13 +375,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "fadc8583-265a-434a-b5f0-b5428d401030",
+      "id": "139705c2-b8e8-4835-a915-ed029028e09b",
       "name": "Merge Parameters + Message",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -820,
-        60
+        -780,
+        1220
       ]
     },
     {
@@ -401,13 +401,13 @@
         },
         "options": {}
       },
-      "id": "01a60d1b-a8a6-4cac-b5e5-ad5d6ec43b65",
+      "id": "9e3ff1fa-4e6a-4efe-a0aa-9ecf9f144ac0",
       "name": "Set Basic Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -4460,
-        -360
+        -4420,
+        800
       ]
     },
     {
@@ -427,13 +427,13 @@
         },
         "options": {}
       },
-      "id": "cb9f9ff0-fe9a-4c92-acfe-641c9d387043",
+      "id": "de43a90d-48c7-411f-a34c-3b5831832f04",
       "name": "Set Parameters From Control Chat",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -4180,
-        -80
+        -4140,
+        1080
       ]
     },
     {
@@ -442,13 +442,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "9b830e6f-3e09-4458-9cc3-c33c2a0aa568",
+      "id": "68b13daf-936a-49cc-89d1-01e747b1eaf8",
       "name": "Merge Parameters +",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -3260,
-        -660
+        -3220,
+        500
       ]
     },
     {
@@ -464,24 +464,24 @@
         },
         "options": {}
       },
-      "id": "f5f1047b-ba99-4772-827c-77adcb2644cb",
+      "id": "b72c8ab4-6c11-417f-83b0-116ca68d8cc5",
       "name": "Set Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1460,
-        -680
+        -1420,
+        480
       ]
     },
     {
       "parameters": {},
-      "id": "2d3cf742-5105-4767-b784-036189649ab3",
+      "id": "a044fc68-0be1-4341-a244-ef42d1cd9588",
       "name": "NoOp",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2880,
-        900
+        -2840,
+        2360
       ]
     },
     {
@@ -495,13 +495,13 @@
           ]
         }
       },
-      "id": "6646ab71-e83e-4c52-bd5a-2c56270d2475",
+      "id": "91a7413f-1f1c-4d5e-8267-8f35dbbf50be",
       "name": "If Reponse Not Empty ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1140,
-        100
+        -1100,
+        1260
       ]
     },
     {
@@ -520,13 +520,13 @@
           ]
         }
       },
-      "id": "b4425c0e-e87a-49ef-aa38-e4119fd7f055",
+      "id": "68af8baa-c730-49a5-82a1-93f6b5dfa5b0",
       "name": "If Body Not Empty",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -3540,
-        140
+        -3500,
+        1300
       ]
     },
     {
@@ -557,35 +557,35 @@
         },
         "options": {}
       },
-      "id": "d60474d3-f48c-4ca2-96c0-f7eeeae7509e",
+      "id": "28b92a6f-75cd-486b-a0ae-2f4e24b3ae2c",
       "name": "Set Payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -3780,
-        140
+        -3740,
+        1300
       ]
     },
     {
       "parameters": {},
-      "id": "9eb03498-132a-4967-8cf3-c985fb0aee90",
+      "id": "3499cfdb-606c-4007-a77a-7038fe60c8cb",
       "name": "When Called By Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -4940,
-        160
+        -4900,
+        1320
       ]
     },
     {
       "parameters": {},
-      "id": "b8311964-ccf0-471d-8d00-dd533e759461",
+      "id": "ac9af65e-0a44-44cc-a40e-0b9b6faacaef",
       "name": "Agent Control",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2900,
-        340
+        -2860,
+        1500
       ]
     },
     {
@@ -619,13 +619,13 @@
           }
         }
       },
-      "id": "c5552d75-1784-4a33-b63b-eedf8976a6cd",
+      "id": "df62618a-6617-4837-93c7-587579bb415f",
       "name": "(Agent) Set Inbox Agent Permissions",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        -2660,
-        480
+        -2620,
+        1640
       ],
       "continueOnFail": true
     },
@@ -640,13 +640,13 @@
           ]
         }
       },
-      "id": "e2550f33-731f-4bf7-b652-03a145484256",
+      "id": "f297d2c8-1b8d-4f65-b6be-667f6ea25167",
       "name": "(Agent) If Success Set Agent",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2460,
-        480
+        -2420,
+        1640
       ]
     },
     {
@@ -662,13 +662,13 @@
         },
         "options": {}
       },
-      "id": "afa9e1cc-2361-4936-8d9c-00e07f817ad6",
+      "id": "35ce061c-bb2f-4376-8a1d-639b3cc40607",
       "name": "(Agent)  Set Sucess Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2260,
-        400
+        -2220,
+        1560
       ]
     },
     {
@@ -684,13 +684,13 @@
         },
         "options": {}
       },
-      "id": "8ac8c1e3-8fa2-453d-ac9d-24a827678690",
+      "id": "b67e81dc-71f5-4a42-8061-8948561e6eb7",
       "name": "(Agent) Set Error Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2260,
-        560
+        -2220,
+        1720
       ]
     },
     {
@@ -699,13 +699,208 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "0678513f-75ae-4012-a6af-f5eb4208955c",
+      "id": "ad01f6d1-0dad-4890-b66b-aa42d1e2dc0f",
       "name": "(Agent) Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -1960,
-        360
+        -1920,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.content?.toLowerCase()}}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/webcallback"
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "0ad9a309-b565-4e1c-ade6-f9dd81e4f173",
+      "name": "Switch Start1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -3280,
+        2040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/inbox",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "identifier",
+              "value": "={{ $json.query.identifier }}"
+            },
+            {
+              "name": "destination",
+              "value": "={{ $json.content.substring(13) }}"
+            },
+            {
+              "name": "contextid",
+              "value": "={{ $env[\"C8Q_SUFFICIT_CONTEXTID\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "41dfae31-3d07-4ecd-8897-561de0291dfa",
+      "name": "Update WebCallBack Destination",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2660,
+        1920
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/inbox",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "identifier",
+              "value": "={{ $json.query.identifier }}"
+            },
+            {
+              "name": "contextId",
+              "value": "={{ $json.content.substring(13) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9665f91a-1d26-4ddb-a70b-9aaf00f6dcf1",
+      "name": "Update WebCallBack ContextId",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2660,
+        2120
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.content.substring(13) }}",
+              "operation": "startsWith",
+              "value2": "+"
+            }
+          ]
+        }
+      },
+      "id": "06db7796-2b2e-4a8d-aab0-acf44acb614c",
+      "name": "If Destination Or ContextId",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2860,
+        2020
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "1efc5cf0-af69-44eb-a629-fac8c92b1978",
+      "name": "If Success Update",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2460,
+        2020
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{ $json.message }}:\n  * identifier: {{ $json.data?.identifier }}\n  * destination: {{ $json.data?.destination }}\n  * contextId: {{ $json.data?.contextId }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "087816dd-00d9-4c70-b451-8ed53112982a",
+      "name": "Set Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        1920
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=! {{ $json.message ?? $json.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b087d373-0d2e-4b9d-8047-79c5a3b78e81",
+      "name": "Set Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        2120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "5c390e4a-7108-41a6-a6e5-5adc3708b125",
+      "name": "NoOp1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2060,
+        2020
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.0) Recommendations \n* Remember set timeout to 15 seconds ",
+        "width": 395
+      },
+      "id": "ccf59cc4-7a1b-47c4-afeb-56e49290d5e6",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -5020,
+        1500
       ]
     }
   ],
@@ -805,7 +1000,7 @@
         ],
         [
           {
-            "node": "NoOp",
+            "node": "Switch Start1",
             "type": "main",
             "index": 0
           }
@@ -1118,33 +1313,139 @@
           }
         ]
       ]
+    },
+    "Switch Start1": {
+      "main": [
+        [
+          {
+            "node": "If Destination Or ContextId",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [
+          {
+            "node": "NoOp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update WebCallBack Destination": {
+      "main": [
+        [
+          {
+            "node": "If Success Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update WebCallBack ContextId": {
+      "main": [
+        [
+          {
+            "node": "If Success Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Destination Or ContextId": {
+      "main": [
+        [
+          {
+            "node": "Update WebCallBack Destination",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update WebCallBack ContextId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Success Update": {
+      "main": [
+        [
+          {
+            "node": "Set Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Success Response": {
+      "main": [
+        [
+          {
+            "node": "NoOp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error Response": {
+      "main": [
+        [
+          {
+            "node": "NoOp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NoOp1": {
+      "main": [
+        [
+          {
+            "node": "If Reponse Not Empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": {},
-  "versionId": "160b6b7d-5bf3-4b94-84b7-dd275db25ac5",
-  "id": "8",
-  "meta": {
-    "instanceId": "a37a29af0b164c10f8b7ef0e4d5577d19b80c64c836f6cd90dd302c84a178489"
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 15
   },
-  "tags": [
+  "versionId": "2622e1ec-7e95-4178-8749-d3cfe63d0d86",
+  "id": "1001",
+  "meta": {
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "tags": [    
     {
-      "createdAt": "2023-04-22T16:05:34.674Z",
-      "updatedAt": "2023-04-22T16:05:34.674Z",
-      "id": "2",
       "name": "QUEPASA"
     },
     {
-      "createdAt": "2023-05-15T19:41:05.629Z",
-      "updatedAt": "2023-05-15T19:41:05.629Z",
-      "id": "5",
-      "name": "codeleaks"
+      "name": "CHATWOOT"
     },
     {
-      "createdAt": "2023-05-15T19:41:05.651Z",
-      "updatedAt": "2023-05-15T19:41:05.651Z",
-      "id": "6",
-      "name": "CHATWOOT"
+      "name": "NOCODELEAKS"
     }
   ]
 }

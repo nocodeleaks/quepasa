@@ -100,7 +100,7 @@
           "string": [
             {
               "name": "URL N8N",
-              "value": "http://localhost:5678"
+              "value": "http://127.0.0.1:5678"
             }
           ]
         },
@@ -288,6 +288,20 @@
         }
       },
       "notes": "Sucesso"
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.0) Recommendations \n* Remember set timeout to 15 seconds ",
+        "width": 395
+      },
+      "id": "d7872589-290c-4614-868f-fabe6b64ca52",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        800
+      ]
     }
   ],
   "pinData": {},
@@ -396,37 +410,12 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {},
-  "versionId": "e3f20b89-64e6-4476-9dc1-553917a3761f",
-  "id": "12",
+  "versionId": "682ba8bc-ce3a-4a41-993d-2b6790f5d955",
+  "id": "1011",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [
-    {
-      "createdAt": "2022-10-13T04:02:06.783Z",
-      "updatedAt": "2022-10-13T04:02:06.783Z",
-      "id": "1",
-      "name": "SUFFICIT"
-    },
-    {
-      "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2022-10-13T15:26:11.519Z",
-      "id": "5",
-      "name": "QUEPASA"
-    },
-    {
-      "createdAt": "2023-05-18T18:59:53.449Z",
-      "updatedAt": "2023-05-18T18:59:53.449Z",
-      "id": "7",
-      "name": "EngajamentoFlow"
-    },
-    {
-      "createdAt": "2023-05-18T18:59:53.482Z",
-      "updatedAt": "2023-05-18T18:59:53.482Z",
-      "id": "8",
-      "name": "Versão 2.0"
-    }
-  ]
+  "tags": []
 }

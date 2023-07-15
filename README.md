@@ -202,7 +202,7 @@ bash /opt/quepasa-source/helpers/install.sh
   APP_ENV=development # this will write some extra debug messages you can change it to production if needed
   MIGRATIONS=false
   SIGNING_SECRET=5345fgdgfd54asdasdasdd #some random test this will be used for password encription 
-
+ 
   ```
 
   ### **Fifth step**
@@ -274,6 +274,9 @@ bash /opt/quepasa-source/helpers/install.sh
 	# APP_TITLE
 	> Suffix for quepasa name on whatsapp devices list like (QuePasa Sufficit), default empty.	
 	
+	# CONVERT_WAVE_TO_OGG
+	> Should convert sending wave files to OGG codec and use as PTT, default true or empty.	
+	 
 ### License
 
 [![License GNU AGPL v3.0](https://img.shields.io/badge/License-AGPL%203.0-lightgrey.svg)](https://github.com/nocodeleaks/quepasa-fork/blob/master/LICENSE.md)

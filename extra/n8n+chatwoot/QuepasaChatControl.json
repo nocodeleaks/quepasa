@@ -2,17 +2,6 @@
   "name": "QuepasaChatControl",
   "nodes": [
     {
-      "parameters": {},
-      "id": "e7a609cd-d480-43ea-8fbb-7f0299475e0e",
-      "name": "Start",
-      "type": "n8n-nodes-base.start",
-      "typeVersion": 1,
-      "position": [
-        640,
-        200
-      ]
-    },
-    {
       "parameters": {
         "conditions": {
           "number": [
@@ -23,13 +12,13 @@
           ]
         }
       },
-      "id": "a785f941-3173-41c4-943c-13e9f33f7f1c",
+      "id": "1ba0fdf3-3405-4080-ae8a-64d84aa867b6",
       "name": "If From Chat ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1120,
-        420
+        3140,
+        520
       ]
     },
     {
@@ -46,24 +35,24 @@
         },
         "fallbackOutput": 3
       },
-      "id": "86c4f61a-9290-4c49-b1b1-85956d3b2308",
+      "id": "f64f469f-c5a1-4898-91b0-4f263a11e392",
       "name": "Switch From Chat",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        1540,
-        600
+        3420,
+        500
       ]
     },
     {
       "parameters": {},
-      "id": "1daa9184-1138-4f3a-b3d0-8d328864dbc9",
+      "id": "e7cbac3e-7c61-4e89-8025-03ba76b5033e",
       "name": "Discarding Invalid Content",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1540,
-        920
+        3420,
+        740
       ]
     },
     {
@@ -78,13 +67,13 @@
         },
         "options": {}
       },
-      "id": "bf3b523d-6837-463f-a471-8ee7f7eafeb9",
+      "id": "34acd79e-12f9-490a-8fa0-bee25405f187",
       "name": "Set Invite Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        3040,
-        460
+        4900,
+        400
       ]
     },
     {
@@ -98,13 +87,13 @@
           ]
         }
       },
-      "id": "34a9876e-68ef-4957-9178-b234be9d489d",
+      "id": "b0ed5d6e-539f-4ff6-a94e-946e303cf537",
       "name": "IF Success2",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2740,
-        540
+        4600,
+        480
       ]
     },
     {
@@ -119,13 +108,13 @@
           ]
         }
       },
-      "id": "5e2d2052-5993-4df5-8c2a-18efd2f1dd85",
+      "id": "81e66b74-2a75-4fd9-ba2a-18a7cde107d5",
       "name": "If Is From Group",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2080,
-        540
+        3940,
+        480
       ]
     },
     {
@@ -139,13 +128,13 @@
           ]
         }
       },
-      "id": "ec6b1736-57ab-481c-b9c5-5c5e87488fda",
+      "id": "378887f6-3d63-42cd-8eb6-73ea0b44f918",
       "name": "If Reponse Not Empty ?1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3360,
-        540
+        5220,
+        480
       ]
     },
     {
@@ -155,13 +144,13 @@
         "text": "={{$json[\"response\"]}}",
         "chatId": "={{$json.chatid}}"
       },
-      "id": "7a86d104-aba4-4be1-9a30-aba3c972c7c8",
+      "id": "d8c32d01-bf20-414d-b0b8-793c10149ae3",
       "name": "Quepasa",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        3620,
-        520
+        5480,
+        460
       ]
     },
     {
@@ -185,13 +174,13 @@
         },
         "options": {}
       },
-      "id": "392384c3-7fb5-4bf5-bfdb-5f1360a5a43f",
+      "id": "d1a78e5f-c595-470a-9110-c04db23ee641",
       "name": "Set Parameters From Control Chat",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1900,
-        540
+        3760,
+        480
       ]
     },
     {
@@ -202,13 +191,13 @@
         "operation": "invite",
         "chatId": "={{$json[\"chatid\"]}}"
       },
-      "id": "c671bf38-e2fa-4aca-9bb9-5e954fa957e0",
+      "id": "a793ab5a-123c-48da-b50e-af099add2186",
       "name": "Quepasa Get Invite Link",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        2320,
-        620
+        4180,
+        560
       ],
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -220,13 +209,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "c31eccc2-b279-49b5-8f43-6d3ebd7d014c",
+      "id": "945c9519-c9fe-4e42-9db1-210c59296d9d",
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        2540,
-        540
+        4400,
+        480
       ]
     },
     {
@@ -241,13 +230,38 @@
         },
         "options": {}
       },
-      "id": "6737af1e-a71b-40a3-86c3-b6d4fe27cb06",
+      "id": "c33974df-0491-40f0-b016-a93fb511650b",
       "name": "Set Error Response From Quepasa",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        3040,
-        620
+        4900,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.0) Recommendations \n* Remember set timeout to 15 seconds ",
+        "width": 395
+      },
+      "id": "07c6c321-042f-4201-9ece-87acece6b3fc",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2900,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d1fc280a-9c26-4f4d-8470-543c910ae925",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        2940,
+        520
       ]
     }
   ],
@@ -338,17 +352,6 @@
         ]
       ]
     },
-    "Start": {
-      "main": [
-        [
-          {
-            "node": "If From Chat ?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Set Parameters From Control Chat": {
       "main": [
         [
@@ -392,14 +395,39 @@
           }
         ]
       ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If From Chat ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": {},
-  "versionId": "4d61fcc5-66c0-47c4-9d92-cfb5d89ab7e0",
-  "id": "6",
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 15
+  },
+  "versionId": "4ea15e3b-9ae3-429e-a4e9-b219e2e80d11",
+  "id": "1003",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": []
+  "tags": [    
+    {
+      "name": "QUEPASA"
+    },
+    {
+      "name": "CHATWOOT"
+    },
+    {
+      "name": "NOCODELEAKS"
+    }
+  ]
 }

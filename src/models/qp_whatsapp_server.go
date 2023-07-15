@@ -568,8 +568,10 @@ func (server *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (resp
 				textMsg := *msg
 				textMsg.Type = whatsapp.TextMessageType
 				textMsg.Attachment = nil
-				_, err = server.connection.Send(&textMsg)
-				if err == nil {
+				response, err = server.connection.Send(&textMsg)
+				if err != nil {
+					return
+				} else {
 					server.Handler.Message(&textMsg)
 				}
 			}

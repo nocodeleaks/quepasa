@@ -407,7 +407,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 	if attach != nil {
 		waMsg.Attachment = attach
 		waMsg.Type = whatsapp.GetMessageType(attach.Mimetype)
-		server.Log.Debugf("send attachment of type: %v and mime: %s and length: %v and filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		server.Log.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 	} else {
 		// test for poll
 		waMsg.Type = whatsapp.TextMessageType

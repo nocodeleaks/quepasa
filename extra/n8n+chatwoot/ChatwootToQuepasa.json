@@ -108,36 +108,6 @@
       "id": "cac44382-8239-42e0-b7d8-d20855383010"
     },
     {
-      "parameters": {
-        "dataType": "string",
-        "value1": "={{$json[\"body\"][\"event\"]}}",
-        "rules": {
-          "rules": [
-            {
-              "value2": "message_created"
-            },
-            {
-              "value2": "conversation_status_changed",
-              "output": 1
-            },
-            {
-              "value2": "conversation_created",
-              "output": 2
-            }
-          ]
-        },
-        "fallbackOutput": 3
-      },
-      "name": "Switch1",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 1,
-      "position": [
-        -3960,
-        3120
-      ],
-      "id": "fb36c998-7e40-42d0-950c-d4aeb3286737"
-    },
-    {
       "parameters": {},
       "name": "Message Created Event",
       "type": "n8n-nodes-base.noOp",
@@ -220,7 +190,8 @@
         3060
       ],
       "retryOnFail": true,
-      "maxTries": 2
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -519,17 +490,6 @@
     },
     {
       "parameters": {},
-      "id": "4d01d6c1-b031-477b-a3f5-21d4e6ac70a8",
-      "name": "NoOp",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        -2000,
-        4520
-      ]
-    },
-    {
-      "parameters": {},
       "id": "f97aa13d-b31c-4ced-884c-aa8ae051d503",
       "name": "No Operation, do nothing",
       "type": "n8n-nodes-base.noOp",
@@ -633,27 +593,6 @@
         3880
       ],
       "continueOnFail": true
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.body.meta?.sender?.identifier ?? \"\" }}",
-              "operation": "notEqual",
-              "value2": "control@quepasa.io"
-            }
-          ]
-        }
-      },
-      "id": "d55170df-de37-4cf3-a289-1dcffa2accb0",
-      "name": "If Not Control",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        -2320,
-        3440
-      ]
     },
     {
       "parameters": {
@@ -964,37 +903,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.body.conversation?.meta.sender.identifier?.toLowerCase() }}",
-              "value2": "control@quepasa.io"
-            },
-            {
-              "value1": "={{ $json.body.meta?.sender.name?.toLowerCase() }}",
-              "operation": "contains",
-              "value2": "quepasa control"
-            },
-            {
-              "value1": "={{ $json.body.conversation?.meta.sender.name?.toLowerCase() }}",
-              "operation": "contains",
-              "value2": "quepasa control"
-            }
-          ]
-        },
-        "combineOperation": "any"
-      },
-      "id": "1c6cef50-944c-4385-ba1b-737d6c708a55",
-      "name": "From Quepasa Control ?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        -1300,
-        2700
-      ]
-    },
-    {
-      "parameters": {
         "baseUrl": "={{$json.query.qphost}}",
         "token": "={{$json.query.qptoken}}",
         "operation": "revoke",
@@ -1005,8 +913,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -1780,
-        4520
+        -1820,
+        4540
       ],
       "retryOnFail": true,
       "maxTries": 2
@@ -1022,7 +930,7 @@
             },
             {
               "name": "payload.messageid",
-              "value": "={{ $json.body.messages[0].id }}"
+              "value": "={{ $json.body.id }}-eval"
             },
             {
               "name": "query.qphost",
@@ -1042,7 +950,7 @@
             },
             {
               "name": "payload.content",
-              "value": "=*{{ $json[\"body\"][\"meta\"][\"sender\"][\"name\"] }}* seu atendimento de Ticket de nº *{{ $json[\"body\"][\"messages\"][0][\"conversation_id\"] }}* foi finalizado ! Caso tenha alguma dúvida só enviar uma nova mensagem !\n\nAproveite e avalie nosso atendimento. Sua opinião é muito importante para nós e nos ajudará a identificar áreas de melhorias e continuar oferecendo um serviço de qualidade. 😎\n\nAvalie meu atendimento !\n{{ ($json.query.cwpublic ?? $json.query.cwhost).trimEnd('/') }}/survey/responses/{{ $json[\"uuid\"] }}"
+              "value": "=*{{ $json[\"body\"][\"meta\"][\"sender\"][\"name\"] }}* seu atendimento de Ticket de nº *{{ $json.body.id }}* foi finalizado ! Caso tenha alguma dúvida só enviar uma nova mensagem !\n\nAproveite e avalie nosso atendimento. Sua opinião é muito importante para nós e nos ajudará a identificar áreas de melhorias e continuar oferecendo um serviço de qualidade. 😎\n\nAvalie meu atendimento !\n{{ ($json.query.cwpublic ?? $env[\"C8Q_CW_PUBLIC_URL\"] ?? $json.query.cwhost).trimEnd('/') }}/survey/responses/{{ $json.uuid }}"
             }
           ]
         },
@@ -1084,7 +992,7 @@
             },
             {
               "name": "payload.messageid",
-              "value": "={{ $json.body.messages[0].id }}"
+              "value": "={{ $json.body.id }}-eval"
             },
             {
               "name": "payload.content",
@@ -1179,6 +1087,136 @@
         -1620,
         3460
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.conversation?.meta.sender.identifier?.toLowerCase() }}",
+              "value2": "={{ $env[\"C8Q_QP_CONTACT\"] ?? 'control@quepasa.io' }}"
+            },
+            {
+              "value1": "={{ $json.body.meta?.sender.name?.toLowerCase() }}",
+              "operation": "contains",
+              "value2": "quepasa control"
+            },
+            {
+              "value1": "={{ $json.body.conversation?.meta.sender.name?.toLowerCase() }}",
+              "operation": "contains",
+              "value2": "quepasa control"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "838e1682-4c9c-4197-9204-13a55bcac2b4",
+      "name": "From Quepasa Control ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        2700
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.5) Updates\n* avoid csat to broadcast\n\n## (1.0.4) Updates\n* use env vars for csat with prio\n\n## (1.0.3) Updates\n* custom id for evaluation messages\n\n## Recommendations \n* Remember set timeout to 30 seconds\n\n",
+        "height": 348.70602969397424,
+        "width": 505.65878958512553
+      },
+      "id": "126175b6-ed49-4de7-bc03-23eaba40f721",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4300,
+        2725.7587906835765
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"message_type\"]}}",
+              "value2": "outgoing"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json[\"body\"][\"message_type\"]}}",
+              "operation": "equal",
+              "value2": 1
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "name": "Is Outgoing Message ?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2040,
+        4560
+      ],
+      "id": "006e3927-1616-4bdc-bbf9-2322118842a0"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json[\"body\"][\"event\"]}}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "message_created"
+            },
+            {
+              "value2": "conversation_status_changed",
+              "output": 1
+            },
+            {
+              "value2": "conversation_created",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "name": "Switch Event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -3960,
+        3120
+      ],
+      "id": "fb36c998-7e40-42d0-950c-d4aeb3286737"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.meta?.sender?.identifier ?? \"\" }}",
+              "operation": "notEqual",
+              "value2": "control@quepasa.io"
+            },
+            {
+              "value1": "={{ $json.body.meta?.sender?.identifier ?? \"\" }}",
+              "operation": "notEndsWith",
+              "value2": "@broadcast"
+            }
+          ]
+        }
+      },
+      "id": "d55170df-de37-4cf3-a289-1dcffa2accb0",
+      "name": "If Not Control & Not Broadcast",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2320,
+        3440
+      ]
     }
   ],
   "pinData": {},
@@ -1199,38 +1237,6 @@
         [
           {
             "node": "No Operation, do nothing1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch1": {
-      "main": [
-        [
-          {
-            "node": "Message Created Event",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Conversation Status Changed  Event",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Conversation Created Event",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -1464,7 +1470,7 @@
       "main": [
         [
           {
-            "node": "NoOp",
+            "node": "Is Outgoing Message ?1",
             "type": "main",
             "index": 0
           }
@@ -1497,7 +1503,7 @@
       "main": [
         [
           {
-            "node": "Switch1",
+            "node": "Switch Event",
             "type": "main",
             "index": 0
           }
@@ -1575,7 +1581,7 @@
       "main": [
         [
           {
-            "node": "If Not Control",
+            "node": "If Not Control & Not Broadcast",
             "type": "main",
             "index": 0
           }
@@ -1603,17 +1609,6 @@
           },
           {
             "node": "Post Resolved Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Not Control": {
-      "main": [
-        [
-          {
-            "node": "Account Found ?",
             "type": "main",
             "index": 0
           }
@@ -1733,35 +1728,6 @@
         ]
       ]
     },
-    "From Quepasa Control ?": {
-      "main": [
-        [
-          {
-            "node": "Throw To Quepasa Inbox Control Workflow",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "NoOp": {
-      "main": [
-        [
-          {
-            "node": "Quepasa Revoke",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Payload With CSAT": {
       "main": [
         [
@@ -1839,25 +1805,100 @@
           }
         ]
       ]
+    },
+    "From Quepasa Control ?": {
+      "main": [
+        [
+          {
+            "node": "Throw To Quepasa Inbox Control Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Outgoing Message ?1": {
+      "main": [
+        [
+          {
+            "node": "Quepasa Revoke",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Event": {
+      "main": [
+        [
+          {
+            "node": "Message Created Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversation Status Changed  Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversation Created Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Control & Not Broadcast": {
+      "main": [
+        [
+          {
+            "node": "Account Found ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "saveManualExecutions": false,
     "callerPolicy": "workflowsFromSameOwner",
-    "executionTimeout": 30
+    "executionTimeout": 50
   },
-  "versionId": "8e162179-8e8a-40d4-98af-e9fa56995926",
-  "id": "2",
+  "versionId": "2db5d57a-728e-417b-aad2-04376c8dd719",
+  "id": "1008",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [
+  "tags": [    
     {
-      "createdAt": "2022-10-13T04:02:06.783Z",
-      "updatedAt": "2022-10-13T04:02:06.783Z",
-      "id": "1",
-      "name": "SUFFICIT"
+      "name": "QUEPASA"
+    },
+    {
+      "name": "CHATWOOT"
+    },
+    {
+      "name": "NOCODELEAKS"
     }
   ]
 }

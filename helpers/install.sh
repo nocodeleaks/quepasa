@@ -33,6 +33,9 @@ echo "Installed ${GOVERSION}"
 echo 'Updating Quepasa link'
 ln -sf /opt/quepasa-source/src /opt/quepasa 
 
+echo 'Ensuring RSyslog'
+apt install rsyslog -y &>/dev/null
+
 echo 'Updating logging'
 ln -sf /opt/quepasa-source/helpers/syslog.conf /etc/rsyslog.d/10-quepasa.conf
 

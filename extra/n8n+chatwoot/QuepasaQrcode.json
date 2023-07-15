@@ -499,28 +499,6 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "=INSERT INTO \"public\".\"agent_bots\" (\"name\", \"account_id\", \"created_at\", \"updated_at\")\nSELECT 'quepasabot', {{ $json[\"ID DA CONTA\"] }}, NOW(), NOW() \nWHERE NOT EXISTS (SELECT NULL FROM \"public\".\"agent_bots\" WHERE \"bot_type\" = '0' AND \"name\" LIKE '%quepasabot%' AND \"account_id\" = {{ $json[\"ID DA CONTA\"] }});\nSELECT \"id\" FROM \"public\".\"agent_bots\" WHERE \"bot_type\" = '0' AND \"name\" LIKE '%quepasabot%' AND \"account_id\" = {{ $json[\"ID DA CONTA\"] }} LIMIT 1;",
-        "additionalFields": {}
-      },
-      "id": "55018c04-64d9-4fea-82ca-775388590bdd",
-      "name": "Garante AgentBot",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 1,
-      "position": [
-        1000,
-        580
-      ],
-      "alwaysOutputData": false,
-      "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "content": "## Coletando Todas informações",
         "height": 745.8570330514997,
         "width": 987.347503496542
@@ -781,6 +759,43 @@
         1160,
         900
       ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO \"public\".\"agent_bots\" (\"name\", \"account_id\", \"created_at\", \"updated_at\")\nSELECT '{{ $env[\"C8Q_QP_BOTTITLE\"] ?? \"quepasabot\" }}', {{ $json[\"ID DA CONTA\"] }}, NOW(), NOW() \nWHERE NOT EXISTS (SELECT NULL FROM \"public\".\"agent_bots\" WHERE \"bot_type\" = '0' AND \"name\" LIKE '{{ $env[\"C8Q_QP_BOTTITLE\"] ?? \"quepasabot\" }}' AND \"account_id\" = {{ $json[\"ID DA CONTA\"] }});\nSELECT \"id\" FROM \"public\".\"agent_bots\" WHERE \"bot_type\" = '0' AND \"name\" LIKE '{{ $env[\"C8Q_QP_BOTTITLE\"] ?? \"quepasabot\" }}' AND \"account_id\" = {{ $json[\"ID DA CONTA\"] }} LIMIT 1;",
+        "additionalFields": {}
+      },
+      "id": "3354b6c7-8e6c-4939-adfb-aee4f501fc60",
+      "name": "Garante AgentBot",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        580
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.0) Recommendations \n* Remember set timeout to 60 seconds ",
+        "height": 254.46482037754592,
+        "width": 505.65878958512553
+      },
+      "id": "19ff712d-3c95-45e9-afff-90b869168f8a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        180
+      ]
     }
   ],
   "pinData": {},
@@ -953,17 +968,6 @@
         ]
       ]
     },
-    "Garante AgentBot": {
-      "main": [
-        [
-          {
-            "node": "Garante AToken",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Informa UToken": {
       "main": [
         [
@@ -1051,39 +1055,29 @@
           }
         ]
       ]
+    },
+    "Garante AgentBot": {
+      "main": [
+        [
+          {
+            "node": "Garante AToken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
-  "settings": {},
-  "versionId": "0e3d90d7-1371-4c77-bcbf-26956ebbd7b6",
-  "id": "13",
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 60
+  },
+  "versionId": "64444fcd-8cdc-46d8-ac0c-9b53ef2da27e",
+  "id": "1010",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [
-    {
-      "createdAt": "2022-10-13T04:02:06.783Z",
-      "updatedAt": "2022-10-13T04:02:06.783Z",
-      "id": "1",
-      "name": "SUFFICIT"
-    },
-    {
-      "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2022-10-13T15:26:11.519Z",
-      "id": "5",
-      "name": "QUEPASA"
-    },
-    {
-      "createdAt": "2023-05-18T18:59:53.449Z",
-      "updatedAt": "2023-05-18T18:59:53.449Z",
-      "id": "7",
-      "name": "EngajamentoFlow"
-    },
-    {
-      "createdAt": "2023-05-18T18:59:53.482Z",
-      "updatedAt": "2023-05-18T18:59:53.482Z",
-      "id": "8",
-      "name": "Versão 2.0"
-    }
-  ]
+  "tags": []
 }

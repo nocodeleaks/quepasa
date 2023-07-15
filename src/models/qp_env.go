@@ -20,6 +20,11 @@ type Environment struct{}
 
 var ENV Environment
 
+func (_ *Environment) ShouldConvertWaveToOgg() bool {
+	environment, _ := GetEnvBool("CONVERT_WAVE_TO_OGG", true)
+	return environment
+}
+
 func (_ *Environment) IsDevelopment() bool {
 	environment, _ := GetEnvStr(ENVIRONMENT)
 	if strings.ToLower(environment) == "development" {

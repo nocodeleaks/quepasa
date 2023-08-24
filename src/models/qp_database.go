@@ -44,7 +44,7 @@ func GetDB() *sqlx.DB {
 		// Tenta realizar a conexão
 		dbconn, err := sqlx.Connect(config.Driver, config.GetConnectionString())
 		if err != nil {
-			log.Fatalf("fatal error at getting database connection")
+			log.Fatalf("error at database connection: %s, msg: %s", config.Driver, err.Error())
 			return
 		}
 

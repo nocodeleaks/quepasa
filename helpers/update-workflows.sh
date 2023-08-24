@@ -2,9 +2,17 @@
 
 cd /root/.n8n
 if [ -z $1 ]; then 
-	/usr/bin/n8n import:workflow --input=/opt/quepasa-source/extra/n8n+chatwoot/ --separate 
+	if /usr/bin/n8n import:workflow --input=/opt/quepasa-source/extra/n8n+chatwoot/ --separate; then
+		echo "workflows imported with success"
+	else
+		exit 1;
+	fi	
 else 
-	/usr/bin/n8n import:workflow --input=/opt/quepasa-source/extra/n8n+chatwoot/ --separate --userId=$1
+	if /usr/bin/n8n import:workflow --input=/opt/quepasa-source/extra/n8n+chatwoot/ --separate --userId=$1; then
+		echo "workflows imported with success"
+	else
+		exit 1;
+	fi
 fi
 
 /usr/bin/n8n update:workflow --id 1008 --active=true

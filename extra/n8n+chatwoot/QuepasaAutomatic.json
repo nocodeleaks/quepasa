@@ -4,7 +4,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO \"contacts\" (\"name\", \"identifier\", \"account_id\", \"created_at\", \"updated_at\", \"last_activity_at\") VALUES ('Quepasa Control', 'control@quepasa.io', {{ $json.account }}, NOW(), NOW(), NOW());",
+        "query": "=INSERT INTO \"contacts\" (\"name\", \"identifier\", \"account_id\", \"created_at\", \"updated_at\", \"last_activity_at\") VALUES ('{{ $node[\"execdata\"].json.bottitle }}', '{{ $node[\"execdata\"].json.contact }}', {{ $json.account }}, NOW(), NOW(), NOW());",
         "additionalFields": {}
       },
       "id": "9ae73ae2-b057-42ab-aec2-2eb07432b666",
@@ -27,7 +27,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO \"automation_rules\" (\"account_id\", \"name\", \"description\", \"event_name\", \"conditions\", \"actions\", \"created_at\", \"updated_at\", \"active\") VALUES ({{ $json.account }}, 'Start Quepasa', 'Start Quepasa', 'message_created', \n\n'[{\"values\": [\"control@quepasa.io\"], \"attribute_key\": \"identifier\", \"query_operator\": \"and\", \"filter_operator\": \"equal_to\", \"custom_attribute_type\": \"\"}, {\"values\": [\"outgoing\"], \"attribute_key\": \"message_type\", \"query_operator\": \"and\", \"filter_operator\": \"equal_to\", \"custom_attribute_type\": \"\"}, {\"values\": [\"/qrcode\"], \"attribute_key\": \"content\", \"filter_operator\": \"contains\", \"custom_attribute_type\": \"\"}]'\n\n, '[{\"action_name\": \"send_webhook_event\", \"action_params\": [\"{{ $node[\"Colocar Dados\"].json[\"URL N8N\"] }}/webhook/quepasa\"]}]', NOW(), NOW(), 'true');",
+        "query": "=INSERT INTO \"automation_rules\" (\"account_id\", \"name\", \"description\", \"event_name\", \"conditions\", \"actions\", \"created_at\", \"updated_at\", \"active\") VALUES ({{ $json.account }}, '{{ $node[\"execdata\"].json.bottitle }}', '{{ $node[\"execdata\"].json.bottitle }}', 'message_created', '[{\"values\": [\"{{ $node[\"execdata\"].json.contact }}\"], \"attribute_key\": \"identifier\", \"query_operator\": \"and\", \"filter_operator\": \"equal_to\", \"custom_attribute_type\": \"\"}, {\"values\": [\"outgoing\"], \"attribute_key\": \"message_type\", \"query_operator\": \"and\", \"filter_operator\": \"equal_to\", \"custom_attribute_type\": \"\"}, {\"values\": [\"/qrcode\"], \"attribute_key\": \"content\", \"filter_operator\": \"contains\", \"custom_attribute_type\": \"\"}]', '[{\"action_name\": \"send_webhook_event\", \"action_params\": [\"{{ $node[\"execdata\"].json.n8nurl }}/webhook/quepasa\"]}]', NOW(), NOW(), 'true');",
         "additionalFields": {}
       },
       "id": "e1822cbf-efbc-47dd-8ad7-afa92d4c3b85",
@@ -51,7 +51,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT \"accounts\".\"id\" AS \"account\" FROM \"accounts\" LEFT JOIN \"automation_rules\" ON \"accounts\".\"id\" = \"automation_rules\".\"account_id\" AND \"automation_rules\".\"name\" = 'Start Quepasa' WHERE \"automation_rules\".\"name\" IS NULL;",
+        "query": "=SELECT \"accounts\".\"id\" AS \"account\" FROM \"accounts\" LEFT JOIN \"automation_rules\" ON \"accounts\".\"id\" = \"automation_rules\".\"account_id\" AND \"automation_rules\".\"name\" = '{{ $node[\"execdata\"].json.bottitle }}' WHERE \"automation_rules\".\"name\" IS NULL;",
         "additionalFields": {}
       },
       "id": "2a75e8f4-7539-4d0a-88e2-561d0deabac7",
@@ -74,7 +74,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT \"accounts\".\"id\" AS \"account\" FROM \"accounts\" LEFT JOIN \"contacts\" ON \"accounts\".\"id\" = \"contacts\".\"account_id\" AND \"contacts\".\"identifier\" = 'control@quepasa.io' WHERE \"contacts\".\"identifier\" IS NULL;",
+        "query": "=SELECT \"accounts\".\"id\" AS \"account\" FROM \"accounts\" LEFT JOIN \"contacts\" ON \"accounts\".\"id\" = \"contacts\".\"account_id\" AND \"contacts\".\"identifier\" = '{{ $node[\"execdata\"].json.contact }}' WHERE \"contacts\".\"identifier\" IS NULL;",
         "additionalFields": {}
       },
       "id": "fb3f0031-6bca-4ef2-b154-3c02bb575e84",
@@ -93,27 +93,6 @@
         }
       },
       "notes": "Sucesso"
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "URL N8N",
-              "value": "http://127.0.0.1:5678"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "cc3544d1-6ab9-49b3-a456-88c2ab01897c",
-      "name": "Colocar Dados",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [
-        160,
-        560
-      ]
     },
     {
       "parameters": {
@@ -291,7 +270,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.0) Recommendations \n* Remember set timeout to 15 seconds ",
+        "content": "## (1.0.1) Recommendations \n* Environment Variables",
         "width": 395
       },
       "id": "d7872589-290c-4614-868f-fabe6b64ca52",
@@ -301,6 +280,35 @@
       "position": [
         -240,
         800
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "n8nurl",
+              "value": "http://127.0.0.1:5678"
+            },
+            {
+              "name": "bottitle",
+              "value": "={{ $env['C8Q_QP_BOTTITLE'] ?? 'Quepasa Control' }}"
+            },
+            {
+              "name": "contact",
+              "value": "={{ $env['C8Q_QP_CONTACT'] ?? 'control@quepasa.io' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cc3544d1-6ab9-49b3-a456-88c2ab01897c",
+      "name": "execdata",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        160,
+        560
       ]
     }
   ],
@@ -322,22 +330,6 @@
         [
           {
             "node": "Cria o Contato",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Colocar Dados": {
-      "main": [
-        [
-          {
-            "node": "Missing Automations",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Quepasa Contact",
             "type": "main",
             "index": 0
           }
@@ -380,7 +372,7 @@
       "main": [
         [
           {
-            "node": "Colocar Dados",
+            "node": "execdata",
             "type": "main",
             "index": 0
           }
@@ -408,14 +400,40 @@
           }
         ]
       ]
+    },
+    "execdata": {
+      "main": [
+        [
+          {
+            "node": "Missing Automations",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Quepasa Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {},
-  "versionId": "682ba8bc-ce3a-4a41-993d-2b6790f5d955",
+  "versionId": "7d3f185a-5f53-469c-9530-e0bf87b5f896",
   "id": "1011",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": []
+  "tags": [
+    {
+      "name": "QUEPASA"
+    },
+    {
+      "name": "EngajamentoFlow"
+    },
+    {
+      "name": "github.com/nocodeleaks"
+    }
+  ]
 }

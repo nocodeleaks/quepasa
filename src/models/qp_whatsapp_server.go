@@ -487,7 +487,7 @@ func (server *QpWhatsappServer) Save() (err error) {
 	server.Log.Infof("saving server info: %v", server)
 	ok, err := server.db.Exists(server.Token)
 	if err != nil {
-		log.Errorf("error on checking existent server: ", err.Error())
+		log.Errorf("error on checking existent server: %s", err.Error())
 		return
 	}
 
@@ -549,12 +549,16 @@ func (server *QpWhatsappServer) Delete() (err error) {
 }
 
 //endregion
-
 //#region SEND
 
 // Default send message method
 func (server *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (response whatsapp.IWhatsappSendResponse, err error) {
-	server.Log.Debugf("sending msg to: %v", msg.Chat.Id)
+	server.Log.Debugf("sending msg to: %s", msg.Chat.Id)
+
+	// leading with wrongs digit 9
+	if ENV.ShouldRemoveDigit9() {
+		msg.Chat.Id = library.RemoveDigit9(msg.Chat.Id)
+	}
 
 	if msg.HasAttachment() {
 		if len(msg.Text) > 0 {

@@ -14,6 +14,7 @@ const (
 	TITLE               = "APP_TITLE"
 	DEBUG_REQUESTS      = "DEBUGREQUESTS"
 	DEBUG_JSON_MESSAGES = "DEBUGJSONMESSAGES"
+	REMOVEDIGIT9        = "REMOVEDIGIT9"
 )
 
 type Environment struct{}
@@ -116,4 +117,9 @@ func GetEnvStr(key string) (string, error) {
 		return v, ErrEnvVarEmpty
 	}
 	return v, nil
+}
+
+func (_ *Environment) ShouldRemoveDigit9() bool {
+	value, _ := GetEnvBool(REMOVEDIGIT9, false)
+	return value
 }

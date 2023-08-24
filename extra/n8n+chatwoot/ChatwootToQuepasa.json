@@ -20,27 +20,6 @@
     },
     {
       "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "payload.content",
-              "value": "={{ $json.payload.sender ? '*' + $json.payload.sender.trim() + '*: ' : '' }}{{ $json.payload.content }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "name": "Update Content With Sender Name",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 1,
-      "position": [
-        -140,
-        2600
-      ],
-      "id": "587e7645-9005-47b3-aaeb-a925f2fbfcc0"
-    },
-    {
-      "parameters": {
         "respondWith": "text",
         "responseBody": "only for messages",
         "options": {
@@ -163,7 +142,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        940,
+        1160,
         2820
       ],
       "retryOnFail": true,
@@ -186,7 +165,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        940,
+        1160,
         3060
       ],
       "retryOnFail": true,
@@ -203,7 +182,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        120,
+        340,
         2220
       ]
     },
@@ -222,7 +201,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        660,
+        880,
         2940
       ],
       "id": "7ad835e2-d6c7-4f6b-97d7-6cd56bc18b4c"
@@ -238,7 +217,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1220,
+        1440,
         2940
       ],
       "id": "953b3a40-38d8-4fa1-b260-e04a1647bfd9"
@@ -360,7 +339,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -140,
+        80,
         2220
       ],
       "continueOnFail": true
@@ -506,7 +485,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        160,
+        380,
         2740
       ]
     },
@@ -866,7 +845,7 @@
     },
     {
       "parameters": {
-        "jsCode": "function hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor(let index in items) \n{ \n    if(items[index].json?.chatid){\n        continue;\n    }\n\n    let body = items[index].json[\"body\"];\n    if(body) \n    {\n        // trying to get from external identifier\n        let chatid = body.meta?.sender?.identifier;\n        if(!chatid)\n        {\n            // trying to get from quepasa custom property\n            chatid = body.meta?.sender?.custom_attributes?.quepasa;            \n            if(!chatid)\n            {\n                // trying to get from e-mail\n                chatid = body.meta?.sender?.email;            \n                if(!chatid)\n                {\n                    // trying to unhex from source_id\n                    if(body.contact_inbox?.source_id && body.contact_inbox.source_id.includes(\"@\")){\n                        chatid = hex2a(body.contact_inbox.source_id)\n                    }\n                    \n                    if(!chatid)\n                    {                    \n                        // trying to get from phone number\n                        chatid = body.meta?.sender?.phone_number;\n                    }\n                }\n            }\n        }\n        items[index].json.chatid = chatid;\n    }\n}\n\nreturn items;"
+        "jsCode": "function hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor(let index in items) \n{ \n    if(items[index].json?.chatid){\n        continue;\n    }\n\n    let body = items[index].json[\"body\"];\n    if(body) \n    {\n        // trying to get from external identifier\n        let chatid = body.meta?.sender?.identifier;\n        if(!chatid)\n        {\n            // trying to get from quepasa custom property\n            chatid = body.meta?.sender?.custom_attributes?.quepasa;            \n            if(!chatid)\n            {\n                // trying to get from e-mail\n                chatid = body.meta?.sender?.email;            \n                if(!chatid)\n                {\n                    // trying to unhex from source_id\n                    if(body.contact_inbox?.source_id && body.contact_inbox.source_id.includes(\"@\")){\n                        chatid = hex2a(body.contact_inbox.source_id)\n                    }\n                    \n                    if(!chatid)\n                    {                    \n                        // trying to get from phone number \n                        chatid = body.meta?.sender?.phone_number;\n                        if (chatid) chatid += '@s.whatsapp.net';\n                    }\n                }\n            }\n        }\n        items[index].json.chatid = chatid;\n    }\n}\n\nreturn items;"
       },
       "id": "813ab8ab-9b42-4970-9e18-d51d62599e85",
       "name": "Getting ChatId From Custom|Email|Source|Phone",
@@ -913,8 +892,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -1820,
-        4540
+        -1620,
+        4520
       ],
       "retryOnFail": true,
       "maxTries": 2
@@ -1121,7 +1100,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.5) Updates\n* avoid csat to broadcast\n\n## (1.0.4) Updates\n* use env vars for csat with prio\n\n## (1.0.3) Updates\n* custom id for evaluation messages\n\n## Recommendations \n* Remember set timeout to 30 seconds\n\n",
+        "content": "## (1.0.9) Updates\n* append whatsapp extension for contacts created from phone\n\n## (1.0.8) Updates\n* should prepend agent title (pat) (query) issue\n\n## Recommendations \n* Remember set timeout to 30 seconds\n\n",
         "height": 348.70602969397424,
         "width": 505.65878958512553
       },
@@ -1217,6 +1196,77 @@
         -2320,
         3440
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"body\"][\"private\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Is Public ?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1820,
+        4540
+      ],
+      "id": "4ebf708e-a0c3-4d22-bf2e-8780aa44e608"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.query.pat ? !!JSON.parse($json.query.pat.toLowerCase()) : true }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "6d80fe16-a8dc-4135-9465-0416595dd967",
+      "name": "Should Prepend Agent Title ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        2600
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "={{ $json.payload.sender ? '*' + $json.payload.sender.trim() + '*: ' : '' }}{{ $json.payload.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Update Content With Agent Ttitle",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        2520
+      ],
+      "id": "587e7645-9005-47b3-aaeb-a925f2fbfcc0"
+    },
+    {
+      "parameters": {},
+      "id": "bd4a23a5-bfcf-4506-984b-e04a9d3e7070",
+      "name": "Follow after prepend",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        160,
+        2620
+      ]
     }
   ],
   "pinData": {},
@@ -1226,17 +1276,6 @@
         [
           {
             "node": "Defaults",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Content With Sender Name": {
-      "main": [
-        [
-          {
-            "node": "No Operation, do nothing1",
             "type": "main",
             "index": 0
           }
@@ -1388,7 +1427,7 @@
         ],
         [
           {
-            "node": "Update Content With Sender Name",
+            "node": "Should Prepend Agent Title ?",
             "type": "main",
             "index": 0
           }
@@ -1828,7 +1867,7 @@
       "main": [
         [
           {
-            "node": "Quepasa Revoke",
+            "node": "Is Public ?1",
             "type": "main",
             "index": 0
           }
@@ -1877,6 +1916,57 @@
           }
         ]
       ]
+    },
+    "Is Public ?1": {
+      "main": [
+        [
+          {
+            "node": "Quepasa Revoke",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Prepend Agent Title ?": {
+      "main": [
+        [
+          {
+            "node": "Update Content With Agent Ttitle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow after prepend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Content With Agent Ttitle": {
+      "main": [
+        [
+          {
+            "node": "Follow after prepend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow after prepend": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1885,20 +1975,29 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 50
   },
-  "versionId": "2db5d57a-728e-417b-aad2-04376c8dd719",
+  "versionId": "7a8dd383-4395-4d46-b439-3aa9b3cee5a7",
   "id": "1008",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [    
+  "tags": [
     {
+      "createdAt": "2022-10-13T15:26:11.519Z",
+      "updatedAt": "2022-10-13T15:26:11.519Z",
+      "id": "5",
       "name": "QUEPASA"
     },
     {
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2022-10-13T15:26:19.857Z",
+      "id": "6",
       "name": "CHATWOOT"
     },
     {
-      "name": "NOCODELEAKS"
+      "createdAt": "2023-05-19T22:54:38.266Z",
+      "updatedAt": "2023-05-19T22:54:38.266Z",
+      "id": "13",
+      "name": "github.com/nocodeleaks"
     }
   ]
 }

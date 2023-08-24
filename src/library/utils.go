@@ -111,3 +111,24 @@ func GetPhoneByWId(wid string) string {
 	}
 	return out
 }
+
+func RemoveDigit9(source string) string {
+	response := source
+
+	// if is direct message, not group
+	if strings.HasSuffix(source, "@s.whatsapp.net") {
+		phonenumber := source[0:13]
+		if len(phonenumber) == 13 {
+
+			// mobile phones with 9 digit
+			r, _ := regexp.Compile("55([4-9]\\d|[3-9][1-9])9\\d\\d\\d\\d\\d\\d\\d\\d$")
+			if r.MatchString(phonenumber) {
+
+				prefix := phonenumber[0:4]
+				response = prefix + phonenumber[5:13] + "@s.whatsapp.net"
+			}
+		}
+	}
+
+	return response
+}

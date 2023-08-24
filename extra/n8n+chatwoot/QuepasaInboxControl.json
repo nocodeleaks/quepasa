@@ -175,7 +175,7 @@
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{$json.content?.toLowerCase()}}",
+        "value1": "={{$json.content?.toLowerCase() ?? \"\"}}",
         "rules": {
           "rules": [
             {
@@ -711,7 +711,7 @@
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{$json.content?.toLowerCase()}}",
+        "value1": "={{$json.content?.toLowerCase() ?? \"\"}}",
         "rules": {
           "rules": [
             {
@@ -891,7 +891,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.0) Recommendations \n* Remember set timeout to 15 seconds ",
+        "content": "## (1.0.1) Recommendations \n* Remember set timeout to 15 seconds \n* string empty for switch",
         "width": 395
       },
       "id": "ccf59cc4-7a1b-47c4-afeb-56e49290d5e6",
@@ -1206,7 +1206,8 @@
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     },
     "Set Payload": {
@@ -1432,12 +1433,12 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 15
   },
-  "versionId": "2622e1ec-7e95-4178-8749-d3cfe63d0d86",
+  "versionId": "4fa0b704-fb7d-4e18-a0ea-361ee57db9aa",
   "id": "1001",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [    
+  "tags": [
     {
       "name": "QUEPASA"
     },

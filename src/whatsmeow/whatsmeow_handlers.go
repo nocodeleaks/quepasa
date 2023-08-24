@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	whatsmeow "go.mau.fi/whatsmeow"
@@ -152,7 +153,11 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message) {
 		}
 	} else {
 		if len(message.Chat.Title) == 0 && message.FromMe {
-			message.Chat.Title = evt.Info.PushName
+
+			// if you doesnt have the contact in your list, it will bring your name instead
+			// message.Chat.Title = evt.Info.PushName
+
+			message.Chat.Title = library.GetPhoneByWId(message.Chat.Id)
 		}
 	}
 
@@ -168,9 +173,11 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message) {
 //#endregion
 
 /*
-	<summary>
-		Follow throw internal handlers
-	</summary>
+<summary>
+
+	Follow throw internal handlers
+
+</summary>
 */
 func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage) {
 	if handler.WAHandlers != nil {

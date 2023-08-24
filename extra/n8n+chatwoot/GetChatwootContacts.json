@@ -17,7 +17,7 @@
       "type": "n8n-nodes-chatwoot.chatwoot",
       "typeVersion": 1,
       "position": [
-        3320,
+        3720,
         -140
       ],
       "continueOnFail": true
@@ -136,7 +136,7 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4460,
+        4720,
         -220
       ]
     },
@@ -156,7 +156,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2920,
+        3340,
         -300
       ]
     },
@@ -164,7 +164,7 @@
       "parameters": {
         "content": "## Chat Contact\n",
         "height": 770.5363743991675,
-        "width": 3118.7902032865236
+        "width": 3390.946354395323
       },
       "id": "4f66fe31-7400-4bc7-81a5-2c373e0e6aaa",
       "name": "Note6",
@@ -172,7 +172,7 @@
       "typeVersion": 1,
       "position": [
         1600,
-        -440
+        -460
       ]
     },
     {
@@ -191,7 +191,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        4240,
+        4500,
         -380
       ]
     },
@@ -211,7 +211,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3760,
+        4100,
         -200
       ]
     },
@@ -225,7 +225,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        4240,
+        4500,
         -120
       ],
       "webhookId": "57209d6b-e7a6-4d78-b55c-82f677b13d42"
@@ -264,7 +264,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        3080,
+        3520,
         -380
       ],
       "id": "97926abf-33b0-428e-bf6f-309150109677"
@@ -299,7 +299,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        3960,
+        4300,
         -280
       ],
       "id": "92bcd719-3b08-4049-bdb0-0fb9dfa43f17"
@@ -313,7 +313,7 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4240,
+        4500,
         60
       ]
     },
@@ -345,7 +345,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4460,
+        4720,
         60
       ]
     },
@@ -381,14 +381,14 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        2740,
+        3140,
         -300
       ],
       "id": "bdd5f78c-39b2-48ad-a58c-e54ada812375"
     },
     {
       "parameters": {
-        "content": "## (1.0.3) Updates\n* issue at receive msg from contact without identifier\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "content": "## (1.0.4) Updates\n* limit and phone validator\n\n## Recommendations \n* Remember set timeout to 20 seconds",
         "height": 201.45401153644474,
         "width": 467.54452018877896
       },
@@ -419,7 +419,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3080,
+        3520,
         -220
       ]
     },
@@ -430,7 +430,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4460,
+        4720,
         -400
       ],
       "alwaysOutputData": true,
@@ -463,7 +463,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3580,
+        3920,
         -200
       ]
     },
@@ -490,7 +490,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3960,
+        4300,
         -100
       ]
     },
@@ -522,7 +522,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT id as ctid, custom_attributes as ctatts FROM contacts WHERE account_id = '{{ $json.extra.account }}' AND phone_number = '{{ $json.chat.phone }}'",
+        "query": "=SELECT id as ctid, custom_attributes as ctatts FROM contacts WHERE account_id = '{{ $json.extra.account }}' AND phone_number = '{{ $json.chat.phone }}' limit 1",
         "additionalFields": {}
       },
       "id": "9a0f018c-22a0-4560-93e1-577f8bdaf2da",
@@ -530,8 +530,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        2400,
-        -180
+        2600,
+        -120
       ],
       "retryOnFail": true,
       "waitBetweenTries": 2000,
@@ -592,10 +592,41 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        2580,
-        -240
+        2780,
+        -180
       ],
       "notesInFlow": false
+    },
+    {
+      "parameters": {},
+      "id": "b7724cd2-efe5-4ea1-9477-3c3e9b53802a",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2960,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.chat.phone }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "0483410d-ff9b-45e8-bc60-90f17ab612ee",
+      "name": "If Has No Phone ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        -220
+      ]
     }
   ],
   "pinData": {},
@@ -874,12 +905,7 @@
         ],
         [
           {
-            "node": "Get Contact Data By Phone",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Extra With Phone",
+            "node": "If Has No Phone ?",
             "type": "main",
             "index": 0
           }
@@ -901,7 +927,41 @@
       "main": [
         [
           {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
             "node": "Set ContactId Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has No Phone ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Extra With Phone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Contact Data By Phone",
             "type": "main",
             "index": 0
           }
@@ -915,35 +975,10 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
-  "versionId": "d8154648-980f-459a-abd6-237d9726cff4",
+  "versionId": "dcb14ac4-d7e4-4f20-880d-14b5dc70c415",
   "id": "1002",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [
-    {
-      "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2022-10-13T15:26:11.519Z",
-      "id": "5",
-      "name": "QUEPASA"
-    },
-    {
-      "createdAt": "2022-10-13T15:26:19.857Z",
-      "updatedAt": "2022-10-13T15:26:19.857Z",
-      "id": "6",
-      "name": "CHATWOOT"
-    },
-    {
-      "createdAt": "2023-05-19T22:53:24.375Z",
-      "updatedAt": "2023-05-19T22:53:24.375Z",
-      "id": "11",
-      "name": "NOCODELEAKS"
-    },
-    {
-      "createdAt": "2023-05-19T22:54:38.266Z",
-      "updatedAt": "2023-05-19T22:54:38.266Z",
-      "id": "13",
-      "name": "github.com/nocodeleaks"
-    }
-  ]
+  "tags": []
 }

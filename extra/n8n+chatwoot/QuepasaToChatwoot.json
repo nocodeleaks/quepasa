@@ -263,7 +263,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_CHATWOOTTOQUEPASAGREETINGS'] }}"
+        "workflowId": "={{ $env['C8Q_CHATWOOTTOQUEPASAGREETINGS'] ?? 1007 }}"
       },
       "id": "bcb8d37d-a8f0-4637-8afb-6adf326d6e45",
       "name": "Throw To Greetings Workflow",
@@ -290,7 +290,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_QUEPASACHATCONTROL'] }}"
+        "workflowId": "={{ $env['C8Q_QUEPASACHATCONTROL'] ?? 1003 }}"
       },
       "id": "a683cab2-6685-403d-b664-349e7715ac18",
       "name": "Throw To Quepasa Chat Control Workflow",
@@ -482,7 +482,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_POSTTOCHATWOOT'] }}"
+        "workflowId": "={{ $env['C8Q_POSTTOCHATWOOT'] ?? 1006 }}"
       },
       "id": "04cc39a6-0b8c-4e28-ba74-276e8318e5d7",
       "name": "Execute Workflow Post To Chatwoot",
@@ -560,7 +560,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_POSTTOWEBCALLBACK'] }}"
+        "workflowId": "={{ $env['C8Q_POSTTOWEBCALLBACK'] ?? 1005 }}"
       },
       "id": "8718b5a6-84c1-4b5b-ae0a-a395615fae89",
       "name": "Throw To WebCallBack Telephony Workflow",
@@ -865,7 +865,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_GETCHATWOOTCONTACTS'] }}"
+        "workflowId": "={{ $env['C8Q_GETCHATWOOTCONTACTS'] ?? 1002 }}"
       },
       "id": "9ed894d2-7af8-4152-98ff-9e49b97184bd",
       "name": "Throw Get Chatwoot Contacts Workflow",

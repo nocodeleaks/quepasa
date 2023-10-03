@@ -929,7 +929,7 @@
             },
             {
               "name": "payload.content",
-              "value": "=*{{ $json[\"body\"][\"meta\"][\"sender\"][\"name\"] }}* seu atendimento de Ticket de nº *{{ $json.body.id }}* foi finalizado ! Caso tenha alguma dúvida só enviar uma nova mensagem !\n\nAproveite e avalie nosso atendimento. Sua opinião é muito importante para nós e nos ajudará a identificar áreas de melhorias e continuar oferecendo um serviço de qualidade. 😎\n\nAvalie meu atendimento !\n{{ ($json.query.cwpublic ?? $env[\"C8Q_CW_PUBLIC_URL\"] ?? $json.query.cwhost).trimEnd('/') }}/survey/responses/{{ $json.uuid }}"
+              "value": "=*{{ $json[\"body\"][\"meta\"][\"sender\"][\"name\"] }}* seu atendimento de Ticket de nº *{{ $json.body.id }}* foi finalizado ! Caso tenha alguma dúvida só enviar uma nova mensagem !\n\nAproveite e avalie nosso atendimento. Sua opinião é muito importante para nós e nos ajudará a identificar áreas de melhorias e continuar oferecendo um serviço de qualidade. 😎\n\nAvalie meu atendimento !\nhttps://{{ ($json.query.cwpublic ?? $env[\"C8Q_CW_PUBLIC_URL\"] ?? $json.query.cwhost).trimEnd('/') }}/survey/responses/{{ $json.uuid }}"
             }
           ]
         },

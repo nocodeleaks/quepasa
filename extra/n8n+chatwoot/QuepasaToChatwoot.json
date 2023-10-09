@@ -126,7 +126,7 @@
         "conditions": {
           "boolean": [
             {
-              "value1": "={{$json[\"chat\"][\"id\"].contains(\"@broadcast\") ?? true}}",
+              "value1": "={{$json[\"body\"][\"chat\"][\"id\"].includes(\"@broadcast\") ?? true}}",
               "operation": "notEqual",
               "value2": true
             }

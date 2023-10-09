@@ -158,6 +158,7 @@
         "text": "={{$json.payload.content}}",
         "chatId": "={{$json.payload.chatid}}",
         "url": "={{$json.payload.attachment}}",
+        "filename": "={{decodeURI($json.payload.attachment.split("/")[8])}}",
         "trackId": "chatwoot"
       },
       "id": "5cfac53c-00dd-406a-90a7-ebf61a1ba2ea",

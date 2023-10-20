@@ -369,7 +369,7 @@
     {
       "parameters": {
         "requestMethod": "POST",
-        "url": "={{$json.query.cwhost}} }}/api/v1/accounts/{{$json.query.account}}/conversations/{{$json.body.id}}/toggle_status",
+        "url": "={{$json.query.cwhost}}/api/v1/accounts/{{$json.query.account}}/conversations/{{$json.body.id}}/toggle_status",
         "allowUnauthorizedCerts": true,
         "options": {},
         "bodyParametersUi": {

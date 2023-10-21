@@ -55,8 +55,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2500,
-        720
+        -180,
+        360
       ],
       "continueOnFail": true
     },
@@ -73,15 +73,15 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2500,
-        900
+        -180,
+        540
       ],
       "continueOnFail": true
     },
     {
       "parameters": {
         "dataType": "string",
-        "value1": "={{$json.content.toLowerCase()}}",
+        "value1": "={{$json.content?.toLowerCase() ?? \"\"}}",
         "rules": {
           "rules": [
             {
@@ -106,17 +106,17 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -2860,
-        920
+        -540,
+        560
       ]
     },
     {
       "parameters": {
-        "baseUrl": "={{$json[\"params\"][\"cwhost\"]}}",
-        "sourceId": "={{$json[\"params\"][\"source_id\"]}}",
+        "baseUrl": "={{ $json.params.cwhost }}",
+        "sourceId": "={{ $json.params.source_id }}",
         "operation": "messageCreate",
-        "inboxIdentifier": "={{$json[\"params\"][\"identifier\"]}}",
-        "conversationId": "={{$json[\"params\"][\"conversation_id\"]}}",
+        "inboxIdentifier": "={{ $json.params.identifier }}",
+        "conversationId": "={{ $json.params.conversation_id }}",
         "content": "={{$json[\"response\"]}}"
       },
       "id": "25c803e1-2e47-4e31-ab5e-b7ce67a8f0ae",
@@ -124,8 +124,8 @@
       "type": "n8n-nodes-chatwoot.chatwoot",
       "typeVersion": 1,
       "position": [
-        -560,
-        1220
+        3220,
+        320
       ]
     },
     {
@@ -146,8 +146,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1920,
-        720
+        440,
+        400
       ]
     },
     {
@@ -168,8 +168,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1860,
-        2360
+        440,
+        2060
       ]
     },
     {
@@ -201,8 +201,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -3280,
-        1280
+        -3080,
+        380
       ]
     },
     {
@@ -225,8 +225,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -4560,
-        1320
+        -4020,
+        420
       ]
     },
     {
@@ -236,8 +236,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -4140,
-        1520
+        -3780,
+        580
       ]
     },
     {
@@ -256,8 +256,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2200,
-        900
+        120,
+        540
       ]
     },
     {
@@ -267,7 +267,7 @@
           "string": [
             {
               "name": "response",
-              "value": "=! {{$json[\"status\"]}}"
+              "value": "=! {{ $json.status ?? $json.message }}"
             }
           ]
         },
@@ -278,8 +278,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1920,
-        1000
+        440,
+        700
       ]
     },
     {
@@ -293,8 +293,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2860,
-        1280
+        -540,
+        940
       ],
       "continueOnFail": true
     },
@@ -314,8 +314,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2500,
-        1280
+        -180,
+        940
       ]
     },
     {
@@ -336,8 +336,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1920,
-        1260
+        440,
+        960
       ]
     },
     {
@@ -349,8 +349,8 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        -2200,
-        1260
+        120,
+        920
       ]
     },
     {
@@ -365,62 +365,20 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -2500,
-        1080
+        -180,
+        720
       ]
     },
     {
       "parameters": {
-        "mode": "combine",
-        "combinationMode": "multiplex",
-        "options": {}
-      },
-      "id": "139705c2-b8e8-4835-a915-ed029028e09b",
-      "name": "Merge Parameters + Message",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 2,
-      "position": [
-        -780,
-        1220
-      ]
-    },
-    {
-      "parameters": {
-        "keepOnlySet": true,
         "values": {
           "string": [
             {
-              "name": "cwhost",
-              "value": "={{$json[\"query\"][\"cwhost\"]}}"
-            },
-            {
-              "name": "identifier",
-              "value": "={{$json[\"query\"][\"identifier\"]}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "9e3ff1fa-4e6a-4efe-a0aa-9ecf9f144ac0",
-      "name": "Set Basic Parameters",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 1,
-      "position": [
-        -4420,
-        800
-      ]
-    },
-    {
-      "parameters": {
-        "keepOnlySet": true,
-        "values": {
-          "string": [
-            {
-              "name": "source_id",
+              "name": "params.source_id",
               "value": "={{$json[\"body\"][\"conversation\"][\"contact_inbox\"][\"source_id\"]}}"
             },
             {
-              "name": "conversation_id",
+              "name": "params.conversation_id",
               "value": "={{$json[\"body\"][\"conversation\"][\"id\"]}}"
             }
           ]
@@ -432,45 +390,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -4140,
-        1080
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combinationMode": "multiplex",
-        "options": {}
-      },
-      "id": "68b13daf-936a-49cc-89d1-01e747b1eaf8",
-      "name": "Merge Parameters +",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 2,
-      "position": [
-        -3220,
-        500
-      ]
-    },
-    {
-      "parameters": {
-        "keepOnlySet": true,
-        "values": {
-          "string": [
-            {
-              "name": "params",
-              "value": "={{$json}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "b72c8ab4-6c11-417f-83b0-116ca68d8cc5",
-      "name": "Set Parameters",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 1,
-      "position": [
-        -1420,
-        480
+        2340,
+        20
       ]
     },
     {
@@ -480,8 +401,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2840,
-        2360
+        -720,
+        2060
       ]
     },
     {
@@ -500,8 +421,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1100,
-        1260
+        1060,
+        1220
       ]
     },
     {
@@ -525,8 +446,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -3500,
-        1300
+        -3580,
+        400
       ]
     },
     {
@@ -562,8 +483,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -3740,
-        1300
+        -3780,
+        400
       ]
     },
     {
@@ -573,8 +494,8 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -4900,
-        1320
+        -4240,
+        420
       ]
     },
     {
@@ -584,8 +505,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2860,
-        1500
+        -540,
+        1200
       ]
     },
     {
@@ -624,8 +545,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        -2620,
-        1640
+        -280,
+        1360
       ],
       "continueOnFail": true
     },
@@ -645,8 +566,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2420,
-        1640
+        -80,
+        1360
       ]
     },
     {
@@ -667,8 +588,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2220,
-        1560
+        120,
+        1240
       ]
     },
     {
@@ -689,8 +610,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2220,
-        1720
+        120,
+        1460
       ]
     },
     {
@@ -704,8 +625,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -1920,
-        1520
+        440,
+        1220
       ]
     },
     {
@@ -727,8 +648,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        -3280,
-        2040
+        -1000,
+        1880
       ]
     },
     {
@@ -759,8 +680,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -2660,
-        1920
+        -280,
+        1740
       ],
       "continueOnFail": true
     },
@@ -788,8 +709,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -2660,
-        2120
+        -280,
+        1940
       ],
       "continueOnFail": true
     },
@@ -810,8 +731,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2860,
-        2020
+        -480,
+        1840
       ]
     },
     {
@@ -830,8 +751,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2460,
-        2020
+        -80,
+        1840
       ]
     },
     {
@@ -841,7 +762,7 @@
           "string": [
             {
               "name": "response",
-              "value": "={{ $json.message }}:\n  * identifier: {{ $json.data?.identifier }}\n  * destination: {{ $json.data?.destination }}\n  * contextId: {{ $json.data?.contextId }}\n"
+              "value": "={{ $json.message }}:\n  * identifier: {{ $json.data?.identifier }}\n  * destination: {{ $json.data?.destination }}\n  * contextId: {{ $json.data?.contextId }}\n\n--------------------------------------\nFor more informations, check:\n*** https://www.sufficit.com.br/gateway/chatwoot/default?objectid={{ $json.data?.contextId }}"
             }
           ]
         },
@@ -852,8 +773,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2260,
-        1920
+        120,
+        1740
       ]
     },
     {
@@ -874,8 +795,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -2260,
-        2120
+        120,
+        1940
       ]
     },
     {
@@ -885,13 +806,13 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2060,
-        2020
+        320,
+        1840
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.1) Recommendations \n* Remember set timeout to 15 seconds \n* string empty for switch",
+        "content": "## (1.0.2) Recommendations \n* Remember set timeout to 15 seconds \n* string empty for switch\n* getting identifier from postgres",
         "width": 395
       },
       "id": "ccf59cc4-7a1b-47c4-afeb-56e49290d5e6",
@@ -899,8 +820,180 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -5020,
-        1500
+        -4360,
+        -20
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d4e8617d-1417-44eb-80a3-66ea64d3e694",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -3340,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"query\"][\"identifier\"]}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "3d578a08-e6ba-4f3b-89ef-dbf13c28666e",
+      "name": "If Missing Identifier",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \"public\".\"channel_api\".\"identifier\", \"public\".\"inboxes\".\"channel_id\" FROM \"public\".\"channel_api\" INNER JOIN \"public\".\"inboxes\" ON \"public\".\"channel_api\".\"id\" = \"public\".\"inboxes\".\"channel_id\" WHERE \"public\".\"channel_api\".\"account_id\"='{{$json.query.account}}' AND \"public\".\"inboxes\".\"id\" = '{{$json.query.inbox}}';",
+        "additionalFields": {}
+      },
+      "id": "343dab73-80ea-4c88-9e8c-5f0be1cbe077",
+      "name": "Get Identifier",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "4d269049-fa4f-411b-a678-95221df804f0",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        2160,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "query.identifier",
+              "value": "={{ $json.identifier }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "68ec1eaf-a296-4b70-8c20-63cdd570b987",
+      "name": "Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "params",
+              "value": "={{ $json.params }}"
+            },
+            {
+              "name": "params.cwhost",
+              "value": "={{$json.query.cwhost}}"
+            },
+            {
+              "name": "params.identifier",
+              "value": "={{$json.query.identifier}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b72c8ab4-6c11-417f-83b0-116ca68d8cc5",
+      "name": "Set Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        2520,
+        20
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e5a7f36a-56dc-4236-a8c0-16178bbaa2ba",
+      "name": "Follow To Main Flow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2540,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Main Flow\n",
+        "height": 577.449009853676,
+        "width": 1184.9286677799867
+      },
+      "id": "5c273573-7ad5-4039-89b5-06943f59eb98",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4360,
+        180
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ea18b050-afb9-444a-9196-bae4bd174e1f",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -3080,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "b5c69cbe-9f2a-49cd-a499-1b15b2a7dc71",
+      "name": "Merge Parameters",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3000,
+        320
       ]
     }
   ],
@@ -1011,11 +1104,6 @@
       "main": [
         [
           {
-            "node": "Set Parameters From Control Chat",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Set Payload",
             "type": "main",
             "index": 0
@@ -1121,61 +1209,6 @@
         ]
       ]
     },
-    "Merge Parameters + Message": {
-      "main": [
-        [
-          {
-            "node": "ChatWoot",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Basic Parameters": {
-      "main": [
-        [
-          {
-            "node": "Merge Parameters +",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Parameters From Control Chat": {
-      "main": [
-        [
-          {
-            "node": "Merge Parameters +",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Parameters +": {
-      "main": [
-        [
-          {
-            "node": "Set Parameters",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Parameters": {
-      "main": [
-        [
-          {
-            "node": "Merge Parameters + Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "NoOp": {
       "main": [
         [
@@ -1191,9 +1224,9 @@
       "main": [
         [
           {
-            "node": "Merge Parameters + Message",
+            "node": "Follow To Main Flow",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -1202,12 +1235,11 @@
       "main": [
         [
           {
-            "node": "Switch Start",
+            "node": "No Operation, do nothing",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Set Payload": {
@@ -1226,11 +1258,6 @@
         [
           {
             "node": "If Message Out",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Set Basic Parameters",
             "type": "main",
             "index": 0
           }
@@ -1425,27 +1452,164 @@
           }
         ]
       ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Switch Start",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Missing Identifier": {
+      "main": [
+        [
+          {
+            "node": "Get Identifier",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Set Parameters From Control Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Identifier": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Set Parameters From Control Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Parameters From Control Chat": {
+      "main": [
+        [
+          {
+            "node": "Set Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow To Main Flow": {
+      "main": [
+        [
+          {
+            "node": "Merge Parameters",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "If Missing Identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Parameters": {
+      "main": [
+        [
+          {
+            "node": "ChatWoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Parameters": {
+      "main": [
+        [
+          {
+            "node": "Merge Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "saveManualExecutions": false,
     "callerPolicy": "workflowsFromSameOwner",
-    "executionTimeout": 15
+    "executionTimeout": 15,
+    "executionOrder": "v1"
   },
-  "versionId": "4fa0b704-fb7d-4e18-a0ea-361ee57db9aa",
+  "versionId": "57bac283-d6ea-4c57-8619-a2c2707913e7",
   "id": "1001",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
   "tags": [
     {
-      "name": "QUEPASA"
+      "createdAt": "2022-10-13T15:26:11.519Z",
+      "updatedAt": "2023-08-25T18:50:53.269Z",
+      "id": "5",
+      "name": "quepasa"
     },
     {
-      "name": "CHATWOOT"
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
     },
     {
+      "createdAt": "2023-05-19T22:53:24.375Z",
+      "updatedAt": "2023-05-19T22:53:24.375Z",
+      "id": "11",
       "name": "NOCODELEAKS"
     }
   ]

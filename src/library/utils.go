@@ -1,6 +1,7 @@
 package library
 
 import (
+	"fmt"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -112,23 +113,36 @@ func GetPhoneByWId(wid string) string {
 	return out
 }
 
-func RemoveDigit9(source string) string {
-	response := source
-
-	// if is direct message, not group
-	if strings.HasSuffix(source, "@s.whatsapp.net") {
-		phonenumber := source[0:13]
-		if len(phonenumber) == 13 {
-
-			// mobile phones with 9 digit
-			r, _ := regexp.Compile("55([4-9]\\d|[3-9][1-9])9\\d\\d\\d\\d\\d\\d\\d\\d$")
-			if r.MatchString(phonenumber) {
-
-				prefix := phonenumber[0:4]
-				response = prefix + phonenumber[5:13] + "@s.whatsapp.net"
-			}
-		}
+func ExtractPhoneIfValid(source string) (phone string, err error) {
+	response := strings.TrimLeft(source, "+")
+	if strings.HasSuffix(response, "@s.whatsapp.net") {
+		response = strings.Split(response, "@")[0]
 	}
 
-	return response
+	r, _ := regexp.Compile("^[1-9]\\d{6,14}$")
+	if r.MatchString(response) {
+		phone = "+" + response
+	} else {
+		err = fmt.Errorf("not a valid phone number")
+	}
+	return
+}
+
+// Whatsapp issue on understanding mobile phones with ddd bigger than 30, only mobile
+func RemoveDigit9IfElegible(source string) (response string, err error) {
+	if len(source) == 14 {
+
+		// mobile phones with 9 digit
+		r, _ := regexp.Compile("\\+55([4-9][1-9]|[3-9][1-9])9\\d{8}$")
+		if r.MatchString(source) {
+			prefix := source[0:5]
+			response = prefix + source[6:14]
+		} else {
+			err = fmt.Errorf("not elegible match")
+		}
+	} else {
+		err = fmt.Errorf("not elegible number of digits")
+	}
+
+	return
 }

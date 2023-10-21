@@ -41,6 +41,9 @@ type WhatsappMessage struct {
 
 	// Msg in reply of another ? Message ID
 	InReply string `json:"inreply,omitempty"`
+
+	// Msg in reply preview
+	Synopsis string `json:"synopsis,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP

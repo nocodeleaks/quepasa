@@ -113,8 +113,8 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -640,
-        820
+        -1020,
+        800
       ]
     },
     {
@@ -407,13 +407,13 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -460,
-        820
+        -840,
+        800
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.0) Updates\n* fail retry at post incomming message\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "content": "## (1.0.1) Updates\n* prepend reference msg\n\n## Recommendations \n* Remember set timeout to 10 seconds",
         "height": 201.45401153644474,
         "width": 467.54452018877896
       },
@@ -422,8 +422,49 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -680,
-        560
+        -1080,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.synopsis }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "a13545b0-509c-41ba-a994-9692e18f299a",
+      "name": "If InReply | Reaction ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "=🔁: \"{{$json.synopsis}}\"\n\n{{$json.payload.content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2c0e0508-8f27-4c83-abdc-190e89b05354",
+      "name": "Prepend Reference",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        720
       ]
     }
   ],
@@ -649,6 +690,35 @@
       "main": [
         [
           {
+            "node": "If InReply | Reaction ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If InReply | Reaction ?": {
+      "main": [
+        [
+          {
+            "node": "Prepend Reference",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter Source Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepend Reference": {
+      "main": [
+        [
+          {
             "node": "Filter Source Payload",
             "type": "main",
             "index": 0
@@ -663,20 +733,23 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 10
   },
-  "versionId": "66400fe4-a425-4e58-891b-d9b64be23d0f",
+  "versionId": "8e22c5db-e4fd-4ab2-95cd-98b63be71837",
   "id": "1006",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [    
+  "tags": [
     {
-      "name": "QUEPASA"
+      "createdAt": "2023-05-19T22:54:38.266Z",
+      "updatedAt": "2023-05-19T22:54:38.266Z",
+      "id": "13",
+      "name": "github.com/nocodeleaks"
     },
     {
-      "name": "CHATWOOT"
-    },
-    {
-      "name": "NOCODELEAKS"
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
     }
   ]
 }

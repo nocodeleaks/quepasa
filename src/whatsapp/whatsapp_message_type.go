@@ -12,6 +12,7 @@ const (
 	LocationMessageType
 	ContactMessageType
 	CallMessageType
+	SystemMessageType
 
 	// Messages that isn't important for this whatsapp service
 	DiscardMessageType
@@ -35,6 +36,8 @@ func (Type WhatsappMessageType) String() string {
 		return "contact"
 	case CallMessageType:
 		return "call"
+	case SystemMessageType:
+		return "system"
 	}
 
 	return "unknown"

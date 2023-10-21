@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	log "github.com/sirupsen/logrus"
 )
 
 type QPWebhookHandler struct {
@@ -23,12 +23,12 @@ func (w *QPWebhookHandler) Handle(payload *whatsapp.WhatsappMessage) {
 	}
 
 	if payload.Type == whatsapp.TextMessageType && len(strings.TrimSpace(payload.Text)) <= 0 {
-		log.Debug("ignoring empty text message on webhook request: %v", payload.Id)
+		log.Debugf("ignoring empty text message on webhook request: %s", payload.Id)
 		return
 	}
 
 	if payload.Chat.Id == "status@broadcast" && !w.server.HandleBroadcast {
-		log.Debug("ignoring broadcast message on webhook request: %v", payload.Id)
+		log.Debugf("ignoring broadcast message on webhook request: %s", payload.Id)
 		return
 	}
 

@@ -99,6 +99,10 @@
               "value": "={{$json.body.inreply}}"
             },
             {
+              "name": "synopsis",
+              "value": "={{$json.body.synopsis}}"
+            },
+            {
               "name": "attachment",
               "value": "={{$json.body.attachment}}"
             }
@@ -388,7 +392,11 @@
     },
     {
       "parameters": {
+<<<<<<< HEAD
         "content": "## (1.0.4) Updates\n* limit and phone validator\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+=======
+        "content": "## (1.0.5) Updates\n* synopsis\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+>>>>>>> other-repo/main
         "height": 201.45401153644474,
         "width": 467.54452018877896
       },
@@ -975,10 +983,31 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
+<<<<<<< HEAD
   "versionId": "dcb14ac4-d7e4-4f20-880d-14b5dc70c415",
+=======
+  "versionId": "77f11969-cc19-4e4b-a281-31c6407aad24",
+>>>>>>> other-repo/main
   "id": "1002",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
+<<<<<<< HEAD
   "tags": []
+=======
+  "tags": [
+    {
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
+    },
+    {
+      "createdAt": "2023-05-19T22:54:38.266Z",
+      "updatedAt": "2023-05-19T22:54:38.266Z",
+      "id": "13",
+      "name": "github.com/nocodeleaks"
+    }
+  ]
+>>>>>>> other-repo/main
 }

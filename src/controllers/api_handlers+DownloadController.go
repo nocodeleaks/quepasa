@@ -14,12 +14,14 @@ import (
 
 /*
 <summary>
+
 	Renders route GET "/download/{messageid}"
 
 	Any of then, at this order of priority
 	Path parameters: {messageid}
 	Url parameters: ?messageid={messageid} || ?id={messageid}
 	Header parameters: X-QUEPASA-MESSAGEID = {messageid}
+
 </summary>
 */
 func DownloadController(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +35,12 @@ func DownloadController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Evitando tentativa de download de anexos sem o bot estar devidamente sincronizado
+	// Checking for ready state
 	status := server.GetStatus()
 	if status != whatsapp.Ready {
-		err := &ApiServerNotReadyException{Wid: server.GetWid(), Status: status}
+		err = &ApiServerNotReadyException{Wid: server.GetWid(), Status: status}
 		response.ParseError(err)
-		RespondInterface(w, response)
+		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
 		return
 	}
 

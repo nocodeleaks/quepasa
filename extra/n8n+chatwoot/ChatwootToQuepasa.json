@@ -332,7 +332,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_QUEPASACHATCONTROL'] }}"
+        "workflowId": "={{ $env['C8Q_QUEPASACHATCONTROL'] ?? 1003 }}"
       },
       "id": "1229f01c-253a-4479-9f37-00739fc05dfa",
       "name": "Quepasa Chat Control Workflow",
@@ -402,7 +402,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_QUEPASAINBOXCONTROL'] }}"
+        "workflowId": "={{ $env['C8Q_QUEPASAINBOXCONTROL'] ?? 1001 }}"
       },
       "id": "6092cfce-a7bb-428e-a5ae-d5e7d2d8fc11",
       "name": "Throw To Quepasa Inbox Control Workflow",
@@ -561,7 +561,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ $env['C8Q_CHATWOOTPROFILEUPDATE'] }}"
+        "workflowId": "={{ $env['C8Q_CHATWOOTPROFILEUPDATE'] ?? 1004 }}"
       },
       "id": "30e9e9e0-dc66-410f-a036-dfb21dd446f1",
       "name": "Throw To Profile Update Workflow",
@@ -845,7 +845,7 @@
     },
     {
       "parameters": {
-        "jsCode": "function hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor(let index in items) \n{ \n    if(items[index].json?.chatid){\n        continue;\n    }\n\n    let body = items[index].json[\"body\"];\n    if(body) \n    {\n        // trying to get from external identifier\n        let chatid = body.meta?.sender?.identifier;\n        if(!chatid)\n        {\n            // trying to get from quepasa custom property\n            chatid = body.meta?.sender?.custom_attributes?.quepasa;            \n            if(!chatid)\n            {\n                // trying to get from e-mail\n                chatid = body.meta?.sender?.email;            \n                if(!chatid)\n                {\n                    // trying to unhex from source_id\n                    if(body.contact_inbox?.source_id && body.contact_inbox.source_id.includes(\"@\")){\n                        chatid = hex2a(body.contact_inbox.source_id)\n                    }\n                    \n                    if(!chatid)\n                    {                    \n                        // trying to get from phone number \n                        chatid = body.meta?.sender?.phone_number;\n                        if (chatid) chatid += '@s.whatsapp.net';\n                    }\n                }\n            }\n        }\n        items[index].json.chatid = chatid;\n    }\n}\n\nreturn items;"
+        "jsCode": "function hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor(let index in items) \n{ \n    if(items[index].json?.chatid){\n        continue;\n    }\n\n    let body = items[index].json[\"body\"];\n    if(body) \n    {\n        // trying to get from external identifier\n        let chatid = body.meta?.sender?.identifier;\n        if(!chatid)\n        {\n            // trying to get from quepasa custom property\n            chatid = body.meta?.sender?.custom_attributes?.quepasa;            \n            if(!chatid)\n            {\n                // trying to get from e-mail\n                chatid = body.meta?.sender?.email;            \n                if(!chatid)\n                {\n                    // trying to unhex from source_id\n                    if(body.contact_inbox?.source_id && body.contact_inbox.source_id.includes(\"@\")){\n                        chatid = hex2a(body.contact_inbox.source_id)\n                    }\n                    \n                    if(!chatid)\n                    {                    \n                        // trying to get from phone number \n                        chatid = body.meta?.sender?.phone_number;\n                        if (chatid) { \n                          chatid += '@s.whatsapp.net';\n                          if (chatid.startsWith('+')) chatid = chatid.substring(1);\n                        }\n                    }\n                }\n            }\n        }\n        items[index].json.chatid = chatid;\n    }\n}\n\nreturn items;"
       },
       "id": "813ab8ab-9b42-4970-9e18-d51d62599e85",
       "name": "Getting ChatId From Custom|Email|Source|Phone",
@@ -869,7 +869,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const response = [];\n\nfunction hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor (const item of $input.all()) {\n  const body = item.json.body;\n  if(body) {     \n    let chatId = body.conversation.meta?.sender?.identifier;    \n    if(!chatId)\n    {\n      chatId = body.conversation.meta?.sender?.custom_attributes?.quepasa;\n      if(!chatId){\n        chatId = body.conversation.meta?.sender?.phone_number;\n        if(!chatId){\n          let chatIdEncrypted = body.conversation.contact_inbox.source_id;\n          chatId = hex2a(chatIdEncrypted)\n        }\n      }\n    }\n\n    // attachments\n    for(let message of body.conversation.messages) \n    {  \n      if(message.content){\n\n        // leading with \\ at SHIFT+ENTER\n        message.content = message.content.replace(/\\n\\\\/g,\"\\n\").replace(/ \\\\/g,\"\");\n\n        const payload = {        \n          token: item.json.query.token,\n          chatid: chatId,\n          messageid: message.id,\n          \n          // dont used for nothing, marked for remove\n          sourceid: body.conversation.contact_inbox.source_id,\n          \n          conversationid: body.conversation.id,\n          content: message.content,\n          sender: message.sender?.available_name || message.sender?.name || 'Auto Atendimento'\n        };\n        const msgItem = { \n          payload: payload,\n          query: item.json.query\n        };\n        response.push(msgItem);\n      }\n\n      if(message.attachments){\n        for(let attach of message.attachments) \n        {\n          const payload = {\n            token: item.json.query.token,\n            chatid: chatId,\n            messageid: message.id,          \n            attachment: attach.data_url\n          };\n          const msgItem = { \n            payload: payload,\n            query: item.json.query\n          };\n          response.push(msgItem);\n        }\n      }      \n    }\n  }\n}\n\nreturn response;"
+        "jsCode": "const response = [];\nfor (const item of $input.all()) {\n  const body = item.json.body;\n  if (body) {     \n    let chatId = body.conversation.meta?.sender?.identifier;    \n    if (!chatId)\n    {\n      chatId = body.conversation.meta?.sender?.custom_attributes?.quepasa;\n      if (!chatId) {\n        chatId = body.conversation.meta?.sender?.phone_number;\n      }\n    }\n\n    // attachments\n    for (let message of body.conversation.messages) \n    {  \n      if (message.content_type === 'integrations' && message.content_attributes?.type === 'dyte')      \n        message.content += '\\r\\n *** https://app.dyte.in/meeting/stage/' + message.content_attributes?.data.room_name;      \n      \n      if (message.content) {\n\n        // leading with \\ at SHIFT+ENTER\n        message.content = message.content.replace(/\\n\\\\/g,\"\\n\").replace(/ \\\\/g,\"\");\n\n        const payload = {        \n          token: item.json.query.token,\n          chatid: chatId,\n          messageid: message.id,\n          \n          // dont used for nothing, marked for remove\n          sourceid: body.conversation.contact_inbox.source_id,\n          \n          conversationid: body.conversation.id,\n          content: message.content,\n          sender: message.sender?.available_name || message.sender?.name || 'Auto Atendimento'\n        };\n        const msgItem = { \n          payload: payload,\n          query: item.json.query\n        };\n        response.push(msgItem);\n      }\n\n      if (message.attachments) {\n        let counter = 0;\n        for (let attach of message.attachments) \n        {\n          const payload = {\n            token: item.json.query.token,\n            chatid: chatId,\n            messageid: message.id + '-a' + counter,          \n            attachment: attach.data_url\n          };\n          const msgItem = { \n            payload: payload,\n            query: item.json.query\n          };\n          response.push(msgItem);\n          counter++;\n        }\n      }      \n    }\n  }\n}\n\nreturn response;"
       },
       "id": "c3876a03-57f4-47b4-8c18-fbca320f0f80",
       "name": "Payload",
@@ -892,7 +892,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -1620,
+        -1600,
         4520
       ],
       "retryOnFail": true,
@@ -1100,17 +1100,17 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.9) Updates\n* append whatsapp extension for contacts created from phone\n\n## (1.0.8) Updates\n* should prepend agent title (pat) (query) issue\n\n## Recommendations \n* Remember set timeout to 30 seconds\n\n",
-        "height": 348.70602969397424,
-        "width": 505.65878958512553
+        "content": "## (1.0.13) Updates\n* quepasa revoke now, uses msg id as prefix\n\n## (1.0.12) Updates\n* adjust msg id with attachments\n* revoke always 1º attach, (avoid to send more than 1 by msg)\n\n## (1.0.11) Updates\n* removed hex source id treatment\n* dyte messages\n\n## Recommendations \n* Remember set timeout to 30 seconds\n\n",
+        "height": 395.65024080214386,
+        "width": 612.1460280877996
       },
       "id": "126175b6-ed49-4de7-bc03-23eaba40f721",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -4300,
-        2725.7587906835765
+        -4337.674438502675,
+        2685.813903743314
       ]
     },
     {
@@ -1975,7 +1975,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 50
   },
-  "versionId": "7a8dd383-4395-4d46-b439-3aa9b3cee5a7",
+  "versionId": "86656909-f8f2-4fed-a3d6-0430ca4d4a8d",
   "id": "1008",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
@@ -1983,15 +1983,15 @@
   "tags": [
     {
       "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2022-10-13T15:26:11.519Z",
+      "updatedAt": "2023-08-25T18:50:53.269Z",
       "id": "5",
-      "name": "QUEPASA"
+      "name": "quepasa"
     },
     {
       "createdAt": "2022-10-13T15:26:19.857Z",
-      "updatedAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
       "id": "6",
-      "name": "CHATWOOT"
+      "name": "chatwoot"
     },
     {
       "createdAt": "2023-05-19T22:54:38.266Z",

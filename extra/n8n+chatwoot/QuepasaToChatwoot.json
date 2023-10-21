@@ -681,6 +681,10 @@
               "value": "={{$json.chat.chatwoot.source_id}}"
             },
             {
+              "name": "synopsis",
+              "value": "={{$json.synopsis}}"
+            },
+            {
               "name": "participant.title",
               "value": "={{$json.participant?.title}}"
             },
@@ -846,7 +850,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.0) Updates\n* implements new chatwoot contacts workflow\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "content": "## (1.0.1) Updates\n* synopsis\n\n## Recommendations \n* Remember set timeout to 30 seconds",
         "height": 175.9061641534987,
         "width": 398.97654103837476
       },
@@ -1359,20 +1363,23 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
-  "versionId": "ed2844fd-58ca-475f-a5c5-9564097cfbf4",
+  "versionId": "46222dee-6ca2-48ad-9d21-f2305b406bb3",
   "id": "1009",
   "meta": {
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
   },
-  "tags": [    
+  "tags": [
     {
-      "name": "QUEPASA"
+      "createdAt": "2023-05-19T22:54:38.266Z",
+      "updatedAt": "2023-05-19T22:54:38.266Z",
+      "id": "13",
+      "name": "github.com/nocodeleaks"
     },
     {
-      "name": "CHATWOOT"
-    },
-    {
-      "name": "NOCODELEAKS"
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
     }
   ]
 }

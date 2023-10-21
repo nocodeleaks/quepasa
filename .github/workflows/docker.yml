@@ -5,19 +5,13 @@ on:
     branches:
       - "**"
     tags:
-      - "v*.*.*"
-  # pull_request:
-  #   branches: 
-  #     - "development"
-  #     - "master"
-  #   tags:
-  #       - v*
+      - v*      
   workflow_dispatch:
-    
+
 env:  
   REGISTRY: docker.io # Use docker.io for Docker Hub if empty  
   # IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
-  IMAGE_NAME: aireset/quepasa # github.repository as <account>/<repo>
+  IMAGE_NAME: codeleaks/quepasa # github.repository as <account>/<repo>
   GIT_REF: ${{ github.head_ref || github.ref_name }} # ref_name to get tags/branches
   NODE_ENV: production
   APP_ENV: production
@@ -42,13 +36,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
+        
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v3

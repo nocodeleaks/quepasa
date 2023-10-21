@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	log "github.com/sirupsen/logrus"
 	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	log "github.com/sirupsen/logrus"
 )
 
 const APIVersion2 string = "v2"
@@ -139,7 +139,7 @@ func ReceiveAPIHandlerV2(w http.ResponseWriter, r *http.Request) {
 	// append server to response
 	response.Bot = *models.ToQpServerV2(server.QpServer)
 
-	// Evitando tentativa de download de anexos sem o bot estar devidamente sincronizado
+	// Checking for ready state
 	status := server.GetStatus()
 	if status != whatsapp.Ready {
 		metrics.MessageReceiveErrors.Inc()
@@ -255,7 +255,7 @@ func AttachmentAPIHandlerV2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Evitando tentativa de download de anexos sem o bot estar devidamente sincronizado
+	// Checking for ready state
 	status := server.GetStatus()
 	if status != whatsapp.Ready {
 		RespondNotReady(w, &ApiServerNotReadyException{Wid: server.GetWid(), Status: status})

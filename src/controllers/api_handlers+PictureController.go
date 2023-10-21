@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -20,6 +20,15 @@ func PictureController(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
+		return
+	}
+
+	// Checking for ready state
+	status := server.GetStatus()
+	if status != whatsapp.Ready {
+		err = &ApiServerNotReadyException{Wid: server.GetWid(), Status: status}
+		response.ParseError(err)
+		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
 		return
 	}
 
@@ -77,7 +86,7 @@ func PictureController(w http.ResponseWriter, r *http.Request) {
 			}
 			defer resp.Body.Close()
 
-			content, err := ioutil.ReadAll(resp.Body)
+			content, err := io.ReadAll(resp.Body)
 			if err != nil {
 				response.ParseError(err)
 				RespondInterface(w, response)

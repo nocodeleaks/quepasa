@@ -29,10 +29,12 @@ func GetFormUser(r *http.Request) (*QpUser, error) {
 
 /*
 <summary>
+
 	Get a parameter from http.Request
 	1º Url Param (/:parameter/)
 	2º Url Query (?parameter=)
 	3º Header (X-QUEPASA-PARAMETER)
+
 </summary>
 */
 func GetRequestParameter(r *http.Request, parameter string) string {
@@ -68,17 +70,35 @@ func GetChatId(r *http.Request) string {
 
 /*
 <summary>
+
 	Converts string to boolean with default value "false"
+
 </summary>
 */
 func ToBoolean(s string) bool {
-	b, _ := strconv.ParseBool(s)
+	return ToBooleanWithDefault(s, false)
+}
+
+/*
+<summary>
+
+	Converts string to boolean with default value as argument
+
+</summary>
+*/
+func ToBooleanWithDefault(s string, value bool) bool {
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		return value
+	}
 	return b
 }
 
 /*
 <summary>
+
 	URL has key, lowercase comparrison
+
 </summary>
 */
 func QueryHasKey(query *url.URL, key string) bool {
@@ -92,7 +112,9 @@ func QueryHasKey(query *url.URL, key string) bool {
 
 /*
 <summary>
+
 	Get URL Value from Key, lowercase comparrison
+
 </summary>
 */
 func QueryGetValue(url *url.URL, key string) string {

@@ -23,7 +23,7 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Evitando tentativa de download de anexos sem o bot estar devidamente sincronizado
+	// Checking for ready state
 	status := server.GetStatus()
 	if status != whatsapp.Ready {
 		metrics.MessageReceiveErrors.Inc()
@@ -411,6 +411,15 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 	} else {
 		// test for poll
 		waMsg.Type = whatsapp.TextMessageType
+	}
+
+	// Checking for ready state
+	status := server.GetStatus()
+	if status != whatsapp.Ready {
+		err = &ApiServerNotReadyException{Wid: server.GetWid(), Status: status}
+		response.ParseError(err)
+		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
+		return
 	}
 
 	sendResponse, err := server.SendMessage(waMsg)

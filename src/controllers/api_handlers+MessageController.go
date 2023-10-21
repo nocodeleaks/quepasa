@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -33,11 +34,18 @@ func RevokeController(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 
-		err = server.Revoke(messageid)
-		if err != nil {
-			response.ParseError(err)
-			RespondInterface(w, response)
-			return
+		if GetMessageIdAsPrefix(r) {
+			errs := server.RevokeByPrefix(messageid)
+			if errs != nil && len(errs) > 0 {
+				err = errors.Join(errs...)
+			}
+		} else {
+			err = server.Revoke(messageid)
+			if err != nil {
+				response.ParseError(err)
+				RespondInterface(w, response)
+				return
+			}
 		}
 
 		response.ParseSuccess("revoked with success")

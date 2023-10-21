@@ -22,7 +22,7 @@ func (source *QpDataWebhooks) WebhookFill(context string, db QpDataWebhooksInter
 
 	whooks, err := source.db.FindAll(source.context)
 	if err != nil {
-		log.Errorf("erro", err)
+		log.Errorf("cannot find webhooks: %s", err.Error())
 		return
 	}
 

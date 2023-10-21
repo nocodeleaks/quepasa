@@ -197,6 +197,21 @@ func (conn *WhatsmeowConnection) Revoke(msg whatsapp.IWhatsappMessage) error {
 	return nil
 }
 
+func (conn *WhatsmeowConnection) IsOnWhatsApp(phones ...string) (registered []string, err error) {
+	results, err := conn.Client.IsOnWhatsApp(phones)
+	if err != nil {
+		return
+	}
+
+	for _, result := range results {
+		if result.IsIn {
+			registered = append(registered, result.JID.String())
+		}
+	}
+
+	return
+}
+
 func (conn *WhatsmeowConnection) GetProfilePicture(wid string, knowingId string) (picture *whatsapp.WhatsappProfilePicture, err error) {
 	jid, err := types.ParseJID(wid)
 	if err != nil {

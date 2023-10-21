@@ -9,7 +9,9 @@ import (
 
 /*
 <summary>
+
 	Find a whatsapp server by token passed on Url Path parameters
+
 </summary>
 */
 func GetServer(r *http.Request) (server *models.QpWhatsappServer, err error) {
@@ -17,7 +19,7 @@ func GetServer(r *http.Request) (server *models.QpWhatsappServer, err error) {
 	return models.GetServerFromToken(token)
 }
 
-//<summary>Find a whatsapp server by token passed on Url Path parameters</summary>
+// <summary>Find a whatsapp server by token passed on Url Path parameters</summary>
 func GetServerRespondOnError(w http.ResponseWriter, r *http.Request) (server *models.QpWhatsappServer, err error) {
 	token := GetToken(r)
 	server, err = models.GetServerFromToken(token)

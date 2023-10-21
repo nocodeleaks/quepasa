@@ -50,8 +50,35 @@ func (handler *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage) {
 		msg.Chat.Title = handler.server.GetChatTitle(msg.Chat.Id)
 	}
 
+	if len(msg.InReply) > 0 {
+		cached, err := handler.GetMessage(msg.InReply)
+		if err == nil {
+			maxlength := ENV.SynopsisLength() - 4
+			if uint64(len(cached.Text)) > maxlength {
+				msg.Synopsis = cached.Text[0:maxlength] + " ..."
+			} else {
+				msg.Synopsis = cached.Text
+			}
+		}
+	}
+
 	handler.server.Log.Tracef("msg recebida/(enviada por outro meio) em models: %s", msg.Id)
 	handler.appendMsgToCache(msg)
+}
+
+// does not cache msg, only update status and webhook dispatch
+func (handler *QPWhatsappHandlers) Receipt(msg *whatsapp.WhatsappMessage) {
+	ids := strings.Split(msg.Text, ",")
+	for _, element := range ids {
+		cached, err := handler.GetMessage(element)
+		if err == nil {
+			// update status
+			handler.server.Log.Tracef("msg recebida/(enviada por outro meio) em models: %s", cached.Id)
+		}
+	}
+
+	// Executando WebHook de forma assincrona
+	handler.Trigger(msg)
 }
 
 /*
@@ -109,6 +136,20 @@ func (handler *QPWhatsappHandlers) GetMessages(timestamp time.Time) (messages []
 
 	for _, item := range handler.messages {
 		if item.Timestamp.After(timestamp) {
+			messages = append(messages, item)
+		}
+	}
+
+	handler.sync.Unlock() // Sinal verde !
+	return
+}
+
+func (handler *QPWhatsappHandlers) GetMessagesByPrefix(id string) (messages []whatsapp.WhatsappMessage) {
+	handler.sync.Lock() // Sinal vermelho para atividades simultâneas
+	// Apartir deste ponto só se executa um por vez
+
+	for _, item := range handler.messages {
+		if strings.HasPrefix(item.Id, id) {
 			messages = append(messages, item)
 		}
 	}

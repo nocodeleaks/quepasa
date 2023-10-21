@@ -65,4 +65,7 @@ type IWhatsappConnection interface {
 	IsValid() bool
 
 	IsConnected() bool
+
+	// Is a valid whatsapp phone numbers
+	IsOnWhatsApp(...string) ([]string, error)
 }

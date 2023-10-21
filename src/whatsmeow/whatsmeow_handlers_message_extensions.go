@@ -34,6 +34,8 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 		HandleLiveLocationMessage(handler.log, out, in.LiveLocationMessage)
 	} else if in.ContactMessage != nil {
 		HandleContactMessage(handler.log, out, in.ContactMessage)
+	} else if in.ReactionMessage != nil {
+		HandleReactionMessage(handler.log, out, in.ReactionMessage)
 	} else if in.ProtocolMessage != nil || in.SenderKeyDistributionMessage != nil {
 		out.Type = whatsapp.DiscardMessageType
 	} else if len(in.GetConversation()) > 0 {
@@ -53,6 +55,8 @@ func HandleUnknownMessage(log *log.Entry, in interface{}) {
 	log.Debug(string(b))
 }
 
+//#region HANDLING TEXT MESSAGES
+
 func HandleTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *proto.Message) {
 	log.Debug("Received a text message !")
 	out.Type = whatsapp.TextMessageType
@@ -68,17 +72,21 @@ func HandleExtendedTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in
 
 	info := in.ContextInfo
 	if info != nil {
-		if info.ForwardingScore != nil {
-			out.ForwardingScore = *info.ForwardingScore
-		}
-
-		if info.StanzaId != nil {
-			out.InReply = *info.StanzaId
-		}
+		out.ForwardingScore = info.GetForwardingScore()
+		out.InReply = info.GetStanzaId()
 	}
 }
 
-// Msg em resposta a outra
+func HandleReactionMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *proto.ReactionMessage) {
+	log.Debug("Received a Reaction message!")
+
+	out.Type = whatsapp.TextMessageType
+	out.Text = in.GetText()
+	out.InReply = in.Key.GetId()
+}
+
+//#endregion
+
 func HandleButtonsResponseMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *proto.ButtonsResponseMessage) {
 	log.Debug("Received a buttons response message !")
 	out.Type = whatsapp.TextMessageType

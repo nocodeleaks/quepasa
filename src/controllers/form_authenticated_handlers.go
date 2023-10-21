@@ -75,7 +75,7 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Servers = models.GetServersForUser(user)
-
+	data.Version = models.QPVersion
 	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/account.tmpl"))
 	templates.ExecuteTemplate(w, "main", data)
 }

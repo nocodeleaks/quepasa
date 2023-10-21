@@ -8,7 +8,6 @@ replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
 
 replace github.com/nocodeleaks/quepasa/models => ./
 
-go 1.19
 
 require (
 	github.com/go-chi/chi/v5 v5.0.8
@@ -42,3 +41,5 @@ require (
 	golang.org/x/sys v0.8.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 )
+
+go 1.20

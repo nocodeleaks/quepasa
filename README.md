@@ -24,7 +24,6 @@
 [PostMan Shared Documentations](https://www.getpostman.com/collections/569a066d7a2798e8d293)
 [PostMan Public Workspace](https://elements.getpostman.com/redirect?entityId=5047984-bb51f975-8e79-43e8-b895-06f5081a6819&entityType=collection)
 
-
 **Features:**
   * Verify a number with a QR code
   * Persistence of account data and keys
@@ -39,40 +38,8 @@
 
   **This is a third-party effort, and is NOT in any affiliated with [WhatsApp][0].**
 
-
-  
-  **Clone and Install**
-  
-```bash
-git clone https://github.com/nocodeleaks/quepasa /opt/quepasa-source
-bash /opt/quepasa-source/helpers/install.sh
-```
-    
-  ### **Final step**
-
-  - go to http://your.ip.address:31000/setup in the web browser and register an admin user for your system
-  - login on quepasa http://your.ip.address:31000 from previously created user and scan the qr using you whatsapp 
-
-<hr/>
-
-
 <details>
   <summary>Anything is section was not reviewed</summary>
-
-  **Implemented features:**
-
-  * Verify a number with a QR code
-  * Persistence of account data and keys
-  * Exposes HTTP endpoints for:
-    * sending messages
-    * receiving messages
-    * download attachments
-    * set webhook for receiving messages 
-
-  **WARNING: This application has not been audited. It should not be regarded as
-  secure, use at your own risk.**
-
-  **This is a third-party effort, and is NOT in any affiliated with [WhatsApp][0].**
 
   ### Why ?
   
@@ -104,8 +71,7 @@ bash /opt/quepasa-source/helpers/install.sh
 
   ## Prerequisites Local Deployment
 
-  * Mysql (Recommended)
-  * Golang (Version go1.18 minimum version)
+  * Golang (Version go1.20 minimum version)
 
   ### *installing above golang version*
 
@@ -120,120 +86,7 @@ bash /opt/quepasa-source/helpers/install.sh
 
   ```
 
-
-
-  ### **First step**
-
-    Clone the repo 
-
-    ```bash
-
-  git clone https://github.com/nocodeleaks/quepasa-fork.git
-
-    ```
-
-  ### **Second step**
-
-    Create Database and Users
-
-  ```bash
-
-  sudo mysql
-
-  # create the user
-
-  mysql> CREATE USER 'quepasa'@'%'IDENTIFIED BY 'S0me_RaNdoM_T3*T';
-
-  # Granting Permition to the Quepasa User
-
-  mysql> GRANT ALL ON quepasa.* TO 'quepasa'@'%';
-
-  # Flushing the Privileges 
-
-  mysql> FLUSH PRIVILEGES;
-
-  # Create quepasa DataBase 
-
-  mysql> CREATE DATABASE quepasa;
-
-  # exit mysql 
-
-  mysql> exit
-
-  ```
-
-  ### **Third step**
-
-    Creating the Tables Required
-
-    ```bash
-  # cd into the cloned reop
-
-  cd <git_clone_location>/src/migrations/
-
-  #below will create the relevent tables in the quepasa database for you
-
-  sudo mysql --database=quepasa < 1_create_tables.up.sql
-
-    ```
-  ### **Forth step**
-
-  Creating the .env file
-
-  ```bash
-  # this file contains all the environment varibles that the system needed do the changes that matches your deployment
-
-  #create the .env file in the below location
-
-  nano <git_clone_location>/src/.env
-
-  # content of the file should looklike this 
-
-  WEBAPIHOST=0.0.0.0 
-  WEBAPIPORT=31000 # web port of the API
-  WEBSOCKETSSL=false # http or Https
-  DBDRIVER=mysql #Databse Server
-  DBHOST=localhost
-  DBDATABASE=quepasa
-  DBPORT=3306
-  DBUSER=quepasa
-  DBPASSWORD='S0me_RaNdoM_T3*T' #the string you created in the third step 
-  DBSSLMODE=disable
-  APP_ENV=development # this will write some extra debug messages you can change it to production if needed
-  MIGRATIONS=false
-  SIGNING_SECRET=5345fgdgfd54asdasdasdd #some random test this will be used for password encription 
- 
-  ```
-
-  ### **Fifth step**
-
-  Compiling the Packge
-
-  ```bash
-  # cd into the src directory
-
-  <git_clone_location>/src/
-
-  # compile using golang this may take few seconds to compile
-
-  go run main.go
-
-  ```
-  if error occourd such as *"go not found"* please make sure to [export the path](#installing-golang) again
-
-
-  ### **Final step**
-
-  - go to http://your.ip.address:3100/setup in the web browser and register an admin user for your system
-  - log in to the sysetm http://your.ip.address:3100 form previously created user and scan the qr using you whatsapp 
-
-
-
-
-
-
   ---
-
 
 
   ## Docker Implimentation
@@ -276,6 +129,25 @@ bash /opt/quepasa-source/helpers/install.sh
 	
 	# CONVERT_WAVE_TO_OGG
 	> Should convert sending wave files to OGG codec and use as PTT, default true or empty.	
+	
+	# GOOS		
+	> Operational System to Golang Extensions, "linux" | "windows", empty is default "linux".
+	
+	# DEBUGREQUESTS
+	> Create a log for every request, default false or empty.
+	
+	# DEBUGJSONMESSAGES
+	> Shows log from whatsmeow, default false or empty.
+	
+	# REMOVEDIGIT9
+	> Remove digit 9 from phones bigger than DDD 30, default false or empty.
+	
+	# READRECEIPTS
+	> Trigger webhooks for read receipts events, default false or empty.
+
+	# SYNOPSISLENGTH
+	> Length for synopsis msg at replies or reactions, default 50 or empty.
+
 	 
 ### License
 

@@ -3,6 +3,7 @@ package whatsmeow
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -18,6 +19,8 @@ type WhatsmeowHandlers struct {
 	eventHandlerID           uint32
 	unregisterRequestedToken bool
 	log                      *log.Entry
+
+	ReadReceipt bool // Should follow Read Receipts to webhook
 }
 
 // only affects whatsmeow
@@ -67,6 +70,12 @@ func (handler *WhatsmeowHandlers) EventsHandler(evt interface{}) {
 		go handler.CallMessage(*&v.BasicCallMeta)
 		return
 
+	case *events.Receipt:
+		if handler.ReadReceipt {
+			go handler.Receipt(*v)
+		}
+		return
+
 	case *events.Connected:
 		// zerando contador de tentativas de reconexão
 		// importante para zerar o tempo entre tentativas em caso de erro
@@ -108,8 +117,7 @@ func (handler *WhatsmeowHandlers) EventsHandler(evt interface{}) {
 		*events.Pin,
 		*events.PushName,
 		*events.PushNameSetting,
-		*events.QR,
-		*events.Receipt:
+		*events.QR:
 		return // ignoring not implemented yet
 
 	default:
@@ -211,6 +219,36 @@ func (handler *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 		// following to internal handlers
 		go handler.WAHandlers.Message(message)
+	}
+}
+
+//#endregion
+
+//#region EVENT READ RECEIPT
+
+func (handler *WhatsmeowHandlers) Receipt(evt events.Receipt) {
+	handler.log.Trace("event Receipt !")
+
+	message := &whatsapp.WhatsappMessage{Content: evt}
+	message.Id = "readreceipt"
+
+	// basic information
+	message.Timestamp = evt.Timestamp
+	message.FromMe = false
+
+	message.Chat = whatsapp.WhatsappChat{}
+	chatID := fmt.Sprint(evt.Chat.User, "@", evt.Chat.Server)
+	message.Chat.Id = chatID
+
+	message.Type = whatsapp.SystemMessageType
+
+	// message ids comma separated
+	message.Text = strings.Join(evt.MessageIDs, ",")
+
+	if handler.WAHandlers != nil {
+
+		// following to internal handlers
+		go handler.WAHandlers.Receipt(message)
 	}
 }
 

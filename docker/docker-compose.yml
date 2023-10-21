@@ -4,7 +4,7 @@ services:
 
   quepasa:
     env_file: .env
-    image: aireset/quepasa:latest
+    image: quepasa
     container_name: $QUEPASA_CONTAINER_NAME
     hostname: $QUEPASA_HOST_NAME
     mem_limit: $QUEPASA_MEMORY_LIMIT
@@ -13,6 +13,9 @@ services:
     tty: true
     ports:
       - $QUEPASA_EXTERNAL_PORT:$QUEPASA_INTERNAL_PORT
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
     volumes:
       - ../src:/opt/quepasa
     networks:

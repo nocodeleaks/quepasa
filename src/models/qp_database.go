@@ -109,8 +109,8 @@ func MigrateToLatest() (err error) {
 			log.Info("migrating database on windows operational system")
 
 			// windows ===================
-			leadingWindowsUnit, _ := filepath.Rel("c:\\", workDir)
-			migrationsDir := filepath.Join(leadingWindowsUnit, "./migrations")
+			leadingWindowsUnit, _ := filepath.Rel("z:\\", workDir)
+			migrationsDir := filepath.Join(leadingWindowsUnit, "migrations")
 			fullPath = fmt.Sprintf("/%s", strings.ReplaceAll(migrationsDir, "\\", "/"))
 		} else {
 			// linux ===================

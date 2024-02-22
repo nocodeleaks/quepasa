@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -278,27 +279,42 @@ func (handler *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 }
 
 func (handler *WhatsmeowHandlers) RejectCall(v types.BasicCallMeta) (err error) {
-	var node = binary.Node{
-		Tag: "call",
-		Attrs: binary.Attrs{
-			"to": v.From,
-			"id": handler.Client.GenerateMessageID(),
-		},
-		Content: []binary.Node{
-			{
-				Tag: "reject",
-				Attrs: binary.Attrs{
-					"call-id":      v.CallID,
-					"call-creator": v.CallCreator,
-					"count":        0,
-				},
-				Content: nil,
-			},
-		},
+	// Verificar se a variável de ambiente REJECTCALL é verdadeira
+	rejectCallEnv := os.Getenv("REJECTCALL")
+	rejectCall, err := strconv.ParseBool(rejectCallEnv)
+	if err != nil {
+		// Se houver um erro ao converter a variável de ambiente, trate-o
+		return err
 	}
 
-	handler.log.Infof("rejecting incoming call from: %s", v.From)
-	return handler.Client.DangerousInternals().SendNode(node)
+	// Se REJECTCALL for verdadeiro, rejeite a chamada
+	if rejectCall {
+		var node = binary.Node{
+			Tag: "call",
+			Attrs: binary.Attrs{
+				"to": v.From,
+				"id": handler.Client.GenerateMessageID(),
+			},
+			Content: []binary.Node{
+				{
+					Tag: "reject",
+					Attrs: binary.Attrs{
+						"call-id":      v.CallID,
+						"call-creator": v.CallCreator,
+						"count":        0,
+					},
+					Content: nil,
+				},
+			},
+		}
+
+		handler.log.Infof("rejecting incoming call from: %s", v.From)
+		return handler.Client.DangerousInternals().SendNode(node)
+	}
+
+	// Se REJECTCALL for falso, não faça nada
+	handler.log.Infof("REJECTCALL is false, not rejecting incoming call from: %s", v.From)
+	return nil
 }
 
 //#endregion

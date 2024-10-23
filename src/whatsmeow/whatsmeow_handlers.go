@@ -268,11 +268,12 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 	case *events.JoinedGroup:
 		source.JoinedGroup(*evt)
 		return
-
+	case *events.Contact:
+		source.ContactInfo(evt)
+		return
 	case
 		*events.AppState,
 		*events.CallTerminate,
-		*events.Contact,
 		*events.DeleteChat,
 		*events.DeleteForMe,
 		*events.MarkChatAsRead,
@@ -673,3 +674,58 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 }
 
 //#endregion
+
+func (handler *WhatsmeowHandlers) ContactInfo(evt *events.Contact) {
+	id := handler.Client.GenerateMessageID()
+	if len(id) == 0 {
+		id = handler.Client.GenerateMessageID()
+	}
+
+	// verify if the event has an Action
+	if evt.Action == nil {
+		handler.GetLogger().Warn("event contact without action")
+		return
+	}
+
+	// functions to get values from pointers
+	getStringValue := func(s *string) string {
+		if s != nil {
+			return *s
+		}
+		return ""
+	}
+
+	getBoolValue := func(b *bool) bool {
+		if b != nil {
+			return *b
+		}
+		return false
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Content:   evt,
+		Id:        id,
+		Timestamp: evt.Timestamp,
+		Type:      whatsapp.ContactMessageType,
+		Chat: whatsapp.WhatsappChat{
+			Id:    evt.JID.String(),
+			Title: getStringValue(evt.Action.FullName),
+		},
+		Text: "contact",
+
+		Info: ContactInfo{
+			JID:                      evt.JID.String(),
+			FullName:                 getStringValue(evt.Action.FullName),
+			FirstName:                getStringValue(evt.Action.FirstName),
+			LidJID:                   getStringValue(evt.Action.LidJID),
+			SaveOnPrimaryAddressbook: getBoolValue(evt.Action.SaveOnPrimaryAddressbook),
+			FromFullSync:             evt.FromFullSync,
+			Timestamp:                evt.Timestamp,
+		},
+	}
+
+	// dispatching to internal handlers
+	handler.GetLogger().Infof("contact created %+v", evt.JID)
+
+	handler.Follow(message)
+}

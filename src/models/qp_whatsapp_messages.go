@@ -8,7 +8,9 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-const DEFAULTEXPIRATION time.Duration = time.Duration(124 * time.Hour)
+const DEFAULTEXPIRATION time.Duration = time.Duration(124) * time.Hour
+
+var expirationDays time.Duration = time.Duration(ENV.CacheDays()*24) * time.Hour
 
 type QpWhatsappMessages struct {
 	QpCache
@@ -22,8 +24,13 @@ func (source *QpWhatsappMessages) Append(value *whatsapp.WhatsappMessage, from s
 
 	// ensure that is an uppercase string before save
 	normalizedId := strings.ToUpper(value.Id)
-
-	item := QpCacheItem{normalizedId, value, time.Now().Add(DEFAULTEXPIRATION)}
+	var expiration time.Duration
+	if expirationDays == 0 {
+		expiration = DEFAULTEXPIRATION
+	} else {
+		expiration = expirationDays
+	}
+	item := QpCacheItem{normalizedId, value, time.Now().Add(expiration)}
 	return source.SetCacheItem(item, "message-"+from)
 }
 
@@ -100,8 +107,13 @@ func (source *QpWhatsappMessages) SetStatusById(id string, status whatsapp.Whats
 
 	// ensure that is an uppercase string before save
 	normalizedId := strings.ToUpper(id)
-
-	item := QpCacheItem{normalizedId, status, time.Now().Add(DEFAULTEXPIRATION)}
+	var expiration time.Duration
+	if expirationDays == 0 {
+		expiration = DEFAULTEXPIRATION
+	} else {
+		expiration = expirationDays
+	}
+	item := QpCacheItem{normalizedId, status, time.Now().Add(expiration)}
 	source.statuses.SetCacheItem(item, "status")
 }
 

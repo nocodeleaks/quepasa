@@ -33,6 +33,7 @@ const (
 	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"
 	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"
 	ENV_CACHELENGTH              = "CACHELENGTH"
+	ENV_CACHEDAYS                = "CACHEDAYS"
 	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"
 	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO"
 
@@ -269,6 +270,19 @@ func (*Environment) SynopsisLength() uint64 {
 // Length for cached messages, auto-cleaner old ones if bigger than 0
 func (*Environment) CacheLength() uint64 {
 	stringValue, err := GetEnvStr(ENV_CACHELENGTH)
+	if err == nil {
+		value, err := strconv.ParseUint(stringValue, 10, 32)
+		if err == nil {
+			return value
+		}
+	}
+
+	return 0
+}
+
+// Days for cached messages, auto-cleaner old ones if bigger than 0
+func (*Environment) CacheDays() uint64 {
+	stringValue, err := GetEnvStr(ENV_CACHEDAYS)
 	if err == nil {
 		value, err := strconv.ParseUint(stringValue, 10, 32)
 		if err == nil {

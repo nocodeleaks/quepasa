@@ -1,0 +1,559 @@
+{
+  "name": "QuepasaInboxControl+typebot",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE channel_api SET additional_attributes = jsonb_set(additional_attributes, '{ {{ $('PAYLOAD').item.json.parameter }} }', '\"{{ $('PAYLOAD').item.json.arguments }}\"') WHERE identifier = '{{ $('EXTRA').item.json.identifier }}';",
+        "options": {}
+      },
+      "id": "120861d7-e763-4d9d-9bc2-e33b63423756",
+      "name": "Set Additional Attributes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        640,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT webhook_url FROM channel_api WHERE identifier = '{{ $('EXTRA').item.json.identifier }}';",
+        "options": {}
+      },
+      "id": "4b8255a2-b658-4cb6-9260-9c885bbe6501",
+      "name": "Get Webhook Url",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        640,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const URL = require('url').URL;\nconst webhookUrl = $input.item.json.webhook_url;\nconst urlObject = new URL(webhookUrl);\n\nconst parameter = $('PAYLOAD').first().json.parameter;\nconst value = $('When Called By Another Workflow').first().json.arguments?.trim();\nurlObject.searchParams.set(parameter, value);\n$input.item.json.webhook_url = urlObject.toString();\n\nreturn $input.item;"
+      },
+      "id": "9dd6c9ef-ea4c-4813-a370-6adc39e7749c",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.extra }}",
+        "options": {}
+      },
+      "id": "1dd61d55-21cc-46ee-a9ac-4421b73423e0",
+      "name": "EXTRA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d37824a9-132e-4349-accc-a8190b6a7451",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $('Parameter Name').item.json.removeField(\"extra\") }}",
+        "options": {}
+      },
+      "id": "dbe86fe0-62b1-4962-b695-30261604f201",
+      "name": "PAYLOAD",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE channel_api SET webhook_url = '{{ $json.webhook_url }}' WHERE identifier = '{{ $('EXTRA').item.json.identifier }}';",
+        "options": {}
+      },
+      "id": "ad8ba0a5-46c2-4ca3-8421-9a0ef6758a16",
+      "name": "Set Webhook Url",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1080,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$('EXTRA').item.json.qphost}}",
+        "token": "={{$('EXTRA').item.json.qptoken}}",
+        "resource": "webhook"
+      },
+      "id": "6074b6f4-85bb-4d61-b610-a3732b836bae",
+      "name": "QP - Webhook",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        640,
+        620
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8fb90f14-89ec-4bbc-8e23-6928da16b412",
+              "name": "webhook_url",
+              "value": "={{ $('EXTRA').item.json.n8nhost?.replace(/\\/+$/, '') ?? \"https://\" + $json.headers.host }}/webhook/to-chatwoot",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6e73ddc5-ef76-4618-a2cd-5d38c4471a79",
+      "name": "Default Webhook Url",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        860,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "webhooks",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "webhook"
+        }
+      },
+      "id": "bba8c94e-b980-410a-8d0f-6d1035419aa9",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "383d849a-118a-4be9-8f48-b1d88c3798f3",
+              "leftValue": "={{ $json.webhook.url }}",
+              "rightValue": "={{ $json.webhook_url }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cc0d1e85-a9ec-4bc6-9e2a-a5784634ff80",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1300,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$('EXTRA').item.json.qphost}}/webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-QUEPASA-TOKEN",
+              "value": "={{$('EXTRA').item.json.qptoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {}
+      },
+      "id": "6bec0ff7-5ea4-422f-a630-ee60cc825b87",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "986b381f-2057-4475-9842-6f728d261897",
+              "name": "payload",
+              "value": "={{ $json.webhook }}",
+              "type": "object"
+            },
+            {
+              "id": "504a98f0-d17c-4509-aeb6-9c5cf9b2fb5e",
+              "name": "=payload.extra.{{ $('PAYLOAD').item.json.parameter }}",
+              "value": "={{ $('PAYLOAD').item.json.arguments }}",
+              "type": "string"
+            },
+            {
+              "id": "76ff5f82-c395-4e37-8462-d37d368bb8b9",
+              "name": "payload.success",
+              "value": "={{ undefined }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "21ba0515-53d4-47ca-ac01-ad6e8b4987a4",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cea7f1bd-e3df-44db-b15a-b3bc8727fea4",
+              "name": "parameter",
+              "value": "typebot",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "1f861c8f-fcb5-4cb7-a0db-ad81672f99e2",
+      "name": "Parameter Name",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        400
+      ],
+      "notesInFlow": true,
+      "notes": "typebot"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=! {{ $json.status ?? $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fbe020a9-a4a3-410e-b161-a2b34d0376da",
+      "name": "Set Error Response From Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        2540,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 3,
+        "output": "empty"
+      },
+      "id": "7d461b5f-62ae-4783-aabc-fcafc3493984",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2260,
+        380
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=({{$json[\"success\"]}}): {{$json[\"status\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "137ed337-c68e-49b5-a787-c179695eec40",
+      "name": "Set Response From Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        2540,
+        220
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Webhook Url": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Set Webhook Url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRA": {
+      "main": [
+        [
+          {
+            "node": "PAYLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Parameter Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAYLOAD": {
+      "main": [
+        [
+          {
+            "node": "Get Webhook Url",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QP - Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Additional Attributes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QP - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Default Webhook Url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Webhook Url": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parameter Name": {
+      "main": [
+        [
+          {
+            "node": "EXTRA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Set Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Additional Attributes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Webhook Url": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7af1725d-517a-4600-96c3-609fc6468f82",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "id": "BvfU3kc7i0j68IpZ",
+  "tags": []
+}

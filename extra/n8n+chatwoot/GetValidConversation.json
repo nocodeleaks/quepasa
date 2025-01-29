@@ -1,0 +1,1514 @@
+{
+  "name": "GetValidConversation",
+  "nodes": [
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json[\"extra\"][\"cwhost\"]}}/api/v1/accounts/{{$json[\"extra\"][\"account\"]}}/conversations",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "status",
+              "value": "open"
+            },
+            {
+              "name": "inbox_id",
+              "value": "={{$json[\"extra\"][\"inbox\"]}}"
+            },
+            {
+              "name": "contact_id",
+              "value": "={{$json.chat.chatwoot.id}}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json[\"extra\"][\"atoken\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Create a Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        640,
+        400
+      ],
+      "id": "20200a82-9070-4e60-ae20-f1258deb5ee0",
+      "retryOnFail": true,
+      "notes": "Important to use \"source_id\" to respond messages"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "conversation.id",
+              "value": "={{$json.id}}"
+            },
+            {
+              "name": "conversation.status",
+              "value": "={{$json.status}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        860,
+        400
+      ],
+      "id": "887305d5-52d0-4540-bdab-bcec3db391cd"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json[\"extra\"][\"cwhost\"]}}/api/v1/accounts/{{$json[\"extra\"][\"account\"]}}/conversations/{{$json[\"conversation\"][\"id\"]}}/toggle_status",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "status",
+              "value": "open"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json[\"extra\"][\"atoken\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Open a Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        440
+      ],
+      "id": "5bfc68a8-4de2-4d03-a43f-e0449c940e9f"
+    },
+    {
+      "parameters": {
+        "content": "## Getting and Filtering Conversations\n",
+        "height": 773.1137005971344,
+        "width": 2565.716091695186
+      },
+      "id": "55acc18c-ca60-4351-a15a-67a49bffc7db",
+      "name": "Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3080,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "extra",
+              "value": "={{$json.extra}}"
+            },
+            {
+              "name": "chatid",
+              "value": "={{$json.chat.id}}"
+            },
+            {
+              "name": "contactid",
+              "value": "={{$json.chat.chatwoot.id}}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "singlethread",
+              "value": "={{ $json.extra.singlethread ?? /^true$/i.test($env[\"C8Q_SINGLETHREAD\"]) ?? false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3d2a00ba-2144-45b4-8157-749350293e85",
+      "name": "Set Filter Conversation Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2980,
+        823
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "conversation.status",
+              "value": "={{$json.payload.current_status}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Updated Conversation Status",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        2360,
+        440
+      ],
+      "id": "2cae095f-9fc1-4f6c-8d1d-4a4a54aa77a1"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "attempts",
+              "value": "={{ ($json.attempts ?? 0) + 1 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5d61568b-10e0-499d-9564-af56e9d0700f",
+      "name": "Set Increment For Conversations Attempts",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1420,
+        1220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n display_id, \n status,\n custom_attributes\nFROM conversations \nWHERE \n\taccount_id = '{{ $json.extra.account }}' \n\tAND inbox_id = '{{ $json.extra.inbox }}'\n\tAND contact_id = '{{ $json.contactid }}'\nORDER BY id DESC\nLIMIT 1",
+        "additionalFields": {}
+      },
+      "id": "9b812e5b-50b1-4ae1-8de4-cc0ea998e34c",
+      "name": "Get Last Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -2560,
+        923
+      ],
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const validStatus = [\"open\", \"resolved\", \"pending\", \"snoozed\"];\n\nreturn [{\n  payload: {\n    id: $input.first().json.display_id,\n    status: validStatus[$input.first().json.status],\n    custom_attributes: $input.first().json.custom_attributes\n  }\n}];"
+      },
+      "id": "25358dc9-bf72-4540-b429-f39315585555",
+      "name": "Rename Status Enum",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -2380,
+        923
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.attempts ?? 0 }}",
+              "operation": "larger",
+              "value2": 2
+            }
+          ]
+        }
+      },
+      "id": "1e3a2f20-55ef-4746-bc5e-c45d87d861eb",
+      "name": "Max Attempts Reached ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        1220
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1a824d4c-e67f-460a-b54e-67d8e95545a0",
+      "name": "#region retries for conversation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2740,
+        823
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "8b80f12d-e859-4b6c-91d0-e5f036b8befe",
+      "name": "first found",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1760,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "options": {}
+      },
+      "id": "f7ddac30-89e9-4ee6-a7ba-a31b5adcad18",
+      "name": "CleanUp Invalid Status",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -920,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "915f6870-811a-493e-b1c8-2631f16463c3",
+              "leftValue": "={{ $json.conversation.status }}",
+              "rightValue": "open",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "3781b103-3678-46c3-80f0-586efa65fc67",
+              "leftValue": "={{ ![\"false\", \"0\"].includes($json.extra.soc?.toString().trim().toLowerCase()) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true,
+          "looseTypeValidation": true
+        }
+      },
+      "id": "ef8c99ca-32fe-415d-ae2a-6344513e2cca",
+      "name": "Should Open Conversation ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.conversation?.id}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Empty Conversation ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        600
+      ],
+      "alwaysOutputData": false,
+      "id": "7247dfc3-2195-4355-90ef-3f838fee5aba"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1"
+            }
+          }
+        }
+      },
+      "id": "652fa92d-5df5-4fa7-a0b6-188d7d54a5a6",
+      "name": "Merge Conversation Status",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "936e8cb0-87b6-43f9-9d52-bdb8c8546aba",
+      "name": "Wait For SHIT ChatWoot API process internal things",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2740,
+        500
+      ],
+      "webhookId": "2bd8aead-fb32-4bad-b0da-cf93d85285fd"
+    },
+    {
+      "parameters": {},
+      "id": "40613d8d-c60f-4370-a370-55c7f6e9361d",
+      "name": "Conversation Opened",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2980,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.1) Updates\n* move skip contact to get chatwoot contact workflow\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "height": 200.52521040961017,
+        "width": 569.6036185132486
+      },
+      "id": "297c89be-dc7f-4bc5-9465-f69c7dbee0a7",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "db511556-f5f1-4b82-be81-8186b830b486",
+              "name": "conversation",
+              "value": "={{ $json.conversation }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1fac9d91-df0b-464a-bb0a-a6c5ed2be06e",
+      "name": "Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3420,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "conversation",
+              "value": "={{ $json.conversation.id }}"
+            }
+          ]
+        }
+      },
+      "id": "99a27dfb-8d94-499c-aa8b-5b0b5b3d7623",
+      "name": "Saving Conversation Id",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        3420,
+        640
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.singlethread }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "9344f142-7ee8-47c2-a1f9-5969cd9e16f8",
+      "name": "If Single Thread ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2040,
+        840
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "multiplex"
+      },
+      "name": "Merge3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        -2200,
+        843
+      ],
+      "id": "a590ae42-6534-411a-a92e-f02fb0a2d89a"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "conversation.id",
+              "value": "={{$json.payload?.id}}"
+            },
+            {
+              "name": "conversation.status",
+              "value": "={{$json.payload?.status}}"
+            },
+            {
+              "name": "conversation.custom_attributes",
+              "value": "={{$json.payload?.custom_attributes}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0af52ad8-d102-48d9-9158-7cf8f13da2ac",
+      "name": "Set Conversation Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.payload?.status }}",
+              "operation": "notEqual",
+              "value2": "resolved"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "fa2dac95-8e2b-4398-a769-7016cfffa67f",
+      "name": "If Not Resolved Conversation Found ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2040,
+        1080
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "3767defb-fceb-4674-a155-7ce873755baa",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3400,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7931c30b-c236-4ba9-8409-cb4d375daa4a",
+              "leftValue": "={{ $json.cached }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "372e2c7c-be46-4033-9473-a6804a9abcdc",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1600,
+        1040
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "473b1231-9d68-4cee-ad26-17973c8eb0b1",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3180,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "9da71cc0-40ed-4db0-a1c7-82e8dba1bb07",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -260,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "account",
+              "value": "={{ $json.extra.account }}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{ $json.extra.inbox }}"
+            },
+            {
+              "key": "chatid",
+              "value": "={{ $json.chat.id }}"
+            }
+          ]
+        }
+      },
+      "id": "00342af5-dede-4c2e-a4f4-df1637a140e1",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -3140,
+        380
+      ],
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## DEBUG",
+        "height": 278.9574374256098,
+        "width": 388.46252278582097
+      },
+      "id": "5c081a8d-3e2a-4fd6-b43b-2fd7f29bceb0",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "numberInputs": 3
+      },
+      "id": "626e0bb9-ab5a-4e45-8ad8-7eefabb48068",
+      "name": "Merge4",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        3680,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $json.chat.id }}"
+      },
+      "id": "9840bd2f-20f5-432e-a0b1-643c4c3dc280",
+      "name": "Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3420,
+        840
+      ],
+      "credentials": {
+        "redis": {
+          "id": "HfPZbIWdUGUkegSm",
+          "name": "Redis account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "=cached",
+        "key": "={{ $json.chatid }}",
+        "keyType": "string",
+        "options": {}
+      },
+      "id": "ada44ec6-fe0b-48e1-872a-0b26f8da7ce4",
+      "name": "Get Cached",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1900,
+        1180
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "redis": {
+          "id": "HfPZbIWdUGUkegSm",
+          "name": "Redis account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "e2574546-1cd1-441c-93d3-17b88e019e42",
+      "name": "Merge Cached",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -1760,
+        1120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "54c61dd1-22c0-4337-93c8-93bef46952b2",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1420,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $json.chatid }}",
+        "value": "true",
+        "keyType": "string",
+        "expire": true,
+        "ttl": 7
+      },
+      "id": "58946d56-bd6d-48bf-8ab1-41527f64f787",
+      "name": "Set Cached",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        1040
+      ],
+      "executeOnce": false,
+      "credentials": {
+        "redis": {
+          "id": "HfPZbIWdUGUkegSm",
+          "name": "Redis account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "7f791382-86ce-46f3-adc3-6eae6a483194",
+      "name": "Get Only First, no cached",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -1120,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "0567eae6-dcba-4519-aa61-479c9a7f99ff",
+      "name": "Wait For Create a Conversation",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json[\"extra\"][\"cwhost\"]}}/api/v1/accounts/{{$json[\"extra\"][\"account\"]}}/conversations",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n    \"status\": \"pending\",\n    \"inbox_id\": {{$json[\"extra\"][\"inbox\"]}},\n    \"contact_id\": {{$json.chat.chatwoot.id}},\n    \"custom_attributes\": {\"typebotsessionid\":\"{{ $json?.trackid?.startsWith(\"typebot-\")??false ? $json.trackid.split('-')[1] : \"starttypebot\" }}\"}\n}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$json[\"extra\"][\"atoken\"]}}\"}"
+      },
+      "name": "Create a Conversation TP1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        640,
+        220
+      ],
+      "id": "85aec1a0-4099-4007-8cca-9c7d3cc3fc43",
+      "continueOnFail": true,
+      "notes": "Criado para lidar com typebot"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "conversation.id",
+              "value": "={{$json.id}}"
+            },
+            {
+              "name": "conversation.status",
+              "value": "={{$json.status}}"
+            },
+            {
+              "name": "conversation.custom_attributes",
+              "value": "={{$json.custom_attributes}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set with custom_attributes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        860,
+        220
+      ],
+      "id": "cae0f5be-f52d-466b-838b-011e2b51e155",
+      "notes": "Criado para lidar com typebot"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "915f6870-811a-493e-b1c8-2631f16463c3",
+              "leftValue": "={{ [\"true\", \"1\"].includes($json.extra.typebot?.toString().trim().toLowerCase()) }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true,
+          "looseTypeValidation": true
+        }
+      },
+      "id": "61f6b2c1-847d-4b9d-b0b7-3227c7faa373",
+      "name": "TypeBot ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        420,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9b4756f1-8298-4fc2-9ece-a71eafca384c",
+      "name": "No Operation, do nothing2",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": []
+        },
+        "includeOtherFields": true,
+        "include": "except",
+        "excludeFields": "conversation",
+        "options": {}
+      },
+      "id": "1a2b13ef-ba24-40ff-add6-3385483b3e72",
+      "name": "Clear Conversation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        500
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "da385abe-562e-4242-adb8-43e9406cffb5",
+      "name": "No Operation, do nothing3",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "=1.5",
+        "unit": "seconds"
+      },
+      "id": "4532ad7a-2ddb-4e97-928d-4dfd7c262a52",
+      "name": "Wait a while (1.5s) For Conversation",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -920,
+        1240
+      ],
+      "webhookId": "13d982e4-e253-4616-9e0a-3da472be5e56"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create a Conversation": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "Wait For Create a Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open a Conversation": {
+      "main": [
+        [
+          {
+            "node": "Set Updated Conversation Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Filter Conversation Parameters": {
+      "main": [
+        [
+          {
+            "node": "#region retries for conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Updated Conversation Status": {
+      "main": [
+        [
+          {
+            "node": "Merge Conversation Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Increment For Conversations Attempts": {
+      "main": [
+        [
+          {
+            "node": "Max Attempts Reached ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Conversation": {
+      "main": [
+        [
+          {
+            "node": "Rename Status Enum",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename Status Enum": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Max Attempts Reached ?": {
+      "main": [
+        [
+          {
+            "node": "CleanUp Invalid Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait a while (1.5s) For Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "#region retries for conversation": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Last Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "first found": {
+      "main": [
+        [
+          {
+            "node": "Set Conversation Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CleanUp Invalid Status": {
+      "main": [
+        [
+          {
+            "node": "Set Conversation Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Open Conversation ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversation Opened",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Empty Conversation ?": {
+      "main": [
+        [
+          {
+            "node": "Clear Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Conversation Status": {
+      "main": [
+        [
+          {
+            "node": "Wait For SHIT ChatWoot API process internal things",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For SHIT ChatWoot API process internal things": {
+      "main": [
+        [
+          {
+            "node": "Conversation Opened",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Opened": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Single Thread ?": {
+      "main": [
+        [
+          {
+            "node": "first found",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Not Resolved Conversation Found ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "If Single Thread ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Conversation Payload": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If Not Resolved Conversation Found ?": {
+      "main": [
+        [
+          {
+            "node": "first found",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Cached",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Cached",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Filter Conversation Parameters",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Increment For Conversations Attempts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Result",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Saving Conversation Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Empty Conversation ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Saving Conversation Id": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Cached": {
+      "main": [
+        [
+          {
+            "node": "Merge Cached",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Cached": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "Get Only First, no cached",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Cached",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Cached": {
+      "main": [
+        [
+          {
+            "node": "Get Only First, no cached",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Only First, no cached": {
+      "main": [
+        [
+          {
+            "node": "CleanUp Invalid Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Create a Conversation": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a Conversation TP1": {
+      "main": [
+        [
+          {
+            "node": "Set with custom_attributes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set with custom_attributes": {
+      "main": [
+        [
+          {
+            "node": "Wait For Create a Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TypeBot ?": {
+      "main": [
+        [
+          {
+            "node": "Create a Conversation TP1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing2": {
+      "main": [
+        [
+          {
+            "node": "Merge Conversation Status",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Open a Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Conversation": {
+      "main": [
+        [
+          {
+            "node": "TypeBot ?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait For Create a Conversation",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing3": {
+      "main": [
+        [
+          {
+            "node": "Should Open Conversation ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait a while (1.5s) For Conversation": {
+      "main": [
+        [
+          {
+            "node": "#region retries for conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "any",
+    "executionTimeout": 20
+  },
+  "versionId": "106b7dac-d9bc-4859-886c-16e004dc0e6b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "id": "qjdP01sHPfaPFUq1",
+  "tags": []
+}

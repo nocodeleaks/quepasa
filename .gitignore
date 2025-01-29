@@ -1,0 +1,52 @@
+# Mac
+.DS_Store
+
+# VSCode
+.vscode
+
+# PHPStorm
+.idea
+
+# Emacs
+*~
+\#*\#
+todo.org
+.projectile
+client.rest
+
+secrets/
+tmp/
+__debug_bin*
+
+#files for production
+src/.cache 
+src/.profile
+src/.env
+src/go
+src/sqlite3
+src/__debug_bin.exe
+src/*.exe
+src/whatsmeow.db-journal
+src/main
+src/service
+
+# database files
+src/*.db
+src/*.sqlite
+src/*.sqlite-journal
+
+# production or testing directory
+src/.dist/
+
+# symbolic link to src folder under linux
+quepasa/
+
+docker/.env
+docker/chatwoot/.env
+docker/chatwoot/data
+docker/chatwoot/.n8n
+
+docker/chatwoot/.n8n
+docker/chatwoot/data
+docker/chatwoot/.env
+docker/.env

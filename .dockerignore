@@ -1,0 +1,14 @@
+.git
+.idea
+tmp
+.env
+.vscode
+.gitignore
+.editorconfig
+.gitattributes
+.github
+.pre-commit-config.yaml
+.readthedocs.yml
+node_modules
+.n8n
+data

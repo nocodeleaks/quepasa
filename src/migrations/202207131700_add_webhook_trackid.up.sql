@@ -1,0 +1,1 @@
+ALTER TABLE `webhooks` ADD COLUMN `trackid` VARCHAR (100) NOT NULL DEFAULT '';

@@ -1,0 +1,78 @@
+{{ define "content" }}
+<section class="hero is-fullheight">
+  <div class="hero-body">
+    <div class="container has-text-centered">
+      <div class="column is-4 is-offset-4">
+        <h3 class="title has-text-grey">Welcome to QuePasa</h3>
+        <div class="notification is-warning">This project is under development and should not be considered secure.
+        </div>
+        <div class="box">
+          <h4 class="subtitle has-text-grey">Create your admin user</h4>
+          {{ if .ErrorMessage }}
+          <div class="notification is-warning">
+            {{ .ErrorMessage }}
+          </div>
+          {{ end }}
+          <form class="login" method="post" action="/setup">
+            <div class="field">
+              <div class="control">
+                <input class="input is-large
+                  {{ if .EmailError }}
+                  is-danger
+                  {{ end }}"
+                  name="email" type="email" placeholder="Your Email"
+                  value="{{ .Email }}"
+                  autofocus="">
+              </div>
+              {{ if .UserExistsError }}
+              <p class="help is-danger">
+                This email address is already taken. Please choose a new one.
+              </p>
+              {{ end }}
+              {{ if .EmailInvalidError }}
+              <p class="help is-danger">
+                Your email address is not valid. Please double check!
+              </p>
+              {{ end }}
+            </div>
+
+            <div class="field">
+              <div class="control">
+                <input class="input is-large
+                  {{ if .PasswordStrengthError }}
+                  is-danger
+                  {{ end }}"
+                  name="password" type="password"
+                  placeholder="Your Password">
+              </div>
+
+              {{ if .PasswordStrengthError }}
+              <p class="help is-danger">
+                This password would take {{ .PasswordCrackTime }} to crack.
+              </p>
+              {{ end }}
+            </div>
+
+            <div class="field">
+              <div class="control">
+                <input class="input is-large
+                  {{ if .PasswordMatchError }}
+                  is-danger
+                  {{ end }}"
+                  name="passwordConfirm" type="password"
+                  placeholder="Confirm password">
+              </div>
+              {{ if .PasswordMatchError }}
+              <p class="help is-danger">
+                The passwords do not match. Please double-check!
+              </p>
+              {{ end }}
+            </div>
+            <button class="button is-block is-info is-large is-fullwidth">Create Admin User</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}

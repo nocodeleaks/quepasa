@@ -1,0 +1,47 @@
+{{ define "content" }}
+{{ if .ErrorMessage}}
+<div class="notification is-warning">
+  {{ .ErrorMessage }}
+</div>
+{{ end }}
+
+{{ if .MessageId }}
+<div class="notification is-success">
+  Last message send successful: {{ .MessageId }}
+</div>
+{{ end }}
+
+<form enctype="multipart/form-data" class="" method="post" action="/form/server/{{ .Server.Token }}/send">
+  <div class="field">
+    <label class="label" for="recipient">Recipient:</label>
+    <div class="control">
+      <input class="input is-large" name="recipient" type="text" placeholder="" autofocus="" value="">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label" for="message">Message Id: (*Optional)</label>
+    <div class="control">
+      <input class="input is-large" name="id" type="text" placeholder="" autofocus="" value="">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label" for="message">Message Text:</label>
+    <div class="control">
+      <input class="input is-large" name="message" type="text" placeholder="" autofocus="" value="">
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="label" for="attachment">Attachment:</label>
+    <div class="control">
+      <input type="file" name="attachment" />
+    </div>
+  </div>
+
+  <button class="button is-block is-info is-large is-fullwidth">Send</button>
+</form>
+
+<a href="/form/account">Back</a>
+{{ end }}

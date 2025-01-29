@@ -1,0 +1,1 @@
+Just replace {{SEUDOMINIOAQUI}} => your domain name

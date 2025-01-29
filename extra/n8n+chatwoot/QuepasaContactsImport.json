@@ -1,0 +1,538 @@
+{
+  "name": "QuepasaContactsImport",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "94babc64-5b72-4e39-be0a-6d7aeecaf6ba",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        340,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.server.extra.qphost }}/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-QUEPASA-TOKEN",
+              "value": "={{ $json.server.extra.qptoken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f9da6ecb-da92-4095-89ab-5f6b1dabb213",
+      "name": "Get Contacts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8c1fe8a-5285-42e8-b6ed-969151130c49",
+              "name": "server.extra.cwhost",
+              "value": "={{ $json.extra.cwhost }}",
+              "type": "string"
+            },
+            {
+              "id": "8befdabc-9b00-4bd9-bcc8-9e7e817a76cf",
+              "name": "server.extra.qphost",
+              "value": "={{ $json.extra.qphost }}",
+              "type": "string"
+            },
+            {
+              "id": "b820262b-f408-4cce-bb06-4ce1484f7154",
+              "name": "server.extra.qptoken",
+              "value": "={{ $json.extra.identifier }}",
+              "type": "string"
+            },
+            {
+              "id": "29628359-6ed9-455e-9c7e-912f5239dc0b",
+              "name": "=server.extra.utoken",
+              "value": "={{ $json.extra.utoken }}",
+              "type": "string"
+            },
+            {
+              "id": "098a452c-c45a-4941-b04f-3b6ad33bde65",
+              "name": "server.extra.atoken",
+              "value": "={{ $json.extra.atoken }}",
+              "type": "string"
+            },
+            {
+              "id": "b0a5caf9-c231-48f9-8d10-b8a688de70e2",
+              "name": "server.extra.token",
+              "value": "={{ $json.extra.identifier }}",
+              "type": "string"
+            },
+            {
+              "id": "cacc3963-4b57-46bd-9d65-4b3452c56d98",
+              "name": "chat.id",
+              "value": "={{ $json.conversation_id }}",
+              "type": "number"
+            },
+            {
+              "id": "c889fda1-2143-4381-b3ba-7347da8bef6e",
+              "name": "chat.inbox_id",
+              "value": "={{ $json.extra.inbox }}",
+              "type": "number"
+            },
+            {
+              "id": "a78dc05a-3025-4585-8685-5156af8cbb40",
+              "name": "chat.account_id",
+              "value": "={{ $json.extra.account }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d85cc3d3-04db-4215-a2cc-590d1c066c86",
+      "name": "Get Extra",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        540,
+        340
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "contacts",
+        "options": {}
+      },
+      "id": "fe6a23a4-9e8c-4ca2-9ca2-2d185bd7eefd",
+      "name": "Split Contacts",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        960,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c728248a-abfd-4cf7-8170-03523ad0f921",
+              "name": "total",
+              "value": "={{ $('Get Contacts').item.json.total }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "f227e62f-8fbf-4628-8443-3ef9eed751d8",
+      "name": "Numbers Sent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        240
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {},
+      "id": "bc01799c-ee1b-4460-bb7c-214c2d81efa2",
+      "name": "No Operation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1620,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "e670521a-d054-4c37-a115-9b90618eedc1",
+      "name": "Merge Extra",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1420,
+        320
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "9f9f1b36-9ed3-414c-9068-705fcc0c9c64",
+      "name": "Merge Register",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        2040,
+        340
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.server.extra.cwhost }}/api/v1/accounts/{{ $json.chat.account_id }}/conversations/{{ $json.chat.id }}/messages  ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.server.extra.utoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n  \"content\": \"💬 Importando Contatos. Mais um momento... \\nTotal a ser importado: **{{ $json.total }}** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
+        "options": {}
+      },
+      "id": "f3468a6a-dcb2-427d-8137-8f4f745d655b",
+      "name": "Message Register Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        400
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inserted AS (\n    INSERT INTO contacts (phone_number, name, identifier, account_id, created_at, updated_at)\n    SELECT\n      '{{ $json.id.split(\"@\")[0] }}',\n      '{{ $json.title.replace(/'/g, \"''\") }}',\n      '{{ $json.id }}',\n      '{{ $json.chat.account_id }}',\n      '{{ $now }}',\n      '{{ $now }}'\n    WHERE NOT EXISTS (\n      SELECT 1 FROM contacts WHERE\n        -- Verifica se o número de telefone normalizado já existe no campo phone_number\n        (\n          CASE WHEN SUBSTRING(contacts.phone_number FROM 3 FOR 1) = '9' THEN\n            CONCAT(SUBSTRING(contacts.phone_number FROM 1 FOR 2), SUBSTRING(contacts.phone_number FROM 4))\n          ELSE\n            contacts.phone_number\n          END\n        ) = (\n          CASE WHEN SUBSTRING('{{ $json.id.split(\"@\")[0] }}' FROM 3 FOR 1) = '9' THEN\n            CONCAT(SUBSTRING('{{ $json.id.split(\"@\")[0] }}' FROM 1 FOR 2), SUBSTRING('{{ $json.id.split(\"@\")[0] }}' FROM 4))\n          ELSE\n            '{{ $json.id.split(\"@\")[0] }}'\n          END\n        )\n        -- Ou verifica se o número normalizado já existe no campo identifier\n        OR\n        (\n          CASE WHEN SUBSTRING(SPLIT_PART(contacts.identifier, '@', 1) FROM 3 FOR 1) = '9' THEN\n            CONCAT(\n              SUBSTRING(SPLIT_PART(contacts.identifier, '@', 1) FROM 1 FOR 2),\n              SUBSTRING(SPLIT_PART(contacts.identifier, '@', 1) FROM 4)\n            )\n          ELSE\n            SPLIT_PART(contacts.identifier, '@', 1)\n          END\n        ) = (\n          CASE WHEN SUBSTRING('{{ $json.id.split(\"@\")[0] }}' FROM 3 FOR 1) = '9' THEN\n            CONCAT(SUBSTRING('{{ $json.id.split(\"@\")[0] }}' FROM 1 FOR 2), SUBSTRING('{{ $json.id.split(\"@\")[0] }}' FROM 4))\n          ELSE\n            '{{ $json.id.split(\"@\")[0] }}'\n          END\n        )\n        -- Ou verifica se já existe um registro com o mesmo identifier e account_id\n        OR\n        (\n          contacts.identifier = '{{ $json.id }}' AND\n          contacts.account_id = '{{ $json.chat.account_id }}'\n        )\n    )\n    RETURNING TRUE AS inserted\n)\nSELECT COALESCE((SELECT inserted FROM inserted), FALSE) AS inserted;\n",
+        "options": {
+          "queryBatching": "transaction"
+        }
+      },
+      "id": "8522ee4f-e3e8-4d06-91f5-74f0ab9623c7",
+      "name": "Register Contact",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2260,
+        180
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e9b2329d-d749-4804-b4e0-ba0454d59011",
+              "leftValue": "={{ $json.inserted }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f5acb294-7496-4056-9fa1-249b8a324937",
+      "name": "Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f79185b5-f686-48bd-9e45-806fa0c65870",
+              "name": "importeds",
+              "value": "={{ $items().length }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b67af304-6984-4120-91e5-9170468f7553",
+      "name": "Item Import",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2720,
+        160
+      ],
+      "executeOnce": true,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json[\"server\"][\"extra\"][\"cwhost\"] }}/api/v1/accounts/{{ $json[\"chat\"][\"account_id\"] }}/conversations/{{ $json.chat.id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.server.extra.utoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n  \"content\": \"💬 Contatos Importados com sucesso! \\n Total: **{{ $json.total}}** \\nImportados:**{{ $json[\"importeds\"] }}** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
+        "options": {}
+      },
+      "id": "3dfcf582-890d-414f-b9f9-d2d960e22255",
+      "name": "Message Ends",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3220,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "3154fa3a-49b9-46b0-a6f9-62b4854c28e6",
+      "name": "Merge Import",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        3020,
+        320
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.0) Updates\n* \n",
+        "height": 146.16388807965458,
+        "width": 467.54452018877896
+      },
+      "id": "34fb2438-5c70-4bad-a0d8-7bd9bc80150b",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        200,
+        155.29012345679016
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Extra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contacts": {
+      "main": [
+        [
+          {
+            "node": "Split Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Extra": {
+      "main": [
+        [
+          {
+            "node": "Get Contacts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Extra",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Split Contacts": {
+      "main": [
+        [
+          {
+            "node": "Numbers Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Numbers Sent": {
+      "main": [
+        [
+          {
+            "node": "Merge Extra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation": {
+      "main": [
+        [
+          {
+            "node": "Message Register Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Extra": {
+      "main": [
+        [
+          {
+            "node": "Merge Register",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "No Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Register": {
+      "main": [
+        [
+          {
+            "node": "Merge Import",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Register Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Register Contact": {
+      "main": [
+        [
+          {
+            "node": "Merge Register",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Register Contact": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success": {
+      "main": [
+        [
+          {
+            "node": "Item Import",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Import": {
+      "main": [
+        [
+          {
+            "node": "Merge Import",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Import": {
+      "main": [
+        [
+          {
+            "node": "Message Ends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8ca9ac71-19a4-412b-843c-6be30cda5f11",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "id": "PkjmWuUN1y6sCX11",
+  "tags": [
+    {
+      "createdAt": "2025-01-29T14:10:20.952Z",
+      "updatedAt": "2025-01-29T14:10:20.952Z",
+      "id": "WKLrBsRZXidylR4T",
+      "name": "ApproachTI"
+    }
+  ]
+}

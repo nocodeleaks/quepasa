@@ -1,0 +1,1842 @@
+{
+  "name": "QuepasaQrcode",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "21012cf2-a902-4a6a-ae47-19f8cda99fa6",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        5295.95709678845,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=✅ Qrcode gerado com sucesso!\n\n✅ Digitalize este código QR nos próximos 20 segundos:"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "76601579-0662-41ee-bade-61c437177ea3",
+      "name": "Qrcode gerado com sucesso!",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1815.9570967884506,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": true
+            },
+            {
+              "value1": "={{ $json.server.verified }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "70303d63-dae7-4ca4-b9c6-452f9410bf41",
+      "name": "Success QrCode",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2995.95709678845,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "content": "##  QrCode Challenging\n",
+        "height": 439.7888005497755,
+        "width": 1689.6872805614216
+      },
+      "id": "af12b792-203f-4642-b88c-e93e9761c859",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Follow",
+        "height": 573.3499448215342,
+        "width": 1617.8746514622399
+      },
+      "id": "41d106d0-0873-4c81-a24f-4564b0ae556a",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.5) Updates\n* paircode",
+        "height": 203.09211018757583,
+        "width": 641.796471588546
+      },
+      "id": "e12adef9-ac58-4c7a-ade6-7d633e267c43",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -503,
+        310
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.extra.qphost }}/scan",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "historysyncdays",
+              "value": "={{ $json.variables?.historysyncdays??  $env[\"HISTORYSYNCDAYS\"] }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-QUEPASA-TOKEN",
+              "value": "={{ $json.extra.identifier }}"
+            },
+            {
+              "name": "X-QUEPASA-USER",
+              "value": "={{ $json.extra.qpuser }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cca48c4f-60a5-4351-8599-8d5ad8c9febe",
+      "name": "QrCode Gerenerator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        835.9570967884506,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "ad111797-5b1c-442e-85fc-f33aaa248bbd",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1255.9570967884506,
+        680
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4d0b36b3-c5f5-4864-bb48-cce1d069bdcf",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1015.9570967884506,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "fa287441-16f2-49d2-b4d1-23368c6b6545",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        140,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "a9c3334f-3d34-4f1b-9295-4a7a018de555",
+      "name": "Merge3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1995.9570967884506,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $node['Manipulate Data'].json.timeout }}"
+      },
+      "id": "7f52b1c5-c05c-4aaf-8770-fa71f982a029",
+      "name": "Waiting For Scanner",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2215.9570967884506,
+        660
+      ],
+      "webhookId": "b8706931-81cb-4f18-93e0-0a5d5416734b"
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{$json.extra.identifier }}",
+        "resource": "information"
+      },
+      "id": "079e0f4d-decc-40ae-9410-1e003ad43443",
+      "name": "Retrieving Info",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        2780,
+        740
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "aa05b4e6-71b0-4936-b701-7c32e1202ce7",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2475.95709678845,
+        660
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "60254919-614a-48db-bcd0-66392ce77f0c",
+      "name": "No Operation, do nothing2",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3455.95709678845,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "3900cfca-d96d-4096-ba5e-381f602147f4",
+      "name": "Merge4",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3235.95709678845,
+        900
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ddc2b39f-7c93-49b7-983f-6535f410aedf",
+      "name": "No Operation, do nothing3",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2755.95709678845,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=❌ Tempo para conexão expirou !\nPor favor, reinicie o processo!"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "29766be7-105b-492e-8f52-5b3392d052d7",
+      "name": "Fail Scanner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3515.95709678845,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "wid",
+              "value": "={{$json.server.wid}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c651a8a3-c095-4817-95d4-d6f61a17a1e0",
+      "name": "Set Whatsapp Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        3275.95709678845,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "540aa717-7060-4475-9921-035e95691ff0",
+      "name": "Merge5",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3655.95709678845,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=Informações do servidor:\nToken gerado: {{$json.extra.identifier}}\nWhatsapp: {{$json.wid}}\n\n\n"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e34d7bae-777f-4242-abcd-cf577ff91bb9",
+      "name": "Confirming Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3915.95709678845,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "47f69c4d-37ae-4e9c-951f-7c4694cbd68f",
+      "name": "Merge6",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        4155.95709678845,
+        720
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "8478912b-ce29-46a0-a61f-19cf61eb5f9c",
+      "name": "No Operation, do nothing5",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        535.9570967884506,
+        620
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a49d2859-a7d9-4378-b0d2-e34c6f909e55",
+      "name": "No Operation, do nothing4",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4375.95709678845,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "8ff73b37-aa86-4026-9f23-3acecc78b523",
+      "name": "Merge7",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        5495.95709678845,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.qphost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=Problema ao atualizar o webhook\n\n*{{$json.message}}\n"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38d75ab8-529a-49b7-b0f5-7a6ae46129e8",
+      "name": "Fail On Updating Quepasa Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        5735.95709678845,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=✅ Conexão feita com sucesso!\n✅ Sistema Pronto para Usar"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7a248835-c018-4974-9d55-83c65c06907c",
+      "name": "All Ready",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        5675.95709678845,
+        460
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ed49b651-d0fb-4851-ae30-a27c71960f9a",
+      "name": "No Operation, do nothing6",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4555.95709678845,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "input2"
+      },
+      "id": "799f1b03-e0c5-4f19-910d-72105e38c8e0",
+      "name": "Merge8",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        5495.95709678845,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $env['C8Q_WF_QUEPASACONTACTSIMPORT'] ?? \"PkjmWuUN1y6sCX11\" }}",
+        "options": {}
+      },
+      "id": "37913ab3-9b4b-48d7-802d-f34a6754fcaa",
+      "name": "Execute Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        6320,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "bc00f6e4-aaf3-4a0b-8618-cd3d2f0dff38",
+      "name": "Merge9",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        5835.95709678845,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "2d0442af-75b9-4ae8-8108-d5ff164e31a6",
+              "leftValue": "={{ $('Webhook').item.json.body.messages[0].content }}",
+              "rightValue": "/contacts",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "02b3959d-2eb5-487e-84ea-afe88a27bf16",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        6035.95709678845,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=❌ Comando Inválido!\nUse:\n/qrcode\n/paircode +55XXXXXXXXXX"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7cba3c31-4703-46e7-b6e3-36f8c4478bf0",
+      "name": "Invalid Comand",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        895.9570967884506,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=❌ Erro ao gerar o PairCode"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e879f327-ce25-43d3-9917-eecfdca2799e",
+      "name": "PairCode Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        1140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.utoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=✅ ***Pair Code Gerado com sucesso***\nNúmero: +{{ $json.message.split('+')[1] }}\nPairCode: ***{{ $json.status }}***\n\nSe o número está correto, uma notificação no whatsapp irá aparece, insira esse código no seu dispositivo para conectar!"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "private",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a4707ba9-f6c6-4039-9c48-d6236a5b4261",
+      "name": "PairCode gerado com sucesso!",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1595.9570967884506,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "0b3ed2a6-6234-4519-91e5-193c3b1c9c2f",
+      "name": "Merge10",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1135.9570967884506,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e3e3c30f-7c66-4d0f-9de6-29d65c64dd4c",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4269d749-9bc9-4817-9322-358f917a7c87",
+      "name": "Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        1315.9570967884506,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ac7cf56a-64f3-4a7a-ba02-37c4ad1b2651",
+              "name": "conversation",
+              "value": "={{ $('Success?').item.json.conversation }}",
+              "type": "number"
+            },
+            {
+              "id": "24fb1141-1263-409c-bc86-fc7a2025d72b",
+              "name": "message",
+              "value": "={{ $('Success?').item.json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "a290cc96-e510-4453-824c-d83f0ae1e397",
+              "name": "extra",
+              "value": "={{ $('Success?').item.json.extra }}",
+              "type": "object"
+            },
+            {
+              "id": "ebdcca1b-18a4-4076-afab-6eaada276a75",
+              "name": "success",
+              "value": "={{ $('Success?').item.json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "33279daa-26cd-47c0-964a-02a2a9644471",
+              "name": "status",
+              "value": "={{ $('Success?').item.json.status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f4f2e11d-45e0-4e8f-a19b-fa2da3413517",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1815.9570967884506,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "content": "##  PairCode Challenging\n",
+        "height": 439.7888005497755,
+        "width": 1689.6872805614216
+      },
+      "id": "db208560-d00a-425d-8ff4-63ffaff28de0",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        455.9570967884506,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node[\"Webhook\"].json[\"body\"][\"messages\"][0][\"content\"].toLowerCase() }}",
+              "operation": "contains",
+              "value2": "typebot"
+            }
+          ]
+        }
+      },
+      "id": "aea4844e-833b-42f4-a91c-2760b58d2cf0",
+      "name": "Includes Typebot?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        4695.95709678845,
+        780
+      ],
+      "notes": "Criado para lidar com typebot"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "tbstart",
+              "value": "={{ $node[\"Webhook\"].json[\"body\"][\"messages\"][0][\"content\"].split(' ')[1].split('-')[1] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ad6d9dde-7633-4722-ab99-966ad9295565",
+      "name": "Set Typebot",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        4875.95709678845,
+        700
+      ],
+      "notes": "Criado para lidar com typebot"
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{ $json.extra.qphost}}",
+        "token": "={{$json.extra.identifier}}",
+        "resource": "webhook",
+        "operation": "setup",
+        "url": "={{$json.extra.n8nhost}}/webhook/to-chatwoot",
+        "trackid": "chatwoot",
+        "extraAttributes": {
+          "attribute": [
+            {
+              "key": "qptoken",
+              "value": "={{$json.extra.identifier}}"
+            },
+            {
+              "key": "cwhost",
+              "value": "={{$josn.extra.cwhost}}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{$json.extra.inbox}}"
+            },
+            {
+              "key": "account",
+              "value": "={{$json.extra.account}}"
+            },
+            {
+              "key": "utoken",
+              "value": "={{$json.extra.utoken}}"
+            },
+            {
+              "key": "atoken",
+              "value": "={{$json.extra.atoken}}"
+            },
+            {
+              "key": "qphost",
+              "value": "={{$json.extra.qphost}}"
+            },
+            {
+              "key": "identifier",
+              "value": "={{$json.extra.identifier}}"
+            }
+          ]
+        }
+      },
+      "id": "03cb4dbc-b700-419c-ad60-27f720225bd4",
+      "name": "Webhook Update",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        5055.95709678845,
+        880
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{ $json.extra.qphost}}",
+        "token": "={{$json.extra.identifier}}",
+        "resource": "webhook",
+        "operation": "setup",
+        "url": "={{$json.extra.n8nhost}}/webhook/to-chatwoot",
+        "trackid": "chatwoot",
+        "extraAttributes": {
+          "attribute": [
+            {
+              "key": "qptoken",
+              "value": "={{$json.extra.identifier}}"
+            },
+            {
+              "key": "cwhost",
+              "value": "={{ $json.extra.cwhost }}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{$json.extra.inbox}}"
+            },
+            {
+              "key": "account",
+              "value": "={{$json.extra.account}}"
+            },
+            {
+              "key": "utoken",
+              "value": "={{$json.extra.utoken}}"
+            },
+            {
+              "key": "atoken",
+              "value": "={{$json.extra.atoken}}"
+            },
+            {
+              "key": "qphost",
+              "value": "={{$json.extra.qphost}}"
+            },
+            {
+              "key": "tbstart",
+              "value": "={{ $json.tbstart }}"
+            },
+            {
+              "key": "identifier",
+              "value": "={{$json.extra.identifier}}"
+            }
+          ]
+        }
+      },
+      "id": "41ba85b7-8c24-4a9d-b53c-24513f99053b",
+      "name": "Webhook Update1",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        5060,
+        700
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "31cba70f-6fbd-4c94-8403-6bc9360ad187",
+      "name": "No Operation, do nothing7",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4555.95709678845,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.extra.qphost }}/paircode?phone=+{{ $json.message.split('+')[1] }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-QUEPASA-TOKEN",
+              "value": "={{ $json.extra.identifier }}"
+            },
+            {
+              "name": "X-QUEPASA-USER",
+              "value": "={{ $json.extra.qpuser }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "41ad16f8-1afd-4639-8155-29d40327ea1d",
+      "name": "PairCode Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        915.9570967884506,
+        1080
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        },
+        "sendBinaryData": true,
+        "binaryPropertyName": "attachments[]:data",
+        "headerParametersJson": "={ \"api_access_token\": \"{{ $json.extra.utoken }}\" }",
+        "queryParametersJson": "{ \"message_type\": \"incoming\" }"
+      },
+      "name": "Envia QRCode No Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1455.9570967884506,
+        680
+      ],
+      "id": "bb122461-bf69-4ee5-92b0-707cac1d0d10"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "8e9419cd-2f72-45db-9370-4fafad0cf2b1",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1655.9570967884506,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const content = $json.body.messages[0].content.trim(); // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 60;\n\nreturn {\n  \"conversation\": $json.body.id ?? $json.body.messages[0].conversation_id,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.body.messages[0].content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
+      },
+      "id": "82d633b3-0179-4ada-a2d2-650ae26bd63b",
+      "name": "Manipulate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -163,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $env['C8Q_WF_CHATWOOTEXTRA'] ?? \"iiEsUj7ybtzEZAFj\" }}",
+        "options": {}
+      },
+      "id": "3e043edd-6aca-4239-ae73-2aecbadddb72",
+      "name": "Execute ChatWootExtra Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -163,
+        690
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message }}",
+                    "rightValue": "qrcode",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "2cbf426e-d6e7-4108-a1eb-8983422aff04",
+                    "leftValue": "={{ $json.message }}",
+                    "rightValue": "paircode",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "089e9c52-8683-4811-b7a0-95107cc895b3",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.1,
+      "position": [
+        675.9570967884506,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE \"public\".\"channel_api\" SET \"webhook_url\"='{{$json.webhook}}' WHERE \"id\"='{{$json.extra.channel}}';",
+        "additionalFields": {}
+      },
+      "id": "9bd59cac-59ba-4fac-8641-ae4dbbae0416",
+      "name": "Database Webhook Update",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        700,
+        220
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const extra = $input.item.json.extra;\n\nlet webhook = extra.n8nhost + \"/webhook/from-chatwoot?\";\nwebhook += \"identifier=\" + extra.identifier + \"&\";\nwebhook += \"utoken=\" + extra.utoken + \"&\";\nwebhook += \"atoken=\" + extra.atoken + \"&\";\n\nif (extra.qphost !== \"http://127.0.0.1:31000\"){\n  webhook += \"qphost=\" + extra.qphost + \"&\";\n}\n\nif (extra.cwhost !== \"http://127.0.0.1:3000\"){\n  webhook += \"cwhost=\" + extra.cwhost + \"&\";\n}\n\n//if (extra.cwpublic){\n//  webhook += \"cwpublic=\" + extra.cwpublic + \"&\";\n//}\n\nwebhook = webhook.replace(/\\&+$/, '');\n\n$input.item.json.webhook = webhook;\nreturn $input.item;"
+      },
+      "id": "b176cf49-a10d-43dd-8495-135eef39f1ec",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "quepasa",
+        "options": {}
+      },
+      "id": "bb3dcd1e-8f43-4333-8905-ff43fe2cf33b",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        620
+      ],
+      "webhookId": "e8d38d79-8f79-4bd1-85f8-fce3d8200233"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "Merge7",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qrcode gerado com sucesso!": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Success QrCode": {
+      "main": [
+        [
+          {
+            "node": "Set Whatsapp Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QrCode Gerenerator": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Envia QRCode No Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Waiting For Scanner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waiting For Scanner": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieving Info": {
+      "main": [
+        [
+          {
+            "node": "Success QrCode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Retrieving Info",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing2": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Fail Scanner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing3": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Set Whatsapp Id": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "Confirming Results",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirming Results": {
+      "main": [
+        [
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge6": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing5": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing4": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Includes Typebot?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "No Operation, do nothing7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge7": {
+      "main": [
+        [
+          {
+            "node": "All Ready",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge9",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "All Ready": {
+      "main": [
+        [
+          {
+            "node": "Merge9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing6": {
+      "main": [
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge8": {
+      "main": [
+        [
+          {
+            "node": "Fail On Updating Quepasa Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge9": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PairCode gerado com sucesso!": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge10": {
+      "main": [
+        [
+          {
+            "node": "Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success?": {
+      "main": [
+        [
+          {
+            "node": "PairCode gerado com sucesso!",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PairCode Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Waiting For Scanner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Includes Typebot?": {
+      "main": [
+        [
+          {
+            "node": "Set Typebot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Webhook Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Typebot": {
+      "main": [
+        [
+          {
+            "node": "Webhook Update1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Update": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Update1": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing7": {
+      "main": [
+        [
+          {
+            "node": "Merge7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PairCode Generator": {
+      "main": [
+        [
+          {
+            "node": "Merge10",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Envia QRCode No Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Qrcode gerado com sucesso!",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute ChatWootExtra Workflow": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Manipulate Data": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "QrCode Gerenerator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PairCode Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge10",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Comand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Database Webhook Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Manipulate Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute ChatWootExtra Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "50fc6773-1f67-44fb-8559-b9794ea094bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "id": "z7iqKYC8r5nPRRHt",
+  "tags": [
+    {
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+    contents: write
+    packages: write
+
+env:
+  GOVERSION: "1.22"
+  
+jobs:
+
+  build:    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-latest,  go-os: darwin,  go-arch: amd64, build-tags: netcgo }
+          - { runner: macos-latest,  go-os: darwin,  go-arch: arm64, build-tags: netcgo }
+          - { runner: ubuntu-latest, go-os: linux,   go-arch: amd64, }
+          - { runner: ubuntu-latest, go-os: linux,   go-arch: arm64, }
+          - { runner: windows-latest, go-os: windows, go-arch: amd64, suffix: .exe }
+
+    runs-on: ${{ matrix.runner }}
+    env: 
+      BINARYNAME: ${{github.repository}}-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
+      
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go ${{env.GOVERSION}}
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{env.GOVERSION}}
+                      
+    - name: Build
+      working-directory: ./src
+      env: 
+        CGO_ENABLED: ${{matrix.go-os == 'windows' && 1 || 0}}
+        GOOS: ${{matrix.go-os}}
+        GOARCH: ${{matrix.go-arch}}
+        
+      run: go build -o "${{env.BINARYNAME}}" -tags="${{ matrix.build-tags }}" -v ./...
+      
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./src/${{env.BINARYNAME}}
+        tag_name: latest

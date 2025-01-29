@@ -1,0 +1,29 @@
+{{ define "content" }}
+<section class="hero is-fullheight">
+  <div class="hero-body">
+    <div class="container has-text-centered">
+      <div class="column is-4 is-offset-4">
+        <h3 class="title has-text-grey">QuePasa</h3>
+        <div class="notification is-warning">This project is under development and is not secure.</div>
+        <div class="box">
+          <h4 class="subtitle has-text-grey">Please login</h4>
+          <form class="login" method="post" action="/login">
+            <div class="field">
+              <div class="control">
+                <input class="input is-large" name="email" type="email" placeholder="Your Email" autofocus="">
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="control">
+                <input class="input is-large" name="password" type="password" placeholder="Your Password">
+              </div>
+            </div>
+            <button class="button is-block is-info is-large is-fullwidth">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    </div>
+</section>
+{{ end }}

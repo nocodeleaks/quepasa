@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+
+  quepasa:
+    env_file: .env
+    image: quepasa
+    container_name: $QUEPASA_CONTAINER_NAME
+    hostname: $QUEPASA_HOST_NAME
+    mem_limit: $QUEPASA_MEMORY_LIMIT
+    restart: always
+    stdin_open: true
+    tty: true
+    ports:
+      - $QUEPASA_EXTERNAL_PORT:$QUEPASA_INTERNAL_PORT
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - ../src:/opt/quepasa
+    networks:
+      - quepasa_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  quepasa_network:

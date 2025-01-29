@@ -1,0 +1,23 @@
+{{ define "content" }}
+  {{ $DOWNLOADPREFIX := .DownloadPrefix }}
+  {{ if .ErrorMessage }}
+    <div class="notification is-warning">
+      {{ .ErrorMessage }}
+    </div>
+  {{ end }}
+
+  <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
+  {{ range .Messages }}
+    <pre id="msg-{{ .Id }}">
+      On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}  
+      Type: {{ .Type }} => Chat:  {{ .Chat }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
+      Participant:  {{ .Participant }}{{ end }}{{ if .TrackId }}
+      TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
+      InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .HasUrl }}
+      Url: <a href="{{ .Url }}">{{ .Url }}</a>{{ end }}{{ if .Text }}
+      Text: {{ .Text }}{{ end }}
+    </pre>
+    <br />
+  {{ end }}
+  <a style="padding: 2rem;" href="/form/account">Back</a>
+{{ end }}

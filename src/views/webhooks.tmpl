@@ -1,0 +1,102 @@
+{{ define "content" }}
+  {{ if .ErrorMessage }}
+    <div class="notification is-warning">
+      {{ .ErrorMessage }}
+    </div>
+  {{ end }}
+  <div class="container site-header">
+    <h1 class="title is-1">WebHooks</h1>
+    <p class="subtitle">({{ len .Server.Webhooks }}) For <b>{{ .Server.Wid }}</b></p>
+  </div>
+  <div class="container">
+    <table class="table is-fullwidth">
+      <thead>
+        <tr>
+          <th>Url</th>
+          <th>TrackId</th>
+          <th style="text-align: center;">Actions</th>
+          <th style="width: 4rem;">Extra</th>
+          <th style="width: 4rem;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Server.Webhooks }}   
+          <tr>
+            <td><span>{{ .Url }}</span></td>
+            <td><span>{{ .TrackId }}</span></td>
+            <td style="text-align: center;">
+              <div style="text-align: center; display: flex; justify-content: center;">          
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-forwardinternal" data-value="{{ .ForwardInternal }}">
+                    <input name="url" type="hidden" value="{{ .Url }}" />
+                    <button class="button {{ if .ForwardInternal }}is-info{{ else }}is-danger{{ end }}" title="ForwardInternal: {{ .ForwardInternal }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-forward"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p>&nbsp;</p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-broadcasts" data-value="{{ .Broadcasts }}">
+                    <input name="url" type="hidden" value="{{ .Url }}">
+                    <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts: {{ .Broadcasts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-groups" data-value="{{ .Groups }}">
+                    <input name="url" type="hidden" value="{{ .Url }}">
+                    <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups: {{ .Groups }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-readreceipts" data-value="{{ .ReadReceipts }}">
+                    <input name="url" type="hidden" value="{{ .Url }}">
+                    <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="ReadReceipts: {{ .ReadReceipts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-calls" data-value="{{ .Calls }}">
+                    <input name="url" type="hidden" value="{{ .Url }}">
+                    <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls: {{ .Calls }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p>&nbsp;&nbsp;</p>
+                <p class="control">
+                  <form class="" method="post" action="/form/delete?token={{ $.Server.Token }}&key=webhook">
+                    <input name="url" type="hidden" value="{{ .Url }}">
+                    <button class="button is-danger is-outlined" title="Delete this webhook">
+                      <i class="fa fa-trash"></i>&nbsp;&nbsp;
+                      Delete
+                    </button>
+                  </form>
+                </p>
+              </div>
+            </td>
+            <td>
+              {{ if .IsSetExtra }}
+                <button class="button" title="Extra: {{ .Extra }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
+                </button>
+              {{ end }}
+            </td>
+            <td>
+              {{ if .Failure }}
+                <button class="button is-warning is-outlined" title="Last Failure: {{ .Failure }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-exclamation"></i></span>
+                </button>
+              {{ end }}
+            </td>
+          </tr>       
+        {{ end }}
+      </tbody>
+    </table>     
+  </div>
+  <div>&nbsp;</div>
+{{ end }}

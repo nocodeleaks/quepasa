@@ -118,7 +118,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.5) Updates\n* paircode",
+        "content": "## (1.0.6) Updates\n* waiting time issue",
         "height": 203.09211018757583,
         "width": 641.796471588546
       },
@@ -223,7 +223,8 @@
     },
     {
       "parameters": {
-        "amount": "={{ $node['Manipulate Data'].json.timeout }}"
+        "amount": "={{ $node['Manipulate Data'].json.timeout }}",
+        "unit": "seconds"
       },
       "id": "7f52b1c5-c05c-4aaf-8770-fa71f982a029",
       "name": "Waiting For Scanner",
@@ -1103,7 +1104,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const content = $json.body.messages[0].content.trim(); // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 60;\n\nreturn {\n  \"conversation\": $json.body.id ?? $json.body.messages[0].conversation_id,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.body.messages[0].content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
+        "jsCode": "const content = $json.body.messages[0].content.trim(); // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 30;\n\nreturn {\n  \"conversation\": $json.body.id ?? $json.body.messages[0].conversation_id,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.body.messages[0].content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
       },
       "id": "82d633b3-0179-4ada-a2d2-650ae26bd63b",
       "name": "Manipulate Data",
@@ -1825,7 +1826,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "50fc6773-1f67-44fb-8559-b9794ea094bf",
+  "versionId": "f3e47b4d-e633-45fa-bde5-ed6be1f95692",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

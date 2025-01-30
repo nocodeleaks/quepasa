@@ -135,19 +135,6 @@
     },
     {
       "parameters": {
-        "errorMessage": "chat not processed "
-      },
-      "id": "7c019522-9df4-4a74-95ea-e4614c6e8d5c",
-      "name": "Stop And Error",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        4740,
-        -220
-      ]
-    },
-    {
-      "parameters": {
         "conditions": {
           "string": [
             {
@@ -308,19 +295,6 @@
     },
     {
       "parameters": {
-        "errorMessage": "Error on create contact (expected 422)"
-      },
-      "id": "823e8d62-0030-4035-8e56-091b6492250c",
-      "name": "! Unknown Error",
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        4500,
-        60
-      ]
-    },
-    {
-      "parameters": {
         "values": {
           "number": [
             {
@@ -408,7 +382,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.15) Updates\n* skip contact\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "content": "## (1.0.16) Updates\n* skip contact error control\n\n## Recommendations \n* Remember set timeout to 20 seconds",
         "height": 201.45401153644474,
         "width": 467.54452018877896
       },
@@ -450,8 +424,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5100,
-        -380
+        5040,
+        -300
       ],
       "alwaysOutputData": true,
       "continueOnFail": true
@@ -754,17 +728,52 @@
     },
     {
       "parameters": {
-        "errorMessage": "skipped contact by parameter"
+        "errorMessage": "Error on create contact (expected 422)"
       },
-      "id": "88c85f46-22b8-4475-915a-2efb8b88e713",
-      "name": "Skipped",
+      "id": "823e8d62-0030-4035-8e56-091b6492250c",
+      "name": "! Unknown Error",
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4920,
-        -480
-      ],
-      "onError": "continueRegularOutput"
+        4500,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "chat not processed "
+      },
+      "id": "7c019522-9df4-4a74-95ea-e4614c6e8d5c",
+      "name": "Stop And Error",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        4740,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5699ac0e-3d5d-4d5d-9f67-0dff8b7b1c41",
+              "name": "error",
+              "value": "skipped contact by parameter",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "89c28c2f-12c2-4844-9888-6ab7a3239987",
+      "name": "Skipped",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5040,
+        -500
+      ]
     }
   ],
   "pinData": {},
@@ -1147,7 +1156,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
-  "versionId": "343dc2eb-5f60-48cd-a651-aaf69c9f2182",
+  "versionId": "0d422843-30d6-41c9-93b8-c1b8257a8edb",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

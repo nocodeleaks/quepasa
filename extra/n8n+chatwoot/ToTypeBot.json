@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.0) Updates\n* impletend TypeBot how an agent_bot with chatwoot and quepasa",
+        "content": "## (1.0.2) Updates\n* resolving and open by text comands\n",
         "height": 175.906164153499,
         "width": 398.976541038375
       },
@@ -21,8 +21,7 @@
         "sortFieldsUi": {
           "sortField": [
             {
-              "fieldName": "payload.id",
-              "order": "descending"
+              "fieldName": "payload.id"
             }
           ]
         },
@@ -69,7 +68,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5780,
+        6000,
         960
       ]
     },
@@ -91,8 +90,8 @@
     {
       "parameters": {
         "content": "## Start Session\n",
-        "height": 629.3627671286205,
-        "width": 1419.397792810985
+        "height": 575.8548488363981,
+        "width": 1417.4486604344295
       },
       "id": "4c023984-a251-4f1f-b42a-e39d7d78c8dc",
       "name": "Sticky Note2",
@@ -100,7 +99,7 @@
       "typeVersion": 1,
       "position": [
         1480,
-        486.3847184489423
+        555.0767332761415
       ]
     },
     {
@@ -199,11 +198,11 @@
             },
             {
               "key": "typebot_status",
-              "value": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_status }}"
+              "value": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_status ?? '' }}"
             },
             {
               "key": "typebot_session",
-              "value": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_session }}"
+              "value": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_session ?? ''}}"
             },
             {
               "key": "typebot_bot",
@@ -576,7 +575,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5280,
+        5500,
         940
       ],
       "retryOnFail": true,
@@ -738,8 +737,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2380,
-        820
+        2300,
+        800
       ],
       "id": "1e15cf4a-f49f-4556-8de5-c824016bc570",
       "retryOnFail": true,
@@ -753,7 +752,8 @@
         "jsonParameters": true,
         "options": {},
         "bodyParametersJson": "={{ $json }}",
-        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.utoken}}\"} "
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.utoken}}\"} ",
+        "queryParametersJson": "{}"
       },
       "name": "Update Status For Conversation - continue",
       "type": "n8n-nodes-base.httpRequest",
@@ -844,6 +844,16 @@
                 "operation": "empty",
                 "singleValue": true
               }
+            },
+            {
+              "id": "d30d1488-7c34-4be4-8a85-b4ba56aec500",
+              "leftValue": "={{ $json.input }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -855,7 +865,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5280,
+        5500,
         1180
       ]
     },
@@ -865,7 +875,7 @@
           "values": [
             {
               "key": "typebot_session",
-              "value": "={{ $json.sessionId }}"
+              "value": "={{ $json.sessionId ?? '' }}"
             },
             {
               "key": "typebot_status",
@@ -879,9 +889,10 @@
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        1780,
+        1720,
         920
       ],
+      "alwaysOutputData": true,
       "onError": "continueRegularOutput"
     },
     {
@@ -989,7 +1000,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1600,
+        1540,
         920
       ]
     },
@@ -1000,8 +1011,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2720,
-        620
+        2700,
+        640
       ],
       "notesInFlow": false
     },
@@ -1039,7 +1050,7 @@
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        2200,
+        2120,
         620
       ],
       "credentials": {
@@ -1081,8 +1092,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2200,
-        820
+        2120,
+        800
       ]
     },
     {
@@ -1098,81 +1109,8 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('TYPEBOT').item.json.host }}/api/v1/sessions/{{ $('PAYLOAD').item.json.conversation.custom_attributes.typebot_session }}/continueChat",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/json"
-            },
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $('TYPEBOT').item.json.token }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "message",
-              "value": "={{ $('PAYLOAD').item.json.text || \"null\" }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "f745acbb-4c47-4093-9004-333600a19a4e",
-      "name": "TP-CONTINUE",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2420,
-        1360
-      ],
-      "retryOnFail": true,
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('TYPEBOT').item.json.host }}/api/v1/typebots/{{ $('TYPEBOT').item.json.bot }}/startChat",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $('TYPEBOT').item.json.token }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": \"{{ $('PAYLOAD').item.json.text }}\"\n  },\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"account_id\": {{$('EXTRA').item.json.account}},\n    \"inbox_id\": {{$('EXTRA').item.json.inbox}}    \n  }\n}",
-        "options": {
-          "allowUnauthorizedCerts": true
-        }
-      },
-      "id": "784daa86-76de-429d-b85c-a0a9e2570701",
-      "name": "TP-START",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [
-        1960,
-        920
-      ],
-      "retryOnFail": true,
-      "maxTries": 2,
-      "waitBetweenTries": 3000,
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const payload = $input.item.json;\nconst messages = payload.messages;\nlet idCounter = 1; // Variável para controlar o id\n\nconst msgItem = messages.map((message) => {\n  let contentText = '';\n\n  // Verifica se o tipo de mensagem é \"image\", \"audio\" ou \"video\"\n  if ([\"image\", \"audio\", \"video\"].includes(message.type)) {\n    contentText = message.content.url;\n  } else if (Array.isArray(message.content?.richText)) {\n    for (const richTextItem of message.content.richText) {\n      if (Array.isArray(richTextItem.children)) {\n        for (const child of richTextItem.children) {\n          if (child.type === \"inline-variable\") {\n            if (child.children && Array.isArray(child.children)) {\n              for (const inlineChild of child.children) {\n                if (inlineChild.text) {\n                  contentText += inlineChild.text.trim();\n                }\n              }\n            }\n          } else {\n            if (child.text) {\n              contentText += `${child.text.trim()} `;\n            }\n          }\n          if (child.children && Array.isArray(child.children)) {\n            for (const nestedChild of child.children) {\n              if (nestedChild.text) {\n                contentText += `${nestedChild.text.trim()} `;\n              }\n              if (nestedChild.children && Array.isArray(nestedChild.children)) {\n                for (const nestedNestedChild of nestedChild.children) {\n                  if (nestedNestedChild.text) {\n                    contentText += `${nestedNestedChild.text.trim()} `;\n                  }\n                  if (nestedNestedChild.children && Array.isArray(nestedNestedChild.children)) {\n                    for (const nestedNestedNestedChild of nestedNestedChild.children) {\n                      if (nestedNestedNestedChild.text) {\n                        contentText += `${nestedNestedNestedChild.text.trim()} `;\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      contentText += \"\\n\"; // Adiciona uma quebra de linha após cada parágrafo\n    }\n  }\n\n  // Substitui \"Invalid message. Please, try again.\" por \"ERRO\"\n  if (contentText.trim() === \"Invalid message. Please, try again.\") {\n    contentText = \"Tipo de mensagem inválida!\";\n  }\n\n  // Filtra os itens do tipo 'wait' em clientSideActions\n  const waitActions = payload?.clientSideActions?.filter(action => action.type === 'wait') || [];\n\n  // Define o valor de secondsToWaitFor\n  const secondsToWaitFor = waitActions.length > 1 ? 0 : waitActions[0]?.wait?.secondsToWaitFor ?? null;\n\n  const newItem = {\n    id: idCounter++,\n    type: message.type,\n    content: contentText.trim(),\n    sessionId: payload.sessionId,\n    openchatwoot: payload?.clientSideActions?.some(objeto => objeto.hasOwnProperty('chatwoot')),\n    ...(idCounter === 1 && { secondsToWaitFor: secondsToWaitFor })\n};\n\n  return newItem;\n});\n\nreturn { \"payload\": msgItem };\n"
+        "jsCode": "const payload = $input.item.json;\nconst input = Object.hasOwn(payload, \"input\");\nconst messages = payload.messages;\nlet idCounter = 1; // Variável para controlar o id\n\nconst msgItem = messages.map((message) => {\n  let contentText = '';\n\n  // Verifica se o tipo de mensagem é \"image\", \"audio\" ou \"video\"\n  if ([\"image\", \"audio\", \"video\"].includes(message.type)) {\n    contentText = message.content.url;\n  } else if (Array.isArray(message.content?.richText)) {\n    for (const richTextItem of message.content.richText) {\n      if (Array.isArray(richTextItem.children)) {\n        for (const child of richTextItem.children) {\n          if (child.type === \"inline-variable\") {\n            if (child.children && Array.isArray(child.children)) {\n              for (const inlineChild of child.children) {\n                if (inlineChild.text) {\n                  contentText += inlineChild.text.trim();\n                }\n              }\n            }\n          } else {\n            if (child.text) {\n              contentText += `${child.text.trim()} `;\n            }\n          }\n          if (child.children && Array.isArray(child.children)) {\n            for (const nestedChild of child.children) {\n              if (nestedChild.text) {\n                contentText += `${nestedChild.text.trim()} `;\n              }\n              if (nestedChild.children && Array.isArray(nestedChild.children)) {\n                for (const nestedNestedChild of nestedChild.children) {\n                  if (nestedNestedChild.text) {\n                    contentText += `${nestedNestedChild.text.trim()} `;\n                  }\n                  if (nestedNestedChild.children && Array.isArray(nestedNestedChild.children)) {\n                    for (const nestedNestedNestedChild of nestedNestedChild.children) {\n                      if (nestedNestedNestedChild.text) {\n                        contentText += `${nestedNestedNestedChild.text.trim()} `;\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      contentText += \"\\n\"; // Adiciona uma quebra de linha após cada parágrafo\n    }\n  }\n\n  // Substitui \"Invalid message. Please, try again.\" por \"ERRO\"\n  if (contentText.trim() === \"Invalid message. Please, try again.\") {\n    contentText = \"Tipo de mensagem inválida!\";\n  }\n\n  // Filtra os itens do tipo 'wait' em clientSideActions\n  const waitActions = payload?.clientSideActions?.filter(action => action.type === 'wait') || [];\n\n  // Define o valor de secondsToWaitFor\n  const secondsToWaitFor = waitActions.length > 1 ? 0 : waitActions[0]?.wait?.secondsToWaitFor ?? null;\n\n  const newItem = {\n    id: idCounter++,\n    type: message.type,\n    content: contentText.trim(),\n    sessionId: payload.sessionId,\n    openchatwoot: payload?.clientSideActions?.some(objeto => objeto.hasOwnProperty('chatwoot')),\n    ...(idCounter === 1 && { secondsToWaitFor: secondsToWaitFor })\n};\n\n  return newItem;\n});\n\nreturn { \"input\": input, \"payload\": msgItem };\n"
       },
       "id": "7e25324f-c712-4cd4-ad07-bf08a27c0e94",
       "name": "Make Payload",
@@ -1208,7 +1146,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        5520,
+        5740,
         840
       ],
       "webhookId": "fcd2e4ee-0d8b-43cd-bb26-cc9e1a3e9c13"
@@ -1226,7 +1164,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5280,
+        5500,
         760
       ],
       "retryOnFail": true,
@@ -1265,14 +1203,14 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        6980,
+        6880,
         1040
       ]
     },
     {
       "parameters": {
         "content": "## Loop Multiple Messages Payloads\n",
-        "height": 1036.5206177076086,
+        "height": 1069.4642583983118,
         "width": 2139.324203751877
       },
       "id": "0d6ea017-6970-4a1e-ae97-5da81cc8c9d7",
@@ -1281,7 +1219,7 @@
       "typeVersion": 1,
       "position": [
         4580,
-        420
+        387.0563593092968
       ]
     },
     {
@@ -1325,7 +1263,7 @@
         "allowUnauthorizedCerts": true,
         "jsonParameters": true,
         "options": {},
-        "bodyParametersJson": "={\"status\": \"open\"}",
+        "bodyParametersJson": "{\"status\": \"open\"}",
         "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"}",
         "queryParametersJson": "{}"
       },
@@ -1337,6 +1275,92 @@
         1160
       ],
       "id": "7d191570-4ba7-4d46-852c-7b48693a9b05"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "b5d93733-9fd0-4cb3-bd0f-594202553daa",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2520,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('TYPEBOT').item.json.host }}/api/v1/typebots/{{ $('TYPEBOT').item.json.bot }}/startChat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('TYPEBOT').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($('PAYLOAD').item.json.text) }}\n  },\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"account_id\": {{$('EXTRA').item.json.account}},\n    \"inbox_id\": {{$('EXTRA').item.json.inbox}}    \n  }\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "784daa86-76de-429d-b85c-a0a9e2570701",
+      "name": "TB-START",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1900,
+        920
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('TYPEBOT').item.json.host }}/api/v1/sessions/{{ $('PAYLOAD').item.json.conversation.custom_attributes.typebot_session }}/continueChat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('TYPEBOT').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('PAYLOAD').item.json.text || \"null\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f745acbb-4c47-4093-9004-333600a19a4e",
+      "name": "TB-CONTINUE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        1360
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -1400,8 +1424,124 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        4993,
+        5000,
         860
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{ $('PAYLOAD').item.json.conversation.id }}/toggle_status ",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"status\": \"resolved\"}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"}",
+        "queryParametersJson": "{}"
+      },
+      "name": "Resolve Conversation in Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        6120,
+        440
+      ],
+      "id": "49633b10-d898-4600-a062-9ac11c45370a"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/resolve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "resolve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dfb8fca6-f6eb-49a5-9922-528db0c0544e",
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/open",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "open"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "cf563f26-64d4-4756-a000-a3754dddec11",
+      "name": "Switch Text Answer",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        5220,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "terminate",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e4916591-db5e-46c4-bfd7-473df504fbbf",
+      "name": "Set Terminate Status Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6460,
+        440
       ]
     }
   ],
@@ -1682,7 +1822,7 @@
         ],
         [
           {
-            "node": "TP-CONTINUE",
+            "node": "TB-CONTINUE",
             "type": "main",
             "index": 0
           }
@@ -1704,7 +1844,7 @@
       "main": [
         [
           {
-            "node": "TP-CONTINUE",
+            "node": "TB-CONTINUE",
             "type": "main",
             "index": 0
           }
@@ -1853,7 +1993,7 @@
       "main": [
         [
           {
-            "node": "Start Session - OUT",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
@@ -1864,7 +2004,7 @@
       "main": [
         [
           {
-            "node": "TP-START",
+            "node": "TB-START",
             "type": "main",
             "index": 0
           }
@@ -1887,47 +2027,6 @@
         [
           {
             "node": "Make Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "TP-CONTINUE": {
-      "main": [
-        [
-          {
-            "node": "Continue Session - OUT",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Set Continue Error Parameters",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "TP-START": {
-      "main": [
-        [
-          {
-            "node": "Set Debouce Started Key",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Set Start Status Parameters",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Set Start Error Parameters",
             "type": "main",
             "index": 0
           }
@@ -2000,11 +2099,74 @@
         ]
       ]
     },
+    "Update Status For Conversation - start": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Start Session - OUT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TB-START": {
+      "main": [
+        [
+          {
+            "node": "Set Start Status Parameters",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Debouce Started Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Start Error Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TB-CONTINUE": {
+      "main": [
+        [
+          {
+            "node": "Continue Session - OUT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Continue Error Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Switch": {
       "main": [
         [
           {
-            "node": "Quepasa Send Text",
+            "node": "Switch Text Answer",
             "type": "main",
             "index": 0
           }
@@ -2024,6 +2186,58 @@
           }
         ]
       ]
+    },
+    "Resolve Conversation in Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Set Terminate Status Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Text Answer": {
+      "main": [
+        [
+          {
+            "node": "Resolve Conversation in Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Conversation Is Not Openned",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Terminate Status Parameters": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -2032,7 +2246,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
-  "versionId": "6ccd3755-2c4c-400c-b356-1f16f987d8d1",
+  "versionId": "f146c375-6500-4364-9858-13b9be3e0c90",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

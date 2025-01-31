@@ -139,7 +139,14 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 	out.Type = whatsapp.TextMessageType
 
 	out.Text = in.GetText()
-	out.Url = in.GetCanonicalURL()
+	out.Url = in.GetMatchedText()
+	if len(in.JPEGThumbnail) > 0 {
+		out.Thumbnail = base64.StdEncoding.EncodeToString(in.JPEGThumbnail)
+	}
+
+	// missing placeholder
+	in.GetDescription() // link description
+	in.GetTitle()       // link title
 
 	info := in.GetContextInfo()
 	if info != nil {

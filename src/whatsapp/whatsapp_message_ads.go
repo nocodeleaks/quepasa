@@ -50,7 +50,9 @@ type WhatsappMessageAds struct {
 	Title     string `json:"title"`
 	SourceId  string `json:"sourceid,omitempty"`
 	SourceUrl string `json:"sourceurl,omitempty"`
-	Thumbnail string `json:"thumbnail,omitempty"` // base64 thumbnail
 	App       string `json:"app,omitempty"`
 	Type      string `json:"type,omitempty"`
+
+	// small image representing something in this message, MIME: image/jpeg
+	Thumbnail *WhatsappMessageThumbnail `json:"thumbnail,omitempty"`
 }

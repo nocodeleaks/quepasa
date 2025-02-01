@@ -139,14 +139,20 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 	out.Type = whatsapp.TextMessageType
 
 	out.Text = in.GetText()
-	out.Url = in.GetMatchedText()
-	if len(in.JPEGThumbnail) > 0 {
-		out.Thumbnail = base64.StdEncoding.EncodeToString(in.JPEGThumbnail)
+
+	matchedText := in.GetMatchedText()
+	if len(matchedText) > 0 {
+		out.Url = &whatsapp.WhatsappMessageUrl{
+			Reference:   matchedText,
+			Title:       in.GetTitle(),
+			Description: in.GetDescription(),
+		}
 	}
 
-	// missing placeholder
-	in.GetDescription() // link description
-	in.GetTitle()       // link title
+	thumbnail := in.GetJPEGThumbnail()
+	if len(thumbnail) > 0 {
+		out.Thumbnail = whatsapp.NewWhatsappMessageThumbnail(thumbnail)
+	}
 
 	info := in.GetContextInfo()
 	if info != nil {
@@ -162,10 +168,15 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 			Title:     adreply.GetTitle(),
 			SourceId:  adreply.GetSourceID(),
 			SourceUrl: adreply.GetSourceURL(),
-			Thumbnail: string(adreply.GetThumbnail()),
 			App:       adreply.GetSourceApp(),
 			Type:      adreply.GetSourceType(),
 		}
+
+		thumbnail := adreply.GetThumbnail()
+		if len(thumbnail) > 0 {
+			ads.Thumbnail = whatsapp.NewWhatsappMessageThumbnail(thumbnail)
+		}
+
 		out.Ads = ads
 	}
 }

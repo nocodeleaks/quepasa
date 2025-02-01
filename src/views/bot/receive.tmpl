@@ -6,18 +6,37 @@
     </div>
   {{ end }}
 
-  <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
-  {{ range .Messages }}
-    <pre id="msg-{{ .Id }}">
-      On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}  
-      Type: {{ .Type }} => Chat:  {{ .Chat }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
-      Participant:  {{ .Participant }}{{ end }}{{ if .TrackId }}
-      TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
-      InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .HasUrl }}
-      Url: <a href="{{ .Url }}">{{ .Url }}</a>{{ end }}{{ if .Text }}
-      Text: {{ .Text }}{{ end }}
-    </pre>
-    <br />
-  {{ end }}
-  <a style="padding: 2rem;" href="/form/account">Back</a>
+  <div class="container is-fluid container-receive">
+    <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
+    <div class="messages">
+      {{ range .Messages }}
+      <div class="message">
+        <pre id="msg-{{ .Id }}">
+          On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}  
+          Type: {{ .Type }} => Chat:  {{ .Chat }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
+          Participant:  {{ .Participant }}{{ end }}{{ if .TrackId }}
+          TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
+          InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .Text }}
+          Text: {{ .Text }}{{ end }}
+        </pre>
+        {{ if .Url }}
+          <div title="Url" class="url">
+            <div class="header">Url</div>
+            <div class="title">Title: <span>{{ .Url.Title }}</span></div>
+            <div class="description">Description: <span>{{ .Url.Description }}</span></div>
+            <div class="reference">Reference: <a href="{{ .Url.Reference }}">{{ .Url.Reference }}</a></div>
+          </div>
+        {{ end }}
+        {{ if .Thumbnail }}
+          <div title="Thumbnail" class="thumbnail">
+            <div class="header">Thumbnail</div>
+            <img src="{{ .Thumbnail.GetThumbnailAsUrl|safeURL }}" />
+          </div>
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+    <a style="padding: 2rem;" href="/form/account">Back</a>
+  </div>
+  <link href="/assets/css/container-receive.css" rel="stylesheet">
 {{ end }}

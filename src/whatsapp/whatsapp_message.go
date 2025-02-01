@@ -28,11 +28,6 @@ type WhatsappMessage struct {
 	// Message text if exists
 	Text string `json:"text,omitempty"`
 
-	/*
-		// Text message mentions
-		Mentions []string `json:"mentions,omitempty"`
-	*/
-
 	Attachment *WhatsappAttachment `json:"attachment,omitempty"`
 
 	// Do i send that ?
@@ -61,10 +56,10 @@ type WhatsappMessage struct {
 	Status WhatsappMessageStatus `json:"status,omitempty"`
 
 	// Url if exists
-	Url string `json:"url,omitempty"`
+	Url *WhatsappMessageUrl `json:"url,omitempty"`
 
-	// Small image representing something in this message
-	Thumbnail string `json:"thumbnail,omitempty"`
+	// small image representing something in this message, MIME: image/jpeg
+	Thumbnail *WhatsappMessageThumbnail `json:"thumbnail,omitempty"`
 
 	Ads *WhatsappMessageAds `json:"ads,omitempty"`
 
@@ -124,7 +119,7 @@ func (source *WhatsappMessage) HasStatus() bool {
 // Indicates if the message has url information
 // *Trick to help in Views
 func (source *WhatsappMessage) HasUrl() bool {
-	return source != nil && len(source.Url) > 0
+	return source != nil && source.Url != nil && len(source.Url.Reference) > 0
 }
 
 func (source *WhatsappMessage) HasAttachment() bool {

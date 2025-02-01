@@ -9,6 +9,12 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
+var funcMap = template.FuncMap{"safeURL": SafeURL}
+
+func SafeURL(url string) template.URL {
+	return template.URL(url)
+}
+
 // FormReceiveController renders route GET "/form/server/{token}/receive"
 func FormReceiveController(w http.ResponseWriter, r *http.Request) {
 	data := models.QPFormReceiveData{PageTitle: "Receive", FormAccountEndpoint: FormAccountEndpoint}
@@ -38,8 +44,13 @@ func FormReceiveController(w http.ResponseWriter, r *http.Request) {
 		data.Messages = messages
 	}
 
-	templates := template.Must(template.ParseFiles(
+	templates := template.New("receive")
+	templates = templates.Funcs(funcMap)
+	templates, err = templates.ParseFiles(
 		"views/layouts/main.tmpl",
-		"views/bot/receive.tmpl"))
+		"views/bot/receive.tmpl")
+	if err != nil {
+		data.ErrorMessage = err.Error()
+	}
 	templates.ExecuteTemplate(w, "main", data)
 }

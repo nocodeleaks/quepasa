@@ -1,0 +1,13 @@
+.container-receive{}
+
+.container-receive .messages .message{
+    border-style: dashed;
+    /* border-radius: 2rem; */
+    border-width: 1px;
+    border-color: #ccc;
+}
+
+.container-receive .messages .message:not(:last-child){
+   
+    margin-bottom: 1rem;
+}

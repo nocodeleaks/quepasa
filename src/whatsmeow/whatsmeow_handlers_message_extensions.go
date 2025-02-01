@@ -147,11 +147,11 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 			Title:       in.GetTitle(),
 			Description: in.GetDescription(),
 		}
-	}
 
-	thumbnail := in.GetJPEGThumbnail()
-	if len(thumbnail) > 0 {
-		out.Thumbnail = whatsapp.NewWhatsappMessageThumbnail(thumbnail)
+		thumbnail := in.GetJPEGThumbnail()
+		if len(thumbnail) > 0 {
+			out.Url.Thumbnail = whatsapp.NewWhatsappMessageThumbnail(thumbnail)
+		}
 	}
 
 	info := in.GetContextInfo()

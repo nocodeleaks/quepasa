@@ -25,12 +25,13 @@
             <div class="title">Title: <span>{{ .Url.Title }}</span></div>
             <div class="description">Description: <span>{{ .Url.Description }}</span></div>
             <div class="reference">Reference: <a href="{{ .Url.Reference }}">{{ .Url.Reference }}</a></div>
-          </div>
-        {{ end }}
-        {{ if .Thumbnail }}
-          <div title="Thumbnail" class="thumbnail">
-            <div class="header">Thumbnail</div>
-            <img src="{{ .Thumbnail.GetThumbnailAsUrl|safeURL }}" />
+
+            {{ if .Url.Thumbnail }}
+            <div title="Url Thumbnail" class="url-thumbnail">
+              <div class="header">Url Thumbnail</div>
+              <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" />
+            </div>
+          {{ end }}
           </div>
         {{ end }}
       </div>

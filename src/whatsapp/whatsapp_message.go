@@ -58,9 +58,6 @@ type WhatsappMessage struct {
 	// Url if exists
 	Url *WhatsappMessageUrl `json:"url,omitempty"`
 
-	// small image representing something in this message, MIME: image/jpeg
-	Thumbnail *WhatsappMessageThumbnail `json:"thumbnail,omitempty"`
-
 	Ads *WhatsappMessageAds `json:"ads,omitempty"`
 
 	// Extra information for custom messages

@@ -1,10 +1,10 @@
 #!/bin/sh
 ####################################
-##		SUFFICIT SHELL SCRIPT
-##		All Rights Reserved (2025) SUFFICIT SOLUCOES EM TECNOLOGIA DA INFORMACAO.
-##		This script will help you to migrate from SQLite to Postgres the whatsmeow database
-##		Version 1.0.1
-##		Usage: migrate.sh {postgres_user} {postgres_db} {postgres_password}   
+##	SUFFICIT SHELL SCRIPT
+##	All Rights Reserved (2025) SUFFICIT SOLUCOES EM TECNOLOGIA DA INFORMACAO.
+##	This script will help you to migrate from SQLite to Postgres the whatsmeow database
+##	Version 1.0.1
+##	Usage: migrate.sh {postgres_user} {postgres_db} {postgres_password}   
 ####################################
 
 set -e

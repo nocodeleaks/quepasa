@@ -1,10 +1,10 @@
 #!/bin/sh
 ####################################
-##  SUFFICIT SHELL SCRIPT
-##  All Rights Reserved (2025) SUFFICIT SOLUCOES EM TECNOLOGIA DA INFORMACAO.
-##  This script will help you to migrate from SQLite to Postgres the whatsmeow database
-##  Version 1.0.1
-##  Usage: migrate.sh {postgres_user} {postgres_db} {postgres_password}   
+##			SUFFICIT SHELL SCRIPT
+##			All Rights Reserved (2025) SUFFICIT SOLUCOES EM TECNOLOGIA DA INFORMACAO.
+##			This script will help you to migrate from SQLite to Postgres the whatsmeow database
+##			Version 1.0.1
+##			Usage: migrate.sh {postgres_user} {postgres_db} {postgres_password}   
 ####################################
 
 set -e
@@ -53,6 +53,7 @@ echo "Prepending truncation commands to the dump file..."
 echo "${TRUNCATETEXT}$(cat ${DUMPFILE})" > ${DUMPFILE}
 echo "Truncation commands prepended."
 
+#echo "SET session_replication_role TO 'replica';\n$(cat ${DUMPFILE})" > ${DUMPFILE}
 echo "Setting constraints to DEFERRED..."
 echo "SET CONSTRAINTS ALL DEFERRED;\n$(cat ${DUMPFILE})" > ${DUMPFILE}
 echo "Constraints set to DEFERRED."

@@ -6,7 +6,7 @@ import (
 )
 
 // quepasa build version, if ends with .0 means stable versions.
-const QpVersion = "3.25.201.1349"
+const QpVersion = "3.25.206.1112"
 
 const QpLogLevel = log.InfoLevel
 

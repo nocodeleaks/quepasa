@@ -1,7 +1,6 @@
 package whatsmeow
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -220,12 +219,15 @@ func HandleImageMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *
 	// in case of caption passed
 	out.Text = in.GetCaption()
 
-	jpeg := GetStringFromBytes(in.JPEGThumbnail)
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload:   true,
-		Mimetype:      in.GetMimetype(),
-		FileLength:    in.GetFileLength(),
-		JpegThumbnail: jpeg,
+		CanDownload: true,
+		Mimetype:    in.GetMimetype(),
+		FileLength:  in.GetFileLength(),
+	}
+
+	if len(in.JPEGThumbnail) > 0 {
+		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
+		out.Attachment.Thumbnail = thumbnail
 	}
 
 	info := in.GetContextInfo()
@@ -244,13 +246,15 @@ func HandleStickerMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 		out.Type = whatsapp.ImageMessageType
 	}
 
-	jpeg := GetStringFromBytes(in.PngThumbnail)
 	out.Attachment = &whatsapp.WhatsappAttachment{
 		CanDownload: true,
 		Mimetype:    in.GetMimetype(),
 		FileLength:  in.GetFileLength(),
+	}
 
-		JpegThumbnail: jpeg,
+	if len(in.PngThumbnail) > 0 {
+		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.PngThumbnail)
+		out.Attachment.Thumbnail = thumbnail
 	}
 }
 
@@ -261,13 +265,15 @@ func HandleVideoMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E
 	// in case of caption passed
 	out.Text = in.GetCaption()
 
-	jpeg := base64.StdEncoding.EncodeToString(in.JPEGThumbnail)
 	out.Attachment = &whatsapp.WhatsappAttachment{
 		CanDownload: true,
 		Mimetype:    in.GetMimetype(),
 		FileLength:  in.GetFileLength(),
+	}
 
-		JpegThumbnail: jpeg,
+	if len(in.JPEGThumbnail) > 0 {
+		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
+		out.Attachment.Thumbnail = thumbnail
 	}
 
 	info := in.ContextInfo
@@ -284,14 +290,16 @@ func HandleDocumentMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 	// in case of caption passed
 	out.Text = in.GetCaption()
 
-	jpeg := base64.StdEncoding.EncodeToString(in.JPEGThumbnail)
 	out.Attachment = &whatsapp.WhatsappAttachment{
 		CanDownload: true,
 		Mimetype:    in.GetMimetype(),
 		FileLength:  in.GetFileLength(),
+		FileName:    in.GetFileName(),
+	}
 
-		FileName:      in.GetFileName(),
-		JpegThumbnail: jpeg,
+	if len(in.JPEGThumbnail) > 0 {
+		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
+		out.Attachment.Thumbnail = thumbnail
 	}
 
 	info := in.ContextInfo
@@ -334,17 +342,20 @@ func HandleLocationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 
 	content := []byte("[InternetShortcut]\nURL=" + defaultUrl)
 	length := uint64(len(content))
-	jpeg := base64.StdEncoding.EncodeToString(in.JPEGThumbnail)
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload:   false,
-		Mimetype:      "text/x-uri; location",
-		Latitude:      in.GetDegreesLatitude(),
-		Longitude:     in.GetDegreesLongitude(),
-		JpegThumbnail: jpeg,
-		Url:           defaultUrl,
-		FileName:      filename,
-		FileLength:    length,
+		CanDownload: false,
+		Mimetype:    "text/x-uri; location",
+		Latitude:    in.GetDegreesLatitude(),
+		Longitude:   in.GetDegreesLongitude(),
+		Url:         defaultUrl,
+		FileName:    filename,
+		FileLength:  length,
+	}
+
+	if len(in.JPEGThumbnail) > 0 {
+		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
+		out.Attachment.Thumbnail = thumbnail
 	}
 
 	out.Attachment.SetContent(&content)
@@ -371,18 +382,21 @@ func HandleLiveLocationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in
 
 	content := []byte("[InternetShortcut]\nURL=" + defaultUrl)
 	length := uint64(len(content))
-	jpeg := base64.StdEncoding.EncodeToString(in.JPEGThumbnail)
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload:   false,
-		Mimetype:      "text/x-uri; live location",
-		Latitude:      in.GetDegreesLatitude(),
-		Longitude:     in.GetDegreesLongitude(),
-		Sequence:      in.GetSequenceNumber(),
-		JpegThumbnail: jpeg,
-		Url:           defaultUrl,
-		FileName:      filename,
-		FileLength:    length,
+		CanDownload: false,
+		Mimetype:    "text/x-uri; live location",
+		Latitude:    in.GetDegreesLatitude(),
+		Longitude:   in.GetDegreesLongitude(),
+		Sequence:    in.GetSequenceNumber(),
+		Url:         defaultUrl,
+		FileName:    filename,
+		FileLength:  length,
+	}
+
+	if len(in.JPEGThumbnail) > 0 {
+		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
+		out.Attachment.Thumbnail = thumbnail
 	}
 
 	out.Attachment.SetContent(&content)

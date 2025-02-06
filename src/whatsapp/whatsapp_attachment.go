@@ -18,8 +18,8 @@ type WhatsappAttachment struct {
 	// document
 	FileName string `json:"filename,omitempty"`
 
-	// video | image | location (base64 image)
-	JpegThumbnail string `json:"thumbnail,omitempty"`
+	// small image representing something in this message, MIME: image/jpeg
+	Thumbnail *WhatsappMessageThumbnail `json:"thumbnail,omitempty"`
 
 	// audio/video
 	Seconds uint32 `json:"seconds,omitempty"`

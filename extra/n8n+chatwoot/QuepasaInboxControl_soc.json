@@ -358,6 +358,21 @@
         2260,
         300
       ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.1) Updates\n* workflow execution permissions\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "height": 187.60409024797292,
+        "width": 489.8474320052134
+      },
+      "id": "a38ca680-8e7e-47f4-8a70-59574f7c0731",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        214.95495495495493
+      ]
     }
   ],
   "pinData": {},
@@ -547,9 +562,11 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "any",
+    "executionTimeout": 10
   },
-  "versionId": "5df13ad8-d73a-4bcd-a7df-eb50d8f431e6",
+  "versionId": "dba41603-fa6a-4cfb-886b-5101970818cc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

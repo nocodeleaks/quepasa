@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.2) Updates\n* resolving and open by text comands\n",
+        "content": "## (1.0.3) Updates\n* allow calling by others\n",
         "height": 175.906164153499,
         "width": 398.976541038375
       },
@@ -2243,10 +2243,10 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner",
+    "callerPolicy": "any",
     "executionTimeout": 30
   },
-  "versionId": "f146c375-6500-4364-9858-13b9be3e0c90",
+  "versionId": "1b7537c6-855c-4c62-bc80-5bf324386a17",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

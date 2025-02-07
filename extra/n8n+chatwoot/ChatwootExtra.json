@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.4) Updates\n* default envrionment variables\n",
+        "content": "## (1.0.5) Updates\n* allow calling by others\n",
         "height": 139.75900985723197,
         "width": 505.65878958512553
       },
@@ -739,10 +739,11 @@
   "active": false,
   "settings": {
     "saveManualExecutions": false,
-    "callerPolicy": "workflowsFromSameOwner",
-    "executionTimeout": 60
+    "callerPolicy": "any",
+    "executionTimeout": 60,
+    "executionOrder": "v0"
   },
-  "versionId": "a5e8631a-43cc-411e-9c07-f64f00a165c2",
+  "versionId": "1a11a58e-a969-462d-bd05-57d401a9092e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

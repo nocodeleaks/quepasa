@@ -148,7 +148,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2620,
+        2840,
         1360
       ]
     },
@@ -183,7 +183,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.21) Updates\n* update quepasa node\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "content": "## (1.0.22) Updates\n* thumbnail for localization\n\n## Recommendations \n* Remember set timeout to 10 seconds",
         "height": 262.55904520292785,
         "width": 489.8474320052134
       },
@@ -287,7 +287,7 @@
       "parameters": {
         "mode": "jsonToBinary",
         "convertAllData": false,
-        "sourceKey": "attachment.thumbnail",
+        "sourceKey": "attachment.thumbnail.data",
         "options": {
           "dataIsBase64": true,
           "fileName": "={{ $json.attachment.filename }}",
@@ -1873,7 +1873,7 @@
     "executionTimeout": 10,
     "executionOrder": "v1"
   },
-  "versionId": "9697586e-5a95-49a4-86d7-9572f8ac3bc5",
+  "versionId": "0c3dd1f3-ad31-4485-af99-8fcb2745f1f8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

@@ -646,9 +646,11 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "any",
+    "executionTimeout": -1
   },
-  "versionId": "36eb2b98-b3fc-4b40-ac1c-0b5c1be0606a",
+  "versionId": "b14b923f-6e78-42e7-aa0f-8ce9de369498",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

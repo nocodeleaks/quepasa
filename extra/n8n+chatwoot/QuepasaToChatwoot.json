@@ -17,7 +17,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        6420,
+        6560,
         -340
       ],
       "id": "72697f1d-f457-4d47-9248-3b8923722028"
@@ -34,7 +34,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        6620,
+        6760,
         -220
       ]
     },
@@ -259,7 +259,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.23) Updates\n* typebot workflow\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "content": "## (1.0.24) Updates\n* cwhost extra parameter\n\n## Recommendations \n* Remember set timeout to 30 seconds",
         "height": 184.64873580281272,
         "width": 569.6036185132486
       },
@@ -268,7 +268,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        5120,
+        5100,
         -700
       ]
     },
@@ -652,64 +652,6 @@
       ]
     },
     {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "extra.cwhost",
-              "value": "={{ $json.extra.cwhost ?? \"http://127.0.0.1:3000\" }}"
-            },
-            {
-              "name": "params",
-              "value": "={{undefined}}"
-            },
-            {
-              "name": "headers",
-              "value": "={{undefined}}"
-            },
-            {
-              "name": "query",
-              "value": "={{undefined}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "32b3f039-dd25-4073-86d4-bf1a101fa173",
-      "name": "Defaults",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [
-        6780,
-        -360
-      ]
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "extra",
-              "value": "={{ $json.extra ?? $json.body.extra }}"
-            },
-            {
-              "name": "body.extra",
-              "value": "={{ undefined }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "6212abc7-c4d2-4538-8e4f-7be0b6791b39",
-      "name": "Extra",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [
-        6620,
-        -360
-      ]
-    },
-    {
       "parameters": {},
       "id": "afe9aa55-b0f3-4dbe-965a-33b3ee0f23e5",
       "name": "No Operation, do nothing",
@@ -787,7 +729,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        5560,
+        5540,
         -360
       ],
       "webhookId": "f0d0e1da-e8cf-4956-8715-dccf5fe3c892"
@@ -804,7 +746,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        6420,
+        6560,
         -520
       ]
     },
@@ -847,7 +789,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        6240,
+        6380,
         -360
       ]
     },
@@ -936,7 +878,7 @@
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        5840,
+        5820,
         -620
       ],
       "alwaysOutputData": false,
@@ -953,7 +895,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        5700,
+        5680,
         -700
       ]
     },
@@ -1112,7 +1054,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5840,
+        6000,
         -360
       ]
     },
@@ -1127,7 +1069,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6040,
+        6180,
         -360
       ]
     },
@@ -1161,7 +1103,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5840,
+        5820,
         -140
       ]
     },
@@ -1175,7 +1117,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        6040,
+        6020,
         -160
       ],
       "continueOnFail": true
@@ -1212,6 +1154,64 @@
         8460,
         -620
       ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "body.extra.cwhost",
+              "value": "={{ $json.body.extra.cwhost ?? $env[\"C8Q_CW_HOST\"] ?? \"http://127.0.0.1:3000\" }}"
+            },
+            {
+              "name": "params",
+              "value": "={{undefined}}"
+            },
+            {
+              "name": "headers",
+              "value": "={{undefined}}"
+            },
+            {
+              "name": "query",
+              "value": "={{undefined}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c537733-03fb-4981-911c-ffe3f2a84e83",
+      "name": "Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        5820,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "extra",
+              "value": "={{ $('EXTRA').item.json }}"
+            },
+            {
+              "name": "body.extra",
+              "value": "={{ undefined }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6212abc7-c4d2-4538-8e4f-7be0b6791b39",
+      "name": "Extra For Compatibility",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6760,
+        -360
+      ]
     }
   ],
   "pinData": {},
@@ -1220,7 +1220,7 @@
       "main": [
         [
           {
-            "node": "Extra",
+            "node": "Extra For Compatibility",
             "type": "main",
             "index": 0
           }
@@ -1529,28 +1529,6 @@
         ]
       ]
     },
-    "Defaults": {
-      "main": [
-        [
-          {
-            "node": "If Not Revoked ?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extra": {
-      "main": [
-        [
-          {
-            "node": "Defaults",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Throw To WebCallBack Telephony Workflow": {
       "main": [
         [
@@ -1627,12 +1605,12 @@
             "index": 0
           },
           {
-            "node": "EXTRA",
+            "node": "From History ?",
             "type": "main",
             "index": 0
           },
           {
-            "node": "From History ?",
+            "node": "Defaults",
             "type": "main",
             "index": 0
           }
@@ -1767,6 +1745,28 @@
           }
         ]
       ]
+    },
+    "Defaults": {
+      "main": [
+        [
+          {
+            "node": "EXTRA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extra For Compatibility": {
+      "main": [
+        [
+          {
+            "node": "If Not Revoked ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1776,7 +1776,7 @@
     "executionTimeout": 30,
     "executionOrder": "v1"
   },
-  "versionId": "2ebd6b25-265b-475d-89e6-f2f795520c87",
+  "versionId": "ecc6ab48-1b4f-47a5-9fcd-75e77788af13",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

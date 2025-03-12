@@ -106,6 +106,9 @@ func RegisterAPIControllers(r chi.Router) {
 		// IT WAS DEVELOPED IN A MOMENT OF WEAKNESS
 		// DONT BE THAT GUY !
 		r.Post(endpoint+"/spam", Spam)
+
+		// GROUPS CONTROLLER
+		r.Get(endpoint+"/groups", GroupsController)
 	}
 }
 

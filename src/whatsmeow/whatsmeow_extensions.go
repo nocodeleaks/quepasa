@@ -2,8 +2,6 @@ package whatsmeow
 
 import (
 	"encoding/base64"
-	"regexp"
-	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -160,76 +158,6 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) string {
 	}
 
 	return ""
-}
-
-var BUTTONSMSGREGEX regexp.Regexp = *regexp.MustCompile(`(?i)(?P<content>.*)\s?[\$#]buttons:\[(?P<buttons>.*)\]\s?(?P<footer>.*)`)
-var BUTTONSREGEXCONTENTINDEX int = BUTTONSMSGREGEX.SubexpIndex("content")
-var BUTTONSREGEXFOOTERINDEX int = BUTTONSMSGREGEX.SubexpIndex("footer")
-var BUTTONSREGEXBUTTONSINDEX int = BUTTONSMSGREGEX.SubexpIndex("buttons")
-
-var RegexButton regexp.Regexp = *regexp.MustCompile(`\((?P<value>.*)\)(?P<display>.*)`)
-var RegexButtonValue int = RegexButton.SubexpIndex("value")
-var RegexButtonDisplay int = RegexButton.SubexpIndex("display")
-
-func GenerateButtonsMessage(messageText string) *waE2E.ButtonsMessage {
-	var contentText *string
-	var footerText *string
-
-	// button list
-	var buttons []*waE2E.ButtonsMessage_Button
-
-	matches := BUTTONSMSGREGEX.FindStringSubmatch(messageText)
-	contentMatched := matches[BUTTONSREGEXCONTENTINDEX]
-	if len(contentMatched) > 0 {
-		contentText = proto.String(contentMatched)
-	}
-
-	footerMatched := matches[BUTTONSREGEXFOOTERINDEX]
-	if len(footerMatched) > 0 {
-		footerText = proto.String(footerMatched)
-	}
-
-	buttonsText := matches[BUTTONSREGEXBUTTONSINDEX]
-	buttonsSplited := strings.Split(buttonsText, ",")
-	for _, s := range buttonsSplited {
-		normalized := strings.TrimSpace(s)
-
-		buttonText := &waE2E.ButtonsMessage_Button_ButtonText{}
-		buttonText.DisplayText = proto.String(normalized)
-		buttonId := buttonText.DisplayText
-
-		matchesButton := RegexButton.FindStringSubmatch(normalized)
-		if len(matchesButton) > 0 {
-			buttonValueMatched := matchesButton[RegexButtonValue]
-			if len(buttonValueMatched) > 0 {
-				buttonId = &buttonValueMatched
-			}
-
-			buttonDisplayMatched := matchesButton[RegexButtonDisplay]
-			if len(buttonDisplayMatched) > 0 {
-				buttonText.DisplayText = &buttonDisplayMatched
-			}
-		}
-
-		buttonType := waE2E.ButtonsMessage_Button_RESPONSE.Enum()
-		buttons = append(buttons, &waE2E.ButtonsMessage_Button{ButtonText: buttonText, ButtonID: buttonId, Type: buttonType})
-	}
-
-	headerType := waE2E.ButtonsMessage_EMPTY.Enum()
-	return &waE2E.ButtonsMessage{HeaderType: headerType, ContentText: contentText, Buttons: buttons, FooterText: footerText}
-}
-
-func IsValidForButtons(text string) bool {
-	lowerText := strings.ToLower(text)
-	if strings.Contains(lowerText, "buttons:") {
-		matches := BUTTONSMSGREGEX.FindStringSubmatch(text)
-		if len(matches) > 0 {
-			if len(strings.TrimSpace(matches[0])) > 0 {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 /*

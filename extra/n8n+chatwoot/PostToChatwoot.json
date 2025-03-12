@@ -55,8 +55,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -1200,
-        700
+        -980,
+        720
       ],
       "continueOnFail": true
     },
@@ -67,7 +67,7 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -3300,
+        -3620,
         760
       ]
     },
@@ -102,19 +102,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -1020,
+        -540,
         780
-      ]
-    },
-    {
-      "parameters": {},
-      "id": "6f7ebcfb-46ec-42ab-bfda-708cb461b35d",
-      "name": "(In) Attachment",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        -1400,
-        800
       ]
     },
     {
@@ -133,7 +122,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -840,
+        -360,
         780
       ]
     },
@@ -183,7 +172,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.22) Updates\n* thumbnail for localization\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "content": "## (1.0.23) Updates\n* ads\n\n## Recommendations \n* Remember set timeout to 10 seconds",
         "height": 262.55904520292785,
         "width": 489.8474320052134
       },
@@ -406,7 +395,8 @@
         "jsonParameters": true,
         "options": {},
         "bodyParametersJson": "={{$json.payload}}",
-        "headerParametersJson": "={ \"api_access_token\": \"{{$json.extra.atoken}}\" }"
+        "headerParametersJson": "={ \"api_access_token\": \"{{$json.extra.atoken}}\" }",
+        "queryParametersJson": "{}"
       },
       "name": "Post Incoming Message Without Attachment",
       "type": "n8n-nodes-base.httpRequest",
@@ -441,7 +431,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        0,
+        440,
         1060
       ]
     },
@@ -690,7 +680,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -200,
+        240,
         960
       ],
       "retryOnFail": true,
@@ -703,7 +693,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        0,
+        440,
         880
       ]
     },
@@ -868,7 +858,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -460,
+        20,
         800
       ]
     },
@@ -899,7 +889,7 @@
           "string": [
             {
               "name": "payload.content",
-              "value": "={{ $env['C8Q_MSGFOR_ATTACHERROR_CONTENT'] ?? '** Falha ao baixar anexo !' }}\n\n-------------------------------------\nfilename: {{ $json[\"attachment\"][\"filename\"] }}\nerror: {{ $json.error }}"
+              "value": "={{ $env['C8Q_MSGFOR_ATTACHERROR_CONTENT'] ?? '** Falha ao baixar anexo !' }}\n\n-------------------------------------\nmessage id: {{ $('PAYLOAD').item.json.payload.content_attributes?.items?.quepasa?.msgid ?? $('PAYLOAD').item.json.payload.echo_id }}\nfilename: {{ $json[\"attachment\"][\"filename\"] ?? \"unknown\" }}\nerror: {{ $json.error }}"
             }
           ]
         },
@@ -910,7 +900,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -640,
+        -160,
         700
       ]
     },
@@ -1145,6 +1135,100 @@
         1440,
         1060
       ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.extra }}",
+        "options": {}
+      },
+      "id": "dc6e9d44-c65d-405c-9bfa-2cda7cc7f0d3",
+      "name": "EXTRA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3460,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $('When Called By Another Workflow').item.json }}",
+        "options": {}
+      },
+      "id": "5ee14136-6fd5-4de0-a7b8-4754f905dd76",
+      "name": "PAYLOAD",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3300,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "efb2f26e-8d25-4e23-a8e1-8101eee24685",
+              "leftValue": "={{$json.attachment.data}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a0f53538-2434-4d6a-9509-4da2d6932ae5",
+      "name": "If Has BASE64 Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1240,
+        700
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "afc84170-95f4-4da7-b7b5-d4456c2bfda2",
+      "name": "(In) Attachment",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1400,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "attachment.data",
+        "options": {
+          "fileName": "=ads-{{ $json.payload.source_id }}.jpeg",
+          "mimeType": "image/jpeg"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -980,
+        540
+      ],
+      "id": "b797e32f-c7ca-4b92-a90a-8597db96abf7",
+      "name": "Convert to File",
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -1193,7 +1277,7 @@
       "main": [
         [
           {
-            "node": "Defaults",
+            "node": "EXTRA",
             "type": "main",
             "index": 0
           }
@@ -1225,22 +1309,6 @@
             "node": "(In) Error On Get Attach ?",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "(In) Attachment": {
-      "main": [
-        [
-          {
-            "node": "Quepasa Download Incoming",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -1864,6 +1932,73 @@
           }
         ]
       ]
+    },
+    "EXTRA": {
+      "main": [
+        [
+          {
+            "node": "PAYLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAYLOAD": {
+      "main": [
+        [
+          {
+            "node": "Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has BASE64 Data": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Download Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Attachment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "If Has BASE64 Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -1873,7 +2008,7 @@
     "executionTimeout": 10,
     "executionOrder": "v1"
   },
-  "versionId": "0c3dd1f3-ad31-4485-af99-8fcb2745f1f8",
+  "versionId": "558a2672-8d48-4e4a-b470-514ac88bee0b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

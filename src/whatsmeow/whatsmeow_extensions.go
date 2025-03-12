@@ -174,17 +174,19 @@ var RegexButtonDisplay int = RegexButton.SubexpIndex("display")
 func GenerateButtonsMessage(messageText string) *waE2E.ButtonsMessage {
 	var contentText *string
 	var footerText *string
+
+	// button list
 	var buttons []*waE2E.ButtonsMessage_Button
 
 	matches := BUTTONSMSGREGEX.FindStringSubmatch(messageText)
 	contentMatched := matches[BUTTONSREGEXCONTENTINDEX]
 	if len(contentMatched) > 0 {
-		contentText = &contentMatched
+		contentText = proto.String(contentMatched)
 	}
 
 	footerMatched := matches[BUTTONSREGEXFOOTERINDEX]
 	if len(footerMatched) > 0 {
-		footerText = &footerMatched
+		footerText = proto.String(footerMatched)
 	}
 
 	buttonsText := matches[BUTTONSREGEXBUTTONSINDEX]
@@ -193,7 +195,7 @@ func GenerateButtonsMessage(messageText string) *waE2E.ButtonsMessage {
 		normalized := strings.TrimSpace(s)
 
 		buttonText := &waE2E.ButtonsMessage_Button_ButtonText{}
-		buttonText.DisplayText = &normalized
+		buttonText.DisplayText = proto.String(normalized)
 		buttonId := buttonText.DisplayText
 
 		matchesButton := RegexButton.FindStringSubmatch(normalized)
@@ -209,12 +211,12 @@ func GenerateButtonsMessage(messageText string) *waE2E.ButtonsMessage {
 			}
 		}
 
-		buttonType := waE2E.ButtonsMessage_Button_RESPONSE
-		buttons = append(buttons, &waE2E.ButtonsMessage_Button{ButtonText: buttonText, ButtonID: buttonId, Type: &buttonType})
+		buttonType := waE2E.ButtonsMessage_Button_RESPONSE.Enum()
+		buttons = append(buttons, &waE2E.ButtonsMessage_Button{ButtonText: buttonText, ButtonID: buttonId, Type: buttonType})
 	}
 
-	headerType := waE2E.ButtonsMessage_EMPTY
-	return &waE2E.ButtonsMessage{HeaderType: &headerType, ContentText: contentText, Buttons: buttons, FooterText: footerText}
+	headerType := waE2E.ButtonsMessage_EMPTY.Enum()
+	return &waE2E.ButtonsMessage{HeaderType: headerType, ContentText: contentText, Buttons: buttons, FooterText: footerText}
 }
 
 func IsValidForButtons(text string) bool {

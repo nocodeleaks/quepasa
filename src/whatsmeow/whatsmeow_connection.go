@@ -2,6 +2,7 @@ package whatsmeow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -468,6 +469,11 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	if !msg.HasAttachment() {
 		if IsValidForButtons(messageText) {
 			internal := GenerateButtonsMessage(messageText)
+
+			extraJson, _ := json.Marshal(internal)
+			logentry.Infof("button message generated: %s", extraJson)
+
+			internal.ContextInfo = source.GetContextInfo(*msg)
 			newMessage = &waE2E.Message{ButtonsMessage: internal}
 		} else {
 			internal := &waE2E.ExtendedTextMessage{Text: &messageText}

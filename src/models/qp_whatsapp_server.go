@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	types "go.mau.fi/whatsmeow/types"
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
@@ -838,4 +839,13 @@ func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []str
 	}
 
 	return conn.IsOnWhatsApp(phones...)
+}
+
+func (server *QpWhatsappServer) GetJoinedGroups() ([]*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetJoinedGroups()
 }

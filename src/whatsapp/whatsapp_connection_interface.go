@@ -5,6 +5,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	types "go.mau.fi/whatsmeow/types"
 )
 
 type IWhatsappConnection interface {
@@ -78,4 +79,7 @@ type IWhatsappConnection interface {
 	GetContacts() ([]WhatsappChat, error)
 
 	PairPhone(phone string) (string, error)
+
+	// Get a list of all groups
+	GetJoinedGroups() ([]*types.GroupInfo, error)
 }

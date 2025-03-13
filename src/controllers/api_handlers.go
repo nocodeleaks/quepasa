@@ -108,7 +108,38 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Post(endpoint+"/spam", Spam)
 
 		// GROUPS CONTROLLER
-		r.Get(endpoint+"/groups", GroupsController)
+		r.Get("/groups/getall", FetchAllGroupsController)
+
+		// Retorna os detalhes de um grupo específico.
+		r.Get("/groups/get", GetGroupController)
+
+		// Cria um novo grupo.
+		r.Post("/groups/create", CreateGroupController)
+
+		// Endpoint para entrar em um grupo usando um convite.
+		//r.Post("/groups/join/invite", JoinGroupWithInviteController)
+
+		// Endpoint para entrar em um grupo usando o link de convite.
+		//r.Post("/groups/join/link", JoinGroupWithLinkController)
+
+		// Endpoint para sair do grupo.
+		//r.Post("/groups/leave", LeaveGroupController)
+
+		// Atualiza os participantes do grupo (adição, remoção, promoção, demissão).
+		//r.Put("/groups/participants", UpdateGroupParticipantsController)
+
+		// Solicita o link de convite do grupo.
+		//r.Get("/groups/invite", GetGroupInviteLinkController)
+
+		// Atualiza o nome (subject) do grupo.
+		//r.Put("/groups/name", SetGroupNameController)
+
+		// Atualiza o tópico (description) do grupo.
+		//r.Put("/groups/topic", SetGroupTopicController)
+
+		// Atualiza a foto do grupo.
+		//r.Put("/groups/photo", SetGroupPhotoController)
+
 	}
 }
 

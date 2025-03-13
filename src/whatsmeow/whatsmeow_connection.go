@@ -799,3 +799,10 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 func (conn *WhatsmeowConnection) IsInterfaceNil() bool {
 	return nil == conn
 }
+
+func (conn *WhatsmeowConnection) GetJoinedGroups() ([]*types.GroupInfo, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+	return conn.Client.GetJoinedGroups()
+}

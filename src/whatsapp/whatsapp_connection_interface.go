@@ -82,4 +82,7 @@ type IWhatsappConnection interface {
 
 	// Get a list of all groups
 	GetJoinedGroups() ([]*types.GroupInfo, error)
+
+	// Get a specific group
+	GetGroupInfo(string) (*types.GroupInfo, error)
 }

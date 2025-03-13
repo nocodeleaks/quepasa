@@ -849,3 +849,12 @@ func (server *QpWhatsappServer) GetJoinedGroups() ([]*types.GroupInfo, error) {
 
 	return conn.GetJoinedGroups()
 }
+
+func (server *QpWhatsappServer) GetGroupInfo(groupID string) (*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetGroupInfo(groupID)
+}

@@ -4,14 +4,8 @@ import (
 	"net/http"
 
 	models "github.com/nocodeleaks/quepasa/models"
-	"go.mau.fi/whatsmeow/types"
+	types "go.mau.fi/whatsmeow/types"
 )
-
-type QpGroupsResponse struct {
-	models.QpResponse
-	Total  int                `json:"total,omitempty"`
-	Groups []*types.GroupInfo `json:"groups,omitempty"`
-}
 
 //region CONTROLLER - GET GROUP
 
@@ -20,14 +14,23 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &QpGroupsResponse{}
+	response := &models.QpSingleGroupResponse{}
 
-	_, err := GetServer(r)
+	server, err := GetServer(r)
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
+
+	groupId := models.GetRequestParameter(r, "groupId")
+	group, err := server.GetGroupInfo(groupId)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+	response.GroupInfo = []*types.GroupInfo{group}
 
 	RespondSuccess(w, response)
 }
@@ -40,7 +43,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &QpGroupsResponse{}
+	response := &models.QpGroupsResponse{}
 
 	// Get the server from the request
 	server, err := GetServer(r)
@@ -58,6 +61,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set the response with the groups and the amount of groups
 	response.Total = len(groups)
 	response.Groups = groups
 
@@ -73,7 +77,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &QpGroupsResponse{}
+	response := &models.QpGroupsResponse{}
 
 	_, err := GetServer(r)
 	if err != nil {

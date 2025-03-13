@@ -806,3 +806,16 @@ func (conn *WhatsmeowConnection) GetJoinedGroups() ([]*types.GroupInfo, error) {
 	}
 	return conn.Client.GetJoinedGroups()
 }
+
+func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (*types.GroupInfo, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.Client.GetGroupInfo(jid)
+}

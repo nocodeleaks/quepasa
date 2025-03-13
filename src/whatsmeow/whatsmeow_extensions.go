@@ -137,11 +137,20 @@ func GetStringFromBytes(bytes []byte) string {
 	return ""
 }
 
+// should implement a cache !!! urgent
 // returns a valid chat title from local memory store
 func GetChatTitle(client *whatsmeow.Client, jid types.JID) string {
 	if jid.Server == "g.us" {
+
+		title := GroupInfoCache.Get(jid.String())
+		if len(title) > 0 {
+			return title
+		}
+
+		// fmt.Printf("getting group info: %s", jid.String())
 		gInfo, _ := client.GetGroupInfo(jid)
 		if gInfo != nil {
+			_ = GroupInfoCache.Append(jid.String(), gInfo.Name, "GetChatTitle")
 			return gInfo.Name
 		}
 	} else {

@@ -819,3 +819,39 @@ func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (*types.GroupInfo,
 
 	return conn.Client.GetGroupInfo(jid)
 }
+
+// Add this to your whatsmeow_connection.go file
+func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (*types.GroupInfo, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Convert participants to JID format
+	var participantsJID []types.JID
+	for _, participant := range participants {
+		// Check if it's already in JID format
+		if strings.Contains(participant, "@") {
+			jid, err := types.ParseJID(participant)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JID format for participant %s: %v", participant, err)
+			}
+			participantsJID = append(participantsJID, jid)
+		} else {
+			// Assume it's a phone number and convert to JID
+			jid := types.JID{
+				User:   participant,
+				Server: "s.whatsapp.net", // Use the standard WhatsApp server
+			}
+			participantsJID = append(participantsJID, jid)
+		}
+	}
+
+	// Create the request struct
+	groupConfig := whatsmeow.ReqCreateGroup{
+		Name:         name,
+		Participants: participantsJID,
+	}
+
+	// Call the existing method with the constructed request
+	return conn.Client.CreateGroup(groupConfig)
+}

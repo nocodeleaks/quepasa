@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	models "github.com/nocodeleaks/quepasa/models"
@@ -73,20 +75,55 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 //region CONTROLLER - CREATE GROUP
 
 func CreateGroupController(w http.ResponseWriter, r *http.Request) {
-
-	// setting default response type as json
+	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpGroupsResponse{}
+	response := &models.QpSingleGroupResponse{}
 
-	_, err := GetServer(r)
+	// Get server
+	server, err := GetServer(r)
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	// Parse request body
+	var request struct {
+		Title        string   `json:"title"`
+		Participants []string `json:"participants"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Validate request
+	if request.Title == "" {
+		response.ParseError(fmt.Errorf("title is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(request.Participants) == 0 {
+		response.ParseError(fmt.Errorf("participants are required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Create group using the interface method
+	groupInfo, err := server.CreateGroup(request.Title, request.Participants)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Set response and return
+	response.GroupInfo = []*types.GroupInfo{groupInfo}
 	RespondSuccess(w, response)
 }
 
-//endregion
+// endregion

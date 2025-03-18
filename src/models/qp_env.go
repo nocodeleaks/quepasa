@@ -25,7 +25,7 @@ const (
 	ENV_DBSSLMODE  = "DBSSLMODE"
 
 	ENV_SIGNING_SECRET = "SIGNING_SECRET" // token for hash singing cookies
-	ENV_MASTER_KEY     = "MASTERKEY"
+	ENV_MASTER_KEY     = "MASTERKEY"      // used for manage all instances at all
 
 	ENV_WEBSOCKETSSL             = "WEBSOCKETSSL" // use ssl for websocket qrcode
 	ENV_MIGRATIONS               = "MIGRATIONS"   // enable migrations
@@ -50,7 +50,8 @@ const (
 	ENV_WHATSMEOWLOGLEVEL   = "WHATSMEOW_LOGLEVEL"
 	ENV_WHATSMEOWDBLOGLEVEL = "WHATSMEOW_DBLOGLEVEL"
 
-	ENV_TESTING = "TESTING"
+	ENV_ACCOUNTSETUP = "ACCOUNTSETUP" // enable or disable account creation, default true
+	ENV_TESTING      = "TESTING"
 )
 
 type Environment struct{}
@@ -307,5 +308,16 @@ func (*Environment) Testing() bool {
 		return value
 	} else {
 		return false // default return
+	}
+}
+
+// enable or disable account creation, default true
+func (*Environment) AccountSetup() bool {
+	text, _ := GetEnvStr(ENV_ACCOUNTSETUP)
+	value, err := strconv.ParseBool(text)
+	if err == nil {
+		return value
+	} else {
+		return true // default return
 	}
 }

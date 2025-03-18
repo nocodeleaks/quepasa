@@ -78,6 +78,11 @@ func (source QpDataUserSql) Check(username string, password string) (result *QpU
 }
 
 func (source QpDataUserSql) Create(username string, password string) (result *QpUser, err error) {
+	if !ENV.AccountSetup() {
+		err = fmt.Errorf("account creation is disabled by environment")
+		return
+	}
+
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
 		return

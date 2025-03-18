@@ -23,9 +23,13 @@ func RegisterFormControllers(r chi.Router) {
 	r.Get("/", IndexHandler)
 	r.Get(FormLoginEndpoint, LoginFormHandler)
 	r.Post(FormLoginEndpoint, LoginHandler)
-	r.Get(FormSetupEndpoint, SetupFormHandler)
-	r.Post(FormSetupEndpoint, SetupHandler)
 	r.Get(FormLogoutEndpoint, LogoutHandler)
+
+	// disable /setup if environment is false
+	if models.ENV.AccountSetup() {
+		r.Get(FormSetupEndpoint, SetupFormHandler)
+		r.Post(FormSetupEndpoint, SetupHandler)
+	}
 }
 
 // LoginFormHandler renders route GET "/login"

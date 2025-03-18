@@ -160,6 +160,9 @@
 	
 	# WHATSMEOW_DBLOGLEVEL
 
+  # ACCOUNTSETUP
+  > enable or disable account creation setup. (default true)
+
 	 
 ### License
 

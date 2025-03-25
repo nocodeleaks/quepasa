@@ -56,3 +56,10 @@ type WhatsappMessageAds struct {
 	// small image representing something in this message, MIME: image/jpeg
 	Thumbnail *WhatsappMessageThumbnail `json:"thumbnail,omitempty"`
 }
+
+func (source *WhatsappMessageAds) SetThumbnail(bytes []byte) {
+	if len(bytes) > 0 {
+		thumbnail := NewWhatsappMessageThumbnail(bytes)
+		source.Thumbnail = thumbnail
+	}
+}

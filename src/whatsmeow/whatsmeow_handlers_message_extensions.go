@@ -153,10 +153,8 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 			Description: in.GetDescription(),
 		}
 
-		thumbnail := in.GetJPEGThumbnail()
-		if len(thumbnail) > 0 {
-			out.Url.Thumbnail = whatsapp.NewWhatsappMessageThumbnail(thumbnail)
-		}
+		// handling thumbnail
+		out.Url.SetThumbnail(in.GetJPEGThumbnail())
 	}
 
 	info := in.GetContextInfo()
@@ -177,10 +175,8 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 			Type:      adreply.GetSourceType(),
 		}
 
-		thumbnail := adreply.GetThumbnail()
-		if len(thumbnail) > 0 {
-			ads.Thumbnail = whatsapp.NewWhatsappMessageThumbnail(thumbnail)
-		}
+		// handling thumbnail
+		ads.SetThumbnail(adreply.GetThumbnail())
 
 		out.Ads = ads
 	}
@@ -231,10 +227,8 @@ func HandleImageMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *
 		FileLength:  in.GetFileLength(),
 	}
 
-	if len(in.JPEGThumbnail) > 0 {
-		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
-		out.Attachment.Thumbnail = thumbnail
-	}
+	// handling thumbnail
+	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
 
 	info := in.GetContextInfo()
 	if info != nil {
@@ -258,10 +252,8 @@ func HandleStickerMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 		FileLength:  in.GetFileLength(),
 	}
 
-	if len(in.PngThumbnail) > 0 {
-		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.PngThumbnail)
-		out.Attachment.Thumbnail = thumbnail
-	}
+	// handling thumbnail
+	out.Attachment.SetThumbnail(in.GetPngThumbnail())
 }
 
 func HandleVideoMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.VideoMessage) {
@@ -277,10 +269,8 @@ func HandleVideoMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E
 		FileLength:  in.GetFileLength(),
 	}
 
-	if len(in.JPEGThumbnail) > 0 {
-		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
-		out.Attachment.Thumbnail = thumbnail
-	}
+	// handling thumbnail
+	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
 
 	info := in.ContextInfo
 	if info != nil {
@@ -303,10 +293,8 @@ func HandleDocumentMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 		FileName:    in.GetFileName(),
 	}
 
-	if len(in.JPEGThumbnail) > 0 {
-		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
-		out.Attachment.Thumbnail = thumbnail
-	}
+	// handling thumnail
+	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
 
 	info := in.ContextInfo
 	if info != nil {
@@ -333,8 +321,8 @@ func HandleAudioMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E
 	}
 }
 
-func HandleLocationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.LocationMessage) {
-	log.Debug("received a Location message !")
+func HandleLocationMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.LocationMessage) {
+	logentry.Debug("received a Location message !")
 	out.Type = whatsapp.LocationMessageType
 
 	// in a near future, create a environment variable for that
@@ -359,16 +347,13 @@ func HandleLocationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 		FileLength:  length,
 	}
 
-	if len(in.JPEGThumbnail) > 0 {
-		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
-		out.Attachment.Thumbnail = thumbnail
-	}
-
+	// handling thumbnail
+	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
 	out.Attachment.SetContent(&content)
 }
 
-func HandleLiveLocationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.LiveLocationMessage) {
-	log.Debug("received a Live Location message !")
+func HandleLiveLocationMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.LiveLocationMessage) {
+	logentry.Debug("received a Live Location message !")
 	out.Type = whatsapp.LocationMessageType
 
 	// in case of caption passed
@@ -400,11 +385,8 @@ func HandleLiveLocationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in
 		FileLength:  length,
 	}
 
-	if len(in.JPEGThumbnail) > 0 {
-		thumbnail := whatsapp.NewWhatsappMessageThumbnail(in.JPEGThumbnail)
-		out.Attachment.Thumbnail = thumbnail
-	}
-
+	// handling thumbnail
+	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
 	out.Attachment.SetContent(&content)
 }
 

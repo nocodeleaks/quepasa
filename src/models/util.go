@@ -34,6 +34,8 @@ func GetFormUser(r *http.Request) (*QpUser, error) {
 	Get File Name From Http Request
 	Getting from PATH => QUERY => HEADER
 
+	* Trimmed & Url Unescaped
+
 </summary>
 */
 func GetFileName(r *http.Request) string {
@@ -44,6 +46,18 @@ func GetFileName(r *http.Request) string {
 		if err == nil {
 			filename = params["filename"]
 		}
+	}
+
+	if len(filename) > 0 {
+
+		// url unescaping ...
+		unescapedFilename, err := url.QueryUnescape(filename)
+		if err == nil {
+			filename = unescapedFilename
+		}
+
+		// trim white spaces from start and end
+		filename = strings.TrimSpace(filename)
 	}
 
 	return filename

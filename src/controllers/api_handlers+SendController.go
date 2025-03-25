@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
@@ -74,6 +75,9 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.Url = r.URL.Query().Get("url")
 	}
 
+	// trim start and end white spaces
+	request.Url = strings.TrimSpace(request.Url)
+
 	if len(request.Url) > 0 {
 
 		// download content to byte array
@@ -94,6 +98,11 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 			RespondInterface(w, response)
 			return
 		}
+	}
+
+	filename := models.GetFileName(r)
+	if len(filename) > 0 {
+		request.FileName = filename
 	}
 
 	SendRequest(w, r, &request.QpSendRequest, server)

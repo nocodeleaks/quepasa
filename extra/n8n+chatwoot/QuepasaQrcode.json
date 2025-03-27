@@ -36,7 +36,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"content\": \"✅ Qrcode gerado com sucesso!\\r\\n⚙ Digitalize este código QR nos próximos {{ $node['Command & Parameters'].json.timeout }} segundos\",\n  \"message_type\": \"incoming\"\n}",
+        "jsonBody": "={\n  \"content\": \"✅ Qrcode gerado com sucesso!\\r\\n⚙ Digitalize este código QR nos próximos {{ $node['Command & Parameters'].json.timeout }} segundos\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "76601579-0662-41ee-bade-61c437177ea3",
@@ -289,29 +289,19 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.atoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=❌ Tempo para conexão expirou !\nPor favor, reinicie o processo!"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"❌ Tempo para conexão expirou !\\r\\nPor favor, reinicie o processo !\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "29766be7-105b-492e-8f52-5b3392d052d7",
@@ -363,29 +353,19 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.utoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=Informações do servidor:\nToken gerado: {{$json.extra.identifier}}\nWhatsapp: {{$json.wid}}\n\n\n"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"Informações do servidor:\\r\\nToken gerado: {{$('EXTRA').item.json.identifier}}\\r\\nWhatsapp: {{$json.wid}}\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "e34d7bae-777f-4242-abcd-cf577ff91bb9",
@@ -474,29 +454,19 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.atoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=✅ Conexão feita com sucesso!\n✅ Sistema Pronto para Usar"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"✅ Conexão feita com sucesso!\\r\\nSistema Pronto para Usar\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "7a248835-c018-4974-9d55-83c65c06907c",
@@ -597,29 +567,19 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.atoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=❌ Comando Inválido!\nUse:\n/qrcode\n/paircode +55XXXXXXXXXX"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"❌ Comando Inválido !\\r\\nUse:\\r\\n/qrcode\\r\\n/paircode +55XXXXXXXXXX\\r\\n\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "7cba3c31-4703-46e7-b6e3-36f8c4478bf0",
@@ -1005,7 +965,7 @@
     {
       "parameters": {
         "requestMethod": "POST",
-        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$json.conversation}}/messages",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages",
         "allowUnauthorizedCerts": true,
         "jsonParameters": true,
         "options": {
@@ -1156,7 +1116,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"content\": \"✅ Inbox webhook atualizado com sucesso\",\n  \"message_type\": \"incoming\"\n}",
+        "jsonBody": "{\n  \"content\": \"✅ Inbox webhook atualizado com sucesso\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "7de0846a-621c-4b02-b0cf-d48fe5f193e5",
@@ -1369,22 +1329,6 @@
     },
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "quepasa",
-        "options": {}
-      },
-      "id": "bb3dcd1e-8f43-4333-8905-ff43fe2cf33b",
-      "name": "Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [
-        -1780,
-        700
-      ],
-      "webhookId": "e8d38d79-8f79-4bd1-85f8-fce3d8200233"
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -1444,125 +1388,25 @@
         -740,
         640
       ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "quepasa",
+        "options": {}
+      },
+      "id": "bb3dcd1e-8f43-4333-8905-ff43fe2cf33b",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1780,
+        700
+      ],
+      "webhookId": "e8d38d79-8f79-4bd1-85f8-fce3d8200233"
     }
   ],
-  "pinData": {
-    "Webhook": [
-      {
-        "json": {
-          "headers": {
-            "accept": "application/json",
-            "user-agent": "rest-client/2.1.0 (linux x86_64) ruby/3.3.3p89",
-            "content-type": "application/json",
-            "content-length": "3676",
-            "accept-encoding": "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
-            "host": "127.0.0.1:5678"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "additional_attributes": {
-              "mail_subject": ""
-            },
-            "can_reply": true,
-            "channel": "Channel::Api",
-            "contact_inbox": {
-              "id": 270671,
-              "contact_id": 133587,
-              "inbox_id": 111,
-              "source_id": "c0d7ca30-b105-406a-b71f-2868d78ab822",
-              "created_at": "2025-03-26T15:42:08.317Z",
-              "updated_at": "2025-03-26T15:42:08.317Z",
-              "hmac_verified": false,
-              "pubsub_token": "trdHubnJ4YaquUuCQaGri3V4"
-            },
-            "id": 74,
-            "inbox_id": 111,
-            "messages": [
-              {
-                "id": 4660411,
-                "content": " /qrcode",
-                "account_id": 96,
-                "inbox_id": 111,
-                "conversation_id": 74,
-                "message_type": 1,
-                "created_at": 1743091488,
-                "updated_at": "2025-03-27T16:04:48.987Z",
-                "private": false,
-                "status": "sent",
-                "source_id": null,
-                "content_type": "text",
-                "content_attributes": {},
-                "sender_type": "User",
-                "sender_id": 250,
-                "external_source_ids": {},
-                "additional_attributes": {},
-                "processed_message_content": " /qrcode",
-                "sentiment": {},
-                "conversation": {
-                  "assignee_id": 250,
-                  "unread_count": 0,
-                  "last_activity_at": 1743091488,
-                  "contact_inbox": {
-                    "source_id": "c0d7ca30-b105-406a-b71f-2868d78ab822"
-                  }
-                },
-                "sender": {
-                  "id": 250,
-                  "name": "Super User Agent",
-                  "available_name": "User for message sincronizations, do not remove !",
-                  "avatar_url": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png",
-                  "type": "user",
-                  "availability_status": null,
-                  "thumbnail": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png"
-                }
-              }
-            ],
-            "labels": [],
-            "meta": {
-              "sender": {
-                "additional_attributes": {},
-                "custom_attributes": {},
-                "email": null,
-                "id": 133587,
-                "identifier": "control@quepasa.io",
-                "name": "Quepasa Control",
-                "phone_number": null,
-                "thumbnail": "",
-                "type": "contact"
-              },
-              "assignee": {
-                "id": 250,
-                "name": "Super User Agent",
-                "available_name": "User for message sincronizations, do not remove !",
-                "avatar_url": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png",
-                "type": "user",
-                "availability_status": null,
-                "thumbnail": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png"
-              },
-              "team": null,
-              "hmac_verified": false
-            },
-            "status": "pending",
-            "custom_attributes": {},
-            "snoozed_until": null,
-            "unread_count": 0,
-            "first_reply_created_at": "2025-03-27T14:30:39.744Z",
-            "priority": null,
-            "waiting_since": 0,
-            "agent_last_seen_at": 1743091488,
-            "contact_last_seen_at": 0,
-            "last_activity_at": 1743091488,
-            "timestamp": 1743091488,
-            "created_at": 1743085839,
-            "event": "automation_event.message_created"
-          },
-          "webhookUrl": "http://187.108.193.40:5678/webhook/quepasa",
-          "executionMode": "production"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "connections": {
     "IF": {
       "main": [
@@ -2184,22 +2028,6 @@
         ]
       ]
     },
-    "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Execution Data",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "If Incoming Message Type",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "If Incoming Message Type": {
       "main": [
         [
@@ -2228,13 +2056,29 @@
           }
         ]
       ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Incoming Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "267017a5-ac39-48ae-a60b-143d0f432d7d",
+  "versionId": "472b84ed-d953-43a4-ba95-e141439c8f48",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

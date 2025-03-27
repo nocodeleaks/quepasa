@@ -36,7 +36,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"content\": \"✅ Qrcode gerado com sucesso!\\r\\n⚙ Digitalize este código QR nos próximos 20 segundos\",\n  \"message_type\": \"incoming\"\n}",
+        "jsonBody": "={\n  \"content\": \"✅ Qrcode gerado com sucesso!\\r\\n⚙ Digitalize este código QR nos próximos {{ $node['Command & Parameters'].json.timeout }} segundos\",\n  \"message_type\": \"incoming\"\n}",
         "options": {}
       },
       "id": "76601579-0662-41ee-bade-61c437177ea3",
@@ -113,19 +113,19 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1800,
-        400
+        -2160,
+        460
       ]
     },
     {
       "parameters": {
-        "url": "={{ $json.extra.qphost }}/scan",
+        "url": "={{ $('EXTRA').item.json.qphost }}/scan",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
             {
               "name": "historysyncdays",
-              "value": "={{ $json.variables?.historysyncdays??  $env[\"HISTORYSYNCDAYS\"] }}"
+              "value": "={{ $json.variables?.historysyncdays ?? $env[\"HISTORYSYNCDAYS\"] }}"
             }
           ]
         },
@@ -134,11 +134,11 @@
           "parameters": [
             {
               "name": "X-QUEPASA-TOKEN",
-              "value": "={{ $json.extra.identifier }}"
+              "value": "={{ $('EXTRA').item.json.identifier }}"
             },
             {
               "name": "X-QUEPASA-USER",
-              "value": "={{ $json.extra.qpuser }}"
+              "value": "={{ $('EXTRA').item.json.qpuser }}"
             }
           ]
         },
@@ -209,7 +209,7 @@
     },
     {
       "parameters": {
-        "amount": "={{ $node['Manipulate Data'].json.timeout }}",
+        "amount": "={{ $node['Command & Parameters'].json.timeout }}",
         "unit": "seconds"
       },
       "id": "7f52b1c5-c05c-4aaf-8770-fa71f982a029",
@@ -1005,7 +1005,7 @@
     {
       "parameters": {
         "requestMethod": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$json.conversation}}/messages",
         "allowUnauthorizedCerts": true,
         "jsonParameters": true,
         "options": {
@@ -1013,7 +1013,7 @@
         },
         "sendBinaryData": true,
         "binaryPropertyName": "attachments[]:data",
-        "headerParametersJson": "={ \"api_access_token\": \"{{ $json.extra.utoken }}\" }",
+        "headerParametersJson": "={ \"api_access_token\": \"{{ $('EXTRA').item.json.atoken }}\" }",
         "queryParametersJson": "{ \"message_type\": \"incoming\" }"
       },
       "name": "Envia QRCode No Chatwoot",
@@ -1036,20 +1036,6 @@
       "position": [
         1676,
         620
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const content = $json.body.messages[0].content?.trim() ?? ''; // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 30;\n\nreturn {\n  \"conversation\": $json.body.id ?? $json.body.messages[0].conversation_id,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.body.messages[0].content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
-      },
-      "id": "82d633b3-0179-4ada-a2d2-650ae26bd63b",
-      "name": "Manipulate Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -740,
-        640
       ]
     },
     {
@@ -1123,8 +1109,8 @@
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        -720,
-        100
+        -1380,
+        120
       ]
     },
     {
@@ -1170,7 +1156,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"content\": \"✅ Webhook atualizado com sucesso\",\n  \"message_type\": \"incoming\"\n}",
+        "jsonBody": "{\n  \"content\": \"✅ Inbox webhook atualizado com sucesso\",\n  \"message_type\": \"incoming\"\n}",
         "options": {}
       },
       "id": "7de0846a-621c-4b02-b0cf-d48fe5f193e5",
@@ -1211,8 +1197,14 @@
             {
               "id": "e72815a2-ae40-419a-92df-fe487b8c8e2c",
               "name": "conversation",
-              "value": "={{ $('Webhook').item.json.body.messages[0].conversation_id }}",
+              "value": "={{ $('Webhook').item.json.body.id ?? $('Webhook').item.json.body.messages[0].conversation_id }}",
               "type": "number"
+            },
+            {
+              "id": "b05caf1a-d5f7-4c2d-83c1-83a8914de417",
+              "name": "content",
+              "value": "={{ $('Webhook').item.json.body.messages[0].content }}",
+              "type": "string"
             }
           ]
         },
@@ -1386,13 +1378,191 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -1560,
-        640
+        -1780,
+        700
       ],
       "webhookId": "e8d38d79-8f79-4bd1-85f8-fce3d8200233"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "317ebd12-2d8f-4000-9e93-f5b2ea21c146",
+              "leftValue": "={{ $json.body.messages[0].message_type }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c187b63b-8de6-4408-a423-d7fc1fda7e4a",
+      "name": "If Incoming Message Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1520,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "ignored cause its a incoming message",
+        "options": {}
+      },
+      "id": "711f32d3-6548-48b0-a2e1-a309ebd186f4",
+      "name": "Respond to Webhook - Ignore Incoming",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1300,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const content = $json.content?.trim() ?? ''; // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 30;\n\nreturn {\n  \"conversation\": $json.conversation,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
+      },
+      "id": "82d633b3-0179-4ada-a2d2-650ae26bd63b",
+      "name": "Command & Parameters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -740,
+        640
+      ]
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "accept": "application/json",
+            "user-agent": "rest-client/2.1.0 (linux x86_64) ruby/3.3.3p89",
+            "content-type": "application/json",
+            "content-length": "3676",
+            "accept-encoding": "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+            "host": "127.0.0.1:5678"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "additional_attributes": {
+              "mail_subject": ""
+            },
+            "can_reply": true,
+            "channel": "Channel::Api",
+            "contact_inbox": {
+              "id": 270671,
+              "contact_id": 133587,
+              "inbox_id": 111,
+              "source_id": "c0d7ca30-b105-406a-b71f-2868d78ab822",
+              "created_at": "2025-03-26T15:42:08.317Z",
+              "updated_at": "2025-03-26T15:42:08.317Z",
+              "hmac_verified": false,
+              "pubsub_token": "trdHubnJ4YaquUuCQaGri3V4"
+            },
+            "id": 74,
+            "inbox_id": 111,
+            "messages": [
+              {
+                "id": 4660411,
+                "content": " /qrcode",
+                "account_id": 96,
+                "inbox_id": 111,
+                "conversation_id": 74,
+                "message_type": 1,
+                "created_at": 1743091488,
+                "updated_at": "2025-03-27T16:04:48.987Z",
+                "private": false,
+                "status": "sent",
+                "source_id": null,
+                "content_type": "text",
+                "content_attributes": {},
+                "sender_type": "User",
+                "sender_id": 250,
+                "external_source_ids": {},
+                "additional_attributes": {},
+                "processed_message_content": " /qrcode",
+                "sentiment": {},
+                "conversation": {
+                  "assignee_id": 250,
+                  "unread_count": 0,
+                  "last_activity_at": 1743091488,
+                  "contact_inbox": {
+                    "source_id": "c0d7ca30-b105-406a-b71f-2868d78ab822"
+                  }
+                },
+                "sender": {
+                  "id": 250,
+                  "name": "Super User Agent",
+                  "available_name": "User for message sincronizations, do not remove !",
+                  "avatar_url": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png",
+                  "type": "user",
+                  "availability_status": null,
+                  "thumbnail": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png"
+                }
+              }
+            ],
+            "labels": [],
+            "meta": {
+              "sender": {
+                "additional_attributes": {},
+                "custom_attributes": {},
+                "email": null,
+                "id": 133587,
+                "identifier": "control@quepasa.io",
+                "name": "Quepasa Control",
+                "phone_number": null,
+                "thumbnail": "",
+                "type": "contact"
+              },
+              "assignee": {
+                "id": 250,
+                "name": "Super User Agent",
+                "available_name": "User for message sincronizations, do not remove !",
+                "avatar_url": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png",
+                "type": "user",
+                "availability_status": null,
+                "thumbnail": "https://chatwoot.sufficit.com.br/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBBeHdhRWc9PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9pZCJ9fQ==--2abb5e3b43e9d4090e70c43aab1d737c9e84774f/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJY0c1bkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c60fa3eab68e8bacb2962abd5c24e620a37e3024/59781971adf3eea92cf2ffd7138c8f32.png"
+              },
+              "team": null,
+              "hmac_verified": false
+            },
+            "status": "pending",
+            "custom_attributes": {},
+            "snoozed_until": null,
+            "unread_count": 0,
+            "first_reply_created_at": "2025-03-27T14:30:39.744Z",
+            "priority": null,
+            "waiting_since": 0,
+            "agent_last_seen_at": 1743091488,
+            "contact_last_seen_at": 0,
+            "last_activity_at": 1743091488,
+            "timestamp": 1743091488,
+            "created_at": 1743085839,
+            "event": "automation_event.message_created"
+          },
+          "webhookUrl": "http://187.108.193.40:5678/webhook/quepasa",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
   "connections": {
     "IF": {
       "main": [
@@ -1885,17 +2055,6 @@
         ]
       ]
     },
-    "Manipulate Data": {
-      "main": [
-        [
-          {
-            "node": "Merge1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Code": {
       "main": [
         [
@@ -1939,6 +2098,11 @@
           },
           {
             "node": "Execution Data After Extra",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Command & Parameters",
             "type": "main",
             "index": 0
           }
@@ -2024,17 +2188,41 @@
       "main": [
         [
           {
-            "node": "Manipulate Data",
+            "node": "Execution Data",
             "type": "main",
             "index": 0
           },
+          {
+            "node": "If Incoming Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Incoming Message Type": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - Ignore Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
           {
             "node": "Execute ChatWootExtra Workflow",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Command & Parameters": {
+      "main": [
+        [
           {
-            "node": "Execution Data",
+            "node": "Merge1",
             "type": "main",
             "index": 0
           }
@@ -2046,7 +2234,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "89c70180-f729-4927-8d1d-c2b7bf26a44c",
+  "versionId": "267017a5-ac39-48ae-a60b-143d0f432d7d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

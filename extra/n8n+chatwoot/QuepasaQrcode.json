@@ -1060,6 +1060,10 @@
             {
               "key": "conversation",
               "value": "={{ $json.body?.id ?? '' }}"
+            },
+            {
+              "key": "content",
+              "value": "={{ $json.body?.messages[0]?.content ?? '' }}"
             }
           ]
         }
@@ -2078,7 +2082,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "472b84ed-d953-43a4-ba95-e141439c8f48",
+  "versionId": "efc43d67-e293-491e-bb17-04e017d5c0c3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

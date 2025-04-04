@@ -533,14 +533,9 @@ func IsValidToStart(status whatsapp.WhatsappConnectionState) bool {
 	return false
 }
 
-func (server *QpWhatsappServer) GetWorking() bool {
-	status := server.GetStatus()
-	if status <= whatsapp.Stopped {
-		return false
-	} else if status == whatsapp.Disconnected {
-		return false
-	}
-	return true
+func (source *QpWhatsappServer) GetWorking() bool {
+	status := source.GetStatus()
+	return !IsValidToStart(status)
 }
 
 func (server *QpWhatsappServer) GetStatusString() string {

@@ -102,3 +102,27 @@ func (source QpDataUserSql) Create(username string, password string) (result *Qp
 	result = user
 	return
 }
+
+func (source QpDataUserSql) UpdatePassword(username string, password string) (err error) {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return
+	}
+
+	query := `UPDATE users SET password = ? WHERE username = ?`
+	result, err := source.db.Exec(query, string(hashed), username)
+	if err != nil {
+		return
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return
+	}
+
+	if affected == 0 {
+		err = fmt.Errorf("user (%s) not found for update password", username)
+	}
+
+	return
+}

@@ -44,3 +44,16 @@ func GetServerFromMaster(r *http.Request) (server *models.QpWhatsappServer, err 
 
 	return models.GetServerFirstAvailable()
 }
+
+// <summary>Checks if was passed a valid master key</summary>
+func IsMatchForMaster(r *http.Request) bool {
+	system := models.ENV.MasterKey()
+	if len(system) > 0 {
+		request := GetMasterKey(r)
+		if strings.EqualFold(system, request) {
+			return true
+		}
+	}
+
+	return false
+}

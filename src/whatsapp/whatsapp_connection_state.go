@@ -1,5 +1,7 @@
 package whatsapp
 
+import "encoding/json"
+
 type WhatsappConnectionState uint
 
 const (
@@ -72,4 +74,8 @@ func (s WhatsappConnectionState) String() string {
 		"Disconnected",
 		"Failed",
 	}[s]
+}
+
+func (s WhatsappConnectionState) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
 }

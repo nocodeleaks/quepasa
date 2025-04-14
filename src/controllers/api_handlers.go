@@ -16,6 +16,8 @@ func RegisterAPIControllers(r chi.Router) {
 	aliases := []string{"/current", "", "/" + CurrentAPIVersion}
 	for _, endpoint := range aliases {
 
+		r.Get(endpoint+"/health", HealthController)
+
 		// CONTROL METHODS ************************
 		// ----------------------------------------
 		r.Get(endpoint+"/info", InformationController)

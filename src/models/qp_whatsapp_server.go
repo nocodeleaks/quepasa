@@ -117,12 +117,19 @@ func (server *QpWhatsappServer) HasSignalRActiveConnections() bool {
 //region IMPLEMENT OF INTERFACE STATE RECOVERY
 
 func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
+	if server == nil {
+		return whatsapp.Unknown // invalid state
+	}
+
 	if server.connection == nil {
 		if server.Verified {
+			if server.StopRequested {
+				return whatsapp.Stopped
+			}
 			return whatsapp.UnPrepared
-		} else {
-			return whatsapp.UnVerified
 		}
+
+		return whatsapp.UnVerified
 	} else {
 		if server.StopRequested {
 			if server.connection != nil && !server.connection.IsInterfaceNil() && server.connection.IsConnected() {

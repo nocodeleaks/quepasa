@@ -76,6 +76,11 @@ func (s WhatsappConnectionState) String() string {
 	}[s]
 }
 
+// used for the status monitoring systems
+func (s WhatsappConnectionState) IsHealthy() bool {
+	return s == Ready || s == Stopped
+}
+
 func (s WhatsappConnectionState) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }

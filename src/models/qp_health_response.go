@@ -20,5 +20,5 @@ type QpHealthResponseItem struct {
 
 // Check if the state is ready or manually stopped
 func (source QpHealthResponseItem) GetHealth() bool {
-	return source.Status == whatsapp.Ready || source.Status == whatsapp.Stopped
+	return source.Status.IsHealthy()
 }

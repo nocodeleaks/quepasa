@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	models "github.com/nocodeleaks/quepasa/models"
-	"github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 //region CONTROLLER - HEALTH
@@ -32,7 +31,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		status := server.GetStatus()
-		response.Success = status == whatsapp.Ready
+		response.Success = status.IsHealthy()
 		response.Status = fmt.Sprintf("server status is %s", status.String())
 		RespondInterface(w, response)
 		return

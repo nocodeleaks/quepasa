@@ -869,3 +869,12 @@ func (server *QpWhatsappServer) CreateGroup(name string, participants []string) 
 
 	return conn.CreateGroup(name, participants)
 }
+
+func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection() // Ensure a valid connection is available
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupSubject(groupID, name) // Delegate the call to the connection
+}

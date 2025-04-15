@@ -842,7 +842,6 @@ func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (*types.GroupInfo,
 	return conn.Client.GetGroupInfo(jid)
 }
 
-// Add this to your whatsmeow_connection.go file
 func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (*types.GroupInfo, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -876,4 +875,25 @@ func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string)
 
 	// Call the existing method with the constructed request
 	return conn.Client.CreateGroup(groupConfig)
+}
+
+func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string) (*types.GroupInfo, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Parse the group ID to JID format
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Update the group subject
+	err = conn.Client.SetGroupName(jid, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update group subject: %v", err)
+	}
+
+	// Return the updated group info
+	return conn.Client.GetGroupInfo(jid)
 }

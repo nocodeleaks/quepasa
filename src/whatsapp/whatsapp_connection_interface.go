@@ -88,4 +88,6 @@ type IWhatsappConnection interface {
 
 	// Create a group
 	CreateGroup(string, []string) (*types.GroupInfo, error)
+
+	UpdateGroupSubject(string, string) (*types.GroupInfo, error)
 }

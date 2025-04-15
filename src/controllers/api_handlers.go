@@ -135,7 +135,7 @@ func RegisterAPIControllers(r chi.Router) {
 		//r.Get("/groups/invite", GetGroupInviteLinkController)
 
 		// Atualiza o nome (subject) do grupo.
-		//r.Put("/groups/name", SetGroupNameController)
+		r.Put("/groups/name", SetGroupNameController)
 
 		// Atualiza o tópico (description) do grupo.
 		//r.Put("/groups/topic", SetGroupTopicController)

@@ -887,3 +887,30 @@ func (server *QpWhatsappServer) UpdateGroupPhoto(groupID string, imageData []byt
 
 	return conn.UpdateGroupPhoto(groupID, imageData)
 }
+
+func (server *QpWhatsappServer) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupParticipants(groupJID, participants, action)
+}
+
+func (server *QpWhatsappServer) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetGroupJoinRequests(groupJID)
+}
+
+func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.HandleGroupJoinRequests(groupJID, participants, action)
+}

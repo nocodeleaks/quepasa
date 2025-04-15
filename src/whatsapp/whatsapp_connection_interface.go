@@ -94,4 +94,13 @@ type IWhatsappConnection interface {
 
 	// Update Group Photo
 	UpdateGroupPhoto(string, []byte) (string, error)
+
+	// Update group participants (add, remove, promote, demote)
+	UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	// Get list of pending join requests for a group
+	GetGroupJoinRequests(groupJID string) ([]interface{}, error)
+
+	// Handle join requests (approve/reject)
+	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
 }

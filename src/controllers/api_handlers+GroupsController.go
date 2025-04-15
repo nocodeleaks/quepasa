@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
@@ -283,3 +284,174 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 }
 
 // endregion
+
+// UpdateGroupParticipantsController handles adding, removing, promoting, and demoting group members
+func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	response := &models.QpResponse{}
+
+	type participantUpdate struct {
+		GroupJID     string   `json:"group_jid"`
+		Participants []string `json:"participants"` // Phone numbers or JIDs
+		Action       string   `json:"action"`       // add, remove, promote, demote
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var req participantUpdate
+	err = decoder.Decode(&req)
+	if err != nil {
+		response.ParseError(fmt.Errorf("could not decode payload: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	if req.GroupJID == "" {
+		response.ParseError(fmt.Errorf("group_jid is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(req.Participants) == 0 {
+		response.ParseError(fmt.Errorf("at least one participant is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Validate action
+	validActions := map[string]bool{"add": true, "remove": true, "promote": true, "demote": true}
+	if !validActions[strings.ToLower(req.Action)] {
+		response.ParseError(fmt.Errorf("invalid action, must be one of: add, remove, promote, demote"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Convert participants to JIDs if needed
+	participantJIDs, err := convertToJIDs(req.Participants)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to parse participant identifiers: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Perform the requested action
+	result, err := server.UpdateGroupParticipants(req.GroupJID, participantJIDs, strings.ToLower(req.Action))
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to update group participants: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Create success response with participant statuses
+	response.ParseSuccess(fmt.Sprintf("Group participants updated successfully. Action: %s", req.Action))
+	RespondSuccess(w, map[string]interface{}{
+		"success":      true,
+		"message":      fmt.Sprintf("Group participants updated successfully. Action: %s", req.Action),
+		"participants": result,
+	})
+}
+
+// GroupMembershipRequestsController handles retrieving and managing join requests for groups
+func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	response := &models.QpResponse{}
+
+	type membershipRequest struct {
+		GroupJID     string   `json:"group_jid"`
+		Participants []string `json:"participants"` // Only needed for approve/reject actions
+		Action       string   `json:"action"`       // get, approve, reject
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	var req membershipRequest
+	if r.Method == http.MethodPost {
+		decoder := json.NewDecoder(r.Body)
+		err = decoder.Decode(&req)
+		if err != nil {
+			response.ParseError(fmt.Errorf("could not decode payload: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+	} else {
+		// For GET requests, extract parameters from query string
+		req.GroupJID = r.URL.Query().Get("group_jid")
+		req.Action = "get" // Default action for GET requests
+	}
+
+	if req.GroupJID == "" {
+		response.ParseError(fmt.Errorf("group_jid is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Handle different actions
+	switch strings.ToLower(req.Action) {
+	case "get", "":
+		// Get list of pending join requests
+		requests, err := server.GetGroupJoinRequests(req.GroupJID)
+		if err != nil {
+			response.ParseError(fmt.Errorf("failed to get group join requests: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+
+		RespondSuccess(w, map[string]interface{}{
+			"success":  true,
+			"requests": requests,
+		})
+
+	case "approve", "reject":
+		if len(req.Participants) == 0 {
+			response.ParseError(fmt.Errorf("at least one participant is required"))
+			RespondInterface(w, response)
+			return
+		}
+
+		// Process the approval/rejection
+		result, err := server.HandleGroupJoinRequests(req.GroupJID, req.Participants, req.Action)
+		if err != nil {
+			response.ParseError(fmt.Errorf("failed to process join requests: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+
+		RespondSuccess(w, map[string]interface{}{
+			"success": true,
+			"message": fmt.Sprintf("Group join requests processed. Action: %s", req.Action),
+			"results": result,
+		})
+
+	default:
+		response.ParseError(fmt.Errorf("invalid action, must be one of: get, approve, reject"))
+		RespondInterface(w, response)
+	}
+}
+
+// Helper function to convert phone numbers or partial JIDs to full JIDs
+func convertToJIDs(participants []string) ([]string, error) {
+	result := make([]string, len(participants))
+
+	for i, participant := range participants {
+		// If it already contains @, assume it's a JID
+		if strings.Contains(participant, "@") {
+			result[i] = participant
+		} else {
+			// Otherwise, treat as a phone number and convert to JID format
+			result[i] = participant + "@s.whatsapp.net"
+		}
+	}
+
+	return result, nil
+}

@@ -917,3 +917,125 @@ func (conn *WhatsmeowConnection) UpdateGroupPhoto(groupID string, imageData []by
 
 	return pictureID, nil
 }
+
+func (conn *WhatsmeowConnection) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Parse the group JID
+	jid, err := types.ParseJID(groupJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Convert participant strings to JIDs
+	participantJIDs := make([]types.JID, len(participants))
+	for i, participant := range participants {
+		participantJIDs[i], err = types.ParseJID(participant)
+		if err != nil {
+			return nil, fmt.Errorf("invalid participant JID format for %s: %v", participant, err)
+		}
+	}
+
+	// Map the action string to the ParticipantChange type
+	var participantAction whatsmeow.ParticipantChange
+	switch action {
+	case "add":
+		participantAction = whatsmeow.ParticipantChangeAdd
+	case "remove":
+		participantAction = whatsmeow.ParticipantChangeRemove
+	case "promote":
+		participantAction = whatsmeow.ParticipantChangePromote
+	case "demote":
+		participantAction = whatsmeow.ParticipantChangeDemote
+	default:
+		return nil, fmt.Errorf("invalid action %s", action)
+	}
+
+	// Call the whatsmeow method
+	result, err := conn.Client.UpdateGroupParticipants(jid, participantJIDs, participantAction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update group participants: %v", err)
+	}
+
+	// Convert to interface array for the generic return type
+	interfaceResults := make([]interface{}, len(result))
+	for i, r := range result {
+		interfaceResults[i] = r
+	}
+
+	return interfaceResults, nil
+}
+
+func (conn *WhatsmeowConnection) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Parse the group JID
+	jid, err := types.ParseJID(groupJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Call the whatsmeow method
+	requests, err := conn.Client.GetGroupRequestParticipants(jid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get group join requests: %v", err)
+	}
+
+	// Convert to interface array for the generic return type
+	interfaceResults := make([]interface{}, len(requests))
+	for i, r := range requests {
+		interfaceResults[i] = r
+	}
+
+	return interfaceResults, nil
+}
+
+func (conn *WhatsmeowConnection) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Parse the group JID
+	jid, err := types.ParseJID(groupJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Convert participant strings to JIDs
+	participantJIDs := make([]types.JID, len(participants))
+	for i, participant := range participants {
+		participantJIDs[i], err = types.ParseJID(participant)
+		if err != nil {
+			return nil, fmt.Errorf("invalid participant JID format for %s: %v", participant, err)
+		}
+	}
+
+	// Map the action string to the ParticipantRequestChange type
+	var requestAction whatsmeow.ParticipantRequestChange
+	switch action {
+	case "approve":
+		requestAction = whatsmeow.ParticipantChangeApprove
+	case "reject":
+		requestAction = whatsmeow.ParticipantChangeReject
+	default:
+		return nil, fmt.Errorf("invalid action %s", action)
+	}
+
+	// Call the correct WhatsApp method which returns participant results
+	result, err := conn.Client.UpdateGroupRequestParticipants(jid, participantJIDs, requestAction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to handle group join requests: %v", err)
+	}
+
+	// Convert the typed results to interface array
+	interfaceResults := make([]interface{}, len(result))
+	for i, r := range result {
+		interfaceResults[i] = r
+	}
+
+	return interfaceResults, nil
+}

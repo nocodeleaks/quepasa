@@ -110,20 +110,20 @@ func RegisterAPIControllers(r chi.Router) {
 		// DONT BE THAT GUY !
 		r.Post(endpoint+"/spam", Spam)
 
-		// GROUPS CONTROLLER
+		// GROUPS CONTROLLER **********************
+		// ----------------------------------------
+
+		// Get all groups
 		r.Get("/groups/getall", FetchAllGroupsController)
 
-		// Retorna os detalhes de um grupo específico.
+		// Get group info
 		r.Get("/groups/get", GetGroupController)
 
-		// Cria um novo grupo.
+		// Create a new group.
 		r.Post("/groups/create", CreateGroupController)
 
 		// Leave group
 		//r.Post("/groups/leave", LeaveGroupController)
-
-		// Updates the group participants.
-		//r.Put("/groups/participants", UpdateGroupParticipantsController)
 
 		// Updates the group name.
 		r.Put("/groups/name", SetGroupNameController)
@@ -134,6 +134,17 @@ func RegisterAPIControllers(r chi.Router) {
 		// Updates the group picture.
 		r.Put("/groups/photo", SetGroupPhotoController)
 
+		// Updates the group participants.
+		r.Put("/groups/participants", UpdateGroupParticipantsController)
+
+		// Get group join requests
+		r.Get("/groups/requests", GroupMembershipRequestsController)
+
+		// Manage group join requests
+		r.Post("/groups/requests", GroupMembershipRequestsController)
+
+		// ----------------------------------------
+		// GROUPS CONTROLLER **********************
 	}
 }
 

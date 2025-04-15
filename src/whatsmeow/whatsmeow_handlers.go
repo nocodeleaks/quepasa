@@ -146,8 +146,8 @@ func (source *WhatsmeowHandlers) Register() (err error) {
 	source.unregisterRequestedToken = false
 	source.eventHandlerID = source.Client.AddEventHandler(source.EventsHandler)
 
-	logger := source.GetLogger()
-	logger.Infof("handler registered, id: %v", source.eventHandlerID)
+	logentry := source.GetLogger()
+	logentry.Infof("handler registered, id: %v, loglevel: %s", source.eventHandlerID, logentry.Level)
 
 	return
 }

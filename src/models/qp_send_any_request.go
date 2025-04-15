@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 )
 
@@ -73,6 +74,18 @@ func (source *QpSendAnyRequest) GenerateUrlContent() (err error) {
 	// setting filename if empty
 	if len(source.FileName) == 0 {
 		source.FileName = path.Base(source.Url)
+
+		if len(source.FileName) > 0 {
+
+			// unescaping filename from url, on error, just warn ... dont panic
+			filename, unescapeErr := url.QueryUnescape(source.FileName)
+			if unescapeErr != nil {
+				logentry := source.GetLogger()
+				logentry.Warnf("fail to unescape from url, filename: %s, err: %s", source.FileName, unescapeErr)
+			} else {
+				source.FileName = filename
+			}
+		}
 	}
 
 	return

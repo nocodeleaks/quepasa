@@ -12,3 +12,10 @@ type WhatsappMessageUrl struct {
 func (source *WhatsappMessageUrl) String() string {
 	return source.Reference
 }
+
+func (source *WhatsappMessageUrl) SetThumbnail(bytes []byte) {
+	if len(bytes) > 0 {
+		thumbnail := NewWhatsappMessageThumbnail(bytes)
+		source.Thumbnail = thumbnail
+	}
+}

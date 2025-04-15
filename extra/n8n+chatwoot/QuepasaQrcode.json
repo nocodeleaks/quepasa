@@ -17,7 +17,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        5295.95709678845,
+        5515.95709678845,
         820
       ]
     },
@@ -35,22 +35,8 @@
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=✅ Qrcode gerado com sucesso!\n\n✅ Digitalize este código QR nos próximos 20 segundos:"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"✅ Qrcode gerado com sucesso!\\r\\n⚙ Digitalize este código QR nos próximos {{ $node['Command & Parameters'].json.timeout }} segundos\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "76601579-0662-41ee-bade-61c437177ea3",
@@ -58,8 +44,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1815.9570967884506,
-        720
+        1836,
+        700
       ]
     },
     {
@@ -82,7 +68,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2995.95709678845,
+        3215.95709678845,
         740
       ]
     },
@@ -105,41 +91,41 @@
       "parameters": {
         "content": "## Follow",
         "height": 573.3499448215342,
-        "width": 1617.8746514622399
+        "width": 1700.4695972024795
       },
       "id": "41d106d0-0873-4c81-a24f-4564b0ae556a",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2420,
+        2337.40505425976,
         540
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.6) Updates\n* waiting time issue",
+        "content": "## (1.0.7) Updates\n* removed private msg type to avoid trigger again",
         "height": 203.09211018757583,
-        "width": 641.796471588546
+        "width": 521.2175484615022
       },
       "id": "e12adef9-ac58-4c7a-ade6-7d633e267c43",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -503,
-        310
+        -2160,
+        460
       ]
     },
     {
       "parameters": {
-        "url": "={{ $json.extra.qphost }}/scan",
+        "url": "={{ $('EXTRA').item.json.qphost }}/scan",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
             {
               "name": "historysyncdays",
-              "value": "={{ $json.variables?.historysyncdays??  $env[\"HISTORYSYNCDAYS\"] }}"
+              "value": "={{ $json.variables?.historysyncdays ?? $env[\"HISTORYSYNCDAYS\"] }}"
             }
           ]
         },
@@ -148,11 +134,11 @@
           "parameters": [
             {
               "name": "X-QUEPASA-TOKEN",
-              "value": "={{ $json.extra.identifier }}"
+              "value": "={{ $('EXTRA').item.json.identifier }}"
             },
             {
               "name": "X-QUEPASA-USER",
-              "value": "={{ $json.extra.qpuser }}"
+              "value": "={{ $('EXTRA').item.json.qpuser }}"
             }
           ]
         },
@@ -163,8 +149,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        835.9570967884506,
-        700
+        1080,
+        740
       ]
     },
     {
@@ -178,8 +164,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1255.9570967884506,
-        680
+        1276,
+        660
       ]
     },
     {
@@ -189,8 +175,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1015.9570967884506,
-        620
+        1080,
+        600
       ]
     },
     {
@@ -204,8 +190,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        140,
-        620
+        -540,
+        700
       ]
     },
     {
@@ -217,13 +203,13 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1995.9570967884506,
-        660
+        2016,
+        640
       ]
     },
     {
       "parameters": {
-        "amount": "={{ $node['Manipulate Data'].json.timeout }}",
+        "amount": "={{ $node['Command & Parameters'].json.timeout }}",
         "unit": "seconds"
       },
       "id": "7f52b1c5-c05c-4aaf-8770-fa71f982a029",
@@ -231,7 +217,7 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        2215.9570967884506,
+        2435.9570967884506,
         660
       ],
       "webhookId": "b8706931-81cb-4f18-93e0-0a5d5416734b"
@@ -247,7 +233,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        2780,
+        3000,
         740
       ],
       "continueOnFail": true
@@ -259,7 +245,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2475.95709678845,
+        2695.95709678845,
         660
       ]
     },
@@ -270,7 +256,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3455.95709678845,
+        3675.95709678845,
         660
       ]
     },
@@ -285,7 +271,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3235.95709678845,
+        3455.95709678845,
         900
       ]
     },
@@ -296,40 +282,26 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2755.95709678845,
+        2975.95709678845,
         920
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.atoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=❌ Tempo para conexão expirou !\nPor favor, reinicie o processo!"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"❌ Tempo para conexão expirou !\\r\\nPor favor, reinicie o processo !\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "29766be7-105b-492e-8f52-5b3392d052d7",
@@ -337,7 +309,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        3515.95709678845,
+        3735.95709678845,
         900
       ]
     },
@@ -359,7 +331,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3275.95709678845,
+        3495.95709678845,
         720
       ]
     },
@@ -374,40 +346,26 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3655.95709678845,
+        3875.95709678845,
         700
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.utoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=Informações do servidor:\nToken gerado: {{$json.extra.identifier}}\nWhatsapp: {{$json.wid}}\n\n\n"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"Informações do servidor:\\r\\nToken gerado: {{$('EXTRA').item.json.identifier}}\\r\\nWhatsapp: {{$json.wid}}\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "e34d7bae-777f-4242-abcd-cf577ff91bb9",
@@ -415,7 +373,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        3915.95709678845,
+        4135.95709678845,
         800
       ]
     },
@@ -428,19 +386,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        4155.95709678845,
+        4375.95709678845,
         720
-      ]
-    },
-    {
-      "parameters": {},
-      "id": "8478912b-ce29-46a0-a61f-19cf61eb5f9c",
-      "name": "No Operation, do nothing5",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        535.9570967884506,
-        620
       ]
     },
     {
@@ -450,7 +397,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4375.95709678845,
+        4595.95709678845,
         720
       ]
     },
@@ -463,7 +410,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        5495.95709678845,
+        5715.95709678845,
         600
       ]
     },
@@ -490,10 +437,6 @@
             {
               "name": "message_type",
               "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
             }
           ]
         },
@@ -504,40 +447,26 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        5735.95709678845,
+        5955.95709678845,
         1000
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.atoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=✅ Conexão feita com sucesso!\n✅ Sistema Pronto para Usar"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"✅ Conexão feita com sucesso!\\r\\nSistema Pronto para Usar\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "7a248835-c018-4974-9d55-83c65c06907c",
@@ -545,7 +474,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        5675.95709678845,
+        5895.95709678845,
         460
       ]
     },
@@ -556,7 +485,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4555.95709678845,
+        4775.95709678845,
         1020
       ]
     },
@@ -570,7 +499,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        5495.95709678845,
+        5715.95709678845,
         1000
       ]
     },
@@ -584,7 +513,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        6320,
+        6540,
         560
       ]
     },
@@ -599,7 +528,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        5835.95709678845,
+        6055.95709678845,
         580
       ]
     },
@@ -631,40 +560,26 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        6035.95709678845,
+        6255.95709678845,
         580
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages ",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{$json.extra.utoken}}"
+              "value": "={{$('EXTRA').item.json.atoken}}"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=❌ Comando Inválido!\nUse:\n/qrcode\n/paircode +55XXXXXXXXXX"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"❌ Comando Inválido !\\r\\nUse:\\r\\n/qrcode\\r\\n/paircode +55XXXXXXXXXX\\r\\n\",\n  \"message_type\": 0\n}",
         "options": {}
       },
       "id": "7cba3c31-4703-46e7-b6e3-36f8c4478bf0",
@@ -672,8 +587,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        895.9570967884506,
-        1380
+        280,
+        1400
       ]
     },
     {
@@ -699,10 +614,6 @@
             {
               "name": "message_type",
               "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
             }
           ]
         },
@@ -713,7 +624,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1600,
+        1444,
         1140
       ]
     },
@@ -731,22 +642,8 @@
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=✅ ***Pair Code Gerado com sucesso***\nNúmero: +{{ $json.message.split('+')[1] }}\nPairCode: ***{{ $json.status }}***\n\nSe o número está correto, uma notificação no whatsapp irá aparece, insira esse código no seu dispositivo para conectar!"
-            },
-            {
-              "name": "message_type",
-              "value": "incoming"
-            },
-            {
-              "name": "private",
-              "value": "true"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"✅ ***Pair Code Gerado com sucesso***\\r\\nNúmero: +{{ $json.message.split('+')[1] }}\\r\\nPairCode: ***{{ $json.status }}***\\r\\nSe o número está correto, uma notificação no whatsapp irá aparece, insira esse código no seu dispositivo para conectar !\",\n  \"message_type\": \"incoming\"\n}",
         "options": {}
       },
       "id": "a4707ba9-f6c6-4039-9c48-d6236a5b4261",
@@ -754,7 +651,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1595.9570967884506,
+        1440,
         960
       ]
     },
@@ -769,7 +666,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        1135.9570967884506,
+        960,
         1040
       ]
     },
@@ -802,7 +699,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.1,
       "position": [
-        1315.9570967884506,
+        1160,
         1040
       ]
     },
@@ -849,7 +746,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1815.9570967884506,
+        1660,
         960
       ]
     },
@@ -885,7 +782,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        4695.95709678845,
+        4915.95709678845,
         780
       ],
       "notes": "Criado para lidar com typebot"
@@ -907,7 +804,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        4875.95709678845,
+        5095.95709678845,
         700
       ],
       "notes": "Criado para lidar com typebot"
@@ -962,7 +859,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5055.95709678845,
+        5275.95709678845,
         880
       ],
       "continueOnFail": true
@@ -1021,7 +918,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5060,
+        5280,
         700
       ],
       "continueOnFail": true
@@ -1033,7 +930,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4555.95709678845,
+        4775.95709678845,
         580
       ]
     },
@@ -1060,7 +957,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        915.9570967884506,
+        760,
         1080
       ],
       "onError": "continueRegularOutput"
@@ -1068,7 +965,7 @@
     {
       "parameters": {
         "requestMethod": "POST",
-        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation}}/messages",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages",
         "allowUnauthorizedCerts": true,
         "jsonParameters": true,
         "options": {
@@ -1076,15 +973,15 @@
         },
         "sendBinaryData": true,
         "binaryPropertyName": "attachments[]:data",
-        "headerParametersJson": "={ \"api_access_token\": \"{{ $json.extra.utoken }}\" }",
+        "headerParametersJson": "={ \"api_access_token\": \"{{ $('EXTRA').item.json.atoken }}\" }",
         "queryParametersJson": "{ \"message_type\": \"incoming\" }"
       },
       "name": "Envia QRCode No Chatwoot",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        1455.9570967884506,
-        680
+        1476,
+        660
       ],
       "id": "bb122461-bf69-4ee5-92b0-707cac1d0d10"
     },
@@ -1097,22 +994,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1655.9570967884506,
-        640
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const content = $json.body.messages[0].content.trim(); // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 30;\n\nreturn {\n  \"conversation\": $json.body.id ?? $json.body.messages[0].conversation_id,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.body.messages[0].content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
-      },
-      "id": "82d633b3-0179-4ada-a2d2-650ae26bd63b",
-      "name": "Manipulate Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -163,
-        550
+        1676,
+        620
       ]
     },
     {
@@ -1125,8 +1008,179 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -163,
-        690
+        -1300,
+        720
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE \"public\".\"channel_api\" SET \"webhook_url\"='{{$json.webhook}}' WHERE \"id\"='{{$json.extra.channel}}';",
+        "additionalFields": {}
+      },
+      "id": "9bd59cac-59ba-4fac-8641-ae4dbbae0416",
+      "name": "Database Webhook Update",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        440
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const extra = $('EXTRA').item.json;\n\nlet webhook = extra.n8nhost + \"/webhook/from-chatwoot?\";\nwebhook += \"identifier=\" + extra.identifier + \"&\";\nwebhook += \"utoken=\" + extra.utoken + \"&\";\nwebhook += \"atoken=\" + extra.atoken + \"&\";\n\nif (extra.qphost !== \"http://127.0.0.1:31000\"){\n  webhook += \"qphost=\" + extra.qphost + \"&\";\n}\n\nif (extra.cwhost !== \"http://127.0.0.1:3000\"){\n  webhook += \"cwhost=\" + extra.cwhost + \"&\";\n}\n\n//if (extra.cwpublic){\n//  webhook += \"cwpublic=\" + extra.cwpublic + \"&\";\n//}\n\nwebhook = webhook.replace(/\\&+$/, '');\n\n$input.item.json.webhook = webhook;\nreturn $input.item;"
+      },
+      "id": "b176cf49-a10d-43dd-8495-135eef39f1ec",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "inbox",
+              "value": "={{ $json.body?.inbox_id ?? '' }}"
+            },
+            {
+              "key": "conversation",
+              "value": "={{ $json.body?.id ?? '' }}"
+            },
+            {
+              "key": "content",
+              "value": "={{ $json.body?.messages[0]?.content ?? '' }}"
+            }
+          ]
+        }
+      },
+      "id": "5f17f49a-c4fa-4c16-b258-f247a7356dc6",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -1380,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "account",
+              "value": "={{ $('EXTRA').item.json.account ?? '' }}"
+            },
+            {
+              "key": "qpuser",
+              "value": "={{ $('EXTRA').item.json.qpuser ?? '' }}"
+            },
+            {
+              "key": "identifier",
+              "value": "={{ $('EXTRA').item.json.identifier ?? '' }}"
+            }
+          ]
+        }
+      },
+      "id": "65ac4335-370b-4a66-9864-0a41a6902542",
+      "name": "Execution Data After Extra",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{$('EXTRA').item.json.atoken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"content\": \"✅ Inbox webhook atualizado com sucesso\",\n  \"message_type\": 0\n}",
+        "options": {}
+      },
+      "id": "7de0846a-621c-4b02-b0cf-d48fe5f193e5",
+      "name": "Inbox Webhook Updated",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        80,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.extra }}",
+        "options": {}
+      },
+      "id": "49fbbe14-8463-4167-9c82-014705d01f29",
+      "name": "EXTRA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1120,
+        720
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1cdb8274-f7bd-45cb-80d9-7420dd90dcf7",
+              "name": "extra",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "e72815a2-ae40-419a-92df-fe487b8c8e2c",
+              "name": "conversation",
+              "value": "={{ $('Webhook').item.json.body.id ?? $('Webhook').item.json.body.messages[0].conversation_id }}",
+              "type": "number"
+            },
+            {
+              "id": "b05caf1a-d5f7-4c2d-83c1-83a8914de417",
+              "name": "content",
+              "value": "={{ $('Webhook').item.json.body.messages[0].content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "97b49e63-449f-472c-9f9c-ebd0218b9232",
+      "name": "PAYLOAD",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -940,
+        720
       ]
     },
     {
@@ -1152,7 +1206,9 @@
                   }
                 ],
                 "combinator": "and"
-              }
+              },
+              "renameOutput": true,
+              "outputKey": "qrcode"
             },
             {
               "conditions": {
@@ -1174,12 +1230,40 @@
                   }
                 ],
                 "combinator": "and"
-              }
+              },
+              "renameOutput": true,
+              "outputKey": "paircode"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "ae58c57f-b87e-40f3-8736-2be0f6355254",
+                    "leftValue": "={{ $json.message }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "empty"
             }
           ]
         },
         "options": {
-          "fallbackOutput": "extra"
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "invalid"
         }
       },
       "id": "089e9c52-8683-4811-b7a0-95107cc895b3",
@@ -1187,44 +1271,126 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.1,
       "position": [
-        675.9570967884506,
+        -40,
+        700
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "241ddb75-21a3-41b2-9649-995f9a9ca359",
+      "name": "Qrcode Challenging",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        600,
+        660
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "98fb0d95-b4aa-474e-91a3-c70b8e114cfb",
+      "name": "Paircode Challenging",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
         1020
       ]
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "=UPDATE \"public\".\"channel_api\" SET \"webhook_url\"='{{$json.webhook}}' WHERE \"id\"='{{$json.extra.channel}}';",
-        "additionalFields": {}
-      },
-      "id": "9bd59cac-59ba-4fac-8641-ae4dbbae0416",
-      "name": "Database Webhook Update",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 1,
-      "position": [
-        700,
-        220
-      ],
-      "alwaysOutputData": true,
-      "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "Postgres account"
+        "respondWith": "text",
+        "responseBody": "empty content",
+        "options": {
+          "responseCode": 200
         }
-      }
+      },
+      "id": "65de1e63-35ec-48a1-9f96-38f9f72b2234",
+      "name": "Respond to Webhook - Empty",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        280,
+        1180
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "invalid command",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "4669594f-09d7-4e85-9355-7626ce3008a9",
+      "name": "Respond to Webhook - Invalid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        1400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "317ebd12-2d8f-4000-9e93-f5b2ea21c146",
+              "leftValue": "={{ $json.body.messages[0].message_type }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c187b63b-8de6-4408-a423-d7fc1fda7e4a",
+      "name": "If Incoming Message Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1520,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "ignored cause its a incoming message",
+        "options": {}
+      },
+      "id": "711f32d3-6548-48b0-a2e1-a309ebd186f4",
+      "name": "Respond to Webhook - Ignore Incoming",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1300,
+        540
+      ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const extra = $input.item.json.extra;\n\nlet webhook = extra.n8nhost + \"/webhook/from-chatwoot?\";\nwebhook += \"identifier=\" + extra.identifier + \"&\";\nwebhook += \"utoken=\" + extra.utoken + \"&\";\nwebhook += \"atoken=\" + extra.atoken + \"&\";\n\nif (extra.qphost !== \"http://127.0.0.1:31000\"){\n  webhook += \"qphost=\" + extra.qphost + \"&\";\n}\n\nif (extra.cwhost !== \"http://127.0.0.1:3000\"){\n  webhook += \"cwhost=\" + extra.cwhost + \"&\";\n}\n\n//if (extra.cwpublic){\n//  webhook += \"cwpublic=\" + extra.cwpublic + \"&\";\n//}\n\nwebhook = webhook.replace(/\\&+$/, '');\n\n$input.item.json.webhook = webhook;\nreturn $input.item;"
+        "jsCode": "const content = $json.content?.trim() ?? ''; // Remover espaços extras no início e fim\n\n// Identificar comando, telefone e variáveis\nlet command = \"\";\nlet phoneNumber = \"\";\nlet variables = {};\n\n// Expressão regular unificada\nconst regex = /^(\\/(paircode|qrcode))\\s*(\\+?[0-9]+)?\\s*(.*)$/;\nconst matches = content.match(regex);\n\nif (matches) {\n    command = matches[2]; // Captura \"paircode\" ou \"qrcode\"\n    phoneNumber = matches[3] || \"\"; // Captura o número de telefone, se existir\n    const variablesString = matches[4] || \"\"; // Captura as variáveis, se existirem\n\n    // Processar variáveis no formato \"--nome=valor\"\n    variablesString.match(/--([a-zA-Z0-9\\-]+)=([0-9]+)/g)?.forEach(variable => {\n        const [key, value] = variable.replace('--', '').split('=');\n        variables[key] = value;\n    });\n}\n\n// Definir timeout padrão e verificar se foi substituído por uma variável\nlet timeout = parseInt(variables.timeout) || 30;\n\nreturn {\n  \"conversation\": $json.conversation,\n  \"timeout\": timeout, // Usa o valor da variável timeout, se disponível\n  \"message\": $json.content,\n  \"command\": command,\n  \"phoneNumber\": phoneNumber,\n  \"variables\": variables\n};\n"
       },
-      "id": "b176cf49-a10d-43dd-8495-135eef39f1ec",
-      "name": "Code",
+      "id": "82d633b3-0179-4ada-a2d2-650ae26bd63b",
+      "name": "Command & Parameters",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        520,
-        220
+        -740,
+        640
       ]
     },
     {
@@ -1238,8 +1404,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -460,
-        620
+        -1780,
+        700
       ],
       "webhookId": "e8d38d79-8f79-4bd1-85f8-fce3d8200233"
     }
@@ -1335,12 +1501,12 @@
       "main": [
         [
           {
-            "node": "No Operation, do nothing5",
+            "node": "Code",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Code",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -1477,22 +1643,6 @@
         [
           {
             "node": "No Operation, do nothing4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "No Operation, do nothing5": {
-      "main": [
-        [
-          {
-            "node": "No Operation, do nothing1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -1746,48 +1896,7 @@
       "main": [
         [
           {
-            "node": "Merge1",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Manipulate Data": {
-      "main": [
-        [
-          {
-            "node": "Merge1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch": {
-      "main": [
-        [
-          {
-            "node": "QrCode Gerenerator",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "PairCode Generator",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge10",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Invalid Comand",
+            "node": "EXTRA",
             "type": "main",
             "index": 0
           }
@@ -1805,16 +1914,163 @@
         ]
       ]
     },
-    "Webhook": {
+    "Database Webhook Update": {
       "main": [
         [
           {
-            "node": "Manipulate Data",
+            "node": "Inbox Webhook Updated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRA": {
+      "main": [
+        [
+          {
+            "node": "PAYLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAYLOAD": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Execution Data After Extra",
             "type": "main",
             "index": 0
           },
           {
+            "node": "Command & Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Qrcode Challenging",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Paircode Challenging",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook - Empty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid Comand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qrcode Challenging": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QrCode Gerenerator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paircode Challenging": {
+      "main": [
+        [
+          {
+            "node": "Merge10",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PairCode Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invalid Comand": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Incoming Message Type": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - Ignore Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Execute ChatWootExtra Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Command & Parameters": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Incoming Message Type",
             "type": "main",
             "index": 0
           }
@@ -1826,7 +2082,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f3e47b4d-e633-45fa-bde5-ed6be1f95692",
+  "versionId": "efc43d67-e293-491e-bb17-04e017d5c0c3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

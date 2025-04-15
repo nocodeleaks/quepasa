@@ -101,3 +101,10 @@ func (source *WhatsappAttachment) IsValidAudio() bool {
 func (source *WhatsappAttachment) IsValidPTT() bool {
 	return source.Mimetype == WhatsappPTTMime
 }
+
+func (source *WhatsappAttachment) SetThumbnail(bytes []byte) {
+	if len(bytes) > 0 {
+		thumbnail := NewWhatsappMessageThumbnail(bytes)
+		source.Thumbnail = thumbnail
+	}
+}

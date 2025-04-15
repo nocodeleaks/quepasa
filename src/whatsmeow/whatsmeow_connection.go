@@ -26,8 +26,9 @@ type WhatsmeowConnection struct {
 	Client            *whatsmeow.Client
 	Handlers          *WhatsmeowHandlers
 
-	failedToken bool
-	paired      func(string)
+	failedToken  bool
+	paired       func(string)
+	IsConnecting bool `json:"isconnecting"` // used to avoid multiple connection attempts
 }
 
 //#region IMPLEMENT WHATSAPP CONNECTION OPTIONS INTERFACE
@@ -118,10 +119,16 @@ func (conn *WhatsmeowConnection) IsValid() bool {
 	return false
 }
 
-func (conn *WhatsmeowConnection) IsConnected() bool {
-	if conn != nil {
-		if conn.Client != nil {
-			if conn.Client.IsConnected() {
+func (source *WhatsmeowConnection) IsConnected() bool {
+	if source != nil {
+
+		// manual checks for avoid thread locking
+		if source.IsConnecting {
+			return false
+		}
+
+		if source.Client != nil {
+			if source.Client.IsConnected() {
 				return true
 			}
 		}
@@ -129,19 +136,26 @@ func (conn *WhatsmeowConnection) IsConnected() bool {
 	return false
 }
 
-func (conn *WhatsmeowConnection) GetStatus() whatsapp.WhatsappConnectionState {
-	if conn != nil {
-		if conn.Client == nil {
+func (source *WhatsmeowConnection) GetStatus() whatsapp.WhatsappConnectionState {
+	if source != nil {
+		if source.Client == nil {
 			return whatsapp.UnVerified
 		} else {
-			if conn.Client.IsConnected() {
-				if conn.Client.IsLoggedIn() {
+
+			// manual checks for avoid thread locking
+			if source.IsConnecting {
+				return whatsapp.Connecting
+			}
+
+			// this is connected method locks the socket thread, so, if its in connecting state, it will be blocked here
+			if source.Client.IsConnected() {
+				if source.Client.IsLoggedIn() {
 					return whatsapp.Ready
 				} else {
 					return whatsapp.Connected
 				}
 			} else {
-				if conn.failedToken {
+				if source.failedToken {
 					return whatsapp.Failed
 				} else {
 					return whatsapp.Disconnected
@@ -167,7 +181,15 @@ func (conn *WhatsmeowConnection) GetChatTitle(wid string) string {
 func (source *WhatsmeowConnection) Connect() (err error) {
 	source.GetLogger().Info("starting whatsmeow connection")
 
+	if source.IsConnecting {
+		return
+	}
+
+	source.IsConnecting = true
+
 	err = source.Client.Connect()
+	source.IsConnecting = false
+
 	if err != nil {
 		source.failedToken = true
 		return

@@ -3,7 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
 	types "go.mau.fi/whatsmeow/types"
@@ -177,6 +179,106 @@ func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 
 	response.GroupInfo = []*types.GroupInfo{updatedGroup}
 
+	RespondSuccess(w, response)
+}
+
+func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	response := &models.QpResponse{}
+
+	type setGroupPhotoStruct struct {
+		GroupJID  string `json:"group_jid"`
+		ImageURL  string `json:"image_url"`  // image URL
+		RemoveImg bool   `json:"remove_img"` // Option to remove existing photo
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var t setGroupPhotoStruct
+	err = decoder.Decode(&t)
+	if err != nil {
+		response.ParseError(fmt.Errorf("could not decode payload: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	if t.GroupJID == "" {
+		response.ParseError(fmt.Errorf("group JID is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Handle image removal request
+	if t.RemoveImg {
+		_, err := server.UpdateGroupPhoto(t.GroupJID, nil)
+		if err != nil {
+			response.ParseError(fmt.Errorf("failed to remove group photo: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+		response.ParseSuccess("Group photo removed successfully")
+		RespondSuccess(w, response)
+		return
+	}
+
+	// Check if an image URL is provided
+	if t.ImageURL == "" {
+		response.ParseError(fmt.Errorf("image_url is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Download the image from the URL
+	httpClient := &http.Client{
+		Timeout: time.Second * 30, // Set a timeout for the request
+	}
+
+	resp, err := httpClient.Get(t.ImageURL)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to download image: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		response.ParseError(fmt.Errorf("failed to download image, server returned status: %s", resp.Status))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Read the image data
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to read image data: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Check if the image meets WhatsApp's size requirements
+	if len(imageData) < 10000 || len(imageData) > 500000 {
+		response.ParseError(fmt.Errorf("image size not ideal for WhatsApp (should be between 10KB and 500KB)"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Call the service to update the group photo
+	pictureID, err := server.UpdateGroupPhoto(t.GroupJID, imageData)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to set group photo: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Prepare response
+	response.ParseSuccess(fmt.Sprintf("Group photo updated successfully. Picture ID: %s", pictureID))
 	RespondSuccess(w, response)
 }
 

@@ -119,29 +119,20 @@ func RegisterAPIControllers(r chi.Router) {
 		// Cria um novo grupo.
 		r.Post("/groups/create", CreateGroupController)
 
-		// Endpoint para entrar em um grupo usando um convite.
-		//r.Post("/groups/join/invite", JoinGroupWithInviteController)
-
-		// Endpoint para entrar em um grupo usando o link de convite.
-		//r.Post("/groups/join/link", JoinGroupWithLinkController)
-
-		// Endpoint para sair do grupo.
+		// Leave group
 		//r.Post("/groups/leave", LeaveGroupController)
 
-		// Atualiza os participantes do grupo (adição, remoção, promoção, demissão).
+		// Updates the group participants.
 		//r.Put("/groups/participants", UpdateGroupParticipantsController)
 
-		// Solicita o link de convite do grupo.
-		//r.Get("/groups/invite", GetGroupInviteLinkController)
-
-		// Atualiza o nome (subject) do grupo.
+		// Updates the group name.
 		r.Put("/groups/name", SetGroupNameController)
 
-		// Atualiza o tópico (description) do grupo.
-		//r.Put("/groups/topic", SetGroupTopicController)
+		// Updates the group description.
+		//r.Put("/groups/description", SetGroupTopicController)
 
-		// Atualiza a foto do grupo.
-		//r.Put("/groups/photo", SetGroupPhotoController)
+		// Updates the group picture.
+		r.Put("/groups/photo", SetGroupPhotoController)
 
 	}
 }

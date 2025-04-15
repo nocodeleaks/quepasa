@@ -897,3 +897,23 @@ func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string)
 	// Return the updated group info
 	return conn.Client.GetGroupInfo(jid)
 }
+
+func (conn *WhatsmeowConnection) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
+	if conn.Client == nil {
+		return "", fmt.Errorf("client not defined")
+	}
+
+	// Parse the group ID to JID format
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		return "", fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Update the group photo
+	pictureID, err := conn.Client.SetGroupPhoto(jid, imageData)
+	if err != nil {
+		return "", fmt.Errorf("failed to update group photo: %v", err)
+	}
+
+	return pictureID, nil
+}

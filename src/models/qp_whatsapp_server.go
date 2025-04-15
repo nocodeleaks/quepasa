@@ -878,3 +878,12 @@ func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) 
 
 	return conn.UpdateGroupSubject(groupID, name) // Delegate the call to the connection
 }
+
+func (server *QpWhatsappServer) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "", err
+	}
+
+	return conn.UpdateGroupPhoto(groupID, imageData)
+}

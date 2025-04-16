@@ -114,34 +114,34 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 
 		// Get all groups
-		r.Get("/groups/getall", FetchAllGroupsController)
+		r.Get(endpoint+"/groups/getall", FetchAllGroupsController)
 
 		// Get group info
-		r.Get("/groups/get", GetGroupController)
+		r.Get(endpoint+"/groups/get", GetGroupController)
 
 		// Create a new group.
-		r.Post("/groups/create", CreateGroupController)
+		r.Post(endpoint+"/groups/create", CreateGroupController)
 
 		// Leave group
-		//r.Post("/groups/leave", LeaveGroupController)
+		//r.Post(endpoint+"/groups/leave", LeaveGroupController)
 
 		// Updates the group name.
-		r.Put("/groups/name", SetGroupNameController)
+		r.Put(endpoint+"/groups/name", SetGroupNameController)
 
 		// Updates the group description.
-		//r.Put("/groups/description", SetGroupTopicController)
+		//r.Put(endpoint+"/groups/description", SetGroupTopicController)
 
 		// Updates the group picture.
-		r.Put("/groups/photo", SetGroupPhotoController)
+		r.Put(endpoint+"/groups/photo", SetGroupPhotoController)
 
 		// Updates the group participants.
-		r.Put("/groups/participants", UpdateGroupParticipantsController)
+		r.Put(endpoint+"/groups/participants", UpdateGroupParticipantsController)
 
 		// Get group join requests
-		r.Get("/groups/requests", GroupMembershipRequestsController)
+		r.Get(endpoint+"/groups/requests", GroupMembershipRequestsController)
 
 		// Manage group join requests
-		r.Post("/groups/requests", GroupMembershipRequestsController)
+		r.Post(endpoint+"/groups/requests", GroupMembershipRequestsController)
 
 		// ----------------------------------------
 		// GROUPS CONTROLLER **********************

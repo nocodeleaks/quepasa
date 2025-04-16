@@ -5,6 +5,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	types "go.mau.fi/whatsmeow/types"
 )
 
 type IWhatsappConnection interface {
@@ -78,4 +79,32 @@ type IWhatsappConnection interface {
 	GetContacts() ([]WhatsappChat, error)
 
 	PairPhone(phone string) (string, error)
+
+	//region Group Methods
+
+	// Get a list of all groups
+	GetJoinedGroups() ([]*types.GroupInfo, error)
+
+	// Get a specific group
+	GetGroupInfo(string) (*types.GroupInfo, error)
+
+	// Create a group
+	CreateGroup(string, []string) (*types.GroupInfo, error)
+
+	// Update Group Name
+	UpdateGroupSubject(string, string) (*types.GroupInfo, error)
+
+	// Update Group Photo
+	UpdateGroupPhoto(string, []byte) (string, error)
+
+	// Update group participants (add, remove, promote, demote)
+	UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	// Get list of pending join requests for a group
+	GetGroupJoinRequests(groupJID string) ([]interface{}, error)
+
+	// Handle join requests (approve/reject)
+	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	//endregion Group Methods
 }

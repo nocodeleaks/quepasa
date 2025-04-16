@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	types "go.mau.fi/whatsmeow/types"
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
@@ -833,6 +834,8 @@ func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat,
 
 //#endregion
 
+//#region IsOnWhatsapp
+
 func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []string, err error) {
 	conn, err := source.GetValidConnection()
 	if err != nil {
@@ -841,3 +844,80 @@ func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []str
 
 	return conn.IsOnWhatsApp(phones...)
 }
+
+//#endregion
+
+// #region GROUPS
+func (server *QpWhatsappServer) GetJoinedGroups() ([]*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetJoinedGroups()
+}
+
+func (server *QpWhatsappServer) GetGroupInfo(groupID string) (*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetGroupInfo(groupID)
+}
+
+func (server *QpWhatsappServer) CreateGroup(name string, participants []string) (*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.CreateGroup(name, participants)
+}
+
+func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection() // Ensure a valid connection is available
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupSubject(groupID, name) // Delegate the call to the connection
+}
+
+func (server *QpWhatsappServer) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "", err
+	}
+
+	return conn.UpdateGroupPhoto(groupID, imageData)
+}
+
+func (server *QpWhatsappServer) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupParticipants(groupJID, participants, action)
+}
+
+func (server *QpWhatsappServer) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetGroupJoinRequests(groupJID)
+}
+
+func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.HandleGroupJoinRequests(groupJID, participants, action)
+}
+
+//#endregion

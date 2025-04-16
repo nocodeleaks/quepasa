@@ -834,6 +834,8 @@ func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat,
 
 //#endregion
 
+//#region IsOnWhatsapp
+
 func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []string, err error) {
 	conn, err := source.GetValidConnection()
 	if err != nil {
@@ -843,6 +845,9 @@ func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []str
 	return conn.IsOnWhatsApp(phones...)
 }
 
+//#endregion
+
+// #region GROUPS
 func (server *QpWhatsappServer) GetJoinedGroups() ([]*types.GroupInfo, error) {
 	conn, err := server.GetValidConnection()
 	if err != nil {
@@ -914,3 +919,5 @@ func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, partici
 
 	return conn.HandleGroupJoinRequests(groupJID, participants, action)
 }
+
+//#endregion

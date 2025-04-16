@@ -80,6 +80,8 @@ type IWhatsappConnection interface {
 
 	PairPhone(phone string) (string, error)
 
+	//region Group Methods
+
 	// Get a list of all groups
 	GetJoinedGroups() ([]*types.GroupInfo, error)
 
@@ -103,4 +105,6 @@ type IWhatsappConnection interface {
 
 	// Handle join requests (approve/reject)
 	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	//endregion Group Methods
 }

@@ -60,6 +60,9 @@ type WhatsappMessage struct {
 
 	Ads *WhatsappMessageAds `json:"ads,omitempty"`
 
+	// WhatsApp ID of the sender
+	Wid string `json:"wid,omitempty"`
+
 	// Extra information for custom messages
 	Info interface{} `json:"info,omitempty"`
 }

@@ -107,8 +107,7 @@ type IWhatsappConnection interface {
 	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
 
 	// Add to the IWhatsappConnection interface in whatsapp/interfaces.go
-	CreateGroupExtended(title string, participants []string, createKey string,
-		isParent bool, linkedParentJID string, approvalMode string) (*types.GroupInfo, error)
+	CreateGroupExtended(title string, participants []string) (*types.GroupInfo, error)
 
 	//endregion Group Methods
 }

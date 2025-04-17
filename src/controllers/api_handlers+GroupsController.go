@@ -93,12 +93,8 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 
 	// Parse request body with extended options
 	var request struct {
-		Title           string   `json:"title"`
-		Participants    []string `json:"participants"`
-		CreateKey       string   `json:"create_key,omitempty"`        // Optional message ID for deduplication
-		IsParent        bool     `json:"is_parent,omitempty"`         // Create a community instead of group
-		LinkedParentJID string   `json:"linked_parent_jid,omitempty"` // Create inside a community
-		ApprovalMode    string   `json:"approval_mode,omitempty"`     // For communities
+		Title        string   `json:"title"`
+		Participants []string `json:"participants"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -139,22 +135,6 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	options := map[string]interface{}{
 		"title":        request.Title,
 		"participants": formattedParticipants,
-	}
-
-	// Add optional parameters if provided
-	if request.CreateKey != "" {
-		options["create_key"] = request.CreateKey
-	}
-
-	if request.IsParent {
-		options["is_parent"] = true
-		if request.ApprovalMode != "" {
-			options["approval_mode"] = request.ApprovalMode
-		}
-	}
-
-	if request.LinkedParentJID != "" {
-		options["linked_parent_jid"] = request.LinkedParentJID
 	}
 
 	// Create group using the interface method with properly formatted participants and options

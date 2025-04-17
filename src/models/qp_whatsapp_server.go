@@ -929,14 +929,8 @@ func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface
 	// Extract parameters
 	title, _ := options["title"].(string)
 	participantsRaw, _ := options["participants"].([]string)
-	createKey, _ := options["create_key"].(string)
-	isParent, _ := options["is_parent"].(bool)
-	linkedParentJID, _ := options["linked_parent_jid"].(string)
-	approvalMode, _ := options["approval_mode"].(string)
 
-	// You need to add a CreateGroupExtended method to the IWhatsappConnection interface
-	// and implement it in WhatsmeowConnection
-	return conn.CreateGroupExtended(title, participantsRaw, createKey, isParent, linkedParentJID, approvalMode)
+	return conn.CreateGroupExtended(title, participantsRaw)
 }
 
 //#endregion

@@ -91,10 +91,14 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse request body
+	// Parse request body with extended options
 	var request struct {
-		Title        string   `json:"title"`
-		Participants []string `json:"participants"`
+		Title           string   `json:"title"`
+		Participants    []string `json:"participants"`
+		CreateKey       string   `json:"create_key,omitempty"`        // Optional message ID for deduplication
+		IsParent        bool     `json:"is_parent,omitempty"`         // Create a community instead of group
+		LinkedParentJID string   `json:"linked_parent_jid,omitempty"` // Create inside a community
+		ApprovalMode    string   `json:"approval_mode,omitempty"`     // For communities
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -110,14 +114,51 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// WhatsApp enforces a 25 character limit on group names
+	if len(request.Title) > 25 {
+		response.ParseError(fmt.Errorf("group title is limited to 25 characters"))
+		RespondInterface(w, response)
+		return
+	}
+
 	if len(request.Participants) == 0 {
 		response.ParseError(fmt.Errorf("participants are required"))
 		RespondInterface(w, response)
 		return
 	}
 
-	// Create group using the interface method
-	groupInfo, err := server.CreateGroup(request.Title, request.Participants)
+	// Convert phone numbers to proper JID format
+	formattedParticipants, err := convertToJIDs(request.Participants)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to format participant numbers: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Build extended options for group creation
+	options := map[string]interface{}{
+		"title":        request.Title,
+		"participants": formattedParticipants,
+	}
+
+	// Add optional parameters if provided
+	if request.CreateKey != "" {
+		options["create_key"] = request.CreateKey
+	}
+
+	if request.IsParent {
+		options["is_parent"] = true
+		if request.ApprovalMode != "" {
+			options["approval_mode"] = request.ApprovalMode
+		}
+	}
+
+	if request.LinkedParentJID != "" {
+		options["linked_parent_jid"] = request.LinkedParentJID
+	}
+
+	// Create group using the interface method with properly formatted participants and options
+	groupInfo, err := server.CreateGroupExtended(options)
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)

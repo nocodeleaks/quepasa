@@ -1039,3 +1039,50 @@ func (conn *WhatsmeowConnection) HandleGroupJoinRequests(groupJID string, partic
 
 	return interfaceResults, nil
 }
+
+func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants []string,
+	createKey string, isParent bool,
+	linkedParentJID string, approvalMode string) (*types.GroupInfo, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Convert participants to JIDs
+	participantJIDs := make([]types.JID, len(participants))
+	for i, participant := range participants {
+		jid, err := types.ParseJID(participant)
+		if err != nil {
+			return nil, fmt.Errorf("invalid participant JID: %v", err)
+		}
+		participantJIDs[i] = jid
+	}
+
+	// Create request structure
+	req := whatsmeow.ReqCreateGroup{
+		Name:         title,
+		Participants: participantJIDs,
+	}
+
+	// Add optional parameters
+	if createKey != "" {
+		req.CreateKey = types.MessageID(createKey)
+	}
+
+	if isParent {
+		req.IsParent = true
+		if approvalMode != "" {
+			req.DefaultMembershipApprovalMode = approvalMode
+		}
+	}
+
+	if linkedParentJID != "" {
+		linkedJID, err := types.ParseJID(linkedParentJID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid linked parent JID: %v", err)
+		}
+		req.LinkedParentJID = linkedJID
+	}
+
+	// Call the WhatsApp method
+	return conn.Client.CreateGroup(req)
+}

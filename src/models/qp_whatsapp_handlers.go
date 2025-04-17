@@ -20,6 +20,16 @@ type QPWhatsappHandlers struct {
 	aeh []QpWebhookHandlerInterface
 }
 
+// Returns whatsapp controller id on E164
+// Ex: 5521967609095
+func (source *QPWhatsappHandlers) GetWId() string {
+	if source == nil || source.server == nil {
+		return ""
+	}
+
+	return source.server.GetWId()
+}
+
 func (source *QPWhatsappHandlers) HandleGroups() bool {
 	global := whatsapp.Options
 
@@ -192,6 +202,7 @@ func (source *QPWhatsappHandlers) GetById(id string) (*whatsapp.WhatsappMessage,
 func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 	if source != nil {
 		if source.server != nil {
+			payload.Wid = source.GetWId()
 			go SignalRHub.Dispatch(source.server.Token, payload)
 		}
 

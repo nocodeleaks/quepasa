@@ -920,4 +920,17 @@ func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, partici
 	return conn.HandleGroupJoinRequests(groupJID, participants, action)
 }
 
+func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface{}) (*types.GroupInfo, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract parameters
+	title, _ := options["title"].(string)
+	participantsRaw, _ := options["participants"].([]string)
+
+	return conn.CreateGroupExtended(title, participantsRaw)
+}
+
 //#endregion

@@ -1039,3 +1039,28 @@ func (conn *WhatsmeowConnection) HandleGroupJoinRequests(groupJID string, partic
 
 	return interfaceResults, nil
 }
+
+func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants []string) (*types.GroupInfo, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Convert participants to JIDs
+	participantJIDs := make([]types.JID, len(participants))
+	for i, participant := range participants {
+		jid, err := types.ParseJID(participant)
+		if err != nil {
+			return nil, fmt.Errorf("invalid participant JID: %v", err)
+		}
+		participantJIDs[i] = jid
+	}
+
+	// Create request structure
+	req := whatsmeow.ReqCreateGroup{
+		Name:         title,
+		Participants: participantJIDs,
+	}
+
+	// Call the WhatsApp method
+	return conn.Client.CreateGroup(req)
+}

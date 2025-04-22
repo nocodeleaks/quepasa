@@ -139,12 +139,25 @@
 	> Trigger webhooks for read receipts events. (default false)
 
 	# CALLS
-	
+	> defines if will be accepted calls
+
 	# READUPDATE
 	> Mark chat read when send any msg. (default true)
-	
+
+ 	# SHOWTYPING
+	> Turns on the typing indicator (default false)
+
+ 	# CACHELENGTH
+	> Defines the amount of messages that should be kept in cache (default empty(unlimited))
+
+ 	# MASTERKEY
+  	> A master key for administration
+   
 	# SYNOPSISLENGTH
 	> Length for synopsis msg at replies or reactions, (default 50)
+
+  	# HISTORYSYNCDAYS
+	> Defines the default amount of days of history that will be request on the QrCode Scan (default 0)
 		
 	# LOGLEVEL
 	

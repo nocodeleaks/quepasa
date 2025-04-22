@@ -145,6 +145,13 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// ----------------------------------------
 		// GROUPS CONTROLLER **********************
+
+		// Typing Controller ********************
+		// ----------------------------------------
+		r.Post(endpoint+"/chat/typing", TypingIndicatorController)
+
+		// ----------------------------------------
+		// Typing Controller ********************
 	}
 }
 

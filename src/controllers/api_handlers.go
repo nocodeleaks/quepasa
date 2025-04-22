@@ -47,7 +47,6 @@ func RegisterAPIControllers(r chi.Router) {
 
 		r.Post(endpoint+"/send", SendAny)
 		r.Post(endpoint+"/send/{chatid}", SendAny)
-		r.Post(endpoint+"/sendlinkpreview", SendWithLinkPreviewHandler)
 
 		// obsolete, marked for remove (2024/10/22)
 		r.Post(endpoint+"/sendtext", SendAny)
@@ -153,8 +152,6 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// ----------------------------------------
 		// Typing Controller ********************
-
-		r.Post(endpoint+"/sendpoll", SendPollHandler)
 	}
 }
 

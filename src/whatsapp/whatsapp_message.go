@@ -65,8 +65,6 @@ type WhatsappMessage struct {
 
 	// Extra information for custom messages
 	Info interface{} `json:"info,omitempty"`
-
-	IsLinkPreview bool `json:"islinkpreview,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP

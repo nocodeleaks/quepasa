@@ -1064,3 +1064,29 @@ func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants 
 	// Call the WhatsApp method
 	return conn.Client.CreateGroup(req)
 }
+
+// SendChatPresence updates typing status in a chat
+func (conn *WhatsmeowConnection) SendChatPresence(chatId string, isTyping bool, mediaType string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	var state types.ChatPresence
+	if isTyping {
+		state = types.ChatPresenceComposing // typing
+	} else {
+		state = types.ChatPresencePaused // stopped typing
+	}
+
+	var media types.ChatPresenceMedia
+	if mediaType == "audio" {
+		media = types.ChatPresenceMediaAudio
+	}
+
+	return conn.Client.SendChatPresence(jid, state, media)
+}

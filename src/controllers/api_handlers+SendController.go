@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
@@ -153,7 +154,11 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 }
 
 // finally sends to the whatsapp server
+// finally sends to the whatsapp server
 func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+	logentry := server.GetLogger()
+
+	// Create WhatsApp message from request
 	waMsg, err := request.ToWhatsappMessage()
 	if err != nil {
 		metrics.MessageSendErrors.Inc()
@@ -162,17 +167,18 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 		return
 	}
 
-	logentry := server.GetLogger()
-
+	// Handle attachment if present
 	if attach != nil {
 		waMsg.Attachment = attach
 		waMsg.Type = whatsapp.GetMessageType(attach)
-		logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s",
+			waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 	} else {
 		// test for poll, already set from ToWhatsappMessage
 		waMsg.Type = whatsapp.TextMessageType
 	}
 
+	// Validate message type
 	if waMsg.Type == whatsapp.UnknownMessageType {
 		// correct msg type for texts contents
 		if len(waMsg.Text) > 0 {
@@ -192,6 +198,44 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 		return
 	}
 
+	// SYNCHRONOUS: Handle typing indicator if requested AND enabled in environment
+	if request.ShowTyping && whatsapp.Options.ShowTyping {
+		typingDuration := request.TypingDuration
+		if typingDuration <= 0 {
+			// Default typing duration based on message length
+			messageLen := len(request.Text)
+			if messageLen > 0 {
+				// Roughly 30ms per character, minimum 1s, maximum 5s
+				typingDuration = min(max(messageLen*30, 1000), 5000)
+			} else {
+				typingDuration = 2000 // Default for media
+			}
+		}
+
+		mediaType := request.MediaType
+		if mediaType == "" && attach != nil {
+			// Auto-detect media type based on attachment
+			if strings.HasPrefix(attach.Mimetype, "audio/") {
+				mediaType = "audio"
+			}
+		}
+
+		// Send the typing indicator
+		err := server.SendChatPresence(request.ChatId, true, mediaType)
+		if err != nil {
+			logentry.Warnf("Failed to send typing indicator: %v", err)
+			// Continue even if typing indicator fails
+		} else {
+			logentry.Infof("Waiting %dms for typing indicator before sending message (global typing: enabled)", typingDuration)
+			// Sleep for the typing duration - this will block the request
+			time.Sleep(time.Duration(typingDuration) * time.Millisecond)
+		}
+	} else if request.ShowTyping && !whatsapp.Options.ShowTyping {
+		logentry.Infof("Typing indicator requested but disabled by environment setting (SHOWTYPING=false)")
+	}
+
+	// SYNCHRONOUS: Send the message
+	logentry.Infof("Sending message synchronously to chat: %s", waMsg.Chat.Id)
 	sendResponse, err := server.SendMessage(waMsg)
 	if err != nil {
 		metrics.MessageSendErrors.Inc()
@@ -202,6 +246,12 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 	// success
 	metrics.MessagesSent.Inc()
+	logentry.Infof("Message sent successfully: %s", waMsg.Id)
+
+	// Stop typing indicator after message is sent (only if we sent one)
+	if request.ShowTyping && whatsapp.Options.ShowTyping {
+		_ = server.SendChatPresence(request.ChatId, false, "")
+	}
 
 	result := &models.QpSendResponseMessage{}
 	result.Wid = server.GetWId()

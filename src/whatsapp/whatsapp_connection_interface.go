@@ -110,4 +110,5 @@ type IWhatsappConnection interface {
 	CreateGroupExtended(title string, participants []string) (*types.GroupInfo, error)
 
 	//endregion Group Methods
+	SendChatPresence(chatId string, isTyping bool, mediaType string) error
 }

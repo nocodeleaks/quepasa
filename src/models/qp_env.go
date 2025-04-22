@@ -43,6 +43,7 @@ const (
 	ENV_GROUPS          = "GROUPS"
 	ENV_BROADCASTS      = "BROADCASTS"
 	ENV_HISTORYSYNCDAYS = "HISTORYSYNCDAYS"
+	ENV_SHOWTYPING      = "SHOWTYPING" // show typing status (default false)
 
 	ENV_PRESENCE            = "PRESENCE"
 	ENV_LOGLEVEL            = "LOGLEVEL"
@@ -201,6 +202,11 @@ func (*Environment) Calls() whatsapp.WhatsappBooleanExtended {
 
 func (*Environment) ReadUpdate() bool {
 	value, _ := GetEnvBool(ENV_READUPDATE, proto.Bool(false))
+	return *value
+}
+
+func (*Environment) ShowTyping() bool {
+	value, _ := GetEnvBool(ENV_SHOWTYPING, proto.Bool(false))
 	return *value
 }
 

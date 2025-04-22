@@ -52,6 +52,7 @@ func main() {
 		ReadReceipts: models.ENV.ReadReceipts(),
 		Calls:        models.ENV.Calls(),
 		ReadUpdate:   models.ENV.ReadUpdate(),
+		ShowTyping:   models.ENV.ShowTyping(),
 		HistorySync:  models.ENV.HistorySync(),
 		Presence:     models.ENV.Presence(),
 		LogLevel:     logentry.Level.String(),

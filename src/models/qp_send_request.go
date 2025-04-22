@@ -40,6 +40,10 @@ type QpSendRequest struct {
 	Seconds uint32 `json:"seconds,omitempty"`
 
 	Content []byte
+
+	ShowTyping     bool   `json:"show_typing,omitempty"`     // Show typing indicator before sending
+	TypingDuration int    `json:"typing_duration,omitempty"` // How long to show typing (ms)
+	MediaType      string `json:"media_type,omitempty"`      // For audio recording indicator
 }
 
 // get default log entry, never nil

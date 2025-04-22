@@ -933,4 +933,13 @@ func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface
 	return conn.CreateGroupExtended(title, participantsRaw)
 }
 
+// Add to QpWhatsappServer
+func (server *QpWhatsappServer) SendChatPresence(chatId string, isTyping bool, mediaType string) error {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return err
+	}
+	return conn.SendChatPresence(chatId, isTyping, mediaType)
+}
+
 //#endregion

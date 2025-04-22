@@ -249,7 +249,8 @@
         "whooks",
         "wmloglevel",
         "wmoptions",
-        "zabbix"
+        "zabbix",
+        "SHOWTYPING"
     ],
     "import": []
 }

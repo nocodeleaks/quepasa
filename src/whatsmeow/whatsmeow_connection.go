@@ -1090,3 +1090,59 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, isTyping bool, 
 
 	return conn.Client.SendChatPresence(jid, state, media)
 }
+
+// Add this method to the WhatsmeowConnection struct
+func (conn *WhatsmeowConnection) Sendpoll(chatId string, question string, options []string, maxSelections int) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	// Create poll options
+	pollOptions := make([]*waE2E.PollCreationMessage_Option, len(options))
+	for i, option := range options {
+		pollOptions[i] = &waE2E.PollCreationMessage_Option{
+			OptionName: proto.String(option),
+		}
+	}
+
+	// Set default max selections if not provided
+	if maxSelections <= 0 {
+		maxSelections = 1
+	}
+
+	// Ensure max selections is valid
+	if maxSelections > len(options) {
+		maxSelections = len(options)
+	}
+
+	// Create poll message
+	pollMessage := &waE2E.Message{
+		PollCreationMessage: &waE2E.PollCreationMessage{
+			Name:                   proto.String(question),
+			Options:                pollOptions,
+			SelectableOptionsCount: proto.Uint32(uint32(maxSelections)),
+		},
+		// Add MessageContextInfo with random message secret for proper poll functionality
+		MessageContextInfo: &waE2E.MessageContextInfo{
+			MessageSecret: randomBytes(32),
+		},
+	}
+
+	// Send the poll message
+	_, err = conn.Client.SendMessage(context.Background(), jid, pollMessage)
+	return err
+}
+
+// Helper function to generate random bytes (needed for poll message secret)
+func randomBytes(n int) []byte {
+	bytes := make([]byte, n)
+	for i := range bytes {
+		bytes[i] = byte(i % 256)
+	}
+	return bytes
+}

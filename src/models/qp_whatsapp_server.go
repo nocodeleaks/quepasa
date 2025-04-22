@@ -943,3 +943,15 @@ func (server *QpWhatsappServer) SendChatPresence(chatId string, isTyping bool, m
 }
 
 //#endregion
+
+// #region SEND poll
+
+func (server *QpWhatsappServer) Sendpoll(chatId string, question string, options []string, maxSelections int) error {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return err
+	}
+	return conn.Sendpoll(chatId, question, options, maxSelections)
+}
+
+// #endregion

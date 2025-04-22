@@ -111,4 +111,7 @@ type IWhatsappConnection interface {
 
 	//endregion Group Methods
 	SendChatPresence(chatId string, isTyping bool, mediaType string) error
+
+	// Update the Sendpoll method signature
+	Sendpoll(chatId string, question string, options []string, maxSelections int) error
 }

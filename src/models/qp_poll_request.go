@@ -5,5 +5,5 @@ type PollRequest struct {
 	Question      string   `json:"question"`                 // Required: Poll question/title
 	Options       []string `json:"options"`                  // Required: Array of poll options
 	MaxSelections int      `json:"max_selections,omitempty"` // Optional: Maximum number of options a user can select (default: 1)
-	TrackId       string   `json:"track_id,omitempty"`       // Optional: For tracking the message
+	TrackId       string   `json:"trackid,omitempty"`        // Optional: For tracking the message
 }

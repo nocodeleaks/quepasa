@@ -109,9 +109,14 @@ type IWhatsappConnection interface {
 	// Add to the IWhatsappConnection interface in whatsapp/interfaces.go
 	CreateGroupExtended(title string, participants []string) (*types.GroupInfo, error)
 
-	//endregion Group Methods
-	SendChatPresence(chatId string, isTyping bool, mediaType string) error
+	//endregion
 
+	//region Send Presence
+	SendChatPresence(chatId string, isTyping bool, mediaType string) error
+	//endregion
+
+	//region Send Poll
 	// Update the Sendpoll method signature
 	Sendpoll(chatId string, question string, options []string, maxSelections int) error
+	//endregion
 }

@@ -37,7 +37,8 @@ func SendPollHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate chat_id
+	// Check if chatid is provided
+	// If not, return an error response
 	if request.ChatId == "" {
 		metrics.MessageSendErrors.Inc()
 		response.ParseError(fmt.Errorf("chat_id is required"))
@@ -99,7 +100,7 @@ func SendPollHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Simply use the high-level API to send the poll
+	// Send the poll using the WhatsApp client
 	err = server.Sendpoll(request.ChatId, request.Question, request.Options, request.MaxSelections)
 	if err != nil {
 		metrics.MessageSendErrors.Inc()

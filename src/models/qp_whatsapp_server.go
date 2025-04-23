@@ -933,7 +933,9 @@ func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface
 	return conn.CreateGroupExtended(title, participantsRaw)
 }
 
-// Add to QpWhatsappServer
+//#endregion
+
+// #region SEND CHAT PRESENCE
 func (server *QpWhatsappServer) SendChatPresence(chatId string, isTyping bool, mediaType string) error {
 	conn, err := server.GetValidConnection()
 	if err != nil {
@@ -944,7 +946,7 @@ func (server *QpWhatsappServer) SendChatPresence(chatId string, isTyping bool, m
 
 //#endregion
 
-// #region SEND poll
+// #region SEND POLL
 
 func (server *QpWhatsappServer) Sendpoll(chatId string, question string, options []string, maxSelections int) error {
 	conn, err := server.GetValidConnection()

@@ -1091,7 +1091,8 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, isTyping bool, 
 	return conn.Client.SendChatPresence(jid, state, media)
 }
 
-// Add this method to the WhatsmeowConnection struct
+// Implements SendPoll method to send a poll message
+// to a specific chat. The poll consists of a question and multiple options.
 func (conn *WhatsmeowConnection) Sendpoll(chatId string, question string, options []string, maxSelections int) error {
 	if conn.Client == nil {
 		return fmt.Errorf("client not defined")

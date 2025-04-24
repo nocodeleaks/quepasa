@@ -144,9 +144,6 @@
 	# READUPDATE
 	> Mark chat read when send any msg. (default true)
 
- 	# SHOWTYPING
-	> Turns on the typing indicator (default false)
-
  	# CACHELENGTH
 	> Defines the amount of messages that should be kept in cache (default empty(unlimited))
 

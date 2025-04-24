@@ -1,4 +1,4 @@
-package controllers
+/*package controllers
 
 import (
 	"context"
@@ -219,4 +219,4 @@ func extractDomain(url string) string {
 	}
 
 	return domain
-}
+}*/

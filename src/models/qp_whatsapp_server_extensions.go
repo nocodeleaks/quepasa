@@ -20,36 +20,36 @@ func PostToWebHookFromServer(server *QpWhatsappServer, message *whatsapp.Whatsap
 	// ignoring ssl issues
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	for _, element := range server.Webhooks {
+	for _, webhook := range server.Webhooks {
 
 		// updating log
-		logentry := element.GetLogger()
+		logentry := webhook.GetLogger()
 		loglevel := logentry.Level
 		logentry = logentry.WithField(LogFields.MessageId, message.Id)
 		logentry.Level = loglevel
 
-		if message.Id == "readreceipt" && element.IsSetReadReceipts() && !element.ReadReceipts.Boolean() {
+		if message.Id == "readreceipt" && webhook.IsSetReadReceipts() && !webhook.ReadReceipts.Boolean() {
 			logentry.Debugf("ignoring read receipt message: %s", message.Text)
 			continue
 		}
 
-		if message.FromGroup() && element.IsSetGroups() && !element.Groups.Boolean() {
+		if message.FromGroup() && webhook.IsSetGroups() && !webhook.Groups.Boolean() {
 			logentry.Debug("ignoring group message")
 			continue
 		}
 
-		if message.FromBroadcast() && element.IsSetBroadcasts() && !element.Broadcasts.Boolean() {
+		if message.FromBroadcast() && webhook.IsSetBroadcasts() && !webhook.Broadcasts.Boolean() {
 			logentry.Debug("ignoring broadcast message")
 			continue
 		}
 
-		if message.Type == whatsapp.CallMessageType && element.IsSetCalls() && !element.Calls.Boolean() {
+		if message.Type == whatsapp.CallMessageType && webhook.IsSetCalls() && !webhook.Calls.Boolean() {
 			logentry.Debug("ignoring call message")
 			continue
 		}
 
-		if !message.FromInternal || (element.ForwardInternal && (len(element.TrackId) == 0 || element.TrackId != message.TrackId)) {
-			elerr := element.Post(message)
+		if !message.FromInternal || (webhook.ForwardInternal && (len(webhook.TrackId) == 0 || webhook.TrackId != message.TrackId)) {
+			elerr := webhook.Post(message)
 			if elerr != nil {
 				logentry.Errorf("error on post webhook: %s", elerr.Error())
 			}

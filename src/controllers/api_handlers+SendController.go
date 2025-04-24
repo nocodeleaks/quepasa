@@ -135,7 +135,7 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 		}
 	}
 
-	if att.Attach == nil && len(request.Text) == 0 {
+	if request.Poll == nil && att.Attach == nil && len(request.Text) == 0 {
 		metrics.MessageSendErrors.Inc()
 		err = fmt.Errorf("text not found, do not send empty messages")
 		response.ParseError(err)
@@ -163,6 +163,25 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 	}
 
 	logentry := server.GetLogger()
+
+	pollText := strings.TrimSpace(waMsg.Text)
+	if len(pollText) > 0 {
+		if strings.HasPrefix(pollText, "poll:") {
+			pollText = pollText[5:]
+
+			var poll *whatsapp.WhatsappPoll
+			err = json.Unmarshal([]byte(pollText), &poll)
+			if err != nil {
+				err = fmt.Errorf("error converting text to json poll: %s", err.Error())
+				metrics.MessageSendErrors.Inc()
+				response.ParseError(err)
+				RespondInterface(w, response)
+				return
+			}
+
+			waMsg.Poll = poll
+		}
+	}
 
 	if attach != nil {
 		waMsg.Attachment = attach

@@ -250,7 +250,6 @@
         "wmloglevel",
         "wmoptions",
         "zabbix",
-        "SHOWTYPING"
     ],
     "import": []
 }

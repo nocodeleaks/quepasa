@@ -2,13 +2,11 @@ package models
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	types "go.mau.fi/whatsmeow/types"
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
@@ -16,7 +14,6 @@ import (
 )
 
 type QpWhatsappServer struct {
-	library.LogStruct // logging
 	*QpServer
 	QpDataWebhooks
 
@@ -37,24 +34,6 @@ type QpWhatsappServer struct {
 	// Stop request token
 	StopRequested bool                   `json:"-"`
 	db            QpDataServersInterface `json:"-"`
-}
-
-// custom log entry with fields: wid
-func (source *QpWhatsappServer) GetLogger() *log.Entry {
-	if source != nil && source.LogEntry != nil {
-		return source.LogEntry
-	}
-
-	logentry := library.NewLogEntry(source)
-	if source != nil {
-		logentry = logentry.WithField(LogFields.WId, source.Wid)
-		source.LogEntry = logentry
-	}
-
-	logentry.Level = log.ErrorLevel
-	logentry.Infof("generating new log entry for %s, with level: %s", reflect.TypeOf(source), logentry.Level)
-
-	return logentry
 }
 
 func (source *QpWhatsappServer) GetValidConnection() (whatsapp.IWhatsappConnection, error) {
@@ -848,7 +827,7 @@ func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []str
 //#endregion
 
 // #region GROUPS
-func (server *QpWhatsappServer) GetJoinedGroups() ([]*types.GroupInfo, error) {
+func (server *QpWhatsappServer) GetJoinedGroups() ([]interface{}, error) {
 	conn, err := server.GetValidConnection()
 	if err != nil {
 		return nil, err
@@ -857,7 +836,7 @@ func (server *QpWhatsappServer) GetJoinedGroups() ([]*types.GroupInfo, error) {
 	return conn.GetJoinedGroups()
 }
 
-func (server *QpWhatsappServer) GetGroupInfo(groupID string) (*types.GroupInfo, error) {
+func (server *QpWhatsappServer) GetGroupInfo(groupID string) (interface{}, error) {
 	conn, err := server.GetValidConnection()
 	if err != nil {
 		return nil, err
@@ -866,7 +845,7 @@ func (server *QpWhatsappServer) GetGroupInfo(groupID string) (*types.GroupInfo, 
 	return conn.GetGroupInfo(groupID)
 }
 
-func (server *QpWhatsappServer) CreateGroup(name string, participants []string) (*types.GroupInfo, error) {
+func (server *QpWhatsappServer) CreateGroup(name string, participants []string) (interface{}, error) {
 	conn, err := server.GetValidConnection()
 	if err != nil {
 		return nil, err
@@ -875,7 +854,7 @@ func (server *QpWhatsappServer) CreateGroup(name string, participants []string) 
 	return conn.CreateGroup(name, participants)
 }
 
-func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (*types.GroupInfo, error) {
+func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
 	conn, err := server.GetValidConnection() // Ensure a valid connection is available
 	if err != nil {
 		return nil, err
@@ -920,7 +899,7 @@ func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, partici
 	return conn.HandleGroupJoinRequests(groupJID, participants, action)
 }
 
-func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface{}) (*types.GroupInfo, error) {
+func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface{}) (interface{}, error) {
 	conn, err := server.GetValidConnection()
 	if err != nil {
 		return nil, err
@@ -935,25 +914,10 @@ func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface
 
 //#endregion
 
-// #region SEND CHAT PRESENCE
-func (server *QpWhatsappServer) SendChatPresence(chatId string, isTyping bool, mediaType string) error {
+func (server *QpWhatsappServer) SendChatPresence(chatId string, presenceType whatsapp.WhatsappChatPresenceType) error {
 	conn, err := server.GetValidConnection()
 	if err != nil {
 		return err
 	}
-	return conn.SendChatPresence(chatId, isTyping, mediaType)
+	return conn.SendChatPresence(chatId, uint(presenceType))
 }
-
-//#endregion
-
-// #region SEND POLL
-
-func (server *QpWhatsappServer) Sendpoll(chatId string, question string, options []string, maxSelections int) error {
-	conn, err := server.GetValidConnection()
-	if err != nil {
-		return err
-	}
-	return conn.Sendpoll(chatId, question, options, maxSelections)
-}
-
-// #endregion

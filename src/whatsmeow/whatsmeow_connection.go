@@ -495,9 +495,16 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 				ButtonsMessage: internal,
 			}
 		} else {
-			internal := &waE2E.ExtendedTextMessage{Text: &messageText}
-			internal.ContextInfo = source.GetContextInfo(*msg)
-			newMessage = &waE2E.Message{ExtendedTextMessage: internal}
+			if msg.Poll != nil {
+				newMessage, err = GeneratePollMessage(msg)
+				if err != nil {
+					return msg, err
+				}
+			} else {
+				internal := &waE2E.ExtendedTextMessage{Text: &messageText}
+				internal.ContextInfo = source.GetContextInfo(*msg)
+				newMessage = &waE2E.Message{ExtendedTextMessage: internal}
+			}
 		}
 	} else {
 		newMessage, err = source.UploadAttachment(*msg)
@@ -821,15 +828,27 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 func (conn *WhatsmeowConnection) IsInterfaceNil() bool {
 	return nil == conn
 }
-
-func (conn *WhatsmeowConnection) GetJoinedGroups() ([]*types.GroupInfo, error) {
+func (conn *WhatsmeowConnection) GetJoinedGroups() ([]interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
 	}
-	return conn.Client.GetJoinedGroups()
+
+	// Get the group info slice
+	groupInfos, err := conn.Client.GetJoinedGroups()
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert []*types.GroupInfo to []interface{}
+	groups := make([]interface{}, len(groupInfos))
+	for i, group := range groupInfos {
+		groups[i] = group
+	}
+
+	return groups, nil
 }
 
-func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (*types.GroupInfo, error) {
+func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
 	}
@@ -842,7 +861,7 @@ func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (*types.GroupInfo,
 	return conn.Client.GetGroupInfo(jid)
 }
 
-func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (*types.GroupInfo, error) {
+func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
 	}
@@ -877,7 +896,7 @@ func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string)
 	return conn.Client.CreateGroup(groupConfig)
 }
 
-func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string) (*types.GroupInfo, error) {
+func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
 	}
@@ -1040,7 +1059,7 @@ func (conn *WhatsmeowConnection) HandleGroupJoinRequests(groupJID string, partic
 	return interfaceResults, nil
 }
 
-func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants []string) (*types.GroupInfo, error) {
+func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants []string) (interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
 	}
@@ -1066,7 +1085,7 @@ func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants 
 }
 
 // SendChatPresence updates typing status in a chat
-func (conn *WhatsmeowConnection) SendChatPresence(chatId string, isTyping bool, mediaType string) error {
+func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType uint) error {
 	if conn.Client == nil {
 		return fmt.Errorf("client not defined")
 	}
@@ -1077,73 +1096,21 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, isTyping bool, 
 	}
 
 	var state types.ChatPresence
-	if isTyping {
-		state = types.ChatPresenceComposing // typing
-	} else {
-		state = types.ChatPresencePaused // stopped typing
-	}
-
 	var media types.ChatPresenceMedia
-	if mediaType == "audio" {
+
+	// Map our custom presence type to whatsmeow types
+	switch whatsapp.WhatsappChatPresenceType(presenceType) {
+	case whatsapp.WhatsappChatPresenceTypeText:
+		state = types.ChatPresenceComposing // typing
+		media = types.ChatPresenceMediaText
+	case whatsapp.WhatsappChatPresenceTypeAudio:
+		state = types.ChatPresenceComposing // typing
 		media = types.ChatPresenceMediaAudio
+	default:
+		// Default is paused (stop typing)
+		state = types.ChatPresencePaused
+		media = types.ChatPresenceMediaText
 	}
 
 	return conn.Client.SendChatPresence(jid, state, media)
-}
-
-// Implements SendPoll method to send a poll message
-// to a specific chat. The poll consists of a question and multiple options.
-func (conn *WhatsmeowConnection) Sendpoll(chatId string, question string, options []string, maxSelections int) error {
-	if conn.Client == nil {
-		return fmt.Errorf("client not defined")
-	}
-
-	jid, err := types.ParseJID(chatId)
-	if err != nil {
-		return fmt.Errorf("invalid chat id format: %v", err)
-	}
-
-	// Create poll options
-	pollOptions := make([]*waE2E.PollCreationMessage_Option, len(options))
-	for i, option := range options {
-		pollOptions[i] = &waE2E.PollCreationMessage_Option{
-			OptionName: proto.String(option),
-		}
-	}
-
-	// Set default max selections if not provided
-	if maxSelections <= 0 {
-		maxSelections = 1
-	}
-
-	// Ensure max selections is valid
-	if maxSelections > len(options) {
-		maxSelections = len(options)
-	}
-
-	// Create poll message
-	pollMessage := &waE2E.Message{
-		PollCreationMessage: &waE2E.PollCreationMessage{
-			Name:                   proto.String(question),
-			Options:                pollOptions,
-			SelectableOptionsCount: proto.Uint32(uint32(maxSelections)),
-		},
-		// Add MessageContextInfo with random message secret for proper poll functionality
-		MessageContextInfo: &waE2E.MessageContextInfo{
-			MessageSecret: randomBytes(32),
-		},
-	}
-
-	// Send the poll message
-	_, err = conn.Client.SendMessage(context.Background(), jid, pollMessage)
-	return err
-}
-
-// Helper function to generate random bytes (needed for poll message secret)
-func randomBytes(n int) []byte {
-	bytes := make([]byte, n)
-	for i := range bytes {
-		bytes[i] = byte(i % 256)
-	}
-	return bytes
 }

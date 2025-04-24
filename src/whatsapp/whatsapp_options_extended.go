@@ -28,9 +28,6 @@ type WhatsappOptionsExtended struct {
 
 	// default presence status
 	Presence string `json:"presence,omitempty"`
-
-	// should show typing status
-	ShowTyping bool `json:"showtyping,omitempty"`
 }
 
 func (source WhatsappOptionsExtended) IsDefault() bool {
@@ -39,7 +36,6 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 		source.ReadReceipts.Equals(UnSetBooleanType) &&
 		source.Calls.Equals(UnSetBooleanType) &&
 		!source.ReadUpdate &&
-		!source.ShowTyping &&
 		source.HistorySync == nil &&
 		len(source.LogLevel) == 0
 }

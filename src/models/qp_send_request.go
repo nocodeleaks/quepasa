@@ -41,9 +41,10 @@ type QpSendRequest struct {
 
 	Content []byte
 
-	ShowTyping     bool   `json:"show_typing,omitempty"`     // Show typing indicator before sending
 	TypingDuration int    `json:"typing_duration,omitempty"` // How long to show typing (ms)
 	MediaType      string `json:"media_type,omitempty"`      // For audio recording indicator
+
+	Poll *whatsapp.WhatsappPoll `json:"poll,omitempty"` // Poll if exists
 }
 
 // get default log entry, never nil
@@ -99,6 +100,8 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 		FromMe:       true,
 		FromInternal: true,
 	}
+
+	msg.Poll = source.Poll
 
 	// setting default type
 	if len(msg.Text) > 0 {

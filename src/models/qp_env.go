@@ -9,6 +9,7 @@ import (
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -43,7 +44,6 @@ const (
 	ENV_GROUPS          = "GROUPS"
 	ENV_BROADCASTS      = "BROADCASTS"
 	ENV_HISTORYSYNCDAYS = "HISTORYSYNCDAYS"
-	ENV_SHOWTYPING      = "SHOWTYPING" // show typing status (default false)
 
 	ENV_PRESENCE            = "PRESENCE"
 	ENV_LOGLEVEL            = "LOGLEVEL"
@@ -205,11 +205,6 @@ func (*Environment) ReadUpdate() bool {
 	return *value
 }
 
-func (*Environment) ShowTyping() bool {
-	value, _ := GetEnvBool(ENV_SHOWTYPING, proto.Bool(false))
-	return *value
-}
-
 //#region LOGS
 
 // forces default presence status (lower)
@@ -225,6 +220,15 @@ func (*Environment) LogLevel() string {
 	result = strings.ToLower(result)   // to lower
 	result = strings.TrimSpace(result) // trim white spaces
 	return result
+}
+
+func (*Environment) LogLevelFromLogrus(level logrus.Level) logrus.Level {
+	envLevel := ENV.LogLevel()
+	logrusLevel, err := logrus.ParseLevel(envLevel)
+	if err == nil {
+		return logrusLevel
+	}
+	return level
 }
 
 func (*Environment) HttpLogs() bool {

@@ -25,6 +25,7 @@ func NewLogEntryWithLevel(level log.Level) *log.Entry {
 	return logentry
 }
 
+// the parameter source is used just to identify the log entry, it can be a string or any other type
 func NewLogEntry(source any) *log.Entry {
 	var typeof string
 	if source != nil {

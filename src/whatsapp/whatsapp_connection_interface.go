@@ -5,7 +5,6 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	types "go.mau.fi/whatsmeow/types"
 )
 
 type IWhatsappConnection interface {
@@ -83,16 +82,16 @@ type IWhatsappConnection interface {
 	//region Group Methods
 
 	// Get a list of all groups
-	GetJoinedGroups() ([]*types.GroupInfo, error)
+	GetJoinedGroups() ([]interface{}, error)
 
 	// Get a specific group
-	GetGroupInfo(string) (*types.GroupInfo, error)
+	GetGroupInfo(string) (interface{}, error)
 
 	// Create a group
-	CreateGroup(string, []string) (*types.GroupInfo, error)
+	CreateGroup(string, []string) (interface{}, error)
 
 	// Update Group Name
-	UpdateGroupSubject(string, string) (*types.GroupInfo, error)
+	UpdateGroupSubject(string, string) (interface{}, error)
 
 	// Update Group Photo
 	UpdateGroupPhoto(string, []byte) (string, error)
@@ -107,16 +106,11 @@ type IWhatsappConnection interface {
 	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
 
 	// Add to the IWhatsappConnection interface in whatsapp/interfaces.go
-	CreateGroupExtended(title string, participants []string) (*types.GroupInfo, error)
+	CreateGroupExtended(title string, participants []string) (interface{}, error)
 
 	//endregion
 
 	//region Send Presence
-	SendChatPresence(chatId string, isTyping bool, mediaType string) error
-	//endregion
-
-	//region Send Poll
-	// Update the Sendpoll method signature
-	Sendpoll(chatId string, question string, options []string, maxSelections int) error
+	SendChatPresence(chatId string, presenceType uint) error
 	//endregion
 }

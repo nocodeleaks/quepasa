@@ -9,7 +9,6 @@ import (
 	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
-	types "go.mau.fi/whatsmeow/types"
 )
 
 //region CONTROLLER - GET GROUP
@@ -35,7 +34,7 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 		RespondInterface(w, response)
 		return
 	}
-	response.GroupInfo = []*types.GroupInfo{group}
+	response.GroupInfo = group
 
 	RespondSuccess(w, response)
 }
@@ -146,7 +145,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set response and return
-	response.GroupInfo = []*types.GroupInfo{groupInfo}
+	response.GroupInfo = groupInfo
 	RespondSuccess(w, response)
 }
 
@@ -199,7 +198,7 @@ func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.GroupInfo = []*types.GroupInfo{updatedGroup}
+	response.GroupInfo = updatedGroup
 
 	RespondSuccess(w, response)
 }
@@ -309,7 +308,7 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 // UpdateGroupParticipantsController handles adding, removing, promoting, and demoting group members
 func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	response := &models.QpResponse{}
+	response := &models.QpParticipantResponse{}
 
 	type participantUpdate struct {
 		GroupJID     string   `json:"group_jid"`
@@ -369,19 +368,18 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response.Total = len(result)
+	response.Participants = result
+
 	// Create success response with participant statuses
 	response.ParseSuccess(fmt.Sprintf("Group participants updated successfully. Action: %s", req.Action))
-	RespondSuccess(w, map[string]interface{}{
-		"success":      true,
-		"message":      fmt.Sprintf("Group participants updated successfully. Action: %s", req.Action),
-		"participants": result,
-	})
+	RespondSuccess(w, response)
 }
 
 // GroupMembershipRequestsController handles retrieving and managing join requests for groups
 func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	response := &models.QpResponse{}
+	response := &models.QpRequestResponse{}
 
 	type membershipRequest struct {
 		GroupJID     string   `json:"group_jid"`
@@ -428,10 +426,13 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		RespondSuccess(w, map[string]interface{}{
-			"success":  true,
-			"requests": requests,
-		})
+		// Set the response with the requests and the amount of requests
+		response.Requests = requests
+		response.Total = len(requests)
+
+		response.ParseSuccess("Group join requests retrieved successfully")
+		RespondInterface(w, response)
+		return
 
 	case "approve", "reject":
 		if len(req.Participants) == 0 {
@@ -447,16 +448,15 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 			RespondInterface(w, response)
 			return
 		}
-
-		RespondSuccess(w, map[string]interface{}{
-			"success": true,
-			"message": fmt.Sprintf("Group join requests processed. Action: %s", req.Action),
-			"results": result,
-		})
+		response.ParseSuccess("Group join requests processed successfully")
+		response.Requests = result
+		RespondInterface(w, response)
+		return
 
 	default:
 		response.ParseError(fmt.Errorf("invalid action, must be one of: get, approve, reject"))
 		RespondInterface(w, response)
+		return
 	}
 }
 

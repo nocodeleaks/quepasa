@@ -67,6 +67,8 @@ type WhatsappMessage struct {
 	Info interface{} `json:"info,omitempty"`
 
 	IsLinkPreview bool `json:"islinkpreview,omitempty"`
+
+	Poll *WhatsappPoll `json:"poll,omitempty"` // Poll if exists
 }
 
 //region ORDER BY TIMESTAMP

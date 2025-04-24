@@ -8,7 +8,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 
-	log "github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 )
 
 // @title chi-swagger example APIs
@@ -20,18 +20,11 @@ func main() {
 	// loading environment variables from .env file
 	godotenv.Load()
 
+	loglevel := models.ENV.LogLevelFromLogrus(logrus.InfoLevel)
+	logrus.SetLevel(loglevel)
+
 	logentry := library.NewLogEntry("main")
-
-	loglevel := models.ENV.LogLevel()
-	if len(loglevel) > 0 {
-		logruslevel, err := log.ParseLevel(loglevel)
-		if err != nil {
-			logentry.Errorf("trying parse an invalid loglevel: %s", loglevel)
-		} else {
-			logentry.Level = logruslevel
-		}
-	}
-
+	logentry.Level = loglevel
 	logentry.Infof("current log level: %v", logentry.Level)
 
 	// checks for pending database migrations

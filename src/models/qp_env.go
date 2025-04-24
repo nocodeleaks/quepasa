@@ -9,6 +9,7 @@ import (
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -219,6 +220,15 @@ func (*Environment) LogLevel() string {
 	result = strings.ToLower(result)   // to lower
 	result = strings.TrimSpace(result) // trim white spaces
 	return result
+}
+
+func (*Environment) LogLevelFromLogrus(level logrus.Level) logrus.Level {
+	envLevel := ENV.LogLevel()
+	logrusLevel, err := logrus.ParseLevel(envLevel)
+	if err == nil {
+		return logrusLevel
+	}
+	return level
 }
 
 func (*Environment) HttpLogs() bool {

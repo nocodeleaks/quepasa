@@ -18,8 +18,8 @@ func (source *QpDataWebhooks) WebhookFill(info *QpServer, db QpDataWebhooksInter
 	source.context = info.Token
 	source.db = db
 
-	logentry := info.NewLogEntry(source)
-	logentry.Debug("getting webhooks from database")
+	logentry := info.GetLogger()
+	logentry.Trace("getting webhooks from database")
 
 	whooks, err := source.db.FindAll(source.context)
 	if err != nil {
@@ -30,8 +30,7 @@ func (source *QpDataWebhooks) WebhookFill(info *QpServer, db QpDataWebhooksInter
 	for _, element := range whooks {
 
 		// logging for running webhooks
-		webHookLogEntry := info.NewLogEntry(element)
-		webHookLogEntry = webHookLogEntry.WithField(LogFields.Url, element.Url)
+		webHookLogEntry := logentry.WithField(LogFields.Url, element.Url)
 		element.LogEntry = webHookLogEntry
 
 		element.Wid = info.Wid

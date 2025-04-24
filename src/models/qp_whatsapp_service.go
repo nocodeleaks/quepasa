@@ -168,6 +168,7 @@ func (source *QPWhatsappService) NewQpWhatsappServer(info *QpServer) (server *Qp
 	serverLogEntry.Level = loglevel
 	server.LogEntry = serverLogEntry
 	logentry.Infof("server created, log level: %s", serverLogEntry.Level)
+	logentry.Trace("server created ...")
 
 	server.HandlerEnsure()
 	server.WebHookEnsure()

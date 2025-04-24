@@ -1,6 +1,7 @@
 package models
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/nocodeleaks/quepasa/library"
@@ -16,6 +17,8 @@ import (
 </summary>
 */
 type QpServer struct {
+	library.LogStruct // logging
+
 	// Optional whatsapp options
 	// ------------------------
 	whatsapp.WhatsappOptions
@@ -32,22 +35,37 @@ type QpServer struct {
 	Timestamp time.Time `db:"timestamp" json:"timestamp,omitempty"`
 }
 
-func (source QpServer) NewLogEntry(entry any) *log.Entry {
-	logentry := library.NewLogEntry(entry)
-	logentry = logentry.WithField(LogFields.WId, source.Wid)
-	logentry = logentry.WithField(LogFields.Token, source.Token)
+// custom log entry with fields: wid
+func (source *QpServer) GetLogger() *log.Entry {
+	if source != nil && source.LogEntry != nil {
+		return source.LogEntry
+	}
+
+	logentry := library.NewLogEntry(source)
+	if source != nil {
+		logentry = logentry.WithField(LogFields.WId, source.Wid)
+		logentry = logentry.WithField(LogFields.Token, source.Token)
+		source.LogEntry = logentry
+	}
+
 	logentry.Level = source.GetLogLevel()
+	logentry.Infof("generating new log entry for %s, with level: %s", reflect.TypeOf(source), logentry.Level)
+
 	return logentry
 }
 
-func (source QpServer) GetWId() string {
+func (source *QpServer) GetWId() string {
 	return source.Wid
 }
 
 // used for view
-func (source QpServer) GetLogLevel() log.Level {
+func (source *QpServer) GetLogLevel() log.Level {
 	if source.Devel {
-		return log.DebugLevel
+		loglevel := ENV.LogLevelFromLogrus(log.DebugLevel)
+		if loglevel < log.DebugLevel {
+			return log.DebugLevel
+		}
+		return loglevel
 	} else {
 		return log.InfoLevel
 	}

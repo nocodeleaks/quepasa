@@ -66,8 +66,6 @@ type WhatsappMessage struct {
 	// Extra information for custom messages
 	Info interface{} `json:"info,omitempty"`
 
-	IsLinkPreview bool `json:"islinkpreview,omitempty"`
-
 	Poll *WhatsappPoll `json:"poll,omitempty"` // Poll if exists
 }
 

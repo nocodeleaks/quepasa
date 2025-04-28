@@ -10,9 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	. "github.com/nocodeleaks/quepasa/metrics"
-	. "github.com/nocodeleaks/quepasa/models"
 	models "github.com/nocodeleaks/quepasa/models"
-	. "github.com/nocodeleaks/quepasa/whatsapp"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 func FormSendController(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +25,7 @@ func FormSendController(w http.ResponseWriter, r *http.Request) {
 
 // Renders route GET "/bot/{token}/send"
 func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
-	data := QPFormSendData{PageTitle: "Send"}
+	data := models.QPFormSendData{PageTitle: "Send"}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {
@@ -43,7 +42,7 @@ func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
 // Renders route POST "/bot/{token}/send"
 // Vindo do formulário de testes
 func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
-	data := QPFormSendData{PageTitle: "Send"}
+	data := models.QPFormSendData{PageTitle: "Send"}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {
@@ -66,7 +65,7 @@ func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
 	recipient := r.Form.Get("recipient")
 	message := r.Form.Get("message")
 
-	msg, err := ToWhatsappMessage(recipient, message, attachment)
+	msg, err := models.ToWhatsappMessage(recipient, message, attachment)
 	if err != nil {
 		RespondServerError(server, w, err)
 		return
@@ -87,7 +86,7 @@ func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
 	renderSendForm(w, data)
 }
 
-func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *WhatsappAttachment, err error) {
+func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *whatsapp.WhatsappAttachment, err error) {
 	logentry.Trace("form post, checking for file")
 
 	// Parse our multipart form, 10 << 20 specifies a maximum
@@ -115,7 +114,7 @@ func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *Wh
 		return
 	}
 
-	attach = &WhatsappAttachment{}
+	attach = &whatsapp.WhatsappAttachment{}
 	attach.SetContent(&content)
 	attach.Mimetype = reader.Header.Get("Content-Type")
 
@@ -141,7 +140,7 @@ func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *Wh
 	return
 }
 
-func renderSendForm(w http.ResponseWriter, data QPFormSendData) {
+func renderSendForm(w http.ResponseWriter, data models.QPFormSendData) {
 	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/bot/send.tmpl"))
 	templates.ExecuteTemplate(w, "main", data)
 }

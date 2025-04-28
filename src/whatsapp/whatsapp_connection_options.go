@@ -37,7 +37,7 @@ func (source *WhatsappConnectionOptions) GetLogger() *log.Entry {
 
 	logentry := library.NewLogEntry(source)
 	if source != nil {
-		logentry = logentry.WithField(library.LogFields.WId, source.Wid)
+		logentry = logentry.WithField(LogFields.WId, source.Wid)
 		source.LogEntry = logentry
 	}
 

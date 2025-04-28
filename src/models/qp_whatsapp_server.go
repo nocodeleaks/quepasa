@@ -8,7 +8,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -38,7 +37,7 @@ type QpWhatsappServer struct {
 
 func (source *QpWhatsappServer) GetValidConnection() (whatsapp.IWhatsappConnection, error) {
 	if source == nil || source.connection == nil || source.connection.IsInterfaceNil() {
-		return nil, ErrorInvalidConnection
+		return nil, ErrInvalidConnection
 	}
 
 	return source.connection, nil
@@ -566,40 +565,6 @@ func (server *QpWhatsappServer) IsDevelopmentGlobal() bool {
 	default:
 		return false
 	}
-}
-
-/*
-<summary>
-
-	Set a new random Guid token for whatsapp server bot
-
-</summary>
-*/
-func (server *QpWhatsappServer) CycleToken() (err error) {
-	value := uuid.New().String()
-	return server.UpdateToken(value)
-}
-
-/*
-<summary>
-
-	Set a specific not empty token for whatsapp server bot
-
-</summary>
-*/
-func (source *QpWhatsappServer) UpdateToken(value string) (err error) {
-	if len(value) == 0 {
-		err = fmt.Errorf("empty token")
-		return
-	}
-
-	err = source.UpdateToken(value)
-	if err != nil {
-		return
-	}
-
-	source.GetLogger().Infof("updating token: %v", value)
-	return
 }
 
 /*

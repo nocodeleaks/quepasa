@@ -28,27 +28,6 @@ func WebSocketProtocol() string {
 	return protocol
 }
 
-//
-// Cycle
-//
-
-// CycleHandler renders route POST "/bot/cycle"
-func FormCycleController(w http.ResponseWriter, r *http.Request) {
-	_, server, err := GetUserAndServer(w, r)
-	if err != nil {
-		// retorno já tratado pela funcao
-		return
-	}
-
-	err = server.CycleToken()
-	if err != nil {
-		RespondServerError(server, w, err)
-		return
-	}
-
-	http.Redirect(w, r, FormAccountEndpoint, http.StatusFound)
-}
-
 // DebugHandler renders route POST "/bot/debug"
 func FormDebugController(w http.ResponseWriter, r *http.Request) {
 	_, server, err := GetUserAndServer(w, r)
@@ -197,8 +176,12 @@ func VerifyFormHandler(w http.ResponseWriter, r *http.Request) {
 func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := models.GetFormUser(r)
 	if err != nil {
-		log.Errorf("connection upgrade error (not logged): %s", err.Error())
-		RedirectToLogin(w, r)
+		if err == models.ErrFormUnauthenticated {
+			RedirectToLogin(w, r)
+			return
+		}
+
+		RespondInterface(w, err)
 		return
 	}
 
@@ -284,7 +267,12 @@ func FormDeleteController(w http.ResponseWriter, r *http.Request) {
 func GetUserAndServer(w http.ResponseWriter, r *http.Request) (user *models.QpUser, server *models.QpWhatsappServer, err error) {
 	user, err = models.GetFormUser(r)
 	if err != nil {
-		RedirectToLogin(w, r)
+		if err == models.ErrFormUnauthenticated {
+			RedirectToLogin(w, r)
+			return
+		}
+
+		RespondInterface(w, err)
 		return
 	}
 
@@ -293,6 +281,7 @@ func GetUserAndServer(w http.ResponseWriter, r *http.Request) (user *models.QpUs
 	token := GetToken(r)
 	server, err = models.WhatsappService.FindByToken(token)
 	if err != nil {
+		err = fmt.Errorf("get user and server error: %s", err.Error())
 		return
 	}
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -18,7 +17,7 @@ type ChatPresenceRequestExtended struct {
 
 func Exec(ctx context.Context, request *ChatPresenceRequest, server *models.QpWhatsappServer) {
 	logentry := server.GetLogger()
-	logentry = logentry.WithField(library.LogFields.ChatId, request.ChatId)
+	logentry = logentry.WithField(LogFields.ChatId, request.ChatId)
 
 	logentry.Tracef("background chat presence update, duration: %d\n", request.Duration)
 	defer logentry.Trace("background chat presence update finished")

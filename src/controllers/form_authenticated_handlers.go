@@ -32,7 +32,6 @@ func RegisterFormAuthenticatedControllers(r chi.Router) {
 	r.Get(FormVerifyEndpoint, VerifyFormHandler)
 
 	r.Post(FormDeleteEndpoint, FormDeleteController)
-	r.Post(FormEndpointPrefix+"/cycle", FormCycleController)
 	r.Post(FormEndpointPrefix+"/debug", FormDebugController)
 	r.Post(FormEndpointPrefix+"/toggle", FormToggleController)
 
@@ -65,7 +64,13 @@ func HttpAuthenticatorHandler(next http.Handler) http.Handler {
 func FormAccountController(w http.ResponseWriter, r *http.Request) {
 	user, err := models.GetFormUser(r)
 	if err != nil {
-		RedirectToLogin(w, r)
+		if err == models.ErrFormUnauthenticated {
+			RedirectToLogin(w, r)
+			return
+		}
+
+		RespondInterface(w, err)
+		return
 	}
 
 	data := models.QPFormAccountData{
@@ -91,7 +96,13 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 	user, err := models.GetFormUser(r)
 	if err != nil {
-		RedirectToLogin(w, r)
+		if err == models.ErrFormUnauthenticated {
+			RedirectToLogin(w, r)
+			return
+		}
+
+		RespondInterface(w, err)
+		return
 	}
 
 	data := models.QPFormWebHooksData{PageTitle: "WebHooks"}

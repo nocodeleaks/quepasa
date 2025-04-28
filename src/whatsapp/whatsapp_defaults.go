@@ -1,5 +1,7 @@
 package whatsapp
 
+import library "github.com/nocodeleaks/quepasa/library"
+
 const WhatsappWebAppName = "QuePasa"
 
 const WhatsappBroadcasts = false   // default broadcast messages option if none was specified
@@ -34,3 +36,6 @@ var WhatsappMIMEDocument = [...]string{
 
 // global invalid file prefix
 const InvalidFilePrefix = "invalid-"
+
+// copying log fields names
+var LogFields = library.LogFields

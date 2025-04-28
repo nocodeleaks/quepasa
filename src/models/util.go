@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"mime"
 	"net/http"
 	"net/url"
@@ -22,7 +21,7 @@ func GetFormUser(r *http.Request) (*QpUser, error) {
 
 	user, ok := claims["user_id"].(string)
 	if !ok {
-		return nil, errors.New("missing user id")
+		return nil, ErrFormUnauthenticated
 	}
 
 	return WhatsappService.DB.Users.Find(user)

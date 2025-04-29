@@ -150,14 +150,23 @@ func QueryHasKey(query *url.URL, key string) bool {
 <summary>
 
 	Get URL Value from Key, lowercase comparison
+	* Url Unescaped
 
 </summary>
 */
-func QueryGetValue(url *url.URL, key string) string {
-	query := url.Query()
+func QueryGetValue(rawUrl *url.URL, key string) string {
+	query := rawUrl.Query()
 	for k := range query {
 		if strings.EqualFold(k, key) {
-			return query.Get(k)
+			value := query.Get(k)
+
+			// unscape value
+			unescapedValue, err := url.QueryUnescape(value)
+			if err == nil {
+				value = unescapedValue
+			}
+
+			return value
 		}
 	}
 	return ""

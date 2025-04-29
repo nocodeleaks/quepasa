@@ -9,6 +9,7 @@ import (
 	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 //region CONTROLLER - GET GROUP
@@ -27,7 +28,14 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupId := models.GetRequestParameter(r, "groupId")
+	groupId := models.GetRequestParameter(r, "groupid")
+	valid := whatsapp.IsValidGroupId(groupId)
+	if !valid {
+		response.ParseError(fmt.Errorf("seams to be an invalid group id: %s", groupId))
+		RespondInterface(w, response)
+		return
+	}
+
 	group, err := server.GetGroupInfo(groupId)
 	if err != nil {
 		response.ParseError(err)
@@ -405,7 +413,7 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// For GET requests, extract parameters from query string
-		req.GroupJID = r.URL.Query().Get("group_jid")
+		req.GroupJID = models.GetRequestParameter(r, "group_jid")
 		req.Action = "get" // Default action for GET requests
 	}
 

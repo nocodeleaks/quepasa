@@ -87,6 +87,28 @@ func IsValidE164(phone string) bool {
 	return false
 }
 
+/*
+<summary>
+
+	Checks if the given ID is a valid group ID
+	It returns true if the ID is valid, false otherwise.
+
+</summary>
+<remarks>
+
+	It checks if the ID ends with "@g.us"
+	It checks the prefix (before "@") max 20 caracters.
+
+<remarks>
+*/
+func IsValidGroupId(id string) bool {
+	return strings.HasSuffix(id, "@g.us") && len(id) <= 25
+	/*
+		regex, _ := regexp.Compile(`^[0-9]{1,20}\@g\.us$`)
+		return regex.MatchString(id)
+	*/
+}
+
 func GetMessageType(attach *WhatsappAttachment) WhatsappMessageType {
 	if attach == nil {
 		return TextMessageType

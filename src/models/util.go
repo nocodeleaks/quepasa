@@ -160,7 +160,7 @@ func QueryGetValue(rawUrl *url.URL, key string) string {
 		if strings.EqualFold(k, key) {
 			value := query.Get(k)
 
-			// unscape value
+			// unescape value
 			unescapedValue, err := url.QueryUnescape(value)
 			if err == nil {
 				value = unescapedValue

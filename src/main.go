@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/joho/godotenv"
 	controllers "github.com/nocodeleaks/quepasa/controllers"
-	"github.com/nocodeleaks/quepasa/library"
+	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"

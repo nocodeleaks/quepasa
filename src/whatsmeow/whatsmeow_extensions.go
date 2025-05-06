@@ -151,7 +151,7 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 		// fmt.Printf("getting group info: %s", jid.String())
 		gInfo, _ := client.GetGroupInfo(jid)
 		if gInfo != nil {
-			title = library.NormalizeForTitle(gInfo.Name)
+			title = gInfo.Name
 			_ = GroupInfoCache.Append(jid.String(), title, "GetChatTitle")
 			goto found
 		}

@@ -9,8 +9,9 @@ import (
 )
 
 var AllowedSuffix = map[string]bool{
-	"g.us":           true, // Mensagem para um grupo
-	"s.whatsapp.net": true, // Mensagem direta a um usuário
+	"g.us":           true, // Group message
+	"s.whatsapp.net": true, // Direct message
+	"lid":            true, // New default suffix for WhatsApp Business API
 }
 
 func PhoneToWid(source string) (destination string) {

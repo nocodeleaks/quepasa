@@ -13,6 +13,7 @@ func IsValidExtensionFor(request string, content string) bool {
 		request == ".jpeg" && content == ".jpg", // inverse is even true
 		request == ".csv" && content == ".txt",
 		request == ".json" && content == ".txt",
+		request == ".xml" && content == ".txt",
 		request == ".sql" && content == ".txt",
 		request == ".oga" && content == ".webm",
 		request == ".oga" && content == ".ogx",

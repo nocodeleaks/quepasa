@@ -66,6 +66,14 @@ func GetLogger(source *LogStruct) *log.Entry {
 	return logentry
 }
 
+/*
+<summary>
+
+	LogWithLevel is used to change the log level of the entry, it will not add any field to the entry
+	it will just add the field to the entry, so you can use it to add more information to the log entry
+
+</summary>
+*/
 func (source *LogStruct) LogWithField(key string, value interface{}) *log.Entry {
 	logentry := source.GetLogger()
 	loglevel := logentry.Level

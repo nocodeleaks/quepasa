@@ -148,9 +148,10 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 	logentry := options.GetLogger()
 	client.EnableAutoReconnect = options.GetReconnect()
 
-	loglevel := logentry.Level
-	logentry = logentry.WithField(LogFields.WId, options.Wid)
-	logentry.Level = loglevel
+	if len(options.Wid) > 0 {
+		logentry = options.LogWithField(LogFields.WId, options.Wid)
+	}
+
 	logentry.Infof("creating whatsmeow connection with log level: %s", logentry.Level)
 	handlers := &WhatsmeowHandlers{
 		WhatsappOptions:  options.WhatsappOptions,

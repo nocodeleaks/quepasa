@@ -88,22 +88,24 @@ func (conn *WhatsmeowConnection) GetReconnect() bool {
 
 func (conn *WhatsmeowConnection) GetVersion() string { return "multi" }
 
-func (conn *WhatsmeowConnection) GetWidInternal() (wid string, err error) {
+func (conn *WhatsmeowConnection) GetWidInternal() (string, error) {
 	if conn.Client == nil {
-		err = fmt.Errorf("client not defined on trying to get wid")
-	} else {
-		if conn.Client.Store == nil {
-			err = fmt.Errorf("device store not defined on trying to get wid")
-		} else {
-			if conn.Client.Store.ID == nil {
-				err = fmt.Errorf("device id not defined on trying to get wid")
-			} else {
-				wid = conn.Client.Store.ID.User
-			}
-		}
+		err := fmt.Errorf("client not defined on trying to get wid")
+		return "", err
 	}
 
-	return
+	if conn.Client.Store == nil {
+		err := fmt.Errorf("device store not defined on trying to get wid")
+		return "", err
+	}
+
+	if conn.Client.Store.ID == nil {
+		err := fmt.Errorf("device id not defined on trying to get wid")
+		return "", err
+	}
+
+	wid := conn.Client.Store.ID.User
+	return wid, nil
 }
 
 func (conn *WhatsmeowConnection) IsValid() bool {

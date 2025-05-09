@@ -263,6 +263,12 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		go OnEventContact(source, *evt)
 		return
 
+	case *events.PairError:
+		{
+			jsonEvt := library.ToJson(evt)
+			logentry.Errorf("pair error event: %s", jsonEvt)
+		}
+
 	case
 		*events.AppState,
 		*events.CallTerminate,
@@ -403,25 +409,17 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 
 	// discard and return
 	if message.Type == whatsapp.DiscardMessageType {
-		JsonMsg := ToJson(evt)
+		JsonMsg := library.ToJson(evt)
 		logentry.Debugf("debugging and ignoring an discard message: %s", JsonMsg)
 		return
 	}
 
 	// unknown and continue
 	if message.Type == whatsapp.UnknownMessageType {
-		message.Text += " :: " + ToJson(evt)
+		message.Text += " :: " + library.ToJson(evt)
 	}
 
 	handler.Follow(message, from)
-}
-
-func ToJson(in interface{}) string {
-	bytes, err := json.Marshal(in)
-	if err == nil {
-		return string(bytes)
-	}
-	return ""
 }
 
 //#endregion

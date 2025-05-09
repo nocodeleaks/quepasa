@@ -401,11 +401,15 @@
             },
             {
               "name": "extra.utoken",
-              "value": "={{ $json.query.utoken }}"
+              "value": "={{ $json.query.utoken ?? $env['C8Q_SUPERUSER_TOKEN'] }}"
             },
             {
               "name": "extra.atoken",
-              "value": "={{ $json.query.atoken }}"
+              "value": "={{ $json.query.atoken ?? $env['C8Q_AGENT_TOKEN'] }}"
+            },
+            {
+              "name": "extra.typebot",
+              "value": "={{ $json.query?.typebot ?? undefined }}"
             }
           ]
         },
@@ -800,7 +804,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.40) Updates\n* n8n host from env\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "content": "## (1.0.42) Updates\n* query typebot to extra\n\n## Recommendations \n* Remember set timeout to 30 seconds",
         "height": 184.30667672289223,
         "width": 591.0097010851398
       },
@@ -2003,19 +2007,27 @@
           "values": [
             {
               "key": "inbox",
-              "value": "={{ $json.extra.inbox }}"
+              "value": "={{ $json.extra?.inbox ?? '' }}"
             },
             {
-              "key": "conversation_id",
-              "value": "={{ $json.body.event.startsWith('conversation') ? $json.body.id : $json.body.conversation.id }}"
+              "key": "conversation",
+              "value": "={{ $json.body?.event?.startsWith('conversation') ? $json.body.id : $json.body?.conversation?.id ?? '' }}"
             },
             {
-              "key": "message_id",
-              "value": "={{ $json.body.event.startsWith('message') ? $json.body.id : null }}"
+              "key": "message",
+              "value": "={{ $json.body?.event?.startsWith('message') ? $json.body.id : '' }}"
             },
             {
-              "key": "source_id",
-              "value": "={{ $json.body.event.startsWith('message') ? $json.body.source_id : null }}"
+              "key": "source",
+              "value": "={{ $json.body?.event?.startsWith('message') ? $json.body.source_id : '' }}"
+            },
+            {
+              "key": "account",
+              "value": "={{ $json.body?.account?.id ?? '' }}"
+            },
+            {
+              "key": "event",
+              "value": "={{ $json.body?.event ?? '' }}"
             }
           ]
         }
@@ -3090,7 +3102,7 @@
     "executionTimeout": 50,
     "executionOrder": "v1"
   },
-  "versionId": "2d0f839d-9eee-44ff-94d6-b8dfb0ecd789",
+  "versionId": "21f0edb7-cd2c-421f-a133-e84220f039ba",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

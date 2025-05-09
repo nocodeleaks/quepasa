@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.3) Updates\n* allow calling by others\n",
+        "content": "## (1.0.4) Updates\n* avoiding empty text messages\n",
         "height": 175.906164153499,
         "width": 398.976541038375
       },
@@ -1364,72 +1364,6 @@
     },
     {
       "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.payload.type }}",
-                    "rightValue": "text",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "text"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "0774cf5a-7901-4024-a325-0e0d05d2fcc4",
-                    "leftValue": "={{ $json.payload.type }}",
-                    "rightValue": "video|audio|image",
-                    "operator": {
-                      "type": "string",
-                      "operation": "regex"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "attach"
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "id": "d3f022ac-30f0-4861-9942-60a9154f485f",
-      "name": "Switch",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        5000,
-        860
-      ]
-    },
-    {
-      "parameters": {
         "requestMethod": "POST",
         "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{ $('PAYLOAD').item.json.conversation.id }}/toggle_status ",
         "allowUnauthorizedCerts": true,
@@ -1542,6 +1476,73 @@
       "position": [
         6460,
         440
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($json.payload.type == 'text') && ($json.payload.content && $json.payload.content.length > 0) }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0774cf5a-7901-4024-a325-0e0d05d2fcc4",
+                    "leftValue": "={{ $json.payload.type }}",
+                    "rightValue": "video|audio|image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "attach"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "d3f022ac-30f0-4861-9942-60a9154f485f",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        5000,
+        860
       ]
     }
   ],
@@ -2162,31 +2163,6 @@
         ]
       ]
     },
-    "Switch": {
-      "main": [
-        [
-          {
-            "node": "Switch Text Answer",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Quepasa Send Attach",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "If Empty Payload Item",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Resolve Conversation in Chatwoot": {
       "main": [
         [
@@ -2238,6 +2214,31 @@
           }
         ]
       ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Switch Text Answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Attach",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Empty Payload Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -2246,7 +2247,7 @@
     "callerPolicy": "any",
     "executionTimeout": 30
   },
-  "versionId": "1b7537c6-855c-4c62-bc80-5bf324386a17",
+  "versionId": "d1e47a45-a123-4487-a107-d4c3ddca127e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

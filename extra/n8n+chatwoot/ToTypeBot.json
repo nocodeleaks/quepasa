@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.4) Updates\n* avoiding empty text messages\n",
+        "content": "## (1.0.5) Updates\n* chat_phone as prefilled variables\n",
         "height": 175.906164153499,
         "width": 398.976541038375
       },
@@ -1305,7 +1305,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($('PAYLOAD').item.json.text) }}\n  },\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"account_id\": {{$('EXTRA').item.json.account}},\n    \"inbox_id\": {{$('EXTRA').item.json.inbox}}    \n  }\n}",
+        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($('PAYLOAD').item.json.text) }}\n  },\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"chat_phone\": \"{{ $('PAYLOAD').item.json.chat.phone }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"account_id\": {{$('EXTRA').item.json.account}},\n    \"inbox_id\": {{$('EXTRA').item.json.inbox}},\n  }\n}",
         "options": {
           "allowUnauthorizedCerts": true
         }
@@ -1492,7 +1492,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ ($json.payload.type == 'text') && ($json.payload.content && $json.payload.content.length > 0) }}",
+                    "leftValue": "={{ ($json.payload.type == \"text\") && (Boolean($json.payload.content) && $json.payload.content.length > 0) }}",
                     "rightValue": "text",
                     "operator": {
                       "type": "boolean",
@@ -2247,7 +2247,7 @@
     "callerPolicy": "any",
     "executionTimeout": 30
   },
-  "versionId": "d1e47a45-a123-4487-a107-d4c3ddca127e",
+  "versionId": "527c8a9d-ddc7-4a55-aa61-a1a88327f339",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

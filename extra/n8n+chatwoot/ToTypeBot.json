@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.6) Updates\n* issue on comma end json\n",
+        "content": "## (1.0.7) Updates\n* /private for internal messages\n",
         "height": 175.906164153499,
         "width": 398.976541038375
       },
@@ -564,8 +564,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5720,
-        960
+        5760,
+        1120
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -855,8 +855,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5720,
-        1440
+        5760,
+        1600
       ]
     },
     {
@@ -910,8 +910,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6180,
-        1860
+        6160,
+        2360
       ]
     },
     {
@@ -939,8 +939,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6180,
-        2060
+        6160,
+        2560
       ]
     },
     {
@@ -968,8 +968,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6400,
-        2280
+        6380,
+        2780
       ]
     },
     {
@@ -979,8 +979,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6740,
-        2060
+        6720,
+        2560
       ]
     },
     {
@@ -1123,8 +1123,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        6000,
-        1740
+        6080,
+        2240
       ]
     },
     {
@@ -1136,8 +1136,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        5960,
-        860
+        6000,
+        1020
       ],
       "webhookId": "fcd2e4ee-0d8b-43cd-bb26-cc9e1a3e9c13"
     },
@@ -1154,8 +1154,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5720,
-        780
+        5760,
+        940
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -1200,7 +1200,7 @@
     {
       "parameters": {
         "content": "## Loop Multiple Messages Payloads\n",
-        "height": 1417.881603653832,
+        "height": 1859.2074837131158,
         "width": 2323.2885620467914
       },
       "id": "0d6ea017-6970-4a1e-ae97-5da81cc8c9d7",
@@ -1374,73 +1374,6 @@
     },
     {
       "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.payload.content }}",
-                    "rightValue": "/resolve",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "resolve"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "dfb8fca6-f6eb-49a5-9922-528db0c0544e",
-                    "leftValue": "={{ $json.payload.content }}",
-                    "rightValue": "/open",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "open"
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "id": "cf563f26-64d4-4756-a000-a3754dddec11",
-      "name": "Switch Text Answer",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        5480,
-        700
-      ]
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -1477,8 +1410,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        5720,
-        1120
+        5760,
+        1280
       ],
       "webhookId": "a5094ecc-3fa9-4468-b5d0-c0d17d7c604c"
     },
@@ -1605,8 +1538,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6620,
-        1460
+        6680,
+        1780
       ]
     },
     {
@@ -1616,8 +1549,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5720,
-        1280
+        5760,
+        1440
       ]
     },
     {
@@ -1630,6 +1563,135 @@
         6680,
         700
       ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/resolve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "resolve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dfb8fca6-f6eb-49a5-9922-528db0c0544e",
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/open",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "open"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "63545ada-0f3a-4a28-ade2-445b57b06a56",
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/private",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "private"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "cf563f26-64d4-4756-a000-a3754dddec11",
+      "name": "Switch Text Answer",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        5480,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "private",
+              "value": "={{ true }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.payload.content.slice(9) }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$('EXTRA').item.json.atoken}}"
+            }
+          ]
+        }
+      },
+      "name": "Post Private Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        5760,
+        760
+      ],
+      "id": "0088163c-b951-4bda-8ff1-2b62c2c87422",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
     }
   ],
   "pinData": {},
@@ -2249,31 +2311,6 @@
         ]
       ]
     },
-    "Switch Text Answer": {
-      "main": [
-        [
-          {
-            "node": "Resolve Conversation in Chatwoot",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Open Conversation",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Quepasa Send Text",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Set Terminate Status Parameters": {
       "main": [
         [
@@ -2372,6 +2409,49 @@
           }
         ]
       ]
+    },
+    "Switch Text Answer": {
+      "main": [
+        [
+          {
+            "node": "Resolve Conversation in Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Private Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Private Message": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -2380,7 +2460,7 @@
     "callerPolicy": "any",
     "executionTimeout": 30
   },
-  "versionId": "101b20dd-7b7a-46df-a78f-d14857df22bb",
+  "versionId": "11486d51-15c3-444c-bd86-6c7f4ef7bc04",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

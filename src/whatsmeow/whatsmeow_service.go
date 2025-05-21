@@ -55,7 +55,7 @@ func Start(options WhatsmeowOptions, dbParameters library.DatabaseParameters, lo
 		dbParameters.DataBase = "whatsmeow"
 	}
 	connectionString := dbParameters.GetConnectionString()
-	container, err := sqlstore.New(dbParameters.Driver, connectionString, dbLog)
+	container, err := sqlstore.New(context.TODO(), dbParameters.Driver, connectionString, dbLog)
 	if err != nil {
 		err = fmt.Errorf("error on creating db container: %s", err.Error())
 		panic(err)
@@ -183,7 +183,7 @@ func (service *WhatsmeowServiceModel) GetOrCreateStore(wid string) (str *store.D
 	if wid == "" {
 		str = service.Container.NewDevice()
 	} else {
-		devices, err := service.Container.GetAllDevices()
+		devices, err := service.Container.GetAllDevices(context.TODO())
 		if err != nil {
 			err = fmt.Errorf("{Whatsmeow}{EX001} error on getting store from wid {%s}: %v", wid, err)
 			return str, err
@@ -208,7 +208,7 @@ func (service *WhatsmeowServiceModel) GetOrCreateStore(wid string) (str *store.D
 // Temporary
 func (service *WhatsmeowServiceModel) GetStoreForMigrated(phone string) (str *store.Device, err error) {
 
-	devices, err := service.Container.GetAllDevices()
+	devices, err := service.Container.GetAllDevices(context.TODO())
 	if err != nil {
 		err = fmt.Errorf("{Whatsmeow}{EX001} error on getting store from phone {%s}: %v", phone, err)
 		return str, err
@@ -254,13 +254,13 @@ func (source *WhatsmeowServiceModel) GetWhatsAppClient(options whatsapp.IWhatsap
 // Flush entire Whatsmeow Database
 // Use with wisdom !
 func (service *WhatsmeowServiceModel) FlushDatabase() (err error) {
-	devices, err := service.Container.GetAllDevices()
+	devices, err := service.Container.GetAllDevices(context.TODO())
 	if err != nil {
 		return
 	}
 
 	for _, element := range devices {
-		err = element.Delete()
+		err = element.Delete(context.TODO())
 		if err != nil {
 			return
 		}

@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/base64"
 	"time"
 
@@ -156,7 +157,7 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 			goto found
 		}
 	} else {
-		cInfo, _ := client.Store.Contacts.GetContact(jid)
+		cInfo, _ := client.Store.Contacts.GetContact(context.TODO(), jid)
 		if cInfo.Found {
 			if len(cInfo.BusinessName) > 0 {
 				title = cInfo.BusinessName

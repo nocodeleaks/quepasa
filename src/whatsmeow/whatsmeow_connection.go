@@ -216,7 +216,7 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 		return chats, err
 	}
 
-	contacts, err := source.Client.Store.Contacts.GetAllContacts()
+	contacts, err := source.Client.Store.Contacts.GetAllContacts(context.TODO())
 	if err != nil {
 		return chats, err
 	}
@@ -245,7 +245,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 	msg := imsg.GetSource()
 	downloadable, ok := msg.(whatsmeow.DownloadableMessage)
 	if ok {
-		return source.Client.Download(downloadable)
+		return source.Client.Download(context.TODO(), downloadable)
 	}
 
 	logentry := source.GetLogger()
@@ -265,7 +265,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		return
 	}
 
-	data, err = source.Client.DownloadAny(waMsg)
+	data, err = source.Client.DownloadAny(context.TODO(), waMsg)
 	if err != nil {
 		if strings.Contains(err.Error(), whatsmeow.ErrFileLengthMismatch.Error()) {
 			logentry.Infof("ignoring (%s) whatsmeow error for msg id: %s", whatsmeow.ErrFileLengthMismatch.Error(), imsg.GetId())
@@ -561,7 +561,7 @@ func (source *WhatsmeowConnection) HasChat(chat string) bool {
 		return false
 	}
 
-	info, err := source.Client.Store.ChatSettings.GetChatSettings(jid)
+	info, err := source.Client.Store.ChatSettings.GetChatSettings(context.TODO(), jid)
 	if err != nil {
 		return false
 	}
@@ -620,7 +620,7 @@ func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
 		}
 	}
 
-	return source.Client.PairPhone(phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
+	return source.Client.PairPhone(context.TODO(), phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 }
 
 func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
@@ -800,7 +800,7 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 	if source != nil {
 		if source.Client != nil {
 			if source.Client.IsLoggedIn() {
-				err = source.Client.Logout()
+				err = source.Client.Logout(context.TODO())
 				if err != nil {
 					err = fmt.Errorf("whatsmeow connection, delete logout error: %s", err.Error())
 					return
@@ -809,7 +809,7 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 			}
 
 			if source.Client.Store != nil {
-				err = source.Client.Store.Delete()
+				err = source.Client.Store.Delete(context.TODO())
 				if err != nil {
 					// ignoring error about JID, just checked and the delete process was succeed
 					if strings.Contains(err.Error(), "device JID must be known before accessing database") {

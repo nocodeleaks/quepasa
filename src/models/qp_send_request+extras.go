@@ -9,17 +9,18 @@ import (
 func IsValidExtensionFor(request string, content string) bool {
 	switch {
 	case
+		request == ".csv" && content == ".txt",
 		request == ".jpg" && content == ".jpeg", // used for correct old windows 3 characters extensions
 		request == ".jpeg" && content == ".jpg", // inverse is even true
-		request == ".csv" && content == ".txt",
 		request == ".json" && content == ".txt",
-		request == ".xml" && content == ".txt",
-		request == ".sql" && content == ".txt",
 		request == ".oga" && content == ".webm",
 		request == ".oga" && content == ".ogx",
 		request == ".opus" && content == ".ogx",
 		request == ".ovpn" && content == ".txt",
-		request == ".svg" && content == ".xml":
+		request == ".pdf" && content == ".txt",
+		request == ".sql" && content == ".txt",
+		request == ".svg" && content == ".xml",
+		request == ".xml" && content == ".txt":
 		return true
 	}
 

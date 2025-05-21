@@ -89,6 +89,7 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] empty file name, generating a new one based on mime type: %s, file name: %s", attach.Mimetype, attach.FileName))
 	}
 
+	// if pdf mime contains extra info
 	if strings.HasPrefix(attach.Mimetype, "application/pdf;") {
 		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachSecureAndCustomize] removing extra information from pdf mime type: %s", attach.Mimetype))
 		attach.Mimetype = strings.Split(attach.Mimetype, ";")[0]

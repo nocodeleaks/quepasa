@@ -64,7 +64,7 @@ type WhatsappMessage struct {
 	Wid string `json:"wid,omitempty"`
 
 	// Extra information for custom messages
-	Info interface{} `json:"info,omitempty"`
+	Info any `json:"info,omitempty"`
 
 	Poll *WhatsappPoll `json:"poll,omitempty"` // Poll if exists
 }

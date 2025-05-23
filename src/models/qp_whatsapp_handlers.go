@@ -3,7 +3,8 @@ package models
 import (
 	"sync"
 
-	"github.com/nocodeleaks/quepasa/library"
+	library "github.com/nocodeleaks/quepasa/library"
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -201,6 +202,10 @@ func (source *QPWhatsappHandlers) GetById(id string) (*whatsapp.WhatsappMessage,
 // sends the message throw external publishers
 func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 	if source != nil {
+		if rabbitmq.RabbitMQClientInstance != nil {
+			RabbitMQPublish(payload)
+		}
+
 		if source.server != nil {
 			payload.Wid = source.GetWId()
 			go SignalRHub.Dispatch(source.server.Token, payload)

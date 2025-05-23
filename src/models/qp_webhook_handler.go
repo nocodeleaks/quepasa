@@ -1,9 +1,6 @@
 package models
 
 import (
-	"reflect"
-	"strings"
-
 	"github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -24,13 +21,9 @@ func (source *QPWebhookHandler) HandleWebHook(payload *whatsapp.WhatsappMessage)
 	logentry = logentry.WithField(LogFields.MessageId, payload.Id)
 	logentry.Level = loglevel
 
-	if payload.Type == whatsapp.DiscardMessageType || payload.Type == whatsapp.UnknownMessageType {
-		logentry.Debugf("ignoring discard|unknown message type on webhook request: %v", reflect.TypeOf(&payload))
-		return
-	}
-
-	if payload.Type == whatsapp.TextMessageType && len(strings.TrimSpace(payload.Text)) <= 0 {
-		logentry.Debugf("ignoring empty text message on webhook request: %s", payload.Id)
+	reason := IsValidForDispatch(payload)
+	if len(reason) > 0 {
+		logentry.Debug(reason)
 		return
 	}
 

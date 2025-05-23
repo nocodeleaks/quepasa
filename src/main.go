@@ -5,6 +5,7 @@ import (
 	controllers "github.com/nocodeleaks/quepasa/controllers"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	"github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 
@@ -66,6 +67,17 @@ func main() {
 		if handler, ok := models.MigrationHandlers[element]; ok {
 			handler(element)
 		}
+	}
+
+	rabbitmq_connection_string := models.ENV.RabbitMQConnectionString()
+	if len(rabbitmq_connection_string) > 0 {
+		rabbitmq_queue := models.ENV.RabbitMQQueue()
+		if len(rabbitmq_queue) > 0 {
+			rabbitmq.RabbitMQQueueDefault = rabbitmq_queue
+		}
+
+		cachelength := models.ENV.RabbitMQCacheLength()
+		rabbitmq.InitializeRabbitMQClient(rabbitmq_connection_string, cachelength)
 	}
 
 	// Inicializando serviço de controle do whatsapp

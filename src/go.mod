@@ -3,7 +3,9 @@ module github.com/nocodeleaks/quepasa/main
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/nocodeleaks/quepasa/controllers v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
@@ -46,7 +48,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nocodeleaks/quepasa/audio v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
 	github.com/philippseith/signalr v0.6.3 // indirect
@@ -55,6 +56,7 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/swaggo/files v1.0.1 // indirect
@@ -92,6 +94,6 @@ replace github.com/nocodeleaks/quepasa/whatsapp => ./whatsapp
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ./whatsmeow
 
-go 1.23.0
+replace github.com/nocodeleaks/quepasa/rabbitmq => ./rabbitmq
 
-toolchain go1.23.2
+go 1.23.2

@@ -360,6 +360,10 @@
           ],
           "string": [
             {
+              "name": "contact.custom_attributes",
+              "value": "={{ $json.ctatts }}"
+            },
+            {
               "name": "ctid",
               "value": "={{ undefined }}"
             },
@@ -382,7 +386,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.16) Updates\n* skip contact error control\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "content": "## (1.0.17) Updates\n* forwarding all contact custom_attributes\n\n## Recommendations \n* Remember set timeout to 20 seconds",
         "height": 201.45401153644474,
         "width": 467.54452018877896
       },
@@ -1156,7 +1160,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
-  "versionId": "0d422843-30d6-41c9-93b8-c1b8257a8edb",
+  "versionId": "00df041d-739d-41f4-9fa1-bf731f5418ea",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

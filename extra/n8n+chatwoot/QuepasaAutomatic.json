@@ -12,8 +12,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
-        700
+        1100,
+        140
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        1100,
-        540
+        1480,
+        -20
       ],
       "alwaysOutputData": false,
       "notesInFlow": false,
@@ -58,8 +58,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        520
+        860,
+        -40
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -81,8 +81,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        700
+        860,
+        140
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -104,7 +104,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
+        860,
         1100
       ],
       "alwaysOutputData": false,
@@ -127,7 +127,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
+        1100,
         1100
       ],
       "alwaysOutputData": false,
@@ -167,7 +167,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
+        860,
         1300
       ],
       "alwaysOutputData": false,
@@ -190,7 +190,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
+        1100,
         1300
       ],
       "alwaysOutputData": false,
@@ -204,7 +204,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.10) Updates\n* /paircode\n* notations ",
+        "content": "## (1.0.11) Updates\n* skip automation, to avoid typebot",
         "width": 425.48157586978226
       },
       "id": "d7872589-290c-4614-868f-fabe6b64ca52",
@@ -227,7 +227,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
+        1100,
         900
       ],
       "alwaysOutputData": false,
@@ -250,7 +250,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
+        860,
         900
       ],
       "alwaysOutputData": false,
@@ -272,8 +272,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        920,
-        440
+        1300,
+        -120
       ]
     },
     {
@@ -306,8 +306,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        720,
-        520
+        1100,
+        -40
       ]
     },
     {
@@ -342,17 +342,6 @@
       }
     },
     {
-      "parameters": {},
-      "id": "70d1c661-c6f0-4d3a-9177-7df81270a4ab",
-      "name": "No Operation, do nothing",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        140,
-        1000
-      ]
-    },
-    {
       "parameters": {
         "schema": {
           "__rl": true,
@@ -375,7 +364,7 @@
       "typeVersion": 1,
       "position": [
         -180,
-        3060
+        3260
       ],
       "credentials": {
         "postgres": {
@@ -405,7 +394,7 @@
       "typeVersion": 4.1,
       "position": [
         740,
-        3080
+        3280
       ],
       "alwaysOutputData": false
     },
@@ -420,7 +409,7 @@
       "typeVersion": 1,
       "position": [
         300,
-        3140
+        3340
       ]
     },
     {
@@ -435,7 +424,7 @@
       "typeVersion": 2.1,
       "position": [
         480,
-        3080
+        3280
       ]
     },
     {
@@ -459,7 +448,7 @@
       "typeVersion": 3.3,
       "position": [
         120,
-        3060
+        3260
       ]
     },
     {
@@ -473,7 +462,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
+        860,
         1500
       ],
       "alwaysOutputData": false,
@@ -496,7 +485,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
+        1100,
         1500
       ],
       "alwaysOutputData": false,
@@ -519,8 +508,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
-        1700
+        1100,
+        2340
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -542,8 +531,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        1700
+        860,
+        2340
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -565,8 +554,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        1920
+        860,
+        1700
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -588,8 +577,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
-        1920
+        1100,
+        1700
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -611,8 +600,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
-        2120
+        1100,
+        2540
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -634,8 +623,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        2120
+        860,
+        2540
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -657,8 +646,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        2540
+        860,
+        340
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -719,8 +708,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
-        2540
+        1100,
+        340
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -742,8 +731,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        2740
+        860,
+        520
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -765,8 +754,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        480,
-        2320
+        860,
+        2740
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -788,8 +777,87 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        720,
-        2320
+        1100,
+        2740
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Sucesso"
+    },
+    {
+      "parameters": {},
+      "id": "ea195dc6-c89a-4680-97da-72833a40ce7a",
+      "name": "Contact Attributes",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        420,
+        1220
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "70d1c661-c6f0-4d3a-9177-7df81270a4ab",
+      "name": "System",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        420,
+        240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "63918897-064f-4b27-83a2-4a52a17277ce",
+      "name": "Conversation Attributes",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        460,
+        2540
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT DISTINCT \"accounts\".\"id\" AS \"account\" FROM \"accounts\" WHERE NOT EXISTS (SELECT NULL FROM \"custom_attribute_definitions\" WHERE \"account_id\" = \"accounts\".\"id\" AND \"attribute_key\" = 'skipautomation' AND \"attribute_model\" = 1);",
+        "additionalFields": {}
+      },
+      "id": "49086dca-ddae-47bc-8ac9-c2479a45f7af",
+      "name": "Missing Skip Automation Contact",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        860,
+        1900
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Sucesso"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO \"custom_attribute_definitions\" (\"attribute_display_name\", \"attribute_key\", \"attribute_display_type\", \"attribute_model\", \"account_id\", \"attribute_description\", \"attribute_values\", \"updated_at\", \"created_at\") VALUES ('Skip Automation', 'skipautomation', 7, 1, {{ $json.account }}, 'Não utilizar sistema de automação de atendimento para este contato !', '[]', NOW(), NOW());",
+        "additionalFields": {}
+      },
+      "id": "c104aeaa-c528-4cf2-bdc5-6e838fffa20d",
+      "name": "Insert Skip Automation Contact Attribute",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        1900
       ],
       "alwaysOutputData": false,
       "credentials": {
@@ -892,72 +960,6 @@
         [
           {
             "node": "Cria Automação",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "No Operation, do nothing": {
-      "main": [
-        [
-          {
-            "node": "Missing Evaluation For Contact",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Greetings For Contact",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Agent Title For Contact",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Quepasa Contact",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Automations",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Skip For Contact",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Evaluation For Conversation",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Audio Transcript For Contact",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing TypeBot Session Id For Conversation",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing Super User",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Update Super User Name",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Missing TypeBot Session Status For Conversation",
             "type": "main",
             "index": 0
           }
@@ -1072,7 +1074,17 @@
       "main": [
         [
           {
-            "node": "No Operation, do nothing",
+            "node": "System",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Contact Attributes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Conversation Attributes",
             "type": "main",
             "index": 0
           }
@@ -1100,6 +1112,100 @@
           }
         ]
       ]
+    },
+    "Contact Attributes": {
+      "main": [
+        [
+          {
+            "node": "Missing Skip For Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Evaluation For Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Greetings For Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Agent Title For Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Audio Transcript For Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Skip Automation Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System": {
+      "main": [
+        [
+          {
+            "node": "Missing Quepasa Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Automations",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing Super User",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Super User Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Attributes": {
+      "main": [
+        [
+          {
+            "node": "Missing Evaluation For Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing TypeBot Session Id For Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missing TypeBot Session Status For Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missing Skip Automation Contact": {
+      "main": [
+        [
+          {
+            "node": "Insert Skip Automation Contact Attribute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1107,7 +1213,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionOrder": "v1"
   },
-  "versionId": "9448bed5-f469-49e6-b1a3-59ece07599ac",
+  "versionId": "721bed44-e6d2-445c-90e6-3e794c64d75f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

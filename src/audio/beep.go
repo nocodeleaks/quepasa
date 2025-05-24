@@ -2,7 +2,6 @@ package audio
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	beep "github.com/gopxl/beep/v2"
@@ -44,6 +43,7 @@ func GetDuration(mimeType string, content []byte) (uint32, error) {
 	}
 }
 
+/*
 func GenerateWaveform(mimeType string, content []byte) ([]byte, error) {
 	streamer, err := GetStreamSeek(mimeType, content)
 	if err != nil {
@@ -104,3 +104,4 @@ func GenerateWaveform(mimeType string, content []byte) ([]byte, error) {
 
 	return normalizedData, nil
 }
+*/

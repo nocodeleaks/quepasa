@@ -13,6 +13,11 @@ RUN go build -o service main.go
 # Run stage
 FROM golang:latest as src
 
+# 1) install ffmpeg here
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends ffmpeg
+RUN rm -rf /var/lib/apt/lists/*
+
 WORKDIR /opt/quepasa/
 
 COPY --from=builder /build/. /builder/

@@ -36,6 +36,10 @@ type WhatsappAttachment struct {
 	Url string `json:"url,omitempty"`
 
 	WaveForm []byte `json:"waveform,omitempty"`
+
+	// Checksum for the message, used to verify integrity
+	// and avoid duplicates
+	Checksum string `json:"checksum,omitempty"`
 }
 
 func (source *WhatsappAttachment) GetContent() *[]byte {

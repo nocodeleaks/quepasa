@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	slug "github.com/gosimple/slug"
+	"github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"go.mau.fi/whatsmeow/types/events"
 )
@@ -71,6 +72,7 @@ func OnEventContact(source *WhatsmeowHandlers, evt events.Contact) {
 
 	content := vcardtext.Bytes()
 	message.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
+	message.Attachment.Checksum = library.GenerateCRC32ChecksumString(content)
 
 	// dispatching to internal handlers
 	source.Follow(message, "vcard")

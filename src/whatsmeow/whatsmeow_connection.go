@@ -221,8 +221,10 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 		return chats, err
 	}
 
-	for jid, info := range contacts {
+	// Map to track contacts by phone number
+	contactMap := make(map[string]whatsapp.WhatsappChat)
 
+	for jid, info := range contacts {
 		title := info.FullName
 		if len(title) == 0 {
 			title = info.BusinessName
@@ -231,10 +233,77 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 			}
 		}
 
-		chats = append(chats, whatsapp.WhatsappChat{
-			Id:    jid.String(),
-			Title: title,
-		})
+		var phoneNumber string
+		var lid string
+
+		if strings.Contains(jid.String(), "@lid") {
+			// For @lid contacts, get the corresponding phone number
+			pnJID, err := source.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
+			if err == nil && !pnJID.IsEmpty() {
+				phoneNumber = pnJID.User
+				lid = jid.String()
+			} else {
+				// If no mapping found, use the LID as unique identifier
+				phoneNumber = jid.String()
+				lid = ""
+			}
+		} else {
+			// For regular @s.whatsapp.net contacts
+			phoneNumber = jid.User
+
+			// Try to get corresponding LID
+			lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), jid)
+			if err == nil && !lidJID.IsEmpty() {
+				lid = lidJID.String()
+			} else {
+				lid = ""
+			}
+		}
+
+		// Check if contact with this phone number already exists
+		existingContact, exists := contactMap[phoneNumber]
+
+		if !exists {
+			// First contact with this phone number
+			contactMap[phoneNumber] = whatsapp.WhatsappChat{
+				Id:    jid.String(),
+				Lid:   lid,
+				Title: title,
+			}
+		} else {
+			// Contact already exists, merge information
+			var finalId, finalLid string
+
+			if strings.Contains(jid.String(), "@lid") {
+				// Current is @lid, keep existing as Id and use current as Lid
+				finalId = existingContact.Id
+				finalLid = jid.String()
+			} else {
+				// Current is @s.whatsapp.net, use as Id and keep existing Lid
+				finalId = jid.String()
+				finalLid = existingContact.Lid
+				if len(finalLid) == 0 && len(lid) > 0 {
+					finalLid = lid
+				}
+			}
+
+			// Keep the best available title
+			finalTitle := title
+			if len(finalTitle) == 0 && len(existingContact.Title) > 0 {
+				finalTitle = existingContact.Title
+			}
+
+			contactMap[phoneNumber] = whatsapp.WhatsappChat{
+				Id:    finalId,
+				Lid:   finalLid,
+				Title: finalTitle,
+			}
+		}
+	}
+
+	// Convert map to slice
+	for _, contact := range contactMap {
+		chats = append(chats, contact)
 	}
 
 	return chats, nil

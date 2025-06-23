@@ -1008,6 +1008,28 @@ func (conn *WhatsmeowConnection) UpdateGroupPhoto(groupID string, imageData []by
 	return pictureID, nil
 }
 
+func (conn *WhatsmeowConnection) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Parse the group ID to JID format
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Update the group topic (description)
+	// SetGroupTopic requires: jid, previousID, newID, topic
+	// Let the whatsmeow library handle previousID and newID automatically by passing empty strings
+	err = conn.Client.SetGroupTopic(jid, "", "", topic)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update group topic: %v", err)
+	}
+
+	// Return the updated group info
+	return conn.Client.GetGroupInfo(jid)
+}
 func (conn *WhatsmeowConnection) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")

@@ -93,6 +93,9 @@ type IWhatsappConnection interface {
 	// Update Group Name
 	UpdateGroupSubject(string, string) (interface{}, error)
 
+	// Update Group Topic (Description)
+	UpdateGroupTopic(string, string) (interface{}, error)
+
 	// Update Group Photo
 	UpdateGroupPhoto(string, []byte) (string, error)
 

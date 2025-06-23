@@ -130,7 +130,7 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Put(endpoint+"/groups/name", SetGroupNameController)
 
 		// Updates the group description.
-		//r.Put(endpoint+"/groups/description", SetGroupTopicController)
+		r.Put(endpoint+"/groups/description", SetGroupTopicController)
 
 		// Updates the group picture.
 		r.Put(endpoint+"/groups/photo", SetGroupPhotoController)

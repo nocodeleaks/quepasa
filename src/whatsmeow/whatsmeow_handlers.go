@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -387,6 +388,17 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	message.Chat.Id = chatID
 	message.Chat.Title = GetChatTitle(handler.Client, evt.Info.Chat)
 
+	// Get LID for the chat if available
+	if handler.Client != nil && handler.Client.Store != nil {
+		chatJID, err := types.ParseJID(chatID)
+		if err == nil {
+			lidJID, err := handler.Client.Store.LIDs.GetLIDForPN(context.TODO(), chatJID)
+			if err == nil && !lidJID.IsEmpty() {
+				message.Chat.Lid = lidJID.String()
+			}
+		}
+	}
+
 	if evt.Info.IsGroup {
 		message.Participant = &whatsapp.WhatsappChat{}
 
@@ -394,9 +406,20 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		message.Participant.Id = participantID
 		message.Participant.Title = GetChatTitle(handler.Client, evt.Info.Sender)
 
-		// sugested by hugo sampaio, removing message.FromMe
+		// If title is empty, use PushName as fallback, sugested by hugo sampaio, removing message.FromMe
 		if len(message.Participant.Title) == 0 {
 			message.Participant.Title = evt.Info.PushName
+		}
+
+		// Get LID for the participant if available
+		if handler.Client != nil && handler.Client.Store != nil {
+			participantJID, err := types.ParseJID(participantID)
+			if err == nil {
+				lidJID, err := handler.Client.Store.LIDs.GetLIDForPN(context.TODO(), participantJID)
+				if err == nil && !lidJID.IsEmpty() {
+					message.Participant.Lid = lidJID.String()
+				}
+			}
 		}
 	} else {
 		if len(message.Chat.Title) == 0 && message.FromMe {

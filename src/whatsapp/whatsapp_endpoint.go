@@ -6,4 +6,5 @@ type WhatsappEndpoint struct {
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
 	Title     string `json:"title,omitempty"`
+	Lid       string `json:"lid,omitempty"`
 }

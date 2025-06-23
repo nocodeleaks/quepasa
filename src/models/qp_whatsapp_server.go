@@ -895,3 +895,12 @@ func (server *QpWhatsappServer) SendChatPresence(chatId string, presenceType wha
 	}
 	return conn.SendChatPresence(chatId, uint(presenceType))
 }
+
+func (server *QpWhatsappServer) GetLIDFromPhone(phone string) (string, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "",
+			err
+	}
+	return conn.GetLIDFromPhone(phone)
+}

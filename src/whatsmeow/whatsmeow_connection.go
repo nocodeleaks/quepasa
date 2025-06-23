@@ -1207,3 +1207,28 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 
 	return conn.Client.SendChatPresence(jid, state, media)
 }
+
+// GetLIDFromPhone returns the @lid for a given phone number
+func (conn *WhatsmeowConnection) GetLIDFromPhone(phone string) (string, error) {
+	if conn.Client == nil {
+		return "", fmt.Errorf("client not defined")
+	}
+
+	if conn.Client.Store == nil {
+		return "", fmt.Errorf("store not defined")
+	}
+
+	// Parse the phone number to JID format
+	phoneJID := types.JID{
+		User:   phone,
+		Server: "s.whatsapp.net",
+	}
+
+	// First, try to get the LID from local store
+	lidJID, err := conn.Client.Store.LIDs.GetLIDForPN(context.TODO(), phoneJID)
+	if err == nil && !lidJID.IsEmpty() {
+		conn.GetLogger().Debugf("LID found in local store for phone %s: %s", phone, lidJID.String())
+		return lidJID.String(), nil
+	}
+	return "", fmt.Errorf("no LID found for phone %s", phone)
+}

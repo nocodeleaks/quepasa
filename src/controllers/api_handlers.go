@@ -106,6 +106,14 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Get(endpoint+"/contacts", ContactsController)
 		r.Post(endpoint+"/isonwhatsapp", IsOnWhatsappController)
 
+		// LID METHODS ****************************
+		// ----------------------------------------
+
+		r.Get(endpoint+"/lid", LIDController)
+
+		// ----------------------------------------
+		// LID METHODS ****************************
+
 		// IF YOU LOVE YOUR FREEDOM, DO NOT USE THAT
 		// IT WAS DEVELOPED IN A MOMENT OF WEAKNESS
 		// DONT BE THAT GUY !

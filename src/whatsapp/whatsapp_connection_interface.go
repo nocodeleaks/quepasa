@@ -116,4 +116,7 @@ type IWhatsappConnection interface {
 	//region Send Presence
 	SendChatPresence(chatId string, presenceType uint) error
 	//endregion
+
+	GetLIDFromPhone(phone string) (string, error)
+	//endregion
 }

@@ -118,5 +118,8 @@ type IWhatsappConnection interface {
 	//endregion
 
 	GetLIDFromPhone(phone string) (string, error)
+
+	// Get phone number from LID
+	GetPhoneFromLID(lid string) (string, error)
 	//endregion
 }

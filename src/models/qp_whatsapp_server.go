@@ -904,3 +904,12 @@ func (server *QpWhatsappServer) GetLIDFromPhone(phone string) (string, error) {
 	}
 	return conn.GetLIDFromPhone(phone)
 }
+
+func (server *QpWhatsappServer) GetPhoneFromLID(lid string) (string, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "",
+			err
+	}
+	return conn.GetPhoneFromLID(lid)
+}

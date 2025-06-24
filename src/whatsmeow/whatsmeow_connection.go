@@ -235,6 +235,7 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 
 		var phoneNumber string
 		var lid string
+		var phoneE164 string
 
 		if strings.Contains(jid.String(), "@lid") {
 			// For @lid contacts, get the corresponding phone number
@@ -242,6 +243,10 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 			if err == nil && !pnJID.IsEmpty() {
 				phoneNumber = pnJID.User
 				lid = jid.String()
+				// Format phone to E164
+				if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+					phoneE164 = phone
+				}
 			} else {
 				// If no mapping found, use the LID as unique identifier
 				phoneNumber = jid.String()
@@ -250,6 +255,10 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 		} else {
 			// For regular @s.whatsapp.net contacts
 			phoneNumber = jid.User
+			// Format phone to E164
+			if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+				phoneE164 = phone
+			}
 
 			// Try to get corresponding LID
 			lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), jid)
@@ -269,21 +278,30 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 				Id:    jid.String(),
 				Lid:   lid,
 				Title: title,
+				Phone: phoneE164,
 			}
 		} else {
 			// Contact already exists, merge information
-			var finalId, finalLid string
+			var finalId, finalLid, finalPhone string
 
 			if strings.Contains(jid.String(), "@lid") {
 				// Current is @lid, keep existing as Id and use current as Lid
 				finalId = existingContact.Id
 				finalLid = jid.String()
+				finalPhone = existingContact.Phone
+				if len(finalPhone) == 0 && len(phoneE164) > 0 {
+					finalPhone = phoneE164
+				}
 			} else {
 				// Current is @s.whatsapp.net, use as Id and keep existing Lid
 				finalId = jid.String()
 				finalLid = existingContact.Lid
 				if len(finalLid) == 0 && len(lid) > 0 {
 					finalLid = lid
+				}
+				finalPhone = phoneE164
+				if len(finalPhone) == 0 && len(existingContact.Phone) > 0 {
+					finalPhone = existingContact.Phone
 				}
 			}
 
@@ -297,6 +315,7 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 				Id:    finalId,
 				Lid:   finalLid,
 				Title: finalTitle,
+				Phone: finalPhone,
 			}
 		}
 	}
@@ -1224,11 +1243,41 @@ func (conn *WhatsmeowConnection) GetLIDFromPhone(phone string) (string, error) {
 		Server: "s.whatsapp.net",
 	}
 
-	// First, try to get the LID from local store
+	// try to get the LID from local store
 	lidJID, err := conn.Client.Store.LIDs.GetLIDForPN(context.TODO(), phoneJID)
 	if err == nil && !lidJID.IsEmpty() {
 		conn.GetLogger().Debugf("LID found in local store for phone %s: %s", phone, lidJID.String())
 		return lidJID.String(), nil
 	}
 	return "", fmt.Errorf("no LID found for phone %s", phone)
+}
+
+// GetPhoneFromLID returns the phone number for a given @lid
+func (conn *WhatsmeowConnection) GetPhoneFromLID(lid string) (string, error) {
+	if conn.Client == nil {
+		return "", fmt.Errorf("client not defined")
+	}
+
+	if conn.Client.Store == nil {
+		return "", fmt.Errorf("store not defined")
+	}
+
+	// Parse the LID to JID format
+	lidJID, err := types.ParseJID(lid)
+	if err != nil {
+		return "", fmt.Errorf("invalid LID format: %v", err)
+	}
+
+	// Get the corresponding phone number from local store
+	phoneJID, err := conn.Client.Store.LIDs.GetPNForLID(context.TODO(), lidJID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get phone for LID %s: %v", lid, err)
+	}
+
+	if phoneJID.IsEmpty() {
+		return "", fmt.Errorf("no phone found for LID %s", lid)
+	}
+
+	conn.GetLogger().Debugf("Phone found in local store for LID %s: %s", lid, phoneJID.User)
+	return phoneJID.User, nil
 }

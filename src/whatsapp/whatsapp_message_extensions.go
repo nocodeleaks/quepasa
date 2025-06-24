@@ -1,5 +1,7 @@
 package whatsapp
 
+import library "github.com/nocodeleaks/quepasa/library"
+
 //
 // Methods to create messages to send
 //
@@ -16,6 +18,12 @@ func ToMessage(
 	}
 
 	chat := WhatsappChat{Id: chatId}
+
+	// Try to populate phone field
+	if phone, _ := library.ExtractPhoneIfValid(chatId); len(phone) > 0 {
+		chat.Phone = phone
+	}
+
 	msg = &WhatsappMessage{
 		TrackId:      trackid,
 		Text:         text,

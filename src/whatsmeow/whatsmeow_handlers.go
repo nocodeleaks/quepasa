@@ -375,7 +375,6 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		InfoForHistory: evt.Info,
 		FromHistory:    from == "history",
 	}
-
 	// basic information
 	message.Id = evt.Info.ID
 	message.Timestamp = ImproveTimestamp(evt.Info.Timestamp)
@@ -387,6 +386,9 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	chatID := fmt.Sprint(evt.Info.Chat.User, "@", evt.Info.Chat.Server)
 	message.Chat.Id = chatID
 	message.Chat.Title = GetChatTitle(handler.Client, evt.Info.Chat)
+
+	// Populate phone field
+	message.Chat.PopulatePhone(handler.Client)
 
 	// Get LID for the chat if available
 	if handler.Client != nil && handler.Client.Store != nil {
@@ -405,6 +407,9 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		participantID := fmt.Sprint(evt.Info.Sender.User, "@", evt.Info.Sender.Server)
 		message.Participant.Id = participantID
 		message.Participant.Title = GetChatTitle(handler.Client, evt.Info.Sender)
+
+		// Populate phone field for participant
+		message.Participant.PopulatePhone(handler.Client)
 
 		// If title is empty, use PushName as fallback, sugested by hugo sampaio, removing message.FromMe
 		if len(message.Participant.Title) == 0 {

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
@@ -91,6 +92,12 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	}
 
 	chat := whatsapp.WhatsappChat{Id: chatId}
+
+	// Try to populate phone field
+	if phone, _ := library.ExtractPhoneIfValid(chatId); len(phone) > 0 {
+		chat.Phone = phone
+	}
+
 	msg = &whatsapp.WhatsappMessage{
 		Id:           strings.ToUpper(source.Id), // dont know why, must be upper
 		TrackId:      source.TrackId,

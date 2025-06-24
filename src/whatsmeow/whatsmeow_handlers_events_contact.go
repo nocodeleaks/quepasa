@@ -37,6 +37,7 @@ func OnEventContact(source *WhatsmeowHandlers, evt events.Contact) {
 		Title: title,
 	}
 
+	chat.PopulatePhone(source.Client)
 	phone := chat.GetPhone()
 
 	vcardtext := new(bytes.Buffer)

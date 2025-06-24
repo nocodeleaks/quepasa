@@ -63,8 +63,8 @@ type WhatsappMessage struct {
 	// WhatsApp ID of the sender
 	Wid string `json:"wid,omitempty"`
 
-	// WhatsApp LID of the sender (if available)
-	Lid string `json:"lid,omitempty"`
+	// WhatsApp phone number of the sender (if available)
+	Phone string `json:"phone,omitempty"`
 
 	// Extra information for custom messages
 	Info any `json:"info,omitempty"`

@@ -446,6 +446,18 @@
               "name": "forwardinternal",
               "value": true,
               "type": "boolean"
+            },
+            {
+              "id": "81902acc-11f5-4f03-b79b-ff99df503bf3",
+              "name": "extra.typebot",
+              "value": "={{ $('QUERY').item.json.typebot ?? undefined }}",
+              "type": "string"
+            },
+            {
+              "id": "9aa7a9a4-394d-4433-ac28-fb2b63e3d407",
+              "name": "extra.soc",
+              "value": "={{ $('QUERY').item.json.soc ?? undefined }}",
+              "type": "boolean"
             }
           ]
         },
@@ -462,7 +474,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.1) Updates\n* workflow execution permissions\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "content": "## (1.0.2) Updates\n* typebot\n\n## Recommendations \n* Remember set timeout to 10 seconds",
         "height": 187.60409024797292,
         "width": 489.8474320052134
       },
@@ -664,7 +676,7 @@
     "executionOrder": "v1",
     "callerPolicy": "any"
   },
-  "versionId": "35e86964-42a6-462b-80b7-2be1a447af97",
+  "versionId": "b97cf6df-b631-4dc9-889a-c000bd903180",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

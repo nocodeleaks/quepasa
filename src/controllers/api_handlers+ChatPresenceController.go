@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -60,7 +59,7 @@ func ChatPresenceController(w http.ResponseWriter, r *http.Request) {
 	request.ChatId = formattedChatId
 
 	// updating logentry with chatid
-	logentry = logentry.WithField(library.LogFields.ChatId, request.ChatId)
+	logentry = logentry.WithField(LogFields.ChatId, request.ChatId)
 
 	// Checking for ready state
 	status := server.GetStatus()

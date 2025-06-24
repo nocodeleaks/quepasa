@@ -9,8 +9,9 @@ import (
 )
 
 var AllowedSuffix = map[string]bool{
-	"g.us":           true, // Mensagem para um grupo
-	"s.whatsapp.net": true, // Mensagem direta a um usuário
+	"g.us":           true, // Group message
+	"s.whatsapp.net": true, // Direct message
+	"lid":            true, // New default suffix for WhatsApp Business API
 }
 
 func PhoneToWid(source string) (destination string) {
@@ -85,6 +86,28 @@ func IsValidE164(phone string) bool {
 		return true
 	}
 	return false
+}
+
+/*
+<summary>
+
+	Checks if the given ID is a valid group ID
+	It returns true if the ID is valid, false otherwise.
+
+</summary>
+<remarks>
+
+	It checks if the ID ends with "@g.us"
+	It checks the prefix (before "@") max 20 caracters.
+
+<remarks>
+*/
+func IsValidGroupId(id string) bool {
+	return strings.HasSuffix(id, "@g.us") && len(id) <= 25
+	/*
+		regex, _ := regexp.Compile(`^[0-9]{1,20}\@g\.us$`)
+		return regex.MatchString(id)
+	*/
 }
 
 func GetMessageType(attach *WhatsappAttachment) WhatsappMessageType {

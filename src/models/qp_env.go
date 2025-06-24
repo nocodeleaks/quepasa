@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
+	"strings" // Certifique-se de que "strings" está importado
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/proto"
 )
 
+// Environment variable names
 const (
 	ENV_WEBAPIPORT = "WEBAPIPORT"
 	ENV_WEBAPIHOST = "WEBAPIHOST"
@@ -29,7 +29,7 @@ const (
 	ENV_MASTER_KEY     = "MASTERKEY"      // used for manage all instances at all
 
 	ENV_WEBSOCKETSSL             = "WEBSOCKETSSL" // use ssl for websocket qrcode
-	ENV_MIGRATIONS               = "MIGRATIONS"   // enable migrations
+	ENV_MIGRATIONS               = "MIGRATIONS"   // enable migrations (can also be a path)
 	ENV_TITLE                    = "APP_TITLE"    // application title for whatsapp id
 	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"
 	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"
@@ -53,117 +53,202 @@ const (
 
 	ENV_ACCOUNTSETUP = "ACCOUNTSETUP" // enable or disable account creation, default true
 	ENV_TESTING      = "TESTING"
+
+	ENV_RABBITMQ_QUEUE            = "RABBITMQ_QUEUE"            // Nome da variável de ambiente para a fila
+	ENV_RABBITMQ_CONNECTIONSTRING = "RABBITMQ_CONNECTIONSTRING" // Nome da variável de ambiente para a string de conexão
+	ENV_RABBITMQ_CACHELENGTH      = "RABBITMQ_CACHELENGTH"
 )
 
+// Environment provides methods to access application configurations from environment variables.
 type Environment struct{}
 
+// ENV is the global singleton instance for accessing environment configurations.
 var ENV Environment
 
-//#region DATABASE CONFIG
+// ErrEnvVarEmpty is returned when an environment variable is requested but is empty.
+var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
 
+// --- Helper Functions for Environment Variables ---
+
+// getEnvOrDefaultString fetches an environment variable, returning a default value if not set.
+func getEnvOrDefaultString(key, defaultValue string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return strings.TrimSpace(value) // Aplicado TrimSpace
+	}
+	return defaultValue
+}
+
+// getEnvOrDefaultBool fetches a boolean environment variable, returning a default value.
+// It logs a warning if the environment variable exists but cannot be parsed as a boolean.
+func getEnvOrDefaultBool(key string, defaultValue bool) bool {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
+		if parsedValue, err := strconv.ParseBool(trimmedValueStr); err == nil {
+			return parsedValue
+		}
+		logrus.Warnf("Invalid boolean value for environment variable %s: '%s'. Using default: %t", key, valueStr, defaultValue)
+	}
+	return defaultValue
+}
+
+// getEnvOrDefaultUint64 fetches an unsigned 64-bit integer environment variable, returning a default value.
+// It logs a warning if the environment variable exists but cannot be parsed as a uint64.
+func getEnvOrDefaultUint64(key string, defaultValue uint64) uint64 {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
+		if parsedValue, err := strconv.ParseUint(trimmedValueStr, 10, 64); err == nil {
+			return parsedValue
+		}
+		logrus.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
+	}
+	return defaultValue
+}
+
+// getEnvOrDefaultUint32 fetches an unsigned 32-bit integer environment variable, returning a default value.
+// It logs a warning if the environment variable exists but cannot be parsed as a uint32.
+func getEnvOrDefaultUint32(key string, defaultValue uint32) uint32 {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
+		if parsedValue, err := strconv.ParseUint(trimmedValueStr, 10, 32); err == nil {
+			return uint32(parsedValue)
+		}
+		logrus.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
+	}
+	return defaultValue
+}
+
+// getOptionalEnvBool fetches a boolean environment variable where nil indicates "use system default logic".
+// It returns:
+//   - *bool (true): if the variable is explicitly set to "true", "1", "yes", etc.
+//   - *bool (false): if the variable is explicitly set to "false", "0", "no", etc.
+//   - nil: if the variable is not set, empty, or its value is not a valid boolean,
+//     indicating that the system's internal default logic should apply.
+func getOptionalEnvBool(key string) *bool {
+	valueStr, ok := os.LookupEnv(key)
+	if !ok {
+		return nil // Not set
+	}
+	trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
+	if trimmedValueStr == "" {
+		return nil // Empty after trim, use system default
+	}
+
+	parsedValue, err := strconv.ParseBool(trimmedValueStr)
+	if err != nil {
+		logrus.Warnf("Invalid boolean value for optional environment variable %s: '%s'. Returning nil (use system default logic). Error: %v", key, valueStr, err)
+		return nil
+	}
+
+	return &parsedValue // Return pointer to the parsed boolean
+}
+
+// --- DATABASE CONFIGURATION ---
+
+// GetDBParameters retrieves database connection parameters from environment variables.
+// It defaults to "sqlite3" if DBDRIVER is not set.
 func (*Environment) GetDBParameters() library.DatabaseParameters {
 	parameters := library.DatabaseParameters{}
 
-	parameters.Driver = os.Getenv(ENV_DBDRIVER)
-	if len(parameters.Driver) == 0 {
-		parameters.Driver = "sqlite3"
-	}
-
-	parameters.Host = os.Getenv(ENV_DBHOST)
-	parameters.DataBase = os.Getenv(ENV_DBDATABASE)
-	parameters.Port = os.Getenv(ENV_DBPORT)
-	parameters.User = os.Getenv(ENV_DBUSER)
-	parameters.Password = os.Getenv(ENV_DBPASSWORD)
-	parameters.SSL = os.Getenv(ENV_DBSSLMODE)
+	parameters.Driver = getEnvOrDefaultString(ENV_DBDRIVER, "sqlite3")
+	parameters.Host = getEnvOrDefaultString(ENV_DBHOST, "")
+	parameters.DataBase = getEnvOrDefaultString(ENV_DBDATABASE, "")
+	parameters.Port = getEnvOrDefaultString(ENV_DBPORT, "")
+	parameters.User = getEnvOrDefaultString(ENV_DBUSER, "")
+	parameters.Password = getEnvOrDefaultString(ENV_DBPASSWORD, "")
+	parameters.SSL = getEnvOrDefaultString(ENV_DBSSLMODE, "")
 	return parameters
 }
 
-//#endregion
+// --- GENERAL APPLICATION SETTINGS ---
 
+// UseCompatibleMIMEsAsAudio checks if compatible MIME types should be treated as audio.
+// Defaults to true.
 func (*Environment) UseCompatibleMIMEsAsAudio() bool {
-	environment, err := GetEnvBool(ENV_CONVERT_WAVE_TO_OGG, proto.Bool(true))
-	if err != nil {
-		return *environment
-	}
-
-	environment, _ = GetEnvBool(ENV_COMPATIBLE_MIME_AS_AUDIO, proto.Bool(true))
-	return *environment
+	convertWave := getEnvOrDefaultBool(ENV_CONVERT_WAVE_TO_OGG, true)
+	compatibleMime := getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true)
+	return convertWave || compatibleMime
 }
 
-// WEBSOCKETSSL => default false
+// UseSSLForWebSocket checks if SSL should be used for WebSocket QR code. Defaults to false.
 func (*Environment) UseSSLForWebSocket() bool {
-	migrations, _ := GetEnvStr(ENV_WEBSOCKETSSL)
-	boolMigrations, err := strconv.ParseBool(migrations)
-	if err == nil {
-		return boolMigrations
-	} else {
-		return false
-	}
+	return getEnvOrDefaultBool(ENV_WEBSOCKETSSL, false)
 }
 
-// MIGRATIONS => Path to database migrations folder
+// Migrate checks if database migrations should be enabled. Defaults to true.
 func (*Environment) Migrate() bool {
-	migrations, _ := GetEnvStr(ENV_MIGRATIONS)
-	boolMigrations, err := strconv.ParseBool(migrations)
-	if err == nil {
-		return boolMigrations
-	} else {
-		return true
-	}
+	return getEnvOrDefaultBool(ENV_MIGRATIONS, true)
 }
 
-// MIGRATIONS => Path to database migrations folder
+// MigrationPath returns the custom path for database migrations.
+// Returns an empty string if migrations are enabled via boolean flag or no custom path is set.
 func (*Environment) MigrationPath() string {
-	migrations, _ := GetEnvStr(ENV_MIGRATIONS)
-	_, err := strconv.ParseBool(migrations)
-	if err != nil {
-		return migrations
-	} else {
-		return "" // indicates that should use default path
+	// Pega o valor bruto da variável de ambiente primeiro para aplicar TrimSpace.
+	rawValue := os.Getenv(ENV_MIGRATIONS)
+	trimmedValue := strings.TrimSpace(rawValue) // Aplicado TrimSpace
+
+	// Se o valor trimado for vazio, ou se puder ser parseado como um booleano, retorna string vazia.
+	// Isso mantém a lógica de que um valor booleano significa "sem caminho personalizado".
+	if trimmedValue == "" {
+		return ""
 	}
+	if _, err := strconv.ParseBool(trimmedValue); err == nil {
+		return "" // Indica que deve usar o caminho padrão ou as migrações são desabilitadas/habilitadas por bool
+	}
+	return trimmedValue // Caso contrário, retorna o valor trimado como um caminho
 }
 
+// AppTitle returns the application title. Defaults to an empty string.
 func (*Environment) AppTitle() string {
-	result, _ := GetEnvStr(ENV_TITLE)
-	return result
+	return getEnvOrDefaultString(ENV_TITLE, "")
 }
 
-var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
-
-func GetEnvBool(key string, value *bool) (*bool, error) {
-	result := value
-	s, err := GetEnvStr(key)
-	if err == nil {
-		trying, err := strconv.ParseBool(s)
-		if err == nil {
-			result = &trying
-		}
-	}
-	return result, err
-}
-
-func GetEnvStr(key string) (string, error) {
-	v := os.Getenv(key)
-	if v == "" {
-		return v, ErrEnvVarEmpty
-	}
-	return v, nil
-}
-
+// ShouldRemoveDigit9 checks if the 9th digit should be removed from phone numbers.
+// Returns true or false, defaulting to false if the environment variable is not set or invalid.
 func (*Environment) ShouldRemoveDigit9() bool {
-	value, _ := GetEnvBool(ENV_REMOVEDIGIT9, proto.Bool(false))
-	return *value
+	return getEnvOrDefaultBool(ENV_REMOVEDIGIT9, false)
 }
 
-//#region WHATSAPP SERVICE OPTIONS - WHATSMEOW
+// SynopsisLength returns the length for message synopsis. Defaults to 50.
+func (*Environment) SynopsisLength() uint64 {
+	return getEnvOrDefaultUint64(ENV_SYNOPSISLENGTH, 50)
+}
 
+// CacheLength returns the maximum number of items for the cache. Defaults to 0 (no limit).
+func (*Environment) CacheLength() uint64 {
+	return getEnvOrDefaultUint64(ENV_CACHELENGTH, 0)
+}
+
+// CacheDays returns the maximum number of days for cached messages. Defaults to 0 (no limit).
+func (*Environment) CacheDays() uint64 {
+	return getEnvOrDefaultUint64(ENV_CACHEDAYS, 0)
+}
+
+// MasterKey returns the master key for super admin methods. Defaults to an empty string.
+func (*Environment) MasterKey() string {
+	return getEnvOrDefaultString(ENV_MASTER_KEY, "")
+}
+
+// Testing checks if testing methods should be applied. Defaults to false.
+func (*Environment) Testing() bool {
+	return getEnvOrDefaultBool(ENV_TESTING, false)
+}
+
+// AccountSetup checks if account creation is enabled. Defaults to true.
+func (*Environment) AccountSetup() bool {
+	return getEnvOrDefaultBool(ENV_ACCOUNTSETUP, true)
+}
+
+// --- WHATSAPP SERVICE OPTIONS - WHATSMEOW ---
+
+// ParseWhatsappBoolean parses a string value into a WhatsappBooleanExtended type.
+// It handles various string representations of boolean values, including extended ones.
 func ParseWhatsappBoolean(value string) whatsapp.WhatsappBooleanExtended {
-
+	// A função já faz trim, então não precisa de outro aqui.
 	formatted := strings.TrimSpace(value)
 	formatted = strings.Trim(formatted, `"`)
 	formatted = strings.ToLower(formatted)
 
-	switch strings.ToLower(formatted) {
+	switch formatted {
 	case "", "0":
 		return whatsapp.WhatsappBooleanExtended(whatsapp.UnSetBooleanType)
 	case "1", "t", "true", "yes":
@@ -180,154 +265,117 @@ func ParseWhatsappBoolean(value string) whatsapp.WhatsappBooleanExtended {
 	}
 }
 
+// Broadcasts returns the WhatsappBooleanExtended setting for broadcasts.
 func (*Environment) Broadcasts() whatsapp.WhatsappBooleanExtended {
 	v := os.Getenv(ENV_BROADCASTS)
+	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
+// Groups returns the WhatsappBooleanExtended setting for groups.
 func (*Environment) Groups() whatsapp.WhatsappBooleanExtended {
 	v := os.Getenv(ENV_GROUPS)
+	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
+// ReadReceipts returns the WhatsappBooleanExtended setting for read receipts.
 func (*Environment) ReadReceipts() whatsapp.WhatsappBooleanExtended {
 	v := os.Getenv(ENV_READRECEIPTS)
+	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
+// Calls returns the WhatsappBooleanExtended setting for calls.
 func (*Environment) Calls() whatsapp.WhatsappBooleanExtended {
 	v := os.Getenv(ENV_CALLS)
+	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
+// ReadUpdate checks if read updates are enabled.
+// Returns true or false, defaulting to false if the environment variable is not set or invalid.
 func (*Environment) ReadUpdate() bool {
-	value, _ := GetEnvBool(ENV_READUPDATE, proto.Bool(false))
-	return *value
+	return getEnvOrDefaultBool(ENV_READUPDATE, false)
 }
 
-//#region LOGS
-
-// forces default presence status (lower)
-func (*Environment) Presence() string {
-	result, _ := GetEnvStr(ENV_PRESENCE)
-	result = strings.ToLower(result)
-	return result
-}
-
-// Force Default Log Level (lower)(trimmed)
-func (*Environment) LogLevel() string {
-	result, _ := GetEnvStr(ENV_LOGLEVEL)
-	result = strings.ToLower(result)   // to lower
-	result = strings.TrimSpace(result) // trim white spaces
-	return result
-}
-
-func (*Environment) LogLevelFromLogrus(level logrus.Level) logrus.Level {
-	envLevel := ENV.LogLevel()
-	logrusLevel, err := logrus.ParseLevel(envLevel)
-	if err == nil {
-		return logrusLevel
-	}
-	return level
-}
-
-func (*Environment) HttpLogs() bool {
-	value, _ := GetEnvBool(ENV_HTTPLOGS, proto.Bool(false))
-	return *value
-}
-
-// Force Default Whatsmeow Log Level
-func (*Environment) WhatsmeowLogLevel() string {
-	result, _ := GetEnvStr(ENV_WHATSMEOWLOGLEVEL)
-	return result
-}
-
-// Force Default Whatsmeow DataBase Log Level
-func (*Environment) WhatsmeowDBLogLevel() string {
-	result, _ := GetEnvStr(ENV_WHATSMEOWDBLOGLEVEL)
-	return result
-}
-
-//#endregion
-
-// Get history sync days, environment whatsapp service global option
+// HistorySync returns the history sync days. Returns nil if not set or invalid.
+// A nil return indicates that the system should use its internal default logic
+// for history sync days, rather than a forced value.
 func (*Environment) HistorySync() *uint32 {
-	stringValue, err := GetEnvStr(ENV_HISTORYSYNCDAYS)
-	if err == nil {
-		value, err := strconv.ParseUint(stringValue, 10, 32)
-		if err == nil {
-			return proto.Uint32(uint32(value))
-		}
+	rawValue := os.Getenv(ENV_HISTORYSYNCDAYS)
+	stringValue := strings.TrimSpace(rawValue) // Aplicado TrimSpace
+
+	if stringValue == "" {
+		return nil
 	}
 
-	return nil
-}
-
-//#endregion
-
-// Length for synopsis when replied messages
-func (*Environment) SynopsisLength() uint64 {
-	stringValue, err := GetEnvStr(ENV_SYNOPSISLENGTH)
-	if err == nil {
-		value, err := strconv.ParseUint(stringValue, 10, 32)
-		if err == nil {
-			return value
-		}
+	value, err := strconv.ParseUint(stringValue, 10, 32)
+	if err != nil {
+		logrus.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Returning nil (use system default logic). Error: %v", ENV_HISTORYSYNCDAYS, rawValue, err) // Loga o valor original para debug
+		return nil
 	}
 
-	return 50
+	result := uint32(value)
+	return &result
 }
 
-// Length for cached messages, auto-cleaner old ones if bigger than 0
-func (*Environment) CacheLength() uint64 {
-	stringValue, err := GetEnvStr(ENV_CACHELENGTH)
-	if err == nil {
-		value, err := strconv.ParseUint(stringValue, 10, 32)
-		if err == nil {
-			return value
-		}
+// --- LOGGING SETTINGS ---
+
+// Presence returns the forced default presence status (lowercase).
+func (*Environment) Presence() string {
+	result := getEnvOrDefaultString(ENV_PRESENCE, "")
+	return strings.ToLower(result)
+}
+
+// LogLevel returns the application log level (lowercase and trimmed).
+func (*Environment) LogLevel() string {
+	result := getEnvOrDefaultString(ENV_LOGLEVEL, "")
+	return strings.ToLower(strings.TrimSpace(result))
+}
+
+// LogLevelFromLogrus parses the environment's log level string into a logrus.Level.
+// If parsing fails (e.g., due to an invalid environment variable value), it will panic,
+// as this indicates a critical configuration error that must be addressed.
+func (*Environment) LogLevelFromLogrus(defaultLevel logrus.Level) logrus.Level {
+	envLevelStr := ENV.LogLevel()
+	logrusLevel, err := logrus.ParseLevel(envLevelStr)
+	if err != nil {
+		panic(fmt.Sprintf("Invalid log level '%s' specified in environment variable %s: %v. Please correct this critical configuration.", envLevelStr, ENV_LOGLEVEL, err))
 	}
-
-	return 0
+	return logrusLevel
 }
 
-// Days for cached messages, auto-cleaner old ones if bigger than 0
-func (*Environment) CacheDays() uint64 {
-	stringValue, err := GetEnvStr(ENV_CACHEDAYS)
-	if err == nil {
-		value, err := strconv.ParseUint(stringValue, 10, 32)
-		if err == nil {
-			return value
-		}
-	}
-
-	return 0
+// HttpLogs checks if HTTP logging is enabled. Defaults to false.
+func (*Environment) HttpLogs() bool {
+	return getEnvOrDefaultBool(ENV_HTTPLOGS, false)
 }
 
-// Master Key for super admin methods
-func (*Environment) MasterKey() string {
-	result, _ := GetEnvStr(ENV_MASTER_KEY)
-	return result
+// WhatsmeowLogLevel returns the Whatsmeow Log Level. Defaults to an empty string.
+func (*Environment) WhatsmeowLogLevel() string {
+	return getEnvOrDefaultString(ENV_WHATSMEOWLOGLEVEL, "")
 }
 
-// Testing => Apply Testing Methods (not stable)
-func (*Environment) Testing() bool {
-	text, _ := GetEnvStr(ENV_TESTING)
-	value, err := strconv.ParseBool(text)
-	if err == nil {
-		return value
-	} else {
-		return false // default return
-	}
+// WhatsmeowDBLogLevel returns the Whatsmeow Database Log Level. Defaults to an empty string.
+func (*Environment) WhatsmeowDBLogLevel() string {
+	return getEnvOrDefaultString(ENV_WHATSMEOWDBLOGLEVEL, "")
 }
 
-// enable or disable account creation, default true
-func (*Environment) AccountSetup() bool {
-	text, _ := GetEnvStr(ENV_ACCOUNTSETUP)
-	value, err := strconv.ParseBool(text)
-	if err == nil {
-		return value
-	} else {
-		return true // default return
-	}
+// --- RABBITMQ SETTINGS ---
+
+// RabbitMQQueue returns the name of the RabbitMQ queue.
+// Defaults to an empty string if the environment variable is not set.
+func (*Environment) RabbitMQQueue() string {
+	return getEnvOrDefaultString(ENV_RABBITMQ_QUEUE, "")
+}
+
+// RabbitMQConnectionString returns the connection string for RabbitMQ.
+// Defaults to an empty string if the environment variable is not set.
+func (*Environment) RabbitMQConnectionString() string {
+	return getEnvOrDefaultString(ENV_RABBITMQ_CONNECTIONSTRING, "")
+}
+
+// CacheLength returns the maximum number of items for the cache. Defaults to 0 (no limit).
+func (*Environment) RabbitMQCacheLength() uint64 {
+	return getEnvOrDefaultUint64(ENV_RABBITMQ_CACHELENGTH, 0)
 }

@@ -205,6 +205,10 @@
             {
               "name": "event",
               "value": "={{ $json.type }}"
+            },
+            {
+              "name": "contact",
+              "value": "={{$json.contact}}"
             }
           ],
           "boolean": [
@@ -231,9 +235,9 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.25) Updates\n* ads\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "content": "## (1.0.26) Updates\n* skip automation attribute\n\n## Recommendations \n* Remember set timeout to 30 seconds",
         "height": 184.64873580281272,
-        "width": 569.6036185132486
+        "width": 556.6707622543934
       },
       "id": "97661b0f-d79b-4d77-bb42-c99a3e1c4f1a",
       "name": "Sticky Note",
@@ -271,7 +275,7 @@
       "typeVersion": 2.3,
       "position": [
         9680,
-        -523
+        -520
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -907,6 +911,16 @@
               "operator": {
                 "type": "string",
                 "operation": "notEndsWith"
+              }
+            },
+            {
+              "id": "142eb4ff-090a-4aa4-a882-2c772a9f2f0f",
+              "leftValue": "={{ Boolean($json.contact?.custom_attributes?.skipautomation ?? false) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
               }
             }
           ],
@@ -1948,7 +1962,7 @@
     "executionTimeout": 30,
     "executionOrder": "v1"
   },
-  "versionId": "eaf5819d-5a17-4d56-b465-b66fd0819a61",
+  "versionId": "0fbb7956-0b2d-450a-9b4c-23bda0657444",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

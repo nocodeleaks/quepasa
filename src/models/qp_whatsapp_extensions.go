@@ -152,6 +152,9 @@ func ToQPEndPointV2(source *whatsapp.WhatsappEndpoint) (destination QPEndpointV2
 		destination.Title = source.UserName
 	}
 
+	// Include Phone if available
+	destination.Phone = source.Phone
+
 	return
 }
 
@@ -204,6 +207,7 @@ func ChatToQPEndPointV2(source whatsapp.WhatsappChat) (destination QPEndpointV2)
 	}
 
 	destination.Title = source.Title
+	destination.Phone = source.Phone
 	return
 }
 

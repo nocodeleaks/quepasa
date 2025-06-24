@@ -59,14 +59,6 @@
             </td>
             <td style="text-align: center;">              
               <div class="field has-addons">
-                <p class="control">
-                  <form class="" method="post" action="/form/cycle">
-                    <input name="token" type="hidden" value="{{ .Token }}">
-                    <button class="button is-primary is-outlined" title="Reset the token">
-                      <span class="icon is-small is-inline"><i class="fa fa-sync"></i></span>
-                    </button>
-                  </form>
-                </p> 
                 {{ if .IsDevelopmentGlobal }}
                   <p class="control"> 
                     <form class="" method="post" action="/form/debug">

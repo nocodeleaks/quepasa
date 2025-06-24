@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"mime"
 	"net/http"
 	"net/url"
@@ -22,7 +21,7 @@ func GetFormUser(r *http.Request) (*QpUser, error) {
 
 	user, ok := claims["user_id"].(string)
 	if !ok {
-		return nil, errors.New("missing user id")
+		return nil, ErrFormUnauthenticated
 	}
 
 	return WhatsappService.DB.Users.Find(user)
@@ -151,14 +150,23 @@ func QueryHasKey(query *url.URL, key string) bool {
 <summary>
 
 	Get URL Value from Key, lowercase comparison
+	* Url Unescaped
 
 </summary>
 */
-func QueryGetValue(url *url.URL, key string) string {
-	query := url.Query()
+func QueryGetValue(rawUrl *url.URL, key string) string {
+	query := rawUrl.Query()
 	for k := range query {
 		if strings.EqualFold(k, key) {
-			return query.Get(k)
+			value := query.Get(k)
+
+			// unescape value
+			unescapedValue, err := url.QueryUnescape(value)
+			if err == nil {
+				value = unescapedValue
+			}
+
+			return value
 		}
 	}
 	return ""

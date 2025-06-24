@@ -93,6 +93,9 @@ type IWhatsappConnection interface {
 	// Update Group Name
 	UpdateGroupSubject(string, string) (interface{}, error)
 
+	// Update Group Topic (Description)
+	UpdateGroupTopic(string, string) (interface{}, error)
+
 	// Update Group Photo
 	UpdateGroupPhoto(string, []byte) (string, error)
 
@@ -113,4 +116,12 @@ type IWhatsappConnection interface {
 	//region Send Presence
 	SendChatPresence(chatId string, presenceType uint) error
 	//endregion
+
+	GetLIDFromPhone(phone string) (string, error)
+
+	// Get phone number from LID
+	GetPhoneFromLID(lid string) (string, error)
+	//endregion
+
+	GetUserInfo(jids []string) ([]interface{}, error)
 }

@@ -16,7 +16,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2220,
+        -2000,
         900
       ],
       "id": "6af41726-dedf-4662-a464-1c19bb71be40"
@@ -37,7 +37,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1800,
+        -1580,
         1060
       ],
       "id": "4cc64138-d2f9-4419-95a6-a8a2bee9a464"
@@ -55,7 +55,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -980,
+        -760,
         720
       ],
       "continueOnFail": true
@@ -67,7 +67,7 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -3620,
+        -3740,
         760
       ]
     },
@@ -86,7 +86,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1600,
+        -1380,
         880
       ],
       "id": "0af31fae-f50e-469b-83d0-77d80f4e72fc"
@@ -102,7 +102,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        -540,
+        -320,
         780
       ]
     },
@@ -122,7 +122,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -360,
+        -140,
         780
       ]
     },
@@ -166,22 +166,22 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -3140,
+        -2920,
         760
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.23) Updates\n* ads\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "content": "## (1.0.24) Updates\n* execution data\n\n## Recommendations \n* Remember set timeout to 10 seconds",
         "height": 262.55904520292785,
-        "width": 489.8474320052134
+        "width": 442.12799981446017
       },
       "id": "5c00d5f6-1dbb-4218-8a8e-8853fd826635",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -3380,
+        -3840,
         480
       ]
     },
@@ -201,7 +201,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2600,
+        -2380,
         880
       ]
     },
@@ -222,7 +222,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -2420,
+        -2200,
         800
       ]
     },
@@ -240,7 +240,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        -2060,
+        -1840,
         620
       ],
       "id": "943ba096-84d6-4793-9b53-d856db56a478",
@@ -265,7 +265,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2920,
+        3140,
         1520
       ],
       "id": "4ebd53bb-6850-419e-a7b1-2e5f336b0a88",
@@ -288,7 +288,7 @@
       "type": "n8n-nodes-base.moveBinaryData",
       "typeVersion": 1,
       "position": [
-        1600,
+        1820,
         1440
       ],
       "alwaysOutputData": true
@@ -303,7 +303,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1660,
+        1880,
         1060
       ]
     },
@@ -338,7 +338,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        3900,
+        4120,
         1040
       ],
       "id": "741bdae9-353f-4da0-8444-7f5ce9e3865c",
@@ -356,7 +356,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
       "position": [
-        -2580,
+        -2360,
         540
       ],
       "alwaysOutputData": true,
@@ -383,7 +383,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2980,
+        -2760,
         760
       ]
     },
@@ -402,7 +402,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2300,
+        2520,
         860
       ],
       "id": "2f0a55d2-bc66-432d-b63b-55e10b63e78e",
@@ -431,7 +431,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        440,
+        660,
         1060
       ]
     },
@@ -442,7 +442,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        980,
+        1200,
         1500
       ]
     },
@@ -453,7 +453,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1040,
+        1260,
         1080
       ]
     },
@@ -464,7 +464,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        980,
+        1200,
         1800
       ]
     },
@@ -475,7 +475,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2300,
+        2520,
         1060
       ]
     },
@@ -490,7 +490,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3680,
+        3900,
         1040
       ]
     },
@@ -510,7 +510,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2780,
+        3000,
         940
       ]
     },
@@ -531,7 +531,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2960,
+        3180,
         800
       ]
     },
@@ -553,7 +553,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3200,
+        3420,
         660
       ]
     },
@@ -575,7 +575,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3200,
+        3420,
         960
       ]
     },
@@ -597,7 +597,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3200,
+        3420,
         820
       ]
     },
@@ -608,7 +608,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3480,
+        3700,
         820
       ]
     },
@@ -629,28 +629,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1880,
+        2100,
         1060
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.attachment.thumbnail }}",
-              "operation": "isNotEmpty"
-            }
-          ]
-        }
-      },
-      "id": "4700fa46-d22c-452e-8c07-0bfa70fe84c4",
-      "name": "If Has Thumbnail",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [
-        1420,
-        1500
       ]
     },
     {
@@ -660,7 +640,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1760,
+        1980,
         1520
       ]
     },
@@ -680,7 +660,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        240,
+        460,
         960
       ],
       "retryOnFail": true,
@@ -693,7 +673,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        440,
+        660,
         880
       ]
     },
@@ -704,7 +684,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1440,
+        1660,
         1220
       ]
     },
@@ -715,7 +695,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2780,
+        -2560,
         640
       ]
     },
@@ -730,7 +710,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        -2380,
+        -2160,
         620
       ]
     },
@@ -761,7 +741,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -2220,
+        -2000,
         620
       ]
     },
@@ -772,7 +752,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2780,
+        -2560,
         880
       ]
     },
@@ -813,7 +793,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        2560,
+        2780,
         940
       ],
       "alwaysOutputData": true,
@@ -827,7 +807,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1000,
+        -780,
         960
       ]
     },
@@ -847,7 +827,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1400,
+        -1180,
         980
       ]
     },
@@ -858,7 +838,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        20,
+        240,
         800
       ]
     },
@@ -879,7 +859,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1200,
+        -980,
         1060
       ]
     },
@@ -900,7 +880,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -160,
+        60,
         700
       ]
     },
@@ -921,7 +901,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1200,
+        1420,
         1500
       ]
     },
@@ -938,7 +918,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        3700,
+        3920,
         1640
       ],
       "onError": "continueRegularOutput"
@@ -990,7 +970,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        3020,
+        3240,
         1800
       ]
     },
@@ -1001,7 +981,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2460,
+        2680,
         1220
       ]
     },
@@ -1012,7 +992,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2240,
+        2460,
         1520
       ]
     },
@@ -1023,7 +1003,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2240,
+        2460,
         1800
       ]
     },
@@ -1046,7 +1026,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3240,
+        3460,
         1520
       ]
     },
@@ -1061,7 +1041,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        3480,
+        3700,
         1640
       ]
     },
@@ -1094,7 +1074,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -2020,
+        -1800,
         980
       ]
     },
@@ -1114,7 +1094,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1800,
+        -1580,
         920
       ],
       "id": "ca99dcc2-4a93-4452-b092-073bf6a5e236"
@@ -1132,7 +1112,7 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        1440,
+        1660,
         1060
       ]
     },
@@ -1147,7 +1127,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -3460,
+        -3240,
         760
       ]
     },
@@ -1162,7 +1142,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -3300,
+        -3080,
         760
       ]
     },
@@ -1196,7 +1176,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1240,
+        -1020,
         700
       ]
     },
@@ -1207,7 +1187,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1400,
+        -1180,
         800
       ]
     },
@@ -1223,12 +1203,97 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -980,
+        -760,
         540
       ],
       "id": "b797e32f-c7ca-4b92-a90a-8597db96abf7",
       "name": "Convert to File",
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "88a55070-1e21-4703-a588-c430857165cc",
+              "leftValue": "={{ $json.attachment.thumbnail }}",
+              "rightValue": "={{ $json.attachment.thumbnail }}",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1ace009f-c2ea-4b5b-ab87-2f71adc7843c",
+      "name": "If Has Thumbnail",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1620,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "account",
+              "value": "={{ $json.extra.account ?? \"-\" }}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{ $json.extra.inbox ?? \"-\" }}"
+            },
+            {
+              "key": "soc",
+              "value": "={{ String($json.extra.soc ?? \"-\")}}"
+            },
+            {
+              "key": "conversation",
+              "value": "={{ $json.conversation.id ?? \"-\" }}"
+            },
+            {
+              "key": "chat",
+              "value": "={{ $json.chat.id ?? \"-\" }}"
+            }
+          ]
+        }
+      },
+      "id": "fe291ae7-4c29-4a42-8dff-b2b2cc507e7b",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -3240,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## DEBUG",
+        "height": 258.7128298295323,
+        "width": 360.98769819114443
+      },
+      "id": "db138ae4-64a0-483a-9f96-9440e3dea700",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3372.5251754053243,
+        480
+      ]
     }
   ],
   "pinData": {},
@@ -1278,6 +1343,11 @@
         [
           {
             "node": "EXTRA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execution Data",
             "type": "main",
             "index": 0
           }
@@ -1603,24 +1673,6 @@
           },
           {
             "node": "Post Incoming Message Without Attachment",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Has Thumbnail": {
-      "main": [
-        [
-          {
-            "node": "Move Binary Data",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "(Localization) Follow and Post",
             "type": "main",
             "index": 0
           }
@@ -1999,6 +2051,24 @@
           }
         ]
       ]
+    },
+    "If Has Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Move Binary Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "(Localization) Follow and Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -2008,7 +2078,7 @@
     "executionTimeout": 10,
     "executionOrder": "v1"
   },
-  "versionId": "558a2672-8d48-4e4a-b470-514ac88bee0b",
+  "versionId": "ebd2fd01-ce8e-47f2-9f03-e911cfe08330",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

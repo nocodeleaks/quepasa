@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.3) Updates\n* allow calling by others\n",
+        "content": "## (1.0.7) Updates\n* /private for internal messages\n",
         "height": 175.906164153499,
         "width": 398.976541038375
       },
@@ -60,17 +60,6 @@
         920
       ],
       "webhookId": "9061e7cf-a643-47a3-a036-15a7fc8cfc3c"
-    },
-    {
-      "parameters": {},
-      "id": "ddc92a96-ca9f-4b17-a6e6-7f500d58df49",
-      "name": "Next Message",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        6000,
-        960
-      ]
     },
     {
       "parameters": {
@@ -575,8 +564,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5500,
-        940
+        5760,
+        1120
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -697,7 +686,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        7160,
+        7380,
         1180
       ]
     },
@@ -711,7 +700,7 @@
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        7300,
+        7520,
         700
       ],
       "credentials": {
@@ -821,8 +810,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6460,
-        620
+        6680,
+        320
       ]
     },
     {
@@ -831,17 +820,17 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
+            "typeValidation": "loose",
             "version": 2
           },
           "conditions": [
             {
               "id": "1c39df9d-151f-493f-a149-4ba481ba241e",
-              "leftValue": "={{ $json.payload }}",
+              "leftValue": "={{ (!$json.payload) || ($json.payload.length == 0) }}",
               "rightValue": "",
               "operator": {
-                "type": "array",
-                "operation": "empty",
+                "type": "boolean",
+                "operation": "true",
                 "singleValue": true
               }
             },
@@ -858,6 +847,7 @@
           ],
           "combinator": "and"
         },
+        "looseTypeValidation": true,
         "options": {}
       },
       "id": "009522ce-e2ba-42bb-8c13-16063a3139f1",
@@ -865,8 +855,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5500,
-        1180
+        5760,
+        1600
       ]
     },
     {
@@ -920,8 +910,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6180,
-        1860
+        6160,
+        2360
       ]
     },
     {
@@ -949,8 +939,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6180,
-        2060
+        6160,
+        2560
       ]
     },
     {
@@ -978,8 +968,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6180,
-        2280
+        6380,
+        2780
       ]
     },
     {
@@ -989,8 +979,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6520,
-        2060
+        6720,
+        2560
       ]
     },
     {
@@ -1110,7 +1100,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const payload = $input.item.json;\nconst input = Object.hasOwn(payload, \"input\");\nconst messages = payload.messages;\nlet idCounter = 1; // Variável para controlar o id\n\nconst msgItem = messages.map((message) => {\n  let contentText = '';\n\n  // Verifica se o tipo de mensagem é \"image\", \"audio\" ou \"video\"\n  if ([\"image\", \"audio\", \"video\"].includes(message.type)) {\n    contentText = message.content.url;\n  } else if (Array.isArray(message.content?.richText)) {\n    for (const richTextItem of message.content.richText) {\n      if (Array.isArray(richTextItem.children)) {\n        for (const child of richTextItem.children) {\n          if (child.type === \"inline-variable\") {\n            if (child.children && Array.isArray(child.children)) {\n              for (const inlineChild of child.children) {\n                if (inlineChild.text) {\n                  contentText += inlineChild.text.trim();\n                }\n              }\n            }\n          } else {\n            if (child.text) {\n              contentText += `${child.text.trim()} `;\n            }\n          }\n          if (child.children && Array.isArray(child.children)) {\n            for (const nestedChild of child.children) {\n              if (nestedChild.text) {\n                contentText += `${nestedChild.text.trim()} `;\n              }\n              if (nestedChild.children && Array.isArray(nestedChild.children)) {\n                for (const nestedNestedChild of nestedChild.children) {\n                  if (nestedNestedChild.text) {\n                    contentText += `${nestedNestedChild.text.trim()} `;\n                  }\n                  if (nestedNestedChild.children && Array.isArray(nestedNestedChild.children)) {\n                    for (const nestedNestedNestedChild of nestedNestedChild.children) {\n                      if (nestedNestedNestedChild.text) {\n                        contentText += `${nestedNestedNestedChild.text.trim()} `;\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      contentText += \"\\n\"; // Adiciona uma quebra de linha após cada parágrafo\n    }\n  }\n\n  // Substitui \"Invalid message. Please, try again.\" por \"ERRO\"\n  if (contentText.trim() === \"Invalid message. Please, try again.\") {\n    contentText = \"Tipo de mensagem inválida!\";\n  }\n\n  // Filtra os itens do tipo 'wait' em clientSideActions\n  const waitActions = payload?.clientSideActions?.filter(action => action.type === 'wait') || [];\n\n  // Define o valor de secondsToWaitFor\n  const secondsToWaitFor = waitActions.length > 1 ? 0 : waitActions[0]?.wait?.secondsToWaitFor ?? null;\n\n  const newItem = {\n    id: idCounter++,\n    type: message.type,\n    content: contentText.trim(),\n    sessionId: payload.sessionId,\n    openchatwoot: payload?.clientSideActions?.some(objeto => objeto.hasOwnProperty('chatwoot')),\n    ...(idCounter === 1 && { secondsToWaitFor: secondsToWaitFor })\n};\n\n  return newItem;\n});\n\nreturn { \"input\": input, \"payload\": msgItem };\n"
+        "jsCode": "const itemJson = $input.item.json;\nconst messages = itemJson.messages;\nlet idCounter = 1; // Variável para controlar o id\n\n// Função auxiliar para aplicar formatação\nfunction formatText(text, node) {\n  let formatted = text;  \n  if (node.bold) formatted = `*${formatted}*`;\n  if (node.italic) formatted = `_${formatted}_`;  \n  return formatted;\n}\n\n// Mapeia as mensagens e guarda o id original para futura correspondência\nconst msgItem = messages.map((message) => {\n  let contentText = '';\n\n  // Se for imagem, áudio ou vídeo, usa a URL\n  if ([\"image\", \"audio\", \"video\"].includes(message.type)) {\n    contentText = message.content.url;\n  } else if (Array.isArray(message.content?.richText)) {\n    for (const richTextItem of message.content.richText) {\n      if (Array.isArray(richTextItem.children)) {\n        for (const child of richTextItem.children) {\n          if (child.type === \"inline-variable\") {\n            if (child.children && Array.isArray(child.children)) {\n              for (const inlineChild of child.children) {\n                if (inlineChild.text) {\n                  contentText += formatText(inlineChild.text, inlineChild);\n                }\n              }\n            }\n          } else {\n            if (child.text) {\n              contentText += `${formatText(child.text, child)}`;\n            }\n          }\n          if (child.children && Array.isArray(child.children)) {\n            for (const nestedChild of child.children) {\n              if (nestedChild.text) {\n                contentText += `${formatText(nestedChild.text, nestedChild)}`;\n              }\n              if (nestedChild.children && Array.isArray(nestedChild.children)) {\n                for (const nestedNestedChild of nestedChild.children) {\n                  if (nestedNestedChild.text) {\n                    contentText += `${formatText(nestedNestedChild.text, nestedNestedChild)}`;\n                  }\n                  if (nestedNestedChild.children && Array.isArray(nestedNestedChild.children)) {\n                    for (const nestedNestedNestedChild of nestedNestedChild.children) {\n                      if (nestedNestedNestedChild.text) {\n                        contentText += `${formatText(nestedNestedNestedChild.text, nestedNestedNestedChild)}`;\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      // Adiciona uma quebra de linha após cada parágrafo\n      contentText += \"\\n\";\n    }\n  }\n\n  // Substitui \"Invalid message. Please, try again.\" por \"Tipo de mensagem inválida!\"\n  if (contentText.trim() === \"Invalid message. Please, try again.\") {\n    contentText = \"Tipo de mensagem inválida!\";\n  }\n\n  const newItem = {\n    id: idCounter++, // ID temporário, que será reatribuído no final\n    originalId: message.id, // Guarda o id original para correspondência com clientSideActions\n    type: message.type,\n    content: contentText.trim(),\n    openchatwoot: itemJson.clientSideActions?.some(objeto => objeto.hasOwnProperty('chatwoot'))\n  };\n\n  return newItem;\n});\n\n// Processa as ações clientSideActions do tipo 'wait'\nif (itemJson.clientSideActions && Array.isArray(itemJson.clientSideActions)) {\n  itemJson.clientSideActions.forEach((action) => {\n    // Verifica se a ação contém o objeto wait com secondsToWaitFor e se lastBubbleBlockId está definido\n    if (action.wait && typeof action.wait.secondsToWaitFor === 'number' && action.lastBubbleBlockId) {\n      // Encontra o índice do item cujo originalId corresponde a lastBubbleBlockId\n      const index = msgItem.findIndex(item => item.originalId === action.lastBubbleBlockId);\n      if (index !== -1) {\n        // Cria um novo item para o wait action\n        const waitItem = {\n          id: idCounter++, // ID temporário\n          type: 'wait',\n          content: '', // Pode ser deixado em branco ou conter uma descrição, se necessário\n          secondsToWaitFor: action.wait.secondsToWaitFor\n        };\n        // Insere o waitItem logo após o item encontrado\n        msgItem.splice(index + 1, 0, waitItem);\n      }\n    }\n  });\n}\n\n// Reatribui os IDs de forma sequencial com base na ordem do array\nmsgItem.forEach((item, index) => {\n  item.id = index + 1;\n  delete item.originalId; // Remove a propriedade auxiliar\n});\n\nreturn { \"payload\": msgItem };\n"
       },
       "id": "7e25324f-c712-4cd4-ad07-bf08a27c0e94",
       "name": "Make Payload",
@@ -1133,8 +1123,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        6000,
-        1740
+        6080,
+        2240
       ]
     },
     {
@@ -1146,8 +1136,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        5740,
-        840
+        6000,
+        1020
       ],
       "webhookId": "fcd2e4ee-0d8b-43cd-bb26-cc9e1a3e9c13"
     },
@@ -1164,8 +1154,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5500,
-        760
+        5760,
+        940
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -1188,8 +1178,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        6120,
-        640
+        6340,
+        340
       ]
     },
     {
@@ -1203,23 +1193,23 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        6880,
+        7140,
         1040
       ]
     },
     {
       "parameters": {
         "content": "## Loop Multiple Messages Payloads\n",
-        "height": 1069.4642583983118,
-        "width": 2139.324203751877
+        "height": 1859.2074837131158,
+        "width": 2323.2885620467914
       },
       "id": "0d6ea017-6970-4a1e-ae97-5da81cc8c9d7",
       "name": "Sticky Note6",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        4580,
-        387.0563593092968
+        4540,
+        254.98616775765322
       ]
     },
     {
@@ -1248,7 +1238,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        7100,
+        7320,
         700
       ],
       "id": "1e3ef7e9-be2b-4cb5-8364-1656712fa9e9",
@@ -1271,7 +1261,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        7420,
+        7640,
         1160
       ],
       "id": "7d191570-4ba7-4d46-852c-7b48693a9b05"
@@ -1305,7 +1295,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($('PAYLOAD').item.json.text) }}\n  },\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"account_id\": {{$('EXTRA').item.json.account}},\n    \"inbox_id\": {{$('EXTRA').item.json.inbox}}    \n  }\n}",
+        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($('PAYLOAD').item.json.text) }}\n  },\n  \"isOnlyRegistering\": false,\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"chat_phone\": \"{{ $('PAYLOAD').item.json.chat.phone }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"account_id\": \"{{$('EXTRA').item.json.account}}\",\n    \"inbox_id\": \"{{$('EXTRA').item.json.inbox}}\"\n  }\n}",
         "options": {
           "allowUnauthorizedCerts": true
         }
@@ -1364,6 +1354,69 @@
     },
     {
       "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{ $('PAYLOAD').item.json.conversation.id }}/toggle_status ",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"status\": \"resolved\"}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"}",
+        "queryParametersJson": "{}"
+      },
+      "name": "Resolve Conversation in Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        6340,
+        520
+      ],
+      "id": "49633b10-d898-4600-a062-9ac11c45370a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "terminate",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e4916591-db5e-46c4-bfd7-473df504fbbf",
+      "name": "Set Terminate Status Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6680,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.payload.secondsToWaitFor }}"
+      },
+      "id": "fec2ade0-56f4-4bcb-8c80-ef67119f1bf0",
+      "name": "Wait Block",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5760,
+        1280
+      ],
+      "webhookId": "a5094ecc-3fa9-4468-b5d0-c0d17d7c604c"
+    },
+    {
+      "parameters": {
         "rules": {
           "values": [
             {
@@ -1376,11 +1429,12 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.payload.type }}",
+                    "leftValue": "={{ ($json.payload.type == \"text\") && (Boolean($json.payload.content) && $json.payload.content.length > 0) }}",
                     "rightValue": "text",
                     "operator": {
-                      "type": "string",
-                      "operation": "equals"
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
                     }
                   }
                 ],
@@ -1412,6 +1466,55 @@
               },
               "renameOutput": true,
               "outputKey": "attach"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d8ad17d0-a984-4004-95d0-48e9142d4683",
+                    "leftValue": "={{ $json.payload.type }}",
+                    "rightValue": "wait",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "wait"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "66e336a8-ff21-45d1-a307-21da5fbfe8d0",
+                    "leftValue": "={{ $json.payload.type }}",
+                    "rightValue": "embed|embeded",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "embed"
             }
           ]
         },
@@ -1429,24 +1532,37 @@
       ]
     },
     {
-      "parameters": {
-        "requestMethod": "POST",
-        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{ $('PAYLOAD').item.json.conversation.id }}/toggle_status ",
-        "allowUnauthorizedCerts": true,
-        "jsonParameters": true,
-        "options": {},
-        "bodyParametersJson": "{\"status\": \"resolved\"}",
-        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"}",
-        "queryParametersJson": "{}"
-      },
-      "name": "Resolve Conversation in Chatwoot",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 2,
+      "parameters": {},
+      "id": "f9519dd1-c2ac-4685-a7c6-75fce20d03bc",
+      "name": "Next Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
       "position": [
-        6120,
-        440
-      ],
-      "id": "49633b10-d898-4600-a062-9ac11c45370a"
+        6680,
+        1780
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4ad24980-ce99-42d9-9303-e1ed81755fc8",
+      "name": "Ignore Embed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5760,
+        1440
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "79815bd6-7772-4094-8c3f-09b8f7361f4e",
+      "name": "Open Conversation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6680,
+        700
+      ]
     },
     {
       "parameters": {
@@ -1499,6 +1615,30 @@
               },
               "renameOutput": true,
               "outputKey": "open"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "63545ada-0f3a-4a28-ade2-445b57b06a56",
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/private",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "private"
             }
           ]
         },
@@ -1511,38 +1651,47 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        5220,
-        740
+        5480,
+        700
       ]
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
             {
-              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
-              "name": "custom_attributes",
-              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
-              "type": "object"
+              "name": "private",
+              "value": "={{ true }}"
             },
             {
-              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
-              "name": "custom_attributes.typebot_status",
-              "value": "terminate",
-              "type": "string"
+              "name": "content",
+              "value": "={{ $json.payload.content.slice(9) }}"
             }
           ]
         },
-        "options": {}
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$('EXTRA').item.json.atoken}}"
+            }
+          ]
+        }
       },
-      "id": "e4916591-db5e-46c4-bfd7-473df504fbbf",
-      "name": "Set Terminate Status Parameters",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Post Private Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
       "position": [
-        6460,
-        440
-      ]
+        5760,
+        760
+      ],
+      "id": "0088163c-b951-4bda-8ff1-2b62c2c87422",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
     }
   ],
   "pinData": {},
@@ -1580,17 +1729,6 @@
         [
           {
             "node": "Redis2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Next Message": {
-      "main": [
-        [
-          {
-            "node": "Loop",
             "type": "main",
             "index": 0
           }
@@ -1889,7 +2027,7 @@
         ],
         [
           {
-            "node": "Loop",
+            "node": "Next Message",
             "type": "main",
             "index": 0
           }
@@ -2162,6 +2300,39 @@
         ]
       ]
     },
+    "Resolve Conversation in Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Set Terminate Status Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Terminate Status Parameters": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Block": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Switch": {
       "main": [
         [
@@ -2180,6 +2351,20 @@
         ],
         [
           {
+            "node": "Wait Block",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignore Embed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "If Empty Payload Item",
             "type": "main",
             "index": 0
@@ -2187,11 +2372,38 @@
         ]
       ]
     },
-    "Resolve Conversation in Chatwoot": {
+    "Next Message": {
       "main": [
         [
           {
-            "node": "Set Terminate Status Parameters",
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Embed": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Conversation Is Not Openned",
             "type": "main",
             "index": 0
           }
@@ -2209,12 +2421,14 @@
         ],
         [
           {
-            "node": "If Conversation Is Not Openned",
+            "node": "Open Conversation",
             "type": "main",
             "index": 0
-          },
+          }
+        ],
+        [
           {
-            "node": "Update Status For Conversation",
+            "node": "Post Private Message",
             "type": "main",
             "index": 0
           }
@@ -2228,11 +2442,11 @@
         ]
       ]
     },
-    "Set Terminate Status Parameters": {
+    "Post Private Message": {
       "main": [
         [
           {
-            "node": "Update Status For Conversation",
+            "node": "Next Message",
             "type": "main",
             "index": 0
           }
@@ -2246,7 +2460,7 @@
     "callerPolicy": "any",
     "executionTimeout": 30
   },
-  "versionId": "1b7537c6-855c-4c62-bc80-5bf324386a17",
+  "versionId": "11486d51-15c3-444c-bd86-6c7f4ef7bc04",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

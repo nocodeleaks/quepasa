@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -263,6 +264,12 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		go OnEventContact(source, *evt)
 		return
 
+	case *events.PairError:
+		{
+			jsonEvt := library.ToJson(evt)
+			logentry.Errorf("pair error event: %s", jsonEvt)
+		}
+
 	case
 		*events.AppState,
 		*events.CallTerminate,
@@ -368,7 +375,6 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		InfoForHistory: evt.Info,
 		FromHistory:    from == "history",
 	}
-
 	// basic information
 	message.Id = evt.Info.ID
 	message.Timestamp = ImproveTimestamp(evt.Info.Timestamp)
@@ -381,6 +387,20 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	message.Chat.Id = chatID
 	message.Chat.Title = GetChatTitle(handler.Client, evt.Info.Chat)
 
+	// Populate phone field
+	message.Chat.PopulatePhone(handler.Client)
+
+	// Get LID for the chat if available
+	if handler.Client != nil && handler.Client.Store != nil {
+		chatJID, err := types.ParseJID(chatID)
+		if err == nil {
+			lidJID, err := handler.Client.Store.LIDs.GetLIDForPN(context.TODO(), chatJID)
+			if err == nil && !lidJID.IsEmpty() {
+				message.Chat.Lid = lidJID.String()
+			}
+		}
+	}
+
 	if evt.Info.IsGroup {
 		message.Participant = &whatsapp.WhatsappChat{}
 
@@ -388,9 +408,23 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		message.Participant.Id = participantID
 		message.Participant.Title = GetChatTitle(handler.Client, evt.Info.Sender)
 
-		// sugested by hugo sampaio, removing message.FromMe
+		// Populate phone field for participant
+		message.Participant.PopulatePhone(handler.Client)
+
+		// If title is empty, use PushName as fallback, sugested by hugo sampaio, removing message.FromMe
 		if len(message.Participant.Title) == 0 {
 			message.Participant.Title = evt.Info.PushName
+		}
+
+		// Get LID for the participant if available
+		if handler.Client != nil && handler.Client.Store != nil {
+			participantJID, err := types.ParseJID(participantID)
+			if err == nil {
+				lidJID, err := handler.Client.Store.LIDs.GetLIDForPN(context.TODO(), participantJID)
+				if err == nil && !lidJID.IsEmpty() {
+					message.Participant.Lid = lidJID.String()
+				}
+			}
 		}
 	} else {
 		if len(message.Chat.Title) == 0 && message.FromMe {
@@ -403,25 +437,17 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 
 	// discard and return
 	if message.Type == whatsapp.DiscardMessageType {
-		JsonMsg := ToJson(evt)
+		JsonMsg := library.ToJson(evt)
 		logentry.Debugf("debugging and ignoring an discard message: %s", JsonMsg)
 		return
 	}
 
 	// unknown and continue
 	if message.Type == whatsapp.UnknownMessageType {
-		message.Text += " :: " + ToJson(evt)
+		message.Text += " :: " + library.ToJson(evt)
 	}
 
 	handler.Follow(message, from)
-}
-
-func ToJson(in interface{}) string {
-	bytes, err := json.Marshal(in)
-	if err == nil {
-		return string(bytes)
-	}
-	return ""
 }
 
 //#endregion

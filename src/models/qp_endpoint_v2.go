@@ -6,4 +6,5 @@ type QPEndpointV2 struct {
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
 	Title     string `json:"title,omitempty"`
+	Phone     string `json:"phone,omitempty"`
 }

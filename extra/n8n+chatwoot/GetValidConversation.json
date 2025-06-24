@@ -293,52 +293,6 @@
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "915f6870-811a-493e-b1c8-2631f16463c3",
-              "leftValue": "={{ $json.conversation.status }}",
-              "rightValue": "open",
-              "operator": {
-                "type": "string",
-                "operation": "notEquals"
-              }
-            },
-            {
-              "id": "3781b103-3678-46c3-80f0-586efa65fc67",
-              "leftValue": "={{ ![\"false\", \"0\"].includes($json.extra.soc?.toString().trim().toLowerCase()) }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {
-          "ignoreCase": true,
-          "looseTypeValidation": true
-        }
-      },
-      "id": "ef8c99ca-32fe-415d-ae2a-6344513e2cca",
-      "name": "Should Open Conversation ?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        1780,
-        620
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
           "string": [
             {
               "value1": "={{$json.conversation?.id}}",
@@ -405,7 +359,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.1) Updates\n* move skip contact to get chatwoot contact workflow\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "content": "## (1.0.2) Updates\n* skip automation\n\n## Recommendations \n* Remember set timeout to 20 seconds",
         "height": 200.52521040961017,
         "width": 569.6036185132486
       },
@@ -900,8 +854,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1980,
-        520
+        2160,
+        640
       ]
     },
     {
@@ -948,6 +902,89 @@
         1240
       ],
       "webhookId": "13d982e4-e253-4616-9e0a-3da472be5e56"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "915f6870-811a-493e-b1c8-2631f16463c3",
+              "leftValue": "={{ $json.conversation.status }}",
+              "rightValue": "open",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true,
+          "looseTypeValidation": true
+        }
+      },
+      "id": "ef8c99ca-32fe-415d-ae2a-6344513e2cca",
+      "name": "Can Open Conversation ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "3781b103-3678-46c3-80f0-586efa65fc67",
+              "leftValue": "={{ Boolean($json.extra?.soc ?? true) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "93c54760-bb14-460a-8557-3e5bf37512b1",
+              "leftValue": "={{ Boolean($json.contact?.custom_attributes?.skipautomation ?? false) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {
+          "ignoreCase": true,
+          "looseTypeValidation": true
+        }
+      },
+      "id": "ffd88fc3-05b6-454c-b477-baba6a52eda3",
+      "name": "Should Open Conversation ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        540
+      ]
     }
   ],
   "pinData": {},
@@ -1090,24 +1127,6 @@
         [
           {
             "node": "Set Conversation Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Should Open Conversation ?": {
-      "main": [
-        [
-          {
-            "node": "No Operation, do nothing2",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Conversation Opened",
             "type": "main",
             "index": 0
           }
@@ -1447,12 +1466,7 @@
       "main": [
         [
           {
-            "node": "Merge Conversation Status",
-            "type": "main",
-            "index": 1
-          },
-          {
-            "node": "Open a Conversation",
+            "node": "Conversation Opened",
             "type": "main",
             "index": 0
           }
@@ -1479,7 +1493,7 @@
       "main": [
         [
           {
-            "node": "Should Open Conversation ?",
+            "node": "Can Open Conversation ?",
             "type": "main",
             "index": 0
           }
@@ -1496,6 +1510,47 @@
           }
         ]
       ]
+    },
+    "Can Open Conversation ?": {
+      "main": [
+        [
+          {
+            "node": "Should Open Conversation ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Open Conversation ?": {
+      "main": [
+        [
+          {
+            "node": "Open a Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Conversation Status",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -1504,7 +1559,7 @@
     "callerPolicy": "any",
     "executionTimeout": 20
   },
-  "versionId": "106b7dac-d9bc-4859-886c-16e004dc0e6b",
+  "versionId": "fe87daaf-af76-48d2-a6bd-1bd710e004ba",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

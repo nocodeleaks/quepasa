@@ -17,6 +17,7 @@ const (
 	SystemMessageType
 	GroupMessageType
 	RevokeMessageType
+	PollMessageType
 
 	// Messages that isn't important for this whatsapp service
 	DiscardMessageType
@@ -46,6 +47,8 @@ func (Type WhatsappMessageType) String() string {
 		return "group"
 	case RevokeMessageType:
 		return "revoke"
+	case PollMessageType:
+		return "poll"
 	case DiscardMessageType:
 		return "discard"
 	}

@@ -1,6 +1,7 @@
 package library
 
 import (
+	"encoding/json"
 	"fmt"
 	"mime"
 	"net/http"
@@ -187,4 +188,27 @@ func RemoveDigit9IfElegible(source string) (response string, err error) {
 	}
 
 	return
+}
+
+// Removes line breaks and leading/trailing spaces from a string
+func NormalizeForTitle(source string) string {
+
+	response := source
+
+	response = strings.ReplaceAll(response, "\r\n", " ")
+	response = strings.ReplaceAll(response, "\r", " ")
+	response = strings.ReplaceAll(response, "\n", " ")
+
+	// removing leading and trailing spaces
+	response = strings.TrimSpace(response)
+
+	return response
+}
+
+func ToJson(in interface{}) string {
+	bytes, err := json.Marshal(in)
+	if err == nil {
+		return string(bytes)
+	}
+	return ""
 }

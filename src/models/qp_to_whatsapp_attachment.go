@@ -8,6 +8,7 @@ import (
 	audio "github.com/nocodeleaks/quepasa/audio"
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	log "github.com/sirupsen/logrus"
 )
 
 type QpToWhatsappAttachment struct {
@@ -89,6 +90,7 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] empty file name, generating a new one based on mime type: %s, file name: %s", attach.Mimetype, attach.FileName))
 	}
 
+	// if pdf mime contains extra info
 	if strings.HasPrefix(attach.Mimetype, "application/pdf;") {
 		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachSecureAndCustomize] removing extra information from pdf mime type: %s", attach.Mimetype))
 		attach.Mimetype = strings.Split(attach.Mimetype, ";")[0]
@@ -97,11 +99,47 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 	source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] resolved mime type: %s, filename: %s", attach.Mimetype, attach.FileName))
 }
 
+// Audio Formatting ...
+func (source *QpToWhatsappAttachment) AttachAudioTreatmentTesting() {
+
+	if audio.AreAudioToolsAvailable() {
+
+		audioInfo, err := audio.GetAudioInfoFromBytes(*source.Attach.GetContent())
+		if err != nil {
+			log.Errorf("Erro ao obter as informações de áudio a partir dos bytes: %v", err)
+			return
+		}
+
+		seconds := audioInfo.Duration.Seconds()
+		if seconds > 0 {
+			if source.Attach.Seconds == 0 {
+				source.Attach.Seconds = uint32(seconds)
+			}
+		}
+
+		source.Attach.WaveForm, err = audio.GenerateWaveform(*source.Attach.GetContent())
+		if err != nil {
+			log.Errorf("error generating waveform from bytes: %v", err)
+			return
+		}
+
+		log.Tracef("\n--- Informações de Áudio ---\n")
+		log.Tracef("Duração:    %s\n", audioInfo.Duration)
+		log.Tracef("MIME Type:  %s\n", audioInfo.MIMEType)
+		log.Tracef("Canais:     %d\n", audioInfo.Channels)
+		log.Tracef("Sample Rate: %d Hz\n", audioInfo.SampleRate)
+	}
+}
+
 func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 	attach := source.Attach
 	if attach == nil {
 		source.Debug = append(source.Debug, "[warn][AttachAudioTreatment] nil attach")
 		return
+	}
+
+	if audio.IsAudioMIMEType(source.Attach.Mimetype) {
+		source.AttachAudioTreatmentTesting()
 	}
 
 	if IsCompatibleWithPTT(attach.Mimetype) {

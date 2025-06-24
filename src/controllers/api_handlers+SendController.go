@@ -57,20 +57,6 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		return
 	}
 
-	/*
-		// if spam, checks if is in group
-		if strings.HasSuffix(request.ChatId, "@g.us") && strings.Contains(r.RequestURI, "spam") {
-			isInGroup := server.GetConnection().HasChat(request.ChatId)
-			if !isInGroup {
-				metrics.MessageSendErrors.Inc()
-				err = fmt.Errorf("it seams that you don't belongs to this group: %s", request.ChatId)
-				response.ParseError(err)
-				RespondInterface(w, response)
-				return
-			}
-		}
-	*/
-
 	if len(request.Url) == 0 && r.URL.Query().Has("url") {
 		request.Url = r.URL.Query().Get("url")
 	}

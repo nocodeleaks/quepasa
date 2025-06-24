@@ -111,6 +111,9 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 		return
 	}
 
+	// logging webhook payload
+	logentry.Debugf("posting webhook payload: %s", payloadJson)
+
 	req, err := http.NewRequest("POST", source.Url, bytes.NewBuffer(payloadJson))
 	req.Header.Set("User-Agent", "Quepasa")
 	req.Header.Set("X-QUEPASA-WID", source.Wid)

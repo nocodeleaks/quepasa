@@ -88,22 +88,24 @@ func (conn *WhatsmeowConnection) GetReconnect() bool {
 
 func (conn *WhatsmeowConnection) GetVersion() string { return "multi" }
 
-func (conn *WhatsmeowConnection) GetWidInternal() (wid string, err error) {
+func (conn *WhatsmeowConnection) GetWidInternal() (string, error) {
 	if conn.Client == nil {
-		err = fmt.Errorf("client not defined on trying to get wid")
-	} else {
-		if conn.Client.Store == nil {
-			err = fmt.Errorf("device store not defined on trying to get wid")
-		} else {
-			if conn.Client.Store.ID == nil {
-				err = fmt.Errorf("device id not defined on trying to get wid")
-			} else {
-				wid = conn.Client.Store.ID.User
-			}
-		}
+		err := fmt.Errorf("client not defined on trying to get wid")
+		return "", err
 	}
 
-	return
+	if conn.Client.Store == nil {
+		err := fmt.Errorf("device store not defined on trying to get wid")
+		return "", err
+	}
+
+	if conn.Client.Store.ID == nil {
+		err := fmt.Errorf("device id not defined on trying to get wid")
+		return "", err
+	}
+
+	wid := conn.Client.Store.ID.User
+	return wid, nil
 }
 
 func (conn *WhatsmeowConnection) IsValid() bool {
@@ -214,13 +216,15 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 		return chats, err
 	}
 
-	contacts, err := source.Client.Store.Contacts.GetAllContacts()
+	contacts, err := source.Client.Store.Contacts.GetAllContacts(context.TODO())
 	if err != nil {
 		return chats, err
 	}
 
-	for jid, info := range contacts {
+	// Map to track contacts by phone number
+	contactMap := make(map[string]whatsapp.WhatsappChat)
 
+	for jid, info := range contacts {
 		title := info.FullName
 		if len(title) == 0 {
 			title = info.BusinessName
@@ -229,10 +233,96 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 			}
 		}
 
-		chats = append(chats, whatsapp.WhatsappChat{
-			Id:    jid.String(),
-			Title: title,
-		})
+		var phoneNumber string
+		var lid string
+		var phoneE164 string
+
+		if strings.Contains(jid.String(), "@lid") {
+			// For @lid contacts, get the corresponding phone number
+			pnJID, err := source.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
+			if err == nil && !pnJID.IsEmpty() {
+				phoneNumber = pnJID.User
+				lid = jid.String()
+				// Format phone to E164
+				if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+					phoneE164 = phone
+				}
+			} else {
+				// If no mapping found, use the LID as unique identifier
+				phoneNumber = jid.String()
+				lid = ""
+			}
+		} else {
+			// For regular @s.whatsapp.net contacts
+			phoneNumber = jid.User
+			// Format phone to E164
+			if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+				phoneE164 = phone
+			}
+
+			// Try to get corresponding LID
+			lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), jid)
+			if err == nil && !lidJID.IsEmpty() {
+				lid = lidJID.String()
+			} else {
+				lid = ""
+			}
+		}
+
+		// Check if contact with this phone number already exists
+		existingContact, exists := contactMap[phoneNumber]
+
+		if !exists {
+			// First contact with this phone number
+			contactMap[phoneNumber] = whatsapp.WhatsappChat{
+				Id:    jid.String(),
+				Lid:   lid,
+				Title: title,
+				Phone: phoneE164,
+			}
+		} else {
+			// Contact already exists, merge information
+			var finalId, finalLid, finalPhone string
+
+			if strings.Contains(jid.String(), "@lid") {
+				// Current is @lid, keep existing as Id and use current as Lid
+				finalId = existingContact.Id
+				finalLid = jid.String()
+				finalPhone = existingContact.Phone
+				if len(finalPhone) == 0 && len(phoneE164) > 0 {
+					finalPhone = phoneE164
+				}
+			} else {
+				// Current is @s.whatsapp.net, use as Id and keep existing Lid
+				finalId = jid.String()
+				finalLid = existingContact.Lid
+				if len(finalLid) == 0 && len(lid) > 0 {
+					finalLid = lid
+				}
+				finalPhone = phoneE164
+				if len(finalPhone) == 0 && len(existingContact.Phone) > 0 {
+					finalPhone = existingContact.Phone
+				}
+			}
+
+			// Keep the best available title
+			finalTitle := title
+			if len(finalTitle) == 0 && len(existingContact.Title) > 0 {
+				finalTitle = existingContact.Title
+			}
+
+			contactMap[phoneNumber] = whatsapp.WhatsappChat{
+				Id:    finalId,
+				Lid:   finalLid,
+				Title: finalTitle,
+				Phone: finalPhone,
+			}
+		}
+	}
+
+	// Convert map to slice
+	for _, contact := range contactMap {
+		chats = append(chats, contact)
 	}
 
 	return chats, nil
@@ -243,7 +333,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 	msg := imsg.GetSource()
 	downloadable, ok := msg.(whatsmeow.DownloadableMessage)
 	if ok {
-		return source.Client.Download(downloadable)
+		return source.Client.Download(context.TODO(), downloadable)
 	}
 
 	logentry := source.GetLogger()
@@ -263,7 +353,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		return
 	}
 
-	data, err = source.Client.DownloadAny(waMsg)
+	data, err = source.Client.DownloadAny(context.TODO(), waMsg)
 	if err != nil {
 		if strings.Contains(err.Error(), whatsmeow.ErrFileLengthMismatch.Error()) {
 			logentry.Infof("ignoring (%s) whatsmeow error for msg id: %s", whatsmeow.ErrFileLengthMismatch.Error(), imsg.GetId())
@@ -559,7 +649,7 @@ func (source *WhatsmeowConnection) HasChat(chat string) bool {
 		return false
 	}
 
-	info, err := source.Client.Store.ChatSettings.GetChatSettings(jid)
+	info, err := source.Client.Store.ChatSettings.GetChatSettings(context.TODO(), jid)
 	if err != nil {
 		return false
 	}
@@ -618,7 +708,7 @@ func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
 		}
 	}
 
-	return source.Client.PairPhone(phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
+	return source.Client.PairPhone(context.TODO(), phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 }
 
 func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
@@ -798,7 +888,7 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 	if source != nil {
 		if source.Client != nil {
 			if source.Client.IsLoggedIn() {
-				err = source.Client.Logout()
+				err = source.Client.Logout(context.TODO())
 				if err != nil {
 					err = fmt.Errorf("whatsmeow connection, delete logout error: %s", err.Error())
 					return
@@ -807,7 +897,7 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 			}
 
 			if source.Client.Store != nil {
-				err = source.Client.Store.Delete()
+				err = source.Client.Store.Delete(context.TODO())
 				if err != nil {
 					// ignoring error about JID, just checked and the delete process was succeed
 					if strings.Contains(err.Error(), "device JID must be known before accessing database") {
@@ -937,6 +1027,28 @@ func (conn *WhatsmeowConnection) UpdateGroupPhoto(groupID string, imageData []by
 	return pictureID, nil
 }
 
+func (conn *WhatsmeowConnection) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	// Parse the group ID to JID format
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Update the group topic (description)
+	// SetGroupTopic requires: jid, previousID, newID, topic
+	// Let the whatsmeow library handle previousID and newID automatically by passing empty strings
+	err = conn.Client.SetGroupTopic(jid, "", "", topic)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update group topic: %v", err)
+	}
+
+	// Return the updated group info
+	return conn.Client.GetGroupInfo(jid)
+}
 func (conn *WhatsmeowConnection) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -1113,4 +1225,223 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 	}
 
 	return conn.Client.SendChatPresence(jid, state, media)
+}
+
+// GetLIDFromPhone returns the @lid for a given phone number
+func (conn *WhatsmeowConnection) GetLIDFromPhone(phone string) (string, error) {
+	if conn.Client == nil {
+		return "", fmt.Errorf("client not defined")
+	}
+
+	if conn.Client.Store == nil {
+		return "", fmt.Errorf("store not defined")
+	}
+
+	// Parse the phone number to JID format
+	phoneJID := types.JID{
+		User:   phone,
+		Server: "s.whatsapp.net",
+	}
+
+	// try to get the LID from local store
+	lidJID, err := conn.Client.Store.LIDs.GetLIDForPN(context.TODO(), phoneJID)
+	if err == nil && !lidJID.IsEmpty() {
+		conn.GetLogger().Debugf("LID found in local store for phone %s: %s", phone, lidJID.String())
+		return lidJID.String(), nil
+	}
+	return "", fmt.Errorf("no LID found for phone %s", phone)
+}
+
+// GetPhoneFromLID returns the phone number for a given @lid
+func (conn *WhatsmeowConnection) GetPhoneFromLID(lid string) (string, error) {
+	if conn.Client == nil {
+		return "", fmt.Errorf("client not defined")
+	}
+
+	if conn.Client.Store == nil {
+		return "", fmt.Errorf("store not defined")
+	}
+
+	// Parse the LID to JID format
+	lidJID, err := types.ParseJID(lid)
+	if err != nil {
+		return "", fmt.Errorf("invalid LID format: %v", err)
+	}
+
+	// Get the corresponding phone number from local store
+	phoneJID, err := conn.Client.Store.LIDs.GetPNForLID(context.TODO(), lidJID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get phone for LID %s: %v", lid, err)
+	}
+
+	if phoneJID.IsEmpty() {
+		return "", fmt.Errorf("no phone found for LID %s", lid)
+	}
+
+	conn.GetLogger().Debugf("Phone found in local store for LID %s: %s", lid, phoneJID.User)
+	return phoneJID.User, nil
+}
+
+// UserInfoResponse represents the structured response for user information
+type UserInfoResponse struct {
+	JID          string              `json:"jid"`
+	LID          string              `json:"lid,omitempty"`
+	Phone        string              `json:"phone,omitempty"`
+	PhoneE164    string              `json:"phoneE164,omitempty"`
+	Status       string              `json:"status,omitempty"`
+	PictureID    string              `json:"pictureId,omitempty"`
+	Devices      []types.JID         `json:"devices,omitempty"`
+	VerifiedName *types.VerifiedName `json:"verifiedName,omitempty"`
+	DisplayName  string              `json:"displayName,omitempty"`
+	FullName     string              `json:"fullName,omitempty"`
+	BusinessName string              `json:"businessName,omitempty"`
+	PushName     string              `json:"pushName,omitempty"`
+}
+
+// GetUserInfo retrieves comprehensive user information for given JIDs
+func (conn *WhatsmeowConnection) GetUserInfo(jids []string) ([]interface{}, error) {
+	if conn.Client == nil {
+		return nil, fmt.Errorf("client not defined")
+	}
+
+	if conn.Client.Store == nil {
+		return nil, fmt.Errorf("store not defined")
+	}
+
+	// Convert string JIDs to types.JID
+	var parsedJIDs []types.JID
+	for _, jidStr := range jids {
+		// Check if it's a phone number (no @ symbol) and validate E164 format
+		if !strings.Contains(jidStr, "@") {
+			// This is a phone number, validate and format to E164
+			validPhone, err := library.ExtractPhoneIfValid(jidStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid phone number format for %s: %v (must be E164 format starting with +)", jidStr, err)
+			}
+
+			// Remove the + from E164 format for JID creation
+			phoneNumber := strings.TrimPrefix(validPhone, "+")
+			jid := types.JID{
+				User:   phoneNumber,
+				Server: "s.whatsapp.net",
+			}
+			parsedJIDs = append(parsedJIDs, jid)
+		} else {
+			// This is already a JID, parse normally
+			jid, err := types.ParseJID(jidStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JID format for %s: %v", jidStr, err)
+			}
+			parsedJIDs = append(parsedJIDs, jid)
+		}
+	}
+
+	// Get user info from WhatsApp - this returns a map[types.JID]types.UserInfo
+	userInfoMap, err := conn.Client.GetUserInfo(parsedJIDs)
+	logentry := conn.GetLogger()
+	logentry.Debugf("GetUserInfo for JIDs: %v, result: %v", parsedJIDs, userInfoMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user info: %v", err)
+	}
+
+	// Convert map to interface array for generic return type
+	result := make([]interface{}, 0, len(userInfoMap))
+	for jid, info := range userInfoMap {
+		// Get contact info from local store - try both JID and corresponding phone/LID
+		contactInfo, contactErr := conn.Client.Store.Contacts.GetContact(context.TODO(), jid)
+
+		// Get LID/Phone mapping information
+		var lid, phoneNumber string
+		var phoneJID types.JID
+
+		if strings.Contains(jid.String(), "@lid") {
+			// This is a LID, try to get corresponding phone
+			lid = jid.String()
+			pnJID, err := conn.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
+			if err == nil && !pnJID.IsEmpty() {
+				phoneNumber = pnJID.User
+				phoneJID = pnJID
+
+				// If we didn't get contact info from LID, try with phone JID
+				if contactErr != nil {
+					contactInfo, contactErr = conn.Client.Store.Contacts.GetContact(context.TODO(), phoneJID)
+				}
+			}
+		} else {
+			// This is a phone number JID, try to get corresponding LID
+			phoneNumber = jid.User
+			lidJID, err := conn.Client.Store.LIDs.GetLIDForPN(context.TODO(), jid)
+			if err == nil && !lidJID.IsEmpty() {
+				lid = lidJID.String()
+
+				// If we didn't get contact info from phone JID, try with LID
+				if contactErr != nil {
+					contactInfo, contactErr = conn.Client.Store.Contacts.GetContact(context.TODO(), lidJID)
+				}
+			}
+		}
+
+		// Format phone to E164 if available
+		var phoneE164 string
+		if phoneNumber != "" {
+			if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+				phoneE164 = phone
+			}
+		}
+
+		// Determine the best display name
+		var displayName string
+		if contactErr == nil {
+			if contactInfo.FullName != "" {
+				displayName = contactInfo.FullName
+			} else if contactInfo.BusinessName != "" {
+				displayName = contactInfo.BusinessName
+			} else if contactInfo.PushName != "" {
+				displayName = contactInfo.PushName
+			}
+		}
+
+		// If no local contact name, use verified name from user info
+		if displayName == "" && info.VerifiedName != nil {
+			displayName = info.VerifiedName.Details.GetVerifiedName()
+		}
+
+		// Check if we have meaningful contact information
+		hasContactInfo := contactErr == nil && (contactInfo.FullName != "" || contactInfo.BusinessName != "" || contactInfo.PushName != "")
+		hasVerifiedName := info.VerifiedName != nil && info.VerifiedName.Details.GetVerifiedName() != ""
+		hasStatus := info.Status != ""
+		hasPictureID := info.PictureID != ""
+		hasDevices := len(info.Devices) > 0
+		hasLID := lid != ""
+
+		// Only include contacts that have meaningful information beyond just phone/JID
+		if !hasContactInfo && !hasVerifiedName && !hasStatus && !hasPictureID && !hasDevices && !hasLID {
+			logentry.Debugf("Skipping contact %s - no meaningful information possible non whatsapp number", jid.String())
+			continue
+		}
+
+		// Create a comprehensive response with omitempty support
+		userInfoResponse := UserInfoResponse{
+			JID:          jid.String(),
+			LID:          lid,
+			Phone:        phoneNumber,
+			PhoneE164:    phoneE164,
+			Status:       info.Status,
+			PictureID:    info.PictureID,
+			Devices:      info.Devices,
+			VerifiedName: info.VerifiedName,
+			DisplayName:  displayName,
+		}
+
+		// Add contact-specific information if available
+		if contactErr == nil {
+			userInfoResponse.FullName = contactInfo.FullName
+			userInfoResponse.BusinessName = contactInfo.BusinessName
+			userInfoResponse.PushName = contactInfo.PushName
+		}
+
+		result = append(result, userInfoResponse)
+	}
+
+	return result, nil
 }

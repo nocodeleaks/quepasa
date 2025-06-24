@@ -15,7 +15,12 @@ type indexData struct {
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := models.GetFormUser(r)
 	if err != nil {
-		RedirectToLogin(w, r)
+		if err == models.ErrFormUnauthenticated {
+			RedirectToLogin(w, r)
+			return
+		}
+
+		RespondInterface(w, err)
 		return
 	}
 

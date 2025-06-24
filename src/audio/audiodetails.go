@@ -48,7 +48,7 @@ func EnsureWaveForm(attach *whatsapp.WhatsappAttachment) (debug []string) {
 		return
 	}
 
-	waveform, err := GenerateWaveform(attach.Mimetype, *content)
+	waveform, err := GenerateWaveform(*content)
 	if err != nil {
 		debug = append(debug, fmt.Sprintf("[error][EnsureWaveForm] %s", err.Error()))
 		return

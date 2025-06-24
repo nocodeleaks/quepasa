@@ -1,12 +1,3 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# GitHub recommends pinning actions to a commit SHA.
-# To get a newer version, you will need to update the SHA.
-# You can also reference a tag or branch, but the action may change without warning.
-
 name: Publish Docker Image
 
 on:
@@ -14,15 +5,17 @@ on:
   release:
     types: [published]
   push:
-    branches: 
+    branches:
       - main
     tags:
       - v*
-env:  
-  REGISTRY: docker.io # Use docker.io for Docker Hub if empty  
-  # IMAGE_NAME: ${{ github.repository }} # github.repository as <account>/<repo>
-  IMAGE_NAME: codeleaks/quepasa # github.repository as <account>/<repo>
-  GIT_REF: ${{ github.head_ref || github.ref_name }} # ref_name to get tags/branches
+
+permissions:
+  contents: write    # para criar tags e releases
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: codeleaks/quepasa
   NODE_ENV: production
   APP_ENV: production
   QUEPASA_CONTAINER_NAME: "quepasa"
@@ -35,16 +28,19 @@ env:
   QUEPASA_BASIC_AUTH_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   MIGRATIONS: './migrations'
   WEBSOCKETSSL: false
-  
+
 jobs:
   push_to_registry:
-    name: Push Docker image to Docker Hub
+    name: Push Docker + GitHub Release (condicional)
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repo
+      - name: Check out the repo (full history)
         uses: actions/checkout@v3
-            
-      - name: Extract metadata (tags, labels) for Docker
+        with:
+          fetch-depth: 0
+
+      # 1) Build & push apenas com `latest`
+      - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v3
         with:
@@ -54,28 +50,75 @@ jobs:
           tags: |
             type=ref,event=tag
             type=schedule
-            # set latest tag for master branch
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
-            # set latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
           flavor: |
             latest=true
-      
+
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (latest)
         uses: docker/build-push-action@v4.1.0
         with:
-          context: "{{defaultContext}}"
+          context: .
           file: docker/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      # 2) Só prossiga se for push na main
+      - name: Extract old QpVersion
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: extract_old
+        run: |
+          OLD=$(git show HEAD~1:src/models/qp_defaults.go \
+            | grep -Po '(?<=const QpVersion = ")[^"]+')
+          echo "old=$OLD" >> $GITHUB_OUTPUT
+
+      - name: Extract new QpVersion
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: extract_new
+        run: |
+          NEW=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "new=$NEW" >> $GITHUB_OUTPUT
+          echo "VERSION=$NEW" >> $GITHUB_ENV
+
+      # 3) Se QpVersion mudou, crie tag, Release e tagueie a imagem
+      - name: Configure Git for tagging
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create & push Git tag ${{ env.VERSION }}
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        run: |
+          git tag -a "${{ env.VERSION }}" -m "Release ${{ env.VERSION }}"
+          git push origin "${{ env.VERSION }}"
+
+      - name: Create GitHub Release ${{ env.VERSION }}
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ env.VERSION }}
+          name: "Release ${{ env.VERSION }}"
+          body: |
+            📦 Imagem Docker `${{ env.IMAGE_NAME }}:${{ env.VERSION }}` publicada!
+            Commit: ${{ github.sha }}
+
+      - name: Build & push Docker image with version tag
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        uses: docker/build-push-action@v4.1.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}

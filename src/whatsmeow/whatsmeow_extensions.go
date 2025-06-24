@@ -1,10 +1,12 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/base64"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	whatsmeow "go.mau.fi/whatsmeow"
@@ -139,34 +141,41 @@ func GetStringFromBytes(bytes []byte) string {
 
 // should implement a cache !!! urgent
 // returns a valid chat title from local memory store
-func GetChatTitle(client *whatsmeow.Client, jid types.JID) string {
+func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 	if jid.Server == "g.us" {
 
-		title := GroupInfoCache.Get(jid.String())
+		title = GroupInfoCache.Get(jid.String())
 		if len(title) > 0 {
-			return title
+			goto found
 		}
 
 		// fmt.Printf("getting group info: %s", jid.String())
 		gInfo, _ := client.GetGroupInfo(jid)
 		if gInfo != nil {
-			_ = GroupInfoCache.Append(jid.String(), gInfo.Name, "GetChatTitle")
-			return gInfo.Name
+			title = gInfo.Name
+			_ = GroupInfoCache.Append(jid.String(), title, "GetChatTitle")
+			goto found
 		}
 	} else {
-		cInfo, _ := client.Store.Contacts.GetContact(jid)
+		cInfo, _ := client.Store.Contacts.GetContact(context.TODO(), jid)
 		if cInfo.Found {
 			if len(cInfo.BusinessName) > 0 {
-				return cInfo.BusinessName
+				title = cInfo.BusinessName
+				goto found
 			} else if len(cInfo.FullName) > 0 {
-				return cInfo.FullName
-			} else {
-				return cInfo.PushName
+				title = cInfo.FullName
+				goto found
 			}
+
+			title = cInfo.PushName
+			goto found
 		}
 	}
 
 	return ""
+
+found:
+	return library.NormalizeForTitle(title)
 }
 
 /*

@@ -106,6 +106,24 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Get(endpoint+"/contacts", ContactsController)
 		r.Post(endpoint+"/isonwhatsapp", IsOnWhatsappController)
 
+		// LID METHODS ****************************
+		// ----------------------------------------
+
+		r.Get(endpoint+"/getlid", GetLIDController)
+
+		r.Get(endpoint+"/getphone", GetPhoneController)
+
+		// ----------------------------------------
+		// LID METHODS ****************************
+
+		// USER INFO METHODS **********************
+		// ----------------------------------------
+
+		r.Post(endpoint+"/userinfo", UserInfoController)
+
+		// ----------------------------------------
+		// USER INFO METHODS **********************
+
 		// IF YOU LOVE YOUR FREEDOM, DO NOT USE THAT
 		// IT WAS DEVELOPED IN A MOMENT OF WEAKNESS
 		// DONT BE THAT GUY !
@@ -130,7 +148,7 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Put(endpoint+"/groups/name", SetGroupNameController)
 
 		// Updates the group description.
-		//r.Put(endpoint+"/groups/description", SetGroupTopicController)
+		r.Put(endpoint+"/groups/description", SetGroupTopicController)
 
 		// Updates the group picture.
 		r.Put(endpoint+"/groups/photo", SetGroupPhotoController)

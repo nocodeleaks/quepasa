@@ -122,4 +122,6 @@ type IWhatsappConnection interface {
 	// Get phone number from LID
 	GetPhoneFromLID(lid string) (string, error)
 	//endregion
+
+	GetUserInfo(jids []string) ([]interface{}, error)
 }

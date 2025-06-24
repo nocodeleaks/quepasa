@@ -22,7 +22,65 @@ type LIDResponse struct {
 	LID   string `json:"lid,omitempty"`
 }
 
-func LIDController(w http.ResponseWriter, r *http.Request) {
+func GetPhoneController(w http.ResponseWriter, r *http.Request) {
+	// setting default response type as json
+	w.Header().Set("Content-Type", "application/json")
+	response := &LIDResponse{}
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Checking for ready state
+	status := server.GetStatus()
+	if status != whatsapp.Ready {
+		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
+		response.ParseError(err)
+		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
+		return
+	}
+
+	// Get lid from query parameter
+	lid := models.GetRequestParameter(r, "lid")
+	// Validate lid parameter
+	if lid == "" {
+		response.ParseError(fmt.Errorf("lid parameter is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// validate if the lid has the correct suffix
+	if !strings.HasSuffix(lid, "@lid") {
+		response.ParseError(fmt.Errorf("lid must have @lid suffix"))
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(lid) == 0 {
+		response.ParseError(fmt.Errorf("invalid lid"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// use the method GetPhoneFromLID to return the contact phone, lid, // and any other information
+	processedPhone, err := server.GetPhoneFromLID(lid)
+
+	// If still no LID found, return the original error
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+	// Set response data
+	response.Phone = processedPhone
+	response.LID = lid
+	response.ParseSuccess("LID found successfully")
+	RespondSuccess(w, response)
+}
+
+func GetLIDController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 

@@ -109,10 +109,20 @@ func RegisterAPIControllers(r chi.Router) {
 		// LID METHODS ****************************
 		// ----------------------------------------
 
-		r.Get(endpoint+"/lid", LIDController)
+		r.Get(endpoint+"/getlid", GetLIDController)
+
+		r.Get(endpoint+"/getphone", GetPhoneController)
 
 		// ----------------------------------------
 		// LID METHODS ****************************
+
+		// USER INFO METHODS **********************
+		// ----------------------------------------
+
+		r.Post(endpoint+"/userinfo", UserInfoController)
+
+		// ----------------------------------------
+		// USER INFO METHODS **********************
 
 		// IF YOU LOVE YOUR FREEDOM, DO NOT USE THAT
 		// IT WAS DEVELOPED IN A MOMENT OF WEAKNESS

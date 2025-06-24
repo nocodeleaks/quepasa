@@ -913,3 +913,12 @@ func (server *QpWhatsappServer) GetPhoneFromLID(lid string) (string, error) {
 	}
 	return conn.GetPhoneFromLID(lid)
 }
+
+// GetUserInfo retrieves user information for given JIDs
+func (server *QpWhatsappServer) GetUserInfo(jids []string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+	return conn.GetUserInfo(jids)
+}

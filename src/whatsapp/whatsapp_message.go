@@ -10,8 +10,8 @@ import (
 type WhatsappMessage struct {
 
 	// original message from source service
-	Content        interface{} `json:"-"`
-	InfoForHistory interface{} `json:"-"`
+	Content        any `json:"-"`
+	InfoForHistory any `json:"-"`
 
 	Id      string `json:"id"`                // Upper text msg id
 	TrackId string `json:"trackid,omitempty"` // Optional id of the system that send that message
@@ -62,9 +62,6 @@ type WhatsappMessage struct {
 
 	// WhatsApp ID of the sender
 	Wid string `json:"wid,omitempty"`
-
-	// WhatsApp LID of the sender (if available)
-	Lid string `json:"lid,omitempty"`
 
 	// Extra information for custom messages
 	Info any `json:"info,omitempty"`

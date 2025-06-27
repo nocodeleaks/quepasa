@@ -130,7 +130,7 @@ func (source *WhatsappMessage) HasAttachment() bool {
 	return attach != nil && len(attach.Mimetype) > 0
 }
 
-func (source *WhatsappMessage) GetSource() interface{} {
+func (source *WhatsappMessage) GetSource() any {
 	return source.Content
 }
 

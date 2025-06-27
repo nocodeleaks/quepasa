@@ -657,7 +657,7 @@ func (server *QpWhatsappServer) Delete() error {
 	return nil
 }
 
-//endregion
+//#endregion
 //#region SEND
 
 // Default send message method
@@ -828,6 +828,15 @@ func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) 
 	return conn.UpdateGroupSubject(groupID, name) // Delegate the call to the connection
 }
 
+func (server *QpWhatsappServer) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
+	conn, err := server.GetValidConnection() // Ensure a valid connection is available
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupTopic(groupID, topic) // Delegate the call to the connection
+}
+
 func (server *QpWhatsappServer) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
 	conn, err := server.GetValidConnection()
 	if err != nil {
@@ -885,4 +894,13 @@ func (server *QpWhatsappServer) SendChatPresence(chatId string, presenceType wha
 		return err
 	}
 	return conn.SendChatPresence(chatId, uint(presenceType))
+}
+
+func (server *QpWhatsappServer) GetLIDFromPhone(phone string) (string, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "",
+			err
+	}
+	return conn.GetLIDFromPhone(phone)
 }

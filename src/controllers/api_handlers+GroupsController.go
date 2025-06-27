@@ -484,3 +484,50 @@ func convertToJIDs(participants []string) ([]string, error) {
 
 	return result, nil
 }
+
+func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	response := &models.QpSingleGroupResponse{}
+
+	type setGroupTopicStruct struct {
+		GroupJID string `json:"group_jid"`
+		Topic    string `json:"topic"`
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var t setGroupTopicStruct
+	err = decoder.Decode(&t)
+	if err != nil {
+		response.ParseError(fmt.Errorf("could not decode payload: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	if t.GroupJID == "" {
+		response.ParseError(fmt.Errorf("group JID is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Convert string JID to appropriate format
+	groupID := t.GroupJID
+
+	updatedGroup, err := server.UpdateGroupTopic(groupID, t.Topic)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to set group topic: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	response.GroupInfo = updatedGroup
+
+	RespondSuccess(w, response)
+}

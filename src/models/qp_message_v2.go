@@ -1,5 +1,6 @@
 package models
 
+// Obsolete, keep for compatibility with zammad
 // Mensagem no formato QuePasa
 // Utilizada na API do QuePasa para troca com outros sistemas
 type QpMessageV2 struct {

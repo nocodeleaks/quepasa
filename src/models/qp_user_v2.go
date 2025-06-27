@@ -1,5 +1,6 @@
 package models
 
+// Obsolete, keep for compatibility with zammad
 // Usuário no formato QuePasa (Telegram)
 // Not in use for now
 type QpUserV2 struct {

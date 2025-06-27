@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Obsolete, keep for compatibility with zammad
 // returning []QPMessageV1
 func GetMessagesFromBotV2(source QPBot, timestamp string) (messages []QpMessageV2, err error) {
 
@@ -28,6 +29,7 @@ func GetMessagesFromBotV2(source QPBot, timestamp string) (messages []QpMessageV
 	return
 }
 
+// Obsolete, keep for compatibility with zammad
 func ToQpServerV2(source *QpServer) (destination *QpServerV2) {
 	destination = &QpServerV2{
 		ID:              source.Wid,

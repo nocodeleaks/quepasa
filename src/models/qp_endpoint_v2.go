@@ -1,5 +1,6 @@
 package models
 
+// Obsolete, keep for compatibility with zammad
 type QPEndpointV2 struct {
 	ID        string `json:"id"`
 	UserName  string `json:"username,omitempty"`

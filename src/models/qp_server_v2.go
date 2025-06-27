@@ -1,5 +1,6 @@
 package models
 
+// Obsolete, keep for compatibility with zammad
 type QpServerV2 struct {
 	ID              string `json:"id"`
 	Verified        bool   `json:"is_verified"`

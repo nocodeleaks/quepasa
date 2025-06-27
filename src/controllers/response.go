@@ -48,7 +48,6 @@ func RespondServerError(server *models.QpWhatsappServer, w http.ResponseWriter, 
 	if strings.Contains(err.Error(), "invalid websocket") {
 		logentry.Error("forced disconnected by any reason of invalid websocket or no response")
 		go server.Restart()
-
 	} else {
 		logentry.Errorf("request server error: %s", err.Error())
 	}

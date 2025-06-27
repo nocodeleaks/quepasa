@@ -1,11 +1,13 @@
 package models
 
+// Obsolete, keep for compatibility with zammad
 type QPSendDocumentRequestV2 struct {
 	Recipient  string         `json:"recipient,omitempty"`
 	Message    string         `json:"message,omitempty"`
 	Attachment QPAttachmentV1 `json:"attachment,omitempty"`
 }
 
+// Obsolete, keep for compatibility with zammad
 func (source *QPSendDocumentRequestV2) ToQpSendRequest() *QpSendRequest {
 	request := &QpSendAnyRequest{}
 	request.ChatId = source.Recipient

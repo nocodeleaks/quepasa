@@ -1,5 +1,6 @@
 package models
 
+// Obsolete, keep for compatibility with zammad
 type QpSendResponseV2 struct {
 	QpResponse
 	ID   string       `json:"message_id"`

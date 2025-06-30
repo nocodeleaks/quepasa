@@ -47,6 +47,12 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 		HandleEditTextMessage(logentry, out, in.EditedMessage)
 	case in.ProtocolMessage != nil:
 		HandleProtocolMessage(logentry, out, in.ProtocolMessage)
+	case in.TemplateMessage != nil:
+		HandleTemplateMessage(logentry, out, in.TemplateMessage)Add commentMore actions
+	case in.TemplateButtonReplyMessage != nil:
+		HandleTemplateButtonReplyMessage(logentry, out, in.TemplateButtonReplyMessage)
+	case in.ListMessage != nil:
+		HandleListMessage(logentry, out, in.ListMessage)
 	case in.SenderKeyDistributionMessage != nil:
 		out.Type = whatsapp.DiscardMessageType
 	case in.StickerSyncRmrMessage != nil:

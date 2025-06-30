@@ -67,6 +67,16 @@ type WhatsappMessage struct {
 	Info any `json:"info,omitempty"`
 
 	Poll *WhatsappPoll `json:"poll,omitempty"` // Poll if exists
+
+	// Debug information for debug events
+	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
+}
+
+// WhatsappMessageDebug contains debug information for unhandled events
+type WhatsappMessageDebug struct {
+	EventType string      `json:"event_type"`
+	EventInfo interface{} `json:"event_info"`
+	Reason    string      `json:"reason,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP

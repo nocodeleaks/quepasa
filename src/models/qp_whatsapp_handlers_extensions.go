@@ -23,6 +23,11 @@ import (
 func IsValidForDispatch(payload *whatsapp.WhatsappMessage) string {
 	// Ignores messages with 'Discard' or 'Unknown' types, as these are typically not meant for
 	// application-level processing or indicate an unhandled message format.
+
+	if ENV.DebugEvents() && (payload.Type == whatsapp.DiscardMessageType || payload.Type == whatsapp.UnknownMessageType) {
+		return ""
+	}
+
 	if payload.Type == whatsapp.DiscardMessageType || payload.Type == whatsapp.UnknownMessageType {
 		return fmt.Sprintf("ignoring discard|unknown message type on webhook request: %v", reflect.TypeOf(&payload))
 	}

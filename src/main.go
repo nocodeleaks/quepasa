@@ -49,6 +49,7 @@ func main() {
 		HistorySync:  models.ENV.HistorySync(),
 		Presence:     models.ENV.Presence(),
 		LogLevel:     logentry.Level.String(),
+		DebugEvents:  models.ENV.DebugEvents(),
 	}
 
 	whatsapp.Options = *whatsappOptions

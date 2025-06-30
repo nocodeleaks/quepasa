@@ -3,6 +3,7 @@ package whatsmeow
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	slug "github.com/gosimple/slug"
@@ -46,12 +47,6 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 		HandleEditTextMessage(logentry, out, in.EditedMessage)
 	case in.ProtocolMessage != nil:
 		HandleProtocolMessage(logentry, out, in.ProtocolMessage)
-	case in.TemplateMessage != nil:
-		HandleTemplateMessage(logentry, out, in.TemplateMessage)
-	case in.TemplateButtonReplyMessage != nil:
-		HandleTemplateButtonReplyMessage(logentry, out, in.TemplateButtonReplyMessage)
-	case in.ListMessage != nil:
-		HandleListMessage(logentry, out, in.ListMessage)
 	case in.SenderKeyDistributionMessage != nil:
 		out.Type = whatsapp.DiscardMessageType
 	case in.StickerSyncRmrMessage != nil:
@@ -59,8 +54,23 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case len(in.GetConversation()) > 0:
 		HandleTextMessage(logentry, out, in)
 	default:
-		out.Type = whatsapp.UnknownMessageType
+		// Handle unknown message types by creating debug message
 		logentry.Warnf("message not handled: %v", in)
+
+		// If debug events is enabled, mark as debug unknown for dispatching
+		if handler.isDebugEventsEnabled() {
+			out.Type = whatsapp.DebugUnknownMessageType
+			out.Text = "" // Empty text
+
+			// Create debug information with the raw message
+			out.Debug = &whatsapp.WhatsappMessageDebug{
+				EventType: getMessageEventType(in),
+				EventInfo: in,
+				Reason:    "Unknown message type not handled by system",
+			}
+		} else {
+			out.Type = whatsapp.UnknownMessageType
+		}
 	}
 }
 
@@ -403,4 +413,33 @@ func HandleContactMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 
 	content := []byte(in.GetVcard())
 	out.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
+}
+
+// getMessageEventType extracts the actual message type from the protobuf message
+func getMessageEventType(in *waE2E.Message) string {
+	v := reflect.ValueOf(in).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if field.Kind() == reflect.Ptr && !field.IsNil() {
+			fieldName := t.Field(i).Name
+			// Convert from Go field name to protobuf field name format
+			return toSnakeCase(fieldName)
+		}
+	}
+
+	return "unknown"
+}
+
+// toSnakeCase converts Go field names to protobuf field naming convention
+func toSnakeCase(s string) string {
+	var result strings.Builder
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			result.WriteRune('_')
+		}
+		result.WriteRune(r)
+	}
+	return strings.ToLower(result.String())
 }

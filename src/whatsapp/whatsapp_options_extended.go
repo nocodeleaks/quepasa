@@ -28,6 +28,9 @@ type WhatsappOptionsExtended struct {
 
 	// default presence status
 	Presence string `json:"presence,omitempty"`
+
+	// should emit debug events
+	DebugEvents bool `json:"debugevents,omitempty"`
 }
 
 func (source WhatsappOptionsExtended) IsDefault() bool {
@@ -37,7 +40,8 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 		source.Calls.Equals(UnSetBooleanType) &&
 		!source.ReadUpdate &&
 		source.HistorySync == nil &&
-		len(source.LogLevel) == 0
+		len(source.LogLevel) == 0 &&
+		!source.DebugEvents
 }
 
 /*

@@ -21,7 +21,16 @@ const (
 
 	// Messages that isn't important for this whatsapp service
 	DiscardMessageType
+
+	// Debug message types
+	DebugEventMessageType
+	DebugUnknownMessageType
+	DebugDiscardMessageType
 )
+
+func (s WhatsappMessageType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
 
 func (Type WhatsappMessageType) String() string {
 	switch Type {
@@ -51,11 +60,13 @@ func (Type WhatsappMessageType) String() string {
 		return "poll"
 	case DiscardMessageType:
 		return "discard"
+	case DebugEventMessageType:
+		return "debug_event"
+	case DebugUnknownMessageType:
+		return "debug_unknown"
+	case DebugDiscardMessageType:
+		return "debug_discard"
 	}
-
+	// If no match, return "unknown"
 	return "unknown"
-}
-
-func (s WhatsappMessageType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
 }

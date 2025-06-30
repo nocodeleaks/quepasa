@@ -48,7 +48,7 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case in.ProtocolMessage != nil:
 		HandleProtocolMessage(logentry, out, in.ProtocolMessage)
 	case in.TemplateMessage != nil:
-		HandleTemplateMessage(logentry, out, in.TemplateMessage)Add commentMore actions
+		HandleTemplateMessage(logentry, out, in.TemplateMessage)
 	case in.TemplateButtonReplyMessage != nil:
 		HandleTemplateButtonReplyMessage(logentry, out, in.TemplateButtonReplyMessage)
 	case in.ListMessage != nil:

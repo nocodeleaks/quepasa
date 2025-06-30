@@ -5,7 +5,11 @@ import "encoding/json"
 type WhatsappMessageType uint
 
 const (
-	UnknownMessageType WhatsappMessageType = iota
+	// Messages that isn't important for this whatsapp service
+	// These are usually used for internal purposes or debugging
+	// and should not be processed further
+	// It must contains a reason for the discard on Debug property
+	UnhandledMessageType WhatsappMessageType = iota
 	ImageMessageType
 	DocumentMessageType
 	AudioMessageType
@@ -18,14 +22,6 @@ const (
 	GroupMessageType
 	RevokeMessageType
 	PollMessageType
-
-	// Messages that isn't important for this whatsapp service
-	DiscardMessageType
-
-	// Debug message types
-	DebugEventMessageType
-	DebugUnknownMessageType
-	DebugDiscardMessageType
 )
 
 func (s WhatsappMessageType) MarshalJSON() ([]byte, error) {
@@ -58,15 +54,8 @@ func (Type WhatsappMessageType) String() string {
 		return "revoke"
 	case PollMessageType:
 		return "poll"
-	case DiscardMessageType:
-		return "discard"
-	case DebugEventMessageType:
-		return "debug_event"
-	case DebugUnknownMessageType:
-		return "debug_unknown"
-	case DebugDiscardMessageType:
-		return "debug_discard"
 	}
-	// If no match, return "unknown"
-	return "unknown"
+
+	// If the type is not recognized, return "unhandled"
+	return "unhandled"
 }

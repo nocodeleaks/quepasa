@@ -57,7 +57,8 @@ const (
 	ENV_RABBITMQ_QUEUE            = "RABBITMQ_QUEUE"            // Nome da variável de ambiente para a fila
 	ENV_RABBITMQ_CONNECTIONSTRING = "RABBITMQ_CONNECTIONSTRING" // Nome da variável de ambiente para a string de conexão
 	ENV_RABBITMQ_CACHELENGTH      = "RABBITMQ_CACHELENGTH"
-	ENV_DEBUG_EVENTS              = "DEBUGEVENTS" // Enable debug mode for unhandled events and unknown messages
+
+	ENV_DISPATCH_UNHANDLED = "DISPATCHUNHANDLED" // enable or disable dispatch unhandled messages, default false
 )
 
 // Environment provides methods to access application configurations from environment variables.
@@ -239,9 +240,9 @@ func (*Environment) AccountSetup() bool {
 	return getEnvOrDefaultBool(ENV_ACCOUNTSETUP, true)
 }
 
-// DebugEvents checks if debug mode for events is enabled. Defaults to false.
-func (*Environment) DebugEvents() bool {
-	return getEnvOrDefaultBool(ENV_DEBUG_EVENTS, false)
+// DispatchUnhandled checks if dispatching unhandled messages is enabled. Defaults to false.
+func (*Environment) DispatchUnhandled() bool {
+	return getEnvOrDefaultBool(ENV_DISPATCH_UNHANDLED, false)
 }
 
 // --- WHATSAPP SERVICE OPTIONS - WHATSMEOW ---

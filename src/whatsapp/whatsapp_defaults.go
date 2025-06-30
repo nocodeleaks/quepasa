@@ -9,7 +9,6 @@ const WhatsappReadReceipts = false // default read receipt option if none was sp
 const WhatsappCalls = true         // default calls option if none was specified
 const WhatsappGroups = true        // default group messages option if none was specified
 const WhatsappHistorySync = false  // default historysync option if none was specified
-const WhatsappDebugEvents = false  // default debug events option if none was specified
 
 // Custom System name defined on start
 var WhatsappWebAppSystem string

@@ -118,9 +118,9 @@ func (source *WhatsmeowHandlers) HandleCalls() bool {
 
 //#endregion
 
-func (source WhatsmeowHandlers) isDebugEventsEnabled() bool {
+func (source WhatsmeowHandlers) ShouldDispatchUnhandled() bool {
 	options := source.GetServiceOptions()
-	return options.DebugEvents
+	return options.DispatchUnhandled
 }
 
 func (source WhatsmeowHandlers) HandleHistorySync() bool {
@@ -297,15 +297,15 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 		// Only dispatch debug events if DEBUGEVENTS is true
 		// If DEBUGEVENTS=false or not set, do nothing (no webhook dispatch)
-		if source.isDebugEventsEnabled() {
-			go source.DispatchDebugEvent(evt, reflect.TypeOf(rawEvt).String())
+		if source.ShouldDispatchUnhandled() {
+			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
 		}
 		return
 	}
 }
 
-// DispatchDebugEvent creates a debug message for unhandled events and dispatches it
-func (source *WhatsmeowHandlers) DispatchDebugEvent(evt interface{}, eventType string) {
+// DispatchUnhandledEvent creates a debug message for unhandled events and dispatches it
+func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventType string) {
 	logentry := source.GetLogger()
 	logentry.Debugf("dispatching debug event: %s", eventType)
 
@@ -316,16 +316,15 @@ func (source *WhatsmeowHandlers) DispatchDebugEvent(evt interface{}, eventType s
 		Content:   evt,
 		Id:        source.Client.GenerateMessageID(),
 		Timestamp: time.Now().Truncate(time.Second),
-		Type:      whatsapp.DebugEventMessageType,
+		Type:      whatsapp.UnhandledMessageType,
 		FromMe:    false,
-		Text:      "", // Empty text as requested
 	}
 
 	// Create debug information with the event in JSON format
 	message.Debug = &whatsapp.WhatsappMessageDebug{
-		EventType: cleanEventType,
-		EventInfo: evt,
-		Reason:    "Unhandled event type",
+		Event:  cleanEventType,
+		Info:   evt,
+		Reason: "event",
 	}
 
 	// Try to extract chat information from events that have Info field
@@ -544,38 +543,9 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	HandleKnowingMessages(handler, message, evt.Message)
 
 	// discard and return
-	if message.Type == whatsapp.DiscardMessageType {
-		JsonMsg := library.ToJson(evt)
-		logentry.Debugf("debugging and ignoring an discard message: %s", JsonMsg)
-
-		if handler.isDebugEventsEnabled() {
-			message.Type = whatsapp.DebugDiscardMessageType
-			message.Text = ""
-			message.Debug = &whatsapp.WhatsappMessageDebug{
-				EventType: reflect.TypeOf(evt).String(),
-				EventInfo: evt,
-				Reason:    "Discarded message by system",
-			}
-		} else {
-			return // Don't dispatch webhook if debug events are disabled
-		}
-	}
-
-	// unknown and continue
-	if message.Type == whatsapp.UnknownMessageType {
-		JsonMsg := library.ToJson(evt)
-
-		if handler.isDebugEventsEnabled() {
-
-			message.Debug = &whatsapp.WhatsappMessageDebug{
-				EventType: reflect.TypeOf(evt).String(),
-				EventInfo: evt,
-				Reason:    "Unknown message type not handled by system",
-			}
-			message.Type = whatsapp.DebugUnknownMessageType
-			message.Text = ""
-		} else {
-			message.Text += " :: " + JsonMsg
+	if message.Type == whatsapp.UnhandledMessageType {
+		if message.Debug == nil {
+			logentry.Warnf("unhandled message type, no debug information: %s", message.Type)
 		}
 	}
 

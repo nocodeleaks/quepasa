@@ -72,13 +72,6 @@ type WhatsappMessage struct {
 	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
 }
 
-// WhatsappMessageDebug contains debug information for unhandled events
-type WhatsappMessageDebug struct {
-	EventType string      `json:"event_type"`
-	EventInfo interface{} `json:"event_info"`
-	Reason    string      `json:"reason,omitempty"`
-}
-
 //region ORDER BY TIMESTAMP
 
 // Ordering by (Timestamp) and then (Id)

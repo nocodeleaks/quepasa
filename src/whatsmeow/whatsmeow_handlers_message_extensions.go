@@ -48,28 +48,30 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case in.ProtocolMessage != nil:
 		HandleProtocolMessage(logentry, out, in.ProtocolMessage)
 	case in.SenderKeyDistributionMessage != nil:
-		out.Type = whatsapp.DiscardMessageType
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "SenderKeyDistributionMessage",
+			Info:   in.SenderKeyDistributionMessage,
+			Reason: "discard",
+		}
 	case in.StickerSyncRmrMessage != nil:
-		out.Type = whatsapp.DiscardMessageType
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "StickerSyncRmrMessage",
+			Info:   in.StickerSyncRmrMessage,
+			Reason: "discard",
+		}
 	case len(in.GetConversation()) > 0:
 		HandleTextMessage(logentry, out, in)
 	default:
-		// Handle unknown message types by creating debug message
-		logentry.Warnf("message not handled: %v", in)
+		// If no specific handler is found, mark the message as unhandled
+		out.Type = whatsapp.UnhandledMessageType
 
-		// If debug events is enabled, mark as debug unknown for dispatching
-		if handler.isDebugEventsEnabled() {
-			out.Type = whatsapp.DebugUnknownMessageType
-			out.Text = "" // Empty text
-
-			// Create debug information with the raw message
-			out.Debug = &whatsapp.WhatsappMessageDebug{
-				EventType: getMessageEventType(in),
-				EventInfo: in,
-				Reason:    "Unknown message type not handled by system",
-			}
-		} else {
-			out.Type = whatsapp.UnknownMessageType
+		// Create debug information with the raw message
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  getMessageEventType(in),
+			Info:   in,
+			Reason: "unknown",
 		}
 	}
 }
@@ -108,7 +110,13 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 
 	case v == waE2E.ProtocolMessage_HISTORY_SYNC_NOTIFICATION:
 		var logtext string
-		out.Type = whatsapp.UnknownMessageType
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "ProtocolMessage",
+			Info:   in,
+			Reason: "history sync notification",
+		}
+
 		b, err := json.Marshal(in)
 		if err != nil {
 			logentry.Error(err)
@@ -131,14 +139,13 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 		return
 
 	default:
-		out.Type = whatsapp.UnknownMessageType
-		b, err := json.Marshal(in)
-		if err != nil {
-			logentry.Error(err)
-			return
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "ProtocolMessage",
+			Info:   in,
+			Reason: "unknown protocol message type",
 		}
 
-		out.Text = "ProtocolMessage :: " + string(b)
 		return
 	}
 }

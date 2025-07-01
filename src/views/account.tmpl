@@ -440,28 +440,7 @@
               </div>
               
               <!-- Right Side Actions -->
-              <div class="flex items-center space-x-2 flex-shrink-0">
-                <!-- Connection Status -->
-                <a href="/form/webhooks?token={{ .Token }}" 
-                   class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}"
-                   title="WebHooks">
-                  {{ if .Webhooks }}
-                    <span class="text-xs font-medium">WH</span>
-                  {{ else }}
-                    <span class="text-xs font-medium text-gray-500">WH</span>
-                  {{ end }}
-                </a>
-                
-                <a href="/form/signalr?token={{ .Token }}" 
-                   class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}"
-                   title="WebSockets">
-                  {{ if .HasSignalRActiveConnections }}
-                    <span class="text-xs font-medium">WS</span>
-                  {{ else }}
-                    <span class="text-xs font-medium text-gray-500">WS</span>
-                  {{ end }}
-                </a>
-              </div>
+              
             </div>
             
             <!-- Action Buttons Row -->
@@ -482,64 +461,53 @@
               </div>
               
               <div class="flex items-center justify-center space-x-2">
-                <!-- Settings Dropdown for Verified Bots -->
+                <div class="flex items-center space-x-4 flex-shrink-0">
+                <!-- WebHooks & WebSockets -->
+                <a href="/form/webhooks?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                  {{ if .Webhooks }}<i class="fas fa-check-circle mr-1"></i>Webhooks{{ else }}<i class="fas fa-times-circle mr-1"></i>Webhooks{{ end }}
+                </a>
+                <a href="/form/signalr?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                  {{ if .HasSignalRActiveConnections }}<i class="fas fa-check-circle mr-1"></i>WebSockets{{ else }}<i class="fas fa-times-circle mr-1"></i>WebSockets{{ end }}
+                </a>
+              </div>
+                
                 {{ if .Verified }}
-                  <div class="relative">
-                    <button onclick="toggleDropdown('list-dropdown-{{ .Token }}')" 
-                            class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
-                            title="Bot Settings">
-                      <i class="fas fa-cog"></i>
-                    </button>
-                    
-                    <div id="list-dropdown-{{ .Token }}" class="hidden absolute right-0 bottom-full mb-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                      <div class="p-3 space-y-2">
-                        <h4 class="text-xs font-medium text-gray-900 border-b border-gray-200 pb-1">Settings</h4>
-                        
-                        <!-- Broadcasts -->
-                        <div class="flex items-center justify-between">
-                          <span class="text-xs text-gray-700">Broadcasts</span>
+                  <!-- inline toggles beside Stop/Delete -->
+                  <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700">Broadcast</span>
                           <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                            <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
                               <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
                         </div>
-                        
-                        <!-- Groups -->
-                        <div class="flex items-center justify-between">
-                          <span class="text-xs text-gray-700">Groups</span>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700">Groups</span>
                           <form method="post" action="/form/toggle?key=server-groups" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                            <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
                               <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
                         </div>
-                        
-                        <!-- Read Receipts -->
-                        <div class="flex items-center justify-between">
-                          <span class="text-xs text-gray-700">Receipts</span>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700">Receipts</span>
                           <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                            <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
                               <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
                         </div>
-                        
-                        <!-- Calls -->
-                        <div class="flex items-center justify-between">
-                          <span class="text-xs text-gray-700">Calls</span>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700">Calls</span>
                           <form method="post" action="/form/toggle?key=server-calls" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                            <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
                               <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 {{ end }}
 

@@ -17,30 +17,32 @@
             </div>
           </div>
           
-          <div class="flex items-center space-x-2 flex-shrink-0">
+            <div class="flex flex-col items-end space-y-2 flex-shrink-0">
+            <!-- Master Key and WebSocket badges on top -->
             {{ if .HasMasterKey }}
               <div class="hidden sm:flex items-center space-x-1">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <i class="fas fa-key mr-1"></i>
-                  <span class="hidden md:inline">Master</span>
-                  <span class="md:hidden">M</span>
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <i class="fas fa-key mr-1"></i>
+                <span class="hidden md:inline">Master Key</span>
+                <span class="md:hidden">Master Key</span>
+              </span>
+              {{ if .HasSignalRActiveConnections }}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <i class="fas fa-wifi mr-1"></i>
+                <span class="hidden md:inline">WebSockets</span>
+                <span class="md:hidden">WebSockets</span>
                 </span>
-                {{ if .HasSignalRActiveConnections }}
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <i class="fas fa-wifi mr-1"></i>
-                    <span class="hidden md:inline">WS</span>
-                    <span class="md:hidden">W</span>
-                  </span>
-                {{ else }}
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    <i class="fas fa-exclamation-triangle mr-1"></i>
-                    <span class="hidden md:inline">No WS</span>
-                    <span class="md:hidden">!</span>
-                  </span>
-                {{ end }}
+              {{ else }}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                <span class="hidden md:inline">No WebSockets</span>
+                <span class="md:hidden">No WebSockets</span>
+                </span>
+              {{ end }}
               </div>
             {{ end }}
             
+            <!-- Add Bot button on bottom -->
             <a href="/form/verify?mode=md" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm flex-shrink-0">
               <i class="fas fa-plus mr-1 sm:mr-2"></i>
               <span class="hidden sm:inline">Add Bot</span>

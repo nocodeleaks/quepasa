@@ -8,11 +8,12 @@ on:
     branches:
       - main
       - develop
+      - new-ui          # adicionada branch new-ui
     tags:
       - v*
 
 permissions:
-  contents: write    # para criar tags e releases
+  contents: write
 
 env:
   REGISTRY: docker.io
@@ -153,3 +154,74 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
+
+  push_new_ui:
+    if: github.ref == 'refs/heads/new-ui'
+    name: Build & Push New-UI Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Extract QpVersion
+        id: extract_version_newui
+        run: |
+          VERSION=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image (new-ui)
+        uses: docker/build-push-action@v4.1.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}
+
+  sync_new_ui:
+    if: github.ref == 'refs/heads/main'
+    needs: push_main
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout da main num diretório temporário
+      - name: Checkout main branch to temp
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          path: temp-main
+
+      # 2) Checkout da new-ui num outro diretório
+      - name: Checkout new-ui branch
+        uses: actions/checkout@v3
+        with:
+          ref: new-ui
+          path: new-ui
+
+      # 3) Sincroniza excluindo .tmpl, .css, .js
+      - name: Sync changes from main to new-ui excluding tmpl/css/js
+        run: |
+          rsync -av --delete \
+            --exclude='*.tmpl' \
+            --exclude='*.css' \
+            --exclude='*.js' \
+            temp-main/ new-ui/
+
+      # 4) Commit e push se houver mudanças
+      - name: Commit & Push to new-ui
+        working-directory: new-ui
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
+            git push origin new-ui
+          else
+            echo "✅ Nenhuma mudança para sincronizar em new-ui"
+          fi

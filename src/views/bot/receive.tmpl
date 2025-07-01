@@ -1,43 +1,862 @@
 {{ define "content" }}
   {{ $DOWNLOADPREFIX := .DownloadPrefix }}
-  {{ if .ErrorMessage }}
-    <div class="notification is-warning">
-      {{ .ErrorMessage }}
-    </div>
-  {{ end }}
-
-  <div class="container is-fluid container-receive">
-    <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
-    <div class="messages">
-      {{ range .Messages }}
-      <div class="message">
-        <pre id="msg-{{ .Id }}">
-          On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}  
-          Type: {{ .Type }} => Chat:  {{ .Chat }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
-          Participant:  {{ .Participant }}{{ end }}{{ if .TrackId }}
-          TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
-          InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .Text }}
-          Text: {{ .Text }}{{ end }}
-        </pre>
-        {{ if .Url }}
-          <div title="Url" class="url">
-            <div class="header">Url</div>
-            <div class="title">Title: <span>{{ .Url.Title }}</span></div>
-            <div class="description">Description: <span>{{ .Url.Description }}</span></div>
-            <div class="reference">Reference: <a href="{{ .Url.Reference }}">{{ .Url.Reference }}</a></div>
-
-            {{ if .Url.Thumbnail }}
-            <div title="Url Thumbnail" class="url-thumbnail">
-              <div class="header">Url Thumbnail</div>
-              <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" />
-            </div>
-          {{ end }}
+  
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Messages</h1>
+            <p class="text-gray-600 mt-1">{{ .Count }} messages for {{ .Number }}</p>
           </div>
+          <div class="flex items-center space-x-4">
+            <a href="/form/account" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
+              <i class="fas fa-arrow-left mr-2"></i>
+              Back to Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    {{ if .ErrorMessage }}
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div class="flex">
+            <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+            <p class="text-yellow-700">{{ .ErrorMessage }}</p>
+          </div>
+        </div>
+      </div>
+    {{ end }}
+
+    <!-- Message Statistics -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <span class="text-2xl font-bold text-gray-900" id="totalCount">{{ .Count }}</span>
+            <p class="text-sm text-gray-600">Total Messages</p>
+          </div>
+          <div>
+            <span class="text-2xl font-bold text-blue-600" id="sentCount">-</span>
+            <p class="text-sm text-gray-600">Sent Messages</p>
+          </div>
+          <div>
+            <span class="text-2xl font-bold text-green-600" id="receivedCount">-</span>
+            <p class="text-sm text-gray-600">Received Messages</p>
+          </div>
+          <div>
+            <span class="text-2xl font-bold text-red-600" id="debugCount">-</span>
+            <p class="text-sm text-gray-600">Debug Messages</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    
+      <div class="space-y-4 mb-8" id="messagesContainer">
+        {{ range .Messages }}
+        <div class="bg-white rounded-xl shadow-sm border-2 overflow-hidden hover:shadow-md ml-8 mr-8 mb-8 transition-shadow message-item {{ if .Debug }}debug-message{{ else if .FromMe }}sent-message{{ else }}received-message{{ end }}" 
+             id="msg-{{ .Id }}" 
+             data-type="{{ .Type }}" 
+             data-timestamp="{{ .Timestamp }}"
+             data-has-debug="{{ if .Debug }}true{{ else }}false{{ end }}"
+             data-from-me="{{ if .FromMe }}true{{ else }}false{{ end }}">
+          
+          <!-- Message Header -->
+          <div class="px-6 py-4 border-b border-gray-100 {{ if .Debug }}bg-red-50{{ else }}bg-gray-50{{ end }}">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                  {{ if .FromMe }}
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <i class="fas fa-arrow-right mr-1"></i>Sent
+                    </span>
+                  {{ else }}
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <i class="fas fa-arrow-left mr-1"></i>Received
+                    </span>
+                  {{ end }}
+                  
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ if .Debug }}bg-red-100 text-red-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                    {{ .Type }}
+                  </span>
+                  
+                  {{ if .Edited }}
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      <i class="fas fa-edit mr-1"></i>Edited
+                    </span>
+                  {{ end }}
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <span class="flex items-center">
+                  <i class="fas fa-clock mr-1"></i>
+                  {{ .Timestamp }}
+                </span>
+                <span class="flex items-center">
+                  <i class="fas fa-hashtag mr-1"></i>
+                  {{ .Id }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Message Content -->
+          <div class="px-6 py-4">
+            <!-- Chat Info -->
+            <div class="mb-4">
+              <div class="flex items-center space-x-2 text-sm text-gray-600">
+                <i class="fas fa-comments"></i>
+                <span>{{ .Chat }}</span>
+                {{ if .Participant }}
+                  <span class="text-gray-400">•</span>
+                  <i class="fas fa-user"></i>
+                  <span>{{ .Participant }}</span>
+                {{ end }}
+              </div>
+            </div>
+
+            <!-- Message Text -->
+            {{ if .Text }}
+              <div class="mb-4">
+                <div class="prose prose-sm max-w-none">
+                  <div id="message-text-{{ .Id }}" class="text-gray-900 whitespace-pre-wrap" data-original-text="{{ .Text }}">{{ .Text }}</div>
+                </div>
+              </div>
+            {{ end }}
+
+            <!-- URL Preview -->
+            {{ if .Url }}
+              <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                  <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-link mr-2"></i>Link Preview
+                  </h4>
+                </div>
+                <div class="p-4">
+                  {{ if .Url.Thumbnail }}
+                    <div class="flex space-x-4">
+                      <div class="flex-shrink-0">
+                        <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" alt="Preview" class="w-16 h-16 rounded-lg object-cover">
+                      </div>
+                      <div class="flex-1">
+                  {{ else }}
+                    <div>
+                  {{ end }}
+                        {{ if .Url.Title }}
+                          <h5 class="font-medium text-gray-900 mb-1">{{ .Url.Title }}</h5>
+                        {{ end }}
+                        {{ if .Url.Description }}
+                          <p class="text-sm text-gray-600 mb-2">{{ .Url.Description }}</p>
+                        {{ end }}
+                        <a href="{{ .Url.Reference }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+                          {{ .Url.Reference }}
+                          <i class="fas fa-external-link-alt ml-1"></i>
+                        </a>
+                  {{ if .Url.Thumbnail }}
+                      </div>
+                    </div>
+                  {{ else }}
+                    </div>
+                  {{ end }}
+                </div>
+              </div>
+            {{ end }}
+
+            <!-- Debug Information -->
+            {{ if .Debug }}
+              <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                  <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>Debug Information
+                  </h4>
+                </div>
+                <div class="p-4">
+                  <div class="space-y-4">
+                    
+                    <!-- Reason -->
+                    {{ if .Debug.Reason }}
+                      <div>
+                        <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Reason:</span>
+                        <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Reason }}</span>
+                      </div>
+                    {{ end }}
+
+                    {{ if .Debug.Event }}
+                    <div>
+                        <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Event:</span>
+                        <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Event }}</span>
+                      </div>
+                    {{ end }}
+
+                    <!-- Debug Info -->
+                    <div>
+                      <div class="relative">
+                        <div id="debug-info-{{ .Id }}" class="debug-info-container" data-debug-info="{{ .Debug.Info | printf "%+v" }}">
+                          
+                            
+                            
+                            {{ if .Debug.Info }}
+                              
+                              <div id="debug-info-content-{{ .Id }}" class="mt-1" data-raw-info="{{ .Debug.Info | printf "%+v" }}">
+                                <pre class="text-xs bg-white p-2 rounded border overflow-x-auto"><code>{{ .Debug.Info | printf "%+v" }}</code></pre>
+                              </div>
+                            {{ end }}
+                          
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {{ end }}
+
+            <!-- Attachment -->
+            {{ if .HasAttachment }}
+              <div class="border border-gray-200 rounded-lg overflow-hidden">
+                <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                  <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-paperclip mr-2"></i>Attachment
+                  </h4>
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <div class="flex-shrink-0">
+                        <i class="fas fa-file text-gray-400 text-xl"></i>
+                      </div>
+                      <div>
+                        <p class="text-sm font-medium text-gray-900">
+                          {{ if .Attachment.FileName }}{{ .Attachment.FileName }}{{ else }}Attachment{{ end }}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                          {{ .Attachment.Mimetype }} • {{ .Attachment.FileLength }} bytes
+                        </p>
+                      </div>
+                    </div>
+                    <a href="{{ $DOWNLOADPREFIX }}{{ .Id }}" download target="_blank" 
+                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md {{ if .Attachment.IsValidSize }}text-blue-600 bg-blue-100 hover:bg-blue-200{{ else }}text-red-600 bg-red-100 hover:bg-red-200{{ end }} transition-colors">
+                      <i class="fas fa-download mr-2"></i>
+                      Download
+                    </a>
+                  </div>
+                </div>
+              </div>
+            {{ end }}
+
+            <!-- Additional Info -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+              <div class="flex flex-wrap gap-4 text-xs text-gray-500">
+                {{ if .HasStatus }}
+                  <span class="flex items-center">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Status: {{ .Status }}
+                  </span>
+                {{ end }}
+                {{ if .TrackId }}
+                  <span class="flex items-center">
+                    <i class="fas fa-route mr-1"></i>
+                    Track ID: {{ .TrackId }}
+                  </span>
+                {{ end }}
+                {{ if .InReply }}
+                  <a href="#msg-{{ .InReply }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-reply mr-1"></i>
+                    Reply to: {{ .InReply }}
+                  </a>
+                {{ end }}
+                {{ if .FromHistory }}
+                  <span class="flex items-center text-orange-600">
+                    <i class="fas fa-history mr-1"></i>
+                    From History
+                  </span>
+                {{ end }}
+                {{ if .FromAds }}
+                  <span class="flex items-center text-purple-600">
+                    <i class="fas fa-ad mr-1"></i>
+                    From Ads
+                  </span>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+        </div>
         {{ end }}
       </div>
+
+      <!-- No Messages State -->
+      {{ if eq .Count 0 }}
+        <div class="text-center py-12">
+          <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <i class="fas fa-inbox text-gray-400 text-3xl"></i>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No messages found</h3>
+          <p class="text-gray-600">There are no messages to display for this bot.</p>
+        </div>
       {{ end }}
-    </div>
-    <a style="padding: 2rem;" href="/form/account">Back</a>
+
   </div>
-  <link href="/assets/css/container-receive.css" rel="stylesheet">
+
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* JSON Code Editor Styling */
+    .json-code-editor {
+      font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .json-code-header {
+      background: #2d2d30;
+      border-bottom: 1px solid #3e3e42;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .json-code-title {
+      color: #cccccc;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .json-code-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .json-code-button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .json-code-button:hover {
+      background: #1177bb;
+    }
+    
+    .json-code-button.success {
+      background: #16a085;
+    }
+    
+    .json-code-content {
+      position: relative;
+      max-height: 500px;
+      overflow: auto;
+    }
+    
+    .json-code-lines {
+      display: flex;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .json-line-numbers {
+      background: #252526;
+      color: #858585;
+      padding: 12px 8px;
+      text-align: right;
+      user-select: none;
+      border-right: 1px solid #3e3e42;
+      min-width: 40px;
+      font-size: 12px;
+    }
+    
+    .json-line-numbers .line-number {
+      display: block;
+      height: 19.5px;
+      line-height: 19.5px;
+    }
+    
+    .json-code-text {
+      flex: 1;
+      padding: 12px;
+      white-space: pre;
+      overflow: visible;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    /* JSON Syntax Highlighting - VS Code Dark Theme */
+    .json-key { 
+      color: #9cdcfe; 
+      font-weight: normal;
+    }
+    .json-string { 
+      color: #ce9178; 
+    }
+    .json-number { 
+      color: #b5cea8; 
+    }
+    .json-boolean { 
+      color: #569cd6; 
+      font-weight: bold;
+    }
+    .json-null { 
+      color: #569cd6; 
+      font-style: italic;
+    }
+    .json-punctuation {
+      color: #d4d4d4;
+    }
+    
+    /* Legacy JSON container styling */
+    .json-container {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    .json-container pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .json-container code {
+      background: none;
+      padding: 0;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    
+    /* Message filtering */
+    .message-item.hidden {
+      display: none !important;
+    }
+    
+    .debug-message {
+      border-left: 4px solid #EF4444;
+    }
+    
+    .sent-message {
+      border-left: 4px solid #3B82F6;
+    }
+    
+    .received-message {
+      border-left: 4px solid #10B981;
+    }
+    
+    /* Toggle buttons styling */
+    .view-toggle {
+      background: #2d2d30;
+      border: 1px solid #3e3e42;
+      color: #cccccc;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .view-toggle.active {
+      background: #0e639c;
+      color: white;
+    }
+    
+    .view-toggle:hover {
+      background: #3e3e42;
+    }
+    
+    .view-toggle.active:hover {
+      background: #1177bb;
+    }
+  </style>
+
+  <script>
+    // Enhanced JSON detection and beautification
+    function isValidJSON(str) {
+      if (!str || typeof str !== 'string') return false;
+      str = str.trim();
+      
+      // Handle Go struct format like "map[key:value]" or similar patterns
+      if (str.startsWith('map[') || str.includes(':') && !str.startsWith('{') && !str.startsWith('[')) {
+        return false;
+      }
+      
+      if (!str.startsWith('{') && !str.startsWith('[')) return false;
+      
+      try {
+        JSON.parse(str);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function beautifyJSON(jsonString) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        return JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        return jsonString;
+      }
+    }
+
+    function highlightJSON(jsonString) {
+      return jsonString
+        .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+        .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+        .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+        .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+        .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+        .replace(/([{}[\],])/g, '<span class="json-punctuation">$1</span>');
+    }
+
+    function createJSONCodeEditor(jsonString, elementId, title = 'JSON') {
+      const beautified = beautifyJSON(jsonString);
+      const lines = beautified.split('\n');
+      const highlighted = highlightJSON(beautified);
+      
+      // Create line numbers
+      const lineNumbers = lines.map((_, index) => 
+        `<span class="line-number">${index + 1}</span>`
+      ).join('');
+      
+      return `
+        <div class="json-code-editor">
+          <div class="json-code-header">
+            <div class="json-code-title">
+              <i class="fas fa-code" style="margin-right: 6px;"></i>
+              ${title} (${lines.length} lines)
+            </div>
+            <div class="json-code-actions">
+              <button class="json-code-button" onclick="toggleJSONView('${elementId}')" title="Toggle Raw/Formatted">
+                <i class="fas fa-eye"></i>
+                <span class="view-mode">Formatted</span>
+              </button>
+              <button class="json-code-button" onclick="copyJSONCode('${elementId}')" title="Copy to Clipboard">
+                <i class="fas fa-copy"></i>
+                Copy
+              </button>
+            </div>
+          </div>
+          <div class="json-code-content">
+            <div class="json-code-lines">
+              <div class="json-line-numbers">${lineNumbers}</div>
+              <div class="json-code-text formatted-view">${highlighted}</div>
+              <div class="json-code-text raw-view" style="display: none;">${escapeHtml(jsonString)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function toggleJSONView(elementId) {
+      const container = document.getElementById(elementId);
+      const formattedView = container.querySelector('.formatted-view');
+      const rawView = container.querySelector('.raw-view');
+      const viewModeSpan = container.querySelector('.view-mode');
+      
+      if (formattedView.style.display === 'none') {
+        // Switch to formatted view
+        formattedView.style.display = 'block';
+        rawView.style.display = 'none';
+        viewModeSpan.textContent = 'Formatted';
+      } else {
+        // Switch to raw view
+        formattedView.style.display = 'none';
+        rawView.style.display = 'block';
+        viewModeSpan.textContent = 'Raw';
+      }
+    }
+
+    function copyJSONCode(elementId) {
+      const container = document.getElementById(elementId);
+      const formattedView = container.querySelector('.formatted-view');
+      const rawView = container.querySelector('.raw-view');
+      
+      // Get the text content from the currently visible view
+      const textToCopy = formattedView.style.display === 'none' 
+        ? rawView.textContent 
+        : formattedView.textContent;
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        // Show success feedback
+        const button = container.querySelector('.json-code-button[onclick*="copyJSONCode"]');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.classList.add('success');
+        
+        setTimeout(() => {
+          button.innerHTML = originalHTML;
+          button.classList.remove('success');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy JSON: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      });
+    }
+
+    function processMessageText() {
+      const messageTextElements = document.querySelectorAll('[id^="message-text-"]');
+      
+      messageTextElements.forEach(element => {
+        const text = element.getAttribute('data-original-text') || element.textContent.trim();
+        
+        if (isValidJSON(text)) {
+          const editorHTML = createJSONCodeEditor(text, element.id, 'JSON Message');
+          element.innerHTML = editorHTML;
+          element.classList.remove('whitespace-pre-wrap');
+        }
+      });
+    }
+
+    function processDebugInfo() {
+      const debugElements = document.querySelectorAll('[id^="debug-info-content-"]');
+      
+      debugElements.forEach(element => {
+        const rawInfo = element.getAttribute('data-raw-info');
+
+        
+        if (rawInfo) {
+          // Check if it contains binary data or is a Go struct
+          if (hasBinaryData(rawInfo) || isGoStruct(rawInfo)) {
+
+            const jsonWithPlaceholders = convertToJSONWithBinaryPlaceholders(rawInfo, element.id);
+            element.innerHTML = jsonWithPlaceholders;
+          } else {
+            // Try to process as regular JSON
+            if (isValidJSON(rawInfo)) {
+
+              const editorHTML = createJSONCodeEditor(rawInfo, element.id, 'Info');
+              element.innerHTML = editorHTML;
+            } else {
+
+            }
+          }
+        }
+      });
+    }
+
+    // Convert Go struct to JSON format with binary placeholders
+    function convertToJSONWithBinaryPlaceholders(structData, elementId) {
+      const fields = parseGoStructFields(structData);
+      
+      if (fields.length === 0) {
+        return `<pre class="text-xs bg-white p-2 rounded border overflow-x-auto"><code>${escapeHtml(structData)}</code></pre>`;
+      }
+      
+      // Create JSON object with binary placeholders
+      const jsonObject = {};
+      fields.forEach(field => {
+        if (field.isBinary) {
+          jsonObject[field.key] = "This Field Contains Binary Data not Valid For Visualization on Json";
+        } else {
+          // Try to parse the value appropriately
+          let value = field.value;
+          
+          // Remove quotes if they wrap the entire value
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1);
+          }
+          
+          // Try to parse as number or boolean
+          if (value.toLowerCase() === 'true') {
+            jsonObject[field.key] = true;
+          } else if (value.toLowerCase() === 'false') {
+            jsonObject[field.key] = false;
+          } else if (value.toLowerCase() === 'null') {
+            jsonObject[field.key] = null;
+          } else if (!isNaN(value) && !isNaN(parseFloat(value)) && value.trim() !== '') {
+            jsonObject[field.key] = parseFloat(value);
+          } else {
+            jsonObject[field.key] = value;
+          }
+        }
+      });
+      
+      // Convert to formatted JSON string
+      const jsonString = JSON.stringify(jsonObject, null, 2);
+      
+      // Create JSON code editor
+      return createJSONCodeEditor(jsonString, elementId, 'Info (JSON)');
+    }
+
+    // Parse Go struct fields from string representation
+    function parseGoStructFields(structStr) {
+      const fields = [];
+      
+      try {
+        // Pattern to match Go struct fields like: fieldName:"value" or fieldName:value
+        const fieldPattern = /(\w+):\s*("(?:[^"\\]|\\.)*"|[^\s]+)/g;
+        let match;
+        
+        while ((match = fieldPattern.exec(structStr)) !== null) {
+          const key = match[1];
+          let value = match[2];
+          
+          // Check if value contains binary data
+          const isBinary = hasBinaryData(value) || value.length > 200;
+          
+          fields.push({
+            key: key,
+            value: value,
+            isBinary: isBinary
+          });
+        }
+        
+        // If no fields found with the regex, try a simpler approach
+        if (fields.length === 0) {
+          const simplePattern = /(\w+):\s*([^\s]+(?:\s+[^\w:]+)*)/g;
+          while ((match = simplePattern.exec(structStr)) !== null) {
+            fields.push({
+              key: match[1],
+              value: match[2].trim(),
+              isBinary: hasBinaryData(match[2])
+            });
+          }
+        }
+        
+      } catch (e) {
+        console.error('Error parsing Go struct fields:', e);
+      }
+      
+      return fields;
+    }
+
+    // Check if data contains binary content
+    function hasBinaryData(str) {
+      // Look for common binary data patterns like \x followed by hex digits
+      return /\\x[0-9a-fA-F]{2}/.test(str) || 
+             /\x00/.test(str) || // null bytes
+             str.includes('axolotlSenderKeyDistributionMessage') || // WhatsApp specific binary
+             str.includes('SenderKeyDistributionMessage');
+    }
+
+    // Check if string looks like a Go struct
+    function isGoStruct(str) {
+      return str.includes(':') && 
+             (str.includes('groupID:') || 
+              str.includes('axolotl') ||
+              /\w+:\s*"[^"]*"/.test(str)) &&
+             !str.startsWith('{') && 
+             !str.startsWith('[');
+    }
+
+    // Legacy copy function for backward compatibility
+    function copyJSONToClipboard(elementId) {
+      const element = document.getElementById(elementId);
+      const codeElement = element.querySelector('pre code') || element.querySelector('.json-code-text');
+      const jsonText = codeElement ? codeElement.textContent : element.textContent;
+      
+      navigator.clipboard.writeText(jsonText).then(() => {
+        // Show success feedback
+        const button = event.target.closest('button');
+        if (button) {
+          const originalText = button.innerHTML;
+          button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+          button.classList.add('bg-green-100', 'text-green-700');
+          button.classList.remove('bg-blue-100', 'text-blue-700');
+          
+          setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-100', 'text-green-700');
+            button.classList.add('bg-blue-100', 'text-blue-700');
+          }, 2000);
+        }
+      }).catch(err => {
+        console.error('Failed to copy JSON: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = jsonText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      });
+    }
+
+    // Update message counts
+    function updateMessageCounts() {
+      const allMessages = document.querySelectorAll('.message-item');
+      
+      let debugCount = 0;
+      let sentCount = 0;
+      let receivedCount = 0;
+      
+      allMessages.forEach((message, index) => {
+        const hasDebug = message.getAttribute('data-has-debug');
+        const fromMe = message.getAttribute('data-from-me');
+        
+        if (hasDebug === 'true') {
+          debugCount++;
+        }
+        
+        if (fromMe === 'true') {
+          sentCount++;
+        } else {
+          receivedCount++;
+        }
+      });
+      
+      // Update the display
+      document.getElementById('sentCount').textContent = sentCount;
+      document.getElementById('receivedCount').textContent = receivedCount;
+      document.getElementById('debugCount').textContent = debugCount;
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        const allMessages = document.querySelectorAll('.message-item');
+        
+        // Make sure all messages are visible initially
+        allMessages.forEach(message => {
+          message.classList.remove('hidden');
+          message.style.display = '';
+        });
+        
+        // Process JSON messages and debug info
+        processMessageText();
+        processDebugInfo();
+        
+        // Update counts
+        updateMessageCounts();
+      }, 100);
+    });
+  </script>
 {{ end }}

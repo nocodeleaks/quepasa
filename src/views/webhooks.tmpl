@@ -50,18 +50,18 @@
                   <p class="text-sm text-gray-500">Track ID: {{ if .TrackId }}{{ .TrackId }}{{ else }}None{{ end }}</p>
                 </div>
               </div>
-              
-              <div class="flex items-center space-x-2">
-                {{ if .Failure }}
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    <i class="fas fa-exclamation-triangle mr-1"></i>Failed
-                  </span>
-                {{ else }}
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <i class="fas fa-check-circle mr-1"></i>Active
-                  </span>
-                {{ end }}
-              </div>
+
+              <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div class="flex justify-end">
+              <form method="post" action="/form/delete?token={{ $.Server.Token }}&key=webhook">
+                <input name="url" type="hidden" value="{{ .Url }}">
+                <button class="inline-flex items-center px-3 py-2 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg hover:bg-red-200 transition-colors"
+                        onclick="return confirm('⚠️ Are you sure you want to delete this webhook?\n\nURL: {{ .Url }}\n{{ if .TrackId }}Track ID: {{ .TrackId }}\n{{ end }}\nThis action cannot be undone!')">
+                  <i class="fas fa-trash mr-1"></i>Delete WebHook
+                </button>
+              </form>
+            </div>
+          </div>
             </div>
           </div>
 
@@ -107,16 +107,12 @@
 
             <!-- Extra Information -->
             {{ if .IsSetExtra }}
-              <div class="mb-4 border border-blue-200 rounded-lg overflow-hidden bg-blue-50">
-                <div class="bg-blue-100 px-4 py-2 border-b border-blue-200">
-                  <h4 class="text-sm font-medium text-blue-900 flex items-center">
-                    <i class="fas fa-info-circle mr-2"></i>Extra Configuration
-                  </h4>
-                </div>
                 <div class="p-4">
-                  <pre class="text-xs bg-blue-100 p-3 rounded border overflow-x-auto"><code>{{ .Extra }}</code></pre>
+                  <div id="webhook-extra-{{ .Url | printf "%x" }}" data-raw-extra="{{ .Extra }}">
+                    <pre class="text-xs bg-blue-100 p-3 rounded border overflow-x-auto"><code>{{ .Extra }}</code></pre>
+                  </div>
                 </div>
-              </div>
+              
             {{ end }}
 
             <!-- Failure Information -->
@@ -135,17 +131,6 @@
           </div>
 
           <!-- WebHook Actions -->
-          <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
-            <div class="flex justify-end">
-              <form method="post" action="/form/delete?token={{ $.Server.Token }}&key=webhook">
-                <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="inline-flex items-center px-3 py-2 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg hover:bg-red-200 transition-colors"
-                        onclick="return confirm('⚠️ Are you sure you want to delete this webhook?\n\nURL: {{ .Url }}\n{{ if .TrackId }}Track ID: {{ .TrackId }}\n{{ end }}\nThis action cannot be undone!')">
-                  <i class="fas fa-trash mr-1"></i>Delete WebHook
-                </button>
-              </form>
-            </div>
-          </div>
         </div>
         {{ end }}
 
@@ -307,6 +292,125 @@
     </div>
   </div>
 
+  <style>
+    /* JSON Code Editor Styling */
+    .json-code-editor {
+      font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .json-code-header {
+      background: #2d2d30;
+      border-bottom: 1px solid #3e3e42;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .json-code-title {
+      color: #cccccc;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .json-code-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .json-code-button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .json-code-button:hover {
+      background: #1177bb;
+    }
+    
+    .json-code-button.success {
+      background: #16a085;
+    }
+    
+    .json-code-content {
+      position: relative;
+      max-height: 500px;
+      overflow: auto;
+    }
+    
+    .json-code-lines {
+      display: flex;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .json-line-numbers {
+      background: #252526;
+      color: #858585;
+      padding: 12px 8px;
+      text-align: right;
+      user-select: none;
+      border-right: 1px solid #3e3e42;
+      min-width: 40px;
+      font-size: 12px;
+    }
+    
+    .json-line-numbers .line-number {
+      display: block;
+      height: 19.5px;
+      line-height: 19.5px;
+    }
+    
+    .json-code-text {
+      flex: 1;
+      padding: 12px;
+      white-space: pre;
+      overflow: visible;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    /* JSON Syntax Highlighting */
+    .json-key { 
+      color: #9cdcfe; 
+      font-weight: normal;
+    }
+    .json-string { 
+      color: #ce9178; 
+    }
+    .json-number { 
+      color: #b5cea8; 
+    }
+    .json-boolean { 
+      color: #569cd6; 
+      font-weight: bold;
+    }
+    .json-null { 
+      color: #569cd6; 
+      font-style: italic;
+    }
+    .json-punctuation {
+      color: #d4d4d4;
+    }
+
+    /* ...existing code... */
+  </style>
+
   <script>
     function showAddWebhookModal() {
       document.getElementById('addWebhookModal').classList.remove('hidden');
@@ -456,11 +560,276 @@
       document.getElementById('extraJson').value = Object.keys(extraData).length > 0 ? JSON.stringify(extraData) : '';
     }
     
-    // Close modal when clicking outside
-    document.getElementById('addWebhookModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        hideAddWebhookModal();
+    // JSON processing functions (similar to receive.tmpl)
+    function isValidJSON(str) {
+      if (!str || typeof str !== 'string') return false;
+      str = str.trim();
+      
+      if (str.startsWith('map[...]') || (str.includes(':') && !str.startsWith('{') && !str.startsWith('['))) {
+        return false;
       }
+      
+      if (!str.startsWith('{') && !str.startsWith('[')) return false;
+      
+      try {
+        JSON.parse(str);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function beautifyJSON(jsonString) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        return JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        return jsonString;
+      }
+    }
+
+    function highlightJSON(jsonString) {
+      return jsonString
+        .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+        .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+        .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+        .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+        .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+        .replace(/([{}[\],])/g, '<span class="json-punctuation">$1</span>');
+    }
+
+    function createJSONCodeEditor(jsonString, elementId, title = 'JSON') {
+      const beautified = beautifyJSON(jsonString);
+      const lines = beautified.split('\n');
+      const highlighted = highlightJSON(beautified);
+      
+      const lineNumbers = lines.map((_, index) => 
+        `<span class="line-number">${index + 1}</span>`
+      ).join('');
+      
+      return `
+        <div class="json-code-editor">
+          <div class="json-code-header">
+            <div class="json-code-title">
+              <i class="fas fa-code" style="margin-right: 6px;"></i>
+              ${title} (${lines.length} lines)
+            </div>
+            <div class="json-code-actions">
+              <button class="json-code-button" onclick="toggleJSONView('${elementId}')" title="Toggle Raw/Formatted">
+                <i class="fas fa-eye"></i>
+                <span class="view-mode">Formatted</span>
+              </button>
+              <button class="json-code-button" onclick="copyJSONCode('${elementId}')" title="Copy to Clipboard">
+                <i class="fas fa-copy"></i>
+                Copy
+              </button>
+            </div>
+          </div>
+          <div class="json-code-content">
+            <div class="json-code-lines">
+              <div class="json-line-numbers">${lineNumbers}</div>
+              <div class="json-code-text formatted-view">${highlighted}</div>
+              <div class="json-code-text raw-view" style="display: none;">${escapeHtml(jsonString)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function toggleJSONView(elementId) {
+      const container = document.getElementById(elementId);
+      const formattedView = container.querySelector('.formatted-view');
+      const rawView = container.querySelector('.raw-view');
+      const viewModeSpan = container.querySelector('.view-mode');
+      
+      if (formattedView.style.display === 'none') {
+        formattedView.style.display = 'block';
+        rawView.style.display = 'none';
+        viewModeSpan.textContent = 'Formatted';
+      } else {
+        formattedView.style.display = 'none';
+        rawView.style.display = 'block';
+        viewModeSpan.textContent = 'Raw';
+      }
+    }
+
+    function copyJSONCode(elementId) {
+      const container = document.getElementById(elementId);
+      const formattedView = container.querySelector('.formatted-view');
+      const rawView = container.querySelector('.raw-view');
+      
+      const textToCopy = formattedView.style.display === 'none' 
+        ? rawView.textContent 
+        : formattedView.textContent;
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const button = container.querySelector('.json-code-button[onclick*="copyJSONCode"]');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.classList.add('success');
+        
+        setTimeout(() => {
+          button.innerHTML = originalHTML;
+          button.classList.remove('success');
+        }, 2000);
+      }).catch(err => {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      });
+    }
+
+    // Convert Go map to JSON with proper formatting
+    function convertToJSONWithPlaceholders(mapData, elementId) {
+      const fields = parseGoMapFields(mapData);
+      
+      if (fields.length === 0) {
+        return `<pre class="text-xs bg-blue-100 p-3 rounded border overflow-x-auto"><code>${escapeHtml(mapData)}</code></pre>`;
+      }
+      
+      const jsonObject = {};
+      fields.forEach(field => {
+        let value = field.value;
+        
+        // Remove quotes if they wrap the entire value
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.slice(1, -1);
+        }
+        
+        // Try to parse as appropriate type
+        if (value.toLowerCase() === 'true') {
+          jsonObject[field.key] = true;
+        } else if (value.toLowerCase() === 'false') {
+          jsonObject[field.key] = false;
+        } else if (value.toLowerCase() === 'null') {
+          jsonObject[field.key] = null;
+        } else if (!isNaN(value) && !isNaN(parseFloat(value)) && value.trim() !== '') {
+          jsonObject[field.key] = parseFloat(value);
+        } else {
+          jsonObject[field.key] = value;
+        }
+      });
+      
+      const jsonString = JSON.stringify(jsonObject, null, 2);
+      return createJSONCodeEditor(jsonString, elementId, 'Extra Configuration (JSON)');
+    }
+
+    // Parse Go map fields from string representation
+    function parseGoMapFields(mapStr) {
+      const fields = [];
+      
+      try {
+        
+        // Extract content between square brackets - fix the regex
+        const mapContentMatch = mapStr.match(/^map\[[^\]]*\](.*)$/);
+        let cleaned;
+        
+        if (mapContentMatch) {
+          cleaned = mapContentMatch[1].trim();
+        } else {
+          // Fallback: try to find content after the first ]
+          const bracketIndex = mapStr.indexOf(']');
+          if (bracketIndex !== -1) {
+            cleaned = mapStr.substring(bracketIndex + 1).trim();
+          } else {
+            cleaned = mapStr.trim();
+          }
+        }
+        
+        
+        // If cleaned is empty, the content is inside the brackets
+        if (!cleaned && mapStr.includes('[') && mapStr.includes(']')) {
+          const startBracket = mapStr.indexOf('[');
+          const endBracket = mapStr.lastIndexOf(']');
+          if (startBracket !== -1 && endBracket !== -1 && endBracket > startBracket) {
+            cleaned = mapStr.substring(startBracket + 1, endBracket).trim();
+          }
+        }
+        
+        if (!cleaned) {
+          return fields;
+        }
+        
+        // Split by spaces and look for key:value patterns
+        const parts = cleaned.split(/\s+/);
+
+        
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (part.includes(':')) {
+            const colonIndex = part.indexOf(':');
+            const key = part.substring(0, colonIndex);
+            let value = part.substring(colonIndex + 1);
+            
+            // If value is empty or looks incomplete, check next parts
+            if (!value || (value && i + 1 < parts.length && !parts[i + 1].includes(':'))) {
+              // Collect consecutive parts that don't contain ':' as part of the value
+              const valueParts = [value];
+              let j = i + 1;
+              while (j < parts.length && !parts[j].includes(':')) {
+                valueParts.push(parts[j]);
+                j++;
+              }
+              value = valueParts.join(' ').trim();
+              i = j - 1; // Skip the parts we've consumed
+            }
+            
+            if (key && value) {
+              fields.push({
+                key: key,
+                value: value
+              });
+            }
+          }
+        }
+        
+
+        
+      } catch (e) {
+
+      }
+      
+      return fields;
+    }
+
+    // Check if string looks like a Go map
+    function isGoMap(str) {
+      return str.includes('map[') && str.includes(':');
+    }
+
+    // Process webhook extra configurations
+    function processWebhookExtras() {
+      const extraElements = document.querySelectorAll('[id^="webhook-extra-"]');
+      
+      extraElements.forEach(element => {
+        const rawExtra = element.getAttribute('data-raw-extra');
+        
+        if (rawExtra) {
+          if (isGoMap(rawExtra)) {
+
+            const jsonWithFormatting = convertToJSONWithPlaceholders(rawExtra, element.id);
+            element.innerHTML = jsonWithFormatting;
+          } else if (isValidJSON(rawExtra)) {
+
+            const editorHTML = createJSONCodeEditor(rawExtra, element.id, 'Extra Configuration');
+            element.innerHTML = editorHTML;
+          }
+        }
+      });
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      processWebhookExtras();
     });
   </script>
 {{ end }}

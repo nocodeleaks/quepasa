@@ -8,11 +8,12 @@ on:
     branches:
       - main
       - develop
+      - new-ui          # adicionada branch new-ui
     tags:
       - v*
 
 permissions:
-  contents: write    # para criar tags e releases
+  contents: write
 
 env:
   REGISTRY: docker.io
@@ -153,3 +154,32 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
+
+  push_new_ui:
+    if: github.ref == 'refs/heads/new-ui'
+    name: Build & Push New-UI Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Extract QpVersion
+        id: extract_version_newui
+        run: |
+          VERSION=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image (new-ui)
+        uses: docker/build-push-action@v4.1.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}

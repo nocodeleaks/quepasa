@@ -2,19 +2,22 @@
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900">WebHooks</h1>
-            <p class="text-gray-600 mt-1">{{ len .Server.Webhooks }} webhook(s) for <span class="font-semibold">{{ .Server.Wid }}</span></p>
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 truncate">WebHooks</h1>
+            <p class="text-xs sm:text-sm text-gray-600 truncate">{{ len .Server.Webhooks }} webhook(s) for <span class="font-semibold">{{ .Server.Wid }}</span></p>
           </div>
-          <div class="flex items-center space-x-4">
-            <button onclick="showAddWebhookModal()" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
-              <i class="fas fa-plus mr-2"></i>
-              Add WebHook
+          <div class="flex items-center space-x-2 flex-shrink-0">
+            <button onclick="showAddWebhookModal()" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm">
+              <i class="fas fa-plus mr-1 sm:mr-2"></i>
+              <span class="hidden sm:inline">Add WebHook</span>
+              <span class="sm:hidden">Add</span>
             </button>
-            <a href="/form/account" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-              <i class="fas fa-arrow-left mr-2"></i>Back
+            <a href="/form/account" class="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm">
+              <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+              <span class="sm:hidden">Back</span>
+              <span class="hidden sm:inline">Back</span>
             </a>
           </div>
         </div>
@@ -40,67 +43,77 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
           <!-- WebHook Header -->
           <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div class="flex items-center space-x-3 min-w-0 flex-1">
+                <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-webhook text-white"></i>
                 </div>
-                <div class="flex-1">
+                <div class="min-w-0 flex-1">
                   <h3 class="font-semibold text-gray-900 truncate">{{ .Url }}</h3>
-                  <p class="text-sm text-gray-500">Track ID: {{ if .TrackId }}{{ .TrackId }}{{ else }}None{{ end }}</p>
+                  <p class="text-sm text-gray-500 truncate">Track ID: {{ if .TrackId }}{{ .TrackId }}{{ else }}None{{ end }}</p>
                 </div>
               </div>
-
-              <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
-            <div class="flex justify-end">
-              <form method="post" action="/form/delete?token={{ $.Server.Token }}&key=webhook">
-                <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="inline-flex items-center px-3 py-2 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg hover:bg-red-200 transition-colors"
-                        onclick="return confirm('⚠️ Are you sure you want to delete this webhook?\n\nURL: {{ .Url }}\n{{ if .TrackId }}Track ID: {{ .TrackId }}\n{{ end }}\nThis action cannot be undone!')">
-                  <i class="fas fa-trash mr-1"></i>Delete WebHook
-                </button>
-              </form>
-            </div>
-          </div>
+              
+              <div class="flex items-center space-x-2 flex-shrink-0">
+                <form method="post" action="/form/delete?token={{ $.Server.Token }}&key=webhook" class="inline">
+                  <input name="url" type="hidden" value="{{ .Url }}">
+                  <button class="inline-flex items-center px-3 py-2 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg hover:bg-red-200 transition-colors"
+                          onclick="return confirm('⚠️ Are you sure you want to delete this webhook?\n\nURL: {{ .Url }}\n{{ if .TrackId }}Track ID: {{ .TrackId }}\n{{ end }}\nThis action cannot be undone!')">
+                    <i class="fas fa-trash mr-1 sm:mr-2"></i>
+                    <span class="hidden sm:inline">Delete WebHook</span>
+                    <span class="sm:hidden">Delete</span>
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
 
           <!-- WebHook Content -->
           <div class="px-6 py-4">
             <!-- Configuration Toggles -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-4">
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-forwardinternal">
                 <input name="url" type="hidden" value="{{ .Url }}" />
-                <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .ForwardInternal }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
-                  <i class="fas fa-share mr-1"></i>Forward Internal
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .ForwardInternal }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                  <i class="fas fa-share mr-1"></i>
+                  <span class="hidden sm:inline">Forward Internal</span>
+                  <span class="sm:hidden">Forward</span>
                 </button>
               </form>
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-broadcasts">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
-                  <i class="fas fa-comment-dots mr-1"></i>Broadcasts
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                  <i class="fas fa-comment-dots mr-1"></i>
+                  <span class="hidden sm:inline">Broadcasts</span>
+                  <span class="sm:hidden">Broad</span>
                 </button>
               </form>
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-groups">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
-                  <i class="fas fa-comments mr-1"></i>Groups
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                  <i class="fas fa-comments mr-1"></i>
+                  <span class="hidden sm:inline">Groups</span>
+                  <span class="sm:hidden">Groups</span>
                 </button>
               </form>
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-readreceipts">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
-                  <i class="fas fa-check mr-1"></i>Receipts
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                  <i class="fas fa-check mr-1"></i>
+                  <span class="hidden sm:inline">Receipts</span>
+                  <span class="sm:hidden">Rcpts</span>
                 </button>
               </form>
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-calls">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
-                  <i class="fas fa-phone mr-1"></i>Calls
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                  <i class="fas fa-phone mr-1"></i>
+                  <span class="hidden sm:inline">Calls</span>
+                  <span class="sm:hidden">Calls</span>
                 </button>
               </form>
             </div>
@@ -408,7 +421,31 @@
       color: #d4d4d4;
     }
 
-    /* ...existing code... */
+    /* Webhook specific mobile styles */
+    @media (max-width: 640px) {
+      .webhook-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+      }
+      
+      .webhook-button {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+      }
+      
+      .webhook-url {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+      }
+    }
+    
+    /* Ensure text truncation works properly */
+    .truncate-url {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
   </style>
 
   <script>

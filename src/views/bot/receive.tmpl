@@ -4,18 +4,17 @@
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900">Messages</h1>
-            <p class="text-gray-600 mt-1">{{ .Count }} messages for {{ .Number }}</p>
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 truncate">Messages</h1>
+            <p class="text-xs sm:text-sm text-gray-600 truncate">{{ .Count }} messages for {{ .Number }}</p>
           </div>
-          <div class="flex items-center space-x-4">
-            <a href="/form/account" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
-              <i class="fas fa-arrow-left mr-2"></i>
-              Back to Dashboard
-            </a>
-          </div>
+          <a href="/form/account" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm flex-shrink-0">
+            <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+            <span class="hidden sm:inline">Back to Dashboard</span>
+            <span class="sm:hidden">Back</span>
+          </a>
         </div>
       </div>
     </div>
@@ -34,23 +33,23 @@
 
     <!-- Message Statistics -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-4">
+        <div class="grid grid-cols-4 gap-1 sm:gap-4 text-center">
           <div>
-            <span class="text-2xl font-bold text-gray-900" id="totalCount">{{ .Count }}</span>
-            <p class="text-sm text-gray-600">Total Messages</p>
+            <span class="text-lg sm:text-3xl font-bold text-gray-900 block" id="totalCount">{{ .Count }}</span>
+            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Total</p>
           </div>
           <div>
-            <span class="text-2xl font-bold text-blue-600" id="sentCount">-</span>
-            <p class="text-sm text-gray-600">Sent Messages</p>
+            <span class="text-lg sm:text-3xl font-bold text-blue-600 block" id="sentCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Sent</p>
           </div>
           <div>
-            <span class="text-2xl font-bold text-green-600" id="receivedCount">-</span>
-            <p class="text-sm text-gray-600">Received Messages</p>
+            <span class="text-lg sm:text-3xl font-bold text-green-600 block" id="receivedCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Received</p>
           </div>
           <div>
-            <span class="text-2xl font-bold text-red-600" id="debugCount">-</span>
-            <p class="text-sm text-gray-600">Debug Messages</p>
+            <span class="text-lg sm:text-3xl font-bold text-red-600 block" id="debugCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Debug</p>
           </div>
         </div>
       </div>
@@ -252,11 +251,21 @@
 
             <!-- Additional Info -->
             <div class="mt-4 pt-4 border-t border-gray-100">
-              <div class="flex flex-wrap gap-4 text-xs text-gray-500">
-                {{ if .HasStatus }}
+              <div class="flex flex-wrap gap-4 text-sm text-gray-500">
+                {{ if eq .Status "read" }}
                   <span class="flex items-center">
                     <i class="fas fa-info-circle mr-1"></i>
-                    Status: {{ .Status }}
+                    Status: Read
+                  </span>
+                {{ else if eq .Status "delivered" }}
+                  <span class="flex items-center">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Status: Delivered
+                  </span>
+                {{ else if eq .Status "" }}
+                  <span class="flex items-center">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Status: {{if .Status}}{{.Status}}{{else}}Unknown{{end}}
                   </span>
                 {{ end }}
                 {{ if .TrackId }}

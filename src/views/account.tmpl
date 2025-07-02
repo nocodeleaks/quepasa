@@ -400,38 +400,38 @@
           <div class="px-4 py-4">
             <!-- Main Bot Info Row -->
             <div class="flex items-center justify-between mb-3">
-              <!-- Bot Info - Left Side -->
-              <div class="flex items-center space-x-3 min-w-0 flex-1">
-                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                <!-- Bot Info - Left Side -->
+                <div class="flex items-center space-x-3 min-w-0 flex-1">
+                <div class="w-10 h-10 {{ if eq .GetStatusString "Ready" }}bg-green-500{{ else if eq .GetStatusString "Connected" }}bg-blue-500{{ else if eq .GetStatusString "Connecting" }}bg-yellow-500{{ else if eq .GetStatusString "Starting" }}bg-yellow-500{{ else if eq .GetStatusString "Fetching" }}bg-blue-500{{ else if eq .GetStatusString "UnVerified" }}bg-orange-500{{ else if eq .GetStatusString "Stopping" }}bg-gray-500{{ else if eq .GetStatusString "Stopped" }}bg-gray-500{{ else if eq .GetStatusString "Restarting" }}bg-yellow-500{{ else if eq .GetStatusString "Disconnected" }}bg-gray-500{{ else if eq .GetStatusString "Failed" }}bg-red-500{{ else if eq .GetStatusString "Halting" }}bg-gray-500{{ else }}bg-gray-500{{ end }} rounded-full flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-robot text-white text-sm"></i>
                 </div>
                 
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center space-x-2 mb-1">
-                    <h3 class="font-semibold text-gray-900 dark:text-white truncate w-32 text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
-                    
-                    <!-- Status Indicator -->
-                    <div class="flex items-center space-x-1 flex-shrink-0">
-                      {{ if eq .GetStatusString "Ready" }}
-                        <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                        <span class="text-sm text-green-700 font-medium">Ready</span>
-                      {{ else if eq .GetStatusString "Connected" }}
-                        <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
-                        <span class="text-sm text-blue-700 font-medium">Connected</span>
-                      {{ else if eq .GetStatusString "Connecting" }}
-                        <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                        <span class="text-sm text-yellow-700 font-medium">Connecting</span>
-                      {{ else if eq .GetStatusString "UnVerified" }}
-                        <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
-                        <span class="text-sm text-orange-700 font-medium">Unverified</span>
-                      {{ else if eq .GetStatusString "Failed" }}
-                        <span class="w-2 h-2 bg-red-400 rounded-full"></span>
-                        <span class="text-sm text-red-700 font-medium">Failed</span>
-                      {{ else }}
-                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                        <span class="text-sm text-gray-700 font-medium">{{ .GetStatusString }}</span>
-                      {{ end }}
-                    </div>
+                  <h3 class="font-semibold text-gray-900 dark:text-white truncate w-32 text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                  
+                  <!-- Status Indicator -->
+                  <div class="flex items-center space-x-1 flex-shrink-0">
+                    {{ if eq .GetStatusString "Ready" }}
+                    <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+                    <span class="text-sm text-green-700 font-medium">Ready</span>
+                    {{ else if eq .GetStatusString "Connected" }}
+                    <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
+                    <span class="text-sm text-blue-700 font-medium">Connected</span>
+                    {{ else if eq .GetStatusString "Connecting" }}
+                    <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                    <span class="text-sm text-yellow-700 font-medium">Connecting</span>
+                    {{ else if eq .GetStatusString "UnVerified" }}
+                    <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
+                    <span class="text-sm text-orange-700 font-medium">Unverified</span>
+                    {{ else if eq .GetStatusString "Failed" }}
+                    <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                    <span class="text-sm text-red-700 font-medium">Failed</span>
+                    {{ else }}
+                    <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span class="text-sm text-gray-700 font-medium">{{ .GetStatusString }}</span>
+                    {{ end }}
+                  </div>
                     
                     <div class="flex items-center justify-between w-full">
                     <div class="flex items-center space-x-2 min-w-0">

@@ -214,7 +214,7 @@
             <div class="mb-4">
               <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Token</label>
               <div class="mt-1 flex items-center space-x-2">
-                <code class="flex-1 text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
+                <code class="flex-1 text-xs text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
                       onclick="CopyToClipboard(this.textContent)" 
                       title="Click to copy">
                   {{ .Token }}
@@ -260,7 +260,7 @@
               <!-- Mobile/Tablet View - Dropdown Menu (Hidden on Desktop) -->
               <div class="mb-4 lg:hidden">
                 <div class="relative inline-block text-left">
-                  <button onclick="toggleDropdown('dropdown-{{ .Token }}')" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white dark:bg-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary">
+                  <button onclick="toggleDropdown('dropdown-{{ .Token }}')" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs dark:text-white bg-white dark:bg-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary">
                     <i class="fas fa-cog mr-2"></i>
                     Settings
                     <i class="fas fa-chevron-down ml-2"></i>
@@ -400,58 +400,51 @@
           <div class="px-4 py-4">
             <!-- Main Bot Info Row -->
             <div class="flex items-center justify-between mb-3">
-                <!-- Bot Info - Left Side -->
-                <div class="flex items-center space-x-3 min-w-0 flex-1">
+              <!-- Bot Info - Left Side -->
+              <div class="flex items-center space-x-3 min-w-0 flex-1">
                 <div class="w-10 h-10 {{ if eq .GetStatusString "Ready" }}bg-green-500{{ else if eq .GetStatusString "Connected" }}bg-blue-500{{ else if eq .GetStatusString "Connecting" }}bg-yellow-500{{ else if eq .GetStatusString "Starting" }}bg-yellow-500{{ else if eq .GetStatusString "Fetching" }}bg-blue-500{{ else if eq .GetStatusString "UnVerified" }}bg-orange-500{{ else if eq .GetStatusString "Stopping" }}bg-gray-500{{ else if eq .GetStatusString "Stopped" }}bg-gray-500{{ else if eq .GetStatusString "Restarting" }}bg-yellow-500{{ else if eq .GetStatusString "Disconnected" }}bg-gray-500{{ else if eq .GetStatusString "Failed" }}bg-red-500{{ else if eq .GetStatusString "Halting" }}bg-gray-500{{ else }}bg-gray-500{{ end }} rounded-full flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-robot text-white text-sm"></i>
                 </div>
                 
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center space-x-2 mb-1">
-                  <h3 class="font-semibold text-gray-900 dark:text-white truncate w-32 text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
-                  
-                  <!-- Status Indicator -->
-                  <div class="flex items-center space-x-1 flex-shrink-0">
-                    {{ if eq .GetStatusString "Ready" }}
-                    <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                    <span class="text-sm text-green-700 font-medium">Ready</span>
-                    {{ else if eq .GetStatusString "Connected" }}
-                    <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
-                    <span class="text-sm text-blue-700 font-medium">Connected</span>
-                    {{ else if eq .GetStatusString "Connecting" }}
-                    <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                    <span class="text-sm text-yellow-700 font-medium">Connecting</span>
-                    {{ else if eq .GetStatusString "UnVerified" }}
-                    <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
-                    <span class="text-sm text-orange-700 font-medium">Unverified</span>
-                    {{ else if eq .GetStatusString "Failed" }}
-                    <span class="w-2 h-2 bg-red-400 rounded-full"></span>
-                    <span class="text-sm text-red-700 font-medium">Failed</span>
-                    {{ else }}
-                    <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                    <span class="text-sm text-gray-700 font-medium">{{ .GetStatusString }}</span>
-                    {{ end }}
-                  </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white truncate w-32 text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                    
+                    <!-- Status Indicator -->
+                    <div class="flex items-center space-x-1 flex-shrink-0">
+                      {{ if eq .GetStatusString "Ready" }}
+                        <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+                        <span class="text-sm text-green-700 font-medium">Ready</span>
+                      {{ else if eq .GetStatusString "Connected" }}
+                        <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
+                        <span class="text-sm text-blue-700 font-medium">Connected</span>
+                      {{ else if eq .GetStatusString "Connecting" }}
+                        <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                        <span class="text-sm text-yellow-700 font-medium">Connecting</span>
+                      {{ else if eq .GetStatusString "UnVerified" }}
+                        <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
+                        <span class="text-sm text-orange-700 font-medium">Unverified</span>
+                      {{ else if eq .GetStatusString "Failed" }}
+                        <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                        <span class="text-sm text-red-700 font-medium">Failed</span>
+                      {{ else }}
+                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        <span class="text-sm text-gray-700 font-medium">{{ .GetStatusString }}</span>
+                      {{ end }}
+                    </div>
                     
                     <div class="flex items-center justify-between w-full">
-                    <div class="flex items-center space-x-2 min-w-0">
-                    
-                    </div>
-                    
-                    <code class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-mono max-w-100 truncate flex-shrink-0" 
-                      onclick="CopyToClipboard('{{ .Token }}')" 
-                      title="Click to copy: {{ .Token }}">
-                      Token: {{ .Token }}
-                    </code>
+                      <div class="flex items-center space-x-2 min-w-0"></div>
+
+                      <code class="text-xs text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-mono max-w-100 truncate flex-shrink-0" 
+                        onclick="CopyToClipboard('{{ .Token }}')" 
+                        title="Click to copy: {{ .Token }}">
+                        Token: {{ .Token }}
+                      </code>
                     </div>
                   </div>
-                  
-                    
                 </div>
               </div>
-              
-              <!-- Right Side Actions -->
-              
             </div>
             
             <!-- Action Buttons Row -->
@@ -472,56 +465,131 @@
               </div>
               
               <div class="flex items-center justify-center space-x-2">
-                
-                
                 {{ if .Verified }}
-                  <!-- inline toggles beside Stop/Delete -->
-                  <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700 dark:text-gray-300">Broadcast</span>
+                  <!-- Desktop View - Inline Toggles (Hidden on Small Screens) -->
+                  <div class="hidden xl:flex items-center space-x-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Broadcast</span>
+                      <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
+                      <form method="post" action="/form/toggle?key=server-groups" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Receipts</span>
+                      <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
+                      <form method="post" action="/form/toggle?key=server-calls" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <!-- Mobile/Small Screen View - Settings Dropdown (Shown on Small Screens) -->
+                  <div class="xl:hidden relative inline-block text-left">
+                    <button onclick="toggleDropdown('list-dropdown-{{ .Token }}')" class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary">
+                      <i class="fas fa-cog mr-1"></i>
+                      Settings
+                      <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    
+                    <div id="list-dropdown-{{ .Token }}" class="hidden absolute right-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <div class="p-4 space-y-3">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Bot Configuration</h4>
+                        
+                        <!-- Broadcasts -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-comment-dots text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Broadcasts</span>
+                          </div>
                           <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
-                              <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
                         </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
+                        
+                        <!-- Groups -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-comments text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
+                          </div>
                           <form method="post" action="/form/toggle?key=server-groups" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
-                              <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
                         </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700 dark:text-gray-300">Receipts</span>
+                        
+                        <!-- Read Receipts -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-check text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Read Receipts</span>
+                          </div>
                           <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
-                              <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
                         </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
+                        
+                        <!-- Calls -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-phone text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
+                          </div>
                           <form method="post" action="/form/toggle?key=server-calls" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
-                              <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
                             </button>
                           </form>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 {{ end }}
 
-                <div class="flex items-center space-x-2 flex-shrink-0">
                 <!-- WebHooks & WebSockets -->
-                <a href="/form/webhooks?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
-                  {{ if .Webhooks }}<i class="fas fa-check-circle mr-1"></i>Webhooks{{ else }}<i class="fas fa-times-circle mr-1"></i>Webhooks{{ end }}
-                </a>
-                <a href="/form/signalr?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
-                  {{ if .HasSignalRActiveConnections }}<i class="fas fa-check-circle mr-1"></i>WebSockets{{ else }}<i class="fas fa-times-circle mr-1"></i>WebSockets{{ end }}
-                </a>
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                  <a href="/form/webhooks?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                    {{ if .Webhooks }}<i class="fas fa-check-circle mr-1"></i>{{ else }}<i class="fas fa-times-circle mr-1"></i>{{ end }}
+                    <span class="hidden xl:inline">{{ if .Webhooks }}Webhooks{{ else }}Webhooks{{ end }}</span>
+                    <span class="xl:hidden">{{ if .Webhooks }}WH{{ else }}WH{{ end }}</span>
+                  </a>
+                  <a href="/form/signalr?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                    {{ if .HasSignalRActiveConnections }}<i class="fas fa-check-circle mr-1"></i>{{ else }}<i class="fas fa-times-circle mr-1"></i>{{ end }}
+                    <span class="hidden xl:inline">{{ if .HasSignalRActiveConnections }}WebSockets{{ else }}WebSockets{{ end }}</span>
+                    <span class="xl:hidden">{{ if .HasSignalRActiveConnections }}WS{{ else }}WS{{ end }}</span>
+                  </a>
                 </div>
 
                 <form method="post" action="/form/toggle?key=server" class="inline">
@@ -660,7 +728,34 @@
         right: -1rem;
         min-width: 180px;
       }
+      
+      /* Adjust spacing for mobile list view */
+      #listView .flex.items-center.space-x-2 {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      
+      #listView .inline-flex.items-center {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+      }
     }
+    
+    /* Extra large screen adjustments */
+    @media (min-width: 1280px) {
+      #listView .xl\\:flex {
+        display: flex !important;
+      }
+      
+      #listView .xl\\:hidden {
+        display: none !important;
+      }
+      
+      #listView .xl\\:inline {
+        display: inline !important;
+      }
+    }
+
   </style>
 
   <script>

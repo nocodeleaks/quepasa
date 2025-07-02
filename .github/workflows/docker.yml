@@ -189,21 +189,29 @@ jobs:
     needs: push_main
     runs-on: ubuntu-latest
     steps:
-      # 1) Checkout da main num diretório temporário
-      - name: Checkout main branch to temp
+      # 1) Checkout da main com histórico completo
+      - name: Checkout main branch
         uses: actions/checkout@v3
         with:
           ref: main
           path: temp-main
+          fetch-depth: 0
 
-      # 2) Checkout da new-ui num outro diretório
+      # 2) Checkout da new-ui com histórico completo
       - name: Checkout new-ui branch
         uses: actions/checkout@v3
         with:
           ref: new-ui
           path: new-ui
+          fetch-depth: 0
 
-      # 3) Sincroniza excluindo .tmpl, .css, .js
+      # 3) Garanta que estamos numa branch local new-ui
+      - name: Prepare new-ui local branch
+        working-directory: new-ui
+        run: |
+          git checkout -B new-ui
+
+      # 4) Sincroniza excluindo .tmpl, .css e .js
       - name: Sync changes from main to new-ui excluding tmpl/css/js
         run: |
           rsync -av --delete \
@@ -212,7 +220,7 @@ jobs:
             --exclude='*.js' \
             temp-main/ new-ui/
 
-      # 4) Commit e push se houver mudanças
+      # 5) Commit & Push com upstream
       - name: Commit & Push to new-ui
         working-directory: new-ui
         run: |
@@ -221,8 +229,7 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
-            git push origin new-ui
+            git push --set-upstream origin new-ui
           else
             echo "✅ Nenhuma mudança para sincronizar em new-ui"
           fi
-

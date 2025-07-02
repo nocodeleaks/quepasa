@@ -672,536 +672,396 @@
     }
   </style>
 
-  <script>
-    // Theme management
-    function initializeTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      const currentTheme = savedTheme || systemTheme;
-      
-      applyTheme(currentTheme);
-    }
-    
-    function applyTheme(theme) {
-      const html = document.documentElement;
-      const themeIcon = document.getElementById('themeIcon');
-      
-      if (theme === 'dark') {
-        html.classList.add('dark');
-        if (themeIcon) themeIcon.className = 'fas fa-sun text-sm';
-      } else {
-        html.classList.remove('dark');
-        if (themeIcon) themeIcon.className = 'fas fa-moon text-sm';
-      }
-      
-      localStorage.setItem('theme', theme);
-    }
-    
-    function toggleTheme() {
-      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      applyTheme(newTheme);
-    }
+<script>
+  // ---------------------------
+  // Theme management functions
+  // ---------------------------
+  
+  // Initialize theme: loads saved preference or system setting
+  function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Apply either saved or system theme
+    applyTheme(savedTheme || systemTheme);
+  }
 
-    // Enhanced JSON detection and beautification
-    function isValidJSON(str) {
-      if (!str || typeof str !== 'string') return false;
-      str = str.trim();
-      
-      // Handle Go struct format like "map[key:value]" or similar patterns
-      if (str.startsWith('map[') || str.includes(':') && !str.startsWith('{') && !str.startsWith('[')) {
-        return false;
-      }
-      
-      if (!str.startsWith('{') && !str.startsWith('[')) return false;
-      
-      try {
-        JSON.parse(str);
-        return true;
-      } catch (e) {
-        return false;
-      }
+  // Apply theme by toggling 'dark' class and updating icon
+  function applyTheme(theme) {
+    const html = document.documentElement;
+    const icon = document.getElementById('themeIcon');
+    if (theme === 'dark') {
+      html.classList.add('dark');
+      if (icon) icon.className = 'fas fa-sun text-sm';  // sun icon when dark active
+    } else {
+      html.classList.remove('dark');
+      if (icon) icon.className = 'fas fa-moon text-sm'; // moon icon when light active
     }
+    localStorage.setItem('theme', theme);
+  }
 
-    function beautifyJSON(jsonString) {
-      try {
-        const parsed = JSON.parse(jsonString);
-        return JSON.stringify(parsed, null, 2);
-      } catch (e) {
-        return jsonString;
-      }
+  // Toggle between light and dark modes
+  function toggleTheme() {
+    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  }
+
+  // ---------------------------
+  // JSON utility functions
+  // ---------------------------
+
+  // Quick check if string is valid JSON
+  function isValidJSON(str) {
+    if (typeof str !== 'string') return false;
+    const t = str.trim();
+    // Must start with object or array delimiters
+    if (!t.startsWith('{') && !t.startsWith('[')) return false;
+    try { JSON.parse(t); return true; } catch { return false; }
+  }
+
+  // Beautify JSON: pretty-print with indentation
+  function beautifyJSON(str) {
+    try {
+      return JSON.stringify(JSON.parse(str), null, 2);
+    } catch {
+      // If parse fails, return original
+      return str;
     }
+  }
 
-    function highlightJSON(jsonString) {
-      return jsonString
-        .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
-        .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
-        .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-        .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
-        .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
-        .replace(/([{}[\],])/g, '<span class="json-punctuation">$1</span>');
-    }
+  // Syntax-highlight JSON keys, strings, numbers, booleans, null, punctuation
+  function highlightJSON(s) {
+    return s
+      .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+      .replace(/([{}[\],])/g, '<span class="json-punctuation">$1</span>');
+  }
 
-    function createJSONCodeEditor(jsonString, elementId, title = 'JSON') {
-      const beautified = beautifyJSON(jsonString);
-      const lines = beautified.split('\n');
-      const highlighted = highlightJSON(beautified);
-      
-      // Create line numbers
-      const lineNumbers = lines.map((_, index) => 
-        `<span class="line-number">${index + 1}</span>`
-      ).join('');
-      
-      return `
-        <div class="json-code-editor">
-          <div class="json-code-header">
-            <div class="json-code-title">
-              <i class="fas fa-code" style="margin-right: 6px;"></i>
-              ${title} (${lines.length} lines)
-            </div>
-            <div class="json-code-actions">
-              <button class="json-code-button" onclick="toggleJSONView('${elementId}')" title="Toggle Raw/Formatted">
-                <i class="fas fa-eye"></i>
-                <span class="view-mode">Formatted</span>
-              </button>
-              <button class="json-code-button" onclick="copyJSONCode('${elementId}')" title="Copy to Clipboard">
-                <i class="fas fa-copy"></i>
-                Copy
-              </button>
-            </div>
+  // Escape HTML entities to safely show raw JSON
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // --------------------------------
+  // JSON Code Editor UI generation
+  // --------------------------------
+
+  function createJSONCodeEditor(jsonString, id, title = 'JSON') {
+    // Beautify and split into lines
+    const pretty = beautifyJSON(jsonString);
+    const lines = pretty.split('\n');
+    // Highlighted HTML and line numbers
+    const highlighted = highlightJSON(pretty);
+    const nums = lines.map((_, i) => `<span class="line-number">${i+1}</span>`).join('');
+
+    // Build editor HTML block
+    return `
+      <div class="json-code-editor" id="${id}">
+        <div class="json-code-header">
+          <div class="json-code-title">
+            <i class="fas fa-code" style="margin-right:6px"></i>
+            ${title} (${lines.length} lines)
           </div>
-          <div class="json-code-content">
-            <div class="json-code-lines">
-              <div class="json-line-numbers">${lineNumbers}</div>
-              <div class="json-code-text formatted-view">${highlighted}</div>
-              <div class="json-code-text raw-view" style="display: none;">${escapeHtml(jsonString)}</div>
-            </div>
+          <div class="json-code-actions">
+            <button class="json-code-button" onclick="toggleJSONView('${id}')">
+              <i class="fas fa-eye"></i> <span class="view-mode">Formatted</span>
+            </button>
+            <button class="json-code-button" onclick="copyJSONCode('${id}')">
+              <i class="fas fa-copy"></i> Copy
+            </button>
           </div>
         </div>
-      `;
+        <div class="json-code-content">
+          <div class="json-code-lines">
+            <div class="json-line-numbers">${nums}</div>
+            <div class="json-code-text formatted-view">${highlighted}</div>
+            <div class="json-code-text raw-view" style="display:none">${escapeHtml(jsonString)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Toggle between formatted and raw views
+  function toggleJSONView(id) {
+    const cont = document.getElementById(id);
+    const fmt = cont.querySelector('.formatted-view');
+    const raw = cont.querySelector('.raw-view');
+    const mode = cont.querySelector('.view-mode');
+    if (fmt.style.display === 'none') {
+      fmt.style.display = 'block'; raw.style.display = 'none'; mode.textContent = 'Formatted';
+    } else {
+      fmt.style.display = 'none'; raw.style.display = 'block'; mode.textContent = 'Raw';
     }
+  }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function toggleJSONView(elementId) {
-      const container = document.getElementById(elementId);
-      const formattedView = container.querySelector('.formatted-view');
-      const rawView = container.querySelector('.raw-view');
-      const viewModeSpan = container.querySelector('.view-mode');
-      
-      if (formattedView.style.display === 'none') {
-        // Switch to formatted view
-        formattedView.style.display = 'block';
-        rawView.style.display = 'none';
-        viewModeSpan.textContent = 'Formatted';
-      } else {
-        // Switch to raw view
-        formattedView.style.display = 'none';
-        rawView.style.display = 'block';
-        viewModeSpan.textContent = 'Raw';
-      }
-    }
-
-    function copyJSONCode(elementId) {
-      const container = document.getElementById(elementId);
-      const formattedView = container.querySelector('.formatted-view');
-      const rawView = container.querySelector('.raw-view');
-      
-      // Get the text content from the currently visible view
-      const textToCopy = formattedView.style.display === 'none' 
-        ? rawView.textContent 
-        : formattedView.textContent;
-      
-      navigator.clipboard.writeText(textToCopy).then(() => {
-        // Show success feedback
-        const button = container.querySelector('.json-code-button[onclick*="copyJSONCode"]');
-        const originalHTML = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        button.classList.add('success');
-        
-        setTimeout(() => {
-          button.innerHTML = originalHTML;
-          button.classList.remove('success');
-        }, 2000);
-      }).catch(err => {
-        console.error('Failed to copy JSON: ', err);
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = textToCopy;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      });
-    }
-
-    function processMessageText() {
-      const messageTextElements = document.querySelectorAll('[id^="message-text-"]');
-      
-      messageTextElements.forEach(element => {
-        const text = element.getAttribute('data-original-text') || element.textContent.trim();
-        
-        if (isValidJSON(text)) {
-          const editorHTML = createJSONCodeEditor(text, element.id, 'JSON Message');
-          element.innerHTML = editorHTML;
-          element.classList.remove('whitespace-pre-wrap');
-        }
-      });
-    }
-
-    function processDebugInfo() {
-      const debugElements = document.querySelectorAll('[id^="debug-info-content-"]');
-      
-      debugElements.forEach(element => {
-        const rawInfo = element.getAttribute('data-raw-info');
-
-        
-        if (rawInfo) {
-          // Check if it contains binary data or is a Go struct
-          if (isGoStruct(rawInfo) || isValidJSON(rawInfo)) {
-
-            const jsonWithPlaceholders = convertToJSONWithBinaryPlaceholders(rawInfo, element.id);
-            element.innerHTML = jsonWithPlaceholders;
-          } else {
-            // Try to process as regular JSON
-            if (isValidJSON(rawInfo)) {
-
-              const editorHTML = createJSONCodeEditor(rawInfo, element.id, 'Info');
-              element.innerHTML = editorHTML;
-            } else {
-
-            }
-          }
-        }
-      });
-    }
-
-    // Convert Go struct to JSON format with binary placeholders
-    function convertToJSONWithBinaryPlaceholders(structData, elementId) {
-      const fields = parseGoStructFields(structData);
-      
-      if (fields.length === 0) {
-        console.log('No fields parsed, showing raw data');
-        return `<pre class="text-xs bg-white dark:bg-gray-700 p-2 rounded border dark:border-gray-600 overflow-x-auto"><code class="text-gray-900 dark:text-gray-100">${escapeHtml(structData)}</code></pre>`;
-      }
-      
-      // Create JSON object with proper type conversion
-      const jsonObject = {};
-      fields.forEach(field => {
-        if (field.isBinary) {
-          jsonObject[field.key] = "[BINARY_DATA_NOT_DISPLAYABLE]";
-        } else {
-          let value = field.value;
-          
-          // Remove surrounding quotes if present
-          if (value.startsWith('"') && value.endsWith('"')) {
-            value = value.slice(1, -1);
-            // Unescape common escape sequences
-            value = value.replace(/\\"/g, '"')
-                        .replace(/\\n/g, '\n')
-                        .replace(/\\r/g, '\r')
-                        .replace(/\\t/g, '\t')
-                        .replace(/\\\\/g, '\\');
-          }
-          
-          // Type conversion
-          if (value.toLowerCase() === 'true') {
-            jsonObject[field.key] = true;
-          } else if (value.toLowerCase() === 'false') {
-            jsonObject[field.key] = false;
-          } else if (value.toLowerCase() === 'null' || value === '<nil>') {
-            jsonObject[field.key] = null;
-          } else if (value.startsWith('{') && value.endsWith('}')) {
-            // Nested object - try to parse recursively
-            try {
-              const nestedFields = parseGoStructFields(value);
-              if (nestedFields.length > 0) {
-                const nestedObj = {};
-                nestedFields.forEach(nf => {
-                  let nValue = nf.value;
-                  if (nValue.startsWith('"') && nValue.endsWith('"')) {
-                    nValue = nValue.slice(1, -1);
-                  }
-                  nestedObj[nf.key] = nf.isBinary ? "[BINARY_DATA]" : nValue;
-                });
-                jsonObject[field.key] = nestedObj;
-              } else {
-                jsonObject[field.key] = value;
-              }
-            } catch (e) {
-              jsonObject[field.key] = value;
-            }
-          } else if (value.startsWith('[') && value.endsWith(']')) {
-            // Array - simple handling for now
-            try {
-              const arrayContent = value.slice(1, -1).trim();
-              if (arrayContent) {
-                const items = arrayContent.split(/\s+/).filter(item => item.length > 0);
-                jsonObject[field.key] = items;
-              } else {
-                jsonObject[field.key] = [];
-              }
-            } catch (e) {
-              jsonObject[field.key] = value;
-            }
-          } else if (!isNaN(value) && !isNaN(parseFloat(value)) && value.trim() !== '' && !/^0+[0-9]/.test(value)) {
-            // Number (but not leading zeros like phone numbers)
-            jsonObject[field.key] = parseFloat(value);
-          } else {
-            jsonObject[field.key] = value;
-          }
-        }
-      });
-      
-      // Convert to formatted JSON string
-      const jsonString = JSON.stringify(jsonObject, null, 2);
-      
-      console.log('Generated JSON:', jsonString);
-      
-      // Create JSON code editor
-      return createJSONCodeEditor(jsonString, elementId, 'Info');
-    }
-
-    // Enhanced Go struct detection and parsing
-    function isGoStruct(str) {
-      return str.includes(':') && 
-             (str.includes('groupID:') || 
-              str.includes('axolotl') ||
-              str.includes('UserAbout') ||
-              str.includes('Status:') ||
-              str.includes('Antenna') ||
-              str.includes('Victrix') ||
-              str.includes('Timestamp:') ||
-              /\w+:\s*"[^"]*"/.test(str) ||
-              /\w+:\{[^}]*\}/.test(str) ||
-              /\w+:\[[^\]]*\]/.test(str)) &&
-             !str.startsWith('{') && 
-             !str.startsWith('[');
-    }
-
-    // Enhanced Go struct field parsing
-    function parseGoStructFields(structStr) {
-      const fields = [];
-      
-      try {
-        console.log('Parsing Go struct:', structStr);
-        
-        // Remove any leading/trailing whitespace
-        let cleaned = structStr.trim();
-        
-        // Handle different Go struct formats
-        // Format 1: &{field:value field2:value2}
-        if (cleaned.startsWith('&{') && cleaned.endsWith('}')) {
-          cleaned = cleaned.slice(2, -1).trim();
-        }
-        // Format 2: {field:value field2:value2}
-        else if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
-          cleaned = cleaned.slice(1, -1).trim();
-        }
-        // Format 3: StructName{field:value field2:value2}
-        else {
-          const structMatch = cleaned.match(/\w+\{([^}]+)\}/);
-          if (structMatch) {
-            cleaned = structMatch[1].trim();
-          }
-        }
-        
-        console.log('Cleaned struct content:', cleaned);
-        
-        if (!cleaned) {
-          return fields;
-        }
-        
-        // Enhanced regex to handle various Go field patterns
-        const patterns = [
-          // Pattern 1: field:"quoted value"
-          /(\w+):\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g,
-          // Pattern 2: field:SimpleValue
-          /(\w+):\s*([^\s{}\[\]]+)(?=\s+\w+:|$)/g,
-          // Pattern 3: field:{...} (nested structs)
-          /(\w+):\s*(\{[^}]*\})/g,
-          // Pattern 4: field:[...] (arrays/slices)
-          /(\w+):\s*(\[[^\]]*\])/g
-        ];
-        
-        let processedPositions = new Set();
-        
-        patterns.forEach(pattern => {
-          let match;
-          const regex = new RegExp(pattern.source, pattern.flags);
-          
-          while ((match = regex.exec(cleaned)) !== null) {
-            const startPos = match.index;
-            const endPos = match.index + match[0].length;
-            
-            // Check if this position was already processed
-            let alreadyProcessed = false;
-            for (let pos = startPos; pos < endPos; pos++) {
-              if (processedPositions.has(pos)) {
-                alreadyProcessed = true;
-                break;
-              }
-            }
-            
-            if (!alreadyProcessed) {
-              const key = match[1];
-              let value = match[2];
-              
-              // Mark positions as processed
-              for (let pos = startPos; pos < endPos; pos++) {
-                processedPositions.add(pos);
-              }
-              
-              // Check if value contains binary data
-              const isBinary = hasBinaryData(value) || value.length > 500;
-              
-              fields.push({
-                key: key,
-                value: value,
-                isBinary: isBinary
-              });
-              
-              console.log(`Found field: ${key} = ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
-            }
-          }
-        });
-        
-        // If no fields found with regex patterns, try a simpler splitting approach
-        if (fields.length === 0) {
-          console.log('No fields found with regex, trying simple split');
-          
-          // Split by spaces but be careful about quoted values
-          const parts = [];
-          let currentPart = '';
-          let inQuotes = false;
-          let braceLevel = 0;
-          let bracketLevel = 0;
-          
-          for (let i = 0; i < cleaned.length; i++) {
-            const char = cleaned[i];
-            
-            if (char === '"' && (i === 0 || cleaned[i-1] !== '\\')) {
-              inQuotes = !inQuotes;
-            } else if (!inQuotes) {
-              if (char === '{') braceLevel++;
-              else if (char === '}') braceLevel--;
-              else if (char === '[') bracketLevel++;
-              else if (char === ']') bracketLevel--;
-            }
-            
-            if (!inQuotes && braceLevel === 0 && bracketLevel === 0 && char === ' ') {
-              if (currentPart.trim()) {
-                parts.push(currentPart.trim());
-                currentPart = '';
-              }
-            } else {
-              currentPart += char;
-            }
-          }
-          
-          if (currentPart.trim()) {
-            parts.push(currentPart.trim());
-          }
-          
-          console.log('Split parts:', parts);
-          
-          // Process each part that contains a colon
-          parts.forEach(part => {
-            const colonIndex = part.indexOf(':');
-            if (colonIndex > 0 && colonIndex < part.length - 1) {
-              const key = part.substring(0, colonIndex);
-              const value = part.substring(colonIndex + 1);
-              
-              if (key && value) {
-                const isBinary = hasBinaryData(value) || value.length > 500;
-                fields.push({
-                  key: key,
-                  value: value,
-                  isBinary: isBinary
-                });
-                console.log(`Simple split field: ${key} = ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
-              }
-            }
-          });
-        }
-        
-        console.log(`Total fields found: ${fields.length}`);
-        
-      } catch (e) {
-        console.error('Error parsing Go struct fields:', e);
-      }
-      
-      return fields;
-    }
-
-    // Enhanced binary data detection
-    function hasBinaryData(str) {
-      // Look for common binary data patterns
-      return /\\x[0-9a-fA-F]{2}/.test(str) || 
-             /\x00/.test(str) || // null bytes
-             str.includes('axolotlSenderKeyDistributionMessage') || 
-             str.includes('SenderKeyDistributionMessage') ||
-             str.includes('PreKey') ||
-             str.includes('SignedPreKey') ||
-             // Long base64-like strings
-             /^[A-Za-z0-9+/]{100,}={0,2}$/.test(str) ||
-             // Binary escape sequences
-             /\\[0-9]{3}/.test(str);
-    }
-
-    // Update message counts
-    function updateMessageCounts() {
-      const allMessages = document.querySelectorAll('.message-item');
-      
-      let debugCount = 0;
-      let sentCount = 0;
-      let receivedCount = 0;
-      
-      allMessages.forEach((message, index) => {
-        const hasDebug = message.getAttribute('data-has-debug');
-        const fromMe = message.getAttribute('data-from-me');
-        
-        if (hasDebug === 'true') {
-          debugCount++;
-        }
-        
-        if (fromMe === 'true') {
-          sentCount++;
-        } else {
-          receivedCount++;
-        }
-      });
-      
-      // Update the display
-      document.getElementById('sentCount').textContent = sentCount;
-      document.getElementById('receivedCount').textContent = receivedCount;
-      document.getElementById('debugCount').textContent = debugCount;
-    }
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeTheme();
-      
-      setTimeout(() => {
-        const allMessages = document.querySelectorAll('.message-item');
-        
-        // Make sure all messages are visible initially
-        allMessages.forEach(message => {
-          message.classList.remove('hidden');
-          message.style.display = '';
-        });
-        
-        // Process JSON messages and debug info
-        processMessageText();
-        processDebugInfo();
-        
-        // Update counts
-        updateMessageCounts();
-      }, 100);
+  // Copy currently visible JSON text to clipboard
+  function copyJSONCode(id) {
+    const cont = document.getElementById(id);
+    const fmt = cont.querySelector('.formatted-view');
+    const raw = cont.querySelector('.raw-view');
+    const txt = fmt.style.display === 'none' ? raw.textContent : fmt.textContent;
+    navigator.clipboard.writeText(txt).catch(() => {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea'); ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
     });
-  </script>
+  }
+
+  // ---------------------------
+  // Go struct parsing logic
+  // ---------------------------
+
+  // Detect if string looks like a Go struct (colon-separated without JSON delimiters)
+  function isGoStruct(str) {
+    return typeof str === 'string' && str.includes(':') &&
+           !str.trim().startsWith('{') && !str.trim().startsWith('[');
+  }
+
+  // Parse fields from a Go struct syntax string
+  function parseGoStructFields(input) {
+    let s = input.trim();
+    // Strip surrounding "Type{...}" or "&{...}" or plain { }
+    const m = s.match(/\w+\{([^}]*)\}/);
+    if (m) s = m[1].trim();
+    else if (s.startsWith('&{') && s.endsWith('}')) s = s.slice(2, -1).trim();
+    else if (s.startsWith('{') && s.endsWith('}')) s = s.slice(1, -1).trim();
+
+    // Check if the content contains excessive binary data that would make parsing impossible
+    const binaryRatio = (s.match(/\\x[0-9A-Fa-f]{2}/g) || []).length / s.length;
+    if (binaryRatio > 0.3 || /[\x00-\x08\x0E-\x1F\x7F-\xFF]/.test(s)) {
+      return [{ key: 'data', value: s, isBinary: true }];
+    }
+
+    // Regex patterns for key:value, key:"quoted", nested {...}, nested [...]
+    const patterns = [
+      /(\w+):"([^"\\]*(?:\\.[^"\\]*)*)"/g,
+      /(\w+):([^\s{}\[\]]+)(?=\s+\w+:|$)/g,
+      /(\w+):(\{[^}]*\})/g,
+      /(\w+):(\[[^]*?\])/g
+    ];
+    const fields = [];
+    const used = new Set();
+
+    patterns.forEach(pat => {
+      let mm;
+      while ((mm = pat.exec(s)) !== null) {
+        const [full, key, val] = mm;
+        const start = mm.index, end = start + full.length;
+        // Skip overlapping matches
+        if ([...Array(end - start).keys()].some(i => used.has(start + i))) continue;
+        // Skip keys that contain binary data
+        if (hasBinaryData(key)) continue;
+        // Mark used positions
+        for (let i = start; i < end; i++) used.add(i);
+        fields.push({ key, value: val, isBinary: hasBinaryData(val) });
+      }
+    });
+
+    // Fallback splitting logic if no patterns matched
+    if (!fields.length) {
+      let parts = [];
+      let buf = '', inQ = false, brace = 0, bracket = 0;
+      for (let ch of s) {
+        if (ch === '"' && buf.slice(-1) !== '\\') inQ = !inQ;
+        else if (!inQ) {
+          if (ch === '{') brace++;
+          if (ch === '}') brace--;
+          if (ch === '[') bracket++;
+          if (ch === ']') bracket--;
+        }
+        if (!inQ && brace === 0 && bracket === 0 && ch === ' ') {
+          if (buf) parts.push(buf);
+          buf = '';
+        } else buf += ch;
+      }
+      if (buf) parts.push(buf);
+      
+      // Filter out parts with binary keys
+      const validParts = parts.filter(p => {
+        const idx = p.indexOf(':');
+        if (idx <= 0) return false;
+        const key = p.slice(0, idx);
+        return !hasBinaryData(key) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key);
+      });
+      
+      if (validParts.length === 0) {
+        // If no valid parts found, treat entire content as binary data
+        return [{ key: 'raw_data', value: s, isBinary: true }];
+      }
+      
+      validParts.forEach(p => {
+        const idx = p.indexOf(':');
+        fields.push({
+          key: p.slice(0, idx),
+          value: p.slice(idx + 1),
+          isBinary: hasBinaryData(p.slice(idx + 1))
+        });
+      });
+    }
+    return fields;
+  }
+
+  // Detect common binary patterns (hex escapes, nulls, or base64 data)
+  function hasBinaryData(str) {
+    return /\\x[0-9A-Fa-f]{2}/.test(str) || 
+           /\\0/.test(str) || 
+           /[\x00-\x08\x0E-\x1F\x7F-\xFF]/.test(str) ||
+           (str.length > 100 && /^[A-Za-z0-9+/=]+$/.test(str.trim()));
+  }
+
+  // Detect if string is likely a base64 thumbnail
+  function isThumbnailData(str, key) {
+    const isThumbKey = /thumb|image|photo|picture|avatar/i.test(key || '');
+    const isBase64 = str.length > 100 && /^[A-Za-z0-9+/=]+$/.test(str.trim());
+    const hasImageHeader = /^\/9j\/|^iVBORw0KGgo|^R0lGODlh|^UklGR/.test(str); // JPEG, PNG, GIF, WebP headers
+    return isThumbKey && (isBase64 || hasImageHeader);
+  }
+
+  // Get appropriate placeholder for binary data
+  function getBinaryPlaceholder(str, key) {
+    if (isThumbnailData(str, key)) {
+      return "[THUMBNAIL_BASE64_NOT_DISPLAYABLE]";
+    }
+    return "[BINARY_DATA_NOT_DISPLAYABLE]";
+  }
+
+  // ----------------------------------------------------
+  // Convert Go struct or JSON-escaped fields to object
+  // ----------------------------------------------------
+  function convertToJSONWithBinaryPlaceholders(raw, id) {
+    // First check if this is primarily binary data
+    if (isValidJSON(raw)) {
+      try {
+        const parsed = JSON.parse(raw);
+        const cleaned = cleanBinaryFromObject(parsed);
+        return createJSONCodeEditor(JSON.stringify(cleaned, null, 2), id, 'JSON Info');
+      } catch (e) {
+        // Fall through to Go struct parsing
+      }
+    }
+    
+    const fields = parseGoStructFields(raw);
+    const obj = {};
+    
+    fields.forEach(f => {
+      let v = f.value; 
+      // 1) Unescape JSON-escaped sequences
+      if (v.includes('\\"')) {
+        v = v.replace(/\\n/g, '\n')
+             .replace(/\\r/g, '\r')
+             .replace(/\\t/g, '\t')
+             .replace(/\\"/g, '"')
+             .replace(/\\\\/g, '\\');
+      }
+      // 2) If still valid JSON, parse it as nested object
+      let isJSONInner = false, parsedInner;
+      if ((v.startsWith('{') && v.endsWith('}')) || (v.startsWith('[') && v.endsWith(']'))) {
+        try { 
+          parsedInner = JSON.parse(v); 
+          parsedInner = cleanBinaryFromObject(parsedInner);
+          isJSONInner = true; 
+        } catch {};
+      }
+      let val;
+      if (isJSONInner) {
+        val = parsedInner;
+      } else if (hasBinaryData(v)) {
+        val = getBinaryPlaceholder(v, f.key);
+      } else {
+        const low = v.toLowerCase();
+        if (low === 'true') val = true;
+        else if (low === 'false') val = false;
+        else if (low === 'null' || v === '<nil>') val = null;
+        else if (!isNaN(v) && v.trim() !== '') val = parseFloat(v);
+        else val = v;
+      }
+      // 3) Accumulate duplicate keys into arrays
+      if (obj.hasOwnProperty(f.key)) {
+        if (!Array.isArray(obj[f.key])) obj[f.key] = [obj[f.key]];
+        obj[f.key].push(val);
+      } else {
+        obj[f.key] = val;
+      }
+    });
+    // Return rendered editor
+    return createJSONCodeEditor(JSON.stringify(obj, null, 2), id, 'Info');
+  }
+
+  // Clean binary data from parsed JSON objects
+  function cleanBinaryFromObject(obj) {
+    if (Array.isArray(obj)) {
+      return obj.map(cleanBinaryFromObject);
+    } else if (obj !== null && typeof obj === 'object') {
+      const cleaned = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'string' && hasBinaryData(value)) {
+          cleaned[key] = getBinaryPlaceholder(value, key);
+        } else if (typeof value === 'object') {
+          cleaned[key] = cleanBinaryFromObject(value);
+        } else {
+          cleaned[key] = value;
+        }
+      }
+      return cleaned;
+    }
+    return obj;
+  }
+
+  // ---------------------------
+  // DOM processing functions
+  // ---------------------------
+
+  // Find and render any valid JSON in message text
+  function processMessageText() {
+    document.querySelectorAll('[id^="message-text-"]').forEach(el => {
+      const txt = el.getAttribute('data-original-text') || el.textContent.trim();
+      if (isValidJSON(txt)) {
+        el.innerHTML = createJSONCodeEditor(txt, el.id, 'JSON Message');
+        el.classList.remove('whitespace-pre-wrap');
+      }
+    });
+  }
+
+  // Find and render Go struct or JSON in debug-info
+  function processDebugInfo() {
+    document.querySelectorAll('[id^="debug-info-content-"]').forEach(el => {
+      const raw = el.getAttribute('data-raw-info');
+      if (!raw) return;
+      if (isGoStruct(raw) || isValidJSON(raw)) {
+        el.innerHTML = convertToJSONWithBinaryPlaceholders(raw, el.id);
+      }
+    });
+  }
+
+  // Update counts of sent/received/debug messages
+  function updateMessageCounts() {
+    let sent = 0, recv = 0, dbg = 0;
+    document.querySelectorAll('.message-item').forEach(m => {
+      if (m.getAttribute('data-has-debug') === 'true') dbg++;
+      if (m.getAttribute('data-from-me') === 'true') sent++; else recv++;
+    });
+    document.getElementById('sentCount').textContent = sent;
+    document.getElementById('receivedCount').textContent = recv;
+    document.getElementById('debugCount').textContent = dbg;
+  }
+
+  // Initialize everything on DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeTheme();
+    setTimeout(() => {
+      document.querySelectorAll('.message-item').forEach(m => { m.classList.remove('hidden'); m.style.display = ''; });
+      processMessageText();
+      processDebugInfo();
+      updateMessageCounts();
+    }, 100);
+  });
+</script>
+
 {{ end }}

@@ -160,22 +160,20 @@ jobs:
     needs: push_main
     runs-on: ubuntu-latest
     steps:
-      # 1) Faça checkout completo da main no workspace raiz
+      # 1) Checkout completo da main
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2) Prepare o worktree para new-ui (ou crie se ainda não existir)
+      # 2) Cria worktree para new-ui (ou reaproveita)
       - name: Create new-ui worktree
         run: |
-          # Fetch da branch new-ui
           git fetch origin new-ui:new-ui || git fetch origin main:new-ui
-          # Adiciona o worktree (se já existir, ignora o erro)
           git worktree add new-ui new-ui || true
 
       # 3) Sincroniza excluindo .tmpl, .css e .js
-      - name: Sync changes from main to new-ui excluding tmpl/css/js
+      - name: Sync changes from main to new-ui
         continue-on-error: true
         run: |
           rsync -av --delete \
@@ -185,7 +183,7 @@ jobs:
             --exclude='*.js' \
             ./ new-ui/
 
-      # 4) Commit & Push direto de dentro do worktree
+      # 4) Commit & Force-Push do novo conteúdo para new-ui
       - name: Commit & Push to new-ui
         run: |
           pushd new-ui
@@ -194,9 +192,34 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
-            # Empurra HEAD para a branch new-ui remota
             git push --force-with-lease origin HEAD:new-ui
           else
             echo "✅ Nenhuma mudança para sincronizar em new-ui"
           fi
           popd
+
+      # 5) Extrai a versão atual de QpVersion em new-ui
+      - name: Extract QpVersion from new-ui
+        id: extract_newui_version
+        run: |
+          grep -Po '(?<=const QpVersion = ")[^"]+' new-ui/src/models/qp_defaults.go \
+            | tee version.txt
+          echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      # 6) Login no DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 7) Build & Push Docker image com tag newui-${VERSION}
+      - name: Build and push new-ui Docker image
+        uses: docker/build-push-action@v4.1.0
+        with:
+          context: new-ui
+          file: new-ui/docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}

@@ -176,8 +176,10 @@ jobs:
 
       # 3) Sincroniza excluindo .tmpl, .css e .js
       - name: Sync changes from main to new-ui excluding tmpl/css/js
+        continue-on-error: true
         run: |
           rsync -av --delete \
+            --exclude='new-ui/' \
             --exclude='*.tmpl' \
             --exclude='*.css' \
             --exclude='*.js' \

@@ -155,86 +155,46 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
 
-  push_new_ui:
-    if: github.ref == 'refs/heads/new-ui'
-    name: Build & Push New-UI Docker Image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-
-      - name: Extract QpVersion
-        id: extract_version_newui
-        run: |
-          VERSION=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker image (new-ui)
-        uses: docker/build-push-action@v4.1.0
-        with:
-          context: .
-          file: docker/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}
-
   sync_new_ui:
     if: github.ref == 'refs/heads/main'
     needs: push_main
     runs-on: ubuntu-latest
     steps:
-      # 0) Cria a pasta temp-main caso não exista
-      - name: Create temp-main folder
-        run: mkdir -p temp-main
-
-      # 1) Checkout da main em temp-main
+      # 1) Faça checkout completo da main no workspace raiz
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: main
-          path: temp-main
           fetch-depth: 0
 
-      # 2) Checkout da new-ui em new-ui
-      - name: Checkout new-ui branch
-        uses: actions/checkout@v4
-        with:
-          ref: new-ui
-          path: new-ui
-          fetch-depth: 0
-
-      # 3) Garanta branch local new-ui rastreando a remota (ou crie vazia)
-      - name: Prepare new-ui local branch
-        working-directory: new-ui
+      # 2) Prepare o worktree para new-ui (ou crie se ainda não existir)
+      - name: Create new-ui worktree
         run: |
-          git fetch --all
-          git checkout -B new-ui origin/new-ui || git checkout -B new-ui
+          # Fetch da branch new-ui
+          git fetch origin new-ui:new-ui || git fetch origin main:new-ui
+          # Adiciona o worktree (se já existir, ignora o erro)
+          git worktree add new-ui new-ui || true
 
-      # 4) Sincroniza de temp-main → new-ui excluindo *.tmpl, *.css e *.js
+      # 3) Sincroniza excluindo .tmpl, .css e .js
       - name: Sync changes from main to new-ui excluding tmpl/css/js
         run: |
           rsync -av --delete \
             --exclude='*.tmpl' \
             --exclude='*.css' \
             --exclude='*.js' \
-            temp-main/ new-ui/
+            ./ new-ui/
 
-      # 5) Commit & Push se houver alterações
+      # 4) Commit & Push direto de dentro do worktree
       - name: Commit & Push to new-ui
-        working-directory: new-ui
         run: |
+          pushd new-ui
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
-            git push --set-upstream origin new-ui
+            # Empurra HEAD para a branch new-ui remota
+            git push origin HEAD:new-ui
           else
             echo "✅ Nenhuma mudança para sincronizar em new-ui"
           fi
+          popd

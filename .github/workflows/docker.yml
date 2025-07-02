@@ -189,39 +189,43 @@ jobs:
     needs: push_main
     runs-on: ubuntu-latest
     steps:
-      # 1) Checkout da main com histórico completo
+      # 0) Cria a pasta temp-main caso não exista
+      - name: Create temp-main folder
+        run: mkdir -p temp-main
+
+      # 1) Checkout da main em temp-main
       - name: Checkout main branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
           path: temp-main
           fetch-depth: 0
 
-      # 2) Checkout de um clone vazio para new-ui
+      # 2) Checkout da new-ui em new-ui
       - name: Checkout new-ui branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: new-ui
           path: new-ui
           fetch-depth: 0
 
-      # 3) Fetch de todas as branches e checkout da remota new-ui (ou cria local)
+      # 3) Garanta branch local new-ui rastreando a remota (ou crie vazia)
       - name: Prepare new-ui local branch
         working-directory: new-ui
         run: |
           git fetch --all
           git checkout -B new-ui origin/new-ui || git checkout -B new-ui
 
-      # 4) Sincroniza excluindo .tmpl, .css e .js
+      # 4) Sincroniza de temp-main → new-ui excluindo *.tmpl, *.css e *.js
       - name: Sync changes from main to new-ui excluding tmpl/css/js
         run: |
           rsync -av --delete \
             --exclude='*.tmpl' \
             --exclude='*.css' \
             --exclude='*.js' \
-            ../temp-main/ ./
+            temp-main/ new-ui/
 
-      # 5) Commit & Push com upstream
+      # 5) Commit & Push se houver alterações
       - name: Commit & Push to new-ui
         working-directory: new-ui
         run: |

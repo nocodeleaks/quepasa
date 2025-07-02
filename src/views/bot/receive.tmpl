@@ -236,7 +236,7 @@
                       <i class="fas fa-file text-gray-400 text-xl"></i>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-gray-900">
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">
                         {{ if .Attachment.FileName }}{{ .Attachment.FileName }}{{ else }}Attachment{{ end }}
                       </p>
                       <p class="text-xs text-gray-500">
@@ -343,56 +343,193 @@
       background: #9ca3af;
     }
     
-    /* JSON Code Editor Dark Mode Support */
+    /* JSON Code Editor Styling - Base Styles */
+    .json-code-editor {
+      font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      /* Light mode styles */
+      background: #f8f9fa;
+      color: #495057;
+      border: 1px solid #dee2e6;
+    }
+    
+    .json-code-header {
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* Light mode styles */
+      background: #e9ecef;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .json-code-title {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      /* Light mode styles */
+      color: #495057;
+    }
+    
+    .json-code-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .json-code-button {
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s;
+      /* Light mode styles */
+      background: #007bff;
+      color: white;
+    }
+    
+    .json-code-button:hover {
+      /* Light mode styles */
+      background: #0056b3;
+    }
+    
+    .json-code-button.success {
+      background: #28a745;
+    }
+    
+    .json-code-content {
+      position: relative;
+      max-height: 500px;
+      overflow: auto;
+    }
+    
+    .json-code-lines {
+      display: flex;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .json-line-numbers {
+      padding: 12px 8px;
+      text-align: right;
+      user-select: none;
+      min-width: 40px;
+      font-size: 12px;
+      /* Light mode styles */
+      background: #f1f3f4;
+      color: #6c757d;
+      border-right: 1px solid #dee2e6;
+    }
+    
+    .json-line-numbers .line-number {
+      display: block;
+      height: 19.5px;
+      line-height: 19.5px;
+    }
+    
+    .json-code-text {
+      flex: 1;
+      padding: 12px;
+      white-space: pre;
+      overflow: visible;
+      font-size: 13px;
+      line-height: 1.5;
+      /* Light mode styles */
+      background: #ffffff;
+      color: #212529;
+    }
+
+    /* Dark Mode JSON Code Editor Overrides */
     .dark .json-code-editor {
-      background: #111827;
-      color: #f3f4f6;
+      background: #0d1117;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
     .dark .json-code-header {
-      background: #1f2937;
-      border-bottom-color: #4b5563;
+      background: #161b22;
+      border-bottom-color: #30363d;
+    }
+    
+    .dark .json-code-title {
+      color: #f0f6fc;
+    }
+    
+    .dark .json-code-button {
+      background: #238636;
+      color: #ffffff;
+    }
+    
+    .dark .json-code-button:hover {
+      background: #2ea043;
+    }
+    
+    .dark .json-code-button.success {
+      background: #1a7f37;
     }
     
     .dark .json-line-numbers {
-      background: #1f2937;
-      border-right-color: #4b5563;
+      background: #161b22;
+      color: #7d8590;
+      border-right-color: #30363d;
     }
     
-    /* Dark mode message borders */
-    .dark .debug-message {
-      border-left-color: #f87171;
+    .dark .json-code-text {
+      background: #0d1117;
+      color: #e6edf3;
     }
     
-    .dark .sent-message {
-      border-left-color: #60a5fa;
-    }
-    
-    .dark .received-message {
-      border-left-color: #34d399;
-    }
-    
-    /* JSON Syntax Highlighting - VS Code Dark Theme */
+    /* JSON Syntax Highlighting - Light Mode */
     .json-key { 
-      color: #9cdcfe; 
+      color: #d73a49; 
       font-weight: normal;
     }
     .json-string { 
-      color: #ce9178; 
+      color: #032f62; 
     }
     .json-number { 
-      color: #b5cea8; 
+      color: #005cc5; 
     }
     .json-boolean { 
-      color: #569cd6; 
+      color: #e36209; 
       font-weight: bold;
     }
     .json-null { 
-      color: #569cd6; 
+      color: #e36209; 
       font-style: italic;
     }
     .json-punctuation {
-      color: #d4d4d4;
+      color: #24292e;
+    }
+
+    /* JSON Syntax Highlighting - Dark Mode */
+    .dark .json-key { 
+      color: #79c0ff; 
+      font-weight: normal;
+    }
+    .dark .json-string { 
+      color: #a5d6ff; 
+    }
+    .dark .json-number { 
+      color: #79c0ff; 
+    }
+    .dark .json-boolean { 
+      color: #ff7b72; 
+      font-weight: bold;
+    }
+    .dark .json-null { 
+      color: #ff7b72; 
+      font-style: italic;
+    }
+    .dark .json-punctuation {
+      color: #e6edf3;
     }
     
     /* Legacy JSON container styling */
@@ -409,6 +546,56 @@
       padding: 0;
       font-size: 0.875rem;
       line-height: 1.5;
+    }
+    
+    /* Enhanced pre/code styling for debug info */
+    pre {
+      background: #f8f9fa !important;
+      color: #212529 !important;
+      border: 1px solid #dee2e6 !important;
+    }
+    
+    .dark pre {
+      background: #0d1117 !important;
+      color: #e6edf3 !important;
+      border: 1px solid #30363d !important;
+    }
+    
+    pre code {
+      color: inherit !important;
+      background: transparent !important;
+    }
+    
+    /* Scrollbar styling for JSON editor */
+    .json-code-content::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    .json-code-content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    .dark .json-code-content::-webkit-scrollbar-track {
+      background: #161b22;
+    }
+    
+    .json-code-content::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    
+    .dark .json-code-content::-webkit-scrollbar-thumb {
+      background: #6e7681;
+      border-radius: 4px;
+    }
+    
+    .json-code-content::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    .dark .json-code-content::-webkit-scrollbar-thumb:hover {
+      background: #8b949e;
     }
     
     /* Message filtering */
@@ -428,28 +615,60 @@
       border-left: 4px solid #10B981;
     }
     
+    /* Dark mode message borders */
+    .dark .debug-message {
+      border-left-color: #f87171;
+    }
+    
+    .dark .sent-message {
+      border-left-color: #60a5fa;
+    }
+    
+    .dark .received-message {
+      border-left-color: #34d399;
+    }
+    
     /* Toggle buttons styling */
     .view-toggle {
-      background: #2d2d30;
-      border: 1px solid #3e3e42;
-      color: #cccccc;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      color: #495057;
       padding: 4px 8px;
       font-size: 11px;
       cursor: pointer;
       transition: all 0.2s;
     }
     
+    .dark .view-toggle {
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+    }
+    
     .view-toggle.active {
-      background: #0e639c;
+      background: #007bff;
+      color: white;
+    }
+    
+    .dark .view-toggle.active {
+      background: #238636;
       color: white;
     }
     
     .view-toggle:hover {
-      background: #3e3e42;
+      background: #e9ecef;
+    }
+    
+    .dark .view-toggle:hover {
+      background: #21262d;
     }
     
     .view-toggle.active:hover {
-      background: #1177bb;
+      background: #0056b3;
+    }
+    
+    .dark .view-toggle.active:hover {
+      background: #2ea043;
     }
   </style>
 
@@ -643,7 +862,7 @@
         
         if (rawInfo) {
           // Check if it contains binary data or is a Go struct
-          if (hasBinaryData(rawInfo) || isGoStruct(rawInfo)) {
+          if (isGoStruct(rawInfo) || isValidJSON(rawInfo)) {
 
             const jsonWithPlaceholders = convertToJSONWithBinaryPlaceholders(rawInfo, element.id);
             element.innerHTML = jsonWithPlaceholders;
@@ -666,31 +885,71 @@
       const fields = parseGoStructFields(structData);
       
       if (fields.length === 0) {
-        return `<pre class="text-xs bg-white p-2 rounded border overflow-x-auto"><code>${escapeHtml(structData)}</code></pre>`;
+        console.log('No fields parsed, showing raw data');
+        return `<pre class="text-xs bg-white dark:bg-gray-700 p-2 rounded border dark:border-gray-600 overflow-x-auto"><code class="text-gray-900 dark:text-gray-100">${escapeHtml(structData)}</code></pre>`;
       }
       
-      // Create JSON object with binary placeholders
+      // Create JSON object with proper type conversion
       const jsonObject = {};
       fields.forEach(field => {
         if (field.isBinary) {
-          jsonObject[field.key] = "This Field Contains Binary Data not Valid For Visualization on Json";
+          jsonObject[field.key] = "[BINARY_DATA_NOT_DISPLAYABLE]";
         } else {
-          // Try to parse the value appropriately
           let value = field.value;
           
-          // Remove quotes if they wrap the entire value
+          // Remove surrounding quotes if present
           if (value.startsWith('"') && value.endsWith('"')) {
             value = value.slice(1, -1);
+            // Unescape common escape sequences
+            value = value.replace(/\\"/g, '"')
+                        .replace(/\\n/g, '\n')
+                        .replace(/\\r/g, '\r')
+                        .replace(/\\t/g, '\t')
+                        .replace(/\\\\/g, '\\');
           }
           
-          // Try to parse as number or boolean
+          // Type conversion
           if (value.toLowerCase() === 'true') {
             jsonObject[field.key] = true;
           } else if (value.toLowerCase() === 'false') {
             jsonObject[field.key] = false;
-          } else if (value.toLowerCase() === 'null') {
+          } else if (value.toLowerCase() === 'null' || value === '<nil>') {
             jsonObject[field.key] = null;
-          } else if (!isNaN(value) && !isNaN(parseFloat(value)) && value.trim() !== '') {
+          } else if (value.startsWith('{') && value.endsWith('}')) {
+            // Nested object - try to parse recursively
+            try {
+              const nestedFields = parseGoStructFields(value);
+              if (nestedFields.length > 0) {
+                const nestedObj = {};
+                nestedFields.forEach(nf => {
+                  let nValue = nf.value;
+                  if (nValue.startsWith('"') && nValue.endsWith('"')) {
+                    nValue = nValue.slice(1, -1);
+                  }
+                  nestedObj[nf.key] = nf.isBinary ? "[BINARY_DATA]" : nValue;
+                });
+                jsonObject[field.key] = nestedObj;
+              } else {
+                jsonObject[field.key] = value;
+              }
+            } catch (e) {
+              jsonObject[field.key] = value;
+            }
+          } else if (value.startsWith('[') && value.endsWith(']')) {
+            // Array - simple handling for now
+            try {
+              const arrayContent = value.slice(1, -1).trim();
+              if (arrayContent) {
+                const items = arrayContent.split(/\s+/).filter(item => item.length > 0);
+                jsonObject[field.key] = items;
+              } else {
+                jsonObject[field.key] = [];
+              }
+            } catch (e) {
+              jsonObject[field.key] = value;
+            }
+          } else if (!isNaN(value) && !isNaN(parseFloat(value)) && value.trim() !== '' && !/^0+[0-9]/.test(value)) {
+            // Number (but not leading zeros like phone numbers)
             jsonObject[field.key] = parseFloat(value);
           } else {
             jsonObject[field.key] = value;
@@ -701,44 +960,176 @@
       // Convert to formatted JSON string
       const jsonString = JSON.stringify(jsonObject, null, 2);
       
+      console.log('Generated JSON:', jsonString);
+      
       // Create JSON code editor
-      return createJSONCodeEditor(jsonString, elementId, 'Info (JSON)');
+      return createJSONCodeEditor(jsonString, elementId, 'Info');
     }
 
-    // Parse Go struct fields from string representation
+    // Enhanced Go struct detection and parsing
+    function isGoStruct(str) {
+      return str.includes(':') && 
+             (str.includes('groupID:') || 
+              str.includes('axolotl') ||
+              str.includes('UserAbout') ||
+              str.includes('Status:') ||
+              str.includes('Antenna') ||
+              str.includes('Victrix') ||
+              str.includes('Timestamp:') ||
+              /\w+:\s*"[^"]*"/.test(str) ||
+              /\w+:\{[^}]*\}/.test(str) ||
+              /\w+:\[[^\]]*\]/.test(str)) &&
+             !str.startsWith('{') && 
+             !str.startsWith('[');
+    }
+
+    // Enhanced Go struct field parsing
     function parseGoStructFields(structStr) {
       const fields = [];
       
       try {
-        // Pattern to match Go struct fields like: fieldName:"value" or fieldName:value
-        const fieldPattern = /(\w+):\s*("(?:[^"\\]|\\.)*"|[^\s]+)/g;
-        let match;
+        console.log('Parsing Go struct:', structStr);
         
-        while ((match = fieldPattern.exec(structStr)) !== null) {
-          const key = match[1];
-          let value = match[2];
+        // Remove any leading/trailing whitespace
+        let cleaned = structStr.trim();
+        
+        // Handle different Go struct formats
+        // Format 1: &{field:value field2:value2}
+        if (cleaned.startsWith('&{') && cleaned.endsWith('}')) {
+          cleaned = cleaned.slice(2, -1).trim();
+        }
+        // Format 2: {field:value field2:value2}
+        else if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
+          cleaned = cleaned.slice(1, -1).trim();
+        }
+        // Format 3: StructName{field:value field2:value2}
+        else {
+          const structMatch = cleaned.match(/\w+\{([^}]+)\}/);
+          if (structMatch) {
+            cleaned = structMatch[1].trim();
+          }
+        }
+        
+        console.log('Cleaned struct content:', cleaned);
+        
+        if (!cleaned) {
+          return fields;
+        }
+        
+        // Enhanced regex to handle various Go field patterns
+        const patterns = [
+          // Pattern 1: field:"quoted value"
+          /(\w+):\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g,
+          // Pattern 2: field:SimpleValue
+          /(\w+):\s*([^\s{}\[\]]+)(?=\s+\w+:|$)/g,
+          // Pattern 3: field:{...} (nested structs)
+          /(\w+):\s*(\{[^}]*\})/g,
+          // Pattern 4: field:[...] (arrays/slices)
+          /(\w+):\s*(\[[^\]]*\])/g
+        ];
+        
+        let processedPositions = new Set();
+        
+        patterns.forEach(pattern => {
+          let match;
+          const regex = new RegExp(pattern.source, pattern.flags);
           
-          // Check if value contains binary data
-          const isBinary = hasBinaryData(value) || value.length > 200;
+          while ((match = regex.exec(cleaned)) !== null) {
+            const startPos = match.index;
+            const endPos = match.index + match[0].length;
+            
+            // Check if this position was already processed
+            let alreadyProcessed = false;
+            for (let pos = startPos; pos < endPos; pos++) {
+              if (processedPositions.has(pos)) {
+                alreadyProcessed = true;
+                break;
+              }
+            }
+            
+            if (!alreadyProcessed) {
+              const key = match[1];
+              let value = match[2];
+              
+              // Mark positions as processed
+              for (let pos = startPos; pos < endPos; pos++) {
+                processedPositions.add(pos);
+              }
+              
+              // Check if value contains binary data
+              const isBinary = hasBinaryData(value) || value.length > 500;
+              
+              fields.push({
+                key: key,
+                value: value,
+                isBinary: isBinary
+              });
+              
+              console.log(`Found field: ${key} = ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+            }
+          }
+        });
+        
+        // If no fields found with regex patterns, try a simpler splitting approach
+        if (fields.length === 0) {
+          console.log('No fields found with regex, trying simple split');
           
-          fields.push({
-            key: key,
-            value: value,
-            isBinary: isBinary
+          // Split by spaces but be careful about quoted values
+          const parts = [];
+          let currentPart = '';
+          let inQuotes = false;
+          let braceLevel = 0;
+          let bracketLevel = 0;
+          
+          for (let i = 0; i < cleaned.length; i++) {
+            const char = cleaned[i];
+            
+            if (char === '"' && (i === 0 || cleaned[i-1] !== '\\')) {
+              inQuotes = !inQuotes;
+            } else if (!inQuotes) {
+              if (char === '{') braceLevel++;
+              else if (char === '}') braceLevel--;
+              else if (char === '[') bracketLevel++;
+              else if (char === ']') bracketLevel--;
+            }
+            
+            if (!inQuotes && braceLevel === 0 && bracketLevel === 0 && char === ' ') {
+              if (currentPart.trim()) {
+                parts.push(currentPart.trim());
+                currentPart = '';
+              }
+            } else {
+              currentPart += char;
+            }
+          }
+          
+          if (currentPart.trim()) {
+            parts.push(currentPart.trim());
+          }
+          
+          console.log('Split parts:', parts);
+          
+          // Process each part that contains a colon
+          parts.forEach(part => {
+            const colonIndex = part.indexOf(':');
+            if (colonIndex > 0 && colonIndex < part.length - 1) {
+              const key = part.substring(0, colonIndex);
+              const value = part.substring(colonIndex + 1);
+              
+              if (key && value) {
+                const isBinary = hasBinaryData(value) || value.length > 500;
+                fields.push({
+                  key: key,
+                  value: value,
+                  isBinary: isBinary
+                });
+                console.log(`Simple split field: ${key} = ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+              }
+            }
           });
         }
         
-        // If no fields found with the regex, try a simpler approach
-        if (fields.length === 0) {
-          const simplePattern = /(\w+):\s*([^\s]+(?:\s+[^\w:]+)*)/g;
-          while ((match = simplePattern.exec(structStr)) !== null) {
-            fields.push({
-              key: match[1],
-              value: match[2].trim(),
-              isBinary: hasBinaryData(match[2])
-            });
-          }
-        }
+        console.log(`Total fields found: ${fields.length}`);
         
       } catch (e) {
         console.error('Error parsing Go struct fields:', e);
@@ -747,56 +1138,19 @@
       return fields;
     }
 
-    // Check if data contains binary content
+    // Enhanced binary data detection
     function hasBinaryData(str) {
-      // Look for common binary data patterns like \x followed by hex digits
+      // Look for common binary data patterns
       return /\\x[0-9a-fA-F]{2}/.test(str) || 
              /\x00/.test(str) || // null bytes
-             str.includes('axolotlSenderKeyDistributionMessage') || // WhatsApp specific binary
-             str.includes('SenderKeyDistributionMessage');
-    }
-
-    // Check if string looks like a Go struct
-    function isGoStruct(str) {
-      return str.includes(':') && 
-             (str.includes('groupID:') || 
-              str.includes('axolotl') ||
-              /\w+:\s*"[^"]*"/.test(str)) &&
-             !str.startsWith('{') && 
-             !str.startsWith('[');
-    }
-
-    // Legacy copy function for backward compatibility
-    function copyJSONToClipboard(elementId) {
-      const element = document.getElementById(elementId);
-      const codeElement = element.querySelector('pre code') || element.querySelector('.json-code-text');
-      const jsonText = codeElement ? codeElement.textContent : element.textContent;
-      
-      navigator.clipboard.writeText(jsonText).then(() => {
-        // Show success feedback
-        const button = event.target.closest('button');
-        if (button) {
-          const originalText = button.innerHTML;
-          button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-          button.classList.add('bg-green-100', 'text-green-700');
-          button.classList.remove('bg-blue-100', 'text-blue-700');
-          
-          setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('bg-green-100', 'text-green-700');
-            button.classList.add('bg-blue-100', 'text-blue-700');
-          }, 2000);
-        }
-      }).catch(err => {
-        console.error('Failed to copy JSON: ', err);
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = jsonText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      });
+             str.includes('axolotlSenderKeyDistributionMessage') || 
+             str.includes('SenderKeyDistributionMessage') ||
+             str.includes('PreKey') ||
+             str.includes('SignedPreKey') ||
+             // Long base64-like strings
+             /^[A-Za-z0-9+/]{100,}={0,2}$/.test(str) ||
+             // Binary escape sequences
+             /\\[0-9]{3}/.test(str);
     }
 
     // Update message counts

@@ -219,9 +219,6 @@
                       title="Click to copy">
                   {{ .Token }}
                 </code>
-                <button onclick="CopyToClipboard('{{ .Token }}')" class="text-gray-400 hover:text-gray-600">
-                  <i class="fas fa-copy"></i>
-                </button>
               </div>
             </div>
 
@@ -411,7 +408,7 @@
                 
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center space-x-2 mb-1">
-                    <h3 class="font-semibold text-gray-900 dark:text-white truncate text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white truncate w-32 text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
                     
                     <!-- Status Indicator -->
                     <div class="flex items-center space-x-1 flex-shrink-0">
@@ -435,14 +432,21 @@
                         <span class="text-xs text-gray-700 font-medium">{{ .GetStatusString }}</span>
                       {{ end }}
                     </div>
+                    
+                    <div class="flex items-center justify-between w-full">
+                    <div class="flex items-center space-x-2 min-w-0">
+                    
+                    </div>
+                    
+                    <code class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-mono max-w-100 truncate flex-shrink-0" 
+                      onclick="CopyToClipboard('{{ .Token }}')" 
+                      title="Click to copy: {{ .Token }}">
+                      Token: {{ .Token }}
+                    </code>
+                    </div>
                   </div>
                   
-                  <!-- Token -->
-                  <code class="text-xs text-gray-500 truncate block cursor-pointer hover:text-gray-700" 
-                        onclick="CopyToClipboard('{{ .Token }}')" 
-                        title="Click to copy: {{ .Token }}">
-                    {{ .Token }}
-                  </code>
+                    
                 </div>
               </div>
               

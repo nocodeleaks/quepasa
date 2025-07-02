@@ -414,22 +414,22 @@
                     <div class="flex items-center space-x-1 flex-shrink-0">
                       {{ if eq .GetStatusString "Ready" }}
                         <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                        <span class="text-xs text-green-700 font-medium">Ready</span>
+                        <span class="text-sm text-green-700 font-medium">Ready</span>
                       {{ else if eq .GetStatusString "Connected" }}
                         <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
-                        <span class="text-xs text-blue-700 font-medium">Connected</span>
+                        <span class="text-sm text-blue-700 font-medium">Connected</span>
                       {{ else if eq .GetStatusString "Connecting" }}
                         <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                        <span class="text-xs text-yellow-700 font-medium">Connecting</span>
+                        <span class="text-sm text-yellow-700 font-medium">Connecting</span>
                       {{ else if eq .GetStatusString "UnVerified" }}
                         <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
-                        <span class="text-xs text-orange-700 font-medium">Unverified</span>
+                        <span class="text-sm text-orange-700 font-medium">Unverified</span>
                       {{ else if eq .GetStatusString "Failed" }}
                         <span class="w-2 h-2 bg-red-400 rounded-full"></span>
-                        <span class="text-xs text-red-700 font-medium">Failed</span>
+                        <span class="text-sm text-red-700 font-medium">Failed</span>
                       {{ else }}
                         <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                        <span class="text-xs text-gray-700 font-medium">{{ .GetStatusString }}</span>
+                        <span class="text-sm text-gray-700 font-medium">{{ .GetStatusString }}</span>
                       {{ end }}
                     </div>
                     
@@ -459,12 +459,12 @@
               <div class="flex items-center space-x-2">
                 {{ if eq .GetStatusString "Ready" }}
                   <a href="/form/server/{{ .Token }}/send" 
-                     class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                     class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
                      title="Send Message">
                     <i class="fas fa-paper-plane mr-1"></i>Send
                   </a>
                   <a href="/form/server/{{ .Token }}/receive" 
-                     class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                     class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
                      title="View Messages">
                     <i class="fas fa-download mr-1"></i>Receive
                   </a>
@@ -472,15 +472,7 @@
               </div>
               
               <div class="flex items-center justify-center space-x-2">
-                <div class="flex items-center space-x-4 flex-shrink-0">
-                <!-- WebHooks & WebSockets -->
-                <a href="/form/webhooks?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
-                  {{ if .Webhooks }}<i class="fas fa-check-circle mr-1"></i>Webhooks{{ else }}<i class="fas fa-times-circle mr-1"></i>Webhooks{{ end }}
-                </a>
-                <a href="/form/signalr?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
-                  {{ if .HasSignalRActiveConnections }}<i class="fas fa-check-circle mr-1"></i>WebSockets{{ else }}<i class="fas fa-times-circle mr-1"></i>WebSockets{{ end }}
-                </a>
-              </div>
+                
                 
                 {{ if .Verified }}
                   <!-- inline toggles beside Stop/Delete -->
@@ -522,9 +514,19 @@
                   </div>
                 {{ end }}
 
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                <!-- WebHooks & WebSockets -->
+                <a href="/form/webhooks?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                  {{ if .Webhooks }}<i class="fas fa-check-circle mr-1"></i>Webhooks{{ else }}<i class="fas fa-times-circle mr-1"></i>Webhooks{{ end }}
+                </a>
+                <a href="/form/signalr?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                  {{ if .HasSignalRActiveConnections }}<i class="fas fa-check-circle mr-1"></i>WebSockets{{ else }}<i class="fas fa-times-circle mr-1"></i>WebSockets{{ end }}
+                </a>
+                </div>
+
                 <form method="post" action="/form/toggle?key=server" class="inline">
                   <input name="token" type="hidden" value="{{ .Token }}">
-                  <button class="inline-flex items-center px-2 py-1 text-xs rounded border transition-colors {{ if not .GetWorking }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-red-100 border-red-300 text-red-700 hover:bg-red-200{{ end }}"
+                  <button class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if not .GetWorking }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-red-100 border-red-300 text-red-700 hover:bg-red-200{{ end }}"
                           title="{{ if not .GetWorking }}Start Bot{{ else }}Stop Bot{{ end }}">
                     <i class="fas fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle mr-1"></i>
                     <span class="hidden sm:inline">{{ if not .GetWorking }}Start{{ else }}Stop{{ end }}</span>
@@ -533,7 +535,7 @@
                 
                 <form method="post" action="/form/delete?key=server" class="inline">
                   <input name="token" type="hidden" value="{{ .Token }}">
-                  <button class="inline-flex items-center px-2 py-1 bg-red-100 border border-red-300 text-red-700 text-xs rounded hover:bg-red-200 transition-colors"
+                  <button class="inline-flex items-center px-2 py-1 bg-red-100 border border-red-300 text-red-700 text-sm rounded hover:bg-red-200 transition-colors"
                           title="Delete Bot"
                           onclick="return confirm('⚠️ Are you sure you want to delete this bot?\n\nBot: {{ .GetNumber }}\nToken: {{ .Token }}\n\nThis action cannot be undone!')">
                     <i class="fas fa-trash mr-1"></i>

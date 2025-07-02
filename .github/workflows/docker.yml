@@ -155,6 +155,37 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
 
+  push_new_ui:
+    if: github.ref == 'refs/heads/new-ui'
+    name: Build & Push new-ui Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      # extrai a versão declarada em src/models/qp_defaults.go
+      - name: Extract QpVersion
+        id: extract_version
+        run: |
+          VERSION=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image (new-ui)
+        uses: docker/build-push-action@v4.1.0
+        with:
+          context: .                 # ajusta se o Dockerfile estiver noutro caminho
+          file: docker/Dockerfile    # idem
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}
+
   sync_new_ui:
     if: github.ref == 'refs/heads/main'
     needs: push_main

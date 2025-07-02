@@ -1,20 +1,26 @@
 {{ define "content" }}
   {{ $DOWNLOADPREFIX := .DownloadPrefix }}
   
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
     <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
+    <div class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0 flex-1">
-            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 truncate">Messages</h1>
-            <p class="text-xs sm:text-sm text-gray-600 truncate">{{ .Count }} messages for {{ .Number }}</p>
+            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">Messages</h1>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{{ .Count }} messages for {{ .Number }}</p>
           </div>
-          <a href="/form/account" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm flex-shrink-0">
-            <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
-            <span class="hidden sm:inline">Back to Dashboard</span>
-            <span class="sm:hidden">Back</span>
-          </a>
+          <div class="flex items-center space-x-2 flex-shrink-0">
+            <!-- Theme Toggle Button -->
+            <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Dark Mode">
+              <i id="themeIcon" class="fas fa-moon text-sm"></i>
+            </button>
+            <a href="/form/account" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm">
+              <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+              <span class="hidden sm:inline">Back to Dashboard</span>
+              <span class="sm:hidden">Back</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -22,10 +28,10 @@
     <!-- Error Message -->
     {{ if .ErrorMessage }}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
           <div class="flex">
             <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
-            <p class="text-yellow-700">{{ .ErrorMessage }}</p>
+            <p class="text-yellow-700 dark:text-yellow-300">{{ .ErrorMessage }}</p>
           </div>
         </div>
       </div>
@@ -33,393 +39,337 @@
 
     <!-- Message Statistics -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2 sm:p-4">
         <div class="grid grid-cols-4 gap-1 sm:gap-4 text-center">
           <div>
-            <span class="text-lg sm:text-3xl font-bold text-gray-900 block" id="totalCount">{{ .Count }}</span>
-            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Total</p>
+            <span class="text-lg sm:text-3xl font-bold text-gray-900 dark:text-white block" id="totalCount">{{ .Count }}</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Total</p>
           </div>
           <div>
-            <span class="text-lg sm:text-3xl font-bold text-blue-600 block" id="sentCount">-</span>
-            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Sent</p>
+            <span class="text-lg sm:text-3xl font-bold text-blue-600 dark:text-blue-400 block" id="sentCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Sent</p>
           </div>
           <div>
-            <span class="text-lg sm:text-3xl font-bold text-green-600 block" id="receivedCount">-</span>
-            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Received</p>
+            <span class="text-lg sm:text-3xl font-bold text-green-600 dark:text-green-400 block" id="receivedCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Received</p>
           </div>
           <div>
-            <span class="text-lg sm:text-3xl font-bold text-red-600 block" id="debugCount">-</span>
-            <p class="text-xs sm:text-sm text-gray-600 -mt-1 sm:mt-0">Debug</p>
+            <span class="text-lg sm:text-3xl font-bold text-red-600 dark:text-red-400 block" id="debugCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Debug</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Messages Container -->
-    
-      <div class="space-y-4 mb-8" id="messagesContainer">
-        {{ range .Messages }}
-        <div class="bg-white rounded-xl shadow-sm border-2 overflow-hidden hover:shadow-md ml-8 mr-8 mb-8 transition-shadow message-item {{ if .Debug }}debug-message{{ else if .FromMe }}sent-message{{ else }}received-message{{ end }}" 
-             id="msg-{{ .Id }}" 
-             data-type="{{ .Type }}" 
-             data-timestamp="{{ .Timestamp }}"
-             data-has-debug="{{ if .Debug }}true{{ else }}false{{ end }}"
-             data-from-me="{{ if .FromMe }}true{{ else }}false{{ end }}">
-          
-          <!-- Message Header -->
-          <div class="px-6 py-4 border-b border-gray-100 {{ if .Debug }}bg-red-50{{ else }}bg-gray-50{{ end }}">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-              <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2">
-                  {{ if .FromMe }}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      <i class="fas fa-arrow-right mr-1"></i>Sent
-                    </span>
-                  {{ else }}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <i class="fas fa-arrow-left mr-1"></i>Received
-                    </span>
-                  {{ end }}
-                  
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ if .Debug }}bg-red-100 text-red-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
-                    {{ .Type }}
+    <div class="space-y-4 mb-8" id="messagesContainer">
+      {{ range .Messages }}
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 dark:border-gray-700 overflow-hidden hover:shadow-md ml-8 mr-8 mb-8 transition-shadow message-item {{ if .Debug }}debug-message{{ else if .FromMe }}sent-message{{ else }}received-message{{ end }}" 
+           id="msg-{{ .Id }}" 
+           data-type="{{ .Type }}" 
+           data-timestamp="{{ .Timestamp }}"
+           data-has-debug="{{ if .Debug }}true{{ else }}false{{ end }}"
+           data-from-me="{{ if .FromMe }}true{{ else }}false{{ end }}">
+        
+        <!-- Message Header -->
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 {{ if .Debug }}bg-red-50 dark:bg-red-900/20{{ else }}bg-gray-50 dark:bg-gray-700{{ end }}">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-2">
+                {{ if .FromMe }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-arrow-right mr-1"></i>Sent
                   </span>
-                  
-                  {{ if .Edited }}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      <i class="fas fa-edit mr-1"></i>Edited
-                    </span>
-                  {{ end }}
-                </div>
-              </div>
-              
-              <div class="flex items-center space-x-4 text-sm text-gray-500">
-                <span class="flex items-center">
-                  <i class="fas fa-clock mr-1"></i>
-                  {{ .Timestamp }}
+                {{ else }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-arrow-left mr-1"></i>Received
+                  </span>
+                {{ end }}
+                
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ if .Debug }}bg-red-100 text-red-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                  {{ .Type }}
                 </span>
-                <span class="flex items-center">
-                  <i class="fas fa-hashtag mr-1"></i>
-                  {{ .Id }}
-                </span>
+                
+                {{ if .Edited }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    <i class="fas fa-edit mr-1"></i>Edited
+                  </span>
+                {{ end }}
               </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <span class="flex items-center">
+                <i class="fas fa-clock mr-1"></i>
+                {{ .Timestamp }}
+              </span>
+              <span class="flex items-center">
+                <i class="fas fa-hashtag mr-1"></i>
+                {{ .Id }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Content -->
+        <div class="px-6 py-4">
+          <!-- Chat Info -->
+          <div class="mb-4">
+            <div class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+              <i class="fas fa-comments"></i>
+              <span>{{ .Chat }}</span>
+              {{ if .Participant }}
+                <span class="text-gray-400">•</span>
+                <i class="fas fa-user"></i>
+                <span>{{ .Participant }}</span>
+              {{ end }}
             </div>
           </div>
 
-          <!-- Message Content -->
-          <div class="px-6 py-4">
-            <!-- Chat Info -->
+          <!-- Message Text -->
+          {{ if .Text }}
             <div class="mb-4">
-              <div class="flex items-center space-x-2 text-sm text-gray-600">
-                <i class="fas fa-comments"></i>
-                <span>{{ .Chat }}</span>
-                {{ if .Participant }}
-                  <span class="text-gray-400">•</span>
-                  <i class="fas fa-user"></i>
-                  <span>{{ .Participant }}</span>
-                {{ end }}
+              <div class="prose prose-sm max-w-none dark:prose-invert">
+                <div id="message-text-{{ .Id }}" class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap" data-original-text="{{ .Text }}">{{ .Text }}</div>
               </div>
             </div>
+          {{ end }}
 
-            <!-- Message Text -->
-            {{ if .Text }}
-              <div class="mb-4">
-                <div class="prose prose-sm max-w-none">
-                  <div id="message-text-{{ .Id }}" class="text-gray-900 whitespace-pre-wrap" data-original-text="{{ .Text }}">{{ .Text }}</div>
-                </div>
+          <!-- URL Preview -->
+          {{ if .Url }}
+            <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+              <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                  <i class="fas fa-link mr-2"></i>Link Preview
+                </h4>
               </div>
-            {{ end }}
-
-            <!-- URL Preview -->
-            {{ if .Url }}
-              <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden">
-                <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                  <h4 class="text-sm font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-link mr-2"></i>Link Preview
-                  </h4>
-                </div>
-                <div class="p-4">
-                  {{ if .Url.Thumbnail }}
-                    <div class="flex space-x-4">
-                      <div class="flex-shrink-0">
-                        <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" alt="Preview" class="w-16 h-16 rounded-lg object-cover">
-                      </div>
-                      <div class="flex-1">
-                  {{ else }}
-                    <div>
-                  {{ end }}
-                        {{ if .Url.Title }}
-                          <h5 class="font-medium text-gray-900 mb-1">{{ .Url.Title }}</h5>
-                        {{ end }}
-                        {{ if .Url.Description }}
-                          <p class="text-sm text-gray-600 mb-2">{{ .Url.Description }}</p>
-                        {{ end }}
-                        <a href="{{ .Url.Reference }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
-                          {{ .Url.Reference }}
-                          <i class="fas fa-external-link-alt ml-1"></i>
-                        </a>
-                  {{ if .Url.Thumbnail }}
-                      </div>
+              <div class="p-4">
+                {{ if .Url.Thumbnail }}
+                  <div class="flex space-x-4">
+                    <div class="flex-shrink-0">
+                      <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" alt="Preview" class="w-16 h-16 rounded-lg object-cover">
                     </div>
-                  {{ else }}
-                    </div>
-                  {{ end }}
-                </div>
-              </div>
-            {{ end }}
-
-            <!-- Debug Information -->
-            {{ if .Debug }}
-              <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                  <h4 class="text-sm font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-info-circle mr-2"></i>Debug Information
-                  </h4>
-                </div>
-                <div class="p-4">
-                  <div class="space-y-4">
-                    
-                    <!-- Reason -->
-                    {{ if .Debug.Reason }}
-                      <div>
-                        <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Reason:</span>
-                        <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Reason }}</span>
-                      </div>
-                    {{ end }}
-
-                    {{ if .Debug.Event }}
-                    <div>
-                        <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Event:</span>
-                        <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Event }}</span>
-                      </div>
-                    {{ end }}
-
-                    <!-- Debug Info -->
-                    <div>
-                      <div class="relative">
-                        <div id="debug-info-{{ .Id }}" class="debug-info-container" data-debug-info="{{ .Debug.Info | printf "%+v" }}">
-                          
-                            
-                            
-                            {{ if .Debug.Info }}
-                              
-                              <div id="debug-info-content-{{ .Id }}" class="mt-1" data-raw-info="{{ .Debug.Info | printf "%+v" }}">
-                                <pre class="text-xs bg-white p-2 rounded border overflow-x-auto"><code>{{ .Debug.Info | printf "%+v" }}</code></pre>
-                              </div>
-                            {{ end }}
-                          
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {{ end }}
-
-            <!-- Attachment -->
-            {{ if .HasAttachment }}
-              <div class="border border-gray-200 rounded-lg overflow-hidden">
-                <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                  <h4 class="text-sm font-medium text-gray-900 flex items-center">
-                    <i class="fas fa-paperclip mr-2"></i>Attachment
-                  </h4>
-                </div>
-                <div class="p-4">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                      <div class="flex-shrink-0">
-                        <i class="fas fa-file text-gray-400 text-xl"></i>
-                      </div>
-                      <div>
-                        <p class="text-sm font-medium text-gray-900">
-                          {{ if .Attachment.FileName }}{{ .Attachment.FileName }}{{ else }}Attachment{{ end }}
-                        </p>
-                        <p class="text-xs text-gray-500">
-                          {{ .Attachment.Mimetype }} • {{ .Attachment.FileLength }} bytes
-                        </p>
-                      </div>
-                    </div>
-                    <a href="{{ $DOWNLOADPREFIX }}{{ .Id }}" download target="_blank" 
-                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md {{ if .Attachment.IsValidSize }}text-blue-600 bg-blue-100 hover:bg-blue-200{{ else }}text-red-600 bg-red-100 hover:bg-red-200{{ end }} transition-colors">
-                      <i class="fas fa-download mr-2"></i>
-                      Download
-                    </a>
-                  </div>
-                </div>
-              </div>
-            {{ end }}
-
-            <!-- Additional Info -->
-            <div class="mt-4 pt-4 border-t border-gray-100">
-              <div class="flex flex-wrap gap-4 text-sm text-gray-500">
-                {{ if eq .Status "read" }}
-                  <span class="flex items-center">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Status: Read
-                  </span>
-                {{ else if eq .Status "delivered" }}
-                  <span class="flex items-center">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Status: Delivered
-                  </span>
-                {{ else if eq .Status "" }}
-                  <span class="flex items-center">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Status: {{if .Status}}{{.Status}}{{else}}Unknown{{end}}
-                  </span>
+                    <div class="flex-1">
+                {{ else }}
+                  <div>
                 {{ end }}
-                {{ if .TrackId }}
-                  <span class="flex items-center">
-                    <i class="fas fa-route mr-1"></i>
-                    Track ID: {{ .TrackId }}
-                  </span>
-                {{ end }}
-                {{ if .InReply }}
-                  <a href="#msg-{{ .InReply }}" class="flex items-center text-blue-600 hover:text-blue-800">
-                    <i class="fas fa-reply mr-1"></i>
-                    Reply to: {{ .InReply }}
+                  {{ if .Url.Title }}
+                    <h5 class="font-medium text-gray-900 mb-1">{{ .Url.Title }}</h5>
+                  {{ end }}
+                  {{ if .Url.Description }}
+                    <p class="text-sm text-gray-600 mb-2">{{ .Url.Description }}</p>
+                  {{ end }}
+                  <a href="{{ .Url.Reference }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+                    {{ .Url.Reference }}
+                    <i class="fas fa-external-link-alt ml-1"></i>
                   </a>
-                {{ end }}
-                {{ if .FromHistory }}
-                  <span class="flex items-center text-orange-600">
-                    <i class="fas fa-history mr-1"></i>
-                    From History
-                  </span>
-                {{ end }}
-                {{ if .FromAds }}
-                  <span class="flex items-center text-purple-600">
-                    <i class="fas fa-ad mr-1"></i>
-                    From Ads
-                  </span>
+                {{ if .Url.Thumbnail }}
+                    </div>
+                  </div>
+                {{ else }}
+                  </div>
                 {{ end }}
               </div>
             </div>
-          </div>
-        </div>
-        {{ end }}
-      </div>
+          {{ end }}
 
-      <!-- No Messages State -->
-      {{ if eq .Count 0 }}
-        <div class="text-center py-12">
-          <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <i class="fas fa-inbox text-gray-400 text-3xl"></i>
+          <!-- Debug Information -->
+          {{ if .Debug }}
+            <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+              <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                  <i class="fas fa-info-circle mr-2"></i>Debug Information
+                </h4>
+              </div>
+              <div class="p-4">
+                <div class="space-y-4">
+                  
+                  <!-- Reason -->
+                  {{ if .Debug.Reason }}
+                    <div>
+                      <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Reason:</span>
+                      <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Reason }}</span>
+                    </div>
+                  {{ end }}
+
+                  {{ if .Debug.Event }}
+                  <div>
+                      <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Event:</span>
+                      <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Event }}</span>
+                    </div>
+                  {{ end }}
+
+                  <!-- Debug Info -->
+                  <div>
+                    <div class="relative">
+                      <div id="debug-info-{{ .Id }}" class="debug-info-container" data-debug-info="{{ .Debug.Info | printf "%+v" }}">
+                        
+                          
+                          
+                          {{ if .Debug.Info }}
+                            
+                            <div id="debug-info-content-{{ .Id }}" class="mt-1" data-raw-info="{{ .Debug.Info | printf "%+v" }}">
+                              <pre class="text-xs bg-white p-2 rounded border overflow-x-auto"><code>{{ .Debug.Info | printf "%+v" }}</code></pre>
+                            </div>
+                          {{ end }}
+                        
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {{ end }}
+
+          <!-- Attachment -->
+          {{ if .HasAttachment }}
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                  <i class="fas fa-paperclip mr-2"></i>Attachment
+                </h4>
+              </div>
+              <div class="p-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-file text-gray-400 text-xl"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">
+                        {{ if .Attachment.FileName }}{{ .Attachment.FileName }}{{ else }}Attachment{{ end }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        {{ .Attachment.Mimetype }} • {{ .Attachment.FileLength }} bytes
+                      </p>
+                    </div>
+                  </div>
+                  <a href="{{ $DOWNLOADPREFIX }}{{ .Id }}" download target="_blank" 
+                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md {{ if .Attachment.IsValidSize }}text-blue-600 bg-blue-100 hover:bg-blue-200{{ else }}text-red-600 bg-red-100 hover:bg-red-200{{ end }} transition-colors">
+                  <i class="fas fa-download mr-2"></i>
+                  Download
+                </a>
+                </div>
+              </div>
+            </div>
+          {{ end }}
+
+          <!-- Additional Info -->
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
+              {{ if eq .Status "read" }}
+                <span class="flex items-center">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Status: Read
+                </span>
+              {{ else if eq .Status "delivered" }}
+                <span class="flex items-center">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Status: Delivered
+                </span>
+              {{ else if eq .Status "" }}
+                <span class="flex items-center">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Status: {{if .Status}}{{.Status}}{{else}}Unknown{{end}}
+                </span>
+              {{ end }}
+              {{ if .TrackId }}
+                <span class="flex items-center">
+                  <i class="fas fa-route mr-1"></i>
+                  Track ID: {{ .TrackId }}
+                </span>
+              {{ end }}
+              {{ if .InReply }}
+                <a href="#msg-{{ .InReply }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                  <i class="fas fa-reply mr-1"></i>
+                  Reply to: {{ .InReply }}
+                </a>
+              {{ end }}
+              {{ if .FromHistory }}
+                <span class="flex items-center text-orange-600">
+                  <i class="fas fa-history mr-1"></i>
+                  From History
+                </span>
+              {{ end }}
+              {{ if .FromAds }}
+                <span class="flex items-center text-purple-600">
+                  <i class="fas fa-ad mr-1"></i>
+                  From Ads
+                </span>
+              {{ end }}
+            </div>
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No messages found</h3>
-          <p class="text-gray-600">There are no messages to display for this bot.</p>
         </div>
+      </div>
       {{ end }}
+    </div>
+
+    <!-- No Messages State -->
+    {{ if eq .Count 0 }}
+      <div class="text-center py-12">
+        <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+          <i class="fas fa-inbox text-gray-400 dark:text-gray-500 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No messages found</h3>
+        <p class="text-gray-600 dark:text-gray-300">There are no messages to display for this bot.</p>
+      </div>
+    {{ end }}
 
   </div>
 
   <style>
-    /* Custom scrollbar */
+    /* Custom scrollbar for dark mode */
     ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
     }
     ::-webkit-scrollbar-track {
       background: #f1f1f1;
-      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: #374151;
     }
     ::-webkit-scrollbar-thumb {
       background: #c1c1c1;
       border-radius: 4px;
     }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #6b7280;
+    }
     ::-webkit-scrollbar-thumb:hover {
       background: #a8a8a8;
     }
-    
-    /* JSON Code Editor Styling */
-    .json-code-editor {
-      font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-      background: #1e1e1e;
-      color: #d4d4d4;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
     }
     
-    .json-code-header {
-      background: #2d2d30;
-      border-bottom: 1px solid #3e3e42;
-      padding: 8px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    /* JSON Code Editor Dark Mode Support */
+    .dark .json-code-editor {
+      background: #111827;
+      color: #f3f4f6;
     }
     
-    .json-code-title {
-      color: #cccccc;
-      font-size: 12px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
+    .dark .json-code-header {
+      background: #1f2937;
+      border-bottom-color: #4b5563;
     }
     
-    .json-code-actions {
-      display: flex;
-      gap: 8px;
+    .dark .json-line-numbers {
+      background: #1f2937;
+      border-right-color: #4b5563;
     }
     
-    .json-code-button {
-      background: #0e639c;
-      color: white;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: background-color 0.2s;
+    /* Dark mode message borders */
+    .dark .debug-message {
+      border-left-color: #f87171;
     }
     
-    .json-code-button:hover {
-      background: #1177bb;
+    .dark .sent-message {
+      border-left-color: #60a5fa;
     }
     
-    .json-code-button.success {
-      background: #16a085;
-    }
-    
-    .json-code-content {
-      position: relative;
-      max-height: 500px;
-      overflow: auto;
-    }
-    
-    .json-code-lines {
-      display: flex;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    
-    .json-line-numbers {
-      background: #252526;
-      color: #858585;
-      padding: 12px 8px;
-      text-align: right;
-      user-select: none;
-      border-right: 1px solid #3e3e42;
-      min-width: 40px;
-      font-size: 12px;
-    }
-    
-    .json-line-numbers .line-number {
-      display: block;
-      height: 19.5px;
-      line-height: 19.5px;
-    }
-    
-    .json-code-text {
-      flex: 1;
-      padding: 12px;
-      white-space: pre;
-      overflow: visible;
-      font-size: 13px;
-      line-height: 1.5;
+    .dark .received-message {
+      border-left-color: #34d399;
     }
     
     /* JSON Syntax Highlighting - VS Code Dark Theme */
@@ -504,6 +454,36 @@
   </style>
 
   <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-sm';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-sm';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+
     // Enhanced JSON detection and beautification
     function isValidJSON(str) {
       if (!str || typeof str !== 'string') return false;
@@ -850,6 +830,8 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+      
       setTimeout(() => {
         const allMessages = document.querySelectorAll('.message-item');
         

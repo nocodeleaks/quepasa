@@ -1,14 +1,18 @@
 {{ define "content" }}
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
     <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
+    <div class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0 flex-1">
-            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 truncate">WebHooks</h1>
-            <p class="text-xs sm:text-sm text-gray-600 truncate">{{ len .Server.Webhooks }} webhook(s) for <span class="font-semibold">{{ .Server.Wid }}</span></p>
+            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">WebHooks</h1>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{{ len .Server.Webhooks }} webhook(s) for <span class="font-semibold">{{ .Server.Wid }}</span></p>
           </div>
           <div class="flex items-center space-x-2 flex-shrink-0">
+            <!-- Theme Toggle Button -->
+            <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Dark Mode">
+              <i id="themeIcon" class="fas fa-moon text-sm"></i>
+            </button>
             <button onclick="showAddWebhookModal()" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm">
               <i class="fas fa-plus mr-1 sm:mr-2"></i>
               <span class="hidden sm:inline">Add WebHook</span>
@@ -27,10 +31,10 @@
     <!-- Error Message -->
     {{ if .ErrorMessage }}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+        <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-lg">
           <div class="flex">
             <i class="fas fa-exclamation-triangle text-red-400 mr-3 mt-1"></i>
-            <p class="text-red-700">{{ .ErrorMessage }}</p>
+            <p class="text-red-700 dark:text-red-300">{{ .ErrorMessage }}</p>
           </div>
         </div>
       </div>
@@ -40,24 +44,24 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div class="space-y-4">
         {{ range .Server.Webhooks }}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
           <!-- WebHook Header -->
-          <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div class="flex items-center space-x-3 min-w-0 flex-1">
                 <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                   <i class="fas fa-webhook text-white"></i>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <h3 class="font-semibold text-gray-900 truncate">{{ .Url }}</h3>
-                  <p class="text-sm text-gray-500 truncate">Track ID: {{ if .TrackId }}{{ .TrackId }}{{ else }}None{{ end }}</p>
+                  <h3 class="font-semibold text-gray-900 dark:text-white truncate">{{ .Url }}</h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 truncate">Track ID: {{ if .TrackId }}{{ .TrackId }}{{ else }}None{{ end }}</p>
                 </div>
               </div>
               
               <div class="flex items-center space-x-2 flex-shrink-0">
                 <form method="post" action="/form/delete?token={{ $.Server.Token }}&key=webhook" class="inline">
                   <input name="url" type="hidden" value="{{ .Url }}">
-                  <button class="inline-flex items-center px-3 py-2 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg hover:bg-red-200 transition-colors"
+                  <button class="inline-flex items-center px-3 py-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 text-xs rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                           onclick="return confirm('⚠️ Are you sure you want to delete this webhook?\n\nURL: {{ .Url }}\n{{ if .TrackId }}Track ID: {{ .TrackId }}\n{{ end }}\nThis action cannot be undone!')">
                     <i class="fas fa-trash mr-1 sm:mr-2"></i>
                     <span class="hidden sm:inline">Delete WebHook</span>
@@ -74,7 +78,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-4">
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-forwardinternal">
                 <input name="url" type="hidden" value="{{ .Url }}" />
-                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .ForwardInternal }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .ForwardInternal }}bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300{{ else }}bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300{{ end }}">
                   <i class="fas fa-share mr-1"></i>
                   <span class="hidden sm:inline">Forward Internal</span>
                   <span class="sm:hidden">Forward</span>
@@ -83,7 +87,7 @@
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-broadcasts">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300{{ else }}bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-700 dark:text-red-300{{ end }}{{ else }}bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300{{ end }}">
                   <i class="fas fa-comment-dots mr-1"></i>
                   <span class="hidden sm:inline">Broadcasts</span>
                   <span class="sm:hidden">Broad</span>
@@ -92,7 +96,7 @@
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-groups">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300{{ else }}bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-700 dark:text-red-300{{ end }}{{ else }}bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300{{ end }}">
                   <i class="fas fa-comments mr-1"></i>
                   <span class="hidden sm:inline">Groups</span>
                   <span class="sm:hidden">Groups</span>
@@ -101,7 +105,7 @@
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-readreceipts">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300{{ else }}bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-700 dark:text-red-300{{ end }}{{ else }}bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300{{ end }}">
                   <i class="fas fa-check mr-1"></i>
                   <span class="hidden sm:inline">Receipts</span>
                   <span class="sm:hidden">Rcpts</span>
@@ -110,7 +114,7 @@
               
               <form method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-calls">
                 <input name="url" type="hidden" value="{{ .Url }}">
-                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                <button class="w-full px-2 sm:px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300{{ else }}bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-700 dark:text-red-300{{ end }}{{ else }}bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300{{ end }}">
                   <i class="fas fa-phone mr-1"></i>
                   <span class="hidden sm:inline">Calls</span>
                   <span class="sm:hidden">Calls</span>
@@ -120,24 +124,23 @@
 
             <!-- Extra Information -->
             {{ if .IsSetExtra }}
-                <div class="p-4">
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <div id="webhook-extra-{{ .Url | printf "%x" }}" data-raw-extra="{{ .Extra }}">
-                    <pre class="text-xs bg-blue-100 p-3 rounded border overflow-x-auto"><code>{{ .Extra }}</code></pre>
+                    <pre class="text-xs bg-blue-100 dark:bg-blue-900/30 p-3 rounded border dark:border-gray-600 overflow-x-auto"><code class="text-gray-900 dark:text-gray-100">{{ .Extra }}</code></pre>
                   </div>
                 </div>
-              
             {{ end }}
 
             <!-- Failure Information -->
             {{ if .Failure }}
-              <div class="mb-4 border border-red-200 rounded-lg overflow-hidden bg-red-50">
-                <div class="bg-red-100 px-4 py-2 border-b border-red-200">
-                  <h4 class="text-sm font-medium text-red-900 flex items-center">
+              <div class="mb-4 border border-red-200 dark:border-red-600 rounded-lg overflow-hidden bg-red-50 dark:bg-red-900/20 mt-4">
+                <div class="bg-red-100 dark:bg-red-900/30 px-4 py-2 border-b border-red-200 dark:border-red-600">
+                  <h4 class="text-sm font-medium text-red-900 dark:text-red-100 flex items-center">
                     <i class="fas fa-exclamation-triangle mr-2"></i>Last Failure
                   </h4>
                 </div>
                 <div class="p-4">
-                  <p class="text-sm text-red-700">{{ .Failure }}</p>
+                  <p class="text-sm text-red-700 dark:text-red-300">{{ .Failure }}</p>
                 </div>
               </div>
             {{ end }}
@@ -150,11 +153,11 @@
         <!-- Empty State -->
         {{ if eq (len .Server.Webhooks) 0 }}
           <div class="text-center py-12">
-            <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <i class="fas fa-webhook text-gray-400 text-3xl"></i>
+            <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+              <i class="fas fa-webhook text-gray-400 dark:text-gray-500 text-3xl"></i>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No WebHooks configured</h3>
-            <p class="text-gray-600 mb-6">Start by adding your first webhook to receive events.</p>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No WebHooks configured</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">Start by adding your first webhook to receive events.</p>
             <button onclick="showAddWebhookModal()" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
               <i class="fas fa-plus mr-2"></i>
               Add Your First WebHook
@@ -167,18 +170,18 @@
 
   <!-- Add WebHook Modal -->
   <div id="addWebhookModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
-    <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <div class="mt-3">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900">Add New WebHook</h3>
-          <button onclick="hideAddWebhookModal()" class="text-gray-400 hover:text-gray-600">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add New WebHook</h3>
+          <button onclick="hideAddWebhookModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <i class="fas fa-times"></i>
           </button>
         </div>
         
         <form method="post" action="/form/webhooks/add?token={{ .Server.Token }}" class="space-y-4" onsubmit="prepareExtraData()">
           <div>
-            <label for="webhookUrl" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="webhookUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               <i class="fas fa-link mr-1"></i>WebHook URL *
             </label>
             <input 
@@ -186,14 +189,14 @@
               name="url" 
               id="webhookUrl"
               placeholder="https://your-server.com/webhook"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
               required
             >
-            <p class="text-xs text-gray-500 mt-1">The URL where webhook events will be sent</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">The URL where webhook events will be sent</p>
           </div>
           
           <div>
-            <label for="trackId" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="trackId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               <i class="fas fa-tag mr-1"></i>Track ID <span class="text-gray-400">(Optional)</span>
             </label>
             <input 
@@ -201,18 +204,18 @@
               name="trackid" 
               id="trackId"
               placeholder="Custom tracking identifier"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-            <p class="text-xs text-gray-500 mt-1">Custom identifier for tracking this webhook</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Custom identifier for tracking this webhook</p>
           </div>
           
           <!-- Extra Configuration as Form Fields -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="block text-sm font-medium text-gray-700">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 <i class="fas fa-cog mr-1"></i>Extra Configuration <span class="text-gray-400">(Optional)</span>
               </label>
-              <button type="button" onclick="addExtraField()" class="text-xs text-blue-600 hover:text-blue-800 flex items-center">
+              <button type="button" onclick="addExtraField()" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
                 <i class="fas fa-plus mr-1"></i>Add Field
               </button>
             </div>
@@ -223,14 +226,14 @@
                 <input 
                   type="text" 
                   placeholder="Field name (e.g., timeout, retries)"
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm extra-key"
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm extra-key"
                 >
                 <input 
                   type="text" 
                   placeholder="Value"
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm extra-value"
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm extra-value"
                 >
-                <button type="button" onclick="removeExtraField(this)" class="px-2 py-2 text-red-600 hover:text-red-800">
+                <button type="button" onclick="removeExtraField(this)" class="px-2 py-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
                   <i class="fas fa-trash text-xs"></i>
                 </button>
               </div>
@@ -239,52 +242,50 @@
             <!-- Hidden field to store the JSON -->
             <input type="hidden" name="extra" id="extraJson">
             
-            <p class="text-xs text-gray-500 mt-2">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Add custom configuration fields like headers, timeout, retries, etc.
             </p>
-            
-
           </div>
 
           <!-- Advanced Options Toggle -->
-          <div class="border-t pt-4">
-            <button type="button" onclick="toggleAdvancedOptions()" class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+          <div class="border-t dark:border-gray-600 pt-4">
+            <button type="button" onclick="toggleAdvancedOptions()" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center">
               <i class="fas fa-cog mr-1"></i>
               <span id="advancedToggleText">Show Advanced Options</span>
               <i id="advancedToggleIcon" class="fas fa-chevron-down ml-1"></i>
             </button>
             
-            <div id="advancedOptions" class="hidden mt-4 space-y-3 bg-gray-50 p-3 rounded">
+            <div id="advancedOptions" class="hidden mt-4 space-y-3 bg-gray-50 dark:bg-gray-700 p-3 rounded">
               <div class="grid grid-cols-2 gap-3">
                 <label class="flex items-center space-x-2">
-                  <input type="checkbox" name="forwardinternal" class="rounded border-gray-300 text-primary focus:ring-primary">
-                  <span class="text-sm text-gray-700">Forward Internal</span>
+                  <input type="checkbox" name="forwardinternal" class="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary focus:ring-primary">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Forward Internal</span>
                 </label>
                 
                 <label class="flex items-center space-x-2">
-                  <input type="checkbox" name="broadcasts" class="rounded border-gray-300 text-primary focus:ring-primary">
-                  <span class="text-sm text-gray-700">Broadcasts</span>
+                  <input type="checkbox" name="broadcasts" class="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary focus:ring-primary">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Broadcasts</span>
                 </label>
                 
                 <label class="flex items-center space-x-2">
-                  <input type="checkbox" name="groups" class="rounded border-gray-300 text-primary focus:ring-primary">
-                  <span class="text-sm text-gray-700">Groups</span>
+                  <input type="checkbox" name="groups" class="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary focus:ring-primary">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
                 </label>
                 
                 <label class="flex items-center space-x-2">
-                  <input type="checkbox" name="readreceipts" class="rounded border-gray-300 text-primary focus:ring-primary">
-                  <span class="text-sm text-gray-700">Read Receipts</span>
+                  <input type="checkbox" name="readreceipts" class="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary focus:ring-primary">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Read Receipts</span>
                 </label>
                 
                 <label class="flex items-center space-x-2">
-                  <input type="checkbox" name="calls" class="rounded border-gray-300 text-primary focus:ring-primary">
-                  <span class="text-sm text-gray-700">Calls</span>
+                  <input type="checkbox" name="calls" class="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary focus:ring-primary">
+                  <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
                 </label>
               </div>
             </div>
           </div>
           
-          <div class="flex space-x-3 pt-4 border-t">
+          <div class="flex space-x-3 pt-4 border-t dark:border-gray-600">
             <button 
               type="submit" 
               class="flex-1 bg-primary text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center"
@@ -295,7 +296,7 @@
             <button 
               type="button" 
               onclick="hideAddWebhookModal()"
-              class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+              class="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
             >
               Cancel
             </button>
@@ -306,6 +307,22 @@
   </div>
 
   <style>
+    /* Dark mode JSON code editor styles */
+    .dark .json-code-editor {
+      background: #111827;
+      color: #f3f4f6;
+    }
+    
+    .dark .json-code-header {
+      background: #1f2937;
+      border-bottom-color: #4b5563;
+    }
+    
+    .dark .json-line-numbers {
+      background: #1f2937;
+      border-right-color: #4b5563;
+    }
+    
     /* JSON Code Editor Styling */
     .json-code-editor {
       font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
@@ -449,6 +466,36 @@
   </style>
 
   <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-sm';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-sm';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+
     function showAddWebhookModal() {
       document.getElementById('addWebhookModal').classList.remove('hidden');
       // Reset form
@@ -497,15 +544,15 @@
           type="text" 
           placeholder="Field name (e.g., timeout, retries)"
           value="${key}"
-          class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm extra-key"
+          class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm extra-key"
         >
         <input 
           type="text" 
           placeholder="Value"
           value="${value}"
-          class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm extra-value"
+          class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm extra-value"
         >
-        <button type="button" onclick="removeExtraField(this)" class="px-2 py-2 text-red-600 hover:text-red-800">
+        <button type="button" onclick="removeExtraField(this)" class="px-2 py-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
           <i class="fas fa-trash text-xs"></i>
         </button>
       `;
@@ -533,14 +580,14 @@
           <input 
             type="text" 
             placeholder="Field name (e.g., timeout, retries)"
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm extra-key"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm extra-key"
           >
           <input 
             type="text" 
             placeholder="Value"
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm extra-value"
+            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md text-sm extra-value"
           >
-          <button type="button" onclick="removeExtraField(this)" class="px-2 py-2 text-red-600 hover:text-red-800">
+          <button type="button" onclick="removeExtraField(this)" class="px-2 py-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
             <i class="fas fa-trash text-xs"></i>
           </button>
         </div>
@@ -866,6 +913,7 @@
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
       processWebhookExtras();
     });
   </script>

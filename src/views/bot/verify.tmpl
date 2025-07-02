@@ -1,30 +1,37 @@
 {{ define "content" }}
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
   <div class="max-w-md w-full mx-4">
+    <!-- Theme Toggle Button -->
+    <div class="absolute top-4 right-4">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md transition-colors" title="Toggle Dark Mode">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+      </button>
+    </div>
+
     <!-- QuePasa Logo Header -->
     <div class="text-center mb-6">
       <div class="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
         <img src="/assets/favicon.png" alt="QuePasa" class="w-24 h-24 object-contain">
       </div>
-      <h1 class="text-4xl font-bold text-gray-900 mb-2">QuePasa</h1>
-      <p class="text-gray-600">WhatsApp Gateway Platform</p>
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">QuePasa</h1>
+      <p class="text-gray-600 dark:text-gray-300">WhatsApp Gateway Platform</p>
     </div>
 
     <!-- Error Message -->
     {{ if .ErrorMessage }}
-      <div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+      <div class="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-lg">
         <div class="flex">
           <i class="fas fa-exclamation-triangle text-red-400 mr-3 mt-1"></i>
-          <p class="text-red-700">{{ .ErrorMessage }}</p>
+          <p class="text-red-700 dark:text-red-300">{{ .ErrorMessage }}</p>
         </div>
       </div>
     {{ end }}
 
     <!-- WebSocket SSL Warning -->
-    <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+    <div class="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
       <div class="flex">
         <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
-        <div class="text-yellow-700">
+        <div class="text-yellow-700 dark:text-yellow-300">
           <p class="font-medium mb-1">Important Configuration</p>
           <p class="text-sm">If the QR code doesn't appear, please verify that the WEBSOCKETSSL=true variable is set in /src/.env</p>
         </div>
@@ -32,30 +39,30 @@
     </div>
 
     <!-- QR Code Container -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
           <i class="fas fa-qrcode mr-3"></i>WhatsApp Verification
         </h2>
-        <p class="text-gray-600 mt-1">Scan this QR code with WhatsApp within 20 seconds</p>
+        <p class="text-gray-600 dark:text-gray-300 mt-1">Scan this QR code with WhatsApp within 20 seconds</p>
       </div>
       
       <div class="p-8 text-center">
         <!-- Loading State -->
         <div id="loadingState" class="space-y-4">
           <div class="animate-spin mx-auto w-12 h-12 border-4 border-primary border-t-transparent rounded-full"></div>
-          <p class="text-gray-600">Generating QR code...</p>
+          <p class="text-gray-600 dark:text-gray-300">Generating QR code...</p>
         </div>
         
         <!-- QR Code -->
         <div id="qrContainer" class="hidden space-y-4">
-          <img id="qrcode" src="" alt="QR Code" class="mx-auto rounded-lg border-4 border-gray-200 transition-all duration-300">
+          <img id="qrcode" src="" alt="QR Code" class="mx-auto rounded-lg border-4 border-gray-200 dark:border-gray-600 transition-all duration-300">
           <div class="space-y-2">
             <div class="flex items-center justify-center space-x-2">
               <div id="statusIndicator" class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-              <span id="statusText" class="text-sm text-gray-600">Waiting for scan...</span>
+              <span id="statusText" class="text-sm text-gray-600 dark:text-gray-300">Waiting for scan...</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
               <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
             </div>
           </div>
@@ -63,32 +70,32 @@
         
         <!-- Success State -->
         <div id="successState" class="hidden space-y-4">
-          <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-check text-green-600 text-2xl"></i>
+          <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-check text-green-600 dark:text-green-400 text-2xl"></i>
           </div>
           <div>
-            <h3 class="text-lg font-medium text-green-900">Successfully Connected!</h3>
-            <p class="text-green-700">Redirecting to dashboard...</p>
+            <h3 class="text-lg font-medium text-green-900 dark:text-green-100">Successfully Connected!</h3>
+            <p class="text-green-700 dark:text-green-300">Redirecting to dashboard...</p>
           </div>
         </div>
         
         <!-- Error State -->
         <div id="errorState" class="hidden space-y-4">
-          <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-            <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+          <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-2xl"></i>
           </div>
           <div>
-            <h3 class="text-lg font-medium text-red-900">Connection Failed</h3>
-            <p class="text-red-700 mb-4">Unable to establish connection. Retrying...</p>
-            <button onclick="retryConnection()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+            <h3 class="text-lg font-medium text-red-900 dark:text-red-100">Connection Failed</h3>
+            <p class="text-red-700 dark:text-red-300 mb-4">Unable to establish connection. Retrying...</p>
+            <button onclick="retryConnection()" class="px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors">
               <i class="fas fa-redo mr-2"></i>Retry Now
             </button>
           </div>
         </div>
       </div>
       
-      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
-        <div class="flex items-center justify-between text-sm text-gray-600">
+      <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
           <div class="flex items-center space-x-2">
             <i class="fas fa-mobile-alt"></i>
             <span>Open WhatsApp → Settings → Linked Devices → Link a Device</span>
@@ -103,6 +110,39 @@
 </div>
 
 <script type="text/javascript">
+  // Theme management
+  function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const currentTheme = savedTheme || systemTheme;
+    
+    applyTheme(currentTheme);
+  }
+  
+  function applyTheme(theme) {
+    const html = document.documentElement;
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (theme === 'dark') {
+      html.classList.add('dark');
+      if (themeIcon) themeIcon.className = 'fas fa-sun text-lg';
+    } else {
+      html.classList.remove('dark');
+      if (themeIcon) themeIcon.className = 'fas fa-moon text-lg';
+    }
+    
+    localStorage.setItem('theme', theme);
+  }
+  
+  function toggleTheme() {
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+  }
+
+  // Initialize theme before other scripts
+  initializeTheme();
+
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   const mode = urlParams.get('mode');

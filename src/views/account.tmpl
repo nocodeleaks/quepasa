@@ -1,9 +1,9 @@
 {{ define "content" }}
   <script src="/assets/copytoclipboard.js"></script>
   
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
     <!-- Header -->
-    <div class="bg-white shadow-sm border-b">
+    <div class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         <div class="flex items-center justify-between gap-2 sm:gap-4">
           <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
@@ -11,36 +11,43 @@
               <img src="/assets/favicon.png" alt="QuePasa" class="w-8 h-8 sm:w-12 sm:h-12 object-contain">
             </div>
             <div class="min-w-0 flex-1">
-              <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 truncate">QuePasa Dashboard</h1>
-              <p class="text-xs sm:text-sm text-gray-600 truncate">Welcome <span class="font-semibold text-primary">{{ .User.Username }}</span></p>
-              <p class="text-xs sm:text-sm text-gray-600 truncate">Version <span class="font-semibold text-secondary">v{{ .Version }}</span></p>
+              <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">QuePasa Dashboard</h1>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">Welcome <span class="font-semibold text-primary">{{ .User.Username }}</span></p>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">Version <span class="font-semibold text-secondary">v{{ .Version }}</span></p>
             </div>
           </div>
           
-            <div class="flex flex-col items-end space-y-2 flex-shrink-0">
-            <!-- Master Key and WebSocket badges on top -->
-            {{ if .HasMasterKey }}
-              <div class="hidden sm:flex items-center space-x-1">
-              <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                <i class="fas fa-key mr-1"></i>
-                <span class="hidden md:inline">Master Key</span>
-                <span class="md:hidden">Master Key</span>
-              </span>
-              {{ if .HasSignalRActiveConnections }}
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                <i class="fas fa-wifi mr-1"></i>
-                <span class="hidden md:inline">WebSockets</span>
-                <span class="md:hidden">WebSockets</span>
+          <div class="flex flex-col items-end space-y-2 flex-shrink-0">
+            <!-- Theme Toggle and Status badges on top -->
+            <div class="flex items-center space-x-2">
+              <!-- Theme Toggle Button -->
+              <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Dark Mode">
+                <i id="themeIcon" class="fas fa-moon text-sm"></i>
+              </button>
+              
+              {{ if .HasMasterKey }}
+                <div class="hidden sm:flex items-center space-x-1">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <i class="fas fa-key mr-1"></i>
+                  <span class="hidden md:inline">Master Key</span>
+                  <span class="md:hidden">Master Key</span>
                 </span>
-              {{ else }}
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                <i class="fas fa-exclamation-triangle mr-1"></i>
-                <span class="hidden md:inline">No WebSockets</span>
-                <span class="md:hidden">No WebSockets</span>
-                </span>
+                {{ if .HasSignalRActiveConnections }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <i class="fas fa-wifi mr-1"></i>
+                  <span class="hidden md:inline">WebSockets</span>
+                  <span class="md:hidden">WebSockets</span>
+                  </span>
+                {{ else }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                  <i class="fas fa-exclamation-triangle mr-1"></i>
+                  <span class="hidden md:inline">No WebSockets</span>
+                  <span class="md:hidden">No WebSockets</span>
+                  </span>
+                {{ end }}
+                </div>
               {{ end }}
-              </div>
-            {{ end }}
+            </div>
             
             <!-- Add Bot button on bottom -->
             <a href="/form/verify?mode=md" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm flex-shrink-0">
@@ -53,7 +60,7 @@
         
         <!-- Mobile Status Badges - Only show on small screens -->
         {{ if .HasMasterKey }}
-          <div class="flex sm:hidden items-center space-x-2 mt-2 pt-2 border-t border-gray-100">
+          <div class="flex sm:hidden items-center space-x-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
               <i class="fas fa-key mr-1"></i>Master Key
             </span>
@@ -74,10 +81,10 @@
     <!-- Error Message -->
     {{ if .ErrorMessage }}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
           <div class="flex">
             <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
-            <p class="text-yellow-700">{{ .ErrorMessage }}</p>
+            <p class="text-yellow-700 dark:text-yellow-300">{{ .ErrorMessage }}</p>
           </div>
         </div>
       </div>
@@ -88,8 +95,8 @@
       <!-- Header with Search and View Toggle -->
       <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900">Your Bots</h2>
-          <p class="text-gray-600 mt-1">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Your Bots</h2>
+          <p class="text-gray-600 dark:text-gray-300 mt-1">
             <span id="visibleCount">{{ len .Servers }}</span> of {{ len .Servers }} bot(s) displayed
           </p>
         </div>
@@ -97,18 +104,18 @@
         <!-- Search and View Controls -->
         <div class="flex flex-col sm:flex-row gap-3">
           <!-- View Toggle -->
-          <div class="flex bg-gray-100 rounded-lg p-1">
+          <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button 
               id="gridViewBtn"
               onclick="setView('grid')"
-              class="flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white text-gray-900 shadow-sm"
+              class="flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
             >
               <i class="fas fa-th mr-2"></i>Cards
             </button>
             <button 
               id="listViewBtn"
               onclick="setView('list')"
-              class="flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 hover:text-gray-900"
+              class="flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
             >
               <i class="fas fa-list mr-2"></i>List
             </button>
@@ -117,19 +124,19 @@
           <!-- Search Field -->
           <div class="relative w-full sm:w-80">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fas fa-search text-gray-400"></i>
+              <i class="fas fa-search text-gray-400 dark:text-gray-500"></i>
             </div>
             <input 
               type="text" 
               id="botSearch"
               placeholder="Search by phone number or token..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
               onkeyup="filterBots()"
             >
             <button 
               id="clearSearch"
               onclick="clearSearch()"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 hidden"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hidden"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -140,19 +147,19 @@
       <!-- Grid View (Default) -->
       <div id="gridView" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {{ range .Servers }}
-        <div class="bot-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow" 
+        <div class="bot-card bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow" 
              data-phone="{{ .GetNumber }}" 
              data-token="{{ .Token }}">
           
           <!-- Bot Header -->
-          <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                   <i class="fas fa-robot text-white"></i>
                 </div>
                 <div>
-                  <h3 class="font-semibold text-gray-900" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                  <h3 class="font-semibold text-gray-900 dark:text-white" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
                 </div>
               </div>
               
@@ -207,7 +214,7 @@
             <div class="mb-4">
               <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Token</label>
               <div class="mt-1 flex items-center space-x-2">
-                <code class="flex-1 text-xs bg-gray-100 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 transition-colors" 
+                <code class="flex-1 text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
                       onclick="CopyToClipboard(this.textContent)" 
                       title="Click to copy">
                   {{ .Token }}
@@ -256,21 +263,21 @@
               <!-- Mobile/Tablet View - Dropdown Menu (Hidden on Desktop) -->
               <div class="mb-4 lg:hidden">
                 <div class="relative inline-block text-left">
-                  <button onclick="toggleDropdown('dropdown-{{ .Token }}')" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary">
+                  <button onclick="toggleDropdown('dropdown-{{ .Token }}')" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white dark:bg-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary">
                     <i class="fas fa-cog mr-2"></i>
                     Settings
                     <i class="fas fa-chevron-down ml-2"></i>
                   </button>
                   
-                  <div id="dropdown-{{ .Token }}" class="hidden absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div id="dropdown-{{ .Token }}" class="hidden absolute right-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
                     <div class="p-4 space-y-3">
-                      <h4 class="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Bot Configuration</h4>
+                      <h4 class="text-sm font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Bot Configuration</h4>
                       
                       <!-- Broadcasts -->
                       <div class="flex items-center justify-between">
                         <div class="flex items-center">
                           <i class="fas fa-comment-dots text-gray-400 mr-2"></i>
-                          <span class="text-sm text-gray-700">Broadcasts</span>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Broadcasts</span>
                         </div>
                         <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
                           <input name="token" type="hidden" value="{{ .Token }}">
@@ -284,7 +291,7 @@
                       <div class="flex items-center justify-between">
                         <div class="flex items-center">
                           <i class="fas fa-comments text-gray-400 mr-2"></i>
-                          <span class="text-sm text-gray-700">Groups</span>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
                         </div>
                         <form method="post" action="/form/toggle?key=server-groups" class="inline">
                           <input name="token" type="hidden" value="{{ .Token }}">
@@ -298,7 +305,7 @@
                       <div class="flex items-center justify-between">
                         <div class="flex items-center">
                           <i class="fas fa-check text-gray-400 mr-2"></i>
-                          <span class="text-sm text-gray-700">Read Receipts</span>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Read Receipts</span>
                         </div>
                         <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
                           <input name="token" type="hidden" value="{{ .Token }}">
@@ -312,7 +319,7 @@
                       <div class="flex items-center justify-between">
                         <div class="flex items-center">
                           <i class="fas fa-phone text-gray-400 mr-2"></i>
-                          <span class="text-sm text-gray-700">Calls</span>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
                         </div>
                         <form method="post" action="/form/toggle?key=server-calls" class="inline">
                           <input name="token" type="hidden" value="{{ .Token }}">
@@ -354,7 +361,7 @@
           </div>
 
           <!-- Bot Actions -->
-          <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+          <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
             <div class="flex flex-wrap gap-2">
               {{ if eq .GetStatusString "Ready" }}
                 <a href="/form/server/{{ .Token }}/send" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
@@ -390,7 +397,7 @@
       <!-- List View (Hidden by default) -->
       <div id="listView" class="hidden space-y-4">
         {{ range .Servers }}
-        <div class="bot-card bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow mx-0 sm:mx-0" 
+        <div class="bot-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow mx-0 sm:mx-0" 
              data-phone="{{ .GetNumber }}" 
              data-token="{{ .Token }}">
           <div class="px-4 py-4">
@@ -404,7 +411,7 @@
                 
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center space-x-2 mb-1">
-                    <h3 class="font-semibold text-gray-900 truncate text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white truncate text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
                     
                     <!-- Status Indicator -->
                     <div class="flex items-center space-x-1 flex-shrink-0">
@@ -444,7 +451,7 @@
             </div>
             
             <!-- Action Buttons Row -->
-            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
               <div class="flex items-center space-x-2">
                 {{ if eq .GetStatusString "Ready" }}
                   <a href="/form/server/{{ .Token }}/send" 
@@ -474,7 +481,7 @@
                 {{ if .Verified }}
                   <!-- inline toggles beside Stop/Delete -->
                   <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700">Broadcast</span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Broadcast</span>
                           <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
@@ -483,7 +490,7 @@
                           </form>
                         </div>
                   <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700">Groups</span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
                           <form method="post" action="/form/toggle?key=server-groups" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
@@ -492,7 +499,7 @@
                           </form>
                         </div>
                   <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700">Receipts</span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Receipts</span>
                           <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
@@ -501,7 +508,7 @@
                           </form>
                         </div>
                   <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700">Calls</span>
+                    <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
                           <form method="post" action="/form/toggle?key=server-calls" class="inline">
                             <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
@@ -538,11 +545,11 @@
 
       <!-- No Results State -->
       <div id="noResults" class="text-center py-12 hidden">
-        <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <i class="fas fa-search text-gray-400 text-3xl"></i>
+        <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+          <i class="fas fa-search text-gray-400 dark:text-gray-500 text-3xl"></i>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No bots found</h3>
-        <p class="text-gray-600 mb-4">No bots match your search criteria.</p>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No bots found</h3>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">No bots match your search criteria.</p>
         <button onclick="clearSearch()" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
           <i class="fas fa-times mr-2"></i>
           Clear Search
@@ -551,12 +558,12 @@
 
       <!-- Environment Options -->
       {{ if not .Options.IsDefault }}
-        <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
-          <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900">WhatsApp Service Options</h3>
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">WhatsApp Service Options</h3>
           </div>
           <div class="px-6 py-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300">
               {{ if .Options.Groups }}<div><span class="font-medium">Groups:</span> {{ .Options.Groups.String }}</div>{{ end }}
               {{ if .Options.Broadcasts }}<div><span class="font-medium">Broadcasts:</span> {{ .Options.Broadcasts.String }}</div>{{ end }}
               {{ if .Options.ReadReceipts }}<div><span class="font-medium">Read Receipts:</span> {{ .Options.ReadReceipts.String }}</div>{{ end }}
@@ -569,12 +576,12 @@
       {{ end }}
 
       {{ if not .WMOptions.IsDefault }}
-        <div class="mt-4 bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
-          <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900">Whatsmeow Service Options</h3>
+        <div class="mt-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Whatsmeow Service Options</h3>
           </div>
           <div class="px-6 py-4">
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
               {{ if .WMOptions.WMLogLevel }}<div><span class="font-medium">Log Level:</span> {{ .WMOptions.WMLogLevel }}</div>{{ end }}
               {{ if .WMOptions.DBLogLevel }}<div><span class="font-medium">Database Log Level:</span> {{ .WMOptions.DBLogLevel }}</div>{{ end }}
             </div>
@@ -651,6 +658,54 @@
   </style>
 
   <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-sm';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-sm';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+      
+      // Set initial view state
+      const savedView = localStorage.getItem('botsViewType') || 'grid';
+      
+      // Make sure both views exist before setting
+      const gridView = document.getElementById('gridView');
+      const listView = document.getElementById('listView');
+      
+      if (gridView && listView) {
+        setView(savedView);
+      } else {
+        console.error('Grid or List view elements not found');
+      }
+    });
+    
     // View management
     let currentView = 'grid';
     
@@ -671,15 +726,15 @@
         listView.style.display = 'none';
         
         // Update button styles
-        gridBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white text-gray-900 shadow-sm';
-        listBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 hover:text-gray-900';
+        gridBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm';
+        listBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white';
       } else {
         gridView.style.display = 'none';
         listView.style.display = 'block';
         
         // Update button styles
-        listBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white text-gray-900 shadow-sm';
-        gridBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 hover:text-gray-900';
+        listBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm';
+        gridBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white';
       }
       
       // Save preference
@@ -800,40 +855,6 @@
       filterBots();
       searchInput.focus();
     }
-    
-    // Load saved view preference and initialize
-    document.addEventListener('DOMContentLoaded', function() {
-      
-      // Set initial view state
-      const savedView = localStorage.getItem('botsViewType') || 'grid';
-      
-      // Make sure both views exist before setting
-      const gridView = document.getElementById('gridView');
-      const listView = document.getElementById('listView');
-      
-      if (gridView && listView) {
-        setView(savedView);
-      } else {
-        console.error('Grid or List view elements not found');
-      }
-    });
-    
-    // Add keyboard shortcut for search
-    document.addEventListener('keydown', function(e) {
-      // Ctrl/Cmd + K to focus search
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        document.getElementById('botSearch').focus();
-      }
-      
-      // Escape to clear search
-      if (e.key === 'Escape') {
-        const searchInput = document.getElementById('botSearch');
-        if (searchInput === document.activeElement) {
-          clearSearch();
-        }
-      }
-    });
     
     // Dropdown functionality
     function toggleDropdown(dropdownId) {

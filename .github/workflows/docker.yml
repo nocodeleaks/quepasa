@@ -195,7 +195,7 @@ jobs:
             git add .
             git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
             # Empurra HEAD para a branch new-ui remota
-            git push origin HEAD:new-ui
+            git push --force-with-lease origin HEAD:new-ui
           else
             echo "✅ Nenhuma mudança para sincronizar em new-ui"
           fi

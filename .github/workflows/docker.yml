@@ -197,7 +197,7 @@ jobs:
           path: temp-main
           fetch-depth: 0
 
-      # 2) Checkout da new-ui com histórico completo
+      # 2) Checkout de um clone vazio para new-ui
       - name: Checkout new-ui branch
         uses: actions/checkout@v3
         with:
@@ -205,11 +205,12 @@ jobs:
           path: new-ui
           fetch-depth: 0
 
-      # 3) Garanta que estamos numa branch local new-ui
+      # 3) Fetch de todas as branches e checkout da remota new-ui (ou cria local)
       - name: Prepare new-ui local branch
         working-directory: new-ui
         run: |
-          git checkout -B new-ui
+          git fetch --all
+          git checkout -B new-ui origin/new-ui || git checkout -B new-ui
 
       # 4) Sincroniza excluindo .tmpl, .css e .js
       - name: Sync changes from main to new-ui excluding tmpl/css/js
@@ -218,7 +219,7 @@ jobs:
             --exclude='*.tmpl' \
             --exclude='*.css' \
             --exclude='*.js' \
-            temp-main/ new-ui/
+            ../temp-main/ ./
 
       # 5) Commit & Push com upstream
       - name: Commit & Push to new-ui

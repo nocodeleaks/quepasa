@@ -976,7 +976,37 @@ func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (interface{}, erro
 		return nil, err
 	}
 
-	return conn.Client.GetGroupInfo(jid)
+	groupInfo, err := conn.Client.GetGroupInfo(jid)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fill contact names for participants
+	if groupInfo.Participants != nil {
+		for i, participant := range groupInfo.Participants {
+			// Get the contact info from the store
+			contact, err := conn.Client.Store.Contacts.GetContact(context.TODO(), participant.JID)
+			if err != nil {
+				// If no contact info is found, fallback to JID user part
+				groupInfo.Participants[i].DisplayName = participant.JID.User
+			} else {
+				// Set the DisplayName field to the contact's full name or push name
+				if len(contact.FullName) > 0 {
+					groupInfo.Participants[i].DisplayName = contact.FullName
+				} else if len(contact.PushName) > 0 {
+					groupInfo.Participants[i].DisplayName = contact.PushName
+				} else {
+					groupInfo.Participants[i].DisplayName = "" // Fallback to JID user part
+				}
+			}
+		}
+	} else {
+		// If Participants is nil, initialize it to an empty slice
+		groupInfo.Participants = []types.GroupParticipant{}
+		conn.GetLogger().Warnf("Group %s has nil Participants, initializing to empty slice", groupInfo.JID.String())
+	}
+
+	return groupInfo, nil
 }
 
 func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (interface{}, error) {

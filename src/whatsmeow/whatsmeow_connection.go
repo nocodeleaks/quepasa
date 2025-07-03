@@ -929,7 +929,35 @@ func (conn *WhatsmeowConnection) GetJoinedGroups() ([]interface{}, error) {
 		return nil, err
 	}
 
-	// Convert []*types.GroupInfo to []interface{}
+	// Iterate over groupInfos and set the DisplayName for each participant
+	for _, groupInfo := range groupInfos {
+		if groupInfo.Participants != nil {
+			for i, participant := range groupInfo.Participants {
+				// Get the contact info from the store
+				contact, err := conn.Client.Store.Contacts.GetContact(context.TODO(), participant.JID)
+				if err != nil {
+					// If no contact info is found, fallback to JID user part
+					groupInfo.Participants[i].DisplayName = participant.JID.User
+				} else {
+					// Set the DisplayName field to the contact's full name or push name
+					if len(contact.FullName) > 0 {
+						groupInfo.Participants[i].DisplayName = contact.FullName
+					} else if len(contact.PushName) > 0 {
+						groupInfo.Participants[i].DisplayName = contact.PushName
+					} else {
+						groupInfo.Participants[i].DisplayName = "" // Fallback to JID user part
+					}
+				}
+			}
+		} else {
+
+			// If Participants is nil, initialize it to an empty slice
+			groupInfo.Participants = []types.GroupParticipant{}
+			// You might want to log this or handle it differently
+			conn.GetLogger().Warnf("Group %s has nil Participants, initializing to empty slice", groupInfo.JID.String())
+		}
+	}
+
 	groups := make([]interface{}, len(groupInfos))
 	for i, group := range groupInfos {
 		groups[i] = group

@@ -21,12 +21,6 @@ func (source *QPWebhookHandler) HandleWebHook(payload *whatsapp.WhatsappMessage)
 	logentry = logentry.WithField(LogFields.MessageId, payload.Id)
 	logentry.Level = loglevel
 
-	reason := IsValidForDispatch(payload)
-	if len(reason) > 0 {
-		logentry.Debug(reason)
-		return
-	}
-
 	err := PostToWebHookFromServer(source.server, payload)
 	if err != nil {
 		logentry.Errorf("error on handle webhook distributions: %s", err.Error())

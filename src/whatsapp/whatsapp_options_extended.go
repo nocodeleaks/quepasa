@@ -28,6 +28,9 @@ type WhatsappOptionsExtended struct {
 
 	// default presence status
 	Presence string `json:"presence,omitempty"`
+
+	// should dispatch unhandled messages
+	DispatchUnhandled bool `json:"dispatchunhandled,omitempty"`
 }
 
 func (source WhatsappOptionsExtended) IsDefault() bool {
@@ -37,6 +40,7 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 		source.Calls.Equals(UnSetBooleanType) &&
 		!source.ReadUpdate &&
 		source.HistorySync == nil &&
+		!source.DispatchUnhandled &&
 		len(source.LogLevel) == 0
 }
 

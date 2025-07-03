@@ -3,6 +3,7 @@ package whatsmeow
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	slug "github.com/gosimple/slug"
@@ -53,14 +54,31 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case in.ListMessage != nil:
 		HandleListMessage(logentry, out, in.ListMessage)
 	case in.SenderKeyDistributionMessage != nil:
-		out.Type = whatsapp.DiscardMessageType
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "SenderKeyDistributionMessage",
+			Info:   in.SenderKeyDistributionMessage,
+			Reason: "discard",
+		}
 	case in.StickerSyncRmrMessage != nil:
-		out.Type = whatsapp.DiscardMessageType
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "StickerSyncRmrMessage",
+			Info:   in.StickerSyncRmrMessage,
+			Reason: "discard",
+		}
 	case len(in.GetConversation()) > 0:
 		HandleTextMessage(logentry, out, in)
 	default:
-		out.Type = whatsapp.UnknownMessageType
-		logentry.Warnf("message not handled: %v", in)
+		// If no specific handler is found, mark the message as unhandled
+		out.Type = whatsapp.UnhandledMessageType
+
+		// Create debug information with the raw message
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  getMessageEventType(in),
+			Info:   in,
+			Reason: "unknown",
+		}
 	}
 }
 
@@ -98,7 +116,13 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 
 	case v == waE2E.ProtocolMessage_HISTORY_SYNC_NOTIFICATION:
 		var logtext string
-		out.Type = whatsapp.UnknownMessageType
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "ProtocolMessage",
+			Info:   in,
+			Reason: "history sync notification",
+		}
+
 		b, err := json.Marshal(in)
 		if err != nil {
 			logentry.Error(err)
@@ -121,14 +145,13 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 		return
 
 	default:
-		out.Type = whatsapp.UnknownMessageType
-		b, err := json.Marshal(in)
-		if err != nil {
-			logentry.Error(err)
-			return
+		out.Type = whatsapp.UnhandledMessageType
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "ProtocolMessage",
+			Info:   in,
+			Reason: "unknown protocol message type",
 		}
 
-		out.Text = "ProtocolMessage :: " + string(b)
 		return
 	}
 }
@@ -403,4 +426,33 @@ func HandleContactMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 
 	content := []byte(in.GetVcard())
 	out.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
+}
+
+// getMessageEventType extracts the actual message type from the protobuf message
+func getMessageEventType(in *waE2E.Message) string {
+	v := reflect.ValueOf(in).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if field.Kind() == reflect.Ptr && !field.IsNil() {
+			fieldName := t.Field(i).Name
+			// Convert from Go field name to protobuf field name format
+			return toSnakeCase(fieldName)
+		}
+	}
+
+	return "unknown"
+}
+
+// toSnakeCase converts Go field names to protobuf field naming convention
+func toSnakeCase(s string) string {
+	var result strings.Builder
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			result.WriteRune('_')
+		}
+		result.WriteRune(r)
+	}
+	return strings.ToLower(result.String())
 }

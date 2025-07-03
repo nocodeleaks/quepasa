@@ -201,19 +201,41 @@ func (source *QPWhatsappHandlers) GetById(id string) (*whatsapp.WhatsappMessage,
 
 // sends the message throw external publishers
 func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
-	if source != nil {
-		if rabbitmq.RabbitMQClientInstance != nil {
-			RabbitMQPublish(payload)
-		}
+	// If the source is nil, we cannot proceed with dispatching the message.
+	// This is a safeguard to prevent nil pointer dereference errors.
+	if source == nil {
+		return
+	}
 
-		if source.server != nil {
-			payload.Wid = source.GetWId()
-			go SignalRHub.Dispatch(source.server.Token, payload)
-		}
+	// Validate the message payload. If it's not valid for dispatch,
+	// IsValidForDispatch will return a reason string.
+	reason := IsValidForDispatch(payload)
+	if len(reason) > 0 {
+		logentry := source.GetLogger()
+		logentry.Debug(reason)
 
-		for _, handler := range source.aeh {
-			go handler.HandleWebHook(payload)
-		}
+		jsonPayload := library.ToJson(payload)
+		logentry.Logger.Debugf("unhandled payload: %s", jsonPayload)
+
+		// If a reason is returned, it means the message should be ignored.
+		// No further action is needed, so we simply return.
+		return
+	}
+
+	if rabbitmq.RabbitMQClientInstance != nil {
+		// This is done in a new goroutine to ensure the publishing process
+		// doesn't block the execution of the calling function, allowing for
+		// non-blocking message processing.
+		go rabbitmq.RabbitMQClientInstance.PublishMessage(payload)
+	}
+
+	if source.server != nil {
+		payload.Wid = source.GetWId()
+		go SignalRHub.Dispatch(source.server.Token, payload)
+	}
+
+	for _, handler := range source.aeh {
+		go handler.HandleWebHook(payload)
 	}
 }
 

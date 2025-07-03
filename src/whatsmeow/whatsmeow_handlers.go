@@ -118,6 +118,11 @@ func (source *WhatsmeowHandlers) HandleCalls() bool {
 
 //#endregion
 
+func (source WhatsmeowHandlers) ShouldDispatchUnhandled() bool {
+	options := source.GetServiceOptions()
+	return options.DispatchUnhandled
+}
+
 func (source WhatsmeowHandlers) HandleHistorySync() bool {
 	options := source.GetServiceOptions()
 	if options.HistorySync != nil {
@@ -289,8 +294,107 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 	default:
 		logentry.Debugf("event not handled: %v", reflect.TypeOf(evt))
+
+		// Only dispatch debug events if DEBUGEVENTS is true
+		// If DEBUGEVENTS=false or not set, do nothing (no webhook dispatch)
+		if source.ShouldDispatchUnhandled() {
+			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
+		}
 		return
 	}
+}
+
+// DispatchUnhandledEvent creates a debug message for unhandled events and dispatches it
+func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventType string) {
+	logentry := source.GetLogger()
+	logentry.Debugf("dispatching debug event: %s", eventType)
+
+	// Clean up the event type by removing the *events. prefix
+	cleanEventType := strings.TrimPrefix(eventType, "*events.")
+
+	message := &whatsapp.WhatsappMessage{
+		Content:   evt,
+		Id:        source.Client.GenerateMessageID(),
+		Timestamp: time.Now().Truncate(time.Second),
+		Type:      whatsapp.UnhandledMessageType,
+		FromMe:    false,
+	}
+
+	// Create debug information with the event in JSON format
+	message.Debug = &whatsapp.WhatsappMessageDebug{
+		Event:  cleanEventType,
+		Info:   evt,
+		Reason: "event",
+	}
+
+	// Try to extract chat information from events that have Info field
+	if eventWithInfo, ok := evt.(interface{ GetInfo() types.MessageInfo }); ok {
+		info := eventWithInfo.GetInfo()
+
+		// basic information
+		message.Id = info.ID
+		message.Timestamp = ImproveTimestamp(info.Timestamp)
+		message.FromMe = info.IsFromMe
+
+		message.Chat = whatsapp.WhatsappChat{}
+		chatID := fmt.Sprint(info.Chat.User, "@", info.Chat.Server)
+		message.Chat.Id = chatID
+		message.Chat.Title = GetChatTitle(source.Client, info.Chat)
+
+		// Populate phone field
+		message.Chat.PopulatePhone(source.Client)
+
+		// Get LID for the chat if available
+		if source.Client != nil && source.Client.Store != nil {
+			chatJID, err := types.ParseJID(chatID)
+			if err == nil {
+				lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), chatJID)
+				if err == nil && !lidJID.IsEmpty() {
+					message.Chat.Lid = lidJID.String()
+				}
+			}
+		}
+
+		// Handle group participants
+		if info.IsGroup {
+			message.Participant = &whatsapp.WhatsappChat{}
+
+			participantID := fmt.Sprint(info.Sender.User, "@", info.Sender.Server)
+			message.Participant.Id = participantID
+			message.Participant.Title = GetChatTitle(source.Client, info.Sender)
+
+			// Populate phone field for participant
+			message.Participant.PopulatePhone(source.Client)
+
+			// If title is empty, use PushName as fallback
+			if len(message.Participant.Title) == 0 {
+				message.Participant.Title = info.PushName
+			}
+
+			// Get LID for the participant if available
+			if source.Client != nil && source.Client.Store != nil {
+				participantJID, err := types.ParseJID(participantID)
+				if err == nil {
+					lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), participantJID)
+					if err == nil && !lidJID.IsEmpty() {
+						message.Participant.Lid = lidJID.String()
+					}
+				}
+			}
+		} else {
+			if len(message.Chat.Title) == 0 && message.FromMe {
+				message.Chat.Title = library.GetPhoneByWId(message.Chat.Id)
+			}
+		}
+
+		// Follow the same pattern as other messages
+		source.Follow(message, "debug")
+		return
+	}
+
+	// Fallback to system chat if we can't extract chat information
+	message.Chat = whatsapp.WASYSTEMCHAT
+	source.Follow(message, "debug")
 }
 
 func HistorySyncSaveJSON(evt events.HistorySync) {
@@ -370,8 +474,11 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		return
 	}
 
+	// Filter out messageContextInfo from the message content
+	filteredContent := FilterMessageContextInfo(evt.Message)
+
 	message := &whatsapp.WhatsappMessage{
-		Content:        evt.Message,
+		Content:        filteredContent,
 		InfoForHistory: evt.Info,
 		FromHistory:    from == "history",
 	}
@@ -436,18 +543,35 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	HandleKnowingMessages(handler, message, evt.Message)
 
 	// discard and return
-	if message.Type == whatsapp.DiscardMessageType {
-		JsonMsg := library.ToJson(evt)
-		logentry.Debugf("debugging and ignoring an discard message: %s", JsonMsg)
-		return
-	}
-
-	// unknown and continue
-	if message.Type == whatsapp.UnknownMessageType {
-		message.Text += " :: " + library.ToJson(evt)
+	if message.Type == whatsapp.UnhandledMessageType {
+		if message.Debug == nil {
+			logentry.Warnf("unhandled message type, no debug information: %s", message.Type)
+		}
 	}
 
 	handler.Follow(message, from)
+}
+
+// FilterMessageContextInfo removes the messageContextInfo field from message content
+func FilterMessageContextInfo(content interface{}) interface{} {
+	if content == nil {
+		return content
+	}
+
+	// Use reflection to check if content has messageContextInfo field
+	if reflect.TypeOf(content).Kind() == reflect.Ptr {
+		elem := reflect.ValueOf(content).Elem()
+		if elem.IsValid() && elem.Kind() == reflect.Struct {
+			// Check if the struct has a messageContextInfo field
+			field := elem.FieldByName("MessageContextInfo")
+			if field.IsValid() && field.CanSet() {
+				// Set the field to nil/zero value
+				field.Set(reflect.Zero(field.Type()))
+			}
+		}
+	}
+
+	return content
 }
 
 //#endregion

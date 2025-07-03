@@ -67,6 +67,9 @@ type WhatsappMessage struct {
 	Info any `json:"info,omitempty"`
 
 	Poll *WhatsappPoll `json:"poll,omitempty"` // Poll if exists
+
+	// Debug information for debug events
+	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP

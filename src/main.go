@@ -48,6 +48,7 @@ func main() {
 		ReadUpdate:   models.ENV.ReadUpdate(),
 		HistorySync:  models.ENV.HistorySync(),
 		Presence:     models.ENV.Presence(),
+		DispatchUnhandled:  models.ENV.DispatchUnhandled(),
 		LogLevel:     logentry.Level.String(),
 	}
 

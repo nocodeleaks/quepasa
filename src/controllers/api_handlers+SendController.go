@@ -178,14 +178,17 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 		waMsg.Type = whatsapp.TextMessageType
 	}
 
-	if waMsg.Type == whatsapp.UnknownMessageType {
+	// if not set, try to recover "text"
+	if waMsg.Type == whatsapp.UnhandledMessageType {
 		// correct msg type for texts contents
 		if len(waMsg.Text) > 0 {
 			waMsg.Type = whatsapp.TextMessageType
+		} else {
+			err = fmt.Errorf("unknown message type without text")
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
 		}
-
-		logentry.Errorf("unknown message type: %v", waMsg)
-		// *** implement an error here if not found any knowing type
 	}
 
 	// Checking for ready state

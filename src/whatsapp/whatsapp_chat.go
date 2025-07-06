@@ -49,24 +49,42 @@ func (source *WhatsappChat) PopulatePhone(conn interface{}) {
 		return // Already populated
 	}
 
+	// Create a LogStruct and use GetLogger for proper logging
+	logStruct := library.NewLogStruct(library.LogLevelDefault)
+	logentry := logStruct.GetLogger()
+	logentry = logentry.WithField(library.LogFields.Entry, "WhatsappChat.PopulatePhone")
+
 	// Try to get phone from different sources
 	if strings.Contains(source.Id, "@lid") {
-		// For @lid, try to get the corresponding phone number
+		// For @lid, try to get the corresponding phone number using WhatsmeowConnection interface
 		if connection, ok := conn.(interface{ GetPhoneFromLID(string) (string, error) }); ok {
 			if phone, err := connection.GetPhoneFromLID(source.Id); err == nil && len(phone) > 0 {
+				logentry.WithField("id", source.Id).WithField("phone", phone).Debug("Retrieved phone from LID mapping")
+
 				// Format the phone to E164 if needed
 				if formattedPhone, err := library.ExtractPhoneIfValid(phone); err == nil {
 					source.Phone = formattedPhone
+					logentry.WithField("id", source.Id).WithField("formatted_phone", formattedPhone).Debug("Phone formatted to E164")
 				} else {
 					source.Phone = phone
+					logentry.WithField("id", source.Id).WithField("phone", phone).WithError(err).Warn("Phone validation failed, using raw phone")
 				}
+			} else {
+				logentry.WithField("id", source.Id).WithError(err).Error("Failed to get phone from LID mapping")
 			}
+		} else {
+			logentry.WithField("id", source.Id).Error("Connection does not support GetPhoneFromLID method")
 		}
 	} else if strings.Contains(source.Id, "@s.whatsapp.net") {
 		// For @s.whatsapp.net, extract phone from ID
 		if phone, _ := library.ExtractPhoneIfValid(source.Id); len(phone) > 0 {
 			source.Phone = phone
+			logentry.WithField("id", source.Id).WithField("phone", phone).Debug("Extracted phone from s.whatsapp.net ID")
+		} else {
+			logentry.WithField("id", source.Id).Error("Failed to extract phone from s.whatsapp.net ID")
 		}
+	} else {
+		logentry.WithField("id", source.Id).Debug("No phone extraction method available for this ID format")
 	}
 }
 
@@ -86,4 +104,5 @@ func (source WhatsappChat) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(aux)
+
 }

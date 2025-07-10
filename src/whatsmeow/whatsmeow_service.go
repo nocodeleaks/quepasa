@@ -15,6 +15,7 @@ import (
 	"go.mau.fi/whatsmeow/proto/waCompanionReg"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	types "go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
@@ -267,4 +268,35 @@ func (service *WhatsmeowServiceModel) FlushDatabase() (err error) {
 	}
 
 	return
+}
+
+// GetPhoneFromLID returns the phone number for a given @lid
+func (service *WhatsmeowServiceModel) GetPhoneFromLID(lid string) (string, error) {
+	if service == nil || service.Container == nil {
+		return "", fmt.Errorf("service or container not initialized")
+	}
+
+	// Parse the LID to JID format
+	lidJID, err := types.ParseJID(lid)
+	if err != nil {
+		return "", fmt.Errorf("invalid LID format: %v", err)
+	}
+
+	// Get all devices to search through their LID mappings
+	devices, err := service.Container.GetAllDevices(context.TODO())
+	if err != nil {
+		return "", fmt.Errorf("failed to get devices: %v", err)
+	}
+
+	// Search through all devices for the LID mapping
+	for _, device := range devices {
+		// Get the corresponding phone number from the device
+		phoneJID, err := device.LIDs.GetPNForLID(context.TODO(), lidJID)
+		if err == nil && !phoneJID.IsEmpty() {
+			return phoneJID.User, nil
+		}
+	}
+
+	return "", fmt.Errorf("no phone found for LID %s", lid)
+
 }

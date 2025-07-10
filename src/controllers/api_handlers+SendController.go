@@ -199,7 +199,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
 		return
 	}
-	/* removed for now, now it's possible to send messages to LID directly
+
 	// Handle LID to phone mapping for sending
 	originalChatId := waMsg.Chat.Id
 	if strings.Contains(waMsg.Chat.Id, "@lid") {
@@ -242,7 +242,6 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 		waMsg.Chat.Id = phone + "@s.whatsapp.net"
 		logentry.Debugf("converted LID %s to phone-based chat ID: %s", originalChatId, waMsg.Chat.Id)
 	}
-	*/
 
 	sendResponse, err := server.SendMessage(waMsg)
 	if err != nil {

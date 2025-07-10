@@ -342,7 +342,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 		message.Chat.Title = GetChatTitle(source.Client, info.Chat)
 
 		// Populate phone field
-		message.Chat.PopulatePhone(source.Client)
+		message.Chat.PopulatePhone(source)
 
 		// Get LID for the chat if available
 		if source.Client != nil && source.Client.Store != nil {
@@ -364,7 +364,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 			message.Participant.Title = GetChatTitle(source.Client, info.Sender)
 
 			// Populate phone field for participant
-			message.Participant.PopulatePhone(source.Client)
+			message.Participant.PopulatePhone(source)
 
 			// If title is empty, use PushName as fallback
 			if len(message.Participant.Title) == 0 {
@@ -495,7 +495,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	message.Chat.Title = GetChatTitle(handler.Client, evt.Info.Chat)
 
 	// Populate phone field
-	message.Chat.PopulatePhone(handler.Client)
+	message.Chat.PopulatePhone(handler)
 
 	// Get LID for the chat if available
 	if handler.Client != nil && handler.Client.Store != nil {
@@ -516,7 +516,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		message.Participant.Title = GetChatTitle(handler.Client, evt.Info.Sender)
 
 		// Populate phone field for participant
-		message.Participant.PopulatePhone(handler.Client)
+		message.Participant.PopulatePhone(handler)
 
 		// If title is empty, use PushName as fallback, sugested by hugo sampaio, removing message.FromMe
 		if len(message.Participant.Title) == 0 {
@@ -819,6 +819,13 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 	}
 
 	handler.Follow(message, "group")
+}
+
+func (handler *WhatsmeowHandlers) GetPhoneFromLID(lid string) (string, error) {
+	if handler.service == nil {
+		return "", fmt.Errorf("no service available")
+	}
+	return handler.service.GetPhoneFromLID(lid)
 }
 
 //#endregion

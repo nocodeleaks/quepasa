@@ -140,7 +140,7 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 
 // finally sends to the whatsapp server
 func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
-	waMsg, err := request.ToWhatsappMessage()
+	waMsg, err := request.ToWhatsappMessageFromServer(server)
 	if err != nil {
 		metrics.MessageSendErrors.Inc()
 		response.ParseError(err)

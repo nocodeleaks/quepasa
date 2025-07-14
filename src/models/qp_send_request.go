@@ -118,6 +118,36 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	return
 }
 
+func (source *QpSendRequest) ToWhatsappMessageFromServer(conn interface{}) (msg *whatsapp.WhatsappMessage, err error) {
+	chatId, err := whatsapp.FormatEndpoint(source.ChatId)
+	if err != nil {
+		return
+	}
+
+	chat := whatsapp.WhatsappChat{Id: chatId}
+
+	chat.PopulatePhone(conn)
+
+	msg = &whatsapp.WhatsappMessage{
+		Id:           strings.ToUpper(source.Id), // dont know why, must be upper
+		TrackId:      source.TrackId,
+		InReply:      source.InReply,
+		Text:         source.Text,
+		Chat:         chat,
+		FromMe:       true,
+		FromInternal: true,
+	}
+
+	msg.Poll = source.Poll
+
+	// setting default type
+	if len(msg.Text) > 0 {
+		msg.Type = whatsapp.TextMessageType
+	}
+
+	return
+}
+
 func (source *QpSendRequest) ToWhatsappAttachment() (result QpToWhatsappAttachment) {
 	contentLength := len(source.Content)
 	if contentLength == 0 {

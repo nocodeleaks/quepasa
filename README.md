@@ -171,6 +171,9 @@
 	# ACCOUNTSETUP
 	> enable or disable account creation setup. (default true)
 
+ 	# DISPATCHUNHANDLED
+  	> dispatch to webhook events that do not have a specific approach (default false)
+
 	 
 ### License
 

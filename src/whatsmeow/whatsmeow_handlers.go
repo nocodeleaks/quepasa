@@ -649,6 +649,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	message.Chat = whatsapp.WhatsappChat{}
 	chatID := fmt.Sprint(evt.From.User, "@", evt.From.Server)
 	message.Chat.Id = chatID
+	message.Chat.PopulatePhone(source)
 
 	message.Type = whatsapp.CallMessageType
 
@@ -754,6 +755,7 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 
 		message.Chat = whatsapp.WhatsappChat{}
 		message.Chat.Id = chatID
+		message.Chat.PopulatePhone(source)
 
 		message.Type = whatsapp.SystemMessageType
 

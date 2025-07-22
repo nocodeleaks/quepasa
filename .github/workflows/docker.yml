@@ -190,8 +190,8 @@ jobs:
       - name: Build & Push new‑ui Images
         uses: docker/build-push-action@v4
         with:
-          context: new-ui
-          file: new-ui/docker/Dockerfile
+          context: .
+          file: docker/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |

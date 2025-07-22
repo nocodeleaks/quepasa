@@ -474,11 +474,8 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		return
 	}
 
-	// Filter out messageContextInfo from the message content
-	filteredContent := FilterMessageContextInfo(evt.Message)
-
 	message := &whatsapp.WhatsappMessage{
-		Content:        filteredContent,
+		Content:        evt.Message,
 		InfoForHistory: evt.Info,
 		FromHistory:    from == "history",
 	}
@@ -550,28 +547,6 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	}
 
 	handler.Follow(message, from)
-}
-
-// FilterMessageContextInfo removes the messageContextInfo field from message content
-func FilterMessageContextInfo(content interface{}) interface{} {
-	if content == nil {
-		return content
-	}
-
-	// Use reflection to check if content has messageContextInfo field
-	if reflect.TypeOf(content).Kind() == reflect.Ptr {
-		elem := reflect.ValueOf(content).Elem()
-		if elem.IsValid() && elem.Kind() == reflect.Struct {
-			// Check if the struct has a messageContextInfo field
-			field := elem.FieldByName("MessageContextInfo")
-			if field.IsValid() && field.CanSet() {
-				// Set the field to nil/zero value
-				field.Set(reflect.Zero(field.Type()))
-			}
-		}
-	}
-
-	return content
 }
 
 //#endregion

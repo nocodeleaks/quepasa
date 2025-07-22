@@ -331,13 +331,14 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 // func (cli *Client) Download(msg DownloadableMessage) (data []byte, err error)
 func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) (data []byte, err error) {
 	msg := imsg.GetSource()
+	logentry := source.GetLogger().WithField(LogFields.MessageId, imsg.GetId())
+
+	// Try direct downloadable message first
 	downloadable, ok := msg.(whatsmeow.DownloadableMessage)
 	if ok {
-		return source.Client.Download(context.TODO(), downloadable)
+		logentry.Trace("Message implements DownloadableMessage directly, using Client.Download()")
+		return source.Client.Download(context.Background(), downloadable)
 	}
-
-	logentry := source.GetLogger()
-	logentry.Debug("not downloadable type, trying default message")
 
 	waMsg, ok := msg.(*waE2E.Message)
 	if !ok {
@@ -345,6 +346,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		if attach != nil {
 			data := attach.GetContent()
 			if data != nil {
+				logentry.Debug("no waMsg, found attachment, returning content")
 				return *data, err
 			}
 		}
@@ -353,43 +355,41 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		return
 	}
 
-	data, err = source.Client.DownloadAny(context.TODO(), waMsg)
-	if err != nil {
-		if strings.Contains(err.Error(), whatsmeow.ErrFileLengthMismatch.Error()) {
-			logentry.Infof("ignoring (%s) whatsmeow error for msg id: %s", whatsmeow.ErrFileLengthMismatch.Error(), imsg.GetId())
-			err = nil
-		}
+	downloadable = GetDownloadableMessage(waMsg)
+	if downloadable != nil {
+		logentry.Trace("waMsg implements DownloadableMessage, using Client.Download()")
+		return source.Client.Download(context.Background(), downloadable)
 	}
 
-	return
+	// If we reach here, it means we have a waE2E.Message but no DownloadableMessage interface
+	return nil, fmt.Errorf("message (%s) is not downloadable", imsg.GetId())
 }
 
 func (conn *WhatsmeowConnection) Download(imsg whatsapp.IWhatsappMessage, cache bool) (att *whatsapp.WhatsappAttachment, err error) {
+	logentry := conn.GetLogger().WithField(LogFields.MessageId, imsg.GetId())
+	logentry.Tracef("Download() method called, Cache: %v", cache)
+
 	att = imsg.GetAttachment()
 	if att == nil {
-		err = fmt.Errorf("message (%s) does not contains attachment info", imsg.GetId())
-		return
+		return nil, fmt.Errorf("message (%s) does not contains attachment info", imsg.GetId())
 	}
 
-	if !att.HasContent() && !att.CanDownload {
-		err = fmt.Errorf("message (%s) attachment with invalid content and not available to download", imsg.GetId())
-		return
+	if cache && att.HasContent() {
+		logentry.Debugf("Download() using cached content - HasContent: %v", att.HasContent())
+		return att, nil
 	}
 
-	if !att.HasContent() || (att.CanDownload && !cache) {
-		data, err := conn.DownloadData(imsg)
-		if err != nil {
-			return att, err
-		}
-
-		if !cache {
-			newAtt := *att
-			att = &newAtt
-		}
-
-		att.SetContent(&data)
+	data, err := conn.DownloadData(imsg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download data for message (%s): %v", imsg.GetId(), err)
 	}
 
+	if !cache {
+		newAtt := *att
+		att = &newAtt
+	}
+
+	att.SetContent(&data)
 	return
 }
 
@@ -739,6 +739,8 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 		}
 
 		wg.Done()
+
+		// ending after the first the loop
 		break
 	}
 

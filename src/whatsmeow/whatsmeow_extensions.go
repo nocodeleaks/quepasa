@@ -3,6 +3,8 @@ package whatsmeow
 import (
 	"context"
 	"encoding/base64"
+	"reflect"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -15,12 +17,25 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+/**
+ * GetMediaTypeFromAttachment returns the whatsmeow.MediaType for a given WhatsappAttachment.
+ *
+ * It uses the attachment to determine the message type and maps it to the corresponding MediaType.
+ *
+ * @param source WhatsappAttachment to check
+ * @return whatsmeow.MediaType for the attachment
+ */
 func GetMediaTypeFromAttachment(source *whatsapp.WhatsappAttachment) whatsmeow.MediaType {
 	msgType := whatsapp.GetMessageType(source)
 	return GetMediaTypeFromWAMsgType(msgType)
 }
 
-// Traz o MediaType para download do whatsapp
+/**
+ * GetMediaTypeFromWAMsgType maps a WhatsappMessageType to a whatsmeow.MediaType.
+ *
+ * @param msgType WhatsappMessageType to map
+ * @return whatsmeow.MediaType corresponding to the message type
+ */
 func GetMediaTypeFromWAMsgType(msgType whatsapp.WhatsappMessageType) whatsmeow.MediaType {
 	switch msgType {
 	case whatsapp.ImageMessageType:
@@ -34,6 +49,15 @@ func GetMediaTypeFromWAMsgType(msgType whatsapp.WhatsappMessageType) whatsmeow.M
 	}
 }
 
+/**
+ * ToWhatsmeowMessage converts a generic IWhatsappMessage to a waE2E.Message.
+ *
+ * If the source does not have an attachment, it creates an ExtendedTextMessage.
+ * Otherwise, returns nil and error (not implemented for attachments).
+ *
+ * @param source IWhatsappMessage to convert
+ * @return waE2E.Message pointer and error
+ */
 func ToWhatsmeowMessage(source whatsapp.IWhatsappMessage) (msg *waE2E.Message, err error) {
 	messageText := source.GetText()
 
@@ -45,6 +69,17 @@ func ToWhatsmeowMessage(source whatsapp.IWhatsappMessage) (msg *waE2E.Message, e
 	return
 }
 
+/**
+ * NewWhatsmeowMessageAttachment creates a new waE2E.Message with the correct media type and metadata.
+ *
+ * It builds the internal message (Image, Audio, Video, Document) using the upload response and WhatsappMessage data.
+ *
+ * @param response UploadResponse containing media upload info
+ * @param waMsg WhatsappMessage containing attachment and text
+ * @param media MediaType to use (image, audio, video, document)
+ * @param inreplycontext Optional context info for replies
+ * @return waE2E.Message pointer with the correct media type
+ */
 func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg whatsapp.WhatsappMessage, media whatsmeow.MediaType, inreplycontext *waE2E.ContextInfo) (msg *waE2E.Message) {
 	attach := waMsg.Attachment
 
@@ -74,15 +109,13 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 		msg = &waE2E.Message{ImageMessage: internal}
 		return
 	case whatsmeow.MediaAudio:
-
 		var ptt *bool
 		if attach.IsValidPTT() {
 			ptt = proto.Bool(true)
-		} else if attach.IsPTTCompatible() { // trick to send audio as ptt, "technical resource"
+		} else if attach.IsPTTCompatible() {
 			ptt = proto.Bool(true)
 			mimetype = proto.String(whatsapp.WhatsappPTTMime)
 		}
-
 		internal := &waE2E.AudioMessage{
 			URL:           proto.String(response.URL),
 			DirectPath:    proto.String(response.DirectPath),
@@ -132,6 +165,14 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 	}
 }
 
+/**
+ * GetStringFromBytes encodes a byte slice to a base64 string.
+ *
+ * Returns an empty string if the input is empty.
+ *
+ * @param bytes Byte slice to encode
+ * @return Base64 string representation
+ */
 func GetStringFromBytes(bytes []byte) string {
 	if len(bytes) > 0 {
 		return base64.StdEncoding.EncodeToString(bytes)
@@ -139,17 +180,21 @@ func GetStringFromBytes(bytes []byte) string {
 	return ""
 }
 
-// should implement a cache !!! urgent
-// returns a valid chat title from local memory store
+/**
+ * GetChatTitle returns a valid chat title from the local memory store or WhatsApp contact/group info.
+ *
+ * If the JID is a group, tries to get the name from cache or fetches group info. For contacts, checks business name, full name, or push name.
+ *
+ * @param client Whatsmeow client instance
+ * @param jid WhatsApp JID to look up
+ * @return Normalized chat title string
+ */
 func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 	if jid.Server == "g.us" {
-
 		title = GroupInfoCache.Get(jid.String())
 		if len(title) > 0 {
 			goto found
 		}
-
-		// fmt.Printf("getting group info: %s", jid.String())
 		gInfo, _ := client.GetGroupInfo(jid)
 		if gInfo != nil {
 			title = gInfo.Name
@@ -166,14 +211,11 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 				title = cInfo.FullName
 				goto found
 			}
-
 			title = cInfo.PushName
 			goto found
 		}
 	}
-
 	return ""
-
 found:
 	return library.NormalizeForTitle(title)
 }
@@ -186,6 +228,16 @@ found:
 
 <summary/>
 */
+/**
+ * SendPresence sends the defined presence to WhatsApp when connecting or when the pushname changes.
+ *
+ * Ensures outgoing messages have the correct pushname. Logs success or failure.
+ *
+ * @param client Whatsmeow client instance
+ * @param presence Presence type to send
+ * @param from Source identifier for logging
+ * @param logentry Logger instance
+ */
 func SendPresence(client *whatsmeow.Client, presence types.Presence, from string, logentry *log.Entry) {
 	if len(client.Store.PushName) > 0 {
 		err := client.SendPresence(presence)
@@ -197,6 +249,12 @@ func SendPresence(client *whatsmeow.Client, presence types.Presence, from string
 	}
 }
 
+/**
+ * GetWhatsappMessageStatus maps a WhatsApp receipt type to a WhatsappMessageStatus value.
+ *
+ * @param receipt ReceiptType from WhatsApp
+ * @return WhatsappMessageStatus corresponding to the receipt
+ */
 func GetWhatsappMessageStatus(receipt types.ReceiptType) whatsapp.WhatsappMessageStatus {
 	switch receipt {
 	case types.ReceiptTypeDelivered:
@@ -206,23 +264,148 @@ func GetWhatsappMessageStatus(receipt types.ReceiptType) whatsapp.WhatsappMessag
 	case types.ReceiptTypeRead, types.ReceiptTypePlayed:
 		return whatsapp.WhatsappMessageStatusRead
 	}
-
 	return whatsapp.WhatsappMessageStatusUnknown
 }
 
+/**
+ * ImproveTimestamp adds nanoseconds to a timestamp if it has zero nanoseconds and matches the current second.
+ *
+ * This helps avoid duplicate timestamps in high-frequency events.
+ *
+ * @param evtTimestamp Time to improve
+ * @return Improved time.Time value
+ */
 func ImproveTimestamp(evtTimestamp time.Time) time.Time {
-
 	if evtTimestamp.Nanosecond() == 0 {
-
 		now := time.Now()
 		if evtTimestamp.Second() == now.Second() {
-
 			nanos := time.Now().Nanosecond()
 			currentNanosecond := time.Duration(nanos)
 			duration := currentNanosecond * time.Nanosecond
 			return evtTimestamp.Add(duration)
 		}
 	}
-
 	return evtTimestamp
+}
+
+/**
+ * GetDownloadableMessage returns the first message inside a waE2E.Message that implements the DownloadableMessage interface.
+ *
+ * This function checks each possible message type (ImageMessage, AudioMessage, VideoMessage, DocumentMessage, StickerMessage)
+ * and returns the first one that implements whatsmeow.DownloadableMessage. If none are found, it returns nil.
+ *
+ * Usage:
+ *   dm := GetDownloadableMessage(msg)
+ *   if dm != nil {
+ *       // You can now use dm to download media
+ *   }
+ *
+ * This is useful for generic media handling when you don't know the exact type in advance.
+ */
+func GetDownloadableMessage(msg *waE2E.Message) whatsmeow.DownloadableMessage {
+	// Check each possible message type for DownloadableMessage interface
+	if msg == nil {
+		return nil
+	}
+
+	isDownloadable := func(v interface{}) whatsmeow.DownloadableMessage {
+		if d, ok := v.(whatsmeow.DownloadableMessage); ok {
+			return d
+		}
+		return nil
+	}
+
+	if d := isDownloadable(msg.ImageMessage); d != nil {
+		return d
+	}
+	if d := isDownloadable(msg.AudioMessage); d != nil {
+		return d
+	}
+	if d := isDownloadable(msg.VideoMessage); d != nil {
+		return d
+	}
+	if d := isDownloadable(msg.DocumentMessage); d != nil {
+		return d
+	}
+	if d := isDownloadable(msg.StickerMessage); d != nil {
+		return d
+	}
+	// Add more types if needed
+	return nil
+}
+
+/**
+ * RemoveMessageContextInfo removes the MessageContextInfo field from a WhatsApp message struct.
+ *
+ * This function uses reflection to set the MessageContextInfo field to its zero value (nil),
+ * effectively removing any context information (such como reply, quoted, etc) que estava presente na mensagem.
+ *
+ * Útil para sanitizar mensagens antes de processar ou enviar, evitando que informações de contexto sejam propagadas.
+ *
+ * @param content WhatsApp message struct (pointer)
+ * @return The same struct with MessageContextInfo removed (set to zero value)
+ */
+func RemoveMessageContextInfo(content any) any {
+	if content == nil {
+		return content
+	}
+
+	// Use reflection to check if content has messageContextInfo field
+	if reflect.TypeOf(content).Kind() == reflect.Ptr {
+		elem := reflect.ValueOf(content).Elem()
+		if elem.IsValid() && elem.Kind() == reflect.Struct {
+			// Check if the struct has a messageContextInfo field
+			field := elem.FieldByName("MessageContextInfo")
+			if field.IsValid() && field.CanSet() {
+				// Remove context info from the message
+				field.Set(reflect.Zero(field.Type()))
+			}
+		}
+	}
+
+	return content
+}
+
+/**
+ * GetMessageEventType extracts the actual message type from a waE2E.Message protobuf struct.
+ *
+ * It inspects all fields of the message and returns the name of the first non-nil pointer field,
+ * converted to snake_case (protobuf convention). If no field is set, returns "unknown".
+ *
+ * @param in Pointer to waE2E.Message
+ * @return String representing the message type in snake_case, or "unknown"
+ */
+func GetMessageEventType(in *waE2E.Message) string {
+	v := reflect.ValueOf(in).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if field.Kind() == reflect.Ptr && !field.IsNil() {
+			fieldName := t.Field(i).Name
+			// Convert from Go field name to protobuf field name format
+			return toSnakeCase(fieldName)
+		}
+	}
+
+	return "unknown"
+}
+
+/**
+ * toSnakeCase converts Go field names to protobuf field naming convention (snake_case).
+ *
+ * For example, "ImageMessage" becomes "image_message".
+ *
+ * @param s Go field name string
+ * @return String in snake_case format
+ */
+func toSnakeCase(s string) string {
+	var result strings.Builder
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			result.WriteRune('_')
+		}
+		result.WriteRune(r)
+	}
+	return strings.ToLower(result.String())
 }

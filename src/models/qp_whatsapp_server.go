@@ -141,7 +141,10 @@ func (source *QpWhatsappServer) DownloadData(id string) ([]byte, error) {
 		return nil, err
 	}
 
-	source.GetLogger().Infof("downloading msg data %s", id)
+	logentry := source.GetLogger()
+	logentry = logentry.WithField(LogFields.MessageId, id)
+	logentry.Info("downloading msg data")
+
 	return source.connection.DownloadData(msg)
 }
 

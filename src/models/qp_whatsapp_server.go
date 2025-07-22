@@ -161,7 +161,10 @@ func (source *QpWhatsappServer) Download(id string, cache bool) (att *whatsapp.W
 		return
 	}
 
-	source.GetLogger().Infof("downloading msg %s, using cache: %v", id, cache)
+	logentry := source.GetLogger()
+	logentry = logentry.WithField(LogFields.MessageId, id)
+	logentry.Infof("downloading msg attachment, using cache: %v", cache)
+
 	att, err = source.connection.Download(msg, cache)
 	if err != nil {
 		return

@@ -346,7 +346,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		if attach != nil {
 			data := attach.GetContent()
 			if data != nil {
-				logentry.Debug("no waMsg, found attachment, returning content")
+				logentry.Trace("no waMsg, found attachment, returning content")
 				return *data, err
 			}
 		}

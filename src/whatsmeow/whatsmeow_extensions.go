@@ -308,29 +308,26 @@ func GetDownloadableMessage(msg *waE2E.Message) whatsmeow.DownloadableMessage {
 		return nil
 	}
 
-	isDownloadable := func(v interface{}) whatsmeow.DownloadableMessage {
-		if d, ok := v.(whatsmeow.DownloadableMessage); ok {
-			return d
-		}
-		return nil
+	if msg.ImageMessage != nil {
+		return msg.ImageMessage
 	}
 
-	if d := isDownloadable(msg.ImageMessage); d != nil {
-		return d
+	if msg.AudioMessage != nil {
+		return msg.AudioMessage
 	}
-	if d := isDownloadable(msg.AudioMessage); d != nil {
-		return d
+
+	if msg.VideoMessage != nil {
+		return msg.VideoMessage
 	}
-	if d := isDownloadable(msg.VideoMessage); d != nil {
-		return d
+
+	if msg.StickerMessage != nil {
+		return msg.StickerMessage
 	}
-	if d := isDownloadable(msg.DocumentMessage); d != nil {
-		return d
+
+	if msg.DocumentMessage != nil {
+		return msg.DocumentMessage
 	}
-	if d := isDownloadable(msg.StickerMessage); d != nil {
-		return d
-	}
-	// Add more types if needed
+
 	return nil
 }
 

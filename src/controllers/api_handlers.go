@@ -145,7 +145,7 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Post(endpoint+"/groups/create", CreateGroupController)
 
 		// Leave group
-		r.Delete(endpoint+"/groups/leave", LeaveGroupController)
+		r.Post(endpoint+"/groups/leave", LeaveGroupController)
 
 		// Updates the group name.
 		r.Put(endpoint+"/groups/name", SetGroupNameController)

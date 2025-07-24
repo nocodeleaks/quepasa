@@ -533,13 +533,39 @@ func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 }
 
 func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
-	// Setting default response type as json
-	w.Header().Set("Content-Type", "application/json")
 
 	response := &models.QpResponse{}
+	// Declare a new request struct
+	request := &LeaveGroupRequest{}
 
-	type leaveGroupStruct struct {
-		GroupJID string `json:"group_jid"`
+	if r.ContentLength > 0 && r.Method == http.MethodPost {
+		// Try to decode the request body into the struct. If there is an error,
+		// respond to the client with the error message and a 400 status code.
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			jsonErr := fmt.Errorf("invalid json body: %s", err.Error())
+			response.ParseError(jsonErr)
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	// Getting ChatId parameter
+	if len(request.ChatId) == 0 {
+		request.ChatId = models.GetChatId(r)
+		if len(request.ChatId) == 0 {
+			response.ParseError(fmt.Errorf("chatId is required"))
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	// Validate group JID format
+	valid := whatsapp.IsValidGroupId(request.ChatId)
+	if !valid {
+		response.ParseError(fmt.Errorf("invalid group JID format: %s", request.ChatId))
+		RespondInterface(w, response)
+		return
 	}
 
 	server, err := GetServer(r)
@@ -549,31 +575,8 @@ func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	var t leaveGroupStruct
-	err = decoder.Decode(&t)
-	if err != nil {
-		response.ParseError(fmt.Errorf("could not decode payload: %v", err))
-		RespondInterface(w, response)
-		return
-	}
-
-	if t.GroupJID == "" {
-		response.ParseError(fmt.Errorf("group_jid is required"))
-		RespondInterface(w, response)
-		return
-	}
-
-	// Validate group JID format
-	valid := whatsapp.IsValidGroupId(t.GroupJID)
-	if !valid {
-		response.ParseError(fmt.Errorf("invalid group JID format: %s", t.GroupJID))
-		RespondInterface(w, response)
-		return
-	}
-
 	// Leave the group
-	err = server.LeaveGroup(t.GroupJID)
+	err = server.LeaveGroup(request.ChatId)
 	if err != nil {
 		response.ParseError(fmt.Errorf("failed to leave group: %v", err))
 		RespondInterface(w, response)

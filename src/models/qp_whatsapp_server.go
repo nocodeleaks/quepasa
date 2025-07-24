@@ -195,6 +195,16 @@ func (source *QpWhatsappServer) Revoke(id string) (err error) {
 	return source.connection.Revoke(msg)
 }
 
+func (source *QpWhatsappServer) Edit(id string, newContent string) (err error) {
+	msg, err := source.Handler.GetById(id)
+	if err != nil {
+		return
+	}
+
+	source.GetLogger().Infof("editing msg %s", id)
+	return source.connection.Edit(msg, newContent)
+}
+
 //endregion
 
 //#region WEBHOOKS

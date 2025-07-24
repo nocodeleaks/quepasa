@@ -37,6 +37,7 @@ type IWhatsappConnection interface {
 
 	Revoke(IWhatsappMessage) error
 
+	Edit(IWhatsappMessage, string) error
 	// Default send message method
 	Send(*WhatsappMessage) (IWhatsappSendResponse, error)
 

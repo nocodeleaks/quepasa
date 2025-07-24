@@ -418,6 +418,31 @@ func (source *WhatsmeowConnection) Revoke(msg whatsapp.IWhatsappMessage) error {
 	return nil
 }
 
+// func (cli *Client) BuildEdit(chat types.JID, id types.MessageID, newContent *waE2E.Message) *waE2E.Message {
+func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newContent string) error {
+	logentry := source.GetLogger()
+	jid, err := types.ParseJID(msg.GetChatId())
+	if err != nil {
+		logentry.Infof("edit message error on get jid: %s", err)
+		return err
+	}
+
+	// Create a new message with the edited content
+	editedMessage := &waE2E.Message{
+		Conversation: proto.String(newContent),
+	}
+
+	// Build the edit message using the new content
+	newMessage := source.Client.BuildEdit(jid, msg.GetId(), editedMessage)
+	_, err = source.Client.SendMessage(context.Background(), jid, newMessage)
+	if err != nil {
+		logentry.Infof("edit message error: %s", err)
+		return err
+	}
+
+	return nil
+}
+
 func (conn *WhatsmeowConnection) IsOnWhatsApp(phones ...string) (registered []string, err error) {
 	results, err := conn.Client.IsOnWhatsApp(phones)
 	if err != nil {

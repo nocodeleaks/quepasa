@@ -43,7 +43,7 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Delete(endpoint+"/message", RevokeController)
 
 		// Edit message
-		r.Post(endpoint+"/message/edit", EditMessageController)
+		r.Post(endpoint+"/edit", EditMessageController)
 
 		// used to send alert msgs via url, triggers on monitor systems like zabbix
 		r.Get(endpoint+"/send", SendAny)

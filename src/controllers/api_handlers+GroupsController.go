@@ -531,3 +531,55 @@ func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 
 	RespondSuccess(w, response)
 }
+
+func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
+	// Setting default response type as json
+	w.Header().Set("Content-Type", "application/json")
+
+	response := &models.QpResponse{}
+
+	type leaveGroupStruct struct {
+		GroupJID string `json:"group_jid"`
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var t leaveGroupStruct
+	err = decoder.Decode(&t)
+	if err != nil {
+		response.ParseError(fmt.Errorf("could not decode payload: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	if t.GroupJID == "" {
+		response.ParseError(fmt.Errorf("group_jid is required"))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Validate group JID format
+	valid := whatsapp.IsValidGroupId(t.GroupJID)
+	if !valid {
+		response.ParseError(fmt.Errorf("invalid group JID format: %s", t.GroupJID))
+		RespondInterface(w, response)
+		return
+	}
+
+	// Leave the group
+	err = server.LeaveGroup(t.GroupJID)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to leave group: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	response.ParseSuccess("Successfully left the group")
+	RespondSuccess(w, response)
+}

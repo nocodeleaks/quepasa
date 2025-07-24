@@ -289,7 +289,10 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		*events.PushName,
 		*events.GroupInfo,
 		*events.QR:
-		logentry.Tracef("event ignored: %v", reflect.TypeOf(evt))
+		logentry.Tracef("event not implemented yet: %v", reflect.TypeOf(evt))
+		if source.ShouldDispatchUnhandled() {
+			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
+		}
 		return // ignoring not implemented yet
 
 	default:

@@ -835,6 +835,15 @@ func (server *QpWhatsappServer) CreateGroup(name string, participants []string) 
 	return conn.CreateGroup(name, participants)
 }
 
+func (server *QpWhatsappServer) LeaveGroup(groupID string) error {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return err
+	}
+
+	return conn.LeaveGroup(groupID)
+}
+
 func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
 	conn, err := server.GetValidConnection() // Ensure a valid connection is available
 	if err != nil {

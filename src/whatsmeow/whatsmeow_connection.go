@@ -1071,6 +1071,26 @@ func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string)
 	return conn.Client.CreateGroup(groupConfig)
 }
 
+func (conn *WhatsmeowConnection) LeaveGroup(groupID string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	// Parse the group ID to JID format
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Leave the group using whatsmeow client
+	err = conn.Client.LeaveGroup(jid)
+	if err != nil {
+		return fmt.Errorf("failed to leave group: %v", err)
+	}
+
+	return nil
+}
+
 func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
 	if conn.Client == nil {
 		return nil, fmt.Errorf("client not defined")

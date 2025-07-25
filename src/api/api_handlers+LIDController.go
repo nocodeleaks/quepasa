@@ -202,7 +202,7 @@ func convertPhoneToJid(phone string) ([]string, error) {
 		result = append(result, phone)
 	} else {
 		// Otherwise, treat as a phone number and convert to JID format
-		result = append(result, phone+"@s.whatsapp.net")
+		result = append(result, phone+whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX)
 	}
 
 	return result, nil

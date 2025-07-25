@@ -1,8 +1,8 @@
 package whatsapp
 
-// IGroupManager defines the interface for group management operations
+// WhatsappGroupManagerInterface defines the interface for group management operations
 // This interface should be implemented by the group manager in the whatsmeow package
-type IGroupManager interface {
+type WhatsappGroupManagerInterface interface {
 	// Get group invite link
 	GetInvite(groupId string) (string, error)
 
@@ -15,8 +15,11 @@ type IGroupManager interface {
 	// Create a group
 	CreateGroup(string, []string) (interface{}, error)
 
-	// Create a group with extended options
+	// Create a group with extended options (title and participants)
 	CreateGroupExtended(title string, participants []string) (interface{}, error)
+
+	// Create group with extended options (map-based for QP level)
+	CreateGroupExtendedWithOptions(options map[string]interface{}) (interface{}, error)
 
 	// Update Group Name
 	UpdateGroupSubject(string, string) (interface{}, error)
@@ -43,5 +46,5 @@ type IWhatsappConnectionWithGroups interface {
 	IWhatsappConnection
 
 	// GetGroupManager returns the group manager for group operations
-	GetGroupManager() IGroupManager
+	GetGroupManager() WhatsappGroupManagerInterface
 }

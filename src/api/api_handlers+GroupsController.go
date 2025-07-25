@@ -37,7 +37,7 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := server.GetGroupInfo(groupId)
+	group, err := server.GetGroupManager().GetGroupInfo(groupId)
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -67,7 +67,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all joined groups
-	groups, err := server.GetJoinedGroups()
+	groups, err := server.GetGroupManager().GetJoinedGroups()
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -146,7 +146,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create group using the interface method with properly formatted participants and options
-	groupInfo, err := server.CreateGroupExtended(options)
+	groupInfo, err := server.GetGroupManager().CreateGroupExtendedWithOptions(options)
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -200,7 +200,7 @@ func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 	groupID := t.GroupJID
 
 	// Call UpdateGroupSubject with the correct parameters and capture both return values
-	updatedGroup, err := server.UpdateGroupSubject(groupID, t.Name)
+	updatedGroup, err := server.GetGroupManager().UpdateGroupSubject(groupID, t.Name)
 	if err != nil {
 		response.ParseError(fmt.Errorf("failed to set group name: %v", err))
 		RespondInterface(w, response)
@@ -247,7 +247,7 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 
 	// Handle image removal request
 	if t.RemoveImg {
-		_, err := server.UpdateGroupPhoto(t.GroupJID, nil)
+		_, err := server.GetGroupManager().UpdateGroupPhoto(t.GroupJID, nil)
 		if err != nil {
 			response.ParseError(fmt.Errorf("failed to remove group photo: %v", err))
 			RespondInterface(w, response)
@@ -300,7 +300,7 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call the service to update the group photo
-	pictureID, err := server.UpdateGroupPhoto(t.GroupJID, imageData)
+	pictureID, err := server.GetGroupManager().UpdateGroupPhoto(t.GroupJID, imageData)
 	if err != nil {
 		response.ParseError(fmt.Errorf("failed to set group photo: %v", err))
 		RespondInterface(w, response)
@@ -370,7 +370,7 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Perform the requested action
-	result, err := server.UpdateGroupParticipants(req.GroupJID, participantJIDs, strings.ToLower(req.Action))
+	result, err := server.GetGroupManager().UpdateGroupParticipants(req.GroupJID, participantJIDs, strings.ToLower(req.Action))
 	if err != nil {
 		response.ParseError(fmt.Errorf("failed to update group participants: %v", err))
 		RespondInterface(w, response)
@@ -428,7 +428,7 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 	switch strings.ToLower(req.Action) {
 	case "get", "":
 		// Get list of pending join requests
-		requests, err := server.GetGroupJoinRequests(req.GroupJID)
+		requests, err := server.GetGroupManager().GetGroupJoinRequests(req.GroupJID)
 		if err != nil {
 			response.ParseError(fmt.Errorf("failed to get group join requests: %v", err))
 			RespondInterface(w, response)
@@ -451,7 +451,7 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Process the approval/rejection
-		result, err := server.HandleGroupJoinRequests(req.GroupJID, req.Participants, req.Action)
+		result, err := server.GetGroupManager().HandleGroupJoinRequests(req.GroupJID, req.Participants, req.Action)
 		if err != nil {
 			response.ParseError(fmt.Errorf("failed to process join requests: %v", err))
 			RespondInterface(w, response)
@@ -521,7 +521,7 @@ func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 	// Convert string JID to appropriate format
 	groupID := t.GroupJID
 
-	updatedGroup, err := server.UpdateGroupTopic(groupID, t.Topic)
+	updatedGroup, err := server.GetGroupManager().UpdateGroupTopic(groupID, t.Topic)
 	if err != nil {
 		response.ParseError(fmt.Errorf("failed to set group topic: %v", err))
 		RespondInterface(w, response)

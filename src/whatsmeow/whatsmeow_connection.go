@@ -25,7 +25,7 @@ type WhatsmeowConnection struct {
 	library.LogStruct // logging
 	Client            *whatsmeow.Client
 	Handlers          *WhatsmeowHandlers
-	GroupManager      *GroupManager // composition for group operations
+	GroupManager      *WhatsmeowGroupManager // composition for group operations
 
 	failedToken  bool
 	paired       func(string)
@@ -868,9 +868,9 @@ func (conn *WhatsmeowConnection) IsInterfaceNil() bool {
 }
 
 // GetGroupManager returns the group manager instance with lazy initialization
-func (conn *WhatsmeowConnection) GetGroupManager() whatsapp.IGroupManager {
+func (conn *WhatsmeowConnection) GetGroupManager() whatsapp.WhatsappGroupManagerInterface {
 	if conn.GroupManager == nil {
-		conn.GroupManager = NewGroupManager(conn)
+		conn.GroupManager = NewWhatsmeowGroupManager(conn)
 	}
 	return conn.GroupManager
 }

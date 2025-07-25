@@ -42,7 +42,7 @@ func InviteController(w http.ResponseWriter, r *http.Request) {
 
 	switch os := r.Method; os {
 	default:
-		url, err := server.GetInvite(chatId)
+		url, err := server.GetGroupManager().GetInvite(chatId)
 		if err != nil {
 			response.ParseError(err)
 			RespondInterface(w, response)

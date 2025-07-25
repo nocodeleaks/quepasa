@@ -8,4 +8,6 @@
 * for #region tags: no blank lines between consecutive regions, but always add one blank line after region opening and one blank line before region closing
 * do not try to build if you just changed the code comments or documentation files;
 * **when making relevant code changes, always create or update internal documentation following the Internal Documentation Guidelines**;
-* sempre que for criar um método de extensão, utilize 'source' como nome de parametro para o objeto extendido
+* sempre que for criar um método de extensão, utilize 'source' como nome de parametro para o objeto extendido;
+* para os nomes das classes, estruturas, ex: whatsmeow_group_manager.go => WhatsmeowGroupManager;
+* todos os testes devem ser colocados em /tests/*

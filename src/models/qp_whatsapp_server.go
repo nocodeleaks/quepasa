@@ -23,12 +23,11 @@ type QpWhatsappServer struct {
 	syncConnection *sync.Mutex                  `json:"-"` // Objeto de sinaleiro para evitar chamadas simultâneas a este objeto
 	syncMessages   *sync.Mutex                  `json:"-"` // Objeto de sinaleiro para evitar chamadas simultâneas a este objeto
 
-	//Battery        *WhatsAppBateryStatus        `json:"battery,omitempty"`
-
 	StartTime time.Time `json:"starttime,omitempty"`
 
-	Handler *QPWhatsappHandlers `json:"-"`
-	WebHook *QPWebhookHandler   `json:"-"`
+	Handler      *QPWhatsappHandlers `json:"-"`
+	WebHook      *QPWebhookHandler   `json:"-"`
+	GroupManager *QpGroupManager     `json:"-"` // composition for group operations
 
 	// Stop request token
 	StopRequested bool                   `json:"-"`
@@ -753,21 +752,6 @@ func (source *QpWhatsappServer) GetProfilePicture(wid string, knowingId string) 
 //#endregion
 //#region GROUP INVITE LINK
 
-func (source *QpWhatsappServer) GetInvite(groupId string) (link string, err error) {
-	conn, err := source.GetValidConnection()
-	if err != nil {
-		return
-	}
-
-	// Type assertion to access group manager
-	connWithGroups, ok := conn.(whatsapp.IWhatsappConnectionWithGroups)
-	if !ok {
-		return "", fmt.Errorf("connection does not support group operations")
-	}
-
-	return connWithGroups.GetGroupManager().GetInvite(groupId)
-}
-
 //#endregion
 //#region GET ALL CONTACTS
 
@@ -805,114 +789,12 @@ func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []str
 
 // #region GROUPS
 
-// getGroupManager is a helper function to get the group manager from connection
-func (server *QpWhatsappServer) getGroupManager() (whatsapp.IGroupManager, error) {
-	conn, err := server.GetValidConnection()
-	if err != nil {
-		return nil, err
+// GetGroupManager returns the group manager instance with lazy initialization
+func (server *QpWhatsappServer) GetGroupManager() whatsapp.WhatsappGroupManagerInterface {
+	if server.GroupManager == nil {
+		server.GroupManager = NewQpGroupManager(server)
 	}
-
-	// Type assertion to access group manager
-	connWithGroups, ok := conn.(whatsapp.IWhatsappConnectionWithGroups)
-	if !ok {
-		return nil, fmt.Errorf("connection does not support group operations")
-	}
-
-	return connWithGroups.GetGroupManager(), nil
-}
-
-func (server *QpWhatsappServer) GetJoinedGroups() ([]interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.GetJoinedGroups()
-}
-
-func (server *QpWhatsappServer) GetGroupInfo(groupID string) (interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.GetGroupInfo(groupID)
-}
-
-func (server *QpWhatsappServer) CreateGroup(name string, participants []string) (interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.CreateGroup(name, participants)
-}
-
-func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.UpdateGroupSubject(groupID, name)
-}
-
-func (server *QpWhatsappServer) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.UpdateGroupTopic(groupID, topic)
-}
-
-func (server *QpWhatsappServer) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return "", err
-	}
-
-	return groupManager.UpdateGroupPhoto(groupID, imageData)
-}
-
-func (server *QpWhatsappServer) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.UpdateGroupParticipants(groupJID, participants, action)
-}
-
-func (server *QpWhatsappServer) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.GetGroupJoinRequests(groupJID)
-}
-
-func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return groupManager.HandleGroupJoinRequests(groupJID, participants, action)
-}
-
-func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface{}) (interface{}, error) {
-	groupManager, err := server.getGroupManager()
-	if err != nil {
-		return nil, err
-	}
-
-	// Extract parameters
-	title, _ := options["title"].(string)
-	participantsRaw, _ := options["participants"].([]string)
-
-	return groupManager.CreateGroupExtended(title, participantsRaw)
+	return server.GroupManager
 }
 
 //#endregion

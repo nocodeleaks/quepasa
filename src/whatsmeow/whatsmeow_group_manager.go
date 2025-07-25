@@ -11,36 +11,39 @@ import (
 	types "go.mau.fi/whatsmeow/types"
 )
 
-// GroupManager handles all group-related operations for WhatsmeowConnection
-type GroupManager struct {
-	connection *WhatsmeowConnection
+// Compile-time interface check
+var _ whatsapp.WhatsappGroupManagerInterface = (*WhatsmeowGroupManager)(nil)
+
+// WhatsmeowGroupManager handles all group-related operations for WhatsmeowConnection
+type WhatsmeowGroupManager struct {
+	*WhatsmeowConnection // embedded connection instead of property
 }
 
-// NewGroupManager creates a new GroupManager instance
-func NewGroupManager(conn *WhatsmeowConnection) *GroupManager {
-	return &GroupManager{
-		connection: conn,
+// NewWhatsmeowGroupManager creates a new WhatsmeowGroupManager instance
+func NewWhatsmeowGroupManager(conn *WhatsmeowConnection) *WhatsmeowGroupManager {
+	return &WhatsmeowGroupManager{
+		WhatsmeowConnection: conn,
 	}
 }
 
-// GetClient returns the whatsmeow client from the connection
-func (gm *GroupManager) GetClient() *whatsmeow.Client {
-	if gm.connection != nil {
-		return gm.connection.Client
+// GetClient returns the whatsmeow client from the embedded connection
+func (gm *WhatsmeowGroupManager) GetClient() *whatsmeow.Client {
+	if gm.WhatsmeowConnection != nil {
+		return gm.WhatsmeowConnection.Client
 	}
 	return nil
 }
 
-// GetLogger returns the logger from the connection
-func (gm *GroupManager) GetLogger() *log.Entry {
-	if gm.connection != nil {
-		return gm.connection.GetLogger()
+// GetLogger returns the logger from the embedded connection
+func (gm *WhatsmeowGroupManager) GetLogger() *log.Entry {
+	if gm.WhatsmeowConnection != nil {
+		return gm.WhatsmeowConnection.GetLogger()
 	}
 	return log.NewEntry(log.StandardLogger())
 }
 
 // GetInvite gets the invite link for a group
-func (gm *GroupManager) GetInvite(groupId string) (link string, err error) {
+func (gm *WhatsmeowGroupManager) GetInvite(groupId string) (link string, err error) {
 	client := gm.GetClient()
 	if client == nil {
 		return "", fmt.Errorf("client not defined")
@@ -57,7 +60,7 @@ func (gm *GroupManager) GetInvite(groupId string) (link string, err error) {
 }
 
 // GetJoinedGroups returns all groups the user has joined
-func (gm *GroupManager) GetJoinedGroups() ([]interface{}, error) {
+func (gm *WhatsmeowGroupManager) GetJoinedGroups() ([]interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -106,7 +109,7 @@ func (gm *GroupManager) GetJoinedGroups() ([]interface{}, error) {
 }
 
 // GetGroupInfo returns information about a specific group
-func (gm *GroupManager) GetGroupInfo(groupId string) (interface{}, error) {
+func (gm *WhatsmeowGroupManager) GetGroupInfo(groupId string) (interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -151,7 +154,7 @@ func (gm *GroupManager) GetGroupInfo(groupId string) (interface{}, error) {
 }
 
 // CreateGroup creates a new group with the given name and participants
-func (gm *GroupManager) CreateGroup(name string, participants []string) (interface{}, error) {
+func (gm *WhatsmeowGroupManager) CreateGroup(name string, participants []string) (interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -188,7 +191,7 @@ func (gm *GroupManager) CreateGroup(name string, participants []string) (interfa
 }
 
 // CreateGroupExtended creates a new group with extended options
-func (gm *GroupManager) CreateGroupExtended(title string, participants []string) (interface{}, error) {
+func (gm *WhatsmeowGroupManager) CreateGroupExtended(title string, participants []string) (interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -215,7 +218,7 @@ func (gm *GroupManager) CreateGroupExtended(title string, participants []string)
 }
 
 // UpdateGroupSubject updates the name/subject of a group
-func (gm *GroupManager) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
+func (gm *WhatsmeowGroupManager) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -238,7 +241,7 @@ func (gm *GroupManager) UpdateGroupSubject(groupID string, name string) (interfa
 }
 
 // UpdateGroupPhoto updates the photo of a group
-func (gm *GroupManager) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
+func (gm *WhatsmeowGroupManager) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return "", fmt.Errorf("client not defined")
@@ -260,7 +263,7 @@ func (gm *GroupManager) UpdateGroupPhoto(groupID string, imageData []byte) (stri
 }
 
 // UpdateGroupTopic updates the topic/description of a group
-func (gm *GroupManager) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
+func (gm *WhatsmeowGroupManager) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -285,7 +288,7 @@ func (gm *GroupManager) UpdateGroupTopic(groupID string, topic string) (interfac
 }
 
 // UpdateGroupParticipants adds, removes, promotes, or demotes participants in a group
-func (gm *GroupManager) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
+func (gm *WhatsmeowGroupManager) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -337,7 +340,7 @@ func (gm *GroupManager) UpdateGroupParticipants(groupJID string, participants []
 }
 
 // GetGroupJoinRequests gets pending join requests for a group
-func (gm *GroupManager) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
+func (gm *WhatsmeowGroupManager) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -365,7 +368,7 @@ func (gm *GroupManager) GetGroupJoinRequests(groupJID string) ([]interface{}, er
 }
 
 // HandleGroupJoinRequests approves or rejects pending join requests
-func (gm *GroupManager) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
+func (gm *WhatsmeowGroupManager) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
 	client := gm.GetClient()
 	if client == nil {
 		return nil, fmt.Errorf("client not defined")
@@ -410,4 +413,14 @@ func (gm *GroupManager) HandleGroupJoinRequests(groupJID string, participants []
 	}
 
 	return interfaceResults, nil
+}
+
+// CreateGroupExtendedWithOptions creates a new group with extended options (map-based)
+func (gm *WhatsmeowGroupManager) CreateGroupExtendedWithOptions(options map[string]interface{}) (interface{}, error) {
+	// Extract parameters from options map
+	title, _ := options["title"].(string)
+	participantsRaw, _ := options["participants"].([]string)
+
+	// Call the existing CreateGroupExtended method
+	return gm.CreateGroupExtended(title, participantsRaw)
 }

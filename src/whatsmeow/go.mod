@@ -1,11 +1,20 @@
 module github.com/nocodeleaks/quepasa/whatsmeow
 
+replace github.com/nocodeleaks/quepasa/whatsmeow => ./
+
+replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
+
+replace github.com/nocodeleaks/quepasa/library => ../library
+
+go 1.23.2
+
 require (
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 )
 
 require (
+	github.com/go-chi/chi/v5 v5.2.2 // indirect
 	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
 	golang.org/x/text v0.27.0 // indirect
@@ -30,13 +39,3 @@ require (
 	golang.org/x/sys v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.6
 )
-
-replace github.com/nocodeleaks/quepasa/whatsmeow => ./
-
-replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
-
-replace github.com/nocodeleaks/quepasa/library => ../library
-
-go 1.23.0
-
-toolchain go1.23.2

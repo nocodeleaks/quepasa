@@ -51,3 +51,4 @@ docker/chatwoot/data
 docker/chatwoot/.env
 docker/.env
 src/.vs/
+src/models/.dist/win-quepasa-service.exe

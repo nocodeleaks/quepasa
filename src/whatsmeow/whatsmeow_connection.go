@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/nocodeleaks/quepasa/library"
+	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -25,6 +25,7 @@ type WhatsmeowConnection struct {
 	library.LogStruct // logging
 	Client            *whatsmeow.Client
 	Handlers          *WhatsmeowHandlers
+	GroupManager      *GroupManager // composition for group operations
 
 	failedToken  bool
 	paired       func(string)
@@ -122,61 +123,16 @@ func (conn *WhatsmeowConnection) IsValid() bool {
 }
 
 func (source *WhatsmeowConnection) IsConnected() bool {
-	if source != nil {
-
-		// manual checks for avoid thread locking
-		if source.IsConnecting {
-			return false
-		}
-
-		if source.Client != nil {
-			if source.Client.IsConnected() {
-				return true
-			}
-		}
-	}
-	return false
+	return IsConnected(source)
 }
 
 func (source *WhatsmeowConnection) GetStatus() whatsapp.WhatsappConnectionState {
-	if source != nil {
-		if source.Client == nil {
-			return whatsapp.UnVerified
-		} else {
-
-			// manual checks for avoid thread locking
-			if source.IsConnecting {
-				return whatsapp.Connecting
-			}
-
-			// this is connected method locks the socket thread, so, if its in connecting state, it will be blocked here
-			if source.Client.IsConnected() {
-				if source.Client.IsLoggedIn() {
-					return whatsapp.Ready
-				} else {
-					return whatsapp.Connected
-				}
-			} else {
-				if source.failedToken {
-					return whatsapp.Failed
-				} else {
-					return whatsapp.Disconnected
-				}
-			}
-		}
-	} else {
-		return whatsapp.UnPrepared
-	}
+	return GetStatus(source)
 }
 
 // returns a valid chat title from local memory store
 func (conn *WhatsmeowConnection) GetChatTitle(wid string) string {
-	jid, err := types.ParseJID(wid)
-	if err == nil {
-		return GetChatTitle(conn.Client, jid)
-	}
-
-	return ""
+	return GetChatTitleFromWId(conn, wid)
 }
 
 // Connect to websocket only, dot not authenticate yet, errors come after
@@ -237,14 +193,14 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 		var lid string
 		var phoneE164 string
 
-		if strings.Contains(jid.String(), "@lid") {
+		if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 			// For @lid contacts, get the corresponding phone number
 			pnJID, err := source.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
 			if err == nil && !pnJID.IsEmpty() {
 				phoneNumber = pnJID.User
 				lid = jid.String()
 				// Format phone to E164
-				if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+				if phone, err := whatsapp.GetPhoneIfValid(phoneNumber); err == nil {
 					phoneE164 = phone
 				}
 			} else {
@@ -256,7 +212,7 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 			// For regular @s.whatsapp.net contacts
 			phoneNumber = jid.User
 			// Format phone to E164
-			if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+			if phone, err := whatsapp.GetPhoneIfValid(phoneNumber); err == nil {
 				phoneE164 = phone
 			}
 
@@ -686,16 +642,6 @@ func (conn *WhatsmeowConnection) Disconnect() (err error) {
 	return
 }
 
-func (source *WhatsmeowConnection) GetInvite(groupId string) (link string, err error) {
-	jid, err := types.ParseJID(groupId)
-	if err != nil {
-		source.GetLogger().Infof("getting invite error on parse jid: %s", err)
-	}
-
-	link, err = source.Client.GetGroupInviteLink(jid, false)
-	return
-}
-
 //region PAIRING
 
 func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
@@ -920,340 +866,13 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 func (conn *WhatsmeowConnection) IsInterfaceNil() bool {
 	return nil == conn
 }
-func (conn *WhatsmeowConnection) GetJoinedGroups() ([]interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
+
+// GetGroupManager returns the group manager instance with lazy initialization
+func (conn *WhatsmeowConnection) GetGroupManager() whatsapp.IGroupManager {
+	if conn.GroupManager == nil {
+		conn.GroupManager = NewGroupManager(conn)
 	}
-
-	// Get the group info slice
-	groupInfos, err := conn.Client.GetJoinedGroups()
-	if err != nil {
-		return nil, err
-	}
-
-	// Iterate over groupInfos and set the DisplayName for each participant
-	for _, groupInfo := range groupInfos {
-		if groupInfo.Participants != nil {
-			for i, participant := range groupInfo.Participants {
-				// Get the contact info from the store
-				contact, err := conn.Client.Store.Contacts.GetContact(context.TODO(), participant.JID)
-				if err != nil {
-					// If no contact info is found, fallback to JID user part
-					groupInfo.Participants[i].DisplayName = participant.JID.User
-				} else {
-					// Set the DisplayName field to the contact's full name or push name
-					if len(contact.FullName) > 0 {
-						groupInfo.Participants[i].DisplayName = contact.FullName
-					} else if len(contact.PushName) > 0 {
-						groupInfo.Participants[i].DisplayName = contact.PushName
-					} else {
-						groupInfo.Participants[i].DisplayName = "" // Fallback to JID user part
-					}
-				}
-			}
-		} else {
-
-			// If Participants is nil, initialize it to an empty slice
-			groupInfo.Participants = []types.GroupParticipant{}
-			// You might want to log this or handle it differently
-			conn.GetLogger().Warnf("Group %s has nil Participants, initializing to empty slice", groupInfo.JID.String())
-		}
-	}
-
-	groups := make([]interface{}, len(groupInfos))
-	for i, group := range groupInfos {
-		groups[i] = group
-	}
-
-	return groups, nil
-}
-
-func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	jid, err := types.ParseJID(groupId)
-	if err != nil {
-		return nil, err
-	}
-
-	groupInfo, err := conn.Client.GetGroupInfo(jid)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fill contact names for participants
-	if groupInfo.Participants != nil {
-		for i, participant := range groupInfo.Participants {
-			// Get the contact info from the store
-			contact, err := conn.Client.Store.Contacts.GetContact(context.TODO(), participant.JID)
-			if err != nil {
-				// If no contact info is found, fallback to JID user part
-				groupInfo.Participants[i].DisplayName = participant.JID.User
-			} else {
-				// Set the DisplayName field to the contact's full name or push name
-				if len(contact.FullName) > 0 {
-					groupInfo.Participants[i].DisplayName = contact.FullName
-				} else if len(contact.PushName) > 0 {
-					groupInfo.Participants[i].DisplayName = contact.PushName
-				} else {
-					groupInfo.Participants[i].DisplayName = "" // Fallback to JID user part
-				}
-			}
-		}
-	} else {
-		// If Participants is nil, initialize it to an empty slice
-		groupInfo.Participants = []types.GroupParticipant{}
-		conn.GetLogger().Warnf("Group %s has nil Participants, initializing to empty slice", groupInfo.JID.String())
-	}
-
-	return groupInfo, nil
-}
-
-func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Convert participants to JID format
-	var participantsJID []types.JID
-	for _, participant := range participants {
-		// Check if it's already in JID format
-		if strings.Contains(participant, "@") {
-			jid, err := types.ParseJID(participant)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JID format for participant %s: %v", participant, err)
-			}
-			participantsJID = append(participantsJID, jid)
-		} else {
-			// Assume it's a phone number and convert to JID
-			jid := types.JID{
-				User:   participant,
-				Server: "s.whatsapp.net", // Use the standard WhatsApp server
-			}
-			participantsJID = append(participantsJID, jid)
-		}
-	}
-
-	// Create the request struct
-	groupConfig := whatsmeow.ReqCreateGroup{
-		Name:         name,
-		Participants: participantsJID,
-	}
-
-	// Call the existing method with the constructed request
-	return conn.Client.CreateGroup(groupConfig)
-}
-
-func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Parse the group ID to JID format
-	jid, err := types.ParseJID(groupID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid group JID format: %v", err)
-	}
-
-	// Update the group subject
-	err = conn.Client.SetGroupName(jid, name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update group subject: %v", err)
-	}
-
-	// Return the updated group info
-	return conn.Client.GetGroupInfo(jid)
-}
-
-func (conn *WhatsmeowConnection) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
-	if conn.Client == nil {
-		return "", fmt.Errorf("client not defined")
-	}
-
-	// Parse the group ID to JID format
-	jid, err := types.ParseJID(groupID)
-	if err != nil {
-		return "", fmt.Errorf("invalid group JID format: %v", err)
-	}
-
-	// Update the group photo
-	pictureID, err := conn.Client.SetGroupPhoto(jid, imageData)
-	if err != nil {
-		return "", fmt.Errorf("failed to update group photo: %v", err)
-	}
-
-	return pictureID, nil
-}
-
-func (conn *WhatsmeowConnection) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Parse the group ID to JID format
-	jid, err := types.ParseJID(groupID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid group JID format: %v", err)
-	}
-
-	// Update the group topic (description)
-	// SetGroupTopic requires: jid, previousID, newID, topic
-	// Let the whatsmeow library handle previousID and newID automatically by passing empty strings
-	err = conn.Client.SetGroupTopic(jid, "", "", topic)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update group topic: %v", err)
-	}
-
-	// Return the updated group info
-	return conn.Client.GetGroupInfo(jid)
-}
-func (conn *WhatsmeowConnection) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Parse the group JID
-	jid, err := types.ParseJID(groupJID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid group JID format: %v", err)
-	}
-
-	// Convert participant strings to JIDs
-	participantJIDs := make([]types.JID, len(participants))
-	for i, participant := range participants {
-		participantJIDs[i], err = types.ParseJID(participant)
-		if err != nil {
-			return nil, fmt.Errorf("invalid participant JID format for %s: %v", participant, err)
-		}
-	}
-
-	// Map the action string to the ParticipantChange type
-	var participantAction whatsmeow.ParticipantChange
-	switch action {
-	case "add":
-		participantAction = whatsmeow.ParticipantChangeAdd
-	case "remove":
-		participantAction = whatsmeow.ParticipantChangeRemove
-	case "promote":
-		participantAction = whatsmeow.ParticipantChangePromote
-	case "demote":
-		participantAction = whatsmeow.ParticipantChangeDemote
-	default:
-		return nil, fmt.Errorf("invalid action %s", action)
-	}
-
-	// Call the whatsmeow method
-	result, err := conn.Client.UpdateGroupParticipants(jid, participantJIDs, participantAction)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update group participants: %v", err)
-	}
-
-	// Convert to interface array for the generic return type
-	interfaceResults := make([]interface{}, len(result))
-	for i, r := range result {
-		interfaceResults[i] = r
-	}
-
-	return interfaceResults, nil
-}
-
-func (conn *WhatsmeowConnection) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Parse the group JID
-	jid, err := types.ParseJID(groupJID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid group JID format: %v", err)
-	}
-
-	// Call the whatsmeow method
-	requests, err := conn.Client.GetGroupRequestParticipants(jid)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get group join requests: %v", err)
-	}
-
-	// Convert to interface array for the generic return type
-	interfaceResults := make([]interface{}, len(requests))
-	for i, r := range requests {
-		interfaceResults[i] = r
-	}
-
-	return interfaceResults, nil
-}
-
-func (conn *WhatsmeowConnection) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Parse the group JID
-	jid, err := types.ParseJID(groupJID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid group JID format: %v", err)
-	}
-
-	// Convert participant strings to JIDs
-	participantJIDs := make([]types.JID, len(participants))
-	for i, participant := range participants {
-		participantJIDs[i], err = types.ParseJID(participant)
-		if err != nil {
-			return nil, fmt.Errorf("invalid participant JID format for %s: %v", participant, err)
-		}
-	}
-
-	// Map the action string to the ParticipantRequestChange type
-	var requestAction whatsmeow.ParticipantRequestChange
-	switch action {
-	case "approve":
-		requestAction = whatsmeow.ParticipantChangeApprove
-	case "reject":
-		requestAction = whatsmeow.ParticipantChangeReject
-	default:
-		return nil, fmt.Errorf("invalid action %s", action)
-	}
-
-	// Call the correct WhatsApp method which returns participant results
-	result, err := conn.Client.UpdateGroupRequestParticipants(jid, participantJIDs, requestAction)
-	if err != nil {
-		return nil, fmt.Errorf("failed to handle group join requests: %v", err)
-	}
-
-	// Convert the typed results to interface array
-	interfaceResults := make([]interface{}, len(result))
-	for i, r := range result {
-		interfaceResults[i] = r
-	}
-
-	return interfaceResults, nil
-}
-
-func (conn *WhatsmeowConnection) CreateGroupExtended(title string, participants []string) (interface{}, error) {
-	if conn.Client == nil {
-		return nil, fmt.Errorf("client not defined")
-	}
-
-	// Convert participants to JIDs
-	participantJIDs := make([]types.JID, len(participants))
-	for i, participant := range participants {
-		jid, err := types.ParseJID(participant)
-		if err != nil {
-			return nil, fmt.Errorf("invalid participant JID: %v", err)
-		}
-		participantJIDs[i] = jid
-	}
-
-	// Create request structure
-	req := whatsmeow.ReqCreateGroup{
-		Name:         title,
-		Participants: participantJIDs,
-	}
-
-	// Call the WhatsApp method
-	return conn.Client.CreateGroup(req)
+	return conn.GroupManager
 }
 
 // SendChatPresence updates typing status in a chat
@@ -1300,7 +919,7 @@ func (conn *WhatsmeowConnection) GetLIDFromPhone(phone string) (string, error) {
 	// Parse the phone number to JID format
 	phoneJID := types.JID{
 		User:   phone,
-		Server: "s.whatsapp.net",
+		Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER,
 	}
 
 	// try to get the LID from local store
@@ -1374,7 +993,7 @@ func (conn *WhatsmeowConnection) GetUserInfo(jids []string) ([]interface{}, erro
 		// Check if it's a phone number (no @ symbol) and validate E164 format
 		if !strings.Contains(jidStr, "@") {
 			// This is a phone number, validate and format to E164
-			validPhone, err := library.ExtractPhoneIfValid(jidStr)
+			validPhone, err := whatsapp.GetPhoneIfValid(jidStr)
 			if err != nil {
 				return nil, fmt.Errorf("invalid phone number format for %s: %v (must be E164 format starting with +)", jidStr, err)
 			}
@@ -1383,7 +1002,7 @@ func (conn *WhatsmeowConnection) GetUserInfo(jids []string) ([]interface{}, erro
 			phoneNumber := strings.TrimPrefix(validPhone, "+")
 			jid := types.JID{
 				User:   phoneNumber,
-				Server: "s.whatsapp.net",
+				Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER,
 			}
 			parsedJIDs = append(parsedJIDs, jid)
 		} else {
@@ -1444,7 +1063,7 @@ func (conn *WhatsmeowConnection) GetUserInfo(jids []string) ([]interface{}, erro
 		// Format phone to E164 if available
 		var phoneE164 string
 		if phoneNumber != "" {
-			if phone, err := library.ExtractPhoneIfValid(phoneNumber); err == nil {
+			if phone, err := whatsapp.GetPhoneIfValid(phoneNumber); err == nil {
 				phoneE164 = phone
 			}
 		}

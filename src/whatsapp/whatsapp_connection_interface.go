@@ -20,9 +20,6 @@ type IWhatsappConnection interface {
 	GetWhatsAppQRChannel(context.Context, chan<- string) error
 	GetWhatsAppQRCode() string
 
-	// Get group invite link
-	GetInvite(groupId string) (string, error)
-
 	// Get info to download profile picture
 	GetProfilePicture(wid string, knowingId string) (*WhatsappProfilePicture, error)
 
@@ -79,40 +76,6 @@ type IWhatsappConnection interface {
 
 	PairPhone(phone string) (string, error)
 
-	//region Group Methods
-
-	// Get a list of all groups
-	GetJoinedGroups() ([]interface{}, error)
-
-	// Get a specific group
-	GetGroupInfo(string) (interface{}, error)
-
-	// Create a group
-	CreateGroup(string, []string) (interface{}, error)
-
-	// Update Group Name
-	UpdateGroupSubject(string, string) (interface{}, error)
-
-	// Update Group Topic (Description)
-	UpdateGroupTopic(string, string) (interface{}, error)
-
-	// Update Group Photo
-	UpdateGroupPhoto(string, []byte) (string, error)
-
-	// Update group participants (add, remove, promote, demote)
-	UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error)
-
-	// Get list of pending join requests for a group
-	GetGroupJoinRequests(groupJID string) ([]interface{}, error)
-
-	// Handle join requests (approve/reject)
-	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
-
-	// Add to the IWhatsappConnection interface in whatsapp/interfaces.go
-	CreateGroupExtended(title string, participants []string) (interface{}, error)
-
-	//endregion
-
 	//region Send Presence
 	SendChatPresence(chatId string, presenceType uint) error
 	//endregion
@@ -121,7 +84,9 @@ type IWhatsappConnection interface {
 
 	// Get phone number from LID
 	GetPhoneFromLID(lid string) (string, error)
-	//endregion
 
 	GetUserInfo(jids []string) ([]interface{}, error)
+
+	// NOTE: Group operations have been moved to IGroupManager
+	// Access them via connection.GetGroupManager().MethodName()
 }

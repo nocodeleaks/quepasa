@@ -39,7 +39,7 @@ func (source *WhatsappChat) GetPhone() string {
 	}
 
 	// Fallback to extracting from ID
-	phone, _ := library.ExtractPhoneIfValid(source.Id)
+	phone, _ := library.GetPhoneIfValid(source.Id)
 	return phone
 }
 
@@ -62,7 +62,7 @@ func (source *WhatsappChat) PopulatePhone(conn interface{}) {
 				logentry.WithField("id", source.Id).WithField("phone", phone).Debug("Retrieved phone from LID mapping")
 
 				// Format the phone to E164 if needed
-				if formattedPhone, err := library.ExtractPhoneIfValid(phone); err == nil {
+				if formattedPhone, err := library.GetPhoneIfValid(phone); err == nil {
 					source.Phone = formattedPhone
 					logentry.WithField("id", source.Id).WithField("formatted_phone", formattedPhone).Debug("Phone formatted to E164")
 				} else {
@@ -77,7 +77,7 @@ func (source *WhatsappChat) PopulatePhone(conn interface{}) {
 		}
 	} else if strings.Contains(source.Id, "@s.whatsapp.net") {
 		// For @s.whatsapp.net, extract phone from ID
-		if phone, _ := library.ExtractPhoneIfValid(source.Id); len(phone) > 0 {
+		if phone, _ := library.GetPhoneIfValid(source.Id); len(phone) > 0 {
 			source.Phone = phone
 			logentry.WithField("id", source.Id).WithField("phone", phone).Debug("Extracted phone from s.whatsapp.net ID")
 		} else {

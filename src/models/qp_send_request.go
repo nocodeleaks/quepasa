@@ -63,7 +63,7 @@ func (source *QpSendRequest) EnsureChatId(r *http.Request) (err error) {
 		return
 	}
 
-	source.ChatId = GetChatId(r)
+	source.ChatId = library.GetChatId(r)
 	if len(source.ChatId) == 0 {
 		err = fmt.Errorf("chat id missing")
 	}
@@ -94,7 +94,7 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	chat := whatsapp.WhatsappChat{Id: chatId}
 
 	// Try to populate phone field
-	if phone, _ := library.ExtractPhoneIfValid(chatId); len(phone) > 0 {
+	if phone, _ := library.GetPhoneIfValid(chatId); len(phone) > 0 {
 		chat.Phone = phone
 	}
 
@@ -171,6 +171,6 @@ func (source *QpSendRequest) GenerateBodyContent(r *http.Request) (err error) {
 		}
 	}
 
-	source.FileName = GetFileName(r)
+	source.FileName = library.GetFileName(r)
 	return
 }

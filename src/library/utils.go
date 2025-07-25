@@ -2,7 +2,6 @@ package library
 
 import (
 	"encoding/json"
-	"fmt"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -124,70 +123,6 @@ func GenerateFileNameFromMimeType(mimeType string) string {
 	}
 
 	return filename
-}
-
-// Usado também para identificar o número do bot
-// Meramente visual
-func GetPhoneByWId(wid string) string {
-
-	// removing whitespaces
-	out := strings.Replace(wid, " ", "", -1)
-	if strings.Contains(out, "@") {
-		// capturando tudo antes do @
-		splited := strings.Split(out, "@")
-		out = splited[0]
-
-		if strings.Contains(out, ".") {
-			// capturando tudo antes do "."
-			splited = strings.Split(out, ".")
-			out = splited[0]
-
-			return out
-		}
-	}
-
-	re, err := regexp.Compile(`\d*`)
-	if err == nil {
-		matches := re.FindAllString(out, -1)
-		if len(matches) > 0 {
-			out = matches[0]
-		}
-	}
-	return out
-}
-
-func ExtractPhoneIfValid(source string) (phone string, err error) {
-	response := strings.TrimLeft(source, "+")
-	if strings.HasSuffix(response, "@s.whatsapp.net") {
-		response = strings.Split(response, "@")[0]
-	}
-
-	r, _ := regexp.Compile(`^[1-9]\d{6,14}$`)
-	if r.MatchString(response) {
-		phone = "+" + response
-	} else {
-		err = fmt.Errorf("not a valid phone number")
-	}
-	return
-}
-
-// Whatsapp issue on understanding mobile phones with ddd bigger than 30, only mobile
-func RemoveDigit9IfElegible(source string) (response string, err error) {
-	if len(source) == 14 {
-
-		// mobile phones with 9 digit
-		r, _ := regexp.Compile(`\+55([4-9][1-9]|[3-9][1-9])9\d{8}$`)
-		if r.MatchString(source) {
-			prefix := source[0:5]
-			response = prefix + source[6:14]
-		} else {
-			err = fmt.Errorf("not elegible match")
-		}
-	} else {
-		err = fmt.Errorf("not elegible number of digits")
-	}
-
-	return
 }
 
 // Removes line breaks and leading/trailing spaces from a string

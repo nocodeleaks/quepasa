@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/joho/godotenv"
-	controllers "github.com/nocodeleaks/quepasa/controllers"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
-	"github.com/nocodeleaks/quepasa/rabbitmq"
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
+	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 
@@ -41,15 +41,15 @@ func main() {
 	}
 
 	whatsappOptions := &whatsapp.WhatsappOptionsExtended{
-		Groups:       models.ENV.Groups(),
-		Broadcasts:   models.ENV.Broadcasts(),
-		ReadReceipts: models.ENV.ReadReceipts(),
-		Calls:        models.ENV.Calls(),
-		ReadUpdate:   models.ENV.ReadUpdate(),
-		HistorySync:  models.ENV.HistorySync(),
-		Presence:     models.ENV.Presence(),
-		DispatchUnhandled:  models.ENV.DispatchUnhandled(),
-		LogLevel:     logentry.Level.String(),
+		Groups:            models.ENV.Groups(),
+		Broadcasts:        models.ENV.Broadcasts(),
+		ReadReceipts:      models.ENV.ReadReceipts(),
+		Calls:             models.ENV.Calls(),
+		ReadUpdate:        models.ENV.ReadUpdate(),
+		HistorySync:       models.ENV.HistorySync(),
+		Presence:          models.ENV.Presence(),
+		DispatchUnhandled: models.ENV.DispatchUnhandled(),
+		LogLevel:          logentry.Level.String(),
 	}
 
 	whatsapp.Options = *whatsappOptions
@@ -88,7 +88,7 @@ func main() {
 		logentry.Fatalf("whatsapp service starting error: %s", err.Error())
 	}
 
-	err = controllers.QPWebServerStart(logentry)
+	err = webserver.WebServerStart(logentry)
 	if err != nil {
 		logentry.Info("end with errors")
 	} else {

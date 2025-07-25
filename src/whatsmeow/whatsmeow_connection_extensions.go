@@ -20,3 +20,13 @@ func GetMentions(text string) (mentions []string) {
 
 	return
 }
+
+// returns a valid chat title from local memory store
+func GetChatTitleFromWId(source *WhatsmeowConnection, wid string) string {
+	jid, err := types.ParseJID(wid)
+	if err == nil {
+		return GetChatTitle(source.Client, jid)
+	}
+
+	return ""
+}

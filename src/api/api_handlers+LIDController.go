@@ -85,7 +85,7 @@ func GetUserIdentifierController(w http.ResponseWriter, r *http.Request) {
 	request.Phone = library.GetRequestParameter(r, "phone")
 	request.LId = library.GetRequestParameter(r, "lid")
 
-	response := api.UserIdentifierResponse{UserIdentifierRequest: request}
+	response := api.UserIdentifierResponse{}
 
 	if len(request.Phone) == 0 && len(request.LId) == 0 {
 		err := fmt.Errorf("get user identifier controller, missing phone or lid")
@@ -103,95 +103,67 @@ func GetUserIdentifierController(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		phone = strings.TrimPrefix(phone, "+")
+
+		lid, err := GetLIdFromPhone(r, phone)
+		if err != nil {
+			response.ParseError(fmt.Errorf("failed to get LId from phone: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+		response.LId = lid
+	} else if len(request.LId) > 0 {
+		phone, err := GetPhoneFromLId(r, request.LId)
+		if err != nil {
+			response.ParseError(fmt.Errorf("failed to get phone from LId: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+
+		response.LId = request.LId
+
+		if !strings.HasPrefix(phone, "+") {
+			phone = "+" + phone
+		}
+		response.Phone = phone
 	}
 
+	response.ParseSuccess("found successfully")
+	RespondSuccess(w, response)
+}
+
+func GetLIdFromPhone(r *http.Request, phone string) (response string, err error) {
 	server, err := GetServer(r)
 	if err != nil {
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
+		return response, err
 	}
 
 	// Checking for ready state
 	status := server.GetStatus()
 	if status != whatsapp.Ready {
 		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		response.ParseError(err)
-		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
-		return
+		return response, err
 	}
 
-	// Extract the phone part from the JID for the response
-	processedPhone := response.Phone
-
-	// Try to get LID with original phone number first
-	lid, err := server.GetLIDFromPhone(processedPhone)
-
-	// If not found and Brazilian 9-digit handling is enabled, try alternative formats
-	if err != nil && models.ENV.ShouldRemoveDigit9() {
-		// Extract phone number with country code
-		phoneWithCountry, phoneErr := library.GetPhoneIfValid(processedPhone)
-		if phoneErr == nil {
-			// Try to remove the 9th digit if eligible (Brazilian mobile phones)
-			phoneWithout9, removeErr := library.RemoveDigit9IfElegible(phoneWithCountry)
-			if removeErr == nil {
-				// Extract phone number without country code and + sign
-				phoneWithout9Clean := strings.TrimPrefix(phoneWithout9, "+")
-
-				// Try with the phone number without the 9th digit
-				lid, err = server.GetLIDFromPhone(phoneWithout9Clean)
-				if err == nil {
-					// Update the processed phone for response
-					processedPhone = phoneWithout9Clean
-				}
-			}
-		}
-
-		// If still not found, try the original logic but with + prefix
-		if err != nil && !strings.HasPrefix(processedPhone, "+") {
-			phoneWithPlus := "+" + processedPhone
-			phoneExtracted, extractErr := library.GetPhoneIfValid(phoneWithPlus)
-			if extractErr == nil {
-				phoneWithout9, removeErr := library.RemoveDigit9IfElegible(phoneExtracted)
-				if removeErr == nil {
-					phoneWithout9Clean := strings.TrimPrefix(phoneWithout9, "+")
-					lid, err = server.GetLIDFromPhone(phoneWithout9Clean)
-					if err == nil {
-						processedPhone = phoneWithout9Clean
-					}
-				}
-			}
-		}
-	}
-
-	// If still no LID found, return the original error
-	if err != nil {
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	// Set response data
-	response.Phone = processedPhone
-	response.LId = lid
-	response.ParseSuccess("LID found successfully")
-
-	RespondSuccess(w, response)
+	contactManager := server.GetContactManager()
+	return contactManager.GetLIDFromPhone(phone)
 }
 
-// Helper function to convert phone numbers or partial JIDs to full JIDs
-func convertPhoneToJid(phone string) ([]string, error) {
-	result := make([]string, 0)
-
-	// If it already contains @, assume it's a JID
-	if strings.Contains(phone, "@") {
-		result = append(result, phone)
-	} else {
-		// Otherwise, treat as a phone number and convert to JID format
-		result = append(result, phone+whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX)
+func GetPhoneFromLId(r *http.Request, lid string) (response string, err error) {
+	server, err := GetServer(r)
+	if err != nil {
+		return response, err
 	}
 
-	return result, nil
+	// Checking for ready state
+	status := server.GetStatus()
+	if status != whatsapp.Ready {
+		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
+		return response, err
+	}
+
+	contactManager := server.GetContactManager()
+	return contactManager.GetPhoneFromLID(lid)
 }
 
 //endregion

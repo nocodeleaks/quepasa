@@ -27,6 +27,7 @@ func prepend(x []string, y string) []string {
 func (e *ApiExceptionBase) Prepend(message string) {
 	e.Messages = prepend(e.Messages, message)
 }
+
 func (e *ApiExceptionBase) Prependf(format string, a ...any) {
 	message := fmt.Sprintf(format, a)
 	e.Prepend(message)

@@ -18,9 +18,6 @@ type IWhatsappConnection interface {
 	GetWhatsAppQRChannel(context.Context, chan<- string) error
 	GetWhatsAppQRCode() string
 
-	// Get info to download profile picture
-	GetProfilePicture(wid string, knowingId string) (*WhatsappProfilePicture, error)
-
 	UpdateHandler(IWhatsappHandlers)
 	UpdatePairedCallBack(func(string))
 
@@ -60,12 +57,7 @@ type IWhatsappConnection interface {
 
 	IsInterfaceNil() bool
 
-	// Is a valid whatsapp phone numbers
-	IsOnWhatsApp(...string) ([]string, error)
-
 	HistorySync(time.Time) error
-
-	GetContacts() ([]WhatsappChat, error)
 
 	PairPhone(phone string) (string, error)
 
@@ -73,16 +65,15 @@ type IWhatsappConnection interface {
 	SendChatPresence(chatId string, presenceType uint) error
 	//endregion
 
-	GetLIDFromPhone(phone string) (string, error)
-
-	// Get phone number from LID
-	GetPhoneFromLID(lid string) (string, error)
-
-	GetUserInfo(jids []string) ([]interface{}, error)
-
 	// NOTE: Group operations have been moved to IGroupManager
 	// Access them via connection.GetGroupManager().MethodName()
 
+	// NOTE: Contact operations have been moved to IContactManager
+	// Access them via connection.GetContactManager().MethodName()
+
 	// GetStatusManager returns the status manager for status operations
 	GetStatusManager() WhatsappStatusManagerInterface
+
+	// GetContactManager returns the contact manager for contact operations
+	GetContactManager() WhatsappContactManagerInterface
 }

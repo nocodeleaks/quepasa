@@ -25,10 +25,11 @@ type QpWhatsappServer struct {
 
 	StartTime time.Time `json:"starttime,omitempty"`
 
-	Handler       *QPWhatsappHandlers `json:"-"`
-	WebHook       *QPWebhookHandler   `json:"-"`
-	GroupManager  *QpGroupManager     `json:"-"` // composition for group operations
-	StatusManager *QpStatusManager    `json:"-"` // composition for status operations
+	Handler        *QPWhatsappHandlers `json:"-"`
+	WebHook        *QPWebhookHandler   `json:"-"`
+	GroupManager   *QpGroupManager     `json:"-"` // composition for group operations
+	StatusManager  *QpStatusManager    `json:"-"` // composition for status operations
+	ContactManager *QpContactManager   `json:"-"` // composition for contact operations
 
 	// Stop request token
 	StopRequested bool                   `json:"-"`
@@ -688,7 +689,8 @@ func (source *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (resp
 		if len(phone) > 0 {
 			phoneWithout9, _ := library.RemoveDigit9IfElegible(phone)
 			if len(phoneWithout9) > 0 {
-				valids, err := conn.IsOnWhatsApp(phone, phoneWithout9)
+				contactManager := source.GetContactManager()
+				valids, err := contactManager.IsOnWhatsApp(phone, phoneWithout9)
 				if err != nil {
 					return nil, err
 				}
@@ -747,12 +749,8 @@ func (source *QpWhatsappServer) GetProfilePicture(wid string, knowingId string) 
 	// future implement a rate control here, high volume of requests causing bans
 	// studying rates ...
 
-	conn, err := source.GetValidConnection()
-	if err != nil {
-		return
-	}
-
-	return conn.GetProfilePicture(wid, knowingId)
+	contactManager := source.GetContactManager()
+	return contactManager.GetProfilePicture(wid, knowingId)
 }
 
 //#endregion
@@ -762,12 +760,8 @@ func (source *QpWhatsappServer) GetProfilePicture(wid string, knowingId string) 
 //#region GET ALL CONTACTS
 
 func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat, err error) {
-	conn, err := source.GetValidConnection()
-	if err != nil {
-		return
-	}
-
-	contacts, err = conn.GetContacts()
+	contactManager := source.GetContactManager()
+	contacts, err = contactManager.GetContacts()
 	if err == nil {
 		for index, contact := range contacts {
 			contact.FormatContact()
@@ -783,12 +777,8 @@ func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat,
 //#region IsOnWhatsapp
 
 func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []string, err error) {
-	conn, err := source.GetValidConnection()
-	if err != nil {
-		return
-	}
-
-	return conn.IsOnWhatsApp(phones...)
+	contactManager := source.GetContactManager()
+	return contactManager.IsOnWhatsApp(phones...)
 }
 
 //#endregion
@@ -811,6 +801,14 @@ func (server *QpWhatsappServer) GetStatusManager() whatsapp.WhatsappStatusManage
 	return server.StatusManager
 }
 
+// GetContactManager returns the contact manager instance with lazy initialization
+func (server *QpWhatsappServer) GetContactManager() whatsapp.WhatsappContactManagerInterface {
+	if server.ContactManager == nil {
+		server.ContactManager = NewQpContactManager(server)
+	}
+	return server.ContactManager
+}
+
 //#endregion
 
 func (server *QpWhatsappServer) SendChatPresence(chatId string, presenceType whatsapp.WhatsappChatPresenceType) error {
@@ -822,28 +820,17 @@ func (server *QpWhatsappServer) SendChatPresence(chatId string, presenceType wha
 }
 
 func (server *QpWhatsappServer) GetLIDFromPhone(phone string) (string, error) {
-	conn, err := server.GetValidConnection()
-	if err != nil {
-		return "",
-			err
-	}
-	return conn.GetLIDFromPhone(phone)
+	contactManager := server.GetContactManager()
+	return contactManager.GetLIDFromPhone(phone)
 }
 
 func (server *QpWhatsappServer) GetPhoneFromLID(lid string) (string, error) {
-	conn, err := server.GetValidConnection()
-	if err != nil {
-		return "",
-			err
-	}
-	return conn.GetPhoneFromLID(lid)
+	contactManager := server.GetContactManager()
+	return contactManager.GetPhoneFromLID(lid)
 }
 
 // GetUserInfo retrieves user information for given JIDs
 func (server *QpWhatsappServer) GetUserInfo(jids []string) ([]interface{}, error) {
-	conn, err := server.GetValidConnection()
-	if err != nil {
-		return nil, err
-	}
-	return conn.GetUserInfo(jids)
+	contactManager := server.GetContactManager()
+	return contactManager.GetUserInfo(jids)
 }

@@ -95,10 +95,34 @@ func RevokeController(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditMessageController(w http.ResponseWriter, r *http.Request) {
-	// setting default response type as json
-	w.Header().Set("Content-Type", "application/json")
 
 	response := &models.QpResponse{}
+	// Declare a new request struct
+	request := &EditMessageRequest{}
+
+	if r.ContentLength > 0 && r.Method == http.MethodPost {
+		// Try to decode the request body into the struct. If there is an error,
+		// respond to the client with the error message and a 400 status code.
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			jsonErr := fmt.Errorf("invalid json body: %s", err.Error())
+			response.ParseError(jsonErr)
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	if len(request.Content) == 0 {
+		response.ParseError(fmt.Errorf("empty content for edit"))
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(request.MessageId) == 0 {
+		response.ParseError(fmt.Errorf("empty message id"))
+		RespondInterface(w, response)
+		return
+	}
 
 	server, err := GetServer(r)
 	if err != nil {
@@ -107,37 +131,14 @@ func EditMessageController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request *models.EditMessageRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		response.ParseError(fmt.Errorf("invalid request: %v", err))
-		RespondInterface(w, response)
-		return
-	}
-
-	if len(request.Content) == 0 {
-		err = fmt.Errorf("empty content for edit")
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	if len(request.MessageId) == 0 {
-		err = fmt.Errorf("empty message id")
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	// Check if the message exists
-
 	err = server.Edit(request.MessageId, request.Content)
 	if err != nil {
 		response.ParseError(err)
-	} else {
-		response.ParseSuccess("message edited successfully")
+		RespondInterface(w, response)
+		return
 	}
-
-	RespondInterface(w, response)
+	response.ParseSuccess("message edited successfully")
+	RespondSuccess(w, response)
 }
 
 //endregion

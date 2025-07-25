@@ -421,6 +421,7 @@ func (source *WhatsmeowConnection) Revoke(msg whatsapp.IWhatsappMessage) error {
 // func (cli *Client) BuildEdit(chat types.JID, id types.MessageID, newContent *waE2E.Message) *waE2E.Message {
 func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newContent string) error {
 	logentry := source.GetLogger()
+
 	jid, err := types.ParseJID(msg.GetChatId())
 	if err != nil {
 		logentry.Infof("edit message error on get jid: %s", err)

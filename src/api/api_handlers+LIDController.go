@@ -121,20 +121,6 @@ func GetUserIdentifierController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use convertPhoneToJid to validate and format the phone number
-	jid, err := convertPhoneToJid(response.Phone)
-	if err != nil {
-		response.ParseError(fmt.Errorf("failed to process phone number: %v", err))
-		RespondInterface(w, response)
-		return
-	}
-
-	if len(jid) == 0 {
-		response.ParseError(fmt.Errorf("invalid phone number"))
-		RespondInterface(w, response)
-		return
-	}
-
 	// Extract the phone part from the JID for the response
 	processedPhone := response.Phone
 

@@ -10,8 +10,6 @@ import (
 type IWhatsappConnection interface {
 	IWhatsappConnectionOptions
 
-	GetStatus() WhatsappConnectionState
-
 	GetChatTitle(string) string
 
 	Connect() error
@@ -62,11 +60,6 @@ type IWhatsappConnection interface {
 
 	IsInterfaceNil() bool
 
-	// Is connected and logged, valid verification
-	IsValid() bool
-
-	IsConnected() bool
-
 	// Is a valid whatsapp phone numbers
 	IsOnWhatsApp(...string) ([]string, error)
 
@@ -89,4 +82,7 @@ type IWhatsappConnection interface {
 
 	// NOTE: Group operations have been moved to IGroupManager
 	// Access them via connection.GetGroupManager().MethodName()
+
+	// GetStatusManager returns the status manager for status operations
+	GetStatusManager() WhatsappStatusManagerInterface
 }

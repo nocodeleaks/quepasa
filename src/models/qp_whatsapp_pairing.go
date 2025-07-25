@@ -48,7 +48,8 @@ func (source *QpWhatsappPairing) OnPaired(wid string) {
 	}
 
 	if source.conn != nil {
-		source.conn.SetReconnect(true)
+		statusManager := source.conn.GetStatusManager()
+		statusManager.SetReconnect(true)
 	}
 
 	logentry := source.GetLogger()

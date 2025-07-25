@@ -11,3 +11,6 @@
 * sempre que for criar um método de extensão, utilize 'source' como nome de parametro para o objeto extendido;
 * para os nomes das classes, estruturas, ex: whatsmeow_group_manager.go => WhatsmeowGroupManager;
 * todos os testes devem ser colocados em /tests/*
+* JId: Whatsapp Jabber Identifier ("go.mau.fi/whatsmeow/types".JID)
+* WId: Whatsapp String Identifier (string)
+* LId: Whatsapp Local Identifier (new default Identifier, used to hide the phone number)

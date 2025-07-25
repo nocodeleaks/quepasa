@@ -25,7 +25,8 @@ type WhatsmeowConnection struct {
 	library.LogStruct // logging
 	Client            *whatsmeow.Client
 	Handlers          *WhatsmeowHandlers
-	GroupManager      *WhatsmeowGroupManager // composition for group operations
+	GroupManager      *WhatsmeowGroupManager  // composition for group operations
+	StatusManager     *WhatsmeowStatusManager // composition for status operations
 
 	failedToken  bool
 	paired       func(string)
@@ -33,17 +34,6 @@ type WhatsmeowConnection struct {
 }
 
 //#region IMPLEMENT WHATSAPP CONNECTION OPTIONS INTERFACE
-
-func (conn *WhatsmeowConnection) GetWid() string {
-	if conn != nil {
-		wid, err := conn.GetWidInternal()
-		if err != nil {
-			return wid
-		}
-	}
-
-	return ""
-}
 
 // get default log entry, never nil
 func (source *WhatsmeowConnection) GetLogger() *log.Entry {
@@ -53,7 +43,8 @@ func (source *WhatsmeowConnection) GetLogger() *log.Entry {
 
 	logentry := library.NewLogEntry(source)
 	if source != nil {
-		wid, _ := source.GetWidInternal()
+		statusManager := source.GetStatusManager()
+		wid, _ := statusManager.GetWidInternal()
 		if len(wid) > 0 {
 			logentry = logentry.WithField(LogFields.WId, wid)
 		}
@@ -65,70 +56,9 @@ func (source *WhatsmeowConnection) GetLogger() *log.Entry {
 	return logentry
 }
 
-func (conn *WhatsmeowConnection) SetReconnect(value bool) {
-	if conn != nil {
-		if conn.Client != nil {
-			conn.Client.EnableAutoReconnect = value
-		}
-	}
-}
-
-func (conn *WhatsmeowConnection) GetReconnect() bool {
-	if conn != nil {
-		if conn.Client != nil {
-			return conn.Client.EnableAutoReconnect
-		}
-	}
-
-	return false
-}
-
 //#endregion
 
 //region IMPLEMENT INTERFACE WHATSAPP CONNECTION
-
-func (conn *WhatsmeowConnection) GetVersion() string { return "multi" }
-
-func (conn *WhatsmeowConnection) GetWidInternal() (string, error) {
-	if conn.Client == nil {
-		err := fmt.Errorf("client not defined on trying to get wid")
-		return "", err
-	}
-
-	if conn.Client.Store == nil {
-		err := fmt.Errorf("device store not defined on trying to get wid")
-		return "", err
-	}
-
-	if conn.Client.Store.ID == nil {
-		err := fmt.Errorf("device id not defined on trying to get wid")
-		return "", err
-	}
-
-	wid := conn.Client.Store.ID.User
-	return wid, nil
-}
-
-func (conn *WhatsmeowConnection) IsValid() bool {
-	if conn != nil {
-		if conn.Client != nil {
-			if conn.Client.IsConnected() {
-				if conn.Client.IsLoggedIn() {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (source *WhatsmeowConnection) IsConnected() bool {
-	return IsConnected(source)
-}
-
-func (source *WhatsmeowConnection) GetStatus() whatsapp.WhatsappConnectionState {
-	return GetStatus(source)
-}
 
 // returns a valid chat title from local memory store
 func (conn *WhatsmeowConnection) GetChatTitle(wid string) string {
@@ -873,6 +803,14 @@ func (conn *WhatsmeowConnection) GetGroupManager() whatsapp.WhatsappGroupManager
 		conn.GroupManager = NewWhatsmeowGroupManager(conn)
 	}
 	return conn.GroupManager
+}
+
+// GetStatusManager returns the status manager instance with lazy initialization
+func (conn *WhatsmeowConnection) GetStatusManager() whatsapp.WhatsappStatusManagerInterface {
+	if conn.StatusManager == nil {
+		conn.StatusManager = NewWhatsmeowStatusManager(conn)
+	}
+	return conn.StatusManager
 }
 
 // SendChatPresence updates typing status in a chat

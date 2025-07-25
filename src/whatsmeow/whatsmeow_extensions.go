@@ -190,7 +190,7 @@ func GetStringFromBytes(bytes []byte) string {
  * @return Normalized chat title string
  */
 func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
-	if jid.Server == "g.us" {
+	if jid.Server == whatsapp.WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX {
 		title = GroupInfoCache.Get(jid.String())
 		if len(title) > 0 {
 			goto found

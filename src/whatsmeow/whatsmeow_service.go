@@ -230,7 +230,7 @@ func (service *WhatsmeowServiceModel) GetStoreForMigrated(phone string) (str *st
 	return
 }
 
-func (source *WhatsmeowServiceModel) GetWhatsAppClient(options whatsapp.IWhatsappConnectionOptions) (client *whatsmeow.Client, err error) {
+func (source *WhatsmeowServiceModel) GetWhatsAppClient(options *whatsapp.WhatsappConnectionOptions) (client *whatsmeow.Client, err error) {
 	loglevel := WhatsmeowClientLogLevel
 	_, logerr := log.ParseLevel(source.Options.WMLogLevel)
 	if logerr == nil {

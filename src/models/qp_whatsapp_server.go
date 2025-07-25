@@ -25,9 +25,10 @@ type QpWhatsappServer struct {
 
 	StartTime time.Time `json:"starttime,omitempty"`
 
-	Handler      *QPWhatsappHandlers `json:"-"`
-	WebHook      *QPWebhookHandler   `json:"-"`
-	GroupManager *QpGroupManager     `json:"-"` // composition for group operations
+	Handler       *QPWhatsappHandlers `json:"-"`
+	WebHook       *QPWebhookHandler   `json:"-"`
+	GroupManager  *QpGroupManager     `json:"-"` // composition for group operations
+	StatusManager *QpStatusManager    `json:"-"` // composition for status operations
 
 	// Stop request token
 	StopRequested bool                   `json:"-"`
@@ -110,13 +111,15 @@ func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
 		return whatsapp.UnVerified
 	} else {
 		if server.StopRequested {
-			if server.connection != nil && !server.connection.IsInterfaceNil() && server.connection.IsConnected() {
+			statusManager := server.GetStatusManager()
+			if server.connection != nil && !server.connection.IsInterfaceNil() && statusManager.IsConnected() {
 				return whatsapp.Stopping
 			} else {
 				return whatsapp.Stopped
 			}
 		} else {
-			state := server.connection.GetStatus()
+			statusManager := server.GetStatusManager()
+			state := statusManager.GetStatus()
 			if state == whatsapp.Disconnected && !server.Verified {
 				return whatsapp.UnVerified
 			}
@@ -367,7 +370,8 @@ func (source *QpWhatsappServer) Start() (err error) {
 		return source.StartConnectionError(err)
 	}
 
-	if !source.connection.IsConnected() {
+	statusManager := source.GetStatusManager()
+	if !statusManager.IsConnected() {
 		logentry.Infof("requesting connection again ...")
 		err = source.connection.Connect()
 		if err != nil {
@@ -376,7 +380,7 @@ func (source *QpWhatsappServer) Start() (err error) {
 	}
 
 	// If at this moment the connect is already logged, ensure a valid mark
-	if source.connection.IsValid() {
+	if statusManager.IsValid() {
 		source.MarkVerified(true)
 	}
 
@@ -409,7 +413,8 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 	// Atualizando manipuladores de eventos
 	source.connection.UpdateHandler(source.Handler)
 
-	if !source.connection.IsConnected() {
+	statusManager := source.GetStatusManager()
+	if !statusManager.IsConnected() {
 		logger.Info("requesting connection ...")
 		err = source.connection.Connect()
 		if err != nil {
@@ -480,7 +485,8 @@ func (source *QpWhatsappServer) Restart() (err error) {
 func (source *QpWhatsappServer) Disconnect(cause string) {
 	conn, err := source.GetValidConnection()
 	if err == nil {
-		if conn.IsConnected() {
+		statusManager := source.GetStatusManager()
+		if statusManager.IsConnected() {
 			logentry := source.GetLogger()
 			logentry.Infof("disconnecting whatsapp server by: %s", cause)
 
@@ -795,6 +801,14 @@ func (server *QpWhatsappServer) GetGroupManager() whatsapp.WhatsappGroupManagerI
 		server.GroupManager = NewQpGroupManager(server)
 	}
 	return server.GroupManager
+}
+
+// GetStatusManager returns the status manager instance with lazy initialization
+func (server *QpWhatsappServer) GetStatusManager() whatsapp.WhatsappStatusManagerInterface {
+	if server.StatusManager == nil {
+		server.StatusManager = NewQpStatusManager(server)
+	}
+	return server.StatusManager
 }
 
 //#endregion

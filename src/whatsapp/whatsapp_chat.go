@@ -44,7 +44,7 @@ func (source *WhatsappChat) GetPhone() string {
 }
 
 // PopulatePhone attempts to fill the Phone field using available mapping
-func (source *WhatsappChat) PopulatePhone(conn interface{}) {
+func (source *WhatsappChat) PopulatePhone(conn any) {
 	if len(source.Phone) > 0 {
 		return // Already populated
 	}
@@ -76,12 +76,18 @@ func (source *WhatsappChat) PopulatePhone(conn interface{}) {
 			logentry.WithField("id", source.Id).Error("Connection does not support GetPhoneFromLID method")
 		}
 	} else if strings.Contains(source.Id, "@s.whatsapp.net") {
-		// For @s.whatsapp.net, extract phone from ID
-		if phone, _ := library.GetPhoneIfValid(source.Id); len(phone) > 0 {
-			source.Phone = phone
-			logentry.WithField("id", source.Id).WithField("phone", phone).Debug("Extracted phone from s.whatsapp.net ID")
+		// For @s.whatsapp.net, extract phone from ID by taking the part before @
+		// adjusted here to first split by '@' and then validate the phone number
+		// GetPhoneIfValid expects a phone number in E164 format not the full ID
+
+		phonepart := strings.Split(source.Id, "@")[0]
+		if formattedPhone, err := library.GetPhoneIfValid(phonepart); err == nil {
+			source.Phone = formattedPhone
+			logentry.WithField("id", source.Id).WithField("phone", formattedPhone).Debug("Extracted phone from s.whatsapp.net ID")
 		} else {
-			logentry.WithField("id", source.Id).Error("Failed to extract phone from s.whatsapp.net ID")
+			// If validation fails, use the raw phone part
+			source.Phone = phonepart
+			logentry.WithField("id", source.Id).WithField("phone", phonepart).WithError(err).Warn("Phone validation failed, using raw phone from s.whatsapp.net ID")
 		}
 	} else {
 		logentry.WithField("id", source.Id).Debug("No phone extraction method available for this ID format")

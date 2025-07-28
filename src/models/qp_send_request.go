@@ -94,7 +94,7 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	chat := whatsapp.WhatsappChat{Id: chatId}
 
 	// Try to populate phone field
-	if phone, _ := library.GetPhoneIfValid(chatId); len(phone) > 0 {
+	if phone, _ := whatsapp.GetPhoneIfValid(chatId); len(phone) > 0 {
 		chat.Phone = phone
 	}
 

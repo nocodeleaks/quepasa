@@ -139,7 +139,7 @@ func (source *WhatsappMessage) GetSource() any {
 }
 
 func (source *WhatsappMessage) FromGroup() bool {
-	return strings.HasSuffix(source.Chat.Id, "@g.us")
+	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX)
 }
 
 func (source *WhatsappMessage) FromAds() bool {

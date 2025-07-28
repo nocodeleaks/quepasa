@@ -94,6 +94,11 @@ func GetPhoneIfValid(source string) (phone string, err error) {
 	// If it has @s.whatsapp.net, remove it
 	if strings.HasSuffix(response, WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
 		response = strings.Split(response, "@")[0]
+
+		if strings.Contains(response, ":") {
+			// removing session id
+			response = strings.Split(response, ":")[0]
+		}
 	}
 
 	// Regex to match E164 format

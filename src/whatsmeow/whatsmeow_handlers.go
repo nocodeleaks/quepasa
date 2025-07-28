@@ -1,7 +1,6 @@
 package whatsmeow
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,30 +12,31 @@ import (
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
-	whatsmeow "go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/appstate"
 	types "go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
 
 type WhatsmeowHandlers struct {
-	library.LogStruct // logging
+	WhatsmeowOptions          // default whatsmeow service global options
+	*WhatsmeowConnection      // Connection reference for accessing embedded managers
+	*whatsapp.WhatsappOptions // particular whatsapp options for this handler
 
-	// particular whatsapp options for this handler
-	*whatsapp.WhatsappOptions
-
-	// default whatsmeow service global options
-	WhatsmeowOptions
-
-	Client     *whatsmeow.Client
 	WAHandlers whatsapp.IWhatsappHandlers
 
 	eventHandlerID           uint32
 	unregisterRequestedToken bool
-	service                  *WhatsmeowServiceModel
 
 	// events counter
 	Counter uint64
+}
+
+func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowHandlers {
+	return &WhatsmeowHandlers{
+		WhatsmeowConnection: conn,
+		WhatsmeowOptions:    wmOptions,
+		WhatsappOptions:     waOptions,
+	}
 }
 
 func (source *WhatsmeowHandlers) GetServiceOptions() (options whatsapp.WhatsappOptionsExtended) {
@@ -336,56 +336,8 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 		message.Timestamp = ImproveTimestamp(info.Timestamp)
 		message.FromMe = info.IsFromMe
 
-		message.Chat = whatsapp.WhatsappChat{}
-		chatID := fmt.Sprint(info.Chat.User, "@", info.Chat.Server)
-		message.Chat.Id = chatID
-		message.Chat.Title = GetChatTitle(source.Client, info.Chat)
-
-		// Populate phone field
-		message.Chat.PopulatePhone(source)
-
-		// Get LID for the chat if available
-		if source.Client != nil && source.Client.Store != nil {
-			chatJID, err := types.ParseJID(chatID)
-			if err == nil {
-				lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), chatJID)
-				if err == nil && !lidJID.IsEmpty() {
-					message.Chat.Lid = lidJID.String()
-				}
-			}
-		}
-
-		// Handle group participants
-		if info.IsGroup {
-			message.Participant = &whatsapp.WhatsappChat{}
-
-			participantID := fmt.Sprint(info.Sender.User, "@", info.Sender.Server)
-			message.Participant.Id = participantID
-			message.Participant.Title = GetChatTitle(source.Client, info.Sender)
-
-			// Populate phone field for participant
-			message.Participant.PopulatePhone(source)
-
-			// If title is empty, use PushName as fallback
-			if len(message.Participant.Title) == 0 {
-				message.Participant.Title = info.PushName
-			}
-
-			// Get LID for the participant if available
-			if source.Client != nil && source.Client.Store != nil {
-				participantJID, err := types.ParseJID(participantID)
-				if err == nil {
-					lidJID, err := source.Client.Store.LIDs.GetLIDForPN(context.TODO(), participantJID)
-					if err == nil && !lidJID.IsEmpty() {
-						message.Participant.Lid = lidJID.String()
-					}
-				}
-			}
-		} else {
-			if len(message.Chat.Title) == 0 && message.FromMe {
-				message.Chat.Title = library.GetPhoneByWId(message.Chat.Id)
-			}
-		}
+		// Populate chat and participant information
+		source.PopulateChatAndParticipant(message, info)
 
 		// Follow the same pattern as other messages
 		source.Follow(message, "debug")
@@ -457,6 +409,20 @@ func (source *WhatsmeowHandlers) OnHistorySyncEvent(evt events.HistorySync) {
 
 //#region EVENT MESSAGE
 
+func (handler *WhatsmeowHandlers) PopulateChatAndParticipant(message *whatsapp.WhatsappMessage, info types.MessageInfo) {
+	message.Chat = *NewWhatsappChat(handler, info.Chat)
+
+	if info.IsGroup {
+		message.Participant = NewWhatsappChat(handler, info.Sender)
+	} /* else { // Obsolete
+		// If title is empty, use Phone as fallback
+		if len(message.Chat.Title) == 0 && message.FromMe {
+			message.Chat.Title = library.GetPhoneByWId(message.Chat.Id)
+		}
+	}
+	*/
+}
+
 // Aqui se processar um evento de recebimento de uma mensagem genérica
 func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	logentry := handler.GetLogger()
@@ -486,55 +452,8 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 
 	message.FromMe = evt.Info.IsFromMe
 
-	message.Chat = whatsapp.WhatsappChat{}
-	chatID := fmt.Sprint(evt.Info.Chat.User, "@", evt.Info.Chat.Server)
-	message.Chat.Id = chatID
-	message.Chat.Title = GetChatTitle(handler.Client, evt.Info.Chat)
-
-	// Populate phone field
-	message.Chat.PopulatePhone(handler)
-
-	// Get LID for the chat if available
-	if handler.Client != nil && handler.Client.Store != nil {
-		chatJID, err := types.ParseJID(chatID)
-		if err == nil {
-			lidJID, err := handler.Client.Store.LIDs.GetLIDForPN(context.TODO(), chatJID)
-			if err == nil && !lidJID.IsEmpty() {
-				message.Chat.Lid = lidJID.String()
-			}
-		}
-	}
-
-	if evt.Info.IsGroup {
-		message.Participant = &whatsapp.WhatsappChat{}
-
-		participantID := fmt.Sprint(evt.Info.Sender.User, "@", evt.Info.Sender.Server)
-		message.Participant.Id = participantID
-		message.Participant.Title = GetChatTitle(handler.Client, evt.Info.Sender)
-
-		// Populate phone field for participant
-		message.Participant.PopulatePhone(handler)
-
-		// If title is empty, use PushName as fallback, sugested by hugo sampaio, removing message.FromMe
-		if len(message.Participant.Title) == 0 {
-			message.Participant.Title = evt.Info.PushName
-		}
-
-		// Get LID for the participant if available
-		if handler.Client != nil && handler.Client.Store != nil {
-			participantJID, err := types.ParseJID(participantID)
-			if err == nil {
-				lidJID, err := handler.Client.Store.LIDs.GetLIDForPN(context.TODO(), participantJID)
-				if err == nil && !lidJID.IsEmpty() {
-					message.Participant.Lid = lidJID.String()
-				}
-			}
-		}
-	} else {
-		if len(message.Chat.Title) == 0 && message.FromMe {
-			message.Chat.Title = library.GetPhoneByWId(message.Chat.Id)
-		}
-	}
+	// Populate chat and participant information
+	handler.PopulateChatAndParticipant(message, evt.Info)
 
 	// Process diferent message types
 	HandleKnowingMessages(handler, message, evt.Message)
@@ -621,11 +540,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	message.Timestamp = evt.Timestamp
 	message.FromMe = false
 
-	message.Chat = whatsapp.WhatsappChat{}
-	chatID := fmt.Sprint(evt.From.User, "@", evt.From.Server)
-	message.Chat.Id = chatID
-	message.Chat.PopulatePhone(source)
-
+	message.Chat = *NewWhatsappChat(source, evt.From)
 	message.Type = whatsapp.CallMessageType
 
 	if source.WAHandlers != nil {
@@ -728,13 +643,8 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 		message.Timestamp = evt.Timestamp
 		message.FromMe = false
 
-		message.Chat = whatsapp.WhatsappChat{}
-		message.Chat.Id = chatID
-		message.Chat.PopulatePhone(source)
-
-		message.Type = whatsapp.SystemMessageType
-
-		// message ids comma separated
+		message.Chat = *NewWhatsappChat(source, evt.Chat)
+		message.Type = whatsapp.SystemMessageType // message ids comma separated
 		message.Text = id
 
 		// following to internal handlers
@@ -796,13 +706,6 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 	}
 
 	handler.Follow(message, "group")
-}
-
-func (handler *WhatsmeowHandlers) GetPhoneFromLID(lid string) (string, error) {
-	if handler.service == nil {
-		return "", fmt.Errorf("no service available")
-	}
-	return handler.service.GetPhoneFromLID(lid)
 }
 
 //#endregion

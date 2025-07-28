@@ -13,8 +13,8 @@
       <div class="message">
         <pre id="msg-{{ .Id }}">
           On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}  
-          Type: {{ .Type }} => Chat:  {{ .Chat }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
-          Participant:  {{ .Participant }}{{ end }}{{ if .TrackId }}
+          Type: {{ .Type }} => Chat: {{ .Chat.Id }}{{ if .Chat.Phone }} [{{ .Chat.Phone }}]{{ end }}{{ if .Chat.LId }} LId: {{ .Chat.LId }}{{ end }}{{ if .Chat.Title }} ({{ .Chat.Title }}){{ end }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
+          Participant: {{ .Participant.Id }}{{ if .Participant.Phone }} [{{ .Participant.Phone }}]{{ end }}{{ if .Participant.LId }} LId: {{ .Participant.LId }}{{ end }}{{ if .Participant.Title }} ({{ .Participant.Title }}){{ end }}{{ end }}{{ if .TrackId }}
           TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
           InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .Text }}
           Text: {{ .Text }}{{ end }}

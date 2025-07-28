@@ -143,10 +143,6 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
 	waMsg, err := request.ToWhatsappMessage()
 
-	if len(waMsg.Chat.Phone) == 0 {
-		waMsg.Chat.PopulatePhone(server)
-	}
-
 	if err != nil {
 		metrics.MessageSendErrors.Inc()
 		response.ParseError(err)

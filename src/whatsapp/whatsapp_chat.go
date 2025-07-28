@@ -8,16 +8,20 @@ import (
 )
 
 type WhatsappChat struct {
-	// whatsapp contact id, based on phone number or timestamp
+	// (Identifier) whatsapp contact id, based on phone number or timestamp
 	Id string `json:"id"`
 
-	// new whatsapp unique contact id
-	Lid string `json:"lid,omitempty"`
+	// (Local Identifier) new whatsapp unique contact id
+	LId string `json:"lid,omitempty"`
 
 	// phone number in E164 format
 	Phone string `json:"phone,omitempty"`
 
 	Title string `json:"title,omitempty"`
+}
+
+func (source *WhatsappChat) GetChatId() string {
+	return source.Id
 }
 
 var WASYSTEMCHAT = WhatsappChat{Id: "system", Title: "Internal System Message"}
@@ -43,57 +47,6 @@ func (source *WhatsappChat) GetPhone() string {
 	return phone
 }
 
-// PopulatePhone attempts to fill the Phone field using available mapping
-func (source *WhatsappChat) PopulatePhone(conn any) {
-	if len(source.Phone) > 0 {
-		return // Already populated
-	}
-
-	// Create a LogStruct and use GetLogger for proper logging
-	logStruct := library.NewLogStruct(library.LogLevelDefault)
-	logentry := logStruct.GetLogger()
-	logentry = logentry.WithField(library.LogFields.Entry, "WhatsappChat.PopulatePhone")
-
-	// Try to get phone from different sources
-	if strings.Contains(source.Id, "@lid") {
-		// For @lid, try to get the corresponding phone number using WhatsmeowConnection interface
-		if connection, ok := conn.(interface{ GetPhoneFromLID(string) (string, error) }); ok {
-			if phone, err := connection.GetPhoneFromLID(source.Id); err == nil && len(phone) > 0 {
-				logentry.WithField("id", source.Id).WithField("phone", phone).Debug("Retrieved phone from LID mapping")
-
-				// Format the phone to E164 if needed
-				if formattedPhone, err := library.GetPhoneIfValid(phone); err == nil {
-					source.Phone = formattedPhone
-					logentry.WithField("id", source.Id).WithField("formatted_phone", formattedPhone).Debug("Phone formatted to E164")
-				} else {
-					source.Phone = phone
-					logentry.WithField("id", source.Id).WithField("phone", phone).WithError(err).Warn("Phone validation failed, using raw phone")
-				}
-			} else {
-				logentry.WithField("id", source.Id).WithError(err).Error("Failed to get phone from LID mapping")
-			}
-		} else {
-			logentry.WithField("id", source.Id).Error("Connection does not support GetPhoneFromLID method")
-		}
-	} else if strings.Contains(source.Id, "@s.whatsapp.net") {
-		// For @s.whatsapp.net, extract phone from ID by taking the part before @
-		// adjusted here to first split by '@' and then validate the phone number
-		// GetPhoneIfValid expects a phone number in E164 format not the full ID
-
-		phonepart := strings.Split(source.Id, "@")[0]
-		if formattedPhone, err := library.GetPhoneIfValid(phonepart); err == nil {
-			source.Phone = formattedPhone
-			logentry.WithField("id", source.Id).WithField("phone", formattedPhone).Debug("Extracted phone from s.whatsapp.net ID")
-		} else {
-			// If validation fails, use the raw phone part
-			source.Phone = phonepart
-			logentry.WithField("id", source.Id).WithField("phone", phonepart).WithError(err).Warn("Phone validation failed, using raw phone from s.whatsapp.net ID")
-		}
-	} else {
-		logentry.WithField("id", source.Id).Debug("No phone extraction method available for this ID format")
-	}
-}
-
 // MarshalJSON customizes JSON marshaling to omit lid when it's the same as id
 func (source WhatsappChat) MarshalJSON() ([]byte, error) {
 	type Alias WhatsappChat
@@ -105,10 +58,9 @@ func (source WhatsappChat) MarshalJSON() ([]byte, error) {
 	}
 
 	// Only include lid if it's different from id
-	if source.Lid != source.Id && len(source.Lid) > 0 {
-		aux.Lid = source.Lid
+	if source.LId != source.Id && len(source.LId) > 0 {
+		aux.Lid = source.LId
 	}
 
 	return json.Marshal(aux)
-
 }

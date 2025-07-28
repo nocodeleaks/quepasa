@@ -16,13 +16,15 @@ var _ whatsapp.WhatsappContactManagerInterface = (*WhatsmeowContactManager)(nil)
 
 // WhatsmeowContactManager handles all contact-related operations for WhatsmeowConnection
 type WhatsmeowContactManager struct {
-	*WhatsmeowConnection // embedded connection for direct access
+	*WhatsmeowConnection                       // embedded connection for direct access
+	maps                 *WhatsmeowContactMaps // global contact mappings singleton
 }
 
 // NewWhatsmeowContactManager creates a new WhatsmeowContactManager instance
 func NewWhatsmeowContactManager(conn *WhatsmeowConnection) *WhatsmeowContactManager {
 	return &WhatsmeowContactManager{
 		WhatsmeowConnection: conn,
+		maps:                GetGlobalContactMaps(), // Use singleton instance
 	}
 }
 
@@ -98,28 +100,28 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 			// First contact with this phone number
 			contactMap[phoneNumber] = whatsapp.WhatsappChat{
 				Id:    jid.String(),
-				Lid:   lid,
+				LId:   lid,
 				Title: title,
 				Phone: phoneE164,
 			}
 		} else {
 			// Contact already exists, merge information
-			var finalId, finalLid, finalPhone string
+			var finalId, finalLId, finalPhone string
 
-			if strings.Contains(jid.String(), "@lid") {
+			if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 				// Current is @lid, keep existing as Id and use current as Lid
 				finalId = existingContact.Id
-				finalLid = jid.String()
+				finalLId = jid.String()
 				finalPhone = existingContact.Phone
 				if len(finalPhone) == 0 && len(phoneE164) > 0 {
 					finalPhone = phoneE164
 				}
 			} else {
-				// Current is @s.whatsapp.net, use as Id and keep existing Lid
+				// Current is @s.whatsapp.net, use as Id and keep existing LId
 				finalId = jid.String()
-				finalLid = existingContact.Lid
-				if len(finalLid) == 0 && len(lid) > 0 {
-					finalLid = lid
+				finalLId = existingContact.LId
+				if len(finalLId) == 0 && len(lid) > 0 {
+					finalLId = lid
 				}
 				finalPhone = phoneE164
 				if len(finalPhone) == 0 && len(existingContact.Phone) > 0 {
@@ -135,7 +137,7 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 
 			contactMap[phoneNumber] = whatsapp.WhatsappChat{
 				Id:    finalId,
-				Lid:   finalLid,
+				LId:   finalLId,
 				Title: finalTitle,
 				Phone: finalPhone,
 			}
@@ -194,6 +196,27 @@ func (cm *WhatsmeowContactManager) GetProfilePicture(wid string, knowingId strin
 
 // GetLIDFromPhone returns the @lid for a given phone number
 func (cm *WhatsmeowContactManager) GetLIDFromPhone(phone string) (string, error) {
+	// Safety check: verify if ContactManager is not nil
+	if cm == nil {
+		return "", fmt.Errorf("contact manager is nil")
+	}
+
+	// Safety check: verify if maps is not nil
+	if cm.maps == nil {
+		return "", fmt.Errorf("contact maps is nil")
+	}
+
+	logger := cm.GetLogger()
+
+	normalized := strings.TrimSpace(phone)
+	normalized = strings.TrimPrefix(normalized, "+") // Remove leading + if present
+
+	// First, check maps for existing mapping - this should be the very first check
+	if cachedLID, exists := cm.maps.GetLIDFromPhoneMap(normalized); exists {
+		logger.Debugf("Found LID in maps for phone %s: %s", phone, cachedLID)
+		return cachedLID, nil
+	}
+
 	if cm.Client == nil {
 		return "", fmt.Errorf("client not defined")
 	}
@@ -202,23 +225,50 @@ func (cm *WhatsmeowContactManager) GetLIDFromPhone(phone string) (string, error)
 		return "", fmt.Errorf("store not defined")
 	}
 
+	logger.Debugf("Phone %s not found in maps, querying database", normalized)
+
 	// Parse the phone number to JID format
 	phoneJID := types.JID{
-		User:   phone,
+		User:   normalized,
 		Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER,
 	}
 
 	// try to get the LID from local store
-	lidJID, err := cm.Client.Store.LIDs.GetLIDForPN(context.TODO(), phoneJID)
+	lidJID, err := cm.Client.Store.LIDs.GetLIDForPN(context.Background(), phoneJID)
 	if err == nil && !lidJID.IsEmpty() {
-		cm.GetLogger().Debugf("LID found in local store for phone %s: %s", phone, lidJID.String())
-		return lidJID.String(), nil
+		lid := lidJID.String()
+		logger.Debugf("LID found in database for phone %s: %s", phone, lid)
+
+		// Caching successful mapping for future use
+		cm.maps.SetLIDFromPhoneMap(normalized, lid)
+		logger.Debugf("Phone->LID mapping cached: %s -> %s", normalized, lid)
+
+		return lid, nil
 	}
-	return "", fmt.Errorf("no LID found for phone %s", phone)
+
+	return "", fmt.Errorf("no LID found for phone %s", normalized)
 }
 
 // GetPhoneFromLID returns the phone number for a given @lid
 func (cm *WhatsmeowContactManager) GetPhoneFromLID(lid string) (string, error) {
+	// Safety check: verify if ContactManager is not nil
+	if cm == nil {
+		return "", fmt.Errorf("contact manager is nil")
+	}
+
+	// Safety check: verify if maps is not nil
+	if cm.maps == nil {
+		return "", fmt.Errorf("contact maps is nil")
+	}
+
+	logger := cm.GetLogger()
+
+	// First, check maps for existing mapping - this should be the very first check
+	if cachedPhone, exists := cm.maps.GetPhoneFromLIDMap(lid); exists {
+		logger.Debugf("Found phone in maps for LID %s: %s", lid, cachedPhone)
+		return cachedPhone, nil
+	}
+
 	if cm.Client == nil {
 		return "", fmt.Errorf("client not defined")
 	}
@@ -226,6 +276,8 @@ func (cm *WhatsmeowContactManager) GetPhoneFromLID(lid string) (string, error) {
 	if cm.Client.Store == nil {
 		return "", fmt.Errorf("store not defined")
 	}
+
+	logger.Debugf("LID %s not found in maps, querying database", lid)
 
 	// Parse the LID to JID format
 	lidJID, err := types.ParseJID(lid)
@@ -234,7 +286,7 @@ func (cm *WhatsmeowContactManager) GetPhoneFromLID(lid string) (string, error) {
 	}
 
 	// Get the corresponding phone number from local store
-	phoneJID, err := cm.Client.Store.LIDs.GetPNForLID(context.TODO(), lidJID)
+	phoneJID, err := cm.Client.Store.LIDs.GetPNForLID(context.Background(), lidJID)
 	if err != nil {
 		return "", fmt.Errorf("failed to get phone for LID %s: %v", lid, err)
 	}
@@ -243,8 +295,14 @@ func (cm *WhatsmeowContactManager) GetPhoneFromLID(lid string) (string, error) {
 		return "", fmt.Errorf("no phone found for LID %s", lid)
 	}
 
-	cm.GetLogger().Debugf("Phone found in local store for LID %s: %s", lid, phoneJID.User)
-	return phoneJID.User, nil
+	phone := phoneJID.User
+	logger.Debugf("Phone found in database for LID %s: %s", lid, phone)
+
+	// Store successful mapping for future use
+	cm.maps.SetPhoneFromLIDMap(lid, phone)
+	logger.Debugf("LID->Phone mapping stored: %s -> %s", lid, phone)
+
+	return phone, nil
 }
 
 // GetUserInfo retrieves comprehensive user information for given JIDs
@@ -303,7 +361,7 @@ func (cm *WhatsmeowContactManager) GetUserInfo(jids []string) ([]interface{}, er
 		var lid, phoneNumber string
 		var phoneJID types.JID
 
-		if strings.Contains(jid.String(), "@lid") {
+		if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 			// This is a LID, try to get corresponding phone
 			lid = jid.String()
 			pnJID, err := cm.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
@@ -393,4 +451,41 @@ func (cm *WhatsmeowContactManager) GetUserInfo(jids []string) ([]interface{}, er
 	}
 
 	return result, nil
+}
+
+// GetPhoneFromContactId attempts to get phone number from contact Id using available mapping
+func (cm *WhatsmeowContactManager) GetPhoneFromContactId(contactId string) (string, error) {
+	if strings.Contains(contactId, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
+		phone, err := whatsapp.GetPhoneIfValid(contactId)
+		if err == nil {
+			return phone, nil // Return phone if valid
+		}
+	}
+
+	logentry := cm.GetLogger()
+	logentry = logentry.WithField("entry", "WhatsmeowContactManager.GetPhoneFromContactId")
+
+	// Try to get phone from different sources
+	if strings.Contains(contactId, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
+
+		logentry.Debug("Attempting to get phone from LId")
+
+		// For @lid, try to get the corresponding phone number using contact manager interface
+		if retrieved, err := cm.GetPhoneFromLID(contactId); err == nil && len(retrieved) > 0 {
+			logentry.Debugf("Retrieved phone from LId mapping: %s", retrieved)
+
+			// Format the phone to E164 if needed
+			if phone, err := whatsapp.GetPhoneIfValid(retrieved); err == nil {
+				logentry.Debug("Phone formatted to E164")
+				return phone, nil
+			}
+		} else {
+			logentry.WithError(err).Error("Failed to get phone from LID mapping")
+			return "", err
+		}
+	}
+
+	// If still not found, return error
+	logentry.Infof("Can't find suitable E164 phone for contact Id: %s", contactId)
+	return "", fmt.Errorf("no phone found for contact Id: %s", contactId)
 }

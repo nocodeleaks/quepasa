@@ -24,10 +24,11 @@ import (
 type WhatsmeowConnection struct {
 	library.LogStruct // logging
 	Client            *whatsmeow.Client
-	Handlers          *WhatsmeowHandlers
-	GroupManager      *WhatsmeowGroupManager   // composition for group operations
-	StatusManager     *WhatsmeowStatusManager  // composition for status operations
-	ContactManager    *WhatsmeowContactManager // composition for contact operations
+
+	Handlers       *WhatsmeowHandlers       // composition for handlers
+	GroupManager   *WhatsmeowGroupManager   // composition for group operations
+	StatusManager  *WhatsmeowStatusManager  // composition for status operations
+	ContactManager *WhatsmeowContactManager // composition for contact operations
 
 	failedToken  bool
 	paired       func(string)
@@ -229,7 +230,7 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	// (optional) another devices will process anyway, but our devices will show quoted only if it exists on cache
 	var quoted *waE2E.Message
 
-	cached, _ := source.Handlers.WAHandlers.GetById(msg.InReply)
+	cached, _ := source.GetHandlers().WAHandlers.GetById(msg.InReply)
 	if cached != nil {
 
 		// update cached info
@@ -354,8 +355,8 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	}
 
 	// testing, mark read function
-	if source.Handlers.ReadUpdate {
-		go source.Handlers.MarkRead(msg, types.ReceiptTypeRead)
+	if source.GetHandlers().ReadUpdate {
+		go source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
 	}
 
 	return msg, err
@@ -518,7 +519,7 @@ func (source *WhatsmeowConnection) GetWhatsAppQRChannel(ctx context.Context, out
 func (source *WhatsmeowConnection) HistorySync(timestamp time.Time) (err error) {
 	logentry := source.GetLogger()
 
-	leading := source.Handlers.WAHandlers.GetLeading()
+	leading := source.GetHandlers().WAHandlers.GetLeading()
 	if leading == nil {
 		err = fmt.Errorf("no valid msg in cache for retrieve parents")
 		return err
@@ -545,7 +546,7 @@ func (source *WhatsmeowConnection) HistorySync(timestamp time.Time) (err error) 
 }
 
 func (conn *WhatsmeowConnection) UpdateHandler(handlers whatsapp.IWhatsappHandlers) {
-	conn.Handlers.WAHandlers = handlers
+	conn.GetHandlers().WAHandlers = handlers
 }
 
 func (conn *WhatsmeowConnection) UpdatePairedCallBack(callback func(string)) {
@@ -601,7 +602,7 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 	if source != nil {
 		if source.Client != nil {
 			if source.Client.IsLoggedIn() {
-				err = source.Client.Logout(context.TODO())
+				err = source.Client.Logout(context.Background())
 				if err != nil {
 					err = fmt.Errorf("whatsmeow connection, delete logout error: %s", err.Error())
 					return
@@ -610,7 +611,7 @@ func (source *WhatsmeowConnection) Delete() (err error) {
 			}
 
 			if source.Client.Store != nil {
-				err = source.Client.Store.Delete(context.TODO())
+				err = source.Client.Store.Delete(context.Background())
 				if err != nil {
 					// ignoring error about JID, just checked and the delete process was succeed
 					if strings.Contains(err.Error(), "device JID must be known before accessing database") {
@@ -654,6 +655,24 @@ func (conn *WhatsmeowConnection) GetContactManager() whatsapp.WhatsappContactMan
 		conn.ContactManager = NewWhatsmeowContactManager(conn)
 	}
 	return conn.ContactManager
+}
+
+// GetHandlers returns the handlers instance with lazy initialization
+func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
+	if conn.Handlers == nil {
+		conn.initializeHandlers(nil, WhatsmeowOptions{})
+	}
+	return conn.Handlers
+}
+
+// initializeHandlers creates and configures the handlers with proper options
+func (conn *WhatsmeowConnection) initializeHandlers(whatsappOptions *whatsapp.WhatsappOptions, whatsmeowOptions WhatsmeowOptions) error {
+	if conn.Handlers != nil {
+		return nil // already initialized
+	}
+
+	conn.Handlers = NewWhatsmeowHandlers(conn, whatsmeowOptions, whatsappOptions)
+	return conn.Handlers.Register()
 }
 
 // SendChatPresence updates typing status in a chat

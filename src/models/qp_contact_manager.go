@@ -82,6 +82,15 @@ func (cm *QpContactManager) GetPhoneFromLID(lid string) (string, error) {
 	return contactManager.GetPhoneFromLID(lid)
 }
 
+// GetPhoneFromContactId returns the phone number for a given contact Id (works with both @s.whatsapp.net and @lid formats)
+func (cm *QpContactManager) GetPhoneFromContactId(contactId string) (string, error) {
+	contactManager, err := cm.getContactManager()
+	if err != nil {
+		return "", err
+	}
+	return contactManager.GetPhoneFromContactId(contactId)
+}
+
 // GetUserInfo retrieves comprehensive user information for given JIDs
 func (cm *QpContactManager) GetUserInfo(jids []string) ([]interface{}, error) {
 	contactManager, err := cm.getContactManager()

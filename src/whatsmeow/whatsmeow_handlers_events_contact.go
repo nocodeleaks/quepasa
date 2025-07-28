@@ -31,13 +31,12 @@ func OnEventContact(source *WhatsmeowHandlers, evt events.Contact) {
 
 	title := evt.Action.GetFullName()
 
-	chat := whatsapp.WhatsappChat{
-		Id:    evt.JID.String(),
-		Lid:   evt.Action.GetLidJID(),
-		Title: title,
-	}
+	chat := *NewWhatsappChat(source, evt.JID)
 
-	chat.PopulatePhone(source.Client)
+	chat.Id = evt.JID.String()
+	chat.LId = evt.Action.GetLidJID()
+	chat.Title = title
+
 	phone := chat.GetPhone()
 
 	vcardtext := new(bytes.Buffer)

@@ -36,16 +36,6 @@ func GetPhoneByWId(wid string) string {
 	return out
 }
 
-// ExtractPhoneFromWhatsappID extrai o telefone de um ID do WhatsApp do tipo "@s.whatsapp.net".
-// Retorna o telefone em formato E164 se possível, ou string vazia se não conseguir.
-func ExtractPhoneFromWhatsappID(id string) string {
-	if strings.Contains(id, "@s.whatsapp.net") {
-		phone, _ := GetPhoneIfValid(id)
-		return phone
-	}
-	return ""
-}
-
 // GetPhoneIfValid tenta extrair e validar um número de telefone no formato E164 a partir de uma string.
 // Retorna o número de telefone formatado ou um erro se não for válido.
 func GetPhoneIfValid(source string) (phone string, err error) {

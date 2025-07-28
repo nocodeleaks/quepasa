@@ -18,6 +18,9 @@ type WhatsappContactManagerInterface interface {
 	// Get phone number from LID
 	GetPhoneFromLID(lid string) (string, error)
 
+	// Get phone number from contact Id (works with both @s.whatsapp.net and @lid formats)
+	GetPhoneFromContactId(contactId string) (string, error)
+
 	// Get comprehensive user information for given JIDs
 	GetUserInfo(jids []string) ([]interface{}, error)
 }

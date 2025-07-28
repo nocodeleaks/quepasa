@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"sync"
 
 	library "github.com/nocodeleaks/quepasa/library"
@@ -53,6 +54,51 @@ func (source *QPWhatsappHandlers) HandleBroadcasts() bool {
 
 //#region EVENTS FROM WHATSAPP SERVICE
 
+func (source *QPWhatsappHandlers) EnsureChatInfo(msg *whatsapp.WhatsappMessage) {
+	if msg == nil {
+		return
+	}
+
+	if source.server == nil {
+		return
+	}
+
+	// messages sended with chat title
+	if len(msg.Chat.Title) == 0 {
+		msg.Chat.Title = source.server.GetChatTitle(msg.Chat.Id)
+	}
+
+	if len(msg.Chat.Phone) == 0 && strings.HasSuffix(msg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
+		contactManager := source.server.GetContactManager()
+		phone, err := contactManager.GetPhoneFromContactId(msg.Chat.Id)
+		if err == nil && len(phone) > 0 {
+			msg.Chat.Phone = phone
+
+			if len(msg.Chat.LId) == 0 {
+				lid, err := contactManager.GetLIDFromPhone(phone)
+				if err == nil && len(lid) > 0 {
+					msg.Chat.LId = lid
+				}
+			}
+		}
+	}
+
+	if msg.Participant != nil && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) && len(msg.Participant.Id) == 0 {
+		contactManager := source.server.GetContactManager()
+		phone, err := contactManager.GetPhoneFromContactId(msg.Participant.Id)
+		if err == nil && len(phone) > 0 {
+			msg.Participant.Phone = phone
+
+			if len(msg.Participant.LId) == 0 {
+				lid, err := contactManager.GetLIDFromPhone(phone)
+				if err == nil && len(lid) > 0 {
+					msg.Participant.LId = lid
+				}
+			}
+		}
+	}
+}
+
 // Process messages received from whatsapp service
 func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from string) {
 
@@ -66,10 +112,8 @@ func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from st
 		return
 	}
 
-	// messages sended with chat title
-	if len(msg.Chat.Title) == 0 {
-		msg.Chat.Title = source.server.GetChatTitle(msg.Chat.Id)
-	}
+	// ensure (title, phone number, lid) for message chat and participant
+	source.EnsureChatInfo(msg)
 
 	if len(msg.InReply) > 0 {
 		cached, err := source.QpWhatsappMessages.GetById(msg.InReply)

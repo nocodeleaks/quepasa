@@ -685,7 +685,7 @@ func (source *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (resp
 	// leading with wrongs digit 9
 	if ENV.ShouldRemoveDigit9() {
 
-		phone, _ := library.GetPhoneIfValid(msg.Chat.Id)
+		phone, _ := whatsapp.GetPhoneIfValid(msg.Chat.Id)
 		if len(phone) > 0 {
 			phoneWithout9, _ := library.RemoveDigit9IfElegible(phone)
 			if len(phoneWithout9) > 0 {

@@ -1,11 +1,11 @@
 package whatsmeow
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	slug "github.com/gosimple/slug"
+	"github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -53,6 +53,10 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case in.ListMessage != nil:
 		HandleListMessage(logentry, out, in.ListMessage)
 	case in.SenderKeyDistributionMessage != nil:
+
+		json := library.ToJson(in.SenderKeyDistributionMessage)
+		logentry.Infof("unhandled SenderKeyDistributionMessage: %s", json)
+
 		out.Type = whatsapp.UnhandledMessageType
 		out.Debug = &whatsapp.WhatsappMessageDebug{
 			Event:  "SenderKeyDistributionMessage",
@@ -60,6 +64,10 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 			Reason: "discard",
 		}
 	case in.StickerSyncRmrMessage != nil:
+
+		json := library.ToJson(in.StickerSyncRmrMessage)
+		logentry.Infof("unhandled StickerSyncRmrMessage: %s", json)
+
 		out.Type = whatsapp.UnhandledMessageType
 		out.Debug = &whatsapp.WhatsappMessageDebug{
 			Event:  "StickerSyncRmrMessage",
@@ -69,6 +77,10 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case len(in.GetConversation()) > 0:
 		HandleTextMessage(logentry, out, in)
 	default:
+
+		json := library.ToJson(in)
+		logentry.Infof("unhandled message: %s", json)
+
 		// If no specific handler is found, mark the message as unhandled
 		out.Type = whatsapp.UnhandledMessageType
 
@@ -114,6 +126,10 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 		return
 
 	case v == waE2E.ProtocolMessage_HISTORY_SYNC_NOTIFICATION:
+
+		json := library.ToJson(in)
+		logentry.Infof("unhandled: %s", json)
+
 		var logtext string
 		out.Type = whatsapp.UnhandledMessageType
 		out.Debug = &whatsapp.WhatsappMessageDebug{
@@ -122,28 +138,22 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 			Reason: "history sync notification",
 		}
 
-		b, err := json.Marshal(in)
-		if err != nil {
-			logentry.Error(err)
-			return
-		}
-
-		logtext = "ProtocolMessage :: " + string(b)
+		logtext = "ProtocolMessage :: " + json
 
 		notif := in.GetHistorySyncNotification()
 		if notif != nil {
-			b, err = json.Marshal(notif)
-			if err != nil {
-				logentry.Error(err)
-				return
-			}
-			logtext = logtext + "History Sync Notification :: " + string(b)
+			json := library.ToJson(notif)
+			logtext = logtext + "History Sync Notification :: " + json
 		}
 
 		out.Text = logtext
 		return
 
 	default:
+
+		json := library.ToJson(in)
+		logentry.Infof("unhandled event: %s", json)
+
 		out.Type = whatsapp.UnhandledMessageType
 		out.Debug = &whatsapp.WhatsappMessageDebug{
 			Event:  "ProtocolMessage",

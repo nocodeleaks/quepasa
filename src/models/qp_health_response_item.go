@@ -1,14 +1,10 @@
 package models
 
-import "github.com/nocodeleaks/quepasa/whatsapp"
-
-type QpHealthResponse struct {
-	QpResponse
-	Items []QpHealthResponseItem `json:"items,omitempty"`
-}
+import (
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+)
 
 type QpHealthResponseItem struct {
-
 	// Public token
 	Token string `json:"token"`
 

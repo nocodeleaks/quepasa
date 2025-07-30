@@ -3,7 +3,9 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	api "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -11,15 +13,17 @@ import (
 
 func HealthController(w http.ResponseWriter, r *http.Request) {
 
-	// setting default response type as json
-	w.Header().Set("Content-Type", "application/json")
-
-	response := &models.QpHealthResponse{}
+	response := &api.HealthResponse{Timestamp: time.Now()}
 
 	master := IsMatchForMaster(r)
 	if master {
-		response.Items = models.WhatsappService.GetHealth()
-		response.Success = All(response.Items, models.QpHealthResponseItem.GetHealth)
+		healthItems := models.WhatsappService.GetHealth()
+		response.Items = healthItems
+
+		// Calculate statistics
+		stats := calculateHealthStats(healthItems)
+		response.Stats = &stats
+
 		RespondInterface(w, response)
 		return
 	} else {
@@ -33,9 +37,55 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		status := server.GetStatus()
 		response.Success = status.IsHealthy()
 		response.Status = fmt.Sprintf("server status is %s", status.String())
+
+		// Single server stats
+		response.Stats = &api.HealthStats{
+			Total:      1,
+			Healthy:    boolToInt(status.IsHealthy()),
+			Unhealthy:  boolToInt(!status.IsHealthy()),
+			Percentage: boolToFloat(status.IsHealthy()) * 100,
+		}
+
 		RespondInterface(w, response)
 		return
 	}
+}
+
+// calculateHealthStats calculates statistics for all servers
+func calculateHealthStats(items []models.QpHealthResponseItem) api.HealthStats {
+	stats := api.HealthStats{
+		Total: len(items),
+	}
+
+	for _, item := range items {
+		if item.GetHealth() {
+			stats.Healthy++
+		} else {
+			stats.Unhealthy++
+		}
+	}
+
+	if stats.Total > 0 {
+		stats.Percentage = float64(stats.Healthy) / float64(stats.Total) * 100
+	}
+
+	return stats
+}
+
+// boolToInt converts boolean to int (true = 1, false = 0)
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// boolToFloat converts boolean to float64 (true = 1.0, false = 0.0)
+func boolToFloat(b bool) float64 {
+	if b {
+		return 1.0
+	}
+	return 0.0
 }
 
 //endregion

@@ -24,6 +24,9 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		stats := calculateHealthStats(healthItems)
 		response.Stats = &stats
 
+		// Set success to true only if all servers are healthy
+		response.Success = stats.Unhealthy == 0
+
 		RespondInterface(w, response)
 		return
 	} else {

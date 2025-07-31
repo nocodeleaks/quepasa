@@ -180,6 +180,32 @@ func (source *WhatsmeowConnection) Revoke(msg whatsapp.IWhatsappMessage) error {
 	return nil
 }
 
+// Edit edits an existing message with new content
+func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newContent string) error {
+	logentry := source.GetLogger()
+
+	jid, err := types.ParseJID(msg.GetChatId())
+	if err != nil {
+		logentry.Infof("edit message error on get jid: %s", err)
+		return err
+	}
+
+	// Build text message with new content
+	textMessage := &waE2E.Message{
+		Conversation: &newContent,
+	}
+
+	// Build edit message
+	editMessage := source.Client.BuildEdit(jid, msg.GetId(), textMessage)
+	_, err = source.Client.SendMessage(context.Background(), jid, editMessage)
+	if err != nil {
+		logentry.Infof("edit message error: %s", err)
+		return err
+	}
+
+	return nil
+}
+
 func isASCII(s string) bool {
 	for _, c := range s {
 		if c > unicode.MaxASCII {

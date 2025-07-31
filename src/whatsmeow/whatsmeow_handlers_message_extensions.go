@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -52,6 +53,10 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 		HandleTemplateButtonReplyMessage(logentry, out, in.TemplateButtonReplyMessage)
 	case in.ListMessage != nil:
 		HandleListMessage(logentry, out, in.ListMessage)
+	case in.PollCreationMessage != nil:
+		HandlePollCreationMessageAdvanced(logentry, out, in.PollCreationMessage)
+	case in.PollUpdateMessage != nil:
+		HandlePollUpdateMessageAdvanced(logentry, handler, out, in.PollUpdateMessage)
 	case in.SenderKeyDistributionMessage != nil:
 
 		json := library.ToJson(in.SenderKeyDistributionMessage)
@@ -428,4 +433,92 @@ func HandleContactMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 
 	content := []byte(in.GetVcard())
 	out.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
+}
+
+func HandlePollCreationMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.PollCreationMessage) {
+	log.Debug("received a poll creation message !")
+	out.Type = whatsapp.PollMessageType
+
+	// Convert options from protobuf to string slice
+	options := make([]string, len(in.GetOptions()))
+	for i, option := range in.GetOptions() {
+		options[i] = option.GetOptionName()
+	}
+
+	out.Poll = &whatsapp.WhatsappPoll{
+		Question:   in.GetName(),
+		Options:    options,
+		Selections: uint(in.GetSelectableOptionsCount()),
+	}
+
+	// Set poll text with formatted information
+	text := fmt.Sprintf("📊 *%s*\n\n", in.GetName())
+	for i, option := range options {
+		text += fmt.Sprintf("%d. %s\n", i+1, option)
+	}
+	if in.GetSelectableOptionsCount() > 1 {
+		text += fmt.Sprintf("\n_Você pode selecionar até %d opções_", in.GetSelectableOptionsCount())
+	}
+	out.Text = text
+
+	info := in.GetContextInfo()
+	if info != nil {
+		out.ForwardingScore = info.GetForwardingScore()
+		out.InReply = info.GetStanzaID()
+	}
+}
+
+func HandlePollUpdateMessage(log *log.Entry, handler *WhatsmeowHandlers, out *whatsapp.WhatsappMessage, in *waE2E.PollUpdateMessage) {
+	log.Debug("received a poll update message (vote) !")
+	out.Type = whatsapp.PollMessageType
+
+	// Get the original poll creation message to understand what was voted
+	pollCreationKey := in.GetPollCreationMessageKey()
+	if pollCreationKey != nil {
+		pollId := pollCreationKey.GetID()
+		
+		// Try to get the original poll message from cache
+		if handler.WAHandlers != nil {
+			originalMsg, err := handler.WAHandlers.GetById(pollId)
+			if err == nil && originalMsg.Poll != nil {
+				// Copy poll structure from original message
+				out.Poll = &whatsapp.WhatsappPoll{
+					Question:   originalMsg.Poll.Question,
+					Options:    originalMsg.Poll.Options,
+					Selections: originalMsg.Poll.Selections,
+				}
+			}
+		}
+	}
+
+	// Handle encrypted vote data
+	vote := in.GetVote()
+	if vote != nil {
+		encPayload := vote.GetEncPayload()
+		encIV := vote.GetEncIV()
+		
+		// Convert byte arrays to base64 strings for display
+		encPayloadStr := base64.StdEncoding.EncodeToString(encPayload)
+		encIVStr := base64.StdEncoding.EncodeToString(encIV)
+		
+		// For now, we'll indicate that there's an encrypted vote
+		// The actual decryption would require the poll's encryption keys
+		out.Text = fmt.Sprintf("🗳️ *Voto na enquete*\n\n_Dados criptografados:_\nPayload: %s\nIV: %s", 
+			encPayloadStr, encIVStr)
+			
+		// Store encrypted vote data in debug info for webhook processing
+		out.Debug = &whatsapp.WhatsappMessageDebug{
+			Event:  "poll_vote",
+			Reason: "encrypted_vote",
+			Info: map[string]interface{}{
+				"pollCreationMessageKey": pollCreationKey,
+				"encryptedVote": map[string]string{
+					"encPayload": encPayloadStr,
+					"encIV":      encIVStr,
+				},
+				"metadata":           in.GetMetadata(),
+				"senderTimestampMS":  in.GetSenderTimestampMS(),
+			},
+		}
+	}
 }

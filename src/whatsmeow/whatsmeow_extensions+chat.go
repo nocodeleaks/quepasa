@@ -19,6 +19,10 @@ import (
  * @return Normalized chat title string
  */
 func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
+	if client == nil {
+		return ""
+	}
+
 	if jid.Server == whatsapp.WHATSAPP_SERVERDOMAIN_GROUP {
 		title = GroupInfoCache.Get(jid.String())
 		if len(title) > 0 {
@@ -31,6 +35,10 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 			goto found
 		}
 	} else {
+		if client.Store == nil || client.Store.Contacts == nil {
+			return ""
+		}
+
 		cInfo, _ := client.Store.Contacts.GetContact(context.Background(), jid)
 		if cInfo.Found {
 			if len(cInfo.BusinessName) > 0 {

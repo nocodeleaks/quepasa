@@ -574,10 +574,11 @@ func (conn *WhatsmeowConnection) PairedCallBack(jid types.JID, platform, busines
 */
 func (source *WhatsmeowConnection) Dispose(reason string) {
 
-	source.GetLogger().Infof("disposing connection: %s", reason)
+	logentry := source.GetLogger()
+	logentry.Infof("disposing connection: %s", reason)
 
 	if source.Handlers != nil {
-		go source.Handlers.UnRegister()
+		go source.Handlers.UnRegister("dispose")
 		source.Handlers = nil
 	}
 

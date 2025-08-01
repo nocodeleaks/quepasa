@@ -133,13 +133,30 @@ func (source WhatsmeowHandlers) HandleHistorySync() bool {
 }
 
 // only affects whatsmeow
-func (handler *WhatsmeowHandlers) UnRegister() {
+func (handler *WhatsmeowHandlers) UnRegister(reason string) {
+	if handler == nil {
+		return
+	}
+
 	handler.unregisterRequestedToken = true
+
+	logentry := handler.GetLogger()
+	logentry.Tracef("unregistering handler, id: %v, reason: %s", handler.eventHandlerID, reason)
+
+	// if client is nil, we can't unregister
+	if handler.Client == nil {
+		if reason == "dispose" {
+			logentry.Tracef("unregister requested, but client is already nil, reason: %s", reason)
+		} else {
+			logentry.Warnf("unregister requested, but client is nil, reason: %s", reason)
+		}
+		return
+	}
 
 	// if is this session
 	found := handler.Client.RemoveEventHandler(handler.eventHandlerID)
 	if found {
-		handler.GetLogger().Infof("handler unregistered, id: %v", handler.eventHandlerID)
+		logentry.Infof("handler unregistered, id: %v, reason: %s", handler.eventHandlerID, reason)
 	}
 }
 
@@ -178,6 +195,12 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 	if source.unregisterRequestedToken {
 		logentry.Info("unregister event handler requested")
+
+		if source.Client == nil {
+			logentry.Debugf("unregister requested, but client is already nil")
+			return
+		}
+
 		source.Client.RemoveEventHandler(source.eventHandlerID)
 		return
 	}
@@ -658,7 +681,9 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 
 func (handler *WhatsmeowHandlers) OnLoggedOutEvent(evt events.LoggedOut) {
 	reason := evt.Reason.String()
-	handler.GetLogger().Tracef("logged out %s", reason)
+
+	logentry := handler.GetLogger()
+	logentry.Tracef("logged out %s", reason)
 
 	if handler.WAHandlers != nil {
 		handler.WAHandlers.LoggedOut(reason)
@@ -673,7 +698,7 @@ func (handler *WhatsmeowHandlers) OnLoggedOutEvent(evt events.LoggedOut) {
 	}
 
 	handler.Follow(message, "logout")
-	handler.UnRegister()
+	handler.UnRegister("logged out event")
 }
 
 //#endregion

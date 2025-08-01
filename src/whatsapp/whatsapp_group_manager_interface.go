@@ -38,6 +38,9 @@ type WhatsappGroupManagerInterface interface {
 
 	// Handle join requests (approve/reject)
 	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	// Leave a group
+	LeaveGroup(groupID string) error
 }
 
 // IWhatsappConnectionWithGroups extends IWhatsappConnection with group management

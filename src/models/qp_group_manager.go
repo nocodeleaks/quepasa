@@ -170,3 +170,13 @@ func (gm *QpGroupManager) CreateGroupExtendedWithOptions(options map[string]inte
 
 	return groupManager.CreateGroupExtended(title, participantsRaw)
 }
+
+// LeaveGroup leaves a group by group ID
+func (gm *QpGroupManager) LeaveGroup(groupID string) error {
+	groupManager, err := gm.getGroupManager()
+	if err != nil {
+		return err
+	}
+
+	return groupManager.LeaveGroup(groupID)
+}

@@ -424,3 +424,35 @@ func (gm *WhatsmeowGroupManager) CreateGroupExtendedWithOptions(options map[stri
 	// Call the existing CreateGroupExtended method
 	return gm.CreateGroupExtended(title, participantsRaw)
 }
+
+// LeaveGroup leaves a group by group ID
+func (gm *WhatsmeowGroupManager) LeaveGroup(groupID string) error {
+	client := gm.GetClient()
+	if client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	logger := gm.GetLogger()
+
+	// Parse group JID
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		logger.Errorf("failed to parse group JID %s: %v", groupID, err)
+		return fmt.Errorf("invalid group JID: %v", err)
+	}
+
+	// Validate that it's a group JID
+	if jid.Server != types.GroupServer {
+		return fmt.Errorf("JID %s is not a group", groupID)
+	}
+
+	// Leave the group
+	err = client.LeaveGroup(jid)
+	if err != nil {
+		logger.Errorf("failed to leave group %s: %v", groupID, err)
+		return fmt.Errorf("failed to leave group: %v", err)
+	}
+
+	logger.Infof("successfully left group %s", groupID)
+	return nil
+}

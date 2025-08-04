@@ -186,7 +186,8 @@ func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newConten
 
 	jid, err := types.ParseJID(msg.GetChatId())
 	if err != nil {
-		logentry.Infof("edit message error on get jid: %s", err)
+		err := fmt.Errorf("failed to edit message (%s): %w", msg.GetId(), err)
+		logentry.Error(err)
 		return err
 	}
 

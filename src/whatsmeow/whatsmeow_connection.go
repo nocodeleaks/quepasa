@@ -199,7 +199,8 @@ func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newConten
 	editMessage := source.Client.BuildEdit(jid, msg.GetId(), textMessage)
 	_, err = source.Client.SendMessage(context.Background(), jid, editMessage)
 	if err != nil {
-		logentry.Infof("edit message error: %s", err)
+		err := fmt.Errorf("failed to edit message (%s): %w", msg.GetId(), err)
+		logentry.Error(err)
 		return err
 	}
 

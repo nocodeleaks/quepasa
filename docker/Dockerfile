@@ -8,7 +8,7 @@ COPY /src/ .
 
 RUN chmod 755 docker-entrypoint.sh
 RUN sed -i 's/\r//' docker-entrypoint.sh
-RUN go build -o service main.go
+RUN CGO_ENABLED=1 go build -o service main.go
 
 # Run stage
 FROM golang:latest as src

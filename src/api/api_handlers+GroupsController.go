@@ -479,7 +479,9 @@ func convertToJIDs(participants []string) ([]string, error) {
 			result[i] = participant
 		} else {
 			// Otherwise, treat as a phone number and convert to JID format
-			result[i] = participant + "@s.whatsapp.net"
+			// Remove leading + if present, as JID User field should not contain +
+			phoneForJID := strings.TrimPrefix(participant, "+")
+			result[i] = phoneForJID + "@s.whatsapp.net"
 		}
 	}
 

@@ -172,8 +172,10 @@ func (gm *WhatsmeowGroupManager) CreateGroup(name string, participants []string)
 			participantsJID = append(participantsJID, jid)
 		} else {
 			// Assume it's a phone number and convert to JID
+			// Remove leading + if present, as JID User field should not contain +
+			phoneForJID := strings.TrimPrefix(participant, "+")
 			jid := types.JID{
-				User:   participant,
+				User:   phoneForJID,
 				Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER, // Use the standard WhatsApp server
 			}
 			participantsJID = append(participantsJID, jid)

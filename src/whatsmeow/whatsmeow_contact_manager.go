@@ -64,6 +64,7 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 		if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 			// For @lid contacts, get the corresponding phone number
 			pnJID, err := cm.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
+			err = nil
 			if err == nil && !pnJID.IsEmpty() {
 				phoneNumber = pnJID.User
 				lid = jid.String()
@@ -195,6 +196,8 @@ func (cm *WhatsmeowContactManager) GetProfilePicture(wid string, knowingId strin
 }
 
 // GetLIDFromPhone returns the @lid for a given phone number
+// IMPORTANT: This method accepts phone numbers in E164 format (with +) or without +
+// and always normalizes them by removing the + before creating JIDs for WhatsApp API calls
 func (cm *WhatsmeowContactManager) GetLIDFromPhone(phone string) (string, error) {
 	// Safety check: verify if ContactManager is not nil
 	if cm == nil {

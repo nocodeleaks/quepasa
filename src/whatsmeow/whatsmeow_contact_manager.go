@@ -64,7 +64,6 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 		if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 			// For @lid contacts, get the corresponding phone number
 			pnJID, err := cm.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
-			err = nil
 			if err == nil && !pnJID.IsEmpty() {
 				phoneNumber = pnJID.User
 				lid = jid.String()

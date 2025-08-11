@@ -168,6 +168,10 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 	}
 
 	client.PrePairCallback = conn.PairedCallBack
+
+	// Configure AutoReconnectHook
+	client.AutoReconnectHook = conn.AutoReconnectHook
+
 	return
 }
 

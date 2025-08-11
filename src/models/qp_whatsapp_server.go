@@ -120,7 +120,7 @@ func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
 			}
 		} else {
 			statusManager := server.GetStatusManager()
-			state := statusManager.GetStatus()
+			state := statusManager.GetState()
 			if state == whatsapp.Disconnected && !server.Verified {
 				return whatsapp.UnVerified
 			}

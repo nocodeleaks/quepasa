@@ -2,6 +2,7 @@ package whatsmeow
 
 import (
 	"fmt"
+	"time"
 
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -21,9 +22,16 @@ func NewWhatsmeowStatusManager(conn *WhatsmeowConnection) *WhatsmeowStatusManage
 	}
 }
 
-// GetVersion returns the WhatsApp connection version
-func (sm *WhatsmeowStatusManager) GetVersion() string {
-	return "multi"
+// GetPlatform returns the WhatsApp connection platform
+func (sm *WhatsmeowStatusManager) GetPlatform() string {
+	if sm.WhatsmeowConnection != nil && sm.Client != nil && sm.Client.Store != nil {
+		// Try to get platform information from store
+		if sm.Client.Store.Platform != "" {
+			return sm.Client.Store.Platform
+		}
+	}
+	// Fallback to a more descriptive platform string
+	return "unavailable"
 }
 
 // GetWid returns the WhatsApp ID (WID) as string
@@ -77,9 +85,65 @@ func (sm *WhatsmeowStatusManager) IsConnected() bool {
 	return IsConnected(sm.WhatsmeowConnection)
 }
 
-// GetStatus returns current connection status
-func (sm *WhatsmeowStatusManager) GetStatus() whatsapp.WhatsappConnectionState {
+// GetState returns current connection status
+func (sm *WhatsmeowStatusManager) GetState() whatsapp.WhatsappConnectionState {
 	return GetStatus(sm.WhatsmeowConnection)
+}
+
+// GetResume returns comprehensive connection status information
+// This method creates a snapshot of the current connection state
+func (sm *WhatsmeowStatusManager) GetResume() *whatsapp.WhatsappConnectionStatus {
+	if sm.WhatsmeowConnection == nil {
+		return nil
+	}
+
+	status := &whatsapp.WhatsappConnectionStatus{
+		State:        GetStatus(sm.WhatsmeowConnection),
+		IsConnected:  IsConnected(sm.WhatsmeowConnection),
+		FailedToken:  sm.WhatsmeowConnection.failedToken,
+		IsConnecting: sm.WhatsmeowConnection.IsConnecting,
+		// Default values for reconnection fields (can be enhanced later)
+		IsReconnecting:    false,
+		ReconnectAttempts: 0,
+	}
+
+	// Get client-specific information if available
+	if sm.Client != nil {
+		status.IsAuthenticated = sm.Client.IsLoggedIn()
+		status.IsValid = status.IsConnected && status.IsAuthenticated
+		status.AutoReconnectEnabled = sm.Client.EnableAutoReconnect
+		status.ReconnectErrors = uint32(sm.Client.AutoReconnectErrors)
+
+		// Set last successful connect time if available
+		if !sm.Client.LastSuccessfulConnect.IsZero() {
+			status.LastSuccessfulConnect = &sm.Client.LastSuccessfulConnect
+		}
+
+		// Calculate connection uptime if connected
+		if status.IsConnected && status.LastSuccessfulConnect != nil {
+			uptime := time.Since(*status.LastSuccessfulConnect)
+			status.ConnectionUptime = &uptime
+		}
+
+		// Get WhatsApp information (platform and SessionId)
+		if sm.Client.Store != nil {
+			// Try to get platform information from store for platform field
+			// The platform is typically set as OSInfo in the store initialization
+			if sm.Client.Store.Platform != "" {
+				status.Platform = sm.Client.Store.Platform
+			} else {
+				// Fallback to a more descriptive platform string
+				status.Platform = "unavailable"
+			}
+
+			// Get SessionId if available
+			if sm.Client.Store.ID != nil {
+				status.SessionId = sm.Client.Store.ID.User
+			}
+		}
+	}
+
+	return status
 }
 
 // GetReconnect returns auto-reconnect setting

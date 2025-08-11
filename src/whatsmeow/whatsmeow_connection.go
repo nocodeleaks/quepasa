@@ -595,6 +595,27 @@ func (source *WhatsmeowConnection) PairedCallBack(jid types.JID, platform, busin
 	return true
 }
 
+// AutoReconnectHook is called by whatsmeow whenever it's attempting to reconnect
+// Receives the error that caused the disconnection
+// Returns true to allow the reconnection attempt, false to prevent it
+func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool {
+	if source == nil {
+		return false
+	}
+
+	logentry := source.GetLogger()
+
+	if disconnectError != nil {
+		logentry.Warnf("auto-reconnect triggered due to error: %v", disconnectError)
+	} else {
+		logentry.Info("auto-reconnect attempt in progress")
+	}
+
+	// Always allow reconnection attempts - return true
+	// This hook provides visibility into reconnection events for the client
+	return true
+}
+
 //endregion
 
 /*
@@ -693,6 +714,16 @@ func (conn *WhatsmeowConnection) GetContactManager() whatsapp.WhatsappContactMan
 	return conn.ContactManager
 }
 
+// GetResume returns detailed connection status information
+// This method delegates to the StatusManager for comprehensive status snapshot
+func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus {
+	statusManager := conn.GetStatusManager()
+	if statusManager == nil {
+		return nil
+	}
+	return statusManager.GetResume()
+}
+
 // GetHandlers returns the handlers instance with lazy initialization
 func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
 	if conn.Handlers == nil {
@@ -738,6 +769,5 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 		state = types.ChatPresencePaused
 		media = types.ChatPresenceMediaText
 	}
-
 	return conn.Client.SendChatPresence(jid, state, media)
 }

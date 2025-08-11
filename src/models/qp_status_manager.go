@@ -37,13 +37,13 @@ func (sm *QpStatusManager) getStatusManager() (whatsapp.WhatsappStatusManagerInt
 	return statusManager, nil
 }
 
-// GetVersion returns the WhatsApp connection version
-func (sm *QpStatusManager) GetVersion() string {
+// GetPlatform returns the WhatsApp connection platform
+func (sm *QpStatusManager) GetPlatform() string {
 	statusManager, err := sm.getStatusManager()
 	if err != nil {
 		return ""
 	}
-	return statusManager.GetVersion()
+	return statusManager.GetPlatform()
 }
 
 // GetWid returns the WhatsApp ID (WID) as string
@@ -82,13 +82,22 @@ func (sm *QpStatusManager) IsConnected() bool {
 	return statusManager.IsConnected()
 }
 
-// GetStatus returns current connection status
-func (sm *QpStatusManager) GetStatus() whatsapp.WhatsappConnectionState {
+// GetState returns current connection status
+func (sm *QpStatusManager) GetState() whatsapp.WhatsappConnectionState {
 	statusManager, err := sm.getStatusManager()
 	if err != nil {
 		return whatsapp.WhatsappConnectionState(0) // Default state
 	}
-	return statusManager.GetStatus()
+	return statusManager.GetState()
+}
+
+// GetResume returns comprehensive connection status information
+func (sm *QpStatusManager) GetResume() *whatsapp.WhatsappConnectionStatus {
+	statusManager, err := sm.getStatusManager()
+	if err != nil {
+		return nil
+	}
+	return statusManager.GetResume()
 }
 
 // GetReconnect returns auto-reconnect setting

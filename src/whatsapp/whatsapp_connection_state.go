@@ -28,6 +28,9 @@ const (
 
 	Restarting
 
+	// Attempting to reconnect after connection loss (auto-reconnect active)
+	Reconnecting
+
 	/*
 		<summary>
 			Connected to whatsapp servers
@@ -67,6 +70,7 @@ func (s WhatsappConnectionState) String() string {
 		"Stopping",
 		"Stopped",
 		"Restarting",
+		"Reconnecting",
 		"Connected",
 		"Fetching",
 		"Ready",

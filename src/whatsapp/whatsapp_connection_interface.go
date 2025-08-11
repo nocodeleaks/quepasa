@@ -79,4 +79,8 @@ type IWhatsappConnection interface {
 
 	// GetContactManager returns the contact manager for contact operations
 	GetContactManager() WhatsappContactManagerInterface
+
+	// GetResume returns detailed connection status information
+	// This consolidates all status management functionality in a single method
+	GetResume() *WhatsappConnectionStatus
 }

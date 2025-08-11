@@ -239,11 +239,12 @@ func ToWhatsappMessage(destination string, text string, attach *whatsapp.Whatsap
 func ToggleReadReceipts(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
-	if options.ReadReceipts == whatsapp.UnSetBooleanType {
+	switch options.ReadReceipts {
+	case whatsapp.UnSetBooleanType:
 		options.ReadReceipts = whatsapp.TrueBooleanType
-	} else if options.ReadReceipts == whatsapp.TrueBooleanType {
+	case whatsapp.TrueBooleanType:
 		options.ReadReceipts = whatsapp.FalseBooleanType
-	} else {
+	default:
 		options.ReadReceipts = whatsapp.UnSetBooleanType
 	}
 
@@ -254,11 +255,12 @@ func ToggleReadReceipts(source whatsapp.IWhatsappOptions) error {
 func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
-	if options.Groups == whatsapp.UnSetBooleanType {
+	switch options.Groups {
+	case whatsapp.UnSetBooleanType:
 		options.Groups = whatsapp.TrueBooleanType
-	} else if options.Groups == whatsapp.TrueBooleanType {
+	case whatsapp.TrueBooleanType:
 		options.Groups = whatsapp.FalseBooleanType
-	} else {
+	default:
 		options.Groups = whatsapp.UnSetBooleanType
 	}
 
@@ -269,11 +271,12 @@ func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 func ToggleBroadcasts(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
-	if options.Broadcasts == whatsapp.UnSetBooleanType {
+	switch options.Broadcasts {
+	case whatsapp.UnSetBooleanType:
 		options.Broadcasts = whatsapp.TrueBooleanType
-	} else if options.Broadcasts == whatsapp.TrueBooleanType {
+	case whatsapp.TrueBooleanType:
 		options.Broadcasts = whatsapp.FalseBooleanType
-	} else {
+	default:
 		options.Broadcasts = whatsapp.UnSetBooleanType
 	}
 
@@ -284,11 +287,12 @@ func ToggleBroadcasts(source whatsapp.IWhatsappOptions) error {
 func ToggleCalls(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
-	if options.Calls == whatsapp.UnSetBooleanType {
+	switch options.Calls {
+	case whatsapp.UnSetBooleanType:
 		options.Calls = whatsapp.TrueBooleanType
-	} else if options.Calls == whatsapp.TrueBooleanType {
+	case whatsapp.TrueBooleanType:
 		options.Calls = whatsapp.FalseBooleanType
-	} else {
+	default:
 		options.Calls = whatsapp.UnSetBooleanType
 	}
 

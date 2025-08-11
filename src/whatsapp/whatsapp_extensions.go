@@ -9,6 +9,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Helper function to convert phone numbers or partial WIDs to full WIDs
+func PhonesToWids(sources []string) []string {
+	result := make([]string, len(sources))
+
+	for i, item := range sources {
+		result[i] = PhoneToWid(item)
+	}
+
+	return result
+}
+
+// PhoneToWid converts a phone number to a WhatsApp WID
 func PhoneToWid(source string) (destination string) {
 
 	// removing starting + from E164 phones

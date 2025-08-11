@@ -131,13 +131,8 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert phone numbers to proper JID format
-	formattedParticipants, err := convertToJIDs(request.Participants)
-	if err != nil {
-		response.ParseError(fmt.Errorf("failed to format participant numbers: %v", err))
-		RespondInterface(w, response)
-		return
-	}
+	// Convert phone numbers to proper WID format
+	formattedParticipants := whatsapp.PhonesToWids(request.Participants)
 
 	// Build extended options for group creation
 	options := map[string]interface{}{
@@ -361,16 +356,11 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert participants to JIDs if needed
-	participantJIDs, err := convertToJIDs(req.Participants)
-	if err != nil {
-		response.ParseError(fmt.Errorf("failed to parse participant identifiers: %v", err))
-		RespondInterface(w, response)
-		return
-	}
+	// Convert participants to WIDs if needed
+	participantWIDs := whatsapp.PhonesToWids(req.Participants)
 
 	// Perform the requested action
-	result, err := server.GetGroupManager().UpdateGroupParticipants(req.GroupJID, participantJIDs, strings.ToLower(req.Action))
+	result, err := server.GetGroupManager().UpdateGroupParticipants(req.GroupJID, participantWIDs, strings.ToLower(req.Action))
 	if err != nil {
 		response.ParseError(fmt.Errorf("failed to update group participants: %v", err))
 		RespondInterface(w, response)
@@ -467,25 +457,6 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 		RespondInterface(w, response)
 		return
 	}
-}
-
-// Helper function to convert phone numbers or partial JIDs to full JIDs
-func convertToJIDs(participants []string) ([]string, error) {
-	result := make([]string, len(participants))
-
-	for i, participant := range participants {
-		// If it already contains @, assume it's a JID
-		if strings.Contains(participant, "@") {
-			result[i] = participant
-		} else {
-			// Otherwise, treat as a phone number and convert to JID format
-			// Remove leading + if present, as JID User field should not contain +
-			phoneForJID := strings.TrimPrefix(participant, "+")
-			result[i] = phoneForJID + "@s.whatsapp.net"
-		}
-	}
-
-	return result, nil
 }
 
 func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {

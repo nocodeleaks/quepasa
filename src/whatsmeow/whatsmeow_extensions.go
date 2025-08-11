@@ -364,3 +364,8 @@ func toSnakeCase(s string) string {
 	}
 	return strings.ToLower(result.String())
 }
+
+func PhoneToJID(source string) (types.JID, error) {
+	wid := whatsapp.PhoneToWid(source)
+	return types.ParseJID(wid)
+}

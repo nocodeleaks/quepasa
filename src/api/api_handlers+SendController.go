@@ -240,10 +240,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 			return
 		}
 
-		// Convert phone to WhatsApp JID format
-		// Remove leading + if present, as JID User field should not contain +
-		phoneForJID := strings.TrimPrefix(phone, "+")
-		waMsg.Chat.Id = phoneForJID + "@s.whatsapp.net"
+		waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
 		logentry.Debugf("converted LID %s to phone-based chat ID: %s (from phone %s)", originalChatId, waMsg.Chat.Id, phone)
 	}
 

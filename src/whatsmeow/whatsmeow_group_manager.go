@@ -3,7 +3,6 @@ package whatsmeow
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
@@ -163,23 +162,13 @@ func (gm *WhatsmeowGroupManager) CreateGroup(name string, participants []string)
 	// Convert participants to JID format
 	var participantsJID []types.JID
 	for _, participant := range participants {
-		// Check if it's already in JID format
-		if strings.Contains(participant, "@") {
-			jid, err := types.ParseJID(participant)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JID format for participant %s: %v", participant, err)
-			}
-			participantsJID = append(participantsJID, jid)
-		} else {
-			// Assume it's a phone number and convert to JID
-			// Remove leading + if present, as JID User field should not contain +
-			phoneForJID := strings.TrimPrefix(participant, "+")
-			jid := types.JID{
-				User:   phoneForJID,
-				Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER, // Use the standard WhatsApp server
-			}
-			participantsJID = append(participantsJID, jid)
+
+		phoneJID, err := PhoneToJID(participant)
+		if err != nil {
+			return nil, fmt.Errorf("invalid participant format: %v", err)
 		}
+
+		participantsJID = append(participantsJID, phoneJID)
 	}
 
 	// Create the request struct

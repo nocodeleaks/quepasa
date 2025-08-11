@@ -91,12 +91,3 @@ func (sm *WhatsmeowStatusManager) GetReconnect() bool {
 	}
 	return false
 }
-
-// SetReconnect sets auto-reconnect setting
-func (sm *WhatsmeowStatusManager) SetReconnect(value bool) {
-	if sm.WhatsmeowConnection != nil {
-		if sm.Client != nil {
-			sm.Client.EnableAutoReconnect = value
-		}
-	}
-}

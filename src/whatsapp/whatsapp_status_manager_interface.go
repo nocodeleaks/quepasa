@@ -23,9 +23,6 @@ type WhatsappStatusManagerInterface interface {
 
 	// Get auto-reconnect setting
 	GetReconnect() bool
-
-	// Set auto-reconnect setting
-	SetReconnect(value bool)
 }
 
 // IWhatsappConnectionWithStatus extends IWhatsappConnection with status management

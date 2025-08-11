@@ -581,9 +581,16 @@ func (conn *WhatsmeowConnection) UpdatePairedCallBack(callback func(string)) {
 	conn.paired = callback
 }
 
-func (conn *WhatsmeowConnection) PairedCallBack(jid types.JID, platform, businessName string) bool {
-	if conn.paired != nil {
-		go conn.paired(jid.String())
+func (source *WhatsmeowConnection) PairedCallBack(jid types.JID, platform, businessName string) bool {
+
+	if source.Client != nil {
+		source.Client.EnableAutoReconnect = true
+		logentry := source.GetLogger()
+		logentry.Info("auto-reconnect enabled after device pairing")
+	}
+
+	if source.paired != nil {
+		go source.paired(jid.String())
 	}
 	return true
 }

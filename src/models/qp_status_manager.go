@@ -99,12 +99,3 @@ func (sm *QpStatusManager) GetReconnect() bool {
 	}
 	return statusManager.GetReconnect()
 }
-
-// SetReconnect sets auto-reconnect setting
-func (sm *QpStatusManager) SetReconnect(value bool) {
-	statusManager, err := sm.getStatusManager()
-	if err != nil {
-		return
-	}
-	statusManager.SetReconnect(value)
-}

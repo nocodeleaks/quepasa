@@ -24,7 +24,7 @@ func NewCallAnswerManager(conn *WhatsmeowConnection) *CallAnswerManager {
 // ExperimentalAcceptCall attempts various methods to accept calls and capture SIP data
 // IMPORTANT: This is experimental and may not work with current WhatsApp API
 func (cam *CallAnswerManager) ExperimentalAcceptCall(from types.JID, callID string) error {
-	cam.logger.Warnf("🧪 EXPERIMENTAL: Attempting to accept call from %s", from)
+	cam.logger.Warnf("🧪 EXPERIMENTAL: Maintaining call active for data capture from %s", from)
 
 	// Log all the details we have about this call
 	cam.logger.Infof("📞 Call Details:")
@@ -33,9 +33,10 @@ func (cam *CallAnswerManager) ExperimentalAcceptCall(from types.JID, callID stri
 	cam.logger.Infof("  - From User: %s", from.User)
 	cam.logger.Infof("  - From Server: %s", from.Server)
 
-	// 🎯 AUTO-ACCEPT STRATEGY: Instead of rejecting, let the call persist to capture data
-	cam.logger.Infof("🔥 AUTO-ACCEPT STRATEGY: Allowing call to persist for SIP data capture")
-	cam.logger.Infof("📡 Call will remain active to gather maximum SIP/RTP information")
+	// 🎯 CALL PERSISTENCE STRATEGY: Keep call active to capture SIP data without auto-accepting
+	cam.logger.Infof("� CALL PERSISTENCE STRATEGY: Maintaining call active for SIP data capture")
+	cam.logger.Infof("⏳ Call will remain PENDING in WhatsApp - no auto-accept performed")
+	cam.logger.Infof("🎯 SIP server will decide call acceptance/rejection")
 
 	// Get SIP proxy integration for data capture
 	if cam.callManager != nil {
@@ -78,8 +79,8 @@ func (cam *CallAnswerManager) ExperimentalAcceptCall(from types.JID, callID stri
 		cam.logger.Errorf("Method 2 failed: %v", err)
 	}
 
-	cam.logger.Warnf("⚠️ Call acceptance attempts completed - call will remain active for data capture")
-	cam.logger.Infof("💡 Strategy: Let call persist instead of auto-rejecting to capture SIP/RTP data")
+	cam.logger.Warnf("⚠️ Call persistence attempts completed - call remains PENDING for SIP server decision")
+	cam.logger.Infof("💡 Strategy: Keep call PENDING instead of auto-accepting to let SIP server decide")
 
 	return nil // Return success to indicate we're handling the call (not rejecting)
 }

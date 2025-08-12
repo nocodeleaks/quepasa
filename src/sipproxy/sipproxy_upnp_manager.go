@@ -29,26 +29,45 @@ func NewUPnPManager(logger *log.Entry) *UPnPManager {
 // Setup configures UPnP for automatic port forwarding
 func (um *UPnPManager) Setup() error {
 	um.logger.Infof("🔌 Setting up UPnP for automatic port forwarding")
+	um.logger.Infof("📡 Note: UPnP is optional - SIP proxy will work without it")
 
-	// Descobrir dispositivos UPnP na rede
+	// Descobrir dispositivos UPnP na rede - IGDv2 primeiro
 	clients, _, err := internetgateway2.NewWANIPConnection1Clients()
 	if err != nil {
+		um.logger.Warnf("⚠️ UPnP IGDv2 discovery failed: %v", err)
+
 		// Tentar IGDv1 se IGDv2 falhar
+		um.logger.Infof("🔄 Trying UPnP IGDv1 as fallback...")
 		clients1, _, err1 := internetgateway1.NewWANIPConnection1Clients()
 		if err1 != nil {
+			um.logger.Warnf("⚠️ UPnP IGDv1 discovery also failed: %v", err1)
+			um.logger.Infof("💡 This is normal if:")
+			um.logger.Infof("   - Your router doesn't support UPnP")
+			um.logger.Infof("   - UPnP is disabled in router settings")
+			um.logger.Infof("   - You're behind multiple NAT layers")
+			um.logger.Infof("   - Using a corporate/restricted network")
+			um.logger.Infof("📡 SIP proxy will continue without automatic port forwarding")
 			return fmt.Errorf("no UPnP IGD devices found (IGDv2: %v, IGDv1: %v)", err, err1)
 		}
 
-		// Converter cliente IGDv1 para IGDv2 (compatibilidade)
+		// IGDv1 encontrado mas não implementamos suporte ainda
 		if len(clients1) > 0 {
-			um.logger.Infof("🔌 Found IGDv1 device, using compatibility mode")
-			// Para simplicidade, vamos focar no IGDv2 por enquanto
-			return fmt.Errorf("IGDv1 not supported yet, please upgrade router firmware")
+			um.logger.Infof("🔌 Found IGDv1 device but compatibility not implemented yet")
+			um.logger.Infof("💡 Consider upgrading router firmware to IGDv2 for automatic port forwarding")
+			um.logger.Infof("📡 SIP proxy will continue without automatic port forwarding")
+			return fmt.Errorf("IGDv1 found but not supported yet - manual port forwarding required")
 		}
 	}
 
 	if len(clients) == 0 {
-		return fmt.Errorf("no UPnP IGDv2 devices found")
+		um.logger.Warnf("⚠️ No UPnP IGDv2 devices found on network")
+		um.logger.Infof("💡 This means automatic port forwarding is not available")
+		um.logger.Infof("📋 To enable UPnP (if desired):")
+		um.logger.Infof("   1. Check router admin panel for UPnP settings")
+		um.logger.Infof("   2. Enable UPnP/IGDv2 if disabled")
+		um.logger.Infof("   3. Restart router and try again")
+		um.logger.Infof("📡 SIP proxy will continue without automatic port forwarding")
+		return fmt.Errorf("no UPnP IGDv2 devices found - manual port forwarding required")
 	}
 
 	um.client = clients[0]

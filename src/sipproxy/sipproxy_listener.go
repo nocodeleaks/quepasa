@@ -28,9 +28,36 @@ func NewSIPListener(logger *log.Entry) *SIPListener {
 }
 
 // FindAvailableUDPPort finds an available UDP port for the SIP listener
+// Tries preferred SIP port range first (5060-5080), then fallback range
 func (sl *SIPListener) FindAvailableUDPPort() (int, error) {
 	sl.logger.Infof("🔍 Finding available UDP port for SIP listener...")
 
+	// First try preferred SIP port range (5060-5080)
+	minPort, maxPort := GetSIPPortRange()
+	sl.logger.Infof("🎯 Trying preferred SIP port range: %d-%d", minPort, maxPort)
+
+	for port := minPort; port <= maxPort; port++ {
+		if sl.isPortAvailable(port) {
+			sl.logger.Infof("✅ Found available UDP port %d in preferred range", port)
+			return port, nil
+		}
+	}
+
+	sl.logger.Warnf("⚠️ Preferred SIP port range (%d-%d) unavailable, trying fallback range", minPort, maxPort)
+
+	// Try fallback range if preferred range is not available
+	fallbackMin, fallbackMax := GetSIPPortFallbackRange()
+	sl.logger.Infof("🔄 Trying fallback port range: %d-%d", fallbackMin, fallbackMax)
+
+	for port := fallbackMin; port <= fallbackMax; port++ {
+		if sl.isPortAvailable(port) {
+			sl.logger.Infof("✅ Found available UDP port %d in fallback range", port)
+			return port, nil
+		}
+	}
+
+	// Last resort: let OS choose any available port
+	sl.logger.Warnf("⚠️ Fallback range also unavailable, letting OS choose port")
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return 0, fmt.Errorf("failed to listen on TCP: %v", err)
@@ -38,33 +65,47 @@ func (sl *SIPListener) FindAvailableUDPPort() (int, error) {
 	defer listener.Close()
 
 	port := listener.Addr().(*net.TCPAddr).Port
+	sl.logger.Infof("✅ OS assigned port %d", port)
+	return port, nil
+}
 
-	// Verificar se a porta UDP também está disponível
+// isPortAvailable checks if a specific UDP port is available
+func (sl *SIPListener) isPortAvailable(port int) bool {
 	udpAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		return 0, fmt.Errorf("failed to resolve UDP address: %v", err)
+		return false
 	}
 
 	udpListener, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
-		return 0, fmt.Errorf("failed to listen on UDP: %v", err)
+		return false
 	}
 	defer udpListener.Close()
 
-	port = udpListener.LocalAddr().(*net.UDPAddr).Port
-	sl.logger.Infof("✅ Found available UDP port %d for SIP listener", port)
-	return port, nil
+	return true
 }
 
 // StartListener starts the SIP server and raw UDP listener
 func (sl *SIPListener) StartListener(config *SIPProxyConfig) error {
-	// Sempre usar porta aleatória disponível para evitar conflitos com outros serviços SIP
+	// Try to find available port with preference for standard SIP range
 	availablePort, err := sl.FindAvailableUDPPort()
 	if err != nil {
 		return fmt.Errorf("failed to find available UDP port: %v", err)
 	}
 	sl.actualListenerPort = availablePort
-	sl.logger.Infof("🎲 Using random available port: %d (avoiding fixed port conflicts like 5060)", sl.actualListenerPort)
+
+	// Show port selection info
+	minPort, maxPort := GetSIPPortRange()
+	if sl.actualListenerPort >= minPort && sl.actualListenerPort <= maxPort {
+		sl.logger.Infof("✅ Using preferred SIP port: %d (standard SIP range)", sl.actualListenerPort)
+	} else {
+		fallbackMin, fallbackMax := GetSIPPortFallbackRange()
+		if sl.actualListenerPort >= fallbackMin && sl.actualListenerPort <= fallbackMax {
+			sl.logger.Infof("🔄 Using fallback port: %d (preferred ports unavailable)", sl.actualListenerPort)
+		} else {
+			sl.logger.Infof("🎲 Using OS-assigned port: %d (all preferred ranges unavailable)", sl.actualListenerPort)
+		}
+	}
 
 	// Create SIPgo UserAgent
 	ua, err := sipgo.NewUA()
@@ -85,10 +126,7 @@ func (sl *SIPListener) StartListener(config *SIPProxyConfig) error {
 	sl.logger.Infof("🚀 Starting SIP server listener on %s", listenAddr)
 	sl.logger.Infof("🔍 UserAgent and Server will share port %d for bidirectional communication", sl.actualListenerPort)
 
-	// Start raw UDP listener for debugging incoming packets
-	go sl.startRawUDPListener(listenAddr)
-
-	// Start SIP server listener
+	// Start SIP server listener (this will handle all UDP traffic on the port)
 	go func() {
 		if err := sl.server.ListenAndServe(context.Background(), config.Protocol, listenAddr); err != nil {
 			sl.logger.Errorf("❌ SIP server listen error: %v", err)
@@ -99,43 +137,6 @@ func (sl *SIPListener) StartListener(config *SIPProxyConfig) error {
 	sl.logger.Infof("✅ SIP Listener started successfully on port %d", sl.actualListenerPort)
 
 	return nil
-}
-
-// startRawUDPListener starts a raw UDP listener for debugging
-func (sl *SIPListener) startRawUDPListener(listenAddr string) {
-	rawAddr, err := net.ResolveUDPAddr("udp", listenAddr)
-	if err != nil {
-		sl.logger.Errorf("❌ Failed to resolve raw UDP address: %v", err)
-		return
-	}
-
-	rawConn, err := net.ListenUDP("udp", rawAddr)
-	if err != nil {
-		sl.logger.Errorf("❌ Failed to create raw UDP listener: %v", err)
-		return
-	}
-	defer rawConn.Close()
-
-	sl.logger.Infof("🔍🔍🔍 RAW UDP Debug listener started on %s", listenAddr)
-
-	buf := make([]byte, 4096)
-	for {
-		select {
-		case <-sl.stopChannel:
-			sl.logger.Infof("🔍🔍🔍 RAW UDP Debug listener stopped")
-			return
-		default:
-			n, addr, err := rawConn.ReadFromUDP(buf)
-			if err != nil {
-				sl.logger.Errorf("❌ Raw UDP read error: %v", err)
-				continue
-			}
-
-			message := string(buf[:n])
-			sl.logger.Infof("🔍🔍🔍 RAW UDP received %d bytes from %s:", n, addr)
-			sl.logger.Infof("🔍🔍🔍 RAW UDP message: %s", message)
-		}
-	}
 }
 
 // Stop stops the SIP listener

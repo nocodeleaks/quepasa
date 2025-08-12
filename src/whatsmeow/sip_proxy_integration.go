@@ -104,9 +104,9 @@ func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 	// Store WhatsApp connection for rejecting calls
 	if conn, ok := whatsappHandler.(*WhatsmeowConnection); ok {
 		si.connection = conn
-		si.logger.Infof("✅ WhatsApp connection stored for call rejection")
+		si.logger.Infof("✅ WhatsApp connection stored for call events")
 	} else {
-		si.logger.Warnf("⚠️ WhatsApp handler is not a WhatsmeowConnection, call rejection may not work")
+		si.logger.Warnf("⚠️ WhatsApp handler is not a WhatsmeowConnection, call actions may not work")
 	}
 
 	// Callback para quando uma chamada é aceita (200 OK)

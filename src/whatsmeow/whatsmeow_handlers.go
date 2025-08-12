@@ -234,73 +234,25 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 		//# region CALLS - Enhanced debugging for VoIP call events
 	case *events.CallOffer:
-		logentry.Infof("🔥🔥🔥 CALLOFFER CAPTURED! 🔥🔥🔥")
-		logentry.Infof("📞 CallOffer received: %+v", evt)
-		logentry.Infof("📞 Call Details - From: %s, CallID: %s, Type: CallOffer", evt.From, evt.CallID)
-		logentry.Infof("🎯 STARTING SIP PROXY PROCESS NOW!")
+		// =========================================================================
+		// 🚫 IMMEDIATE SIP PROCESSING COMMENTED OUT (CAUSES DUPLICATION)
+		// =========================================================================
+		// This immediate processing was causing duplicate SIP INVITEs
+		// We handle CallOffer in the dedicated CallMessage() function instead
 
-		// 🚀 IMMEDIATE SIP FORWARDING - NEW ARCHITECTURE
-		logentry.Infof("🔥🔥🔥 PROCESSING CALL IMMEDIATELY 🔥🔥🔥")
-		logentry.Infof("📞 From: %s", evt.From)
-		logentry.Infof("📞 CallID: %s", evt.CallID)
-		logentry.Infof("📞 Phone: %s", evt.From.User)
+		// COMMENTED OUT: Immediate SIP forwarding (causes duplicate calls)
+		// logentry.Infof("🔥🔥🔥 CALLOFFER CAPTURED! 🔥🔥🔥")
+		// logentry.Infof("📞 CallOffer received: %+v", evt)
+		// logentry.Infof("📞 Call Details - From: %s, CallID: %s, Type: CallOffer", evt.From, evt.CallID)
+		// logentry.Infof("🎯 STARTING SIP PROXY PROCESS NOW!")
+		// logentry.Infof("🔥🔥🔥 PROCESSING CALL IMMEDIATELY 🔥🔥🔥")
+		// ... (rest of immediate processing code commented out)
+		// logentry.Infof("📡 Call processing completed - forwarded to voip.sufficit.com.br:26499")
 
-		// Create CallManager immediately
-		var callManager *WhatsmeowCallManager
-		if source.WhatsmeowConnection.CallManager != nil {
-			callManager = source.WhatsmeowConnection.CallManager
-			logentry.Infof("🔄 Using existing CallManager")
-		} else {
-			callManager = NewWhatsmeowCallManager(source.WhatsmeowConnection)
-			source.WhatsmeowConnection.CallManager = callManager
-			logentry.Infof("🆕 Created new CallManager")
-		}
+		// Only basic logging for CallOffer detection
+		logentry.Infof("📞 CallOffer detected - CallID: %s, From: %s", evt.CallID, evt.From.User)
 
-		// Forward call to SIP server IMMEDIATELY
-		logentry.Infof("🎯🎯🎯 FORWARDING CALL TO SIP SERVER IMMEDIATELY 🎯🎯🎯")
-		sipIntegration := callManager.GetSIPProxy()
-		if sipIntegration != nil && sipIntegration.IsReady() {
-			logentry.Infof("🚀 SIP integration ready, forwarding call...")
-
-			// Get the receiving WhatsApp number (our number)
-			statusManager := source.GetStatusManager()
-			myNumber, err := statusManager.GetWidInternal()
-			if err != nil {
-				logentry.Errorf("❌ Failed to get WhatsApp number: %v", err)
-				myNumber = "unknown"
-			}
-
-			// Forward with correct From/To: From=caller, To=our WhatsApp number
-			err = sipIntegration.ThrowSIPProxy(evt.CallID, evt.From.User, myNumber)
-			if err != nil {
-				logentry.Errorf("❌ Failed to forward call to SIP server: %v", err)
-			} else {
-				logentry.Infof("✅ Call successfully forwarded to SIP server!")
-				logentry.Infof("📞 CallID: %s", evt.CallID)
-				logentry.Infof("📞 From: %s", evt.From.User)
-				logentry.Infof("📞 To: %s", myNumber)
-				logentry.Infof("🎯 SIP server will handle call acceptance/rejection")
-			}
-		} else {
-			logentry.Errorf("❌ SIP integration not ready - cannot forward call")
-			if sipIntegration == nil {
-				logentry.Errorf("   → sipIntegration is nil")
-			} else {
-				logentry.Errorf("   → sipIntegration.IsReady() = %v", sipIntegration.IsReady())
-			}
-		}
-
-		logentry.Infof("📡 Call processing completed - forwarded to voip.sufficit.com.br:26499")
-
-		// IMMEDIATE SIP PROXY - Enhanced debugging with CallManager (singleton)
-		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-			logentry.Infof("✅ CallManager created successfully")
-			callManager.LogCallEvent("CallOffer", evt)
-			logentry.Infof("✅ CallEvent logged successfully")
-		} else {
-			logentry.Errorf("❌ Failed to create CallManager!")
-		}
-
+		// Let CallMessage() handle the actual SIP forwarding
 		go source.CallMessage(evt.BasicCallMeta)
 		return
 
@@ -683,122 +635,129 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	logentry := source.GetLogger()
 	logentry.Trace("event CallMessage !")
 
-	// 🧪 EXPERIMENTAL: Try to handle call acceptance
-	if source.WhatsmeowConnection != nil {
-		// Create experimental call answer manager
-		callAnswerManager := NewCallAnswerManager(source.WhatsmeowConnection)
+	// =========================================================================
+	// 🚫 EXPERIMENTAL CALL PROCESSING COMPLETELY DISABLED
+	// =========================================================================
+	// We only process: CallOffer → SIP Server → Monitor SIP Response
+	// NO WhatsApp experimental features, NO call answer managers
 
-		// Start enhanced monitoring
-		callAnswerManager.StartCallMonitoring()
+	// COMMENTED OUT: Experimental call processing
+	// if source.WhatsmeowConnection != nil {
+	//	callAnswerManager := NewCallAnswerManager(source.WhatsmeowConnection)
 
-		// Log debugging info
-		debugInfo := callAnswerManager.GetCallDebuggingInfo()
-		logentry.Infof("🔍 Call System Debug Info: %+v", debugInfo)
+	// =========================================================================
+	// 🚫 EXPERIMENTAL WhatsApp CALL PROCESSING COMMENTED OUT
+	// =========================================================================
+	// We only focus on: CallOffer → SIP Server → Monitor SIP Response
+	// NO WhatsApp experimental features, NO call monitoring, NO debugging
 
-		// Experimental: Try to accept the call (probably won't work, but logs will show what happens)
-		if source.HandleCalls() {
-			logentry.Infof("🧪 EXPERIMENTAL: Attempting to accept call from %s", evt.From)
-			err := callAnswerManager.ExperimentalAcceptCall(evt.From, evt.CallID)
-			if err != nil {
-				logentry.Warnf("🧪 Call acceptance experiment failed (expected): %v", err)
-			}
-		}
-	}
+	// COMMENTED OUT: Enhanced monitoring and experimental call processing
+	// Start enhanced monitoring
+	// callAnswerManager.StartCallMonitoring()
 
-	message := &whatsapp.WhatsappMessage{Content: evt}
+	// Log debugging info
+	// debugInfo := callAnswerManager.GetCallDebuggingInfo()
+	// logentry.Infof("🔍 Call System Debug Info: %+v", debugInfo)
 
-	// basic information
-	message.Id = evt.CallID
-	message.Timestamp = evt.Timestamp
-	message.FromMe = false
+	// Experimental: Try to keep call active for data capture (no auto-accept)
+	// if source.HandleCalls() {
+	//	logentry.Infof("🧪 EXPERIMENTAL: Maintaining call active for data capture from %s", evt.From)
+	//	err := callAnswerManager.ExperimentalAcceptCall(evt.From, evt.CallID)
+	//	if err != nil {
+	//		logentry.Warnf("🧪 Call persistence experiment failed (expected): %v", err)
+	//	}
+	// }
+	// } // End of experimental call processing
 
-	message.Chat = *NewWhatsappChat(source, evt.From)
-	message.Type = whatsapp.CallMessageType
+	// =========================================================================
+	// 🚫 WhatsApp MESSAGE PROCESSING COMMENTED OUT
+	// =========================================================================
+	// We don't send messages to internal WhatsApp handlers
 
-	if source.WAHandlers != nil {
+	// COMMENTED OUT: WhatsApp message processing
+	// message := &whatsapp.WhatsappMessage{Content: evt}
+	// message.Id = evt.CallID
+	// message.Timestamp = evt.Timestamp
+	// message.FromMe = false
+	// message.Chat = *NewWhatsappChat(source, evt.From)
+	// message.Type = whatsapp.CallMessageType
+	// if source.WAHandlers != nil {
+	//	go source.WAHandlers.Message(message, "call")
+	// }
 
-		// following to internal handlers
-		go source.WAHandlers.Message(message, "call")
-	}
+	// =========================================================================
+	// � IMMEDIATE CALL PROCESSING COMMENTED OUT
+	// =========================================================================
+	// This was duplicating SIP calls - we handle this in the section below
 
-	// 🚀 PROCESSING CALL IMMEDIATELY - DON'T WAIT FOR HandleCalls()
-	logentry.Infof("🔥🔥🔥 PROCESSING CALL IMMEDIATELY 🔥🔥🔥")
-	logentry.Infof("📞 From: %s", evt.From)
-	logentry.Infof("📞 CallID: %s", evt.CallID)
-	logentry.Infof("📞 Phone: %s", evt.From.User)
+	// COMMENTED OUT: Immediate call processing (was causing duplicate SIP calls)
+	// �� PROCESSING CALL IMMEDIATELY - DON'T WAIT FOR HandleCalls()
+	// logentry.Infof("🔥🔥🔥 PROCESSING CALL IMMEDIATELY 🔥🔥🔥")
+	// logentry.Infof("📞 From: %s", evt.From)
+	// logentry.Infof("📞 CallID: %s", evt.CallID)
+	// logentry.Infof("📞 Phone: %s", evt.From.User)
 
 	// Create CallManager immediately - don't wait for HandleCalls()
-	var callManager *WhatsmeowCallManager
-	if source.WhatsmeowConnection.CallManager != nil {
-		callManager = source.WhatsmeowConnection.CallManager
-		logentry.Infof("🔄 Using existing CallManager")
-	} else {
-		callManager = NewWhatsmeowCallManager(source.WhatsmeowConnection)
-		source.WhatsmeowConnection.CallManager = callManager
-		logentry.Infof("🆕 Created new CallManager")
-	}
+	// var callManager *WhatsmeowCallManager
+	// if source.WhatsmeowConnection.CallManager != nil {
+	//	callManager = source.WhatsmeowConnection.CallManager
+	//	logentry.Infof("🔄 Using existing CallManager")
+	// } else {
+	//	callManager = NewWhatsmeowCallManager(source.WhatsmeowConnection)
+	//	source.WhatsmeowConnection.CallManager = callManager
+	//	logentry.Infof("🆕 Created new CallManager")
+	// }
 
-	// NOVA ARQUITETURA: Encaminhar PRIMEIRO para servidor SIP, não aceitar ainda no WhatsApp
-	logentry.Infof("🎯🎯🎯 FORWARDING CALL TO SIP SERVER IMMEDIATELY 🎯🎯🎯")
-	sipIntegration := callManager.GetSIPProxy()
-	if sipIntegration != nil && sipIntegration.IsReady() {
-		// Encaminhar chamada para servidor SIP
-		logentry.Infof("🚀 SIP integration ready, forwarding call...")
-
-		// Get the receiving WhatsApp number (our number)
-		statusManager := source.GetStatusManager()
-		myNumber, err := statusManager.GetWidInternal()
-		if err != nil {
-			logentry.Errorf("❌ Failed to get WhatsApp number: %v", err)
-			myNumber = "unknown"
-		}
-
-		// Forward with correct From/To: From=caller, To=our WhatsApp number
-		err = sipIntegration.ThrowSIPProxy(evt.CallID, evt.From.User, myNumber)
-		if err != nil {
-			logentry.Errorf("❌ Failed to forward call to SIP server: %v", err)
-		} else {
-			logentry.Infof("✅ Call successfully forwarded to SIP server!")
-			logentry.Infof("📞 CallID: %s", evt.CallID)
-			logentry.Infof("📞 From: %s", evt.From.User)
-			logentry.Infof("🎯 SIP server will handle call acceptance/rejection")
-		}
-	} else {
-		logentry.Errorf("❌ SIP integration not ready - cannot forward call")
-		if sipIntegration == nil {
-			logentry.Errorf("   → sipIntegration is nil")
-		} else {
-			logentry.Errorf("   → sipIntegration.IsReady() = %v", sipIntegration.IsReady())
-		}
-	}
+	// COMMENTED OUT: Duplicate SIP processing (handled in main section below)
+	// logentry.Infof("🎯🎯🎯 FORWARDING CALL TO SIP SERVER IMMEDIATELY 🎯🎯🎯")
+	// sipIntegration := callManager.GetSIPProxy()
+	// if sipIntegration != nil && sipIntegration.IsReady() {
+	//	logentry.Infof("🚀 SIP integration ready, forwarding call...")
+	//	statusManager := source.GetStatusManager()
+	//	myNumber, err := statusManager.GetWidInternal()
+	//	if err != nil {
+	//		logentry.Errorf("❌ Failed to get WhatsApp number: %v", err)
+	//		myNumber = "unknown"
+	//	}
+	//	err = sipIntegration.ThrowSIPProxy(evt.CallID, evt.From.User, myNumber)
+	//	if err != nil {
+	//		logentry.Errorf("❌ Failed to forward call to SIP server: %v", err)
+	//	} else {
+	//		logentry.Infof("✅ Call successfully forwarded to SIP server!")
+	//		logentry.Infof("📞 CallID: %s", evt.CallID)
+	//		logentry.Infof("📞 From: %s", evt.From.User)
+	//		logentry.Infof("🎯 SIP server will handle call acceptance/rejection")
+	//	}
+	// } else {
+	//	logentry.Errorf("❌ SIP integration not ready - cannot forward call")
+	//	if sipIntegration == nil {
+	//		logentry.Errorf("   → sipIntegration is nil")
+	//	} else {
+	//		logentry.Errorf("   → sipIntegration.IsReady() = %v", sipIntegration.IsReady())
+	//	}
+	// }
 
 	logentry.Infof("📡 Call processing completed")
 
-	// 🚀 AUTO-ACCEPT CALLS AND CAPTURE SIP/RTP INFO
+	// 🚀 MINIMAL CALL PROCESSING: CallOffer → SIP Server Only
 	handleCallsResult := source.HandleCalls()
-	logentry.Infof("🔍 HandleCalls() result: %v", handleCallsResult)
 
 	if handleCallsResult {
-		logentry.Infof("🔥🔥🔥 AUTO-ACCEPTING CALL from: %s, CallID: %s 🔥🔥🔥", evt.From, evt.CallID)
-		logentry.Infof("📞 PHONE NUMBER: %s", evt.From.User)
-		logentry.Infof("📞 FULL JID: %s", evt.From.String())
+		logentry.Infof("📡 CALL DETECTED - Forwarding to SIP server")
+		logentry.Infof("📞 CallID: %s | From: %s", evt.CallID, evt.From.User)
 
-		// Use existing CallManager from connection to avoid multiple SIPgo instances
+		// Create CallManager for SIP forwarding only
 		var callManager *WhatsmeowCallManager
 		if source.WhatsmeowConnection.CallManager != nil {
 			callManager = source.WhatsmeowConnection.CallManager
-			logentry.Infof("🔄 Using existing CallManager")
 		} else {
 			callManager = NewWhatsmeowCallManager(source.WhatsmeowConnection)
 			source.WhatsmeowConnection.CallManager = callManager
-			logentry.Infof("🆕 Created new CallManager")
 		}
 
-		// NOVA ARQUITETURA: Encaminhar PRIMEIRO para servidor SIP, não aceitar ainda no WhatsApp
-		logentry.Infof("🎯🎯🎯 FORWARDING CALL TO SIP SERVER IMMEDIATELY 🎯🎯🎯")
+		// Forward to SIP server - monitoring response only
 		sipIntegration := callManager.GetSIPProxy()
 		if sipIntegration != nil && sipIntegration.IsReady() {
-			// Get the receiving WhatsApp number (our number)
 			statusManager := source.GetStatusManager()
 			myNumber, err := statusManager.GetWidInternal()
 			if err != nil {
@@ -806,25 +765,24 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 				myNumber = "unknown"
 			}
 
-			// Forward with correct From/To: From=caller, To=our WhatsApp number
 			err = sipIntegration.ThrowSIPProxy(evt.CallID, evt.From.User, myNumber)
 			if err != nil {
-				logentry.Errorf("❌ Failed to forward call to SIP server: %v", err)
+				logentry.Errorf("❌ SIP forward failed: %v", err)
 			} else {
-				logentry.Infof("✅ Call successfully forwarded to SIP server!")
-				logentry.Infof("📞 CallID: %s", evt.CallID)
-				logentry.Infof("📞 From: %s", evt.From.User)
-				logentry.Infof("🎯 SIP server will handle call acceptance/rejection")
+				logentry.Infof("✅ SIP INVITE sent to server - monitoring response")
 			}
 		} else {
-			logentry.Errorf("❌ SIP integration not ready - cannot forward call")
+			logentry.Errorf("❌ SIP integration not ready")
 		}
-
-		logentry.Infof("📡 Call forwarded to voip.sufficit.com.br:26499 for processing")
 	} else {
-		logentry.Warnf("⚠️ HandleCalls() returned false - call handling disabled")
-		logentry.Warnf("⚠️ Call will NOT be processed by SIP proxy")
+		logentry.Warnf("⚠️ Call handling disabled - no SIP forwarding")
 	}
+
+	// =========================================================================
+	// 🚫 ALL WhatsApp INTERACTIONS BELOW ARE COMMENTED OUT
+	// =========================================================================
+	// We only monitor CallOffer → SIP Server and analyze SIP responses
+	// NO auto-reject, NO call state changes, NO WhatsApp API calls
 
 	// COMMENTED OUT: Auto-rejection logic (was terminating calls automatically from database config)
 	// if !source.HandleCalls() {
@@ -842,21 +800,22 @@ func (source *WhatsmeowHandlers) CallTerminateMessage(evt types.BasicCallMeta, r
 	logentry := source.GetLogger()
 	logentry.Tracef("📞❌ Call terminated - CallID: %s, From: %s, Reason: %v", evt.CallID, evt.From, reason)
 
-	message := &whatsapp.WhatsappMessage{Content: evt}
+	// =========================================================================
+	// 🚫 WhatsApp TERMINATION PROCESSING COMMENTED OUT
+	// =========================================================================
+	// We only monitor call termination, NO WhatsApp message processing
 
-	// basic information
-	message.Id = evt.CallID
-	message.Timestamp = evt.Timestamp
-	message.FromMe = false
-
-	message.Chat = *NewWhatsappChat(source, evt.From)
-	message.Type = whatsapp.CallMessageType
-	message.Text = fmt.Sprintf("Call terminated. Reason: %v", reason)
-
-	if source.WAHandlers != nil {
-		// following to internal handlers
-		go source.WAHandlers.Message(message, "call_terminate")
-	}
+	// COMMENTED OUT: WhatsApp message processing for call termination
+	// message := &whatsapp.WhatsappMessage{Content: evt}
+	// message.Id = evt.CallID
+	// message.Timestamp = evt.Timestamp
+	// message.FromMe = false
+	// message.Chat = *NewWhatsappChat(source, evt.From)
+	// message.Type = whatsapp.CallMessageType
+	// message.Text = fmt.Sprintf("Call terminated. Reason: %v", reason)
+	// if source.WAHandlers != nil {
+	//	go source.WAHandlers.Message(message, "call_terminate")
+	// }
 }
 
 // CallAcceptMessage handles call accept events
@@ -864,31 +823,31 @@ func (source *WhatsmeowHandlers) CallAcceptMessage(evt types.BasicCallMeta) {
 	logentry := source.GetLogger()
 	logentry.Tracef("📞✅ Call accepted - CallID: %s, From: %s", evt.CallID, evt.From)
 
-	// 🎯 NOTIFY SIP PROXY ABOUT CALL ACCEPTANCE
-	logentry.Infof("🎯 SIP PROXY: WhatsApp call was ACCEPTED - SIP integration active")
-	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
-			// SIP integration automatically handles call acceptance
-			activeCalls := sipIntegration.GetActiveCalls()
-			logentry.Infof("📊 SIP integration has %d active calls", len(activeCalls))
-		}
-	}
+	// =========================================================================
+	// 🚫 WhatsApp ACCEPTANCE PROCESSING COMMENTED OUT
+	// =========================================================================
+	// We only monitor call acceptance, NO WhatsApp message processing or SIP notifications
 
-	message := &whatsapp.WhatsappMessage{Content: evt}
+	// COMMENTED OUT: SIP proxy notification for call acceptance
+	// logentry.Infof("🎯 SIP PROXY: WhatsApp call was ACCEPTED - SIP integration active")
+	// if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+	//	if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
+	//		activeCalls := sipIntegration.GetActiveCalls()
+	//		logentry.Infof("📊 SIP integration has %d active calls", len(activeCalls))
+	//	}
+	// }
 
-	// basic information
-	message.Id = evt.CallID
-	message.Timestamp = evt.Timestamp
-	message.FromMe = false
-
-	message.Chat = *NewWhatsappChat(source, evt.From)
-	message.Type = whatsapp.CallMessageType
-	message.Text = "Call accepted"
-
-	if source.WAHandlers != nil {
-		// following to internal handlers
-		go source.WAHandlers.Message(message, "call_accept")
-	}
+	// COMMENTED OUT: WhatsApp message processing for call acceptance
+	// message := &whatsapp.WhatsappMessage{Content: evt}
+	// message.Id = evt.CallID
+	// message.Timestamp = evt.Timestamp
+	// message.FromMe = false
+	// message.Chat = *NewWhatsappChat(source, evt.From)
+	// message.Type = whatsapp.CallMessageType
+	// message.Text = "Call accepted"
+	// if source.WAHandlers != nil {
+	//	go source.WAHandlers.Message(message, "call_accept")
+	// }
 }
 
 /*

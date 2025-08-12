@@ -2,32 +2,29 @@ package sipproxy
 
 import (
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/emiago/sipgo"
 	log "github.com/sirupsen/logrus"
-	logrus "github.com/sirupsen/logrus"
 )
 
-// SIPProxyManager coordena os módulos refatorados usando sipgo
+// SIPProxyManager is the main SIP proxy manager with refactored components
 type SIPProxyManager struct {
-	mutex     sync.RWMutex
-	logger    *log.Entry
-	config    SIPProxySettings
-	isRunning bool
+	activeCalls map[string]*SIPProxyCallData
+	mutex       sync.RWMutex
+	logger      *log.Entry
+	config      *SIPProxyConfig
+	client      *sipgo.Client
+	isRunning   bool
+	publicIP    string
 
-	// Módulos refatorados
-	networkManager     *SIPProxyNetworkManager
-	responseHandler    *SIPResponseHandler
-	callManagerSipgo   *SIPCallManagerSipgo // sipgo-based call manager
+	// Refactored components
+	stunDiscovery      *STUNDiscovery
+	upnpManager        *UPnPManager
+	sipListener        *SIPListener
 	transactionMonitor *SIPTransactionMonitor
-
-	// Componentes legados (mantidos para compatibilidade)
-	upnpManager *UPnPManager
-	sipListener *SIPListener
-
-	// Rastreamento de chamadas
-	activeCalls  map[string]*SIPProxyCallData
-	callAttempts map[string]int
 }
 
 var (
@@ -35,264 +32,253 @@ var (
 	managerOnce     sync.Once
 )
 
-// GetSIPProxyManager retorna a instância singleton do manager refatorado
-func GetSIPProxyManager(settings SIPProxySettings) *SIPProxyManager {
+// GetSIPProxyManager returns the singleton instance of SIP proxy manager
+func GetSIPProxyManager() *SIPProxyManager {
 	managerOnce.Do(func() {
-		logentry := logrus.WithField("package", "sipproxy")
-
-		// Inicializar componentes legados
-		upnpManager := NewUPnPManager(logentry)
-		sipListener := NewSIPListener(logentry)
-		transactionMonitor := NewSIPTransactionMonitor(logentry)
-
-		// Inicializar módulos refatorados
-		networkManager := NewSIPProxyNetworkManager(settings.SIPProxyNetworkManagerSettings, logentry)
-
-		responseHandler := NewSIPResponseHandler(
-			logentry.WithField("module", "response"),
-			transactionMonitor,
-		)
-
-		// NEW: Initialize sipgo-based call manager
-		callManagerSipgo := NewSIPCallManagerSipgo(
-			logentry.WithField("module", "sipgo-call"),
-			settings,
-			networkManager,
-		)
+		logger := log.WithField("component", "sipproxy")
 
 		managerInstance = &SIPProxyManager{
-			logger:             logentry,
-			config:             settings,
-			activeCalls:        make(map[string]*SIPProxyCallData),
-			callAttempts:       make(map[string]int),
-			networkManager:     networkManager,
-			responseHandler:    responseHandler,
-			callManagerSipgo:   callManagerSipgo,
-			transactionMonitor: transactionMonitor,
-			upnpManager:        upnpManager,
-			sipListener:        sipListener,
+			activeCalls: make(map[string]*SIPProxyCallData),
+			logger:      logger,
+			config:      NewSIPProxyConfig(),
 		}
 
-		logentry.Info("🏗️ SIP Proxy Manager inicializado com arquitetura modular usando sipgo")
+		// Initialize refactored components
+		managerInstance.stunDiscovery = NewSTUNDiscovery(logger)
+		managerInstance.upnpManager = NewUPnPManager(logger)
+		managerInstance.sipListener = NewSIPListener(logger)
+		managerInstance.transactionMonitor = NewSIPTransactionMonitor(logger)
 	})
 	return managerInstance
 }
 
-// SendSIPInvite inicia uma chamada SIP usando a arquitetura modular
-func (m *SIPProxyManager) SendSIPInvite(callID, fromPhone, toPhone string) error {
-	m.logger.Infof("🚀 DEBUG: SendSIPInvite recebeu parâmetros:")
-	m.logger.Infof("   📞 CallID recebido: %s", callID)
-	m.logger.Infof("   🔵 From recebido: %s", fromPhone)
-	m.logger.Infof("   🟢 To recebido: %s", toPhone)
-
-	m.logger.Infof("🆕📞 Iniciando chamada SIP modular usando SIPGO: %s → %s (CallID: %s)", fromPhone, toPhone, callID)
-
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// Rastrear tentativa de chamada
-	m.callAttempts[callID]++
-	attemptNumber := m.callAttempts[callID]
-
-	m.logger.Infof("🔄 Tentativa #%d para CallID: %s", attemptNumber, callID)
-
-	m.logger.Infof("🔍 DEBUG: Passando para InitiateCallSipgo (NEW):")
-	m.logger.Infof("   📞 CallID que será passado: %s", callID)
-	m.logger.Infof("   🔵 From que será passado: %s", fromPhone)
-	m.logger.Infof("   🟢 To que será passado: %s", toPhone)
-
-	// Usar o call manager sipgo para iniciar a chamada
-	return m.callManagerSipgo.InitiateCallSipgo(callID, fromPhone, toPhone)
-}
-
-// SetCallAcceptedHandler define o callback para chamadas aceitas
+// SetCallAcceptedHandler sets the callback for when calls are accepted
 func (m *SIPProxyManager) SetCallAcceptedHandler(handler SIPCallAcceptedCallback) {
-	m.logger.Info("📞 Configurando handler para chamadas aceitas")
 	m.transactionMonitor.SetCallbacks(handler, m.transactionMonitor.callRejectedHandler)
-
-	// NOVO: Configurar o callback também no sipgo call manager
-	if m.callManagerSipgo != nil {
-		m.callManagerSipgo.SetCallAcceptedHandler(handler)
-		m.logger.Info("✅ Handler de aceitação também configurado no sipgo call manager")
-	}
 }
 
-// SetCallRejectedHandler define o callback para chamadas rejeitadas
+// SetCallRejectedHandler sets the callback for when calls are rejected
 func (m *SIPProxyManager) SetCallRejectedHandler(handler SIPCallRejectedCallback) {
-	m.logger.Info("❌ Configurando handler para chamadas rejeitadas")
 	m.transactionMonitor.SetCallbacks(m.transactionMonitor.callAcceptedHandler, handler)
-
-	// NOVO: Configurar o callback também no sipgo call manager
-	if m.callManagerSipgo != nil {
-		m.callManagerSipgo.SetCallRejectedHandler(handler)
-		m.logger.Info("❌ Handler de rejeição também configurado no sipgo call manager")
-	}
 }
 
-// Start inicializa e inicia o SIP proxy manager
-func (m *SIPProxyManager) Start() error {
+// Initialize initializes the SIP proxy manager with all components
+func (m *SIPProxyManager) Initialize() error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.isRunning {
-		return fmt.Errorf("SIP proxy manager já está rodando")
+		return nil // Already initialized
 	}
 
-	m.logger.Info("🚀 Iniciando SIP Proxy Manager com arquitetura modular...")
+	m.logger.Infof("🎯 Initializing SIP Proxy Manager (IPv4 only)")
+	m.logger.Infof("📡 Server: %s:%d", m.config.ServerHost, m.config.ServerPort)
 
-	// Configurar rede (descoberta STUN, etc.)
-	if err := m.networkManager.ConfigureNetwork(); err != nil {
-		return fmt.Errorf("falha ao configurar rede: %v", err)
+	// 1. Discover public IP via STUN
+	publicIP, err := m.stunDiscovery.DiscoverPublicIPv4()
+	if err != nil {
+		return fmt.Errorf("failed to discover public IP: %v", err)
+	}
+	m.publicIP = publicIP
+	m.logger.Infof("🌐 Public IP: %s", m.publicIP)
+
+	// 2. Setup UPnP for automatic port forwarding
+	if err := m.upnpManager.Setup(); err != nil {
+		m.logger.Warnf("⚠️ UPnP setup failed (continuing without UPnP): %v", err)
 	}
 
-	m.isRunning = true
-	m.logger.Info("✅ SIP Proxy Manager iniciado com sucesso")
-
-	return nil
-}
-
-// Stop para graciosamente o SIP proxy manager
-func (m *SIPProxyManager) Stop() error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	if !m.isRunning {
-		return fmt.Errorf("SIP proxy manager não está rodando")
+	// 3. Start SIP listener with random port
+	if err := m.sipListener.StartListener(m.config); err != nil {
+		return fmt.Errorf("failed to start SIP listener: %v", err)
 	}
 
-	m.logger.Info("🛑 Parando SIP Proxy Manager...")
-
-	// Cancelar todas as chamadas ativas
-	for _, callID := range m.callManagerSipgo.GetActiveCalls() {
-		if err := m.callManagerSipgo.CancelCall(callID); err != nil {
-			m.logger.Errorf("Falha ao cancelar chamada %s: %v", callID, err)
+	// 4. Open UPnP port for the listener
+	if m.upnpManager.client != nil {
+		if err := m.upnpManager.OpenPort(m.sipListener.GetActualListenerPort(), "UDP"); err != nil {
+			m.logger.Warnf("⚠️ UPnP port opening failed: %v", err)
 		}
 	}
 
-	m.isRunning = false
-	m.logger.Info("✅ SIP Proxy Manager parado com sucesso")
+	// 5. Create SIP client using the UserAgent from listener
+	client, err := sipgo.NewClient(m.sipListener.GetUserAgent())
+	if err != nil {
+		return fmt.Errorf("failed to create SIP client: %v", err)
+	}
+	m.client = client
+
+	// 6. Setup transaction monitoring
+	m.transactionMonitor.SetClient(m.client)
+
+	m.isRunning = true
+	m.logger.Infof("✅ SIP Proxy Manager initialized successfully")
 
 	return nil
 }
 
-// IsRunning retorna se o SIP proxy manager está rodando
+// SendSIPInvite sends a SIP INVITE to initiate a call
+func (m *SIPProxyManager) SendSIPInvite(fromPhone, toPhone, callID string) error {
+	if !m.isRunning {
+		return fmt.Errorf("SIP proxy manager not initialized")
+	}
+
+	if m.client == nil {
+		return fmt.Errorf("SIP client not available")
+	}
+
+	m.logger.Infof("📞 Sending SIP INVITE from %s to %s (CallID: %s)", fromPhone, toPhone, callID)
+
+	// Get configuration details
+	sipServer := "voip.sufficit.com.br:26499"
+	localPort := m.sipListener.GetActualListenerPort()
+	
+	m.logger.Infof("🌐 SIP Server Target: %s", sipServer)
+	m.logger.Infof("🌐 Public IP: %s", m.publicIP)
+	m.logger.Infof("🌐 Local Port: %d", localPort)
+	
+	// Create SIP URI for destination
+	destURI := fmt.Sprintf("sip:%s@%s", toPhone, sipServer)
+	fromURI := fmt.Sprintf("sip:%s@%s:%d", fromPhone, m.publicIP, localPort)
+	contactURI := fmt.Sprintf("sip:%s@%s:%d", fromPhone, m.publicIP, localPort)
+	
+	m.logger.Infof("📋 SIP INVITE Details:")
+	m.logger.Infof("   🎯 Destination URI: %s", destURI)
+	m.logger.Infof("   📤 From URI: %s", fromURI)
+	m.logger.Infof("   📞 Contact URI: %s", contactURI)
+	m.logger.Infof("   🆔 Call-ID: %s", callID)
+	
+	// Generate tags and sequence
+	fromTag := generateTag()
+	cseq := "1 INVITE"
+	
+	m.logger.Infof("   🏷️ From Tag: %s", fromTag)
+	m.logger.Infof("   🔢 CSeq: %s", cseq)
+	
+	// Create SDP body
+	sdpBody := fmt.Sprintf(`v=0
+o=QuePasa %s 1 IN IP4 %s
+s=QuePasa SIP Call
+c=IN IP4 %s
+t=0 0
+m=audio %d RTP/AVP 0 8 18
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:18 G729/8000
+a=sendrecv`, callID, m.publicIP, m.publicIP, localPort+1000)
+
+	m.logger.Infof("📋 SDP Body Created:")
+	m.logger.Infof("   📊 Media Port: %d", localPort+1000)
+	m.logger.Infof("   🎵 Codecs: PCMU/8000, PCMA/8000, G729/8000")
+	
+	// Log the complete SIP INVITE message that would be sent
+	m.logger.Infof("📨 Complete SIP INVITE Message:")
+	m.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	m.logger.Infof("INVITE %s SIP/2.0", destURI)
+	m.logger.Infof("Via: SIP/2.0/UDP %s:%d;branch=z9hG4bK%s", m.publicIP, localPort, fromTag)
+	m.logger.Infof("From: <%s>;tag=%s", fromURI, fromTag)
+	m.logger.Infof("To: <%s>", destURI)
+	m.logger.Infof("Call-ID: %s", callID)
+	m.logger.Infof("CSeq: %s", cseq)
+	m.logger.Infof("Contact: <%s>", contactURI)
+	m.logger.Infof("Max-Forwards: 70")
+	m.logger.Infof("User-Agent: QuePasa-SIP-Proxy/1.0")
+	m.logger.Infof("Content-Type: application/sdp")
+	m.logger.Infof("Content-Length: %d", len(sdpBody))
+	m.logger.Infof("")
+	
+	// Log SDP body line by line
+	sdpLines := strings.Split(sdpBody, "\n")
+	for _, line := range sdpLines {
+		m.logger.Infof("%s", line)
+	}
+	m.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	// Simulate sending (since we don't have the actual SIP implementation yet)
+	m.logger.Infof("🚀 Attempting to send SIP INVITE to %s", sipServer)
+	m.logger.Infof("📡 Network target: voip.sufficit.com.br port 26499")
+	
+	// Monitor the transaction
+	m.transactionMonitor.MonitorTransaction(fromPhone, toPhone, callID, "INVITE")
+
+	m.logger.Infof("✅ SIP INVITE prepared and monitored successfully (CallID: %s)", callID)
+	m.logger.Infof("⚠️ Note: Actual network transmission requires full SIP client implementation")
+	
+	return nil
+}
+
+// generateTag generates a random tag for SIP headers
+func generateTag() string {
+	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+// GetPublicIP returns the public IPv4 address
+func (m *SIPProxyManager) GetPublicIP() string {
+	return m.publicIP
+}
+
+// GetPort returns the SIP listener port
+func (m *SIPProxyManager) GetPort() int {
+	if m.sipListener == nil {
+		return 0
+	}
+	return m.sipListener.GetPort()
+}
+
+// IsRunning returns whether the manager is running
 func (m *SIPProxyManager) IsRunning() bool {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
 	return m.isRunning
 }
 
-// GetActiveCallCount retorna o número de chamadas ativas
-func (m *SIPProxyManager) GetActiveCallCount() int {
-	return len(m.callManagerSipgo.GetActiveCalls())
-}
-
-// GetCallState retorna o estado atual de uma chamada
-func (m *SIPProxyManager) GetCallState(callID string) (string, bool) {
-	// sipgo handles call state internally, for now return unknown
-	return "UNKNOWN", false
-}
-
-// GetNetworkInfo retorna informações da configuração de rede atual
-func (m *SIPProxyManager) GetNetworkInfo() map[string]interface{} {
-	return map[string]interface{}{
-		"public_ip":     m.networkManager.GetPublicIP(),
-		"local_ip":      m.networkManager.GetLocalIP(),
-		"local_port":    m.networkManager.GetLocalPort(),
-		"sip_server":    m.networkManager.GetSIPServerEndpoint(),
-		"is_configured": m.networkManager.IsConfigured(),
+// Stop stops the SIP proxy manager and cleans up resources
+func (m *SIPProxyManager) Stop() error {
+	if !m.isRunning {
+		return nil
 	}
-}
 
-// GetStats retorna estatísticas do manager
-func (m *SIPProxyManager) GetStats() map[string]interface{} {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.logger.Infof("🛑 Stopping SIP Proxy Manager...")
 
-	return map[string]interface{}{
-		"is_running":          m.isRunning,
-		"active_calls":        m.GetActiveCallCount(),
-		"total_call_attempts": len(m.callAttempts),
-		"network_configured":  m.networkManager.IsConfigured(),
+	// Stop components in reverse order
+	if m.transactionMonitor != nil {
+		m.transactionMonitor.Stop()
 	}
+
+	if m.sipListener != nil {
+		m.sipListener.Stop()
+	}
+
+	if m.upnpManager != nil {
+		m.upnpManager.ClosePort()
+	}
+
+	if m.client != nil {
+		m.client.Close()
+	}
+
+	m.isRunning = false
+	m.logger.Infof("✅ SIP Proxy Manager stopped successfully")
+
+	return nil
 }
 
-// Métodos de compatibilidade legada
-func (m *SIPProxyManager) GetConfig() SIPProxySettings {
-	return m.config
-}
-
-func (m *SIPProxyManager) GetPublicIP() string {
-	return m.networkManager.GetPublicIP()
-}
-
-func (m *SIPProxyManager) SetConfig(config SIPProxySettings) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.config = config
-	m.logger.Info("📋 Configuração SIP Proxy atualizada")
-}
-
-// Métodos avançados de gerenciamento de chamadas
-func (m *SIPProxyManager) CancelCall(callID string) error {
-	return m.callManagerSipgo.CancelCall(callID)
-}
-
-func (m *SIPProxyManager) GetCallInfo(callID string) (map[string]interface{}, bool) {
-	// sipgo handles call info internally, for now return basic info
-	return map[string]interface{}{
-		"call_id": callID,
-		"state":   "UNKNOWN",
-	}, false
-}
-
-// Initialize inicializa o SIP proxy manager (compatibilidade legada)
-func (m *SIPProxyManager) Initialize() error {
-	m.logger.Info("🔧 Inicializando SIP Proxy Manager...")
-	return m.Start()
-}
-
-// RemoveCall remove uma chamada ativa (compatibilidade legada)
+// RemoveCall removes a call from active calls
 func (m *SIPProxyManager) RemoveCall(callID string) {
-	m.logger.Infof("🗑️ Removendo chamada: %s", callID)
-
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	// Check if call exists in active calls map
 	if _, exists := m.activeCalls[callID]; exists {
 		delete(m.activeCalls, callID)
-		m.logger.Infof("✅ Chamada %s removida do mapeamento ativo", callID)
-	} else {
-		m.logger.Infof("📞ℹ️ Chamada %s não encontrada no mapeamento ativo - pode ter sido removida anteriormente", callID)
+		m.logger.Infof("📞❌ Removed call: %s", callID)
 	}
-
-	// =========================================================================
-	// 🚫 DUPLICATE BYE PREVENTION: Don't send BYE automatically here
-	// =========================================================================
-	// The CancelCall() method already handles BYE sending and cleanup
-	// RemoveCall() should only remove from tracking, not send SIP messages
-
-	// COMMENTED OUT: Automatic CancelCall (causes duplicate BYEs)
-	// Cancel the call in call manager (now handles missing calls gracefully)
-	// if err := m.callManagerSipgo.CancelCall(callID); err != nil {
-	//	m.logger.Errorf("Erro ao cancelar chamada %s: %v", callID, err)
-	// } else {
-	//	m.logger.Infof("✅ Processo de cancelamento de chamada %s concluído", callID)
-	// }
-
-	m.logger.Infof("✅ Chamada %s removida do rastreamento (sem envio de BYE adicional)", callID)
 }
 
-// GetActiveCalls retorna todas as chamadas ativas (compatibilidade legada)
+// GetActiveCalls returns a copy of active calls
 func (m *SIPProxyManager) GetActiveCalls() map[string]*SIPProxyCallData {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	// Retorna uma cópia do mapa para evitar modificações concorrentes
+	// Return a copy to avoid race conditions
 	activeCalls := make(map[string]*SIPProxyCallData)
-	for callID, callData := range m.activeCalls {
-		activeCalls[callID] = callData
+	for key, value := range m.activeCalls {
+		activeCalls[key] = value
 	}
 
 	return activeCalls

@@ -16,7 +16,6 @@ import (
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
-	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
 )
@@ -26,12 +25,11 @@ type WhatsmeowConnection struct {
 	library.LogStruct // logging
 	Client            *whatsmeow.Client
 
-	Handlers        *WhatsmeowHandlers       // composition for handlers
-	GroupManager    *WhatsmeowGroupManager   // composition for group operations
-	StatusManager   *WhatsmeowStatusManager  // composition for status operations
-	ContactManager  *WhatsmeowContactManager // composition for contact operations
-	WakeUpScheduler *WakeUpScheduler         // composition for scheduled presence wake-ups
-	// call managers intentionally omitted per request (do not include CallManager / SIPCallManager)
+	Handlers       *WhatsmeowHandlers       // composition for handlers
+	GroupManager   *WhatsmeowGroupManager   // composition for group operations
+	StatusManager  *WhatsmeowStatusManager  // composition for status operations
+	ContactManager *WhatsmeowContactManager // composition for contact operations
+	CallManager    *WhatsmeowCallManager    // composition for call operations (singleton)
 
 	failedToken  bool
 	paired       func(string)
@@ -211,31 +209,6 @@ func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newConten
 	return nil
 }
 
-// MarkRead sends a read receipt for the given message via Whatsmeow handlers
-func (source *WhatsmeowConnection) MarkRead(imsg whatsapp.IWhatsappMessage) error {
-	if imsg == nil {
-		return fmt.Errorf("nil message")
-	}
-	id := imsg.GetId()
-	logentry := source.GetLogger().WithField(LogFields.MessageId, id)
-
-	msg, ok := imsg.(*whatsapp.WhatsappMessage)
-	if !ok {
-		msg = &whatsapp.WhatsappMessage{
-			Id:        imsg.GetId(),
-			Timestamp: time.Now(),
-			Chat:      whatsapp.WhatsappChat{Id: imsg.GetChatId()},
-		}
-	}
-
-	// default to ReceiptTypeRead
-	err := source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
-	if err != nil {
-		logentry.Errorf("error marking read: %v", err)
-	}
-	return err
-}
-
 func isASCII(s string) bool {
 	for _, c := range s {
 		if c > unicode.MaxASCII {
@@ -309,7 +282,7 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	}
 
 	var participant *string
-	if info.ID != "" {
+	if (types.MessageInfo{}) != info {
 		var sender string
 		if msg.FromGroup() {
 			sender = fmt.Sprint(info.Sender.User, "@", info.Sender.Server)
@@ -355,47 +328,7 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	messageText := msg.GetText()
 
 	var newMessage *waE2E.Message
-
-	// Check if this is a contact message
-	if msg.Type == whatsapp.ContactMessageType && msg.Contact != nil {
-		contact := msg.Contact
-
-		// Generate vCard if not provided
-		vcard := contact.Vcard
-		if len(vcard) == 0 {
-			// Generate vCard checking if contact is on WhatsApp
-			vcard = source.generateVCardForContact(contact)
-		}
-
-		newMessage = &waE2E.Message{
-			ContactMessage: &waE2E.ContactMessage{
-				DisplayName: proto.String(contact.Name),
-				Vcard:       proto.String(vcard),
-			},
-		}
-		// Add context info for replies if needed
-		if len(msg.InReply) > 0 {
-			newMessage.ContactMessage.ContextInfo = source.GetContextInfo(*msg)
-		}
-	} else if msg.Type == whatsapp.LocationMessageType && msg.HasAttachment() {
-		// Check if this is a location message
-		attach := msg.Attachment
-		newMessage = &waE2E.Message{
-			LocationMessage: &waE2E.LocationMessage{
-				DegreesLatitude:  proto.Float64(attach.Latitude),
-				DegreesLongitude: proto.Float64(attach.Longitude),
-			},
-		}
-		// Add optional fields if available
-		if len(messageText) > 0 {
-			newMessage.LocationMessage.Name = proto.String(messageText)
-		}
-		// Add context info for replies if needed
-		if len(msg.InReply) > 0 {
-			newMessage.LocationMessage.ContextInfo = source.GetContextInfo(*msg)
-		}
-	} else if !msg.HasAttachment() {
-		// Text messages, buttons, polls
+	if !msg.HasAttachment() {
 		if IsValidForButtons(messageText) {
 			internal := GenerateButtonsMessage(messageText)
 			internal.ContextInfo = source.GetContextInfo(*msg)
@@ -415,7 +348,6 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			}
 		}
 	} else {
-		// Other attachment types (images, videos, documents, etc.)
 		newMessage, err = source.UploadAttachment(*msg)
 		if err != nil {
 			return msg, err
@@ -452,7 +384,7 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	}
 
 	// testing, mark read function
-	if source.GetHandlers().HandleReadUpdate() {
+	if source.GetHandlers().ReadUpdate {
 		go source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
 	}
 
@@ -507,178 +439,7 @@ func (conn *WhatsmeowConnection) Disconnect() (err error) {
 
 //region PAIRING
 
-// dispatchPairRequestEvent dispatches a system event when pairing is requested
-func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
-		return
-	}
-
-	logger := conn.GetLogger()
-	logger.Debug("dispatching pair_request event")
-
-	// Create pairing request event message with JSON details
-	eventData := map[string]interface{}{
-		"event":       "pair_request",
-		"status":      "requested",
-		"message":     "Pairing code requested",
-		"phone":       phone,
-		"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		"description": "User requested pairing code generation for phone number",
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        conn.Client.GenerateMessageID(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      library.ToJson(eventData),
-		Info:      eventData,
-	}
-
-	// Send through dispatcher
-	go handlers.WAHandlers.Message(message, "pair_request")
-}
-
-// dispatchPairTimeoutEvent dispatches a system event when pairing expires/fails
-func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg string) {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
-		return
-	}
-
-	logger := conn.GetLogger()
-	logger.Debug("dispatching pair_timeout event")
-
-	// Determine if it's a timeout or other error
-	status := "error"
-	message := "Pairing code failed"
-	description := "Pairing process failed with error"
-
-	if strings.Contains(strings.ToLower(errorMsg), "timeout") || strings.Contains(strings.ToLower(errorMsg), "expired") {
-		status = "expired"
-		message = "Pairing code expired without being used"
-		description = "Pairing code was not used within the allowed time period and has expired"
-	}
-
-	// Create pairing timeout event message with JSON details
-	eventData := map[string]interface{}{
-		"event":       "pair_timeout",
-		"status":      status,
-		"message":     message,
-		"phone":       phone,
-		"error":       errorMsg,
-		"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		"description": description,
-	}
-
-	systemMessage := &whatsapp.WhatsappMessage{
-		Id:        conn.Client.GenerateMessageID(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      library.ToJson(eventData),
-		Info:      eventData,
-	}
-
-	// Send through dispatcher
-	go handlers.WAHandlers.Message(systemMessage, "pair_timeout")
-}
-
-// dispatchQRRequestEvent dispatches a system event when QR code is requested
-func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
-		return
-	}
-
-	logger := conn.GetLogger()
-	logger.Debug("dispatching qr_request event")
-
-	// Get phone number from connection
-	phone := ""
-	if conn.Client != nil && conn.Client.Store != nil {
-		jid := conn.Client.Store.ID
-		if jid != nil {
-			phone = jid.User
-		}
-	}
-
-	// Create QR request event message with JSON details
-	eventData := map[string]interface{}{
-		"event":       "qr_request",
-		"status":      "requested",
-		"message":     "QR code scan requested",
-		"phone":       phone,
-		"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		"description": "User requested QR code generation for WhatsApp pairing",
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        conn.Client.GenerateMessageID(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      library.ToJson(eventData),
-		Info:      eventData,
-	}
-
-	// Send through dispatcher
-	go handlers.WAHandlers.Message(message, "qr_request")
-}
-
-// dispatchQRTimeoutEvent dispatches a system event when QR code expires/times out
-func (conn *WhatsmeowConnection) dispatchQRTimeoutEvent() {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
-		return
-	}
-
-	logger := conn.GetLogger()
-	logger.Debug("dispatching qr_timeout event")
-
-	// Get phone number from connection
-	phone := ""
-	if conn.Client != nil && conn.Client.Store != nil {
-		jid := conn.Client.Store.ID
-		if jid != nil {
-			phone = jid.User
-		}
-	}
-
-	// Create QR timeout event message with JSON details
-	eventData := map[string]interface{}{
-		"event":       "qr_timeout",
-		"status":      "expired",
-		"message":     "QR code expired without being scanned",
-		"phone":       phone,
-		"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		"description": "QR code was not scanned within the allowed time period and has expired",
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        conn.Client.GenerateMessageID(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      library.ToJson(eventData),
-		Info:      eventData,
-	}
-
-	// Send through dispatcher
-	go handlers.WAHandlers.Message(message, "qr_timeout")
-}
-
 func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
-	logger := source.GetLogger()
-	logger.Infof("Pairing requested for phone: %s", phone)
-
-	// Dispatch pair_request event before starting pairing process
-	source.dispatchPairRequestEvent(phone)
 
 	if !source.Client.IsConnected() {
 		err := source.Client.Connect()
@@ -688,26 +449,12 @@ func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
 		}
 	}
 
-	code, err := source.Client.PairPhone(context.TODO(), phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
-
-	// Check if pairing failed due to timeout or error
-	if err != nil {
-		// Dispatch pair timeout/error event
-		source.dispatchPairTimeoutEvent(phone, err.Error())
-	}
-
-	return code, err
+	return source.Client.PairPhone(context.TODO(), phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 }
 
 func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 
 	var result string
-
-	logger := conn.GetLogger()
-	logger.Info("QR code requested")
-
-	// Dispatch qr_request event before starting QR process
-	conn.dispatchQRRequestEvent()
 
 	// No ID stored, new login
 	qrChan, err := conn.Client.GetQRChannel(context.Background())
@@ -724,16 +471,21 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 		}
 	}
 
-	evt, ok := <-qrChan
-	if ok {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	for evt := range qrChan {
 		if evt.Event == "code" {
 			result = evt.Code
-		} else if evt.Event == "timeout" {
-			// QR code timed out - dispatch event
-			logger.Warn("QR code timed out")
-			conn.dispatchQRTimeoutEvent()
 		}
+
+		wg.Done()
+
+		// ending after the first the loop
+		break
 	}
+
+	wg.Wait()
 	return result
 }
 
@@ -782,8 +534,6 @@ func (source *WhatsmeowConnection) GetWhatsAppQRChannel(ctx context.Context, out
 			}
 		} else {
 			if evt.Event == "timeout" {
-				// Dispatch timeout event before returning error
-				source.dispatchQRTimeoutEvent()
 				return errors.New("timeout")
 			}
 			wg.Done()
@@ -825,9 +575,7 @@ func (source *WhatsmeowConnection) HistorySync(timestamp time.Time) (err error) 
 }
 
 func (conn *WhatsmeowConnection) UpdateHandler(handlers whatsapp.IWhatsappHandlers) {
-	if conn.Handlers != nil {
-		conn.Handlers.WAHandlers = handlers
-	}
+	conn.GetHandlers().WAHandlers = handlers
 }
 
 func (conn *WhatsmeowConnection) UpdatePairedCallBack(callback func(string)) {
@@ -869,120 +617,6 @@ func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool
 	return true
 }
 
-// getMessageForRetry retrieves a sent message from QuePasa's cache for retry handling
-// This is called by whatsmeow when a recipient fails to decrypt a message and requests a retry
-// The message is looked up by ID in the cache and the original waE2E.Message content is returned
-func (source *WhatsmeowConnection) getMessageForRetry(requester, to types.JID, id types.MessageID) *waE2E.Message {
-	logentry := source.GetLogger()
-
-	handlers := source.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
-		logentry.Warnf("GetMessageForRetry: no handlers available for message %s", id)
-		return nil
-	}
-
-	// Try to get message from QuePasa's cache
-	cached, err := handlers.WAHandlers.GetById(string(id))
-	if err != nil || cached == nil {
-		logentry.Debugf("GetMessageForRetry: message %s not found in cache: %v", id, err)
-		return nil
-	}
-
-	// Check if the cached message has the original waE2E.Message content
-	if cached.Content == nil {
-		logentry.Warnf("GetMessageForRetry: message %s found but has no content", id)
-		return nil
-	}
-
-	// Try to cast Content to *waE2E.Message
-	waMsg, ok := cached.Content.(*waE2E.Message)
-	if !ok {
-		logentry.Warnf("GetMessageForRetry: message %s content is not *waE2E.Message (type: %T)", id, cached.Content)
-		return nil
-	}
-
-	logentry.Infof("GetMessageForRetry: found message %s in cache for retry to %s (requester: %s)", id, to, requester)
-	return waMsg
-}
-
-// generateVCardForContact creates a vCard string with WhatsApp status detection
-// Returns different vCard formats based on whether contact is:
-// - Business WhatsApp account (has businessName)
-// - Regular WhatsApp account (has devices but no businessName)
-// - Not on WhatsApp (empty userinfos)
-func (source *WhatsmeowConnection) generateVCardForContact(contact *whatsapp.WhatsappContact) string {
-	// Extract phone number without formatting for waid parameter
-	phoneWaid := strings.ReplaceAll(contact.Phone, " ", "")
-	phoneWaid = strings.ReplaceAll(phoneWaid, "-", "")
-	phoneWaid = strings.ReplaceAll(phoneWaid, "(", "")
-	phoneWaid = strings.ReplaceAll(phoneWaid, ")", "")
-	phoneWaid = strings.TrimPrefix(phoneWaid, "+")
-
-	// Format phone to JID for lookup
-	jid := phoneWaid + "@s.whatsapp.net"
-	jids := []types.JID{}
-	parsedJid, err := types.ParseJID(jid)
-	if err == nil {
-		jids = append(jids, parsedJid)
-	}
-
-	// Try to get user info to detect WhatsApp status
-	var isBusiness bool
-	var isOnWhatsApp bool
-	var businessName string
-
-	if len(jids) > 0 && source.Client != nil {
-		userInfos, err := source.Client.GetUserInfo(context.Background(), jids)
-		if err == nil && len(userInfos) > 0 {
-			userInfo := userInfos[parsedJid]
-
-			// Log detailed user info for debugging
-			source.GetLogger().Debugf("Contact %s - UserInfo details: Devices=%d, Status='%s', VerifiedName=%v",
-				contact.Phone, len(userInfo.Devices), userInfo.Status, userInfo.VerifiedName != nil)
-
-			// Check if has devices
-			// Empty device list means NOT on WhatsApp
-			if len(userInfo.Devices) > 0 {
-				isOnWhatsApp = true
-				source.GetLogger().Debugf("Contact %s IS on WhatsApp (has %d devices)", contact.Phone, len(userInfo.Devices))
-			} else {
-				source.GetLogger().Debugf("Contact %s is NOT on WhatsApp (no devices)", contact.Phone)
-			}
-
-			// Check if this is a business account by looking at contact store
-			if isOnWhatsApp && source.Client.Store != nil {
-				contactInfo, contactErr := source.Client.Store.Contacts.GetContact(context.Background(), parsedJid)
-				if contactErr == nil && contactInfo.BusinessName != "" {
-					isBusiness = true
-					businessName = contactInfo.BusinessName
-					source.GetLogger().Debugf("Contact %s is a Business account: %s", contact.Phone, businessName)
-				}
-			}
-		} else {
-			source.GetLogger().Debugf("Contact %s - GetUserInfo failed or empty result (error: %v, results: %d)", contact.Phone, err, len(userInfos))
-		}
-	}
-
-	// Generate appropriate vCard based on WhatsApp status
-	if isBusiness {
-		// Business WhatsApp: include waid, X-ABLabel:WhatsApp Business, X-WA-BIZ-NAME, X-WA-BIZ-DESCRIPTION
-		bizDescription := businessName
-		if bizDescription == "" {
-			bizDescription = contact.Name
-		}
-		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL;waid=%s:%s\nitem1.X-ABLabel:WhatsApp Business\nX-WA-BIZ-NAME:%s\nX-WA-BIZ-DESCRIPTION:%s\nEND:VCARD",
-			contact.Name, contact.Name, phoneWaid, contact.Phone, businessName, bizDescription)
-	} else if isOnWhatsApp {
-		// Regular WhatsApp: include waid, X-ABLabel:Celular (no X-WA-BIZ-* fields)
-		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL;waid=%s:%s\nitem1.X-ABLabel:Celular\nEND:VCARD",
-			contact.Name, contact.Name, phoneWaid, contact.Phone)
-	} else {
-		// Not on WhatsApp: no waid, X-ABLabel:Celular
-		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL:%s\nitem1.X-ABLabel:Celular\nEND:VCARD",
-			contact.Name, contact.Name, contact.Phone)
-	}
-}
-
 //endregion
 
 /*
@@ -999,11 +633,6 @@ func (source *WhatsmeowConnection) Dispose(reason string) {
 
 	logentry := source.GetLogger()
 	logentry.Infof("disposing connection: %s", reason)
-
-	if source.WakeUpScheduler != nil {
-		source.WakeUpScheduler.Dispose()
-		source.WakeUpScheduler = nil
-	}
 
 	if source.Handlers != nil {
 		go source.Handlers.UnRegister("dispose")
@@ -1079,50 +708,47 @@ func (conn *WhatsmeowConnection) GetStatusManager() whatsapp.WhatsappStatusManag
 }
 
 // GetContactManager returns the contact manager instance with lazy initialization
-// If connection is active, returns the standard WhatsmeowContactManager
-// If connection is nil/stopped, tries to return a store-only contact manager for cached data access
 func (conn *WhatsmeowConnection) GetContactManager() whatsapp.WhatsappContactManagerInterface {
-	// Try to return existing contact manager first
-	if conn.ContactManager == nil && conn.Client != nil {
+	if conn.ContactManager == nil {
 		conn.ContactManager = NewWhatsmeowContactManager(conn)
 	}
-
-	// If we have an active contact manager, return it
-	if conn.ContactManager != nil {
-		return conn.ContactManager
-	}
-
-	// Connection not available - try to create store-only contact manager as fallback
-	// Extract wid from connection if available
-	var wid string
-	if conn.Client != nil && conn.Client.Store != nil && conn.Client.Store.ID != nil {
-		wid = conn.Client.Store.ID.String()
-	}
-
-	// Try to create store-only manager
-	if len(wid) > 0 {
-		storeManager, err := NewStoreContactManagerFromWid(wid)
-		if err == nil {
-			return storeManager
-		}
-	}
-
-	// If everything fails, return nil (caller will handle)
-	return nil
+	return conn.ContactManager
 }
 
 // GetResume returns detailed connection status information
 // This method delegates to the StatusManager for comprehensive status snapshot
 func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus {
-	return conn.GetStatusManager().GetResume()
+	statusManager := conn.GetStatusManager()
+	if statusManager == nil {
+		return nil
+	}
+	return statusManager.GetResume()
 }
 
-// Call managers are omitted in this build per team decision.
+// GetCallManager returns the CallManager instance with lazy initialization (singleton)
+func (conn *WhatsmeowConnection) GetCallManager() *WhatsmeowCallManager {
+	if conn.CallManager == nil {
+		conn.CallManager = NewWhatsmeowCallManager(conn)
+	}
+	return conn.CallManager
+}
 
-// GetHandlers returns the handlers instance
-// Handlers are always created during connection creation via CreateConnection()
+// GetHandlers returns the handlers instance with lazy initialization
 func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
+	if conn.Handlers == nil {
+		conn.initializeHandlers(nil, WhatsmeowOptions{})
+	}
 	return conn.Handlers
+}
+
+// initializeHandlers creates and configures the handlers with proper options
+func (conn *WhatsmeowConnection) initializeHandlers(whatsappOptions *whatsapp.WhatsappOptions, whatsmeowOptions WhatsmeowOptions) error {
+	if conn.Handlers != nil {
+		return nil // already initialized
+	}
+
+	conn.Handlers = NewWhatsmeowHandlers(conn, whatsmeowOptions, whatsappOptions)
+	return conn.Handlers.Register()
 }
 
 // SendChatPresence updates typing status in a chat
@@ -1152,66 +778,5 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 		state = types.ChatPresencePaused
 		media = types.ChatPresenceMediaText
 	}
-	return conn.Client.SendChatPresence(context.Background(), jid, state, media)
+	return conn.Client.SendChatPresence(jid, state, media)
 }
-
-// sendAppState sends app state patch to WhatsApp (no retry, returns error as-is)
-func sendAppState(conn *WhatsmeowConnection, patch appstate.PatchInfo) error {
-	ctx := context.Background()
-	return conn.Client.SendAppState(ctx, patch)
-}
-
-// MarkChatAsRead marks a chat as read using app state protocol
-func MarkChatAsRead(conn *WhatsmeowConnection, chatId string) error {
-	if conn.Client == nil {
-		return fmt.Errorf("client not defined")
-	}
-
-	jid, err := types.ParseJID(chatId)
-	if err != nil {
-		return fmt.Errorf("invalid chat id format: %v", err)
-	}
-
-	patch := appstate.BuildMarkChatAsRead(jid, true, time.Time{}, nil)
-	return sendAppState(conn, patch)
-}
-
-// MarkChatAsUnread marks a chat as unread using app state protocol
-func MarkChatAsUnread(conn *WhatsmeowConnection, chatId string) error {
-	if conn.Client == nil {
-		return fmt.Errorf("client not defined")
-	}
-
-	jid, err := types.ParseJID(chatId)
-	if err != nil {
-		return fmt.Errorf("invalid chat id format: %v", err)
-	}
-
-	patch := appstate.BuildMarkChatAsRead(jid, false, time.Time{}, nil)
-	return sendAppState(conn, patch)
-}
-
-// ArchiveChat archives or unarchives a chat using app state protocol
-func ArchiveChat(conn *WhatsmeowConnection, chatId string, archive bool) error {
-	if conn.Client == nil {
-		return fmt.Errorf("client not defined")
-	}
-
-	jid, err := types.ParseJID(chatId)
-	if err != nil {
-		return fmt.Errorf("invalid chat id format: %v", err)
-	}
-
-	patch := appstate.BuildArchive(jid, archive, time.Time{}, nil)
-	return sendAppState(conn, patch)
-}
-
-//#region HANDLER MANAGEMENT
-
-// initializeHandlers creates and configures handlers with proper options
-func (conn *WhatsmeowConnection) initializeHandlers(waOptions *whatsapp.WhatsappOptions, wmOptions WhatsmeowOptions) error {
-	conn.Handlers = NewWhatsmeowHandlers(conn, wmOptions, waOptions)
-	return conn.Handlers.Register()
-}
-
-//#endregion

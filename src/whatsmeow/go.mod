@@ -6,75 +6,47 @@ replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
 
 replace github.com/nocodeleaks/quepasa/library => ../library
 
-replace github.com/nocodeleaks/quepasa/metrics => ../metrics
-
-replace github.com/nocodeleaks/quepasa/api => ../api
-
-replace github.com/nocodeleaks/quepasa/environment => ../environment
-
-replace github.com/nocodeleaks/quepasa/form => ../form
-
-replace github.com/nocodeleaks/quepasa/media => ../media
-
-replace github.com/nocodeleaks/quepasa/models => ../models
-
-replace github.com/nocodeleaks/quepasa/rabbitmq => ../rabbitmq
-
-replace github.com/nocodeleaks/quepasa/signalr => ../signalr
-
 replace github.com/nocodeleaks/quepasa/sipproxy => ../sipproxy
 
-replace github.com/nocodeleaks/quepasa/swagger => ../swagger
-
-replace github.com/nocodeleaks/quepasa/webserver => ../webserver
-
-go 1.24.0
-
-toolchain go1.24.2
+go 1.23.2
 
 require (
-	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/emiago/sipgo v0.33.0
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
+	github.com/pion/stun v0.6.1
 )
 
 require (
-	github.com/beeper/argo-go v1.1.2 // indirect
-	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
-	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
-	github.com/go-chi/chi/v5 v5.2.3 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000 // indirect
-	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
-	github.com/prometheus/client_golang v1.16.0 // indirect
-	github.com/prometheus/client_model v0.4.0 // indirect
-	github.com/prometheus/common v0.44.0 // indirect
-	github.com/prometheus/procfs v0.11.1 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.2 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.3.2 // indirect
+	github.com/icholy/digest v1.1.0 // indirect
+	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
+	github.com/pion/dtls/v2 v2.2.7 // indirect
+	github.com/pion/logging v0.2.2 // indirect
+	github.com/pion/transport/v2 v2.2.1 // indirect
+	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
+	golang.org/x/text v0.27.0 // indirect
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosimple/slug v1.13.1
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sirupsen/logrus v1.9.3
-	go.mau.fi/libsignal v0.2.1 // indirect
-	go.mau.fi/util v0.9.5
-	go.mau.fi/whatsmeow v0.0.0-20260211193157-7b33f6289f98
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	google.golang.org/protobuf v1.36.11
+	go.mau.fi/libsignal v0.2.0 // indirect
+	go.mau.fi/util v0.8.8
+	go.mau.fi/whatsmeow v0.0.0-20250807072145-72ce90b82194
+	golang.org/x/crypto v0.40.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	google.golang.org/protobuf v1.36.6
 )

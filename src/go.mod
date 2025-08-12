@@ -20,6 +20,10 @@ replace github.com/nocodeleaks/quepasa/webserver => ./webserver
 
 replace github.com/nocodeleaks/quepasa/form => ./form
 
+replace github.com/nocodeleaks/quepasa/sipproxy => ./sipproxy
+
+replace github.com/nocodeleaks/quepasa/environment => ./environment
+
 go 1.23.2
 
 require (
@@ -71,6 +75,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/audio v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect

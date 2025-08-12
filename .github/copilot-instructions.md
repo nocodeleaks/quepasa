@@ -8,9 +8,22 @@
 * for #region tags: no blank lines between consecutive regions, but always add one blank line after region opening and one blank line before region closing
 * do not try to build if you just changed the code comments or documentation files;
 * **when making relevant code changes, always create or update internal documentation following the Internal Documentation Guidelines**;
-* sempre que for criar um método de extensão, utilize 'source' como nome de parametro para o objeto extendido;
-* para os nomes das classes, estruturas, ex: whatsmeow_group_manager.go => WhatsmeowGroupManager;
-* todos os testes devem ser colocados em /tests/*
+* whenever creating an extension method, use 'source' as parameter name for the extended object;
+* for class and structure names, e.g.: whatsmeow_group_manager.go => WhatsmeowGroupManager;
+
+## Testing Guidelines
+* **Follow official Go testing conventions** - use `*_test.go` files within the same package
+* Test files should be named with `_test.go` suffix (e.g., `environment_test.go`)
+* Test functions must start with `Test` prefix (e.g., `TestEnvironmentSettings`)
+* Execute tests from project root where environment variables are available: `go test -v ./packagename`
+* Use VS Code's integrated testing via F5 (Debug) to load `.env` files automatically
+* For environment package: all 45 variables across 8 categories must be testable
+
+## Build and Environment Guidelines
+* `.env` file should be in project root for VS Code integration
+* Environment file versioning uses `YYYYMMDDHHMMSS` timestamp format (no dots)
+
+## Identifier Conventions
 * JId: Whatsapp Jabber Identifier ("go.mau.fi/whatsmeow/types".JID)
 * WId: Whatsapp String Identifier (string)
 * LId: Whatsapp Local Identifier (new default Identifier, used to hide the phone number)

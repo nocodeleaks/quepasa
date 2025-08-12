@@ -99,6 +99,91 @@ SIPPROXY_TIMEOUT=30
 SIPPROXY_RETRIES=3
 ```
 
+## 🧪 Testing Instructions
+
+### Official Go Testing Convention
+
+This package follows **official Go testing conventions**. We **NO longer use** separate `tests/` folders.
+
+#### ✅ Correct Approach (Go Standard)
+```bash
+# Run tests from project root where environment variables are available
+cd /path/to/quepasa/src
+go test -v github.com/nocodeleaks/quepasa/environment
+
+# Or run tests from environment directory
+cd environment
+go test -v
+```
+
+#### 📁 Test File Naming Convention
+- **`*_test.go`** - Standard Go test files
+- **`TestFunctionName`** - Test function names must start with `Test`
+- **Example:** `environment_test.go`, `sipproxy_test.go`
+
+#### 🔧 VS Code Integration
+The environment package automatically loads `.env` files when running via:
+- **F5 Debug** - Uses `launch.json` configuration with `envFile: "${workspaceFolder}/.env"`
+- **Build Tasks** - Automatically copies `.env` to `.dist/` folder
+
+#### 🚀 Build Tasks Available
+1. **`Build and run`** - Standard Go build (default task)
+2. **`Build and copy env`** - Build + automatically copy `.env` to `.dist/`
+3. **`Copy env to dist`** - Just copy `.env` to distribution folder
+
+#### 📅 Environment File Versioning
+The `.env` file includes automatic versioning headers:
+```env
+# ================================================================
+# QUEPASA ENVIRONMENT CONFIGURATION
+# ================================================================
+# Version: 20250812143000 (YYYYMMDDHHMMSS)
+# Last Updated: 12 de Agosto de 2025 - 14:30:00
+# Build Target: Development/Production Environment
+# Source: Merged from main branch to calls branch
+# Environment Package: 45 variables across 8 categories
+# ================================================================
+```
+
+#### 📁 File Structure
+```
+project/
+├── .env                    # ← Root .env (VS Code loads this)
+├── .dist/
+│   ├── .env               # ← Copied during build
+│   └── quepasa.exe        # ← Compiled executable
+└── environment/
+    ├── environment.go     # ← Main environment package
+    ├── *_test.go         # ← Test files (Go standard)
+    └── README.md         # ← This documentation
+```
+
+#### 📝 Test Categories Available
+1. **`TestEnvironmentPackageStructure`** - Verifies all environment files exist
+2. **`TestEnvironmentVariablesDefault`** - Tests default values
+3. **`TestEnvironmentVariablesFromSystem`** - Tests real environment loading
+4. **`TestSIPProxyActivationLogic`** - Tests SIP proxy HOST-based activation
+5. **`TestEnvironmentSettingsSingleton`** - Tests Settings initialization
+6. **`TestEnvironmentVariablesCoverage`** - Tests all 45 environment variables
+
+#### 🎯 Running Specific Tests
+```bash
+# Run specific test
+go test -v -run TestSIPProxyActivationLogic
+
+# Run with timeout
+go test -v -timeout=30s
+
+# Run tests and show coverage
+go test -v -cover
+```
+
+#### ⚠️ Important Notes
+- Environment variables are loaded from VS Code's `.env` injection when debugging
+- When running via `go test` in terminal, default values are used
+- SIP Proxy activation depends on `SIPPROXY_HOST` being set
+- All 45 environment variables are tested for accessibility
+
 ## 💡 Usage Examples
 
 ```go

@@ -346,6 +346,10 @@ func (*Environment) LogLevel() string {
 // as this indicates a critical configuration error that must be addressed.
 func (*Environment) LogLevelFromLogrus(defaultLevel logrus.Level) logrus.Level {
 	envLevelStr := ENV.LogLevel()
+	if len(envLevelStr) == 0 {
+		return defaultLevel
+	}
+
 	logrusLevel, err := logrus.ParseLevel(envLevelStr)
 	if err != nil {
 		panic(fmt.Sprintf("Invalid log level '%s' specified in environment variable %s: %v. Please correct this critical configuration.", envLevelStr, ENV_LOGLEVEL, err))

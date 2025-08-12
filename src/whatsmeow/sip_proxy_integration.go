@@ -130,16 +130,41 @@ func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 
 // onCallAccepted é chamado quando uma chamada SIP é aceita
 func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string, response *sip.Response) {
-	si.logger.Infof("🎉 CALL ACCEPTED EVENT - Ready to start WhatsApp ↔ SIP communication!")
+	si.logger.Infof("🎉 CALL ACCEPTED EVENT - SIP server authorized call!")
 	si.logger.Infof("📞 CallID: %s", callID)
 	si.logger.Infof("📞 From: %s", fromPhone)
 	si.logger.Infof("📞 To: %s", toPhone)
 	si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
 
-	// TODO: Aqui implementaremos a comunicação bidirecional WhatsApp ↔ SIP
-	// - Aceitar a chamada no WhatsApp
-	// - Estabelecer ponte de áudio
-	// - Gerenciar estado da chamada
+	// 🟢 AUTOMATICALLY ACCEPT THE CALL IN WHATSAPP TOO
+	si.logger.Infof("✅ SIP authorized call, automatically accepting in WhatsApp...")
+
+	// Aqui precisamos acessar o WhatsApp connection para aceitar a chamada
+	// O fromPhone é quem está ligando, então vamos aceitar a chamada vinda dele
+	if si.connection != nil {
+		// Converter número de telefone para JID WhatsApp
+		fromJID, err := types.ParseJID(fromPhone + "@s.whatsapp.net")
+		if err != nil {
+			si.logger.Errorf("❌ Failed to parse fromPhone JID: %v", err)
+			return
+		}
+
+		// Usar o CallManager para aceitar a chamada no WhatsApp
+		if callManager := si.connection.GetCallManager(); callManager != nil {
+			err := callManager.AcceptCall(fromJID, callID)
+			if err != nil {
+				si.logger.Errorf("❌ Failed to accept WhatsApp call: %v", err)
+			} else {
+				si.logger.Infof("✅ Successfully accepted WhatsApp call from %s (CallID: %s)", fromPhone, callID)
+				si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
+				si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
+			}
+		} else {
+			si.logger.Errorf("❌ CallManager not available for accepting WhatsApp call")
+		}
+	} else {
+		si.logger.Errorf("❌ WhatsApp connection not available for accepting call")
+	}
 }
 
 // onCallRejected é chamado quando uma chamada SIP é rejeitada

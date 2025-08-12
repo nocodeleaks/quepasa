@@ -40,6 +40,7 @@ import (
 	"time"
 
 	"github.com/emiago/sipgo"
+	"github.com/emiago/sipgo/sip"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -283,7 +284,7 @@ Content-Length: %d
 	if err != nil {
 		return fmt.Errorf("failed to create UDP connection: %v", err)
 	}
-	defer tempConn.Close()
+	// Do NOT defer close here - connection needs to stay open for continuous monitoring
 
 	// Get the actual local NAT port being used
 	localAddr := tempConn.LocalAddr().(*net.UDPAddr)
@@ -318,6 +319,7 @@ Content-Length: %d
 	// Send the SIP message
 	bytesWritten, err := tempConn.Write([]byte(sipMessage))
 	if err != nil {
+		tempConn.Close() // Close only on error
 		return fmt.Errorf("failed to send SIP INVITE: %v", err)
 	}
 
@@ -328,15 +330,15 @@ Content-Length: %d
 	m.logger.Infof("   🔗 Actual local address: %s", tempConn.LocalAddr())
 	m.logger.Infof("   🌐 Via header uses: %s:%d (with rport for NAT)", localAddr.IP, actualLocalPort)
 
-	// Set a deadline for reading response
+	// Set a deadline for reading initial response only
 	tempConn.SetReadDeadline(time.Now().Add(5 * time.Second))
 
-	// Try to read response
+	// Try to read initial response (100 Trying or immediate final response)
 	buffer := make([]byte, 4096)
 	n, err := tempConn.Read(buffer)
 	if err != nil {
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-			m.logger.Warnf("⏰ No response received within 5 seconds")
+			m.logger.Warnf("⏰ No initial response received within 5 seconds")
 			m.logger.Infof("🔍 NAT Debug info:")
 			m.logger.Infof("   📡 Sent to: %s", serverAddr)
 			m.logger.Infof("   👂 Listening on: %s", tempConn.LocalAddr())
@@ -344,7 +346,7 @@ Content-Length: %d
 			m.logger.Infof("   💡 Server should respond to the rport address")
 			m.logger.Infof("   📋 Public port configured: %d", localPort)
 		} else {
-			m.logger.Warnf("⚠️ Error reading response: %v", err)
+			m.logger.Warnf("⚠️ Error reading initial response: %v", err)
 		}
 	} else {
 		response := string(buffer[:n])
@@ -356,7 +358,34 @@ Content-Length: %d
 			}
 		}
 		m.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	} // Monitor the transaction
+
+		// Parse the response to check if it's a final response
+		if strings.Contains(response, "SIP/2.0") {
+			lines := strings.Split(response, "\n")
+			if len(lines) > 0 {
+				statusLine := strings.TrimSpace(lines[0])
+				if strings.HasPrefix(statusLine, "SIP/2.0 ") {
+					parts := strings.Fields(statusLine)
+					if len(parts) >= 3 {
+						statusCode := parts[1]
+						m.logger.Infof("🔍 Received SIP response: %s", statusCode)
+
+						// If it's not 100 Trying, it might be a final response
+						if statusCode != "100" {
+							m.logger.Infof("📞 Final response received immediately: %s", statusCode)
+							// Process this response through transaction monitor
+							m.processImmediateResponse(statusCode, callID, fromPhone, toPhone, response)
+							// Still start continuous monitoring for potential additional responses
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 🔥 NOW START CONTINUOUS MONITORING FOR ADDITIONAL RESPONSES
+	m.logger.Infof("🔍 Starting continuous SIP response monitoring for CallID: %s", callID)
+	go m.startContinuousResponseMonitoring(tempConn, callID, fromPhone, toPhone, serverAddr) // Monitor the transaction
 	m.transactionMonitor.MonitorTransaction(fromPhone, toPhone, callID, "INVITE")
 
 	m.logger.Infof("✅ SIP INVITE prepared and monitored successfully (CallID: %s)", callID)
@@ -442,4 +471,199 @@ func (m *SIPProxyManager) GetActiveCalls() map[string]*SIPProxyCallData {
 	}
 
 	return activeCalls
+}
+
+// processImmediateResponse processes immediate SIP responses
+func (m *SIPProxyManager) processImmediateResponse(statusCode, callID, fromPhone, toPhone, response string) {
+	m.logger.Infof("🔍 Processing immediate SIP response: %s for CallID: %s", statusCode, callID)
+
+	// Parse status code to integer for proper handling
+	switch statusCode {
+	case "200":
+		m.logger.Infof("✅ Call %s immediately ACCEPTED (200 OK)", callID)
+		if m.transactionMonitor.callAcceptedHandler != nil {
+			// Create a mock response object for the callback
+			mockResponse := &sip.Response{
+				StatusCode: 200,
+				Reason:     "OK",
+			}
+			m.logger.Infof("🎉 Calling onCallAccepted handler for immediate 200 OK")
+			m.transactionMonitor.callAcceptedHandler(callID, fromPhone, toPhone, mockResponse)
+		}
+	case "603":
+		m.logger.Infof("❌ Call %s immediately REJECTED (603 Decline)", callID)
+		if m.transactionMonitor.callRejectedHandler != nil {
+			// Create a mock response object for the callback
+			mockResponse := &sip.Response{
+				StatusCode: 603,
+				Reason:     "Decline",
+			}
+			m.logger.Infof("💔 Calling onCallRejected handler for immediate 603")
+			m.transactionMonitor.callRejectedHandler(callID, fromPhone, toPhone, mockResponse)
+		}
+	default:
+		if statusCode[0] >= '4' { // 4xx, 5xx, 6xx
+			m.logger.Infof("❌ Call %s immediately REJECTED (%s)", callID, statusCode)
+			if m.transactionMonitor.callRejectedHandler != nil {
+				// Create a mock response object for the callback
+				mockResponse := &sip.Response{
+					StatusCode: 400, // Default
+					Reason:     "Client Error",
+				}
+				// Parse actual status code if possible
+				if len(statusCode) >= 3 {
+					if statusCode == "404" {
+						mockResponse.StatusCode = 404
+						mockResponse.Reason = "Not Found"
+					} else if statusCode == "486" {
+						mockResponse.StatusCode = 486
+						mockResponse.Reason = "Busy Here"
+					} else if statusCode == "480" {
+						mockResponse.StatusCode = 480
+						mockResponse.Reason = "Temporarily Unavailable"
+					} else if statusCode[0] == '5' {
+						mockResponse.StatusCode = 500
+						mockResponse.Reason = "Server Error"
+					} else if statusCode[0] == '6' {
+						mockResponse.StatusCode = 600
+						mockResponse.Reason = "Global Failure"
+					}
+				}
+				m.logger.Infof("💔 Calling onCallRejected handler for %s", statusCode)
+				m.transactionMonitor.callRejectedHandler(callID, fromPhone, toPhone, mockResponse)
+			}
+		} else {
+			m.logger.Infof("📞 Call %s PROGRESS (%s)", callID, statusCode)
+		}
+	}
+} // startContinuousResponseMonitoring starts continuous monitoring for SIP responses
+func (m *SIPProxyManager) startContinuousResponseMonitoring(conn *net.UDPConn, callID, fromPhone, toPhone string, serverAddr *net.UDPAddr) {
+	// Note: Do NOT close the connection here since it needs to stay open for monitoring
+
+	m.logger.Infof("🔍 Starting continuous response monitoring for CallID: %s", callID)
+	m.logger.Infof("📡 Monitoring connection: %s → %s", conn.LocalAddr(), serverAddr)
+
+	// Set a longer timeout for continuous monitoring (60 seconds)
+	timeout := 60 * time.Second
+	conn.SetReadDeadline(time.Now().Add(timeout))
+
+	buffer := make([]byte, 4096)
+	responseCount := 0
+
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				m.logger.Infof("⏰ Response monitoring timeout after 60 seconds for CallID: %s (received %d responses)", callID, responseCount)
+				break
+			} else {
+				m.logger.Warnf("⚠️ Error reading response: %v", err)
+				break
+			}
+		}
+
+		responseCount++
+		response := string(buffer[:n])
+		m.logger.Infof("📨 SIP Response #%d received (%d bytes) for CallID: %s:", responseCount, n, callID)
+		m.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+		// Parse and log the response
+		for _, line := range strings.Split(response, "\n") {
+			if strings.TrimSpace(line) != "" {
+				m.logger.Infof("%s", line)
+			}
+		}
+		m.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+		// Parse the status code and handle the response
+		if strings.Contains(response, "SIP/2.0") {
+			lines := strings.Split(response, "\n")
+			if len(lines) > 0 {
+				statusLine := strings.TrimSpace(lines[0])
+				if strings.HasPrefix(statusLine, "SIP/2.0 ") {
+					parts := strings.Fields(statusLine)
+					if len(parts) >= 3 {
+						statusCode := parts[1]
+						m.logger.Infof("🎯 Processing SIP response: %s for CallID: %s", statusCode, callID)
+
+						// Handle different response types
+						switch statusCode {
+						case "100":
+							m.logger.Infof("📞 100 Trying received - call is being processed")
+							// Continue monitoring for final response
+						case "200":
+							m.logger.Infof("✅ 200 OK received - CALL ACCEPTED!")
+							if m.transactionMonitor.callAcceptedHandler != nil {
+								// Create a mock SIP response for the callback
+								mockResponse := &sip.Response{
+									StatusCode: 200,
+									Reason:     "OK",
+								}
+								m.transactionMonitor.callAcceptedHandler(callID, fromPhone, toPhone, mockResponse)
+							}
+							// Final response - stop monitoring and close connection
+							conn.Close()
+							return
+						case "603":
+							m.logger.Infof("❌ 603 Decline received - CALL REJECTED!")
+							if m.transactionMonitor.callRejectedHandler != nil {
+								// Create a mock SIP response for the callback
+								mockResponse := &sip.Response{
+									StatusCode: 603,
+									Reason:     "Decline",
+								}
+								m.transactionMonitor.callRejectedHandler(callID, fromPhone, toPhone, mockResponse)
+							}
+							// Final response - stop monitoring and close connection
+							conn.Close()
+							return
+						default:
+							if statusCode[0] >= '4' { // 4xx, 5xx, 6xx
+								m.logger.Infof("❌ %s received - CALL REJECTED!", statusCode)
+								if m.transactionMonitor.callRejectedHandler != nil {
+									// Create a mock SIP response for the callback
+									mockResponse := &sip.Response{
+										StatusCode: 400, // Use 400 as default for 4xx/5xx/6xx
+										Reason:     "Client Error",
+									}
+									// Parse actual status code if possible
+									if len(statusCode) >= 3 {
+										if statusCode == "404" {
+											mockResponse.StatusCode = 404
+											mockResponse.Reason = "Not Found"
+										} else if statusCode == "486" {
+											mockResponse.StatusCode = 486
+											mockResponse.Reason = "Busy Here"
+										} else if statusCode == "480" {
+											mockResponse.StatusCode = 480
+											mockResponse.Reason = "Temporarily Unavailable"
+										} else if statusCode[0] == '5' {
+											mockResponse.StatusCode = 500
+											mockResponse.Reason = "Server Error"
+										} else if statusCode[0] == '6' {
+											mockResponse.StatusCode = 600
+											mockResponse.Reason = "Global Failure"
+										}
+									}
+									m.transactionMonitor.callRejectedHandler(callID, fromPhone, toPhone, mockResponse)
+								}
+								// Final response - stop monitoring and close connection
+								conn.Close()
+								return
+							} else {
+								m.logger.Infof("📞 %s received - call progress", statusCode)
+								// Continue monitoring for final response
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Reset timeout for next response
+		conn.SetReadDeadline(time.Now().Add(timeout))
+	}
+
+	m.logger.Infof("🔚 Response monitoring completed for CallID: %s (total responses: %d)", callID, responseCount)
+	conn.Close()
 }

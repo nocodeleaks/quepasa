@@ -7,48 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// SIPProxyCallAnswerManager manages call answering operations
-type SIPProxyCallAnswerManager struct {
-	logger     *log.Entry
-	proxy      *SIPProxyManager
-	timeout    time.Duration
-	retryCount int
-}
-
-// NewSIPProxyCallAnswerManager creates a new call answer manager
-func NewSIPProxyCallAnswerManager(proxy *SIPProxyManager) *SIPProxyCallAnswerManager {
-	return &SIPProxyCallAnswerManager{
-		logger:     log.WithField("component", "call_answer"),
-		proxy:      proxy,
-		timeout:    30 * time.Second,
-		retryCount: 3,
-	}
-}
-
-// AnswerCall answers an incoming WhatsApp call
-func (cam *SIPProxyCallAnswerManager) AnswerCall(fromPhone, callID string) error {
-	cam.logger.Infof("📞 Answering call from %s (CallID: %s)", fromPhone, callID)
-
-	// Send INVITE to SIP proxy
-	if err := cam.proxy.SendSIPInvite(fromPhone, "destination", callID); err != nil {
-		cam.logger.Errorf("❌ Failed to send SIP INVITE: %v", err)
-		return err
-	}
-
-	cam.logger.Infof("✅ Call answered and forwarded to SIP proxy")
-	return nil
-}
-
-// SetTimeout sets the timeout for call operations
-func (cam *SIPProxyCallAnswerManager) SetTimeout(timeout time.Duration) {
-	cam.timeout = timeout
-}
-
-// SetRetryCount sets the number of retries for failed operations
-func (cam *SIPProxyCallAnswerManager) SetRetryCount(count int) {
-	cam.retryCount = count
-}
-
 // SIPProxyCallAcceptTestManager manages call acceptance testing
 type SIPProxyCallAcceptTestManager struct {
 	logger      *log.Entry
@@ -56,18 +14,6 @@ type SIPProxyCallAcceptTestManager struct {
 	testResults []SIPProxyCallTestResult
 	isRunning   bool
 	maxTests    int
-}
-
-// SIPProxyCallTestResult represents the result of a call test
-type SIPProxyCallTestResult struct {
-	TestID      string        `json:"test_id"`
-	CallID      string        `json:"call_id"`
-	StartTime   time.Time     `json:"start_time"`
-	EndTime     time.Time     `json:"end_time"`
-	Duration    time.Duration `json:"duration"`
-	Success     bool          `json:"success"`
-	ErrorMsg    string        `json:"error_msg,omitempty"`
-	SIPResponse string        `json:"sip_response,omitempty"`
 }
 
 // NewSIPProxyCallAcceptTestManager creates a new call acceptance test manager

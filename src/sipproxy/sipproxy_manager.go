@@ -109,12 +109,24 @@ func (m *SIPProxyManager) SendSIPInvite(callID, fromPhone, toPhone string) error
 func (m *SIPProxyManager) SetCallAcceptedHandler(handler SIPCallAcceptedCallback) {
 	m.logger.Info("📞 Configurando handler para chamadas aceitas")
 	m.transactionMonitor.SetCallbacks(handler, m.transactionMonitor.callRejectedHandler)
+
+	// NOVO: Configurar o callback também no sipgo call manager
+	if m.callManagerSipgo != nil {
+		m.callManagerSipgo.SetCallAcceptedHandler(handler)
+		m.logger.Info("✅ Handler de aceitação também configurado no sipgo call manager")
+	}
 }
 
 // SetCallRejectedHandler define o callback para chamadas rejeitadas
 func (m *SIPProxyManager) SetCallRejectedHandler(handler SIPCallRejectedCallback) {
 	m.logger.Info("❌ Configurando handler para chamadas rejeitadas")
 	m.transactionMonitor.SetCallbacks(m.transactionMonitor.callAcceptedHandler, handler)
+
+	// NOVO: Configurar o callback também no sipgo call manager
+	if m.callManagerSipgo != nil {
+		m.callManagerSipgo.SetCallRejectedHandler(handler)
+		m.logger.Info("❌ Handler de rejeição também configurado no sipgo call manager")
+	}
 }
 
 // Start inicializa e inicia o SIP proxy manager
@@ -255,12 +267,21 @@ func (m *SIPProxyManager) RemoveCall(callID string) {
 		m.logger.Infof("📞ℹ️ Chamada %s não encontrada no mapeamento ativo - pode ter sido removida anteriormente", callID)
 	}
 
+	// =========================================================================
+	// 🚫 DUPLICATE BYE PREVENTION: Don't send BYE automatically here
+	// =========================================================================
+	// The CancelCall() method already handles BYE sending and cleanup
+	// RemoveCall() should only remove from tracking, not send SIP messages
+
+	// COMMENTED OUT: Automatic CancelCall (causes duplicate BYEs)
 	// Cancel the call in call manager (now handles missing calls gracefully)
-	if err := m.callManagerSipgo.CancelCall(callID); err != nil {
-		m.logger.Errorf("Erro ao cancelar chamada %s: %v", callID, err)
-	} else {
-		m.logger.Infof("✅ Processo de cancelamento de chamada %s concluído", callID)
-	}
+	// if err := m.callManagerSipgo.CancelCall(callID); err != nil {
+	//	m.logger.Errorf("Erro ao cancelar chamada %s: %v", callID, err)
+	// } else {
+	//	m.logger.Infof("✅ Processo de cancelamento de chamada %s concluído", callID)
+	// }
+
+	m.logger.Infof("✅ Chamada %s removida do rastreamento (sem envio de BYE adicional)", callID)
 }
 
 // GetActiveCalls retorna todas as chamadas ativas (compatibilidade legada)

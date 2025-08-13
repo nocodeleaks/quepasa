@@ -2,11 +2,12 @@ package whatsmeow
 
 import (
 	"fmt"
+	"time"
 
 	sipproxy "github.com/nocodeleaks/quepasa/sipproxy"
 	log "github.com/sirupsen/logrus"
+	"go.mau.fi/whatsmeow/binary"
 	"go.mau.fi/whatsmeow/types"
-	"go.mau.fi/whatsmeow/types/events"
 )
 
 // WhatsmeowCallManager is a lightweight adapter for the sipproxy call management
@@ -42,7 +43,56 @@ func (cm *WhatsmeowCallManager) GetSIPProxy() *SIPProxyIntegration {
 
 // AcceptCall delegates to sipproxy call answer manager
 func (cm *WhatsmeowCallManager) AcceptCall(from types.JID, callID string) error {
-	cm.logger.Infof("📞 Delegating call acceptance to sipproxy for %s (CallID: %s)", from, callID)
+	cm.logger.Infof("📞 Attempting to accept WhatsApp call from %s (CallID: %s)", from, callID)
+
+	// First try to accept the call directly in WhatsApp using SendNode
+	if cm.connection != nil && cm.connection.Client != nil {
+		client := cm.connection.Client
+		ownID := client.Store.ID
+		if ownID != nil {
+			cm.logger.Infof("🔗 Sending WhatsApp call accept node...")
+
+			// Create accept node
+			acceptNode := binary.Node{
+				Tag: "call",
+				Attrs: binary.Attrs{
+					"from": ownID.ToNonAD(),
+					"to":   from,
+					"id":   client.GenerateMessageID(),
+				},
+				Content: []binary.Node{{
+					Tag: "accept",
+					Attrs: binary.Attrs{
+						"call-id":      callID,
+						"call-creator": from,
+					},
+				}},
+			}
+
+			cm.logger.Infof("📨 Sending accept node: %+v", acceptNode)
+			err := client.DangerousInternals().SendNode(acceptNode)
+			if err != nil {
+				cm.logger.Errorf("❌ Failed to send accept node: %v", err)
+			} else {
+				cm.logger.Infof("✅ Accept node sent successfully!")
+
+				// Give some time for WhatsApp to process the accept
+				time.Sleep(500 * time.Millisecond)
+
+				// Now delegate to SIP proxy call answer manager
+				cm.logger.Infof("📞 Delegating call acceptance to sipproxy for %s (CallID: %s)", from, callID)
+				return cm.delegateToSIPProxy(from, callID)
+			}
+		}
+	}
+
+	// Fallback to old method if direct accept fails
+	cm.logger.Warnf("⚠️ Direct WhatsApp accept failed, trying fallback method")
+	return cm.delegateToSIPProxy(from, callID)
+}
+
+// delegateToSIPProxy handles the SIP proxy delegation logic
+func (cm *WhatsmeowCallManager) delegateToSIPProxy(from types.JID, callID string) error {
 
 	// Check if SIP integration is ready
 	if cm.sipIntegration == nil {
@@ -96,36 +146,6 @@ func (cm *WhatsmeowCallManager) RejectCall(from types.JID, callID string) error 
 
 	cm.logger.Infof("❌ Rejecting call from %s (CallID: %s)", from, callID)
 	return cm.connection.Client.RejectCall(from, callID)
-}
-
-// LogCallEvent logs call events and delegates to sipproxy
-func (cm *WhatsmeowCallManager) LogCallEvent(eventType string, evt interface{}) {
-	cm.logger.Infof("🔍 CALL EVENT: %s", eventType)
-
-	// Delegate to sipproxy integration for all SIP handling
-	switch e := evt.(type) {
-	case *events.CallOffer:
-		cm.logger.Infof("📞 CallOffer from %s (ID: %s)", e.From, e.CallID)
-		// NOTE: ThrowSIPProxy is now called directly in the main handler, not here
-
-	case *events.CallOfferNotice:
-		cm.logger.Infof("📞 CallOfferNotice from %s (ID: %s)", e.From, e.CallID)
-
-	case *events.CallTerminate:
-		cm.logger.Infof("📞❌ CallTerminate from %s (ID: %s) - Reason: %v", e.From, e.CallID, e.Reason)
-		if err := cm.sipIntegration.HandleWhatsAppCallTermination(e.CallID); err != nil {
-			cm.logger.Errorf("Failed to handle call termination: %v", err)
-		}
-
-	case *events.CallAccept:
-		cm.logger.Infof("📞✅ CallAccept from %s (ID: %s)", e.From, e.CallID)
-
-	case *events.CallRelayLatency:
-		cm.logger.Infof("📊 CallRelayLatency for %s (ID: %s)", e.From, e.CallID)
-
-	default:
-		cm.logger.Infof("📞 Unknown Call Event: %T", evt)
-	}
 }
 
 // GetSIPProxyManager returns the SIP proxy integration (compatibility method)

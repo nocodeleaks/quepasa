@@ -275,8 +275,6 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		// Enhanced debugging with CallManager
 		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
 			logentry.Infof("✅ CallManager created for CallOfferNotice")
-			callManager.LogCallEvent("CallOfferNotice", evt)
-			logentry.Infof("✅ CallOfferNotice logged successfully")
 		} else {
 			logentry.Errorf("❌ Failed to create CallManager for CallOfferNotice!")
 		}
@@ -288,20 +286,11 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		logentry.Infof("📊 CallRelayLatency: %+v", evt)
 		logentry.Infof("📞 Call Performance - From: %s, CallID: %s, Latency: %v", evt.From, evt.CallID, evt.Data)
 
-		// Enhanced debugging with CallManager
-		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-			callManager.LogCallEvent("CallRelayLatency", evt)
-		}
 		return
 
 	case *events.CallTerminate:
 		logentry.Infof("📞❌ CallTerminate: %+v", evt)
 		logentry.Infof("📞 Call Ended - From: %s, CallID: %s, Reason: %v", evt.From, evt.CallID, evt.Reason)
-
-		// Enhanced debugging with CallManager
-		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-			callManager.LogCallEvent("CallTerminate", evt)
-		}
 
 		go source.CallTerminateMessage(evt.BasicCallMeta, evt.Reason)
 		return
@@ -310,12 +299,14 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		logentry.Infof("📞✅ CallAccept: %+v", evt)
 		logentry.Infof("📞 Call Accepted - From: %s, CallID: %s", evt.From, evt.CallID)
 
-		// Enhanced debugging with CallManager
-		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-			callManager.LogCallEvent("CallAccept", evt)
-		}
-
 		go source.CallAcceptMessage(evt.BasicCallMeta)
+		return
+
+	case *events.CallReject:
+		logentry.Infof("📞❌ CallReject: %+v", evt)
+		logentry.Infof("📞 Call Rejected - From: %s, CallID: %s", evt.From, evt.CallID)
+
+		go source.CallRejectMessage(evt.BasicCallMeta)
 		return
 	//#endregion
 
@@ -809,6 +800,29 @@ func (source *WhatsmeowHandlers) CallTerminateMessage(evt types.BasicCallMeta, r
 	logentry.Tracef("📞❌ Call terminated - CallID: %s, From: %s, Reason: %v", evt.CallID, evt.From, reason)
 
 	// =========================================================================
+	// 🚫 SIP PROXY CANCELLATION - SEND BYE/CANCEL TO SIP SERVER FOR ALL TERMINATIONS
+	// =========================================================================
+	reasonStr := fmt.Sprintf("%v", reason)
+	logentry.Infof("🎯 SIP PROXY: WhatsApp call TERMINATED (reason: %s) - sending BYE/CANCEL to SIP server", reasonStr)
+
+	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
+			// Send BYE/CANCEL to SIP server for this call
+			logentry.Infof("📞❌ Sending SIP BYE/CANCEL for terminated WhatsApp call: %s (reason: %s)", evt.CallID, reasonStr)
+			err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID)
+			if err != nil {
+				logentry.Errorf("❌ Failed to send SIP BYE/CANCEL: %v", err)
+			} else {
+				logentry.Infof("✅ SIP BYE/CANCEL sent successfully for CallID: %s (reason: %s)", evt.CallID, reasonStr)
+			}
+		} else {
+			logentry.Warnf("⚠️ SIP integration not available for call termination handling")
+		}
+	} else {
+		logentry.Warnf("⚠️ CallManager not available for call termination handling")
+	}
+
+	// =========================================================================
 	// 🚫 WhatsApp TERMINATION PROCESSING COMMENTED OUT
 	// =========================================================================
 	// We only monitor call termination, NO WhatsApp message processing
@@ -855,6 +869,51 @@ func (source *WhatsmeowHandlers) CallAcceptMessage(evt types.BasicCallMeta) {
 	// message.Text = "Call accepted"
 	// if source.WAHandlers != nil {
 	//	go source.WAHandlers.Message(message, "call_accept")
+	// }
+}
+
+// CallRejectMessage handles call rejection events
+func (source *WhatsmeowHandlers) CallRejectMessage(evt types.BasicCallMeta) {
+	logentry := source.GetLogger()
+	logentry.Tracef("📞❌ Call rejected - CallID: %s, From: %s", evt.CallID, evt.From)
+
+	// =========================================================================
+	// 🚫 SIP PROXY CANCELLATION - SEND BYE/CANCEL TO SIP SERVER
+	// =========================================================================
+	logentry.Infof("🎯🎯🎯 [SIP-PROXY-REJECTION] WhatsApp call was REJECTED - sending BYE/CANCEL to SIP server")
+
+	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
+			// Send BYE/CANCEL to SIP server for this call
+			logentry.Infof("📞❌📞❌ [BYE-FOR-REJECTION] Sending SIP BYE/CANCEL for rejected WhatsApp call: %s", evt.CallID)
+			err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID)
+			if err != nil {
+				logentry.Errorf("❌❌❌ [BYE-REJECTION-ERROR] Failed to send SIP BYE/CANCEL: %v", err)
+			} else {
+				logentry.Infof("✅✅✅ [BYE-REJECTION-SUCCESS] SIP BYE/CANCEL sent successfully for CallID: %s", evt.CallID)
+			}
+		} else {
+			logentry.Warnf("⚠️ SIP integration not available for call rejection handling")
+		}
+	} else {
+		logentry.Warnf("⚠️ CallManager not available for call rejection handling")
+	}
+
+	// =========================================================================
+	// 🚫 WhatsApp REJECTION PROCESSING COMMENTED OUT
+	// =========================================================================
+	// We only handle SIP cancellation, NO WhatsApp message processing
+
+	// COMMENTED OUT: WhatsApp message processing for call rejection
+	// message := &whatsapp.WhatsappMessage{Content: evt}
+	// message.Id = evt.CallID
+	// message.Timestamp = evt.Timestamp
+	// message.FromMe = false
+	// message.Chat = *NewWhatsappChat(source, evt.From)
+	// message.Type = whatsapp.CallMessageType
+	// message.Text = "Call rejected"
+	// if source.WAHandlers != nil {
+	//	go source.WAHandlers.Message(message, "call_reject")
 	// }
 }
 

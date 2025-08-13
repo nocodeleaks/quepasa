@@ -2,25 +2,30 @@ package whatsmeow
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/emiago/sipgo/sip"
 	sipproxy "github.com/nocodeleaks/quepasa/sipproxy"
 	log "github.com/sirupsen/logrus"
+	"go.mau.fi/whatsmeow/binary"
 	"go.mau.fi/whatsmeow/types"
 )
 
 // SIPProxyIntegration provides integration between WhatsApp calls and the singleton SIP proxy
 type SIPProxyIntegration struct {
-	logger     *log.Entry
-	sipProxy   *sipproxy.SIPProxyManager
-	connection *WhatsmeowConnection // WhatsApp connection for rejecting calls
+	logger             *log.Entry
+	sipProxy           *sipproxy.SIPProxyManager
+	connection         *WhatsmeowConnection // WhatsApp connection for rejecting calls
+	processingCallsMap map[string]bool      // Track calls being processed to avoid loops
+	processingMutex    sync.RWMutex         // Mutex to protect the processing map
 }
 
 // NewSIPProxyIntegration creates a new SIP proxy integration instance
 func NewSIPProxyIntegration(logger *log.Entry) *SIPProxyIntegration {
 	integration := &SIPProxyIntegration{
-		logger:   logger.WithField("component", "sip_integration"),
-		sipProxy: sipproxy.SIPProxy,
+		logger:             logger.WithField("component", "sip_integration"),
+		sipProxy:           sipproxy.SIPProxy,
+		processingCallsMap: make(map[string]bool),
 	}
 	return integration
 }
@@ -80,9 +85,77 @@ func (si *SIPProxyIntegration) HandleWhatsAppCallTermination(callID string) erro
 		return fmt.Errorf("SIP proxy is not running")
 	}
 
+	// =========================================================================
+	// 🚫 DUPLICATE TERMINATION PREVENTION
+	// =========================================================================
+	terminationKey := callID + "_terminating"
+	si.logger.Infof("🔍🔍🔍 [TERMINATION-ENTRY] CallID: %s (key: %s)", callID, terminationKey)
+
+	if si.isCallBeingProcessed(terminationKey) {
+		si.logger.Warnf("⚠️⚠️⚠️ DUPLICATE TERMINATION PREVENTION: Call %s is already being terminated, skipping", callID)
+		si.logger.Infof("🔍 Current processing calls: %+v", si.processingCallsMap)
+		return nil
+	}
+
+	// Mark call as being terminated to prevent duplicates
+	if !si.markCallAsProcessing(terminationKey) {
+		si.logger.Warnf("⚠️ DUPLICATE TERMINATION PREVENTION: Failed to mark call %s as terminating", callID)
+		return nil
+	}
+
+	si.logger.Infof("🔒🔒🔒 Call %s marked as terminating", callID)
+
+	// Ensure we unmark the call when done
+	defer func() {
+		si.unmarkCallAsProcessing(terminationKey)
+		si.logger.Infof("🔓🔓🔓 Call %s unmarked from terminating", callID)
+	}()
+
 	si.logger.Infof("📞❌ Handling WhatsApp call termination for CallID: %s", callID)
-	si.sipProxy.RemoveCall(callID)
+
+	// Send BYE/CANCEL to SIP server (this will also clean up locally)
+	if err := si.sipProxy.CancelCall(callID); err != nil {
+		si.logger.Errorf("❌ Failed to cancel SIP call %s: %v", callID, err)
+		return err
+	}
+
+	si.logger.Infof("✅ SIP BYE/CANCEL sent successfully for CallID: %s", callID)
 	return nil
+}
+
+// =========================================================================
+// 🔄 LOOP PREVENTION METHODS
+// =========================================================================
+
+// markCallAsProcessing marks a call as being processed to avoid loops
+func (si *SIPProxyIntegration) markCallAsProcessing(callID string) bool {
+	si.processingMutex.Lock()
+	defer si.processingMutex.Unlock()
+
+	if si.processingCallsMap[callID] {
+		return false // Already being processed
+	}
+
+	si.processingCallsMap[callID] = true
+	si.logger.Infof("🔒 Call %s marked as processing", callID)
+	return true
+}
+
+// unmarkCallAsProcessing removes a call from the processing list
+func (si *SIPProxyIntegration) unmarkCallAsProcessing(callID string) {
+	si.processingMutex.Lock()
+	defer si.processingMutex.Unlock()
+
+	delete(si.processingCallsMap, callID)
+	si.logger.Infof("🔓 Call %s unmarked from processing", callID)
+}
+
+// isCallBeingProcessed checks if a call is currently being processed
+func (si *SIPProxyIntegration) isCallBeingProcessed(callID string) bool {
+	si.processingMutex.RLock()
+	defer si.processingMutex.RUnlock()
+
+	return si.processingCallsMap[callID]
 }
 
 // GetActiveCalls returns all active calls from the SIP proxy
@@ -140,7 +213,13 @@ func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 	// Callback para quando uma chamada é aceita (200 OK)
 	si.sipProxy.SetCallAcceptedHandler(func(callID, fromPhone, toPhone string, response *sip.Response) {
 		si.logger.Infof("✅ SIP CALL ACCEPTED! CallID: %s, From: %s, To: %s", callID, fromPhone, toPhone)
-		si.logger.Infof("📡 SIP Response: %d %s", response.StatusCode, response.Reason)
+
+		// Safe response handling
+		if response != nil {
+			si.logger.Infof("📡 SIP Response: %d %s", response.StatusCode, response.Reason)
+		} else {
+			si.logger.Infof("📡 SIP Response: 200 OK (confirmed by sipgo dialog)")
+		}
 
 		// Aqui podemos notificar o WhatsApp que a chamada foi aceita
 		si.onCallAccepted(callID, fromPhone, toPhone, response)
@@ -149,7 +228,13 @@ func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 	// Callback para quando uma chamada é rejeitada (>=400)
 	si.sipProxy.SetCallRejectedHandler(func(callID, fromPhone, toPhone string, response *sip.Response) {
 		si.logger.Infof("❌ SIP CALL REJECTED! CallID: %s, From: %s, To: %s", callID, fromPhone, toPhone)
-		si.logger.Infof("📡 SIP Response: %d %s", response.StatusCode, response.Reason)
+
+		// Verificar se response não é nil antes de acessar
+		if response != nil {
+			si.logger.Infof("📡 SIP Response: %d %s", response.StatusCode, response.Reason)
+		} else {
+			si.logger.Infof("📡 SIP Response: (details not available)")
+		}
 
 		// Aqui podemos notificar o WhatsApp que a chamada foi rejeitada
 		si.onCallRejected(callID, fromPhone, toPhone, response)
@@ -158,11 +243,34 @@ func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 
 // onCallAccepted é chamado quando uma chamada SIP é aceita
 func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string, response *sip.Response) {
+	// =========================================================================
+	// 🚫 LOOP PREVENTION: Check if call is already being processed
+	// =========================================================================
+	if si.isCallBeingProcessed(callID) {
+		si.logger.Warnf("⚠️ LOOP PREVENTION: Call %s is already being processed, skipping WhatsApp acceptance", callID)
+		return
+	}
+
+	// Mark call as being processed to prevent loops
+	if !si.markCallAsProcessing(callID) {
+		si.logger.Warnf("⚠️ LOOP PREVENTION: Failed to mark call %s as processing (concurrent access?)", callID)
+		return
+	}
+
+	// Ensure we unmark the call when done
+	defer si.unmarkCallAsProcessing(callID)
+
 	si.logger.Infof("🎉 CALL ACCEPTED EVENT - SIP server authorized the call!")
 	si.logger.Infof("📞 CallID: %s", callID)
-	si.logger.Infof("� From (caller): %s", fromPhone)
-	si.logger.Infof("� To (receiver): %s", toPhone)
-	si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
+	si.logger.Infof("📞 From (caller): %s", fromPhone)
+	si.logger.Infof("📞 To (receiver): %s", toPhone)
+
+	// Safe response handling
+	if response != nil {
+		si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
+	} else {
+		si.logger.Infof("📡 SIP Status: 200 OK (confirmed by sipgo dialog)")
+	}
 
 	// 🟢 AUTOMATICALLY ACCEPT THE CALL IN WHATSAPP TOO
 	si.logger.Infof("✅ SIP authorized call, automatically accepting in WhatsApp...")
@@ -177,16 +285,58 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 			return
 		}
 
-		// Usar o CallManager para aceitar a chamada no WhatsApp
+		// =========================================================================
+		// 📱 WHATSAPP ACCEPTANCE ONLY (NO SIP PROXY DELEGATION)
+		// =========================================================================
+		// We only accept the call in WhatsApp, we DON'T create a new SIP call
+		// since the SIP call is already established and working
+
+		si.logger.Infof("🔄 Attempting to accept WhatsApp call from %s (NO SIP delegation)...", fromPhone)
+
+		// Direct WhatsApp acceptance using SendNode (without SIP proxy delegation)
 		if callManager := si.connection.GetCallManager(); callManager != nil {
-			si.logger.Infof("🔄 Attempting to accept WhatsApp call from %s...", fromPhone)
-			err := callManager.AcceptCall(fromJID, callID)
-			if err != nil {
-				si.logger.Errorf("❌ Failed to accept WhatsApp call: %v", err)
+			if si.connection.Client != nil {
+				client := si.connection.Client
+				ownID := client.Store.ID
+				if ownID != nil {
+					si.logger.Infof("🔗 Sending WhatsApp call accept node...")
+
+					// Create accept node
+					acceptNode := binary.Node{
+						Tag: "call",
+						Attrs: binary.Attrs{
+							"from": ownID.ToNonAD(),
+							"to":   fromJID,
+							"id":   client.GenerateMessageID(),
+						},
+						Content: []binary.Node{{
+							Tag: "accept",
+							Attrs: binary.Attrs{
+								"call-id":      callID,
+								"call-creator": fromJID,
+							},
+						}},
+					}
+
+					si.logger.Infof("📨 Sending accept node: %+v", acceptNode)
+					err := client.DangerousInternals().SendNode(acceptNode)
+					if err != nil {
+						si.logger.Errorf("❌ Failed to send accept node: %v", err)
+					} else {
+						si.logger.Infof("✅ Accept node sent successfully!")
+						si.logger.Infof("✅ Successfully accepted WhatsApp call from %s (CallID: %s)", fromPhone, callID)
+						if response != nil {
+							si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
+						} else {
+							si.logger.Infof("🎯 Reason: SIP server responded with 200 OK")
+						}
+						si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
+					}
+				} else {
+					si.logger.Errorf("❌ Client Store ID not available")
+				}
 			} else {
-				si.logger.Infof("✅ Successfully accepted WhatsApp call from %s (CallID: %s)", fromPhone, callID)
-				si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
-				si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
+				si.logger.Errorf("❌ WhatsApp client not available")
 			}
 		} else {
 			si.logger.Errorf("❌ CallManager not available for accepting WhatsApp call")
@@ -198,14 +348,38 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 
 // onCallRejected é chamado quando uma chamada SIP é rejeitada
 func (si *SIPProxyIntegration) onCallRejected(callID, fromPhone, toPhone string, response *sip.Response) {
-	si.logger.Infof("💔 CALL REJECTED EVENT - SIP server rejected the call!")
+	// =========================================================================
+	// 🚫 LOOP PREVENTION: Check if call is already being processed for rejection
+	// =========================================================================
+	rejectionKey := fmt.Sprintf("rejection_%s", callID)
+	if si.isCallBeingProcessed(rejectionKey) {
+		si.logger.Warnf("⚠️⚠️⚠️ LOOP PREVENTION: Call %s is already being processed for REJECTION, skipping WhatsApp rejection", callID)
+		return
+	}
+
+	// Mark call as being processed to prevent loops
+	if !si.markCallAsProcessing(rejectionKey) {
+		si.logger.Warnf("⚠️⚠️⚠️ LOOP PREVENTION: Failed to mark call %s as processing rejection (concurrent access?)", callID)
+		return
+	}
+
+	// Ensure we unmark the call when done
+	defer si.unmarkCallAsProcessing(rejectionKey)
+
+	si.logger.Infof("💔💔💔 [REJECTION-ENTRY] SIP server rejected the call!")
 	si.logger.Infof("📞 CallID: %s", callID)
-	si.logger.Infof("� From (caller): %s", fromPhone)
-	si.logger.Infof("� To (receiver): %s", toPhone)
-	si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
+	si.logger.Infof("📞 From (caller): %s", fromPhone)
+	si.logger.Infof("📞 To (receiver): %s", toPhone)
+
+	// Verificar se response não é nil antes de acessar
+	if response != nil {
+		si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
+	} else {
+		si.logger.Infof("📡 SIP Status: (details not available)")
+	}
 
 	// 🚫 AUTOMATICALLY REJECT THE CALL IN WHATSAPP TOO
-	si.logger.Infof("🚫 SIP rejected call, automatically rejecting in WhatsApp...")
+	si.logger.Infof("🚫🚫🚫 [WHATSAPP-REJECTION] SIP rejected call, automatically rejecting in WhatsApp...")
 
 	// Aqui precisamos acessar o WhatsApp connection para rejeitar a chamada
 	// O fromPhone é quem está ligando, então vamos rejeitar a chamada vinda dele
@@ -219,17 +393,21 @@ func (si *SIPProxyIntegration) onCallRejected(callID, fromPhone, toPhone string,
 
 		// Usar o CallManager para rejeitar a chamada no WhatsApp
 		if callManager := si.connection.GetCallManager(); callManager != nil {
-			si.logger.Infof("🔄 Attempting to reject WhatsApp call from %s...", fromPhone)
+			si.logger.Infof("🔄🔄🔄 [WHATSAPP-CALL-REJECT] Attempting to reject WhatsApp call from %s...", fromPhone)
 			err := callManager.RejectCall(fromJID, callID)
 			if err != nil {
-				si.logger.Errorf("❌ Failed to reject WhatsApp call: %v", err)
+				si.logger.Errorf("❌❌❌ [REJECTION-ERROR] Failed to reject WhatsApp call: %v", err)
 				// Tentar métodos alternativos de rejeição
 				si.logger.Infof("🔄 Trying alternative rejection method...")
 				// Aqui podemos implementar um método alternativo se necessário
 			} else {
-				si.logger.Infof("✅ Successfully rejected WhatsApp call from %s (CallID: %s)", fromPhone, callID)
-				si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
-				si.logger.Infof("📞 WhatsApp call should now be terminated")
+				si.logger.Infof("✅✅✅ [REJECTION-SUCCESS] Successfully rejected WhatsApp call from %s (CallID: %s)", fromPhone, callID)
+				if response != nil {
+					si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
+				} else {
+					si.logger.Infof("🎯 Reason: SIP server rejected the call")
+				}
+				si.logger.Infof("📞📞📞 [WHATSAPP-TERMINATED] WhatsApp call should now be terminated")
 			}
 		} else {
 			si.logger.Errorf("❌ CallManager not available for rejecting WhatsApp call")

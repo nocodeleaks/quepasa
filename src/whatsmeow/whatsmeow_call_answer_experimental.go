@@ -40,7 +40,7 @@ func (cam *CallAnswerManager) ExperimentalAcceptCall(from types.JID, callID stri
 
 	// Get SIP proxy integration for data capture
 	if cam.callManager != nil {
-		if sipIntegration := cam.callManager.GetSIPProxyManager(); sipIntegration != nil {
+		if sipIntegration := cam.callManager.GetSIPProxy(); sipIntegration != nil {
 			activeCalls := sipIntegration.GetActiveCalls()
 			if len(activeCalls) > 0 {
 				cam.logger.Infof("🎯 SIP Data captured for calls:")

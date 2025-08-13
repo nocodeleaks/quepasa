@@ -803,17 +803,17 @@ func (source *WhatsmeowHandlers) CallTerminateMessage(evt types.BasicCallMeta, r
 	// 🚫 SIP PROXY CANCELLATION - SEND BYE/CANCEL TO SIP SERVER FOR ALL TERMINATIONS
 	// =========================================================================
 	reasonStr := fmt.Sprintf("%v", reason)
-	logentry.Infof("🎯 SIP PROXY: WhatsApp call TERMINATED (reason: %s) - sending BYE/CANCEL to SIP server", reasonStr)
+	logentry.Infof("🎯🎯🎯 [SIP-PROXY-TERMINATION] WhatsApp call TERMINATED (reason: %s) - sending BYE/CANCEL to SIP server", reasonStr)
 
 	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
 		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
 			// Send BYE/CANCEL to SIP server for this call
-			logentry.Infof("📞❌ Sending SIP BYE/CANCEL for terminated WhatsApp call: %s (reason: %s)", evt.CallID, reasonStr)
+			logentry.Infof("📞❌📞❌ [BYE-FOR-TERMINATION] Sending SIP BYE/CANCEL for terminated WhatsApp call: %s (reason: %s)", evt.CallID, reasonStr)
 			err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID)
 			if err != nil {
-				logentry.Errorf("❌ Failed to send SIP BYE/CANCEL: %v", err)
+				logentry.Errorf("❌❌❌ [BYE-TERMINATION-ERROR] Failed to send SIP BYE/CANCEL: %v", err)
 			} else {
-				logentry.Infof("✅ SIP BYE/CANCEL sent successfully for CallID: %s (reason: %s)", evt.CallID, reasonStr)
+				logentry.Infof("✅✅✅ [BYE-TERMINATION-SUCCESS] SIP BYE/CANCEL sent successfully for CallID: %s (reason: %s)", evt.CallID, reasonStr)
 			}
 		} else {
 			logentry.Warnf("⚠️ SIP integration not available for call termination handling")
@@ -878,13 +878,16 @@ func (source *WhatsmeowHandlers) CallRejectMessage(evt types.BasicCallMeta) {
 	logentry.Tracef("📞❌ Call rejected - CallID: %s, From: %s", evt.CallID, evt.From)
 
 	// =========================================================================
-	// 🚫 SIP PROXY CANCELLATION - SEND BYE/CANCEL TO SIP SERVER
+	// � SIP PROXY CANCELLATION WITH CACHE PROTECTION - SAFE TO CALL
 	// =========================================================================
-	logentry.Infof("🎯🎯🎯 [SIP-PROXY-REJECTION] WhatsApp call was REJECTED - sending BYE/CANCEL to SIP server")
+	// Now that we have permanent cache in HandleWhatsAppCallTermination,
+	// it's safe to call it from multiple places without duplicating BYEs
+
+	logentry.Infof("🎯🎯🎯 [CALLREJECT-SIP-TERMINATION] WhatsApp call was REJECTED - sending BYE/CANCEL to SIP server (cache protected)")
 
 	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
 		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
-			// Send BYE/CANCEL to SIP server for this call
+			// Send BYE/CANCEL to SIP server for this call (cache will prevent duplicates)
 			logentry.Infof("📞❌📞❌ [BYE-FOR-REJECTION] Sending SIP BYE/CANCEL for rejected WhatsApp call: %s", evt.CallID)
 			err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID)
 			if err != nil {

@@ -289,8 +289,16 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	// Wait for responses using sipgo Dialog API with detailed error logging
 	scm.logger.Infof("⏳ Waiting for SIP response from server for CallID: %s", callInfo.CallID)
 	scm.logger.Infof("🔍 Dialog session state before wait...")
+	scm.logger.Infof("📞 MONITORING: Calling WaitAnswer() to wait for 200 OK response...")
 
 	err := dialogSession.WaitAnswer(callInfo.Context, sipgo.AnswerOptions{})
+
+	scm.logger.Infof("📞 MONITORING: WaitAnswer() completed for CallID: %s", callInfo.CallID)
+	if err == nil {
+		scm.logger.Infof("📞 MONITORING: ✅ NO ERROR - This means we got 200 OK!")
+	} else {
+		scm.logger.Infof("📞 MONITORING: ❌ ERROR OCCURRED - %v", err)
+	}
 
 	if err != nil {
 		scm.logger.Errorf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -371,6 +379,10 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	if scm.onCallAccepted != nil {
 		scm.logger.Infof("📞✅ Calling WhatsApp acceptance handler for CallID: %s", callInfo.CallID)
 		scm.onCallAccepted(callInfo.CallID, callInfo.FromPhone, callInfo.ToPhone, nil)
+		
+		// 🚨 CRITICAL: Clear the callback to prevent loops
+		scm.logger.Infof("🛑 LOOP PREVENTION: Clearing acceptance handler after first execution")
+		scm.onCallAccepted = nil
 	} else {
 		scm.logger.Errorf("❌ No acceptance handler configured! Cannot accept WhatsApp call!")
 	}
@@ -386,6 +398,10 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	// Keep the call active - do not automatically hang up
 	// The call will be managed by the SIP server and WhatsApp events
 	scm.logger.Infof("📞 Call is now active and ready for media flow - CallID: %s", callInfo.CallID)
+
+	// 🚨 CRITICAL: Stop monitoring after successful accept to prevent callback loops
+	scm.logger.Infof("🛑 Stopping dialog monitoring after successful acceptance - CallID: %s", callInfo.CallID)
+	return
 }
 
 // GetActiveCalls returns the list of active call IDs

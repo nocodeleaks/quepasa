@@ -27,7 +27,7 @@ replace github.com/nocodeleaks/quepasa/environment => ./environment
 go 1.23.2
 
 require (
-	github.com/joho/godotenv v1.5.1
+	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
@@ -69,6 +69,7 @@ require (
 	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/joncalhoun/migrate v0.0.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -81,7 +82,6 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/audio v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/sipproxy v0.0.0-00010101000000-000000000000 // indirect

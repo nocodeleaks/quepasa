@@ -113,7 +113,17 @@ func (source *WhatsmeowHandlers) HandleCalls() bool {
 	}
 
 	serviceOptions := source.GetServiceOptions()
-	return serviceOptions.HandleCalls(defaultValue)
+	result := serviceOptions.HandleCalls(defaultValue)
+
+	// Debug logging
+	logentry := log.WithField("component", "call_handler")
+	logentry.Infof("🔍 HandleCalls() debug:")
+	logentry.Infof("   📋 source.WhatsappOptions: %+v", source.WhatsappOptions)
+	logentry.Infof("   📋 defaultValue (Calls): %+v", defaultValue)
+	logentry.Infof("   📋 serviceOptions: %+v", serviceOptions)
+	logentry.Infof("   📋 Final result: %v", result)
+
+	return result
 }
 
 //#endregion
@@ -741,23 +751,15 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 	// 🚀 MINIMAL CALL PROCESSING: CallOffer → SIP Server Only
 	handleCallsResult := source.HandleCalls()
+	logentry.Infof("🔍 HandleCalls() result: %v", handleCallsResult)
 
 	if handleCallsResult {
 		logentry.Infof("📡 CALL DETECTED - Forwarding to SIP server")
 		logentry.Infof("📞 CallID: %s | From: %s", evt.CallID, evt.From.User)
 
-		// Create CallManager for SIP forwarding only
-		var callManager *WhatsmeowCallManager
-		if source.WhatsmeowConnection.CallManager != nil {
-			callManager = source.WhatsmeowConnection.CallManager
-		} else {
-			callManager = NewWhatsmeowCallManager(source.WhatsmeowConnection)
-			source.WhatsmeowConnection.CallManager = callManager
-		}
-
-		// Forward to SIP server - monitoring response only
-		sipIntegration := callManager.GetSIPProxy()
-		if sipIntegration != nil && sipIntegration.IsReady() {
+		// Use the internal SIP call manager
+		sipCallManager := source.WhatsmeowConnection.GetSIPCallManager()
+		if sipCallManager.IsEnabled() {
 			statusManager := source.GetStatusManager()
 			myNumber, err := statusManager.GetWidInternal()
 			if err != nil {
@@ -765,14 +767,20 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 				myNumber = "unknown"
 			}
 
-			err = sipIntegration.ThrowSIPProxy(evt.CallID, evt.From.User, myNumber)
+			// Process incoming WhatsApp call through internal SIP manager
+			logentry.Infof("📞 CALL DETECTED - Processing via internal SIP manager:")
+			logentry.Infof("   🔵 From (caller): %s", evt.From.User)
+			logentry.Infof("   🟢 To (receiver): %s", myNumber)
+			logentry.Infof("   📞 CallID: %s", evt.CallID)
+
+			err = sipCallManager.ProcessIncomingCall(evt.CallID, evt.From.User, myNumber)
 			if err != nil {
-				logentry.Errorf("❌ SIP forward failed: %v", err)
+				logentry.Errorf("❌ SIP call processing failed: %v", err)
 			} else {
-				logentry.Infof("✅ SIP INVITE sent to server - monitoring response")
+				logentry.Infof("✅ Call processed via internal SIP manager")
 			}
 		} else {
-			logentry.Errorf("❌ SIP integration not ready")
+			logentry.Warnf("⚠️ SIP call manager not enabled")
 		}
 	} else {
 		logentry.Warnf("⚠️ Call handling disabled - no SIP forwarding")

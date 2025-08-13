@@ -40,6 +40,16 @@ func (source *WhatsmeowServiceModel) GetLogger() *log.Entry {
 
 var WhatsmeowService *WhatsmeowServiceModel
 
+// StartPreConfigured inicia o serviço usando as configurações pré-carregadas
+func StartPreConfigured() {
+	if !isPreConfigured {
+		panic("WhatsmeowService não foi pré-configurado. Verifique se o environment foi carregado corretamente.")
+	}
+
+	preConfiguredLogger.Info("🚀 Iniciando WhatsmeowService com configurações pré-carregadas")
+	Start(*preConfiguredOptions, *preConfiguredDBParams, preConfiguredLogger)
+}
+
 func Start(options WhatsmeowOptions, dbParameters library.DatabaseParameters, logentry *log.Entry) {
 	logentry.Infof("starting Whatsmeow Service, with log level: %s", logentry.Level)
 	if WhatsmeowService != nil {

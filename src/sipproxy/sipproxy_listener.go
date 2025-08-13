@@ -86,7 +86,7 @@ func (sl *SIPListener) isPortAvailable(port int) bool {
 }
 
 // StartListener starts the SIP server and raw UDP listener
-func (sl *SIPListener) StartListener(config *SIPProxyConfig) error {
+func (sl *SIPListener) StartListener(config SIPProxySettings) error {
 	// Try to find available port with preference for standard SIP range
 	availablePort, err := sl.FindAvailableUDPPort()
 	if err != nil {

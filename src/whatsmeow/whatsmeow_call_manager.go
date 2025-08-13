@@ -21,16 +21,9 @@ type WhatsmeowCallManager struct {
 func NewWhatsmeowCallManager(conn *WhatsmeowConnection) *WhatsmeowCallManager {
 	logger := conn.GetLogger().WithField("component", "call_adapter")
 
-	// Create SIP proxy integration using the singleton
+	// Create SIP proxy integration using the existing singleton
+	// Note: SIP proxy should already be initialized in main.go
 	sipIntegration := NewSIPProxyIntegration(logger)
-
-	// Initialize the singleton SIP proxy with server configuration
-	err := sipIntegration.InitializeSIPProxy("voip.sufficit.com.br", 26499, 5060)
-	if err != nil {
-		logger.Errorf("Failed to initialize SIP proxy: %v", err)
-	} else {
-		logger.Infof("🚀 SIP proxy singleton ready via adapter")
-	}
 
 	// Setup callbacks para capturar quando chamadas SIP são aceitas/rejeitadas
 	sipIntegration.SetupCallbacks(conn)
@@ -65,7 +58,7 @@ func (cm *WhatsmeowCallManager) AcceptCall(from types.JID, callID string) error 
 	cm.logger.Infof("✅ SIP integration is ready, proceeding with call acceptance")
 
 	// Use sipproxy's call answer manager
-	sipProxy := sipproxy.GetSIPProxyManager()
+	sipProxy := sipproxy.SIPProxy
 	if sipProxy == nil {
 		cm.logger.Errorf("❌ sipproxy singleton is nil!")
 		return fmt.Errorf("sipproxy singleton not available")
@@ -74,8 +67,18 @@ func (cm *WhatsmeowCallManager) AcceptCall(from types.JID, callID string) error 
 	cm.logger.Infof("✅ Got sipproxy singleton, creating answer manager")
 	answerManager := sipproxy.NewSIPProxyCallAnswerManager(sipProxy)
 
-	cm.logger.Infof("🚀 Calling sipproxy AnswerCall for user: %s, callID: %s", from.User, callID)
-	err := answerManager.AnswerCall(from.User, callID)
+	// 🔧 Get the WhatsApp receiver number (own number) from client store
+	var toPhone string
+	if cm.connection != nil && cm.connection.Client != nil && cm.connection.Client.Store != nil && cm.connection.Client.Store.ID != nil {
+		toPhone = cm.connection.Client.Store.ID.User
+		cm.logger.Infof("� WhatsApp receiver number: %s", toPhone)
+	} else {
+		cm.logger.Errorf("❌ Cannot get WhatsApp receiver number from client store")
+		return fmt.Errorf("cannot get WhatsApp receiver number - client store not available")
+	}
+
+	cm.logger.Infof("�� Calling sipproxy AnswerCallWithReceiver: from=%s, to=%s, callID=%s", from.User, toPhone, callID)
+	err := answerManager.AnswerCallWithReceiver(from.User, toPhone, callID)
 	if err != nil {
 		cm.logger.Errorf("❌ SIP AnswerCall failed: %v", err)
 		return err

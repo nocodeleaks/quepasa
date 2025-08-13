@@ -30,6 +30,7 @@ type WhatsmeowConnection struct {
 	StatusManager  *WhatsmeowStatusManager  // composition for status operations
 	ContactManager *WhatsmeowContactManager // composition for contact operations
 	CallManager    *WhatsmeowCallManager    // composition for call operations (singleton)
+	SIPCallManager *WhatsmeowSIPCallManager // composition for SIP call operations (internal)
 
 	failedToken  bool
 	paired       func(string)
@@ -429,6 +430,11 @@ func (source *WhatsmeowConnection) UploadAttachment(msg whatsapp.WhatsappMessage
 }
 
 func (conn *WhatsmeowConnection) Disconnect() (err error) {
+	// Finalizar SIP call manager se estiver ativo
+	if conn.SIPCallManager != nil {
+		conn.SIPCallManager.Shutdown()
+	}
+
 	if conn.Client != nil {
 		if conn.Client.IsConnected() {
 			conn.Client.Disconnect()
@@ -731,6 +737,14 @@ func (conn *WhatsmeowConnection) GetCallManager() *WhatsmeowCallManager {
 		conn.CallManager = NewWhatsmeowCallManager(conn)
 	}
 	return conn.CallManager
+}
+
+// GetSIPCallManager returns the SIP CallManager instance with lazy initialization
+func (conn *WhatsmeowConnection) GetSIPCallManager() *WhatsmeowSIPCallManager {
+	if conn.SIPCallManager == nil {
+		conn.SIPCallManager = NewWhatsmeowSIPCallManager(conn)
+	}
+	return conn.SIPCallManager
 }
 
 // GetHandlers returns the handlers instance with lazy initialization

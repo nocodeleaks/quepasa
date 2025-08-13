@@ -27,3 +27,6 @@
 * JId: Whatsapp Jabber Identifier ("go.mau.fi/whatsmeow/types".JID)
 * WId: Whatsapp String Identifier (string)
 * LId: Whatsapp Local Identifier (new default Identifier, used to hide the phone number)
+
+## Logging
+* logrus "github.com/sirupsen/logrus"

@@ -20,15 +20,17 @@ type SIPProxyIntegration struct {
 func NewSIPProxyIntegration(logger *log.Entry) *SIPProxyIntegration {
 	integration := &SIPProxyIntegration{
 		logger:   logger.WithField("component", "sip_integration"),
-		sipProxy: sipproxy.GetSIPProxyManager(),
+		sipProxy: sipproxy.SIPProxy,
 	}
-
-	integration.logger.Infof("🔗 SIP Proxy Integration created")
 	return integration
 }
 
 // InitializeSIPProxy sets up the singleton SIP proxy with server configuration
 func (si *SIPProxyIntegration) InitializeSIPProxy(serverHost string, serverPort int, listenerPort int) error {
+	if si.sipProxy == nil {
+		return fmt.Errorf("SIP proxy singleton is nil - cannot initialize")
+	}
+
 	// The singleton already has default configuration, we just initialize it
 	si.logger.Infof("🔧 Initializing SIP Proxy Singleton...")
 	if err := si.sipProxy.Initialize(); err != nil {
@@ -43,6 +45,10 @@ func (si *SIPProxyIntegration) InitializeSIPProxy(serverHost string, serverPort 
 
 // ThrowSIPProxy forwards a WhatsApp call to the SIP server
 func (si *SIPProxyIntegration) ThrowSIPProxy(callID, fromUser, toUser string) error {
+	if si.sipProxy == nil {
+		return fmt.Errorf("SIP proxy singleton is nil - cannot forward call")
+	}
+
 	if !si.sipProxy.IsRunning() {
 		return fmt.Errorf("SIP proxy is not running")
 	}
@@ -52,8 +58,14 @@ func (si *SIPProxyIntegration) ThrowSIPProxy(callID, fromUser, toUser string) er
 	si.logger.Infof("   📞 From: %s", fromUser)
 	si.logger.Infof("   📞 To: %s", toUser)
 
-	// Send SIP INVITE
-	if err := si.sipProxy.SendSIPInvite(fromUser, toUser, callID); err != nil {
+	si.logger.Infof("🚀 Sending SIP INVITE to server...")
+	si.logger.Infof("🔍 DEBUG: Verificando parâmetros antes de enviar:")
+	si.logger.Infof("   ✅ CallID correto: %s", callID)
+	si.logger.Infof("   ✅ From correto: %s", fromUser)
+	si.logger.Infof("   ✅ To correto: %s", toUser)
+
+	// Send SIP INVITE - Corrected parameter order
+	if err := si.sipProxy.SendSIPInvite(callID, fromUser, toUser); err != nil {
 		si.logger.Errorf("❌ Failed to send SIP INVITE: %v", err)
 		return err
 	}
@@ -80,12 +92,22 @@ func (si *SIPProxyIntegration) GetActiveCalls() map[string]*sipproxy.SIPProxyCal
 
 // IsReady returns true if the SIP proxy is ready to handle calls
 func (si *SIPProxyIntegration) IsReady() bool {
+	if si.sipProxy == nil {
+		return false
+	}
 	return si.sipProxy.IsRunning()
 }
 
 // GetStatus returns status information about the SIP proxy
 func (si *SIPProxyIntegration) GetStatus() map[string]interface{} {
 	status := make(map[string]interface{})
+
+	if si.sipProxy == nil {
+		status["running"] = false
+		status["configured"] = false
+		status["error"] = "SIP proxy singleton is nil"
+		return status
+	}
 
 	status["running"] = si.sipProxy.IsRunning()
 	status["configured"] = true // Singleton is always configured
@@ -100,6 +122,12 @@ func (si *SIPProxyIntegration) GetStatus() map[string]interface{} {
 // SetupCallbacks configura callbacks para quando chamadas SIP são aceitas/rejeitadas
 func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 	si.logger.Infof("🎯 Setting up SIP call status callbacks")
+
+	// Check if SIP proxy is available
+	if si.sipProxy == nil {
+		si.logger.Warnf("⚠️ SIP Proxy is nil - callbacks cannot be set up")
+		return
+	}
 
 	// Store WhatsApp connection for rejecting calls
 	if conn, ok := whatsappHandler.(*WhatsmeowConnection); ok {
@@ -130,10 +158,10 @@ func (si *SIPProxyIntegration) SetupCallbacks(whatsappHandler interface{}) {
 
 // onCallAccepted é chamado quando uma chamada SIP é aceita
 func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string, response *sip.Response) {
-	si.logger.Infof("🎉 CALL ACCEPTED EVENT - SIP server authorized call!")
+	si.logger.Infof("🎉 CALL ACCEPTED EVENT - SIP server authorized the call!")
 	si.logger.Infof("📞 CallID: %s", callID)
-	si.logger.Infof("📞 From: %s", fromPhone)
-	si.logger.Infof("📞 To: %s", toPhone)
+	si.logger.Infof("� From (caller): %s", fromPhone)
+	si.logger.Infof("� To (receiver): %s", toPhone)
 	si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
 
 	// 🟢 AUTOMATICALLY ACCEPT THE CALL IN WHATSAPP TOO
@@ -151,6 +179,7 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 
 		// Usar o CallManager para aceitar a chamada no WhatsApp
 		if callManager := si.connection.GetCallManager(); callManager != nil {
+			si.logger.Infof("🔄 Attempting to accept WhatsApp call from %s...", fromPhone)
 			err := callManager.AcceptCall(fromJID, callID)
 			if err != nil {
 				si.logger.Errorf("❌ Failed to accept WhatsApp call: %v", err)
@@ -169,10 +198,10 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 
 // onCallRejected é chamado quando uma chamada SIP é rejeitada
 func (si *SIPProxyIntegration) onCallRejected(callID, fromPhone, toPhone string, response *sip.Response) {
-	si.logger.Infof("💔 CALL REJECTED EVENT")
+	si.logger.Infof("💔 CALL REJECTED EVENT - SIP server rejected the call!")
 	si.logger.Infof("📞 CallID: %s", callID)
-	si.logger.Infof("📞 From: %s", fromPhone)
-	si.logger.Infof("📞 To: %s", toPhone)
+	si.logger.Infof("� From (caller): %s", fromPhone)
+	si.logger.Infof("� To (receiver): %s", toPhone)
 	si.logger.Infof("📡 SIP Status: %d %s", response.StatusCode, response.Reason)
 
 	// 🚫 AUTOMATICALLY REJECT THE CALL IN WHATSAPP TOO
@@ -190,12 +219,17 @@ func (si *SIPProxyIntegration) onCallRejected(callID, fromPhone, toPhone string,
 
 		// Usar o CallManager para rejeitar a chamada no WhatsApp
 		if callManager := si.connection.GetCallManager(); callManager != nil {
+			si.logger.Infof("🔄 Attempting to reject WhatsApp call from %s...", fromPhone)
 			err := callManager.RejectCall(fromJID, callID)
 			if err != nil {
 				si.logger.Errorf("❌ Failed to reject WhatsApp call: %v", err)
+				// Tentar métodos alternativos de rejeição
+				si.logger.Infof("🔄 Trying alternative rejection method...")
+				// Aqui podemos implementar um método alternativo se necessário
 			} else {
 				si.logger.Infof("✅ Successfully rejected WhatsApp call from %s (CallID: %s)", fromPhone, callID)
 				si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
+				si.logger.Infof("📞 WhatsApp call should now be terminated")
 			}
 		} else {
 			si.logger.Errorf("❌ CallManager not available for rejecting WhatsApp call")

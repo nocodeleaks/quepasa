@@ -8,13 +8,16 @@ replace github.com/nocodeleaks/quepasa/library => ../library
 
 replace github.com/nocodeleaks/quepasa/sipproxy => ../sipproxy
 
+replace github.com/nocodeleaks/quepasa/environment => ../environment
+
 go 1.23.2
 
 require (
 	github.com/emiago/sipgo v0.33.0
+	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/sipproxy v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
-	github.com/pion/stun v0.6.1
 )
 
 require (
@@ -22,12 +25,16 @@ require (
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.3.2 // indirect
+	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/icholy/digest v1.1.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
 	github.com/pion/dtls/v2 v2.2.7 // indirect
 	github.com/pion/logging v0.2.2 // indirect
+	github.com/pion/stun v0.6.1 // indirect
 	github.com/pion/transport/v2 v2.2.1 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
+	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 )
 

@@ -83,7 +83,19 @@ func (source *QPWhatsappHandlers) EnsureChatInfo(msg *whatsapp.WhatsappMessage) 
 		}
 	}
 
-	if msg.Participant != nil && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) && len(msg.Participant.Id) == 0 {
+	if len(msg.Chat.Phone) == 0 && strings.HasSuffix(msg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
+		contactManager := source.server.GetContactManager()
+		phone, err := contactManager.GetPhoneFromLID(msg.Chat.Id)
+		if err == nil && len(phone) > 0 {
+			msg.Chat.Phone = phone
+		}
+	}
+
+	if len(msg.Chat.LId) == 0 && strings.HasSuffix(msg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
+		msg.Chat.LId = msg.Chat.Id
+	}
+
+	if msg.Participant != nil && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) && len(msg.Participant.Phone) == 0 {
 		contactManager := source.server.GetContactManager()
 		phone, err := contactManager.GetPhoneFromContactId(msg.Participant.Id)
 		if err == nil && len(phone) > 0 {
@@ -96,6 +108,18 @@ func (source *QPWhatsappHandlers) EnsureChatInfo(msg *whatsapp.WhatsappMessage) 
 				}
 			}
 		}
+	}
+
+	if msg.Participant != nil && len(msg.Participant.Phone) == 0 && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
+		contactManager := source.server.GetContactManager()
+		phone, err := contactManager.GetPhoneFromLID(msg.Participant.Id)
+		if err == nil && len(phone) > 0 {
+			msg.Participant.Phone = phone
+		}
+	}
+
+	if msg.Participant != nil && len(msg.Participant.LId) == 0 && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
+		msg.Participant.LId = msg.Participant.Id
 	}
 }
 

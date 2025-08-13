@@ -7,7 +7,6 @@ import (
 	"github.com/emiago/sipgo/sip"
 	sipproxy "github.com/nocodeleaks/quepasa/sipproxy"
 	log "github.com/sirupsen/logrus"
-	"go.mau.fi/whatsmeow/binary"
 	"go.mau.fi/whatsmeow/types"
 )
 
@@ -293,53 +292,30 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 
 		si.logger.Infof("🔄 Attempting to accept WhatsApp call from %s (NO SIP delegation)...", fromPhone)
 
-		// Direct WhatsApp acceptance using SendNode (without SIP proxy delegation)
-		if callManager := si.connection.GetCallManager(); callManager != nil {
-			if si.connection.Client != nil {
-				client := si.connection.Client
-				ownID := client.Store.ID
-				if ownID != nil {
-					si.logger.Infof("🔗 Sending WhatsApp call accept node...")
+		// Use proper WhatsApp CallManager with PreAccept -> Accept sequence
+		si.logger.Infof("🔍 Attempting to get CallManager from connection...")
+		callManager := si.connection.GetCallManager()
+		if callManager != nil {
+			si.logger.Infof("✅ CallManager obtained successfully")
+			si.logger.Infof("🔗 Using WhatsApp CallManager with PreAccept -> Accept sequence...")
 
-					// Create accept node
-					acceptNode := binary.Node{
-						Tag: "call",
-						Attrs: binary.Attrs{
-							"from": ownID.ToNonAD(),
-							"to":   fromJID,
-							"id":   client.GenerateMessageID(),
-						},
-						Content: []binary.Node{{
-							Tag: "accept",
-							Attrs: binary.Attrs{
-								"call-id":      callID,
-								"call-creator": fromJID,
-							},
-						}},
-					}
-
-					si.logger.Infof("📨 Sending accept node: %+v", acceptNode)
-					err := client.DangerousInternals().SendNode(acceptNode)
-					if err != nil {
-						si.logger.Errorf("❌ Failed to send accept node: %v", err)
-					} else {
-						si.logger.Infof("✅ Accept node sent successfully!")
-						si.logger.Infof("✅ Successfully accepted WhatsApp call from %s (CallID: %s)", fromPhone, callID)
-						if response != nil {
-							si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
-						} else {
-							si.logger.Infof("🎯 Reason: SIP server responded with 200 OK")
-						}
-						si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
-					}
-				} else {
-					si.logger.Errorf("❌ Client Store ID not available")
-				}
+			// Use the official WhatsApp call acceptance flow: PreAccept -> Accept
+			si.logger.Infof("📞 Calling callManager.AcceptCall with JID: %s, CallID: %s", fromJID.String(), callID)
+			err := callManager.AcceptCall(fromJID, callID)
+			if err != nil {
+				si.logger.Errorf("❌ Failed to accept WhatsApp call via CallManager: %v", err)
 			} else {
-				si.logger.Errorf("❌ WhatsApp client not available")
+				si.logger.Infof("✅ Successfully accepted WhatsApp call from %s (CallID: %s) using CallManager", fromPhone, callID)
+				if response != nil {
+					si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
+				} else {
+					si.logger.Infof("🎯 Reason: SIP server responded with 200 OK")
+				}
+				si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
 			}
 		} else {
-			si.logger.Errorf("❌ CallManager not available for accepting WhatsApp call")
+			si.logger.Errorf("❌ WhatsApp CallManager is nil - cannot accept call")
+			si.logger.Errorf("❌ Connection details: %v", si.connection)
 		}
 	} else {
 		si.logger.Errorf("❌ WhatsApp connection not available for accepting call")

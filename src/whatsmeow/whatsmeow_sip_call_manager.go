@@ -3,7 +3,6 @@ package whatsmeow
 import (
 	"fmt"
 
-	"github.com/emiago/sipgo/sip"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	sipproxy "github.com/nocodeleaks/quepasa/sipproxy"
 	logrus "github.com/sirupsen/logrus"
@@ -32,37 +31,36 @@ func NewWhatsmeowSIPCallManager(conn *WhatsmeowConnection) *WhatsmeowSIPCallMana
 		logentry.Info("🔧 SIP Proxy habilitado - inicializando gerenciador interno de chamadas")
 		manager.initializeSIPProxy()
 	} else {
-		logentry.Debug("🔇 SIP Proxy desabilitado - gerenciador de chamadas inativo")
+		logentry.Info("ℹ️ SIP Proxy desabilitado - não inicializando gerenciador de chamadas")
 	}
 
 	return manager
 }
 
-// initializeSIPProxy initializes the internal SIP proxy manager
+// initializeSIPProxy inicializa o singleton SIP proxy
 func (scm *WhatsmeowSIPCallManager) initializeSIPProxy() {
-
-	// Get SIP proxy manager instance
+	// Obter referência ao singleton (já deve estar inicializado)
 	scm.sipProxyManager = sipproxy.SIPProxy
 
+	// Verificar se o singleton foi inicializado corretamente
 	if scm.sipProxyManager == nil {
-		scm.logger.Error("❌ Falha ao obter instância do SIP proxy manager")
-		scm.enabled = false
+		scm.logger.Error("❌ Singleton SIP proxy não foi inicializado")
 		return
 	}
 
-	// ✅ SIP proxy já foi inicializado no init() - apenas verificar se está rodando
+	// Verificar se o proxy já está rodando
 	if !scm.sipProxyManager.IsRunning() {
-		scm.logger.Warn("⚠️ SIP proxy manager não está rodando - tentando inicializar")
-		if err := scm.sipProxyManager.Initialize(); err != nil {
-			scm.logger.Errorf("❌ Falha ao inicializar SIP proxy: %v", err)
-			scm.enabled = false
+		scm.logger.Info("▶️ Iniciando SIP proxy manager...")
+		if err := scm.sipProxyManager.Start(); err != nil {
+			scm.logger.Errorf("❌ Falha ao iniciar SIP proxy: %v", err)
 			return
 		}
+		scm.logger.Info("✅ SIP proxy manager iniciado com sucesso")
 	} else {
 		scm.logger.Info("✅ SIP proxy manager já está rodando - reutilizando instância")
 	}
 
-	// Configurar callbacks
+	// Configure callbacks
 	scm.setupCallbacks()
 
 	scm.logger.Info("✅ SIP proxy manager interno inicializado com sucesso")
@@ -70,17 +68,28 @@ func (scm *WhatsmeowSIPCallManager) initializeSIPProxy() {
 
 // setupCallbacks configura os callbacks do SIP proxy
 func (scm *WhatsmeowSIPCallManager) setupCallbacks() {
-	// Callback para chamadas aceitas
-	scm.sipProxyManager.SetCallAcceptedHandler(func(callID, fromPhone, toPhone string, response *sip.Response) {
-		scm.logger.Infof("📞✅ Chamada SIP aceita: %s → %s (CallID: %s)", fromPhone, toPhone, callID)
-		// Aqui pode adicionar lógica adicional para chamadas aceitas
-	})
+	scm.logger.Info("📞 WhatsmeowSIPCallManager: Configurando callbacks via sip_proxy_integration.go...")
 
-	// Callback para chamadas rejeitadas
-	scm.sipProxyManager.SetCallRejectedHandler(func(callID, fromPhone, toPhone string, response *sip.Response) {
-		scm.logger.Infof("📞❌ Chamada SIP rejeitada: %s → %s (CallID: %s)", fromPhone, toPhone, callID)
-		// Aqui pode adicionar lógica adicional para chamadas rejeitadas
-	})
+	// Criar e configurar o SIP proxy integration
+	scm.logger.Info("🔍 [DEBUG] Criando SIPProxyIntegration...")
+	sipIntegration := NewSIPProxyIntegration(scm.logger)
+	if sipIntegration != nil {
+		scm.logger.Info("✅ [DEBUG] SIPProxyIntegration criado com sucesso")
+		sipIntegration.SetupCallbacks(scm.connection)
+		scm.logger.Info("✅ Callbacks configurados via sip_proxy_integration.go")
+
+		// ✅ FIX: Configurar a integração SIP no WhatsmeowCallManager
+		scm.logger.Info("🔍 [DEBUG] Obtendo CallManager da conexão...")
+		if callManager := scm.connection.GetCallManager(); callManager != nil {
+			scm.logger.Info("✅ [DEBUG] CallManager obtido com sucesso")
+			callManager.SetSIPIntegration(sipIntegration)
+			scm.logger.Info("✅ SIP integration configurada no CallManager para call termination")
+		} else {
+			scm.logger.Warn("⚠️ CallManager não disponível para configurar SIP integration")
+		}
+	} else {
+		scm.logger.Error("❌ Falha ao criar SIPProxyIntegration para configurar callbacks")
+	}
 }
 
 // IsEnabled verifica se o SIP call manager está habilitado
@@ -88,67 +97,38 @@ func (scm *WhatsmeowSIPCallManager) IsEnabled() bool {
 	return scm.enabled
 }
 
-// ProcessIncomingCall processa uma chamada WhatsApp recebida
-func (scm *WhatsmeowSIPCallManager) ProcessIncomingCall(callID, fromPhone, toPhone string) error {
+// ProcessCall processa uma chamada WhatsApp recebida via SIP proxy
+func (scm *WhatsmeowSIPCallManager) ProcessCall(callID, fromUser, toUser string) error {
 	if !scm.enabled {
-		return fmt.Errorf("SIP call manager não está habilitado")
+		return fmt.Errorf("SIP call manager is disabled")
 	}
 
 	if scm.sipProxyManager == nil {
-		return fmt.Errorf("SIP proxy manager não foi inicializado")
+		return fmt.Errorf("SIP proxy manager not initialized")
 	}
 
-	scm.logger.Infof("🔄 Processando chamada WhatsApp recebida: %s → %s (CallID: %s)", fromPhone, toPhone, callID)
+	scm.logger.Infof("🔄 Processando chamada WhatsApp recebida: %s → %s (CallID: %s)", fromUser, toUser, callID)
 
-	// Iniciar chamada via SIP proxy usando o método correto
-	return scm.sipProxyManager.SendSIPInvite(callID, fromPhone, toPhone)
-}
-
-// AcceptCall aceita uma chamada
-func (scm *WhatsmeowSIPCallManager) AcceptCall(callID string) error {
-	if !scm.enabled {
-		return fmt.Errorf("SIP call manager não está habilitado")
+	// Enviar SIP INVITE usando o manager interno
+	if err := scm.sipProxyManager.SendSIPInvite(callID, fromUser, toUser); err != nil {
+		scm.logger.Errorf("❌ Falha ao enviar SIP INVITE: %v", err)
+		return err
 	}
 
-	scm.logger.Infof("📞✅ Aceitando chamada: %s", callID)
-	// Lógica para aceitar a chamada pode ser implementada aqui
+	scm.logger.Info("✅ Call processed via internal SIP manager")
 	return nil
 }
 
-// RejectCall rejeita uma chamada
-func (scm *WhatsmeowSIPCallManager) RejectCall(callID, reason string) error {
-	if !scm.enabled {
-		return fmt.Errorf("SIP call manager não está habilitado")
-	}
-
-	scm.logger.Infof("📞❌ Rejeitando chamada: %s (Razão: %s)", callID, reason)
-
-	if scm.sipProxyManager != nil {
-		return scm.sipProxyManager.CancelCall(callID)
-	}
-
-	return nil
+// ProcessIncomingCall é um alias para ProcessCall para compatibilidade
+func (scm *WhatsmeowSIPCallManager) ProcessIncomingCall(callID, fromUser, toUser string) error {
+	return scm.ProcessCall(callID, fromUser, toUser)
 }
 
-// CancelCall cancela uma chamada
-func (scm *WhatsmeowSIPCallManager) CancelCall(callID string) error {
-	if !scm.enabled {
-		return fmt.Errorf("SIP call manager não está habilitado")
+// Shutdown encerra o call manager
+func (scm *WhatsmeowSIPCallManager) Shutdown() error {
+	if scm.sipProxyManager != nil && scm.sipProxyManager.IsRunning() {
+		scm.logger.Info("🔻 Encerrando SIP proxy manager...")
+		return scm.sipProxyManager.Stop()
 	}
-
-	scm.logger.Infof("📞🚫 Cancelando chamada: %s", callID)
-
-	if scm.sipProxyManager != nil {
-		return scm.sipProxyManager.CancelCall(callID)
-	}
-
 	return nil
-}
-
-// Shutdown finaliza o SIP call manager
-func (scm *WhatsmeowSIPCallManager) Shutdown() {
-	if scm.enabled && scm.sipProxyManager != nil {
-		scm.logger.Info("🛑 Finalizando SIP call manager interno")
-		scm.sipProxyManager.Stop()
-	}
 }

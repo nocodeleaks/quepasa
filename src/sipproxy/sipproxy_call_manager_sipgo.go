@@ -379,10 +379,9 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	if scm.onCallAccepted != nil {
 		scm.logger.Infof("📞✅ Calling WhatsApp acceptance handler for CallID: %s", callInfo.CallID)
 		scm.onCallAccepted(callInfo.CallID, callInfo.FromPhone, callInfo.ToPhone, nil)
-		
-		// 🚨 CRITICAL: Clear the callback to prevent loops
-		scm.logger.Infof("🛑 LOOP PREVENTION: Clearing acceptance handler after first execution")
-		scm.onCallAccepted = nil
+
+		// ✅ Keeping callback active for subsequent calls (removed loop prevention)
+		scm.logger.Infof("✅ Callback executed successfully, keeping handler active for future calls")
 	} else {
 		scm.logger.Errorf("❌ No acceptance handler configured! Cannot accept WhatsApp call!")
 	}

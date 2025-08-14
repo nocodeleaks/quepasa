@@ -121,6 +121,10 @@ func (source *QPWhatsappHandlers) EnsureChatInfo(msg *whatsapp.WhatsappMessage) 
 	if msg.Participant != nil && len(msg.Participant.LId) == 0 && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 		msg.Participant.LId = msg.Participant.Id
 	}
+
+	if msg.Participant != nil && len(msg.Participant.Title) == 0 {
+		msg.Participant.Title = source.server.GetChatTitle(msg.Participant.Id)
+	}
 }
 
 // Process messages received from whatsapp service

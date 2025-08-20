@@ -227,6 +227,10 @@ jobs:
             ./ new-ui/
 
       # 4) Commit & Force-Push do novo conteúdo para new-ui
+      - name: Force QpVersion from main into new-ui
+        run: |
+          cp src/models/qp_defaults.go new-ui/src/models/qp_defaults.go
+
       - name: Commit & Push to new-ui
         run: |
           pushd new-ui
@@ -234,7 +238,7 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add .
-            git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
+            git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js) + versão da main"
             git push --force-with-lease origin HEAD:new-ui
           else
             echo "✅ Nenhuma mudança para sincronizar em new-ui"

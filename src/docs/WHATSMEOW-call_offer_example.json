@@ -1,0 +1,214 @@
+﻿{
+    "_file_note":  "Arquivo gerado com o offer completo e com o campo 'voip_settings' decodificado. Campo 'voip_settings' contém tanto o base64 original quanto o objeto decodificado.",
+    "From": "557138388109@s.whatsapp.net",
+    "Timestamp": "2025-08-14T13:54:18-03:00",
+    "CallCreator": "557138388109@s.whatsapp.net",
+    "CallID": "66BC5718E648F1B69440E180880AF674",
+    "GroupJID": "",
+    "RemotePlatform": "smba",
+    "RemoteVersion": "2.25.21.83",
+    "Data": {
+        "Tag": "offer",
+        "Attrs": {
+            "call-creator": "557138388109@s.whatsapp.net",
+            "call-id": "66BC5718E648F1B69440E180880AF674",
+            "caller_country_code": "BR",
+            "device_class": "2016",
+            "joinable": "1"
+        },
+        "Content": [
+            {
+                "Tag": "audio",
+                "Attrs": { "enc": "opus", "rate": "16000" },
+                "Content": null
+            },
+            {
+                "Tag": "audio",
+                "Attrs": { "enc": "opus", "rate": "8000" },
+                "Content": null
+            },
+            {
+                "Tag": "capability",
+                "Attrs": { "ver": "1" },
+                "Content": "AQX3CeT7Bw=="
+            },
+            {
+                "Tag": "enc",
+                "Attrs": { "type": "msg", "v": "2" },
+                "Content": "MwohBcSSd6LDP18W3P9D8KiWbgY/Iw+F1SYgw6r1HfQA3rMUELgCGAAiYL8YAc/cYuX4qrpq8Bic2lNfVLN6qjmgrT87AtYe3Kdf0QYocUxd5z+z02+55TiXw9gDvI8I6JGA+e+H6mKvFnTbeQ8I5NFc87g2d7ilne+LPE8W/ZCLUoZRHPoXgq94KHeswUET7Su5"
+            },
+            {
+                "Tag": "encopt",
+                "Attrs": { "keygen": "2" },
+                "Content": null
+            },
+            {
+                "Tag": "net",
+                "Attrs": { "medium": "3" },
+                "Content": null
+            },
+            {
+                "Tag": "rte",
+                "Attrs": null,
+                "Content": "KAQDsJV+4wDRd41mhnkWu9tn"
+            },
+            {
+                "Tag": "uploadfieldstat",
+                "Attrs": null,
+                "Content": null
+            },
+            {
+                "Tag": "voip_settings",
+                "Attrs": { "uncompressed": "1" },
+                "Content": {
+                    "_note": "Este objeto foi decodificado a partir do conteúdo base64 original do elemento voip_settings.",
+                    "base64": "eyJhZWMiOnsiYmVyeWxfYWVjX2VuYWJsZSI6InRydWUiLCJydW5fYWVjX2ZvbGxvd2VkX2J5X25zIjoidHJ1ZSJ9LCJid2UiOnsiYndlX2ltcGwiOiI4IiwiZGVsYXlfYmFzZWRfYndlX2FpbWRfYWRwdF90aHJlc2hfZXhwIjoiMSJ9LCJpbml0X2J3ZSI6eyJlbmFibGVfb25lX3NpZGVfbW9kZSI6IjEiLCJpZ25vcmVfcGluZ19yZXNwb25zZV93aGVuX29pYndlX2lzX3N0b3BwZWQiOiIxIiwib2lid2VfZml4X3JhY2VfY29uZGl0aW9uIjoiMSIsInN0b3BfcHJvYmluZ19iZWZvcmVfYWNjZXB0X3NlbmQiOiIxIn0sIm5zIjp7ImRlbm9pc2VyX2ludGVuc2l0eSI6IjAuNTUiLCJ1c2VfZGVub2lzZXIiOiJ0cnVlIn0sIm9wdGlvbnMiOnsiYWxsb2NfZXJyb3JfaGFuZGxlZF9iaXRtYXAiOiI0Mjk0OTY3Mjk0IiwiYWx0X2FmX2NoZWNrX21heF9kZWZhdWx0X2FmX3JlbGF5X2JpbmRfdGltZV9tcyI6IjEwMDAiLCJhdWRpb190c19qaXR0ZXJfdXNlX2ZyYW1lX3RzIjoidHJ1ZSIsImNoZWNrX2FsdF9uZXRfc3RhdGVfYml0bWFwIjoiNyIsImNvbm5lY3RlZF9maXhfYml0bWFwIjoiNCIsImRlc3Ryb3lfd2FycF9tY3NfcmJ3ZSI6IjEiLCJkaXNhYmxlX2hiaF9ydGNwX3Jlc2V0X2NlciI6IjEiLCJkaXNhYmxlX3AycCI6IjEiLCJlbGFwc2VkX21zZWNfc2luY2VfbGFzdF9wb25nX3RocmVzaG9sZCI6IjIwMDAiLCJlbmFibGVfYWxsb2NfZXJyb3JfaGFuZGxpbmciOiIxIiwiZW5hYmxlX2FzeW5jX3RyYW5zcG9ydF9yZXN0YXJ0X2JpdG1hcCI6IjE1IiwiZW5hYmxlX2NhbGxfcGVlcl9wbGF0Zm9ybV9mc19maXgiOiJ0cnVlIiwiZW5hYmxlX2NoZWNrX25hdDY0IjoiMSIsImVuYWJsZV9jb25uZWN0aW9uX2NvdW50X2NoZWNrX2Zvcl9zb2NrZXRfcmVjcmVhdGlvbiI6IjEiLCJlbmFibGVfZXh0ZXJuYWxfYWx0X3NvY2tfZml4IjoiMSIsImVuYWJsZV9maWVsZHN0YXRfTDEyNDkxNjZQUlYiOiIxIiwiZW5hYmxlX2ZpZWxkc3RhdF9MMTI2ODYzNVBSViI6InRydWUiLCJlbmFibGVfZmllbGRzdGF0X0wxMjc2Nzc5UFJWIjoidHJ1ZSIsImVuYWJsZV9maXJzdF9ydHBfc3NyY19maXgiOiJ0cnVlIiwiZW5hYmxlX2xvZ2dpbmdfdm9pcF9zZXR0aW5nX3ZlcnNpb24iOiIxIiwiZW5hYmxlX21pc3NpbmdfcmVsYXlfYXBpX2xvY2tfYmluZF9maXgiOiIxIiwiZW5hYmxlX25ldF9ldmVudF9jb3B5X3BheWxvYWQiOiIxIiwiZW5hYmxlX25ldHdvcmtfbWVkaXVtX2JjIjoiMSIsImVuYWJsZV9ub25lX21lZGl1bV9ub19yZXN0YXJ0IjoiMSIsImVuYWJsZV9ub256ZXJvX3RyYW5zYWN0aW9uX2lkIjoiMSIsImVuYWJsZV9vcF9rZXlfbWVtX2xlYWtfZml4IjoiMSIsImVuYWJsZV9wMnBfaGFsZl9kdXBsZXgiOiIxIiwiZW5hYmxlX3AycF9yZXF1ZXN0X29wdGltaXphdGlvbiI6IjEiLCJlbmFibGVfcGFyYWxsZWxfYWZfY2hlY2siOiIxIiwiZW5hYmxlX3BhcmFsbGVsX2FmX2ZpZWxkc3RhdCI6IjEiLCJlbmFibGVfcGFyYWxsZWxfYWZfbG9nX2ZpeCI6IjEiLCJlbmFibGVfcGluZ19sYXRlbmN5X21lYXN1cmVfdjIiOiIxIiwiZW5hYmxlX3JlYmluZF9hbGxfYml0bWFwIjoiMTkyIiwiZW5hYmxlX3JlbGF5X3BpbmdfcnR0X2ZpZWxkc3RhdCI6IjEiLCJlbmFibGVfcmVsYXlfcnhfdGltZW91dF90c192MiI6IjEiLCJlbmFibGVfcmVzZXRfb3Bfa2V5X2luX3VzZV9vbl90cmFuc3BvcnRfcmVzdGFydCI6IjEiLCJlbmFibGVfcnRwX2xhc3Rfc2VxbnVtX29mZnNldF9maXgiOiIxIiwiZW5hYmxlX3NlbmRfcmVsYXlfYmluZF9jaGVja192MiI6IjEiLCJlbmFibGVfc2tpcF9ob3N0X2lwX2Zvcl9hbHRfbmV0X3NvY2tldCI6IjEiLCJlbmFibGVfc29mdHdhcmVfbXV0ZV9kdXJpbmdfY2FsbF9ob2xkIjoidHJ1ZSIsImVuYWJsZV9zc3JjX2RlbXV4IjoiMSIsImVuYWJsZV9zdGFydF90cmFuc3BvcnRfbWVkaWFfb25fcmVsYXlfY29ubmVjdGlvbiI6InRydWUiLCJlbmFibGVfc3RyZWFtX2Rlc2NyaXB0b3IiOiJ0cnVlIiwiZW5hYmxlX3N0cmVhbV9tdXRleF9yZXN0YXJ0X2ZpeCI6IjEiLCJlbmFibGVfc3RyaWN0X3N0dW5fdGlkX2NoZWNrIjoiMSIsImVuYWJsZV9zdWJzY3JpcHRpb25fbW9kZV9zZW5kX2JpbmRfdG9fYWxsIjoiMSIsImVuYWJsZV90cmFuc3BvcnRfc3RheV9vbl93b3JraW5nX2lwX3ZlcnNpb24iOiIxIiwiZW5hYmxlX3R4X3N0b3BfZmllbGRfc3RhdCI6IjEiLCJlbmFibGVfdW5ib3VuZF9yZWxheV9yZXNldF9jZXIiOiIxIiwiZW5hYmxlX3VuZXhwZWN0ZWRfY2VyX2JpdG1hcCI6IjEiLCJlbmFibGVfdXBucCI6IjAiLCJlbmFibGVfd2Vha193aWZpX3NldF9wb25nX3RzIjoiMSIsImVuYWJsZV94cG9wX2ZhbGxiYWNrX2ZpZWxkX3N0YXQiOiIxIiwiZW5hYmxlX3hwb3BfZmllbGRfc3RhdCI6IjEiLCJlbmFibGVfemVyb19yZWxheV9sYXRlbmN5X2Zvcl9hY2NlcHQiOiIxIiwiZXhjbHVkZV9wZWVyX3NldHVwX2Vycm9yX2Zyb21fY29ubmVjdGVkIjoiMSIsImZhaWxfZGVhbGxvY19vbl9taXNzaW5nX21lZGlhIjoiZmFsc2UiLCJmYWlsX2VtcHR5X2UyZV9rZXlfbWF0ZXJpYWwiOiIwIiwiZm9yYmlkX3AycF9mb3Jfbm9uX2NvbnRhY3QiOiIxIiwiZ2V0aG9zdGlwX2Rpc2FibGVfbG9jYWxfcmVzb2x1dGlvbiI6InRydWUiLCJpcF9jaGFuZ2VkX3NvY2tldF9ldmVudF9yZXNldF9pbnRlcnZhbF9tcyI6IjMwMDAiLCJrZWVwX2lwdjZfYnJpZGdlX2ludGVyZmFjZV9iaXRtYXAiOiI3IiwibWF4X2F1ZF9yZXN0YXJ0c19yZWNvcmRfc2lsZW5jZSI6IjMiLCJtdXRlX3NlbmRlcl9vbl9ob2xkIjoiMyIsIm9wX2tleV9saXN0X2ZpeF9iaXRtYXAiOiIzNSIsInAycF90b19yZWxheV9mYWxsYmFja19maXgiOiIxIiwicDJwX3RvX3JlbGF5X2ZhbGxiYWNrX3RpbWVvdXQiOiIxMDAwIiwicmVkYWN0X3BlZXJfaXBfZnMiOiJ0cnVlIiwicmVmYWN0b3Jfc29ja2FkZHJfYXZhaWxhYmxlIjoiMSIsInJlbGF5X2FjdGl2ZV9vbmx5X3N0cmF0ZWd5IjoiMyIsInJlbGF5X2FjdGl2ZV90aW1lb3V0X21zIjoiMCIsInJlbGF5X3VucmVzcG9uc2l2ZV9jaGVja192MiI6IjEiLCJyZWxheV91bnJlc3BvbnNpdmVfcmVzZXRfdGltZW91dCI6Ijc1MDAiLCJyZWxheV91bnJlc3BvbnNpdmVfdGltZW91dCI6IjUwMDAiLCJyZXN0YXJ0X29wdF9iaXRtYXAiOiIxNCIsInJldGFpbl9oYXNfY29ubmVjdGVkX2Zvcl9leGlzdGluZ19wZWVyIjoiMSIsInJ4X3RpbWVvdXRfYWxsb2NfcmVzcF9tcyI6IjUwMDAiLCJzZXRfcHJlZmVycmVkX2hvc3RfYWRkcl9vbmx5X3N3aXRjaCI6IjEiLCJzaWduYWxpbmdfaGFuZGxlcl9zdHJhdGVneSI6IjgiLCJzaWduYWxpbmdfaGFuZGxlcl9zdHJhdGVneV9pbnRlcnZhbF9tcyI6IjMwMDAwIiwic2tpcF9icmlkZ2VkX3AycF9hZGRyX2JpdG1hcCI6IjYiLCJza2lwX2V4dHJhX21lc3NhZ2VfcmVzZXRfY2VyIjoiMSIsInNraXBfcnhfdHJhZmZpY19zdGFydF9pZl9mYWxzZV9wb3NpdGl2ZSI6IjEiLCJzc3RzX2VuYWJsZV94cG9wX3ByZWZlcl9yZWxheV9vdmVycmlkZSI6IjAiLCJ0ZXN0X2RlZmF1bHRfbmV0X2NoZWNrX2dhcF9hZnRlcl9maXJzdF9tZWRpYSI6IjEiLCJ0ZXN0X2RlZmF1bHRfbmV0X2ludGVydmFsX2luX21zZWMiOiIxNTAwMCIsInRyYW5zcG9ydF9yZXN0YXJ0X29uX2lwX2NoYW5nZWRfY2hlY2tfaW50ZXJ2YWxfbXMiOiIxMDAwIiwidHJhbnNwb3J0X3Jlc3RhcnRfb25fbm9fb3Bfa2V5X3RpbWVvdXRfbXMiOiIwIiwidHVuZV93YXRjaGRvZ19iaXRtYXAiOiI1MDAiLCJ1c2VfbmV3X3BpbmdfZm9ybWF0IjoiMSIsInhwb3BfcmVsYXlfZWxlY3Rpb25fc2NoZW1lIjoiMCJ9LCJyZSI6eyJlbmFibGVfY2hlY2tfZm9yX3JldHJ5X2xpbWl0X3RpbWVvdXQiOiJ0cnVlIiwicDJwX2ZpeF9jYW5kX3NpZ25hbGluZyI6InRydWUiLCJwMnBfcmV0cnlfbW9kZSI6IjQiLCJwMnBfcmV0cnlfdGltZW91dCI6IjEyODAwMCIsInRpbWVvdXRfYWZ0ZXJfYWNjZXB0X2Zvcl90Y3BfYWxsb2NfbXNlYyI6IjgwMCIsInRpbWVvdXRfZm9yX3RjcF9hbGxvY19tc2VjIjoiNjAwMCIsInVkcF9iaW5kX3RpbWVvdXRfZm9yX3RjcF9pbl9tc2VjIjoiMzAwMCJ9LCJ0cmFuc3BvcnRfc3J0cCI6eyJ0cF9zcnRwX2VuYWJsZV9saWZlY3ljbGVfbXV0ZXgiOiIwIn0sInZvaXBfc2V0dGluZ3NfdmVyc2lvbiI6eyJyZWxlYXNlX3R5cGUiOiIxIiwidmVyc2lvbl9udW1iZXIiOiIxMTEzODAifX0=",
+                    "decoded": {
+                        "aec": {
+                            "beryl_aec_enable": "true",
+                            "run_aec_followed_by_ns": "true"
+                        },
+                        "bwe": {
+                            "bwe_impl": "8",
+                            "delay_based_bwe_aimd_adpt_threshold_exp": "1"
+                        },
+                        "init_bw": {
+                            "enable_one_side_mode": "1",
+                            "ignore_ping_response_when_oibwe_is_stopped": "1",
+                            "oibwe_fix_race_condition": "1",
+                            "stop_probing_before_accept_send": "1"
+                        },
+                        "ns": {
+                            "denoiser_intensity": "0.55",
+                            "use_denoiser": "true"
+                        },
+                        "options": {
+                            "alloc_error_handler_bitmap": "4294967294",
+                            "alt_af_check_max_default_af_relay_bind_time_ms": "1000",
+                            "audito_ts_jitter_use_frame_ts": "true",
+                            "check_alt_net_state_bitmap": "7",
+                            "connected_fix_bitmap": "4",
+                            "destroy_warp_mcs_rbwe": "1",
+                            "disable_bhh_rtcp_reset_cer": "1",
+                            "disable_p2p": "1",
+                            "elaps ed_msec_since_last_pong_threshold": "2000",
+                            "enable_alloc_error_handling": "1",
+                            "enable_async_transport_restart_bitmap": "15",
+                            "enable_call_peer_platform_fs_fix": "true",
+                            "enable_check_nat64": "1",
+                            "enable_connection_count_check_for_socket_recreation": "1",
+                            "enable_external_alt_sock_fix": "1",
+                            "enable_fieldstat_L1249166PRV": "1",
+                            "enable_fieldstat_L1268635PRV": "true",
+                            "enable_fieldstat_L1276779PRV": "true",
+                            "enable_first_rtp_ssrc_fix": "true",
+                            "enable_logging_voip_settings_version": "1",
+                            "enable_missing_relay_api_lock_bind_fix": "1",
+                            "enable_net_event_copy_payload": "1",
+                            "enable_network_medium_bc": "1",
+                            "enable_none_medium_no_restart": "1",
+                            "enable_nonzero_transaction_id": "1",
+                            "enable_op_key_mem_leak_fix": "1",
+                            "enable_p2p_half_duplex": "1",
+                            "enable_p2p_request_optimization": "1",
+                            "enable_parallel_af_check": "1",
+                            "enable_parallel_af_fieldstat": "1",
+                            "enable_parallel_af_log_fix": "1",
+                            "enable_ping_latency_measure_v2": "1",
+                            "enable_rebind_all_bitmap": "192",
+                            "enable_relay_ping_rtt_fieldstat": "1",
+                            "enable_relay_rx_timeout_ts_v2": "1",
+                            "enable_reset_op_key_in_use_on_transport_restart": "1",
+                            "enable_rtp_last_seqnum_offset_fix": "1",
+                            "enable_send_relay_bind_check_v2": "1",
+                            "enable_skip_host_ip_for_alt_net_socket": "1",
+                            "enable_software_mute_during_call_hold": "true",
+                            "enable_ssrc_demux": "1",
+                            "enable_start_transport_media_on_relay_connection": "true",
+                            "enable_stream_descriptor": "true",
+                            "enable_stream_mutex_restart_fix": "1",
+                            "enable_strip_stun_tid_check": "1",
+                            "enable_subscription_mode_send_bind_to_all": "1",
+                            "enable_transport_stay_on_working_ip_version": "1",
+                            "enable_tx_stop_field_stat": "1",
+                            "enable_unbound_relay_reset_cer": "1",
+                            "enable_unexpected_cer_bitmap": "1",
+                            "enable_upnp": "0",
+                            "enable_weak_wifi_set_pong_ts": "1",
+                            "enable_xpop_fallback_fix_field_stat": "1",
+                            "enable_xpop_field_stat": "1",
+                            "enable_zer o_relay_latency_for_accept": "1",
+                            "exclude_peer_setup_error_from_connected": "1",
+                            "fail_dealloc_on_missing_media": "false",
+                            "fail_empty_e2e_key_material": "0",
+                            "forbid_p2p_for_non_contact": "1",
+                            "gethostip_disable_local_resolution": "true",
+                            "ip_changed_socket_event_reset_interval_ms": "3000",
+                            "keep_ipv6_bridge_interface_bitmap": "7",
+                            "max_aud_restarts_record_silence": "3",
+                            "mute_sender_on_hold": "3",
+                            "op_key_list_fix_bitmap": "35",
+                            "p2p_to_relay_fallback_fix": "1",
+                            "p2p_to_relay_fallback_timeout_ms": "1000",
+                            "redact_peer_ip_fs": "true",
+                            "refactor_sockaddr_available": "1",
+                            "relay_active_only_strategy": "3",
+                            "relay_active_timeout_ms": "0",
+                            "relay_unresponsive_check_v2": "1",
+                            "relay_unresponsive_reset_timeout": "7500",
+                            "relay_unresponsive_timeout": "5000",
+                            "restart_opt_bitmap": "14",
+                            "retain_has_connected_for_existing_peer": "1",
+                            "rx_timeout_alloc_resp_ms": "5000",
+                            "rx_timeout_allc_resp_ms": "5000",
+                            "start_opt_bitmap_max_count": "2",
+                            "transport_restart_on_ip_changed_check_interval_ms": "1000",
+                            "transport_restart_on_no_op_key_timeou t_ms": "0",
+                            "tune_watchdog_bitmap": "500",
+                            "use_new_ping_format": "1",
+                            "xpop_relay_election_scheme": "0"
+                        },
+                        "re": {
+                            "enable_check_for_retry_limit_timeout": "true",
+                            "p2p_fix_cand_signaling": "true",
+                            "p2p_retry_mode": "4",
+                            "p2p_retry_timeout": "1280000",
+                            "timeout_after_accept_for_tcp_alloc_msec": "800",
+                            "timeout_for_tcp_alloc_msec": "600",
+                            "udp_bind_timeout_for_tcp_in_msec": "3000"
+                        },
+                        "transport_srtp": { "tp_srtp_enable_lifetime_multiex": "0" },
+                        "voip_settings_version": { "release_type": "1", "version_number": "111380" }
+                    }
+                }
+            },
+            {
+                "Tag": "relay",
+                "Attrs": {
+                    "attribute_padding": "1",
+                    "peer_pid": "1",
+                    "self_pid": "2",
+                    "uuid": "-QwJEm4urkUjL7Eq"
+                },
+                "Content": [
+                    { "Tag": "participant", "Attrs": { "jid": "557138388109@s.whatsapp.net", "pid": "1" }, "Content": null },
+                    { "Tag": "token", "Attrs": { "id": "0" }, "Content": "CQ8BVc513yhrM5hM7JlDG0NYv7xy8hPUFtlIlOb3AooJ1YfBY44Rl9R8a3TweNLvM+qXpS+fXjYva8Hsbx4OZ0vbBCRHheaJ5YfbT9Tr0VF+tEK17sNhtPuyUfH0igUo52yJ5z0VH7mVS9co9Zc2N3yBrTGi0NU17ze30d3hpQAFsTcob5x/ckLu6eX2aMdQGghw2ceBlRKUTOGN6tR78PiEW35gzON471xfDYdISc/v17qYJcx4ZncccGc1iw==" },
+                    { "Tag": "token", "Attrs": { "id": "1" }, "Content": "CQ8B9Jlu7ScXWQXMJbvuQbMGdp+LBJQS2bv1IKXJCcEPwjmyi1AuK1EWtABkcgD6CwYCo032Fmp5j9sEoU744FusBvyVSfdDgLbtEVFi+t6EZAEhlZ5vHxP+dUTWHW5m6xVrCCiuEDIcJhCU78K2pPfTGhb8WaJxnMl2i+WM6WRyKkxIFNr5TONNoowQzkwqzq6092+Rb8OZby4vXIE2gI+2ukzdheLzzZFwxY0g5KOla0kL6d1A84Eb0BnYKQ==" },
+                    { "Tag": "token", "Attrs": { "id": "2" }, "Content": "CQ8B9M6gAgiaB1cD6i6Y+Ew6OdWvz7qMq6K68rFtI5P05T6JZmWzboXluMQyTHIjnmgTkPJcHx9TK0EwqFW5B1HhVDnyZIkIibCq9gYhv/E6VGuCThC/JOWvUckVdWaG8OsljfPneiwe0vPFTu0hrUj4YKfDtYO+/+VDcQgrtJVx0vVv3arh8mi8aecaKV7Stpz+rsLAeKzj1dzGT0/sxSu71LcBwPmfZE1vICKfMocHcl9MTlrEE978HXrokQ==" },
+                    { "Tag": "key", "Attrs": null, "Content": "aFlwaVBqWmpOUkpsb0gyeUtQTnRzZz09" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "9", "relay_id": "0", "token_id": "0" }, "Content": "qpbsIw2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "9", "relay_id": "0", "token_id": "0" }, "Content": "KAQDsIMFAAH6zrAMMzNN8A2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "20", "protocol": "1", "relay_id": "1", "token_id": "2" }, "Content": "OZCzNg2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "20", "protocol": "1", "relay_id": "1", "token_id": "2" }, "Content": "KgMogPNZATb6zrAMAAAAsQ2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "20", "relay_id": "1", "token_id": "2" }, "Content": "OZCzNg2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "20", "relay_id": "1", "token_id": "2" }, "Content": "KgMogPNZATb6zrAMAAAAsQ2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "25", "protocol": "1", "relay_id": "2", "token_id": "1" }, "Content": "nfAMMw2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "25", "protocol": "1", "relay_id": "2", "token_id": "1" }, "Content": "KgMogPIFAsP6zrAMAAABdw2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "25", "relay_id": "2", "token_id": "1" }, "Content": "nfAMMw2W" },
+                    { "Tag": "te2", "Attrs": { "c2r_rtt": "25", "relay_id": "2", "token_id": "1" }, "Content": "KgMogPIFAsP6zrAMAAABdw2W" },
+                    { "Tag": "hbh_key", "Attrs": null, "Content": "b200U0NZenV1bGVBdVNETWltQzIzbFJkZHY1WEh6MENWUDdYNk5PTQ==" }
+                ]
+            }
+        ]
+    }
+}

@@ -122,6 +122,31 @@ func (si *SIPProxyIntegration) HandleWhatsAppCallTermination(callID string) erro
 	return nil
 }
 
+// HandleWhatsAppTransportInfo processes CallTransport events for audio establishment
+func (si *SIPProxyIntegration) HandleWhatsAppTransportInfo(callID string, transportData interface{}) error {
+	if !si.sipProxy.IsRunning() {
+		return fmt.Errorf("SIP proxy is not running")
+	}
+
+	si.logger.Infof("🎵📡 [TRANSPORT-HANDLER] Processing WhatsApp transport info for CallID: %s", callID)
+	si.logger.Infof("🎵📡 [TRANSPORT-DATA] %+v", transportData)
+
+	// =========================================================================
+	// 🎵 CRITICAL: CallTransport contains transport information for audio
+	// =========================================================================
+	// This event is fired when WhatsApp establishes/updates transport info
+	// We need to extract relevant information and update our RTP proxy
+
+	// Check if we have an active call for this CallID
+	if err := si.sipProxy.UpdateCallTransport(callID, transportData); err != nil {
+		si.logger.Errorf("❌🎵 [TRANSPORT-UPDATE-ERROR] Failed to update call transport for %s: %v", callID, err)
+		return err
+	}
+
+	si.logger.Infof("✅🎵 [TRANSPORT-UPDATE-SUCCESS] Transport info updated successfully for CallID: %s", callID)
+	return nil
+}
+
 // =========================================================================
 // 🔄 LOOP PREVENTION METHODS
 // =========================================================================
@@ -271,55 +296,11 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 		si.logger.Infof("📡 SIP Status: 200 OK (confirmed by sipgo dialog)")
 	}
 
-	// 🟢 AUTOMATICALLY ACCEPT THE CALL IN WHATSAPP TOO
-	si.logger.Infof("✅ SIP authorized call, automatically accepting in WhatsApp...")
-
-	// Aqui precisamos acessar o WhatsApp connection para aceitar a chamada
-	// O fromPhone é quem está ligando, então vamos aceitar a chamada vinda dele
-	if si.connection != nil {
-		// Converter número de telefone para JID WhatsApp
-		fromJID, err := types.ParseJID(fromPhone + "@s.whatsapp.net")
-		if err != nil {
-			si.logger.Errorf("❌ Failed to parse fromPhone JID: %v", err)
-			return
-		}
-
-		// =========================================================================
-		// 📱 WHATSAPP ACCEPTANCE ONLY (NO SIP PROXY DELEGATION)
-		// =========================================================================
-		// We only accept the call in WhatsApp, we DON'T create a new SIP call
-		// since the SIP call is already established and working
-
-		si.logger.Infof("🔄 Attempting to accept WhatsApp call from %s (NO SIP delegation)...", fromPhone)
-
-		// Use proper WhatsApp CallManager with PreAccept -> Accept sequence
-		si.logger.Infof("🔍 Attempting to get CallManager from connection...")
-		callManager := si.connection.GetCallManager()
-		if callManager != nil {
-			si.logger.Infof("✅ CallManager obtained successfully")
-			si.logger.Infof("🔗 Using WhatsApp CallManager with PreAccept -> Accept sequence...")
-
-			// Use the official WhatsApp call acceptance flow: PreAccept -> Accept
-			si.logger.Infof("📞 Calling callManager.AcceptCall with JID: %s, CallID: %s", fromJID.String(), callID)
-			err := callManager.AcceptCall(fromJID, callID)
-			if err != nil {
-				si.logger.Errorf("❌ Failed to accept WhatsApp call via CallManager: %v", err)
-			} else {
-				si.logger.Infof("✅ Successfully accepted WhatsApp call from %s (CallID: %s) using CallManager", fromPhone, callID)
-				if response != nil {
-					si.logger.Infof("🎯 Reason: SIP server responded with %d %s", response.StatusCode, response.Reason)
-				} else {
-					si.logger.Infof("🎯 Reason: SIP server responded with 200 OK")
-				}
-				si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
-			}
-		} else {
-			si.logger.Errorf("❌ WhatsApp CallManager is nil - cannot accept call")
-			si.logger.Errorf("❌ Connection details: %v", si.connection)
-		}
-	} else {
-		si.logger.Errorf("❌ WhatsApp connection not available for accepting call")
-	}
+	// ✅ SIP authorized call - Call was already accepted in immediate acceptance
+	si.logger.Infof("✅ SIP authorized call, call already handled by immediate acceptance")
+	si.logger.Infof("� SKIPPING SECOND ACCEPT - Call already accepted immediately on CallOffer")
+	si.logger.Infof("🎯 Reason: SIP server responded with 200 OK")
+	si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
 }
 
 // onCallRejected é chamado quando uma chamada SIP é rejeitada

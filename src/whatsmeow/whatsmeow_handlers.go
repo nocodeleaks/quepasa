@@ -13,6 +13,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/appstate"
+	"go.mau.fi/whatsmeow/binary"
 	types "go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
@@ -181,8 +182,6 @@ func (source *WhatsmeowHandlers) Register() (err error) {
 
 	logentry := source.GetLogger()
 	logentry.Infof("🔧 Event handler registered, ID: %v, LogLevel: %s", source.eventHandlerID, logentry.Level)
-	logentry.Infof("📞 Call events (CallOffer, CallOfferNotice, CallTerminate) will be captured!")
-	logentry.Infof("🎯 SIP Proxy ready to process incoming calls")
 
 	return
 }
@@ -217,97 +216,46 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		return
 	}
 
-	// 🔍 LOG ALL CALL-RELATED EVENTS FOR DEBUGGING
-	eventType := fmt.Sprintf("%T", rawEvt)
-	if strings.Contains(eventType, "Call") {
-		logentry.Infof("🔍🔍🔍 CALL-RELATED EVENT DETECTED: %s = %+v", eventType, rawEvt)
-
-		// EXTRA DEBUG: Check event type more specifically
-		if eventType == "*events.CallOffer" {
-			logentry.Infof("🎯🎯🎯 CALLOFFER DETECTED IN MAIN HANDLER! 🎯🎯🎯")
-		}
-		if eventType == "*events.CallOfferNotice" {
-			logentry.Infof("📢📢📢 CALLOFFERNOTICE DETECTED IN MAIN HANDLER! 📢📢📢")
-		}
-	}
-
-	// 🔍 EXTRA DEBUG: Log ALL events during call timeframe
-	if eventType != "*events.Receipt" && eventType != "*events.HistorySync" && eventType != "*events.Message" {
-		logentry.Debugf("📋 Event: %s", eventType)
-	}
-
 	switch evt := rawEvt.(type) {
 
 	case *events.Message:
 		go source.Message(*evt, "live")
 		return
 
-		//# region CALLS - Enhanced debugging for VoIP call events
+	//#region CALLS - Enhanced debugging for VoIP call events
+
 	case *events.CallOffer:
-		// =========================================================================
-		// 🚫 IMMEDIATE SIP PROCESSING COMMENTED OUT (CAUSES DUPLICATION)
-		// =========================================================================
-		// This immediate processing was causing duplicate SIP INVITEs
-		// We handle CallOffer in the dedicated CallMessage() function instead
-
-		// COMMENTED OUT: Immediate SIP forwarding (causes duplicate calls)
-		// logentry.Infof("🔥🔥🔥 CALLOFFER CAPTURED! 🔥🔥🔥")
-		// logentry.Infof("📞 CallOffer received: %+v", evt)
-		// logentry.Infof("📞 Call Details - From: %s, CallID: %s, Type: CallOffer", evt.From, evt.CallID)
-		// logentry.Infof("🎯 STARTING SIP PROXY PROCESS NOW!")
-		// logentry.Infof("🔥🔥🔥 PROCESSING CALL IMMEDIATELY 🔥🔥🔥")
-		// ... (rest of immediate processing code commented out)
-		// logentry.Infof("📡 Call processing completed - forwarded to voip.sufficit.com.br:26499")
-
-		// Only basic logging for CallOffer detection
-		logentry.Infof("📞 CallOffer detected - CallID: %s, From: %s", evt.CallID, evt.From.User)
-
-		// Let CallMessage() handle the actual SIP forwarding
-		go source.CallMessage(evt.BasicCallMeta)
+		source.HandleCallOffer(evt)
 		return
 
 	case *events.CallOfferNotice:
-		logentry.Infof("�📢📢 CALLOFFERNOTICE CAPTURED! 📢📢📢")
-		logentry.Infof("����🔔 CallOfferNotice received: %+v", evt)
-		logentry.Infof("📞 Call Details - From: %s, CallID: %s, Type: CallOfferNotice", evt.From, evt.CallID)
-		logentry.Infof("🎯 PROCESSING SIP PROXY DATA!")
-
-		// Enhanced debugging with CallManager
-		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-			logentry.Infof("✅ CallManager created for CallOfferNotice")
-		} else {
-			logentry.Errorf("❌ Failed to create CallManager for CallOfferNotice!")
-		}
-
-		go source.CallMessage(evt.BasicCallMeta)
+		source.HandleCallOfferNotice(evt)
 		return
 
 	case *events.CallRelayLatency:
-		logentry.Infof("📊 CallRelayLatency: %+v", evt)
-		logentry.Infof("📞 Call Performance - From: %s, CallID: %s, Latency: %v", evt.From, evt.CallID, evt.Data)
-
+		source.HandleCallRelayLatency(evt)
 		return
 
 	case *events.CallTerminate:
-		logentry.Infof("📞❌ CallTerminate: %+v", evt)
-		logentry.Infof("📞 Call Ended - From: %s, CallID: %s, Reason: %v", evt.From, evt.CallID, evt.Reason)
-
-		go source.CallTerminateMessage(evt.BasicCallMeta, evt.Reason)
+		source.HandleCallTerminate(evt)
 		return
 
 	case *events.CallAccept:
-		logentry.Infof("📞✅ CallAccept: %+v", evt)
-		logentry.Infof("📞 Call Accepted - From: %s, CallID: %s", evt.From, evt.CallID)
-
-		go source.CallAcceptMessage(evt.BasicCallMeta)
+		source.HandleCallAccept(evt)
 		return
 
 	case *events.CallReject:
-		logentry.Infof("📞❌ CallReject: %+v", evt)
-		logentry.Infof("📞 Call Rejected - From: %s, CallID: %s", evt.From, evt.CallID)
-
-		go source.CallRejectMessage(evt.BasicCallMeta)
+		source.HandleCallReject(evt)
 		return
+
+	case *events.CallTransport:
+		source.HandleCallTransport(evt)
+		return
+
+	case *events.UnknownCallEvent:
+		source.HandleCallUnknown(evt)
+		return
+
 	//#endregion
 
 	case *events.Receipt:
@@ -805,21 +753,23 @@ func (source *WhatsmeowHandlers) CallTerminateMessage(evt types.BasicCallMeta, r
 	reasonStr := fmt.Sprintf("%v", reason)
 	logentry.Infof("🎯🎯🎯 [SIP-PROXY-TERMINATION] WhatsApp call TERMINATED (reason: %s) - sending BYE/CANCEL to SIP server", reasonStr)
 
-	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
-			// Send BYE/CANCEL to SIP server for this call
-			logentry.Infof("📞❌📞❌ [BYE-FOR-TERMINATION] Sending SIP BYE/CANCEL for terminated WhatsApp call: %s (reason: %s)", evt.CallID, reasonStr)
-			err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID)
-			if err != nil {
-				logentry.Errorf("❌❌❌ [BYE-TERMINATION-ERROR] Failed to send SIP BYE/CANCEL: %v", err)
+	if os.Getenv("QP_CALL_META_ONLY") != "1" { // somente se NÃO estiver em modo META-ONLY
+		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+			if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
+				logentry.Infof("📞❌📞❌ [BYE-FOR-TERMINATION] Sending SIP BYE/CANCEL for terminated WhatsApp call: %s (reason: %s)", evt.CallID, reasonStr)
+				if err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID); err != nil {
+					logentry.Errorf("❌❌❌ [BYE-TERMINATION-ERROR] Failed to send SIP BYE/CANCEL: %v", err)
+				} else {
+					logentry.Infof("✅✅✅ [BYE-TERMINATION-SUCCESS] SIP BYE/CANCEL sent successfully for CallID: %s (reason: %s)", evt.CallID, reasonStr)
+				}
 			} else {
-				logentry.Infof("✅✅✅ [BYE-TERMINATION-SUCCESS] SIP BYE/CANCEL sent successfully for CallID: %s (reason: %s)", evt.CallID, reasonStr)
+				logentry.Debug("[META] SIP integration nil; skipping termination forward")
 			}
 		} else {
-			logentry.Warnf("⚠️ SIP integration not available for call termination handling")
+			logentry.Debug("[META] CallManager nil; skipping termination forward")
 		}
 	} else {
-		logentry.Warnf("⚠️ CallManager not available for call termination handling")
+		logentry.Debug("[META-ONLY] Ignorando encaminhamento de término para SIP")
 	}
 
 	// =========================================================================
@@ -885,26 +835,94 @@ func (source *WhatsmeowHandlers) CallRejectMessage(evt types.BasicCallMeta) {
 
 	logentry.Infof("🎯🎯🎯 [CALLREJECT-SIP-TERMINATION] WhatsApp call was REJECTED - sending BYE/CANCEL to SIP server (cache protected)")
 
-	if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
-		if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
-			// Send BYE/CANCEL to SIP server for this call (cache will prevent duplicates)
-			logentry.Infof("📞❌📞❌ [BYE-FOR-REJECTION] Sending SIP BYE/CANCEL for rejected WhatsApp call: %s", evt.CallID)
-			err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID)
-			if err != nil {
-				logentry.Errorf("❌❌❌ [BYE-REJECTION-ERROR] Failed to send SIP BYE/CANCEL: %v", err)
+	if os.Getenv("QP_CALL_META_ONLY") != "1" { // somente se NÃO estiver em modo META-ONLY
+		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+			if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
+				logentry.Infof("📞❌📞❌ [BYE-FOR-REJECTION] Sending SIP BYE/CANCEL for rejected WhatsApp call: %s", evt.CallID)
+				if err := sipIntegration.HandleWhatsAppCallTermination(evt.CallID); err != nil {
+					logentry.Errorf("❌❌❌ [BYE-REJECTION-ERROR] Failed to send SIP BYE/CANCEL: %v", err)
+				} else {
+					logentry.Infof("✅✅✅ [BYE-REJECTION-SUCCESS] SIP BYE/CANCEL sent successfully for CallID: %s", evt.CallID)
+				}
 			} else {
-				logentry.Infof("✅✅✅ [BYE-REJECTION-SUCCESS] SIP BYE/CANCEL sent successfully for CallID: %s", evt.CallID)
+				logentry.Debug("[META] SIP integration nil; skipping rejection forward")
 			}
 		} else {
-			logentry.Warnf("⚠️ SIP integration not available for call rejection handling")
+			logentry.Debug("[META] CallManager nil; skipping rejection forward")
 		}
 	} else {
-		logentry.Warnf("⚠️ CallManager not available for call rejection handling")
+		logentry.Debug("[META-ONLY] Ignorando encaminhamento de rejeição para SIP")
 	}
 
 	// =========================================================================
 	// 🚫 WhatsApp REJECTION PROCESSING COMMENTED OUT
 	// =========================================================================
+	// Commented out: Traditional WhatsApp message creation for rejection events
+	// message := &whatsmeow.WhatsappMessage{}
+	// message.ID = models.NewMessageId()
+	// message.Timestamp = time.Now()
+	// message.FromMe = false
+	// message.Chat = *NewWhatsappChat(source, evt.From)
+	// message.Type = whatsapp.CallMessageType
+	// message.Text = "Call rejected"
+	// if source.WAHandlers != nil {
+	//	go source.WAHandlers.Message(message, "call_reject")
+	// }
+}
+
+// CallTransportMessage handles call transport events - CRITICAL FOR AUDIO FLOW
+func (source *WhatsmeowHandlers) CallTransportMessage(evt types.BasicCallMeta, transportData interface{}) {
+	logentry := source.GetLogger()
+	logentry.Infof("🎵🚀 Call Transport received - CallID: %s, From: %s", evt.CallID, evt.From)
+	logentry.Infof("🎵 Transport Data: %+v", transportData)
+
+	// 🔍 CRITICAL: EXTRACT REMOTE DEVICE IP/PORT INFO FROM TRANSPORT
+	source.extractRemoteDeviceInfo(evt, transportData, logentry)
+
+	// =========================================================================
+	// 🎵 CRITICAL: PROCESS CALLTRANSPORT FOR AUDIO ESTABLISHMENT
+	// =========================================================================
+	// CallTransport events contain the actual media transport information
+	// needed to establish RTP audio streams between WhatsApp and SIP
+
+	if os.Getenv("QP_CALL_META_ONLY") != "1" { // somente se NÃO estiver em modo META-ONLY
+		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+			logentry.Infof("🎵🚀 [TRANSPORT-RESPONSE] Calling CallManager.HandleCallTransport...")
+			if err := callManager.HandleCallTransport(evt.From, evt.CallID, transportData); err != nil {
+				logentry.Errorf("❌🎵 [TRANSPORT-RESPONSE-ERROR] Failed to handle transport: %v", err)
+			}
+			if sipIntegration := callManager.GetSIPProxy(); sipIntegration != nil {
+				logentry.Infof("🎵📡 [TRANSPORT-PROCESS] Processing WhatsApp transport info for CallID: %s", evt.CallID)
+				if err := sipIntegration.HandleWhatsAppTransportInfo(evt.CallID, transportData); err != nil {
+					logentry.Errorf("❌🎵 [TRANSPORT-ERROR] Failed to process transport info: %v", err)
+				} else {
+					logentry.Infof("✅🎵 [TRANSPORT-SUCCESS] Transport info processed successfully for CallID: %s", evt.CallID)
+				}
+			} else {
+				logentry.Debug("[META] SIP integration nil; skipping transport forward")
+			}
+		} else {
+			logentry.Debug("[META] CallManager nil; skipping transport forward")
+		}
+	} else {
+		logentry.Debug("[META-ONLY] Ignorando encaminhamento de transport para SIP")
+	}
+
+	// =========================================================================
+	// 🚫 WhatsApp MESSAGE PROCESSING COMMENTED OUT
+	// =========================================================================
+	// Commented out: Traditional WhatsApp message creation for transport events
+	// CallTransport events are technical media events, not user messages
+	// message := &whatsmeow.WhatsappMessage{}
+	// message.ID = models.NewMessageId()
+	// message.Timestamp = time.Now()
+	// message.FromMe = false
+	// message.Chat = *NewWhatsappChat(source, evt.From)
+	// message.Type = whatsapp.CallMessageType
+	// message.Text = "Call transport"
+	// if source.WAHandlers != nil {
+	//	go source.WAHandlers.Message(message, "call_transport")
+	// }
 	// We only handle SIP cancellation, NO WhatsApp message processing
 
 	// COMMENTED OUT: WhatsApp message processing for call rejection
@@ -918,6 +936,105 @@ func (source *WhatsmeowHandlers) CallRejectMessage(evt types.BasicCallMeta) {
 	// if source.WAHandlers != nil {
 	//	go source.WAHandlers.Message(message, "call_reject")
 	// }
+}
+
+// extractRemoteDeviceInfo analisa o transport data para extrair informações do dispositivo remoto
+func (source *WhatsmeowHandlers) extractRemoteDeviceInfo(evt types.BasicCallMeta, transportData interface{}, logentry *log.Entry) {
+	logentry.Infof("🔍📱 [REMOTE-DEVICE] === ANALISANDO TRANSPORT DO DISPOSITIVO EXTERNO ===")
+	logentry.Infof("🔍📱 [REMOTE-DEVICE] From: %s, CallID: %s", evt.From, evt.CallID)
+
+	// Converter transportData para format mais útil
+	if node, ok := transportData.(*binary.Node); ok {
+		logentry.Infof("🔍📱 [TRANSPORT-NODE] Tag: %s", node.Tag)
+		logentry.Infof("🔍📱 [TRANSPORT-ATTRS] Attributes: %+v", node.Attrs)
+
+		// Analisar candidatos de rede
+		source.analyzeNetworkCandidates(node, logentry)
+
+		// Procurar por informações de IP/porta nos Content
+		source.analyzeTransportContent(node, logentry)
+
+	} else {
+		logentry.Infof("🔍📱 [TRANSPORT-RAW] Raw data type: %T", transportData)
+		logentry.Infof("🔍📱 [TRANSPORT-RAW] Raw data: %+v", transportData)
+	}
+}
+
+// analyzeNetworkCandidates analisa candidatos de rede no transport message
+func (source *WhatsmeowHandlers) analyzeNetworkCandidates(node *binary.Node, logentry *log.Entry) {
+	logentry.Infof("🔍🌐 [NETWORK-CANDIDATES] Analisando candidatos de rede...")
+
+	// Percorrer todos os Content nodes
+	children := node.GetChildren()
+	for i, contentNode := range children {
+		if contentNode.Tag == "net" {
+			logentry.Infof("🔍🌐 [NET-NODE-%d] Found net node with attrs: %+v", i, contentNode.Attrs)
+
+			// Procurar por candidatos (candidates) que contêm IPs
+			candidates := contentNode.GetChildren()
+			for j, candidate := range candidates {
+				logentry.Infof("🔍🌐 [CANDIDATE-%d-%d] Tag: %s, Attrs: %+v", i, j, candidate.Tag, candidate.Attrs)
+
+				// Extrair IP e porta dos candidatos
+				if candidate.Tag == "candidate" {
+					if ip, exists := candidate.Attrs["ip"]; exists {
+						logentry.Infof("🔍📍 [REMOTE-IP-FOUND] DISPOSITIVO EXTERNO IP: %s", ip)
+					}
+					if port, exists := candidate.Attrs["port"]; exists {
+						logentry.Infof("🔍🔌 [REMOTE-PORT-FOUND] DISPOSITIVO EXTERNO PORT: %s", port)
+					}
+					if priority, exists := candidate.Attrs["priority"]; exists {
+						logentry.Infof("🔍⭐ [CANDIDATE-PRIORITY] Priority: %s", priority)
+					}
+					if protocol, exists := candidate.Attrs["protocol"]; exists {
+						logentry.Infof("🔍📡 [CANDIDATE-PROTOCOL] Protocol: %s", protocol)
+					}
+					if candType, exists := candidate.Attrs["type"]; exists {
+						logentry.Infof("🔍🏷️ [CANDIDATE-TYPE] Type: %s", candType)
+					}
+				}
+			}
+		}
+	}
+}
+
+// analyzeTransportContent analisa todo o conteúdo do transport message
+func (source *WhatsmeowHandlers) analyzeTransportContent(node *binary.Node, logentry *log.Entry) {
+	logentry.Infof("🔍📄 [TRANSPORT-CONTENT] Analisando conteúdo completo...")
+
+	// Função recursiva para analisar todos os níveis
+	var analyzeNode func(*binary.Node, int)
+	analyzeNode = func(n *binary.Node, level int) {
+		indent := strings.Repeat("  ", level)
+		logentry.Infof("🔍📄 [LEVEL-%d] %sTag: %s", level, indent, n.Tag)
+
+		if len(n.Attrs) > 0 {
+			for key, value := range n.Attrs {
+				logentry.Infof("🔍📄 [LEVEL-%d] %s  %s: %s", level, indent, key, value)
+
+				// Procurar por padrões de IP
+				if strings.Contains(strings.ToLower(key), "ip") ||
+					strings.Contains(strings.ToLower(key), "host") ||
+					strings.Contains(strings.ToLower(key), "addr") {
+					logentry.Infof("🔍📍 [IP-PATTERN-FOUND] POSSÍVEL IP: %s = %s", key, value)
+				}
+
+				// Procurar por padrões de porta
+				if strings.Contains(strings.ToLower(key), "port") {
+					logentry.Infof("🔍🔌 [PORT-PATTERN-FOUND] POSSÍVEL PORTA: %s = %s", key, value)
+				}
+			}
+		}
+
+		// Analisar Content recursivamente
+		children := n.GetChildren()
+		for i, child := range children {
+			logentry.Infof("🔍📄 [LEVEL-%d] %sContent[%d]:", level, indent, i)
+			analyzeNode(&child, level+1)
+		}
+	}
+
+	analyzeNode(node, 0)
 }
 
 /*
@@ -1071,3 +1188,35 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 }
 
 //#endregion
+
+// attemptImmediateAcceptance tries to immediately accept a WhatsApp call before any other processing
+// This is TESTE 6 - attempt to stop the call from ringing by accepting it instantly
+func (source *WhatsmeowHandlers) attemptImmediateAcceptance(from types.JID, callID string) {
+	logentry := source.GetLogger()
+
+	logentry.Infof("🚀🔥 [TESTE-6-START] === IMMEDIATE CALL ACCEPTANCE ATTEMPT ===")
+	logentry.Infof("🚀🔥 [TESTE-6] From: %s, CallID: %s", from, callID)
+	logentry.Infof("🚀🔥 [TESTE-6] Theory: Accept call BEFORE any SIP processing to stop ringing")
+
+	// Try to get CallManager and accept immediately
+	if source.WhatsmeowConnection != nil {
+		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+			logentry.Infof("🚀🔥 [TESTE-6] Got CallManager, attempting DIRECT ACCEPT (sem PREACCEPT)...")
+			go func() {
+				logentry.Infof("🚀🔥 [TESTE-6-GOROUTINE] Sending DIRECT ACCEPT now...")
+				if err := callManager.AcceptDirectCall(from, callID); err != nil {
+					logentry.Errorf("❌🔥 [TESTE-6-ERROR] Direct accept failed: %v", err)
+				} else {
+					logentry.Infof("✅🔥 [TESTE-6-SUCCESS] Direct ACCEPT sent (waiting for TRANSPORT)")
+				}
+				logentry.Infof("🚀🔥 [TESTE-6-COMPLETE] === DIRECT ACCEPT DISPATCHED ===")
+			}()
+		} else {
+			logentry.Errorf("❌🔥 [TESTE-6-ERROR] CallManager not available for immediate acceptance")
+		}
+	} else {
+		logentry.Errorf("❌🔥 [TESTE-6-ERROR] WhatsmeowConnection not available for immediate acceptance")
+	}
+
+	logentry.Infof("🚀🔥 [TESTE-6-DISPATCH] Immediate acceptance dispatched, continuing with normal processing...")
+}

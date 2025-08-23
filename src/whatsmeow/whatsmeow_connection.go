@@ -734,7 +734,8 @@ func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus 
 // GetCallManager returns the CallManager instance with lazy initialization (singleton)
 func (conn *WhatsmeowConnection) GetCallManager() *WhatsmeowCallManager {
 	if conn.CallManager == nil {
-		conn.CallManager = NewWhatsmeowCallManager(conn)
+		logger := conn.GetLogger()
+		conn.CallManager = NewWhatsmeowCallManager(conn, logger, nil) // SIP integration será definida depois
 	}
 	return conn.CallManager
 }

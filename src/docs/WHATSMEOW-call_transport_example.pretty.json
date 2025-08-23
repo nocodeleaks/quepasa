@@ -1,0 +1,28 @@
+/*  events.CallTransport */
+{
+  "From": "557138388109@s.whatsapp.net",
+  "Timestamp": "2025-08-14T16:35:59-03:00",
+  "CallCreator": "557138388109@s.whatsapp.net",
+  "CallID": "0B359728A546ED2831A2308EE207EF8F",
+  "GroupJID": "",
+  "RemotePlatform": "",
+  "RemoteVersion": "",
+  "Data": {
+    "Tag": "transport",
+    "Attrs": {
+      "call-creator": "557138388109@s.whatsapp.net",
+      "call-id": "0B359728A546ED2831A2308EE207EF8F",
+      "transport-message-type": "1"
+    },
+    "Content": [
+      {
+        "Tag": "net",
+        "Attrs": {
+          "medium": "2",
+          "protocol": "0"
+        },
+        "Content": null
+      }
+    ]
+  }
+}

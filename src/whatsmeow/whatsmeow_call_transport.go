@@ -31,9 +31,9 @@ import (
 // WhatsmeowCallTransport embeds the original events.CallTransport and adds a normalized Data tree.
 type WhatsmeowCallTransport struct {
 	TimestampRaw string `json:"Timestamp,omitempty"`
-	
+
 	events.CallTransport
-	Data TransportDataNode `json:"Data"`
+	Data     TransportDataNode `json:"Data"`
 	dataOnce sync.Once
 }
 
@@ -41,12 +41,6 @@ type TransportDataNode struct {
 	Tag     string            `json:"Tag"`
 	Attrs   map[string]string `json:"Attrs"`
 	Content []RawNode         `json:"Content"`
-}
-
-type RawNode struct {
-	Tag     string            `json:"Tag"`
-	Attrs   map[string]string `json:"Attrs"`
-	Content json.RawMessage   `json:"Content"`
 }
 
 func NewWhatsmeowCallTransport(evt *events.CallTransport) *WhatsmeowCallTransport {
@@ -110,91 +104,45 @@ func (w *WhatsmeowCallTransport) hydrateFromEventData() {
 	}
 }
 
-func toRawNode(v reflect.Value) (RawNode, bool) {
-	var rn RawNode
-	if v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			return rn, false
-		}
-		v = v.Elem()
-	}
-	if v.Kind() != reflect.Struct {
-		return rn, false
-	}
-	tagField := v.FieldByName("Tag")
-	if !tagField.IsValid() || tagField.Kind() != reflect.String {
-		return rn, false
-	}
-	rn.Tag = tagField.String()
-	attrsField := v.FieldByName("Attrs")
-	if attrsField.IsValid() {
-		rn.Attrs = map[string]string{}
-		switch attrsField.Kind() {
-		case reflect.Map:
-			for _, key := range attrsField.MapKeys() {
-				val := attrsField.MapIndex(key)
-				rn.Attrs[fmt.Sprint(key.Interface())] = fmt.Sprint(val.Interface())
-			}
-		}
-	}
-	contentField := v.FieldByName("Content")
-	if contentField.IsValid() && contentField.Kind() != reflect.Invalid && !contentField.IsZero() {
-		cf := contentField
-		if cf.Kind() == reflect.Interface && !cf.IsNil() { cf = cf.Elem() }
-		switch cf.Kind() {
-		case reflect.String:
-			b, _ := json.Marshal(cf.String())
-			rn.Content = b
-		case reflect.Slice, reflect.Array:
-			if cf.Type().Elem().Kind() == reflect.Uint8 {
-				b, _ := json.Marshal(string(cf.Bytes()))
-				rn.Content = b
-			} else {
-				children := make([]RawNode, 0, cf.Len())
-				for i := 0; i < cf.Len(); i++ {
-					childVal := cf.Index(i)
-					if cn, okc := toRawNode(childVal); okc { children = append(children, cn) }
-				}
-				if len(children) > 0 { if b, err := json.Marshal(children); err == nil { rn.Content = b } }
-			}
-		case reflect.Struct:
-			if cn, okc := toRawNode(cf); okc {
-				children := []RawNode{cn}
-				if b, err := json.Marshal(children); err == nil { rn.Content = b }
-			}
-		default:
-			b, _ := json.Marshal(fmt.Sprint(cf.Interface()))
-			rn.Content = b
-		}
-	}
-	return rn, true
-}
-
 // GetData returns a pointer to the normalized TransportDataNode ensuring hydration once.
 func (c *WhatsmeowCallTransport) GetData() *TransportDataNode {
 	c.dataOnce.Do(func() {
-		if len(c.Data.Content) == 0 { c.hydrateFromEventData() }
+		if len(c.Data.Content) == 0 {
+			c.hydrateFromEventData()
+		}
 	})
 	return &c.Data
 }
 
 // IsValid tells if the transport is structurally valid and not expired (TTL 90s).
 func (c *WhatsmeowCallTransport) IsValid() bool {
-	if c == nil { return false }
-	if c.CallID == "" { return false }
+	if c == nil {
+		return false
+	}
+	if c.CallID == "" {
+		return false
+	}
 	d := c.GetData()
-	if strings.ToLower(d.Tag) != "transport" { return false }
+	if strings.ToLower(d.Tag) != "transport" {
+		return false
+	}
 	const ttl = 90 * time.Second
 	t := time.Time{}
 	rv := reflect.ValueOf(&c.CallTransport).Elem()
-	if f := rv.FieldByName("Timestamp"); f.IsValid() && f.CanInterface() { if tt, ok := f.Interface().(time.Time); ok { t = tt } }
+	if f := rv.FieldByName("Timestamp"); f.IsValid() && f.CanInterface() {
+		if tt, ok := f.Interface().(time.Time); ok {
+			t = tt
+		}
+	}
 	if !t.IsZero() {
-		if time.Since(t) > ttl { return false }
+		if time.Since(t) > ttl {
+			return false
+		}
 	}
 	return true
 }
 
 func (c *WhatsmeowCallTransport) Summary() string {
 	d := c.GetData()
-	return fmt.Sprintf("callid=%s ts=%s", c.CallID, c.TimestampRaw)
+	return fmt.Sprintf("callid=%s ts=%s data=%v", c.CallID, c.TimestampRaw, d)
 }

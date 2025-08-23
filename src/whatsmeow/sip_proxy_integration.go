@@ -122,31 +122,6 @@ func (si *SIPProxyIntegration) HandleWhatsAppCallTermination(callID string) erro
 	return nil
 }
 
-// HandleWhatsAppTransportInfo processes CallTransport events for audio establishment
-func (si *SIPProxyIntegration) HandleWhatsAppTransportInfo(callID string, transportData interface{}) error {
-	if !si.sipProxy.IsRunning() {
-		return fmt.Errorf("SIP proxy is not running")
-	}
-
-	si.logger.Infof("🎵📡 [TRANSPORT-HANDLER] Processing WhatsApp transport info for CallID: %s", callID)
-	si.logger.Infof("🎵📡 [TRANSPORT-DATA] %+v", transportData)
-
-	// =========================================================================
-	// 🎵 CRITICAL: CallTransport contains transport information for audio
-	// =========================================================================
-	// This event is fired when WhatsApp establishes/updates transport info
-	// We need to extract relevant information and update our RTP proxy
-
-	// Check if we have an active call for this CallID
-	if err := si.sipProxy.UpdateCallTransport(callID, transportData); err != nil {
-		si.logger.Errorf("❌🎵 [TRANSPORT-UPDATE-ERROR] Failed to update call transport for %s: %v", callID, err)
-		return err
-	}
-
-	si.logger.Infof("✅🎵 [TRANSPORT-UPDATE-SUCCESS] Transport info updated successfully for CallID: %s", callID)
-	return nil
-}
-
 // =========================================================================
 // 🔄 LOOP PREVENTION METHODS
 // =========================================================================

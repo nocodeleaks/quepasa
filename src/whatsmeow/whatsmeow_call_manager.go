@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nocodeleaks/quepasa/sipproxy"
 	"github.com/pion/stun"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/binary"
@@ -438,7 +437,7 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 func (cm *WhatsmeowCallManager) performSTUNDiscovery() (string, int, error) {
 	// Novo: fallback múltiplo opcional
 	fallbackEnabled := os.Getenv("QP_CALL_STUN_FALLBACK") == "1"
-	primary := sipproxy.META_STUN_SERVER
+	primary := "stun1.l.google.com:19302"
 	servers := []string{primary}
 	if fallbackEnabled {
 		servers = append(servers, "stun1.l.google.com:19302", "stun2.l.google.com:19302", "stun.l.google.com:19302", "stun.cloudflare.com:3478")

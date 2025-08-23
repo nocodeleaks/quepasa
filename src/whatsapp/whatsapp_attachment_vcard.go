@@ -4,10 +4,9 @@ func GenerateVCardAttachment(content []byte, filename string) (attach *WhatsappA
 	length := uint64(len(content))
 
 	attach = &WhatsappAttachment{
-		CanDownload: false,
-		Mimetype:    "text/x-vcard",
-		FileName:    filename,
-		FileLength:  length,
+		Mimetype:   "text/x-vcard",
+		FileName:   filename,
+		FileLength: length,
 	}
 
 	attach.SetContent(&content)

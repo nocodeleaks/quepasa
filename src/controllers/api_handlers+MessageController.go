@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -91,6 +92,53 @@ func RevokeController(w http.ResponseWriter, r *http.Request) {
 		response.ParseSuccess("revoked with success")
 		RespondSuccess(w, response)
 	}
+}
+
+func EditMessageController(w http.ResponseWriter, r *http.Request) {
+
+	response := &models.QpResponse{}
+	// Declare a new request struct
+	request := &EditMessageRequest{}
+
+	if r.ContentLength > 0 && r.Method == http.MethodPost {
+		// Try to decode the request body into the struct. If there is an error,
+		// respond to the client with the error message and a 400 status code.
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			jsonErr := fmt.Errorf("invalid json body: %s", err.Error())
+			response.ParseError(jsonErr)
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	if len(request.Content) == 0 {
+		response.ParseError(fmt.Errorf("empty content for edit"))
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(request.MessageId) == 0 {
+		response.ParseError(fmt.Errorf("empty message id"))
+		RespondInterface(w, response)
+		return
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	err = server.Edit(request.MessageId, request.Content)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+	response.ParseSuccess("message edited successfully")
+	RespondSuccess(w, response)
 }
 
 //endregion

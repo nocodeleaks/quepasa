@@ -15,7 +15,7 @@ type IWhatsappMessage interface {
 	GetAttachment() *WhatsappAttachment
 
 	// Original message from source service
-	GetSource() interface{}
+	GetSource() any
 
 	GetParticipantId() string
 }

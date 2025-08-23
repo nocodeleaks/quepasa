@@ -289,7 +289,10 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		*events.PushName,
 		*events.GroupInfo,
 		*events.QR:
-		logentry.Tracef("event ignored: %v", reflect.TypeOf(evt))
+		logentry.Tracef("event not implemented yet: %v", reflect.TypeOf(evt))
+		if source.ShouldDispatchUnhandled() {
+			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
+		}
 		return // ignoring not implemented yet
 
 	default:
@@ -342,7 +345,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 		message.Chat.Title = GetChatTitle(source.Client, info.Chat)
 
 		// Populate phone field
-		message.Chat.PopulatePhone(source.Client)
+		message.Chat.PopulatePhone(source)
 
 		// Get LID for the chat if available
 		if source.Client != nil && source.Client.Store != nil {
@@ -364,7 +367,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 			message.Participant.Title = GetChatTitle(source.Client, info.Sender)
 
 			// Populate phone field for participant
-			message.Participant.PopulatePhone(source.Client)
+			message.Participant.PopulatePhone(source)
 
 			// If title is empty, use PushName as fallback
 			if len(message.Participant.Title) == 0 {
@@ -474,11 +477,8 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		return
 	}
 
-	// Filter out messageContextInfo from the message content
-	filteredContent := FilterMessageContextInfo(evt.Message)
-
 	message := &whatsapp.WhatsappMessage{
-		Content:        filteredContent,
+		Content:        evt.Message,
 		InfoForHistory: evt.Info,
 		FromHistory:    from == "history",
 	}
@@ -495,7 +495,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	message.Chat.Title = GetChatTitle(handler.Client, evt.Info.Chat)
 
 	// Populate phone field
-	message.Chat.PopulatePhone(handler.Client)
+	message.Chat.PopulatePhone(handler)
 
 	// Get LID for the chat if available
 	if handler.Client != nil && handler.Client.Store != nil {
@@ -516,7 +516,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		message.Participant.Title = GetChatTitle(handler.Client, evt.Info.Sender)
 
 		// Populate phone field for participant
-		message.Participant.PopulatePhone(handler.Client)
+		message.Participant.PopulatePhone(handler)
 
 		// If title is empty, use PushName as fallback, sugested by hugo sampaio, removing message.FromMe
 		if len(message.Participant.Title) == 0 {
@@ -550,28 +550,6 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	}
 
 	handler.Follow(message, from)
-}
-
-// FilterMessageContextInfo removes the messageContextInfo field from message content
-func FilterMessageContextInfo(content interface{}) interface{} {
-	if content == nil {
-		return content
-	}
-
-	// Use reflection to check if content has messageContextInfo field
-	if reflect.TypeOf(content).Kind() == reflect.Ptr {
-		elem := reflect.ValueOf(content).Elem()
-		if elem.IsValid() && elem.Kind() == reflect.Struct {
-			// Check if the struct has a messageContextInfo field
-			field := elem.FieldByName("MessageContextInfo")
-			if field.IsValid() && field.CanSet() {
-				// Set the field to nil/zero value
-				field.Set(reflect.Zero(field.Type()))
-			}
-		}
-	}
-
-	return content
 }
 
 //#endregion
@@ -649,6 +627,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	message.Chat = whatsapp.WhatsappChat{}
 	chatID := fmt.Sprint(evt.From.User, "@", evt.From.Server)
 	message.Chat.Id = chatID
+	message.Chat.PopulatePhone(source)
 
 	message.Type = whatsapp.CallMessageType
 
@@ -754,6 +733,7 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 
 		message.Chat = whatsapp.WhatsappChat{}
 		message.Chat.Id = chatID
+		message.Chat.PopulatePhone(source)
 
 		message.Type = whatsapp.SystemMessageType
 
@@ -819,6 +799,13 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 	}
 
 	handler.Follow(message, "group")
+}
+
+func (handler *WhatsmeowHandlers) GetPhoneFromLID(lid string) (string, error) {
+	if handler.service == nil {
+		return "", fmt.Errorf("no service available")
+	}
+	return handler.service.GetPhoneFromLID(lid)
 }
 
 //#endregion

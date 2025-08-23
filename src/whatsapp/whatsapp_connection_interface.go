@@ -37,6 +37,7 @@ type IWhatsappConnection interface {
 
 	Revoke(IWhatsappMessage) error
 
+	Edit(IWhatsappMessage, string) error
 	// Default send message method
 	Send(*WhatsappMessage) (IWhatsappSendResponse, error)
 
@@ -89,6 +90,9 @@ type IWhatsappConnection interface {
 
 	// Create a group
 	CreateGroup(string, []string) (interface{}, error)
+
+	// Leave a group
+	LeaveGroup(string) error
 
 	// Update Group Name
 	UpdateGroupSubject(string, string) (interface{}, error)

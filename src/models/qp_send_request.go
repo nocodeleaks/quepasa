@@ -127,11 +127,10 @@ func (source *QpSendRequest) ToWhatsappAttachment() (result QpToWhatsappAttachme
 	logentry := source.GetLogger()
 
 	attach := &whatsapp.WhatsappAttachment{
-		CanDownload: false,
-		Mimetype:    source.Mimetype,
-		FileLength:  source.FileLength,
-		FileName:    source.FileName,
-		Seconds:     source.Seconds,
+		Mimetype:   source.Mimetype,
+		FileLength: source.FileLength,
+		FileName:   source.FileName,
+		Seconds:    source.Seconds,
 	}
 
 	// validating content length

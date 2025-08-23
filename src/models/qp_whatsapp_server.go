@@ -141,7 +141,10 @@ func (source *QpWhatsappServer) DownloadData(id string) ([]byte, error) {
 		return nil, err
 	}
 
-	source.GetLogger().Infof("downloading msg data %s", id)
+	logentry := source.GetLogger()
+	logentry = logentry.WithField(LogFields.MessageId, id)
+	logentry.Info("downloading msg data")
+
 	return source.connection.DownloadData(msg)
 }
 
@@ -158,7 +161,10 @@ func (source *QpWhatsappServer) Download(id string, cache bool) (att *whatsapp.W
 		return
 	}
 
-	source.GetLogger().Infof("downloading msg %s, using cache: %v", id, cache)
+	logentry := source.GetLogger()
+	logentry = logentry.WithField(LogFields.MessageId, id)
+	logentry.Infof("downloading msg attachment, using cache: %v", cache)
+
 	att, err = source.connection.Download(msg, cache)
 	if err != nil {
 		return
@@ -187,6 +193,16 @@ func (source *QpWhatsappServer) Revoke(id string) (err error) {
 
 	source.GetLogger().Infof("revoking msg %s", id)
 	return source.connection.Revoke(msg)
+}
+
+func (source *QpWhatsappServer) Edit(id string, newContent string) (err error) {
+	msg, err := source.Handler.GetById(id)
+	if err != nil {
+		return
+	}
+
+	source.GetLogger().Infof("editing msg %s", id)
+	return source.connection.Edit(msg, newContent)
 }
 
 //endregion
@@ -817,6 +833,15 @@ func (server *QpWhatsappServer) CreateGroup(name string, participants []string) 
 	}
 
 	return conn.CreateGroup(name, participants)
+}
+
+func (server *QpWhatsappServer) LeaveGroup(groupID string) error {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return err
+	}
+
+	return conn.LeaveGroup(groupID)
 }
 
 func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (interface{}, error) {

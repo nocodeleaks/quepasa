@@ -331,13 +331,14 @@ func (source *WhatsmeowConnection) GetContacts() (chats []whatsapp.WhatsappChat,
 // func (cli *Client) Download(msg DownloadableMessage) (data []byte, err error)
 func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) (data []byte, err error) {
 	msg := imsg.GetSource()
+	logentry := source.GetLogger().WithField(LogFields.MessageId, imsg.GetId())
+
+	// Try direct downloadable message first
 	downloadable, ok := msg.(whatsmeow.DownloadableMessage)
 	if ok {
-		return source.Client.Download(context.TODO(), downloadable)
+		logentry.Trace("Message implements DownloadableMessage directly, using Client.Download()")
+		return source.Client.Download(context.Background(), downloadable)
 	}
-
-	logentry := source.GetLogger()
-	logentry.Debug("not downloadable type, trying default message")
 
 	waMsg, ok := msg.(*waE2E.Message)
 	if !ok {
@@ -345,6 +346,7 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		if attach != nil {
 			data := attach.GetContent()
 			if data != nil {
+				logentry.Trace("no waMsg, found attachment, returning content")
 				return *data, err
 			}
 		}
@@ -353,43 +355,41 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		return
 	}
 
-	data, err = source.Client.DownloadAny(context.TODO(), waMsg)
-	if err != nil {
-		if strings.Contains(err.Error(), whatsmeow.ErrFileLengthMismatch.Error()) {
-			logentry.Infof("ignoring (%s) whatsmeow error for msg id: %s", whatsmeow.ErrFileLengthMismatch.Error(), imsg.GetId())
-			err = nil
-		}
+	downloadable = GetDownloadableMessage(waMsg)
+	if downloadable != nil {
+		logentry.Trace("waMsg implements DownloadableMessage, using Client.Download()")
+		return source.Client.Download(context.Background(), downloadable)
 	}
 
-	return
+	// If we reach here, it means we have a waE2E.Message but no DownloadableMessage interface
+	return nil, fmt.Errorf("message (%s) is not downloadable", imsg.GetId())
 }
 
 func (conn *WhatsmeowConnection) Download(imsg whatsapp.IWhatsappMessage, cache bool) (att *whatsapp.WhatsappAttachment, err error) {
+	logentry := conn.GetLogger().WithField(LogFields.MessageId, imsg.GetId())
+	logentry.Tracef("Download() method called, Cache: %v", cache)
+
 	att = imsg.GetAttachment()
 	if att == nil {
-		err = fmt.Errorf("message (%s) does not contains attachment info", imsg.GetId())
-		return
+		return nil, fmt.Errorf("message (%s) does not contains attachment info", imsg.GetId())
 	}
 
-	if !att.HasContent() && !att.CanDownload {
-		err = fmt.Errorf("message (%s) attachment with invalid content and not available to download", imsg.GetId())
-		return
+	if cache && att.HasContent() {
+		logentry.Debugf("Download() using cached content - HasContent: %v", att.HasContent())
+		return att, nil
 	}
 
-	if !att.HasContent() || (att.CanDownload && !cache) {
-		data, err := conn.DownloadData(imsg)
-		if err != nil {
-			return att, err
-		}
-
-		if !cache {
-			newAtt := *att
-			att = &newAtt
-		}
-
-		att.SetContent(&data)
+	data, err := conn.DownloadData(imsg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download data for message (%s): %v", imsg.GetId(), err)
 	}
 
+	if !cache {
+		newAtt := *att
+		att = &newAtt
+	}
+
+	att.SetContent(&data)
 	return
 }
 
@@ -412,6 +412,32 @@ func (source *WhatsmeowConnection) Revoke(msg whatsapp.IWhatsappMessage) error {
 	_, err = source.Client.SendMessage(context.Background(), jid, newMessage)
 	if err != nil {
 		logentry.Infof("revoke error: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+// func (cli *Client) BuildEdit(chat types.JID, id types.MessageID, newContent *waE2E.Message) *waE2E.Message {
+func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newContent string) error {
+	logentry := source.GetLogger()
+
+	jid, err := types.ParseJID(msg.GetChatId())
+	if err != nil {
+		logentry.Infof("edit message error on get jid: %s", err)
+		return err
+	}
+
+	// Create a new message with the edited content
+	editedMessage := &waE2E.Message{
+		Conversation: proto.String(newContent),
+	}
+
+	// Build the edit message using the new content
+	newMessage := source.Client.BuildEdit(jid, msg.GetId(), editedMessage)
+	_, err = source.Client.SendMessage(context.Background(), jid, newMessage)
+	if err != nil {
+		logentry.Infof("edit message error: %s", err)
 		return err
 	}
 
@@ -739,6 +765,8 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 		}
 
 		wg.Done()
+
+		// ending after the first the loop
 		break
 	}
 
@@ -929,7 +957,35 @@ func (conn *WhatsmeowConnection) GetJoinedGroups() ([]interface{}, error) {
 		return nil, err
 	}
 
-	// Convert []*types.GroupInfo to []interface{}
+	// Iterate over groupInfos and set the DisplayName for each participant
+	for _, groupInfo := range groupInfos {
+		if groupInfo.Participants != nil {
+			for i, participant := range groupInfo.Participants {
+				// Get the contact info from the store
+				contact, err := conn.Client.Store.Contacts.GetContact(context.TODO(), participant.JID)
+				if err != nil {
+					// If no contact info is found, fallback to JID user part
+					groupInfo.Participants[i].DisplayName = participant.JID.User
+				} else {
+					// Set the DisplayName field to the contact's full name or push name
+					if len(contact.FullName) > 0 {
+						groupInfo.Participants[i].DisplayName = contact.FullName
+					} else if len(contact.PushName) > 0 {
+						groupInfo.Participants[i].DisplayName = contact.PushName
+					} else {
+						groupInfo.Participants[i].DisplayName = "" // Fallback to JID user part
+					}
+				}
+			}
+		} else {
+
+			// If Participants is nil, initialize it to an empty slice
+			groupInfo.Participants = []types.GroupParticipant{}
+			// You might want to log this or handle it differently
+			conn.GetLogger().Warnf("Group %s has nil Participants, initializing to empty slice", groupInfo.JID.String())
+		}
+	}
+
 	groups := make([]interface{}, len(groupInfos))
 	for i, group := range groupInfos {
 		groups[i] = group
@@ -948,7 +1004,37 @@ func (conn *WhatsmeowConnection) GetGroupInfo(groupId string) (interface{}, erro
 		return nil, err
 	}
 
-	return conn.Client.GetGroupInfo(jid)
+	groupInfo, err := conn.Client.GetGroupInfo(jid)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fill contact names for participants
+	if groupInfo.Participants != nil {
+		for i, participant := range groupInfo.Participants {
+			// Get the contact info from the store
+			contact, err := conn.Client.Store.Contacts.GetContact(context.TODO(), participant.JID)
+			if err != nil {
+				// If no contact info is found, fallback to JID user part
+				groupInfo.Participants[i].DisplayName = participant.JID.User
+			} else {
+				// Set the DisplayName field to the contact's full name or push name
+				if len(contact.FullName) > 0 {
+					groupInfo.Participants[i].DisplayName = contact.FullName
+				} else if len(contact.PushName) > 0 {
+					groupInfo.Participants[i].DisplayName = contact.PushName
+				} else {
+					groupInfo.Participants[i].DisplayName = "" // Fallback to JID user part
+				}
+			}
+		}
+	} else {
+		// If Participants is nil, initialize it to an empty slice
+		groupInfo.Participants = []types.GroupParticipant{}
+		conn.GetLogger().Warnf("Group %s has nil Participants, initializing to empty slice", groupInfo.JID.String())
+	}
+
+	return groupInfo, nil
 }
 
 func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string) (interface{}, error) {
@@ -984,6 +1070,26 @@ func (conn *WhatsmeowConnection) CreateGroup(name string, participants []string)
 
 	// Call the existing method with the constructed request
 	return conn.Client.CreateGroup(groupConfig)
+}
+
+func (conn *WhatsmeowConnection) LeaveGroup(groupID string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	// Parse the group ID to JID format
+	jid, err := types.ParseJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group JID format: %v", err)
+	}
+
+	// Leave the group using whatsmeow client
+	err = conn.Client.LeaveGroup(jid)
+	if err != nil {
+		return fmt.Errorf("failed to leave group: %v", err)
+	}
+
+	return nil
 }
 
 func (conn *WhatsmeowConnection) UpdateGroupSubject(groupID string, name string) (interface{}, error) {

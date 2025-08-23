@@ -8,11 +8,12 @@ on:
     branches:
       - main
       - develop
+      - new-ui          # adicionada branch new-ui
     tags:
       - v*
 
 permissions:
-  contents: write    # para criar tags e releases
+  contents: write
 
 env:
   REGISTRY: docker.io
@@ -152,4 +153,117 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-latest
+          
+
+  push_new_ui:
+    # 1) roda *após* o sync e portanto após o push_main
+    needs: sync_new_ui
+    name: Build & Push new‑ui Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      # 2) faz checkout da branch new‑ui já atualizada pelo sync_new_ui
+      - name: Checkout new‑ui
+        uses: actions/checkout@v3
+        with:
+          ref: new-ui
+          fetch-depth: 0
+
+      # 3) extrai a QpVersion que acabou de chegar da main
+      - name: Extract QpVersion
+        id: extract_newui
+        run: |
+          VERSION=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      # 4) login no DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 5) build & push das duas tags new‑ui
+      - name: Build & Push new‑ui Images
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}
+
+  sync_new_ui:
+    if: github.ref == 'refs/heads/main'
+    needs: push_main
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout completo da main
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2) Cria worktree para new-ui (ou reaproveita)
+      - name: Create new-ui worktree
+        run: |
+          git fetch origin new-ui:new-ui || git fetch origin main:new-ui
+          git worktree add new-ui new-ui || true
+
+      # 3) Sincroniza excluindo .tmpl, .css e .js
+      - name: Sync changes from main to new-ui
+        continue-on-error: true
+        run: |
+          rsync -av --delete \
+            --exclude='new-ui/' \
+            --exclude='*.tmpl' \
+            --exclude='*.css' \
+            --exclude='*.js' \
+            ./ new-ui/
+
+      # 4) Commit & Force-Push do novo conteúdo para new-ui
+      - name: Commit & Push to new-ui
+        run: |
+          pushd new-ui
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Sync from main (excluindo *.tmpl, *.css, *.js)"
+            git push --force-with-lease origin HEAD:new-ui
+          else
+            echo "✅ Nenhuma mudança para sincronizar em new-ui"
+          fi
+          popd
+
+      # 5) Extrai a versão atual de QpVersion em new-ui
+      - name: Extract QpVersion from new-ui
+        id: extract_newui_version
+        run: |
+          grep -Po '(?<=const QpVersion = ")[^"]+' new-ui/src/models/qp_defaults.go \
+            | tee version.txt
+          echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      # 6) Login no DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 7) Build & Push Docker image com tag newui-${VERSION} e latest
+      - name: Build and push new-ui Docker image
+        uses: docker/build-push-action@v4.1.0
+        with:
+          context: new-ui
+          file: new-ui/docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-${{ env.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:newui-latest

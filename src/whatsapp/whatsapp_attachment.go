@@ -7,9 +7,6 @@ import (
 type WhatsappAttachment struct {
 	content *[]byte `json:"-"`
 
-	// means that it can be downloaded from whatsapp servers
-	CanDownload bool `json:"-"`
-
 	Mimetype string `json:"mime"`
 
 	// important to navigate throw content, declared file length

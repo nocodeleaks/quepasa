@@ -531,3 +531,58 @@ func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 
 	RespondSuccess(w, response)
 }
+
+func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
+
+	response := &models.QpResponse{}
+	// Declare a new request struct
+	request := &LeaveGroupRequest{}
+
+	if r.ContentLength > 0 && r.Method == http.MethodPost {
+		// Try to decode the request body into the struct. If there is an error,
+		// respond to the client with the error message and a 400 status code.
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			jsonErr := fmt.Errorf("invalid json body: %s", err.Error())
+			response.ParseError(jsonErr)
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	// Getting ChatId parameter
+	if len(request.ChatId) == 0 {
+		request.ChatId = models.GetChatId(r)
+		if len(request.ChatId) == 0 {
+			response.ParseError(fmt.Errorf("chatId is required"))
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	// Validate group JID format
+	valid := whatsapp.IsValidGroupId(request.ChatId)
+	if !valid {
+		response.ParseError(fmt.Errorf("invalid group JID format: %s", request.ChatId))
+		RespondInterface(w, response)
+		return
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Leave the group
+	err = server.LeaveGroup(request.ChatId)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to leave group: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+
+	response.ParseSuccess("Successfully left the group")
+	RespondSuccess(w, response)
+}

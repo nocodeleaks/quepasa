@@ -3,7 +3,6 @@ package whatsmeow
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
 	slug "github.com/gosimple/slug"
@@ -75,8 +74,8 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 
 		// Create debug information with the raw message
 		out.Debug = &whatsapp.WhatsappMessageDebug{
-			Event:  getMessageEventType(in),
-			Info:   in,
+			Event:  GetMessageEventType(in),
+			Info:   RemoveMessageContextInfo(in),
 			Reason: "unknown",
 		}
 	}
@@ -245,9 +244,8 @@ func HandleImageMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *
 	out.Text = in.GetCaption()
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: true,
-		Mimetype:    in.GetMimetype(),
-		FileLength:  in.GetFileLength(),
+		Mimetype:   in.GetMimetype(),
+		FileLength: in.GetFileLength(),
 	}
 
 	// handling thumbnail
@@ -270,9 +268,8 @@ func HandleStickerMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 	}
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: true,
-		Mimetype:    in.GetMimetype(),
-		FileLength:  in.GetFileLength(),
+		Mimetype:   in.GetMimetype(),
+		FileLength: in.GetFileLength(),
 	}
 
 	// handling thumbnail
@@ -287,9 +284,8 @@ func HandleVideoMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E
 	out.Text = in.GetCaption()
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: true,
-		Mimetype:    in.GetMimetype(),
-		FileLength:  in.GetFileLength(),
+		Mimetype:   in.GetMimetype(),
+		FileLength: in.GetFileLength(),
 	}
 
 	// handling thumbnail
@@ -302,18 +298,17 @@ func HandleVideoMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E
 	}
 }
 
-func HandleDocumentMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.DocumentMessage) {
-	log.Debug("received a document message !")
+func HandleDocumentMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.DocumentMessage) {
+	logentry.Debug("received a document message !")
 	out.Type = whatsapp.DocumentMessageType
 
 	// in case of caption passed
 	out.Text = in.GetCaption()
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: true,
-		Mimetype:    in.GetMimetype(),
-		FileLength:  in.GetFileLength(),
-		FileName:    in.GetFileName(),
+		Mimetype:   in.GetMimetype(),
+		FileLength: in.GetFileLength(),
+		FileName:   in.GetFileName(),
 	}
 
 	// handling thumnail
@@ -331,10 +326,9 @@ func HandleAudioMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E
 	out.Type = whatsapp.AudioMessageType
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: true,
-		Mimetype:    in.GetMimetype(),
-		FileLength:  in.GetFileLength(),
-		Seconds:     in.GetSeconds(),
+		Mimetype:   in.GetMimetype(),
+		FileLength: in.GetFileLength(),
+		Seconds:    in.GetSeconds(),
 	}
 
 	info := in.ContextInfo
@@ -361,13 +355,12 @@ func HandleLocationMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 	length := uint64(len(content))
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: false,
-		Mimetype:    "text/x-uri; location",
-		Latitude:    in.GetDegreesLatitude(),
-		Longitude:   in.GetDegreesLongitude(),
-		Url:         defaultUrl,
-		FileName:    filename,
-		FileLength:  length,
+		Mimetype:   "text/x-uri; location",
+		Latitude:   in.GetDegreesLatitude(),
+		Longitude:  in.GetDegreesLongitude(),
+		Url:        defaultUrl,
+		FileName:   filename,
+		FileLength: length,
 	}
 
 	// handling thumbnail
@@ -398,14 +391,13 @@ func HandleLiveLocationMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 	length := uint64(len(content))
 
 	out.Attachment = &whatsapp.WhatsappAttachment{
-		CanDownload: false,
-		Mimetype:    "text/x-uri; live location",
-		Latitude:    in.GetDegreesLatitude(),
-		Longitude:   in.GetDegreesLongitude(),
-		Sequence:    in.GetSequenceNumber(),
-		Url:         defaultUrl,
-		FileName:    filename,
-		FileLength:  length,
+		Mimetype:   "text/x-uri; live location",
+		Latitude:   in.GetDegreesLatitude(),
+		Longitude:  in.GetDegreesLongitude(),
+		Sequence:   in.GetSequenceNumber(),
+		Url:        defaultUrl,
+		FileName:   filename,
+		FileLength: length,
 	}
 
 	// handling thumbnail
@@ -426,33 +418,4 @@ func HandleContactMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 
 	content := []byte(in.GetVcard())
 	out.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
-}
-
-// getMessageEventType extracts the actual message type from the protobuf message
-func getMessageEventType(in *waE2E.Message) string {
-	v := reflect.ValueOf(in).Elem()
-	t := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		if field.Kind() == reflect.Ptr && !field.IsNil() {
-			fieldName := t.Field(i).Name
-			// Convert from Go field name to protobuf field name format
-			return toSnakeCase(fieldName)
-		}
-	}
-
-	return "unknown"
-}
-
-// toSnakeCase converts Go field names to protobuf field naming convention
-func toSnakeCase(s string) string {
-	var result strings.Builder
-	for i, r := range s {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			result.WriteRune('_')
-		}
-		result.WriteRune(r)
-	}
-	return strings.ToLower(result.String())
 }

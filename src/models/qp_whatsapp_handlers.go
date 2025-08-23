@@ -1,8 +1,11 @@
 package models
 
 import (
+	"fmt"
+	"reflect"
 	"sync"
 
+	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -81,6 +84,11 @@ func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from st
 				msg.Synopsis = cached.Text
 			}
 		}
+	}
+
+	// Handle unhandled message type
+	if msg.Type == whatsapp.UnhandledMessageType {
+		source.processUnhandledMessage(msg)
 	}
 
 	logentry := source.GetLogger()
@@ -294,6 +302,38 @@ func (handler *QPWhatsappHandlers) IsRegistered(evt interface{}) bool {
 }
 
 //endregion
+
+// processUnhandledMessage handles debugging for unhandled message types
+// This method can be easily removed when debugging is no longer needed
+func (source *QPWhatsappHandlers) processUnhandledMessage(msg *whatsapp.WhatsappMessage) {
+	// Generate a unique UUID to prevent duplicate message IDs
+	uniqueID := uuid.New().String()
+	msg.Id = msg.Id + "-unhandled-" + uniqueID
+
+	if len(msg.Text) == 0 && msg.Content != nil {
+		// Get the type information using reflection
+		contentType := reflect.TypeOf(msg.Content)
+		var typeInfo string
+
+		if contentType != nil {
+			// Get full type name including package
+			typeInfo = contentType.String()
+
+			// If it's a pointer, get the element type
+			if contentType.Kind() == reflect.Ptr {
+				if contentType.Elem() != nil {
+					typeInfo = fmt.Sprintf("*%s", contentType.Elem().String())
+				}
+			}
+		} else {
+			typeInfo = "<nil>"
+		}
+
+		// Include type information and content in the text
+		contentJson := library.ToJson(msg.Content)
+		msg.Text = fmt.Sprintf("[Type: %s] %s", typeInfo, contentJson)
+	}
+}
 
 func (source *QPWhatsappHandlers) IsInterfaceNil() bool {
 	return nil == source

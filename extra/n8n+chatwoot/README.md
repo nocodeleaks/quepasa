@@ -15,7 +15,11 @@
 * [(1.0.1) Quepasa Inbox Control + soc](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaInboxControl_soc.json)
 * [(1.0.2) Quepasa Inbox Control + webhook](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaInboxControl_webhook.json)
 
+<<<<<<< Updated upstream
 * [(1.0.17) Get Chatwoot Contacts](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/GetChatwootContacts.json)
+=======
+* [(1.0.20) Get Chatwoot Contacts](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/GetChatwootContacts.json)
+>>>>>>> Stashed changes
 * [(1.0.3) Post To WebCallBack](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/PostToWebCallBack.json)
 * [(1.0.5) Chatwoot Extra](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/ChatwootExtra.json)
 * [(1.0.0) To Chatwoot Transcript Via OpenAI](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/ToChatwootTranscriptViaOpenAI.json)

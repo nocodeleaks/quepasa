@@ -6,36 +6,50 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/joho/godotenv"
+	logrus "github.com/sirupsen/logrus"
 )
 
-// EnvironmentManager provides centralized access to all environment configurations.
+// EnvironmentSettings provides centralized access to all environment configurations.
 // This is the main class that aggregates all environment variable management.
-type EnvironmentManager struct {
+type EnvironmentSettings struct {
 	// Embedded structs for organized access to different environment categories
-	Database *DatabaseEnvironment
-	API      *APIEnvironment
-	WhatsApp *WhatsAppEnvironment
-	SIPProxy *SIPProxyEnvironment
-	Logging  *LoggingEnvironment
-	General  *GeneralEnvironment
-	RabbitMQ *RabbitMQEnvironment
+	Database  DatabaseSettings
+	API       APISettings
+	WhatsApp  WhatsAppSettings
+	Whatsmeow WhatsmeowSettings
+	SIPProxy  SIPProxySettings
+	General   GeneralSettings
+	RabbitMQ  RabbitMQSettings
 }
 
 // Settings is the global singleton instance for accessing all environment configurations.
-var Settings *EnvironmentManager
+var Settings EnvironmentSettings
 
 // Initialize the global environment manager
 func init() {
-	Settings = &EnvironmentManager{
-		Database: &DatabaseEnvironment{},
-		API:      &APIEnvironment{},
-		WhatsApp: &WhatsAppEnvironment{},
-		SIPProxy: &SIPProxyEnvironment{},
-		Logging:  &LoggingEnvironment{},
-		General:  &GeneralEnvironment{},
-		RabbitMQ: &RabbitMQEnvironment{},
+	logentry := logrus.NewEntry(logrus.StandardLogger()).WithField("package", "environment")
+	logentry.Println("Starting Environment Manager initialization...")
+
+	// loading environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		logentry.Println("Failed to load .env file")
+	} else {
+		logentry.Println("Successfully loaded .env file")
 	}
+
+	Settings = EnvironmentSettings{
+		Database:  NewDatabaseSettings(),
+		API:       NewAPISettings(),
+		WhatsApp:  NewWhatsAppSettings(),
+		Whatsmeow: NewWhatsmeowSettings(),
+		SIPProxy:  NewSIPProxySettings(),
+		General:   NewGeneralSettings(),
+		RabbitMQ:  NewRabbitMQSettings(),
+	}
+
+	logentry.Println("Environment Manager ready - All configurations loaded!")
 }
 
 // ErrEnvVarEmpty is returned when an environment variable is requested but is empty.
@@ -62,6 +76,21 @@ func getEnvOrDefaultBool(key string, defaultValue bool) bool {
 		logrus.Warnf("Invalid boolean value for environment variable %s: '%s'. Using default: %t", key, valueStr, defaultValue)
 	}
 	return defaultValue
+}
+
+// Helper function to get optional uint32 from environment (redeclared locally to avoid conflicts)
+func getOptionalEnvUint32(key string) *uint32 {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		if trimmedValueStr == "" {
+			return nil
+		}
+		if parsedValue, err := strconv.ParseUint(trimmedValueStr, 10, 32); err == nil {
+			result := uint32(parsedValue)
+			return &result
+		}
+	}
+	return nil
 }
 
 // getEnvOrDefaultUint64 fetches an unsigned 64-bit integer environment variable, returning a default value.

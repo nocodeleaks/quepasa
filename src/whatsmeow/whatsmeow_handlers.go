@@ -175,6 +175,14 @@ func (source *WhatsmeowHandlers) Register() (err error) {
 	return
 }
 
+// GetContactManager delegates contact manager retrieval to the underlying connection
+func (h *WhatsmeowHandlers) GetContactManager() whatsapp.WhatsappContactManagerInterface {
+	if h == nil || h.WhatsmeowConnection == nil {
+		return nil
+	}
+	return h.WhatsmeowConnection.GetContactManager()
+}
+
 func (source *WhatsmeowHandlers) SendPresence(presence types.Presence, from string) {
 	logentry := source.GetLogger()
 	client := source.Client

@@ -116,8 +116,32 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 	case v == waE2E.ProtocolMessage_MESSAGE_EDIT:
 		out.Type = whatsapp.TextMessageType
 		out.Id = in.Key.GetID()
-		out.Text = in.EditedMessage.GetConversation()
 		out.Edited = true
+
+		// Extract text from different message types
+		editedMsg := in.EditedMessage
+		if editedMsg != nil {
+			switch {
+			case editedMsg.Conversation != nil:
+				// Plain text message
+				out.Text = editedMsg.GetConversation()
+			case editedMsg.ImageMessage != nil:
+				// Image message with caption
+				out.Text = editedMsg.ImageMessage.GetCaption()
+			case editedMsg.VideoMessage != nil:
+				// Video message with caption
+				out.Text = editedMsg.VideoMessage.GetCaption()
+			case editedMsg.DocumentMessage != nil:
+				// Document message with caption
+				out.Text = editedMsg.DocumentMessage.GetCaption()
+			case editedMsg.ExtendedTextMessage != nil:
+				// Extended text message
+				out.Text = editedMsg.ExtendedTextMessage.GetText()
+			default:
+				// Fallback to conversation field
+				out.Text = editedMsg.GetConversation()
+			}
+		}
 		return
 
 	case v == waE2E.ProtocolMessage_REVOKE:

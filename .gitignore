@@ -18,6 +18,9 @@ secrets/
 tmp/
 __debug_bin*
 
+# any environment file
+.env
+
 #files for production
 src/.cache 
 src/.profile
@@ -40,15 +43,9 @@ src/.dist/
 # symbolic link to src folder under linux
 quepasa/
 
-# Docker environment files and data
-docker/.env
-docker/chatwoot/.env
 docker/chatwoot/data
 docker/chatwoot/.n8n
 
+docker/chatwoot/.n8n
+docker/chatwoot/data
 src/.vs/
-src/models/.dist/win-quepasa-service.exe
-
-# Environment files (block only .env files, allow .env.example, .env.template, etc.)
-.env
-*/.env

@@ -10,6 +10,8 @@ import (
 type IWhatsappConnection interface {
 	IWhatsappConnectionOptions
 
+	GetStatus() WhatsappConnectionState
+
 	GetChatTitle(string) string
 
 	Connect() error
@@ -17,6 +19,12 @@ type IWhatsappConnection interface {
 
 	GetWhatsAppQRChannel(context.Context, chan<- string) error
 	GetWhatsAppQRCode() string
+
+	// Get group invite link
+	GetInvite(groupId string) (string, error)
+
+	// Get info to download profile picture
+	GetProfilePicture(wid string, knowingId string) (*WhatsappProfilePicture, error)
 
 	UpdateHandler(IWhatsappHandlers)
 	UpdatePairedCallBack(func(string))
@@ -29,9 +37,7 @@ type IWhatsappConnection interface {
 
 	Revoke(IWhatsappMessage) error
 
-	// Edit an existing message with new content
 	Edit(IWhatsappMessage, string) error
-
 	// Default send message method
 	Send(*WhatsappMessage) (IWhatsappSendResponse, error)
 
@@ -60,27 +66,66 @@ type IWhatsappConnection interface {
 
 	IsInterfaceNil() bool
 
+	// Is connected and logged, valid verification
+	IsValid() bool
+
+	IsConnected() bool
+
+	// Is a valid whatsapp phone numbers
+	IsOnWhatsApp(...string) ([]string, error)
+
 	HistorySync(time.Time) error
 
+	GetContacts() ([]WhatsappChat, error)
+
 	PairPhone(phone string) (string, error)
+
+	//region Group Methods
+
+	// Get a list of all groups
+	GetJoinedGroups() ([]interface{}, error)
+
+	// Get a specific group
+	GetGroupInfo(string) (interface{}, error)
+
+	// Create a group
+	CreateGroup(string, []string) (interface{}, error)
+
+	// Leave a group
+	LeaveGroup(string) error
+
+	// Update Group Name
+	UpdateGroupSubject(string, string) (interface{}, error)
+
+	// Update Group Topic (Description)
+	UpdateGroupTopic(string, string) (interface{}, error)
+
+	// Update Group Photo
+	UpdateGroupPhoto(string, []byte) (string, error)
+
+	// Update group participants (add, remove, promote, demote)
+	UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	// Get list of pending join requests for a group
+	GetGroupJoinRequests(groupJID string) ([]interface{}, error)
+
+	// Handle join requests (approve/reject)
+	HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error)
+
+	// Add to the IWhatsappConnection interface in whatsapp/interfaces.go
+	CreateGroupExtended(title string, participants []string) (interface{}, error)
+
+	//endregion
 
 	//region Send Presence
 	SendChatPresence(chatId string, presenceType uint) error
 	//endregion
 
-	// NOTE: Group operations have been moved to IGroupManager
-	// Access them via connection.GetGroupManager().MethodName()
+	GetLIDFromPhone(phone string) (string, error)
 
-	// NOTE: Contact operations have been moved to IContactManager
-	// Access them via connection.GetContactManager().MethodName()
+	// Get phone number from LID
+	GetPhoneFromLID(lid string) (string, error)
+	//endregion
 
-	// GetStatusManager returns the status manager for status operations
-	GetStatusManager() WhatsappStatusManagerInterface
-
-	// GetContactManager returns the contact manager for contact operations
-	GetContactManager() WhatsappContactManagerInterface
-
-	// GetResume returns detailed connection status information
-	// This consolidates all status management functionality in a single method
-	GetResume() *WhatsappConnectionStatus
+	GetUserInfo(jids []string) ([]interface{}, error)
 }

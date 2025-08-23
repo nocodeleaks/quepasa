@@ -95,28 +95,31 @@ func RevokeController(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditMessageController(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpResponse{}
 
+	response := &models.QpResponse{}
 	// Declare a new request struct
 	request := &EditMessageRequest{}
 
-	// Decode the JSON body into the request struct
-	err := json.NewDecoder(r.Body).Decode(request)
-	if err != nil {
-		response.ParseError(fmt.Errorf("invalid JSON in request body: %s", err.Error()))
+	if r.ContentLength > 0 && r.Method == http.MethodPost {
+		// Try to decode the request body into the struct. If there is an error,
+		// respond to the client with the error message and a 400 status code.
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			jsonErr := fmt.Errorf("invalid json body: %s", err.Error())
+			response.ParseError(jsonErr)
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	if len(request.Content) == 0 {
+		response.ParseError(fmt.Errorf("empty content for edit"))
 		RespondInterface(w, response)
 		return
 	}
 
-	// Validate required fields
-	if request.MessageId == "" {
-		response.ParseError(fmt.Errorf("messageId is required"))
-		RespondInterface(w, response)
-		return
-	}
-
-	if request.Content == "" {
-		response.ParseError(fmt.Errorf("content is required"))
+	if len(request.MessageId) == 0 {
+		response.ParseError(fmt.Errorf("empty message id"))
 		RespondInterface(w, response)
 		return
 	}
@@ -128,22 +131,12 @@ func EditMessageController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the message to be edited
-	msg, err := server.Handler.GetById(request.MessageId)
+	err = server.Edit(request.MessageId, request.Content)
 	if err != nil {
-		response.ParseError(fmt.Errorf("message not found: %s", err.Error()))
+		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
-
-	// Edit the message
-	err = server.GetConnection().Edit(msg, request.Content)
-	if err != nil {
-		response.ParseError(fmt.Errorf("failed to edit message: %s", err.Error()))
-		RespondInterface(w, response)
-		return
-	}
-
 	response.ParseSuccess("message edited successfully")
 	RespondSuccess(w, response)
 }

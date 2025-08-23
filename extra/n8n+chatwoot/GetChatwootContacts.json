@@ -55,7 +55,7 @@
     },
     {
       "parameters": {
-        "jsCode": "function a2hex(str) {\n  var arr = [];\n  for (var i = 0, l = str.length; i < l; i ++) {\n    var hex = Number(str.charCodeAt(i)).toString(16);\n    arr.push(hex);\n  }\n  return arr.join('');\n}\n\nfor (const item of $input.all()) {\n  let body = item.json;\n  if(body){\n    \n    // Covering participant id\n    if(body.participant){\n\n      if(!body.participant.id || body.participant.id.length == 0)\n      {\n        delete body.participant;\n      } \n      else {\n        body.participant.phone = \"+\" + body.participant.id.split('@').shift();\n        body.participant.hex = a2hex(body.participant.id);\n      }\n    }\n\n    // Covering chat id\n    if(body.chat.id){\n      if(!body.chat.id.endsWith('@g.us')){\n        body.chat.phone = \"+\" + body.chat.id.split('@').shift();\n      } else {\n        // adding contact suffix\n        if(body.chat.title){\n          if(!body.chat.title.endsWith('(GROUP)')) {\n            body.chat.title = body.chat.title + ' (GROUP)'\n          }\n        } else {\n          body.chat.title = 'UNKNOWN (GROUP)'\n        }\n      }\n      body.chat.hex = a2hex(body.chat.id);\n    }\n  }\n}\nreturn $input.all();"
+        "jsCode": "function a2hex(str) {\n  var arr = [];\n  for (var i = 0, l = str.length; i < l; i ++) {\n    var hex = Number(str.charCodeAt(i)).toString(16);\n    arr.push(hex);\n  }\n  return arr.join('');\n}\n\nfor (const item of $input.all()) {\n  let body = item.json;\n  if(body){\n    \n    // Covering participant id\n    if(body.participant){\n\n      if(!body.participant.id || body.participant.id.length == 0)\n      {\n        delete body.participant;\n      } \n      else {\n        body.participant.phone = \"+\" + body.participant.id.split('@').shift();\n        body.participant.hex = a2hex(body.participant.id);\n      }\n    }\n\n    // Covering chat id\n    if(body.chat.id){\n      if(body.chat.id.endsWith('@s.whatsapp.net')){\n        if (!body.chat.phone){\n          body.chat.phone = \"+\" + body.chat.id.split('@').shift();\n        }\n      } else if (body.chat.id.endsWith('@g.us')) {\n        // adding contact suffix\n        if(body.chat.title){\n          if(!body.chat.title.endsWith('(GROUP)')) {\n            body.chat.title = body.chat.title + ' (GROUP)'\n          }\n        } else {\n          body.chat.title = 'UNKNOWN (GROUP)'\n        }\n      }\n      body.chat.hex = a2hex(body.chat.id);\n    }\n  }\n}\nreturn $input.all();"
       },
       "id": "999b09b5-e4c2-498f-bc3c-cb2d71c8af72",
       "name": "Cover Ids & Set Phone",
@@ -387,7 +387,7 @@
     },
     {
       "parameters": {
-        "content": "## (1.0.18) Updates\n* ed: operation - new\n* ed: chatserver\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "content": "## (1.0.17) Updates\n* forwarding all contact custom_attributes\n\n## Recommendations \n* Remember set timeout to 20 seconds",
         "height": 201.45401153644474,
         "width": 467.54452018877896
       },
@@ -1190,7 +1190,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 30
   },
-  "versionId": "83472b2e-681a-4443-aaab-9b1668a1fa20",
+  "versionId": "00df041d-739d-41f4-9fa1-bf731f5418ea",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

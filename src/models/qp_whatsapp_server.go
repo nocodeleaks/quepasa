@@ -23,13 +23,12 @@ type QpWhatsappServer struct {
 	syncConnection *sync.Mutex                  `json:"-"` // Objeto de sinaleiro para evitar chamadas simultâneas a este objeto
 	syncMessages   *sync.Mutex                  `json:"-"` // Objeto de sinaleiro para evitar chamadas simultâneas a este objeto
 
+	//Battery        *WhatsAppBateryStatus        `json:"battery,omitempty"`
+
 	StartTime time.Time `json:"starttime,omitempty"`
 
-	Handler        *QPWhatsappHandlers `json:"-"`
-	WebHook        *QPWebhookHandler   `json:"-"`
-	GroupManager   *QpGroupManager     `json:"-"` // composition for group operations
-	StatusManager  *QpStatusManager    `json:"-"` // composition for status operations
-	ContactManager *QpContactManager   `json:"-"` // composition for contact operations
+	Handler *QPWhatsappHandlers `json:"-"`
+	WebHook *QPWebhookHandler   `json:"-"`
 
 	// Stop request token
 	StopRequested bool                   `json:"-"`
@@ -112,15 +111,13 @@ func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
 		return whatsapp.UnVerified
 	} else {
 		if server.StopRequested {
-			statusManager := server.GetStatusManager()
-			if server.connection != nil && !server.connection.IsInterfaceNil() && statusManager.IsConnected() {
+			if server.connection != nil && !server.connection.IsInterfaceNil() && server.connection.IsConnected() {
 				return whatsapp.Stopping
 			} else {
 				return whatsapp.Stopped
 			}
 		} else {
-			statusManager := server.GetStatusManager()
-			state := statusManager.GetState()
+			state := server.connection.GetStatus()
 			if state == whatsapp.Disconnected && !server.Verified {
 				return whatsapp.UnVerified
 			}
@@ -196,6 +193,16 @@ func (source *QpWhatsappServer) Revoke(id string) (err error) {
 
 	source.GetLogger().Infof("revoking msg %s", id)
 	return source.connection.Revoke(msg)
+}
+
+func (source *QpWhatsappServer) Edit(id string, newContent string) (err error) {
+	msg, err := source.Handler.GetById(id)
+	if err != nil {
+		return
+	}
+
+	source.GetLogger().Infof("editing msg %s", id)
+	return source.connection.Edit(msg, newContent)
 }
 
 //endregion
@@ -371,8 +378,7 @@ func (source *QpWhatsappServer) Start() (err error) {
 		return source.StartConnectionError(err)
 	}
 
-	statusManager := source.GetStatusManager()
-	if !statusManager.IsConnected() {
+	if !source.connection.IsConnected() {
 		logentry.Infof("requesting connection again ...")
 		err = source.connection.Connect()
 		if err != nil {
@@ -381,7 +387,7 @@ func (source *QpWhatsappServer) Start() (err error) {
 	}
 
 	// If at this moment the connect is already logged, ensure a valid mark
-	if statusManager.IsValid() {
+	if source.connection.IsValid() {
 		source.MarkVerified(true)
 	}
 
@@ -414,8 +420,7 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 	// Atualizando manipuladores de eventos
 	source.connection.UpdateHandler(source.Handler)
 
-	statusManager := source.GetStatusManager()
-	if !statusManager.IsConnected() {
+	if !source.connection.IsConnected() {
 		logger.Info("requesting connection ...")
 		err = source.connection.Connect()
 		if err != nil {
@@ -486,8 +491,7 @@ func (source *QpWhatsappServer) Restart() (err error) {
 func (source *QpWhatsappServer) Disconnect(cause string) {
 	conn, err := source.GetValidConnection()
 	if err == nil {
-		statusManager := source.GetStatusManager()
-		if statusManager.IsConnected() {
+		if conn.IsConnected() {
 			logentry := source.GetLogger()
 			logentry.Infof("disconnecting whatsapp server by: %s", cause)
 
@@ -685,12 +689,11 @@ func (source *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (resp
 	// leading with wrongs digit 9
 	if ENV.ShouldRemoveDigit9() {
 
-		phone, _ := whatsapp.GetPhoneIfValid(msg.Chat.Id)
+		phone, _ := library.ExtractPhoneIfValid(msg.Chat.Id)
 		if len(phone) > 0 {
 			phoneWithout9, _ := library.RemoveDigit9IfElegible(phone)
 			if len(phoneWithout9) > 0 {
-				contactManager := source.GetContactManager()
-				valids, err := contactManager.IsOnWhatsApp(phone, phoneWithout9)
+				valids, err := conn.IsOnWhatsApp(phone, phoneWithout9)
 				if err != nil {
 					return nil, err
 				}
@@ -749,19 +752,36 @@ func (source *QpWhatsappServer) GetProfilePicture(wid string, knowingId string) 
 	// future implement a rate control here, high volume of requests causing bans
 	// studying rates ...
 
-	contactManager := source.GetContactManager()
-	return contactManager.GetProfilePicture(wid, knowingId)
+	conn, err := source.GetValidConnection()
+	if err != nil {
+		return
+	}
+
+	return conn.GetProfilePicture(wid, knowingId)
 }
 
 //#endregion
 //#region GROUP INVITE LINK
 
+func (source *QpWhatsappServer) GetInvite(groupId string) (link string, err error) {
+	conn, err := source.GetValidConnection()
+	if err != nil {
+		return
+	}
+
+	return conn.GetInvite(groupId)
+}
+
 //#endregion
 //#region GET ALL CONTACTS
 
 func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat, err error) {
-	contactManager := source.GetContactManager()
-	contacts, err = contactManager.GetContacts()
+	conn, err := source.GetValidConnection()
+	if err != nil {
+		return
+	}
+
+	contacts, err = conn.GetContacts()
 	if err == nil {
 		for index, contact := range contacts {
 			contact.FormatContact()
@@ -777,36 +797,118 @@ func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat,
 //#region IsOnWhatsapp
 
 func (source *QpWhatsappServer) IsOnWhatsApp(phones ...string) (registered []string, err error) {
-	contactManager := source.GetContactManager()
-	return contactManager.IsOnWhatsApp(phones...)
+	conn, err := source.GetValidConnection()
+	if err != nil {
+		return
+	}
+
+	return conn.IsOnWhatsApp(phones...)
 }
 
 //#endregion
 
 // #region GROUPS
-
-// GetGroupManager returns the group manager instance with lazy initialization
-func (server *QpWhatsappServer) GetGroupManager() whatsapp.WhatsappGroupManagerInterface {
-	if server.GroupManager == nil {
-		server.GroupManager = NewQpGroupManager(server)
+func (server *QpWhatsappServer) GetJoinedGroups() ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
 	}
-	return server.GroupManager
+
+	return conn.GetJoinedGroups()
 }
 
-// GetStatusManager returns the status manager instance with lazy initialization
-func (server *QpWhatsappServer) GetStatusManager() whatsapp.WhatsappStatusManagerInterface {
-	if server.StatusManager == nil {
-		server.StatusManager = NewQpStatusManager(server)
+func (server *QpWhatsappServer) GetGroupInfo(groupID string) (interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
 	}
-	return server.StatusManager
+
+	return conn.GetGroupInfo(groupID)
 }
 
-// GetContactManager returns the contact manager instance with lazy initialization
-func (server *QpWhatsappServer) GetContactManager() whatsapp.WhatsappContactManagerInterface {
-	if server.ContactManager == nil {
-		server.ContactManager = NewQpContactManager(server)
+func (server *QpWhatsappServer) CreateGroup(name string, participants []string) (interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
 	}
-	return server.ContactManager
+
+	return conn.CreateGroup(name, participants)
+}
+
+func (server *QpWhatsappServer) LeaveGroup(groupID string) error {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return err
+	}
+
+	return conn.LeaveGroup(groupID)
+}
+
+func (server *QpWhatsappServer) UpdateGroupSubject(groupID string, name string) (interface{}, error) {
+	conn, err := server.GetValidConnection() // Ensure a valid connection is available
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupSubject(groupID, name) // Delegate the call to the connection
+}
+
+func (server *QpWhatsappServer) UpdateGroupTopic(groupID string, topic string) (interface{}, error) {
+	conn, err := server.GetValidConnection() // Ensure a valid connection is available
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupTopic(groupID, topic) // Delegate the call to the connection
+}
+
+func (server *QpWhatsappServer) UpdateGroupPhoto(groupID string, imageData []byte) (string, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "", err
+	}
+
+	return conn.UpdateGroupPhoto(groupID, imageData)
+}
+
+func (server *QpWhatsappServer) UpdateGroupParticipants(groupJID string, participants []string, action string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.UpdateGroupParticipants(groupJID, participants, action)
+}
+
+func (server *QpWhatsappServer) GetGroupJoinRequests(groupJID string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.GetGroupJoinRequests(groupJID)
+}
+
+func (server *QpWhatsappServer) HandleGroupJoinRequests(groupJID string, participants []string, action string) ([]interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.HandleGroupJoinRequests(groupJID, participants, action)
+}
+
+func (server *QpWhatsappServer) CreateGroupExtended(options map[string]interface{}) (interface{}, error) {
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract parameters
+	title, _ := options["title"].(string)
+	participantsRaw, _ := options["participants"].([]string)
+
+	return conn.CreateGroupExtended(title, participantsRaw)
 }
 
 //#endregion
@@ -820,17 +922,28 @@ func (server *QpWhatsappServer) SendChatPresence(chatId string, presenceType wha
 }
 
 func (server *QpWhatsappServer) GetLIDFromPhone(phone string) (string, error) {
-	contactManager := server.GetContactManager()
-	return contactManager.GetLIDFromPhone(phone)
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "",
+			err
+	}
+	return conn.GetLIDFromPhone(phone)
 }
 
 func (server *QpWhatsappServer) GetPhoneFromLID(lid string) (string, error) {
-	contactManager := server.GetContactManager()
-	return contactManager.GetPhoneFromLID(lid)
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return "",
+			err
+	}
+	return conn.GetPhoneFromLID(lid)
 }
 
 // GetUserInfo retrieves user information for given JIDs
 func (server *QpWhatsappServer) GetUserInfo(jids []string) ([]interface{}, error) {
-	contactManager := server.GetContactManager()
-	return contactManager.GetUserInfo(jids)
+	conn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+	return conn.GetUserInfo(jids)
 }

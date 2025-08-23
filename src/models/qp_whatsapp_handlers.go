@@ -1,9 +1,11 @@
 package models
 
 import (
-	"strings"
+	"fmt"
+	"reflect"
 	"sync"
 
+	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -54,79 +56,6 @@ func (source *QPWhatsappHandlers) HandleBroadcasts() bool {
 
 //#region EVENTS FROM WHATSAPP SERVICE
 
-func (source *QPWhatsappHandlers) EnsureChatInfo(msg *whatsapp.WhatsappMessage) {
-	if msg == nil {
-		return
-	}
-
-	if source.server == nil {
-		return
-	}
-
-	// messages sended with chat title
-	if len(msg.Chat.Title) == 0 {
-		msg.Chat.Title = source.server.GetChatTitle(msg.Chat.Id)
-	}
-
-	if len(msg.Chat.Phone) == 0 && strings.HasSuffix(msg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
-		contactManager := source.server.GetContactManager()
-		phone, err := contactManager.GetPhoneFromContactId(msg.Chat.Id)
-		if err == nil && len(phone) > 0 {
-			msg.Chat.Phone = phone
-
-			if len(msg.Chat.LId) == 0 {
-				lid, err := contactManager.GetLIDFromPhone(phone)
-				if err == nil && len(lid) > 0 {
-					msg.Chat.LId = lid
-				}
-			}
-		}
-	}
-
-	if len(msg.Chat.Phone) == 0 && strings.HasSuffix(msg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
-		contactManager := source.server.GetContactManager()
-		phone, err := contactManager.GetPhoneFromLID(msg.Chat.Id)
-		if err == nil && len(phone) > 0 {
-			msg.Chat.Phone = phone
-		}
-	}
-
-	if len(msg.Chat.LId) == 0 && strings.HasSuffix(msg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
-		msg.Chat.LId = msg.Chat.Id
-	}
-
-	if msg.Participant != nil && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) && len(msg.Participant.Phone) == 0 {
-		contactManager := source.server.GetContactManager()
-		phone, err := contactManager.GetPhoneFromContactId(msg.Participant.Id)
-		if err == nil && len(phone) > 0 {
-			msg.Participant.Phone = phone
-
-			if len(msg.Participant.LId) == 0 {
-				lid, err := contactManager.GetLIDFromPhone(phone)
-				if err == nil && len(lid) > 0 {
-					msg.Participant.LId = lid
-				}
-			}
-		}
-	}
-
-	if msg.Participant != nil && len(msg.Participant.Phone) == 0 && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
-		contactManager := source.server.GetContactManager()
-		phone, err := contactManager.GetPhoneFromLID(msg.Participant.Id)
-		if err == nil && len(phone) > 0 {
-			msg.Participant.Phone = phone
-		}
-	}
-
-	if msg.Participant != nil && len(msg.Participant.LId) == 0 && strings.HasSuffix(msg.Participant.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
-		msg.Participant.LId = msg.Participant.Id
-	}
-
-	if msg.Participant != nil && len(msg.Participant.Title) == 0 {
-		msg.Participant.Title = source.server.GetChatTitle(msg.Participant.Id)
-	}
-}
-
 // Process messages received from whatsapp service
 func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from string) {
 
@@ -140,8 +69,10 @@ func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from st
 		return
 	}
 
-	// ensure (title, phone number, lid) for message chat and participant
-	source.EnsureChatInfo(msg)
+	// messages sended with chat title
+	if len(msg.Chat.Title) == 0 {
+		msg.Chat.Title = source.server.GetChatTitle(msg.Chat.Id)
+	}
 
 	if len(msg.InReply) > 0 {
 		cached, err := source.QpWhatsappMessages.GetById(msg.InReply)
@@ -153,6 +84,11 @@ func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from st
 				msg.Synopsis = cached.Text
 			}
 		}
+	}
+
+	// Handle unhandled message type
+	if msg.Type == whatsapp.UnhandledMessageType {
+		source.processUnhandledMessage(msg)
 	}
 
 	logentry := source.GetLogger()
@@ -366,6 +302,38 @@ func (handler *QPWhatsappHandlers) IsRegistered(evt interface{}) bool {
 }
 
 //endregion
+
+// processUnhandledMessage handles debugging for unhandled message types
+// This method can be easily removed when debugging is no longer needed
+func (source *QPWhatsappHandlers) processUnhandledMessage(msg *whatsapp.WhatsappMessage) {
+	// Generate a unique UUID to prevent duplicate message IDs
+	uniqueID := uuid.New().String()
+	msg.Id = msg.Id + "-unhandled-" + uniqueID
+
+	if len(msg.Text) == 0 && msg.Content != nil {
+		// Get the type information using reflection
+		contentType := reflect.TypeOf(msg.Content)
+		var typeInfo string
+
+		if contentType != nil {
+			// Get full type name including package
+			typeInfo = contentType.String()
+
+			// If it's a pointer, get the element type
+			if contentType.Kind() == reflect.Ptr {
+				if contentType.Elem() != nil {
+					typeInfo = fmt.Sprintf("*%s", contentType.Elem().String())
+				}
+			}
+		} else {
+			typeInfo = "<nil>"
+		}
+
+		// Include type information and content in the text
+		contentJson := library.ToJson(msg.Content)
+		msg.Text = fmt.Sprintf("[Type: %s] %s", typeInfo, contentJson)
+	}
+}
 
 func (source *QPWhatsappHandlers) IsInterfaceNil() bool {
 	return nil == source

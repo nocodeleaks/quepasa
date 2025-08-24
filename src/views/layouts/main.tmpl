@@ -1,18 +1,47 @@
 {{ define "main" }}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ .PageTitle }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#25D366',
+            secondary: '#128C7E',
+            accent: '#34B7F1',
+            dark: '#075E54'
+          }
+        }
+      }
+    }
+  </script>
   <link href="/assets/css/main.css" rel="preload" as="style">
   <link href="/assets/css/main.css" rel="stylesheet">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <script>
+    // Initialize theme immediately to prevent flash
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      if (currentTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
 </head>
-<body>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen overflow-x-hidden">
   {{ template "content" . }}
-  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
 </body>
 </html>
 {{ end }}

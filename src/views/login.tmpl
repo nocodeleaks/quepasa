@@ -1,29 +1,111 @@
 {{ define "content" }}
-<section class="hero is-fullheight">
-  <div class="hero-body">
-    <div class="container has-text-centered">
-      <div class="column is-4 is-offset-4">
-        <h3 class="title has-text-grey">QuePasa</h3>
-        <div class="notification is-warning">This project is under development and is not secure.</div>
-        <div class="box">
-          <h4 class="subtitle has-text-grey">Please login</h4>
-          <form class="login" method="post" action="/login">
-            <div class="field">
-              <div class="control">
-                <input class="input is-large" name="email" type="email" placeholder="Your Email" autofocus="">
-              </div>
-            </div>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+  <div class="max-w-md w-full mx-4">
+    <!-- Theme Toggle Button -->
+    <div class="absolute top-4 right-4">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md transition-colors" title="Toggle Dark Mode">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+      </button>
+    </div>
 
-            <div class="field">
-              <div class="control">
-                <input class="input is-large" name="password" type="password" placeholder="Your Password">
-              </div>
-            </div>
-            <button class="button is-block is-info is-large is-fullwidth">Login</button>
-          </form>
-        </div>
+    <div class="text-center mb-8">
+      <!-- QuePasa Logo -->
+      <div class="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center">
+        <img src="/assets/favicon.png" alt="QuePasa" class="w-24 h-24 object-contain">
+      </div>
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">QuePasa</h1>
+      <p class="text-gray-600 dark:text-gray-300">WhatsApp Gateway Platform</p>
+    </div>
+    
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-6">
+      <div class="flex">
+        <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+        <p class="text-yellow-700 dark:text-yellow-300 text-sm">This project is under development and is not secure.</p>
       </div>
     </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white text-center">Sign In</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-center mt-1">Please enter your credentials</p>
+      </div>
+      
+      <form method="post" action="/login" class="p-6 space-y-6">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-envelope mr-1"></i>Email Address
+          </label>
+          <input 
+            type="email" 
+            name="email" 
+            id="email"
+            placeholder="your@email.com"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+            required
+            autofocus
+          >
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-lock mr-1"></i>Password
+          </label>
+          <input 
+            type="password" 
+            name="password" 
+            id="password"
+            placeholder="Your password"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+            required
+          >
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-opacity-90 transition-colors font-medium flex items-center justify-center"
+        >
+          <i class="fas fa-sign-in-alt mr-2"></i>
+          Sign In
+        </button>
+      </form>
     </div>
-</section>
+  </div>
+
+  <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-lg';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-lg';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+    });
+  </script>
+</div>
 {{ end }}

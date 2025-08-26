@@ -29,6 +29,10 @@ type WhatsmeowHandlers struct {
 
 	// events counter
 	Counter uint64
+
+	// Connection control for history sync
+	offlineSyncStarted   bool
+	offlineSyncCompleted bool
 }
 
 func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowHandlers {
@@ -242,6 +246,12 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		return
 
 	case *events.Connected:
+		// Initialize offline sync flags - assume sync will happen after connection
+		source.offlineSyncStarted = true
+		source.offlineSyncCompleted = false
+
+		logentry.Info("connection established - assuming history sync period will start")
+
 		if source.Client != nil {
 			// zerando contador de tentativas de reconexão
 			// importante para zerar o tempo entre tentativas em caso de erro
@@ -250,6 +260,9 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 			presence := source.GetPresence()
 			source.SendPresence(presence, "'connected' event")
 		}
+
+		// Send connection webhook event
+		go source.sendConnectionWebhook("connected")
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
 			go source.WAHandlers.OnConnected()
@@ -306,6 +319,14 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 			logentry.Errorf("pair error event: %s", jsonEvt)
 		}
 
+	case *events.OfflineSyncPreview:
+		go source.OnOfflineSyncPreview(*evt)
+		return
+
+	case *events.OfflineSyncCompleted:
+		go source.OnOfflineSyncCompleted(*evt)
+		return
+
 	case
 		*events.AppState,
 		*events.CallTerminate,
@@ -313,8 +334,6 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		*events.DeleteForMe,
 		*events.MarkChatAsRead,
 		*events.Mute,
-		*events.OfflineSyncCompleted,
-		*events.OfflineSyncPreview,
 		*events.PairSuccess,
 		*events.Pin,
 		*events.PushName,
@@ -474,10 +493,13 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		return
 	}
 
+	// Determine if message is from history based on multiple criteria
+	isFromHistory := handler.isHistoryMessage(evt, from)
+
 	message := &whatsapp.WhatsappMessage{
 		Content:        evt.Message,
 		InfoForHistory: evt.Info,
-		FromHistory:    from == "history",
+		FromHistory:    isFromHistory,
 	}
 	// basic information
 	message.Id = evt.Info.ID
@@ -485,6 +507,22 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	// fmt.Printf("event timestamp: %v, new timestamp: %v\n", evt.Info.Timestamp, message.Timestamp)
 
 	message.FromMe = evt.Info.IsFromMe
+
+	// Log message classification for debugging
+	if isFromHistory {
+		reason := "unknown"
+		if from == "history" {
+			reason = "explicit history flag"
+		} else if handler.offlineSyncStarted && !handler.offlineSyncCompleted {
+			reason = "offline sync period (OfflineSyncPreview to OfflineSyncCompleted)"
+		}
+
+		logentry.Debugf("processing history message: %s, timestamp: %v, reason: %s, offline_sync_active: %v",
+			message.Id, message.Timestamp, reason, handler.offlineSyncStarted && !handler.offlineSyncCompleted)
+	} else {
+		logentry.Debugf("processing real-time message: %s, timestamp: %v, offline_sync_active: %v",
+			message.Id, message.Timestamp, handler.offlineSyncStarted && !handler.offlineSyncCompleted)
+	}
 
 	// Populate chat and participant information
 	handler.PopulateChatAndParticipant(message, evt.Info)
@@ -745,3 +783,140 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 }
 
 //#endregion
+
+//#region CONNECTION WEBHOOKS AND HISTORY CONTROL
+
+// isHistoryMessage determines if a message should be classified as history
+func (handler *WhatsmeowHandlers) isHistoryMessage(evt events.Message, from string) bool {
+	// If explicitly marked as history, return true
+	if from == "history" {
+		return true
+	}
+
+	// Main logic: If we're in offline sync period (between OfflineSyncPreview and OfflineSyncCompleted)
+	// all messages should be considered history
+	if handler.offlineSyncStarted && !handler.offlineSyncCompleted {
+		return true
+	}
+
+	// If not in sync period, it's real-time
+	return false
+}
+
+// sendConnectionWebhook sends connection status events to configured webhooks
+func (handler *WhatsmeowHandlers) sendConnectionWebhook(event string) {
+	if handler.WAHandlers == nil {
+		return
+	}
+
+	logentry := handler.GetLogger()
+	logentry.Infof("sending connection webhook event: %s", event)
+
+	// Get phone number from connection
+	phone := ""
+	if handler.Client != nil && handler.Client.Store != nil {
+		jid := handler.Client.Store.ID
+		if jid != nil {
+			phone = jid.User
+		}
+	}
+
+	// Create connection event message
+	message := &whatsapp.WhatsappMessage{
+		Id:        handler.Client.GenerateMessageID(),
+		Timestamp: time.Now().Truncate(time.Second),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      event,
+		Info: map[string]interface{}{
+			"event":     event,
+			"phone":     phone,
+			"timestamp": time.Now(),
+		},
+	}
+
+	// Send through internal handlers
+	go handler.WAHandlers.Message(message, "connection")
+}
+
+// OnOfflineSyncPreview handles the start of offline synchronization
+func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPreview) {
+	logentry := handler.GetLogger()
+	logentry.Infof("offline sync preview started - Total: %d, Messages: %d, Notifications: %d, Receipts: %d",
+		evt.Total, evt.Messages, evt.Notifications, evt.Receipts)
+
+	// Mark the start of offline sync period (reset flags in case already set by connection)
+	handler.offlineSyncStarted = true
+	handler.offlineSyncCompleted = false
+
+	// Send sync preview webhook
+	handler.sendSyncWebhook("sync_preview", map[string]interface{}{
+		"total":         evt.Total,
+		"messages":      evt.Messages,
+		"notifications": evt.Notifications,
+		"receipts":      evt.Receipts,
+	})
+
+	logentry.Info("history sync period confirmed by OfflineSyncPreview event")
+}
+
+// OnOfflineSyncCompleted handles the completion of offline synchronization
+func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncCompleted) {
+	logentry := handler.GetLogger()
+	logentry.Infof("offline sync completed - Count: %d", evt.Count)
+
+	// Mark the end of offline sync period
+	handler.offlineSyncCompleted = true
+	handler.offlineSyncStarted = false
+
+	// Send sync completed webhook
+	handler.sendSyncWebhook("sync_completed", map[string]interface{}{
+		"count": evt.Count,
+	})
+
+	logentry.Info("history sync period ended based on OfflineSyncCompleted event")
+}
+
+// sendSyncWebhook sends synchronization events to configured webhooks
+func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]interface{}) {
+	if handler.WAHandlers == nil {
+		return
+	}
+
+	logentry := handler.GetLogger()
+	logentry.Infof("sending sync webhook event: %s", event)
+
+	// Get phone number from connection
+	phone := ""
+	if handler.Client != nil && handler.Client.Store != nil {
+		jid := handler.Client.Store.ID
+		if jid != nil {
+			phone = jid.User
+		}
+	}
+
+	// Merge data with common fields
+	info := map[string]interface{}{
+		"event":     event,
+		"phone":     phone,
+		"timestamp": time.Now(),
+	}
+	for k, v := range data {
+		info[k] = v
+	}
+
+	// Create sync event message
+	message := &whatsapp.WhatsappMessage{
+		Id:        handler.Client.GenerateMessageID(),
+		Timestamp: time.Now().Truncate(time.Second),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      event,
+		Info:      info,
+	}
+
+	// Send through internal handlers
+	go handler.WAHandlers.Message(message, "sync")
+}

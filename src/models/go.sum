@@ -85,6 +85,8 @@ github.com/jfreymuth/vorbis v1.0.2/go.mod h1:DoftRo4AznKnShRl1GxiTFCseHr4zR9BN3T
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/jmoiron/sqlx v1.3.5 h1:vFFPA71p1o5gAeqtEAwLU4dnX2napprKtHr7PYIcN3g=
 github.com/jmoiron/sqlx v1.3.5/go.mod h1:nRVWtLre0KfCLJvgxzCsLVMogSvQ1zNJtpYr2Ccp0mQ=
+github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
+github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
 github.com/joncalhoun/migrate v0.0.2 h1:IYKLjg4mj044QGB+2BGx3YrR2AUUGZDQiW+TZiH3C04=
 github.com/joncalhoun/migrate v0.0.2/go.mod h1:5DsJtnyufol9412LNtv0xLkfGQtCbvLbTRBoHm3jsKk=
 github.com/json-iterator/go v1.1.9 h1:9yzud/Ht36ygwatGx56VwCZtlI/2AD15T1X2sjSuGns=
@@ -179,8 +181,6 @@ go.mau.fi/libsignal v0.2.0 h1:oRXj3OHhEJq51BFEM8/50UZblmWiTYH93hsNTPcbk90=
 go.mau.fi/libsignal v0.2.0/go.mod h1:tvjoDsMejgT38CXTXwqaYu8itBiY8O2Mb6biWvZBb9k=
 go.mau.fi/util v0.8.8 h1:OnuEEc/sIJFhnq4kFggiImUpcmnmL/xpvQMRu5Fiy5c=
 go.mau.fi/util v0.8.8/go.mod h1:Y/kS3loxTEhy8Vill513EtPXr+CRDdae+Xj2BXXMy/c=
-go.mau.fi/whatsmeow v0.0.0-20250723174453-937d77661333 h1:wZnqbIembr69yyUeWWEjxNxeofhYg3PDEx1BRRvHdWM=
-go.mau.fi/whatsmeow v0.0.0-20250723174453-937d77661333/go.mod h1:ltDTXUgOAT7LcFKp11H+5S7UY7+xHBMGzNJcv3dLHGk=
 go.mau.fi/whatsmeow v0.0.0-20250807072145-72ce90b82194 h1:/ow/oKzvxxwJEyCJ4bq8U7W2yar2f0HSq89yto+sD9Q=
 go.mau.fi/whatsmeow v0.0.0-20250807072145-72ce90b82194/go.mod h1:ltDTXUgOAT7LcFKp11H+5S7UY7+xHBMGzNJcv3dLHGk=
 go.uber.org/goleak v1.1.10/go.mod h1:8a7PlsEVH3e/a/GLqe5IIrQx6GzcnRmZEufDUTk4A7A=

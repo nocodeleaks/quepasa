@@ -106,44 +106,6 @@ func getEnvOrDefaultUint64(key string, defaultValue uint64) uint64 {
 	return defaultValue
 }
 
-// getEnvOrDefaultUint32 fetches an unsigned 32-bit integer environment variable, returning a default value.
-// It logs a warning if the environment variable exists but cannot be parsed as a uint32.
-func getEnvOrDefaultUint32(key string, defaultValue uint32) uint32 {
-	if valueStr, ok := os.LookupEnv(key); ok {
-		trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
-		if parsedValue, err := strconv.ParseUint(trimmedValueStr, 10, 32); err == nil {
-			return uint32(parsedValue)
-		}
-		logrus.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
-	}
-	return defaultValue
-}
-
-// getOptionalEnvBool fetches a boolean environment variable where nil indicates "use system default logic".
-// It returns:
-//   - *bool (true): if the variable is explicitly set to "true", "1", "yes", etc.
-//   - *bool (false): if the variable is explicitly set to "false", "0", "no", etc.
-//   - nil: if the variable is not set, empty, or its value is not a valid boolean,
-//     indicating that the system's internal default logic should apply.
-func getOptionalEnvBool(key string) *bool {
-	valueStr, ok := os.LookupEnv(key)
-	if !ok {
-		return nil // Not set
-	}
-	trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
-	if trimmedValueStr == "" {
-		return nil // Empty after trim, use system default
-	}
-
-	parsedValue, err := strconv.ParseBool(trimmedValueStr)
-	if err != nil {
-		logrus.Warnf("Invalid boolean value for optional environment variable %s: '%s'. Returning nil (use system default logic). Error: %v", key, valueStr, err)
-		return nil
-	}
-
-	return &parsedValue // Return pointer to the parsed boolean
-}
-
 // --- DATABASE CONFIGURATION ---
 
 // GetDBParameters retrieves database connection parameters from environment variables.

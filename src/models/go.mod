@@ -1,6 +1,6 @@
 module github.com/nocodeleaks/quepasa/models
 
-replace github.com/nocodeleaks/quepasa/audio => ../audio
+replace github.com/nocodeleaks/quepasa/media => ../media
 
 replace github.com/nocodeleaks/quepasa/library => ../library
 
@@ -20,9 +20,9 @@ require (
 	github.com/joncalhoun/migrate v0.0.2
 	github.com/lib/pq v1.10.8
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/nocodeleaks/quepasa/audio v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000

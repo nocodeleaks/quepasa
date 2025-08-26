@@ -1,4 +1,4 @@
-package audio
+package media
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ import (
 // or in an init() function within another file of the audio package.
 // Example in main.go or another audio package file:
 //
-// package audio
+// package media
 //
 // import (
 //

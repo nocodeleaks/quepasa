@@ -1,4 +1,4 @@
-package audio
+package media
 
 import (
 	"bytes"
@@ -109,12 +109,24 @@ func ConvertPngToJpg(pngData []byte) (jpgData []byte, newMime string, err error)
 
 // ShouldConvertImage checks if an image should be converted based on its MIME type and filename.
 func ShouldConvertImage(mimeType, filename string) bool {
-	// Check MIME type
-	if strings.ToLower(mimeType) == "image/png" {
+	// First check MIME type - this is the most reliable indicator
+	lowerMimeType := strings.ToLower(mimeType)
+	
+	// If MIME type is definitely an image/png, convert it
+	if lowerMimeType == "image/png" {
 		return true
 	}
+	
+	// If MIME type indicates it's another format (audio, video, etc.), don't convert
+	// even if filename has .png extension
+	if strings.HasPrefix(lowerMimeType, "audio/") ||
+		strings.HasPrefix(lowerMimeType, "video/") ||
+		strings.HasPrefix(lowerMimeType, "application/") ||
+		strings.HasPrefix(lowerMimeType, "text/") {
+		return false
+	}
 
-	// Check file extension as fallback
+	// If MIME type is empty or generic, check file extension as fallback
 	if filename != "" {
 		ext := strings.ToLower(filepath.Ext(filename))
 		return ext == ".png"

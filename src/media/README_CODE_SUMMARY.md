@@ -70,8 +70,8 @@ The `audio` package is organized into multiple Go files, each with a specific re
 
 ## **Usage Notes**
 
-* The `logentry` variable needs to be properly initialized (e.g., setting formatter, output, level) in the main application or in a dedicated `init()` function within the `audio` package itself if a default setup is desired.
-* It's recommended to call `audio.AreAudioToolsAvailable()` at the start of your application (or before using any functions that depend on FFmpeg/FFprobe) to check prerequisites. If it returns `false`, `audio.GetInitError()` can be called to retrieve the detailed reason.
+* The `logentry` variable needs to be properly initialized (e.g., setting formatter, output, level) in the main application or in a dedicated `init()` function within the `media` package itself if a default setup is desired.
+* It's recommended to call `media.AreAudioToolsAvailable()` at the start of your application (or before using any functions that depend on FFmpeg/FFprobe) to check prerequisites. If it returns `false`, `media.GetInitError()` can be called to retrieve the detailed reason.
 * Temporary files are created and cleaned up for `ffprobe` and `ffmpeg` operations to handle byte-slice inputs.
 
 ---

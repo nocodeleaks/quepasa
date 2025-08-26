@@ -1,6 +1,6 @@
 module github.com/nocodeleaks/quepasa/form
 
-replace github.com/nocodeleaks/quepasa/audio => ../audio
+replace github.com/nocodeleaks/quepasa/media => ../media
 
 replace github.com/nocodeleaks/quepasa/library => ../library
 
@@ -60,7 +60,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/nocodeleaks/quepasa/audio v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
 	github.com/philippseith/signalr v0.6.3 // indirect

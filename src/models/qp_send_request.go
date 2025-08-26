@@ -147,8 +147,8 @@ func (source *QpSendRequest) ToWhatsappAttachment() (result QpToWhatsappAttachme
 	attach.SetContent(&source.Content)
 
 	result.Attach = attach
-	result.AttachImageTreatment()
 	result.AttachSecureAndCustomize()
+	result.AttachImageTreatment()
 	result.AttachAudioTreatment()
 
 	return

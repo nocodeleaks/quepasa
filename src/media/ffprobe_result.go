@@ -1,4 +1,4 @@
-package audio
+package media
 
 // FFProbeResult struct to unmarshal ffprobe JSON output.
 // It contains format-level and stream-level information from ffprobe.

@@ -15,6 +15,7 @@ const (
 	ENV_ACCOUNTSETUP             = "ACCOUNTSETUP"             // enable or disable account creation
 	ENV_TESTING                  = "TESTING"                  // testing mode
 	ENV_LOGLEVEL                 = "LOGLEVEL"                 // general log level
+	ENV_CONVERT_PNG_TO_JPG       = "CONVERT_PNG_TO_JPG"       // convert PNG to JPG (not implemented yet)
 )
 
 // GeneralConfig holds all general application configuration loaded from environment
@@ -30,6 +31,7 @@ type GeneralSettings struct {
 	AccountSetup          bool   `json:"account_setup"`
 	Testing               bool   `json:"testing"`
 	LogLevel              string `json:"log_level"`
+	ConvertPNGToJPG       bool   `json:"convert_png_to_jpg"`
 }
 
 // NewGeneralSettings creates a new general settings by loading all values from environment
@@ -46,6 +48,7 @@ func NewGeneralSettings() GeneralSettings {
 		AccountSetup:          getEnvOrDefaultBool(ENV_ACCOUNTSETUP, true),
 		Testing:               getEnvOrDefaultBool(ENV_TESTING, false),
 		LogLevel:              getEnvOrDefaultString(ENV_LOGLEVEL, ""),
+		ConvertPNGToJPG:       getEnvOrDefaultBool(ENV_CONVERT_PNG_TO_JPG, false),
 	}
 }
 

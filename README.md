@@ -125,6 +125,9 @@
 	# COMPATIBLE_MIME_AS_AUDIO
 	> Should convert sending audio files to OGG codec and use as PTT. (default true)	
 	
+	# CONVERT_PNG_TO_JPG
+	> Should convert PNG images to JPG format using FFmpeg. Requires FFmpeg to be installed and available in PATH. (default false)
+	
 	# GOOS		
 	> Operational System to Golang Extensions, "linux" | "windows". (default "linux")
 		

@@ -72,6 +72,7 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`CACHEDAYS`** - Cache max days (default: `0` = unlimited)
 - **`CONVERT_WAVE_TO_OGG`** - Convert wave to OGG (default: `true`)
 - **`COMPATIBLE_MIME_AS_AUDIO`** - Treat compatible MIME as audio (default: `true`)
+- **`CONVERT_PNG_TO_JPG`** - Convert PNG images to JPG using FFmpeg (default: `false`)
 - **`ACCOUNTSETUP`** - Enable account creation (default: `true`)
 - **`TESTING`** - Testing mode (default: `false`)
 - **`DISPATCHUNHANDLED`** - Dispatch unhandled messages (default: `false`)

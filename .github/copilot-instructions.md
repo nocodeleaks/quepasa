@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## Common Guidelines
 * code comments should always be in English;
 * response to user queries should be in IDE current language;
@@ -11,6 +10,21 @@
 * **when making relevant code changes, always create or update internal documentation following the Internal Documentation Guidelines**;
 * whenever creating an extension method, use 'source' as parameter name for the extended object;
 * for class and structure names, e.g.: whatsmeow_group_manager.go => WhatsmeowGroupManager;
+
+## Packages Guidelines
+* **api**: only for API related code, e.g. REST API, GraphQL API, gRPC API, etc;
+* **audio**: for media processing and manipulation code, e.g. audio conversion, audio extraction, image conversion etc;
+* **environment**: for environment variable management and configuration;
+* **form**: for form handling and validation code;
+* **library**: for reusable library code and utilities, only keeps golang packages, do not add third party packages;
+* **metrics**: for application performance monitoring and metrics collection;
+* **models**: for data models and structures;
+* **rabbitmq**: for RabbitMQ messaging and queueing code;
+* **sipproxy**: for SIP proxy server code;
+* **webserver**: for web server related code, e.g. HTTP server, routing, middleware, api, forms and websockets etc;
+* **whatsapp**: for Whatsapp structures and models;
+* **whatsmeow**: for Whatsmeow library integration and messaging code;
+
 
 ## Testing Guidelines
 * **Follow official Go testing conventions** - use `*_test.go` files within the same package
@@ -28,13 +42,8 @@
 * JId: Whatsapp Jabber Identifier ("go.mau.fi/whatsmeow/types".JID)
 * WId: Whatsapp String Identifier (string)
 * LId: Whatsapp Local Identifier (new default Identifier, used to hide the phone number)
-=======
-# GitHub Copilot Instructions
 
-## Development Rules
-
-### Version Management
-- **IMPORTANT**: Whenever you are going to merge/push to the `main` branch (main branch), you MUST:
+**IMPORTANT**: Whenever you are going to merge/push to the `main` branch (main branch), you MUST:
   1. Update the `QpVersion` in the `models/qp_defaults.go` file
   2. Increment the version following the current semantic pattern
   3. If it ends with `.0` it means stable version
@@ -62,4 +71,3 @@ const QpVersion = "3.25.2207.0127" // <-- ALWAYS UPDATE BEFORE MERGE TO MAIN
 🚨 **NEVER merge to main without updating QpVersion** 🚨
 
 This is a mandatory project rule for version control.
->>>>>>> release/band-beachhub-merge

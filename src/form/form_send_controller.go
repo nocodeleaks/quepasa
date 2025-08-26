@@ -132,6 +132,7 @@ func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *wh
 	attach.FileName = reader.Filename
 
 	result := &models.QpToWhatsappAttachment{Attach: attach}
+	result.AttachImageTreatment()
 	result.AttachSecureAndCustomize()
 	result.AttachAudioTreatment()
 	for _, debug := range result.Debug {

@@ -24,7 +24,9 @@ replace github.com/nocodeleaks/quepasa/sipproxy => ./sipproxy
 
 replace github.com/nocodeleaks/quepasa/environment => ./environment
 
-go 1.23.2
+go 1.24.0
+
+toolchain go1.24.2
 
 require (
 	github.com/joho/godotenv v1.5.1
@@ -74,11 +76,11 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
-	github.com/petermattis/goid v0.0.0-20250508124226-395b08cebbdb // indirect
+	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/philippseith/signalr v0.6.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
@@ -96,15 +98,15 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.0 // indirect
-	go.mau.fi/util v0.8.8 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20250807072145-72ce90b82194 // indirect
-	golang.org/x/crypto v0.40.0 // indirect
-	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
-	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
-	golang.org/x/tools v0.35.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	go.mau.fi/util v0.9.0 // indirect
+	go.mau.fi/whatsmeow v0.0.0-20250826144440-85e30ecab38b // indirect
+	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/tools v0.36.0 // indirect
+	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )

@@ -365,9 +365,13 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 	// Clean up the event type by removing the *events. prefix
 	cleanEventType := strings.TrimPrefix(eventType, "*events.")
 
+	// Generate unique event ID with prefix, original ID and random suffix to avoid cache conflicts
+	// Format: event_<8digits>_<originalID>
+	randomizer := fmt.Sprintf("%08d", time.Now().Nanosecond()%100000000)
+
 	message := &whatsapp.WhatsappMessage{
 		Content:   evt,
-		Id:        source.Client.GenerateMessageID(),
+		Id:        fmt.Sprintf("event_%s_%s", randomizer, source.Client.GenerateMessageID()),
 		Timestamp: time.Now().Truncate(time.Second),
 		Type:      whatsapp.UnhandledMessageType,
 		FromMe:    false,
@@ -383,9 +387,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 	// Try to extract chat information from events that have Info field
 	if eventWithInfo, ok := evt.(interface{ GetInfo() types.MessageInfo }); ok {
 		info := eventWithInfo.GetInfo()
-
-		// basic information
-		message.Id = info.ID
+		message.Id = fmt.Sprintf("event_%s_%s", randomizer, info.ID)
 		message.Timestamp = ImproveTimestamp(info.Timestamp)
 		message.FromMe = info.IsFromMe
 

@@ -11,6 +11,22 @@ import (
 
 //region CONTROLLER - HEALTH
 
+// BasicHealthController - Simple health check without authentication
+// Returns 200 OK if the application is running
+func BasicHealthController(w http.ResponseWriter, r *http.Request) {
+	response := &api.HealthResponse{
+		QpResponse: models.QpResponse{
+			Success: true,
+			Status:  "application is running",
+		},
+		Timestamp: time.Now(),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	RespondInterface(w, response)
+}
+
 func HealthController(w http.ResponseWriter, r *http.Request) {
 
 	response := &api.HealthResponse{Timestamp: time.Now()}

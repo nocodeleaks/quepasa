@@ -14,6 +14,9 @@ const CurrentAPIVersion string = "v4"
 
 func RegisterAPIControllers(r chi.Router) {
 
+	// Basic health check route without authentication
+	r.Get("/healthapi", BasicHealthController)
+
 	aliases := []string{"/current", "", "/" + CurrentAPIVersion}
 	for _, endpoint := range aliases {
 

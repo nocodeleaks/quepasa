@@ -173,6 +173,13 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 		// Typing Controller ********************
 
+		// MESSAGE EDITING CONTROLLER ***********
+		// ----------------------------------------
+		r.Put(endpoint+"/edit", EditMessageController)
+
+		// ----------------------------------------
+		// MESSAGE EDITING CONTROLLER ***********
+
 	}
 }
 

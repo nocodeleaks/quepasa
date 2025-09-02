@@ -178,7 +178,7 @@ func (gm *WhatsmeowGroupManager) CreateGroup(name string, participants []string)
 	}
 
 	// Call the existing method with the constructed request
-	return client.CreateGroup(groupConfig)
+	return client.CreateGroup(context.TODO(), groupConfig)
 }
 
 // CreateGroupExtended creates a new group with extended options
@@ -205,7 +205,7 @@ func (gm *WhatsmeowGroupManager) CreateGroupExtended(title string, participants 
 	}
 
 	// Call the WhatsApp method
-	return client.CreateGroup(req)
+	return client.CreateGroup(context.TODO(), req)
 }
 
 // UpdateGroupSubject updates the name/subject of a group

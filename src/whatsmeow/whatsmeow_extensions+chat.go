@@ -87,6 +87,14 @@ func NewWhatsappChatRaw(client *whatsmeow.Client, contactManager whatsapp.Whatsa
 				chat.LId = lid
 			}
 		}
+	} else if jid.Server == whatsapp.WHATSAPP_SERVERDOMAIN_LID {
+		// For @lid contacts, get the corresponding phone number
+		phone, err := contactManager.GetPhoneFromContactId(chat.Id)
+		if err == nil && len(phone) > 0 {
+			chat.Phone = phone
+			// LId is already the chat.Id for @lid contacts
+			chat.LId = chat.Id
+		}
 	}
 
 	return chat

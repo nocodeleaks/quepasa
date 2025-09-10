@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -469,6 +470,11 @@ func (handler *WhatsmeowHandlers) PopulateChatAndParticipant(message *whatsapp.W
 
 	if info.IsGroup {
 		message.Participant = NewWhatsappChat(handler, info.Sender)
+
+		// Enrich participant name if empty (only for group messages)
+		if message.Participant != nil && len(message.Participant.Title) == 0 {
+			handler.enrichParticipantName(message.Participant, info.Sender)
+		}
 	} /* else { // Obsolete
 		// If title is empty, use Phone as fallback
 		if len(message.Chat.Title) == 0 && message.FromMe {
@@ -921,4 +927,34 @@ func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]
 
 	// Send through internal handlers
 	go handler.WAHandlers.Message(message, "sync")
+}
+
+// enrichParticipantName enriches participant name for group messages using cached contact information
+func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.WhatsappChat, senderJID types.JID) {
+	if handler.Client == nil || handler.Client.Store == nil || handler.Client.Store.Contacts == nil {
+		return
+	}
+
+	// Buscar informações de contato em cache usando o JID do sender
+	contactInfo, err := handler.Client.Store.Contacts.GetContact(context.Background(), senderJID)
+	if err != nil || !contactInfo.Found {
+		return
+	}
+
+	// Aplicar mesma hierarquia do GetChatTitle: BusinessName > FullName > PushName > FirstName
+	if len(contactInfo.BusinessName) > 0 {
+		participant.Title = library.NormalizeForTitle(contactInfo.BusinessName)
+	} else if len(contactInfo.FullName) > 0 {
+		participant.Title = library.NormalizeForTitle(contactInfo.FullName)
+	} else if len(contactInfo.PushName) > 0 {
+		participant.Title = library.NormalizeForTitle(contactInfo.PushName)
+	} else if len(contactInfo.FirstName) > 0 {
+		participant.Title = library.NormalizeForTitle(contactInfo.FirstName)
+	}
+
+	// Log quando o nome foi enriquecido via cache
+	if len(participant.Title) > 0 {
+		logentry := handler.GetLogger()
+		logentry.Debugf("Participant name enriched via cache for JID %s: %s", senderJID.String(), participant.Title)
+	}
 }

@@ -137,3 +137,35 @@ func getOptionalEnvBool(key string) *bool {
 	}
 	return nil // Not set or invalid means "use default logic"
 }
+
+// getEnvOrDefaultInt fetches a signed integer environment variable, returning a default value.
+// It logs a warning if the environment variable exists but cannot be parsed as an integer.
+func getEnvOrDefaultInt(key string, defaultValue int) int {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		if parsedValue, err := strconv.Atoi(trimmedValueStr); err == nil {
+			return parsedValue
+		}
+		logrus.Warnf("Invalid integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
+	}
+	return defaultValue
+}
+
+// isEnvVarSet checks if an environment variable is explicitly set
+func isEnvVarSet(key string) bool {
+	_, exists := os.LookupEnv(key)
+	return exists
+}
+
+// getOptionalEnvInt fetches an integer environment variable.
+// Returns the value if set, or -1 if not set (indicating disabled/not configured)
+func getOptionalEnvInt(key string) int {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		if parsedValue, err := strconv.Atoi(trimmedValueStr); err == nil {
+			return parsedValue
+		}
+		logrus.Warnf("Invalid integer value for environment variable %s: '%s'. Feature will be disabled", key, valueStr)
+	}
+	return -1 // Not set or invalid means "disabled"
+}

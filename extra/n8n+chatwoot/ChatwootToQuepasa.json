@@ -667,7 +667,24 @@
         6400
       ],
       "retryOnFail": true,
-      "maxTries": 2
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Revoke Result - Handle both success and error cases\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const result = {\n    messageId: null,\n    error: null,\n    success: false\n  };\n\n  // Try to get message ID from various sources\n  result.messageId = \n    item.json?.revoke?.id ||\n    item.json?.body?.source_id ||\n    item.json?.body?.id ||\n    item.json?.id ||\n    'unknown';\n\n  // Check if there was an error\n  if (item.error) {\n    result.error = {\n      message: item.error.message || 'Unknown error',\n      code: item.error.code || 'UNKNOWN_ERROR',\n      details: item.error\n    };\n    \n    // Categorize common WhatsApp/Quepasa errors\n    if (item.error.message?.includes('24') || item.error.message?.includes('hour') || item.error.message?.includes('time')) {\n      result.error.code = 'MESSAGE_TOO_OLD';\n      result.error.message = 'WhatsApp Limitation: Message too old (>24h) - MessageId: ' + result.messageId;\n    } else if (item.error.message?.includes('not found') || item.error.message?.includes('404')) {\n      result.error.code = 'MESSAGE_NOT_FOUND';\n      result.error.message = 'WhatsApp Error: Message not found - MessageId: ' + result.messageId;\n    } else if (item.error.message?.includes('unauthorized') || item.error.message?.includes('401')) {\n      result.error.code = 'UNAUTHORIZED';\n      result.error.message = 'Quepasa Auth Error: Unauthorized - MessageId: ' + result.messageId;\n    }\n  } else {\n    // Success case\n    result.success = true;\n  }\n\n  results.push(result);\n}\n\nreturn results.map(result => ({ json: result }));"
+      },
+      "id": "f1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6",
+      "name": "Process Revoke Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6320,
+        6400
+      ],
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1771,9 +1788,10 @@
     },
     {
       "parameters": {
-        "respondWith": "noData",
+        "respondWith": "json",
+        "responseBody": "={{ $json.success ? { \"success\": true, \"action\": \"message_revoked\", \"messageId\": $json.messageId, \"timestamp\": new Date().toISOString() } : { \"success\": false, \"error\": $json.error.message, \"errorCode\": $json.error.code, \"messageId\": $json.messageId, \"timestamp\": new Date().toISOString() } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": "={{ $json.success ? 200 : 422 }}"
         }
       },
       "id": "2b9102fc-a661-486e-b6d8-d3c4f7b16314",
@@ -3040,6 +3058,17 @@
       ]
     },
     "Quepasa Revoke": {
+      "main": [
+        [
+          {
+            "node": "Process Revoke Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Revoke Result": {
       "main": [
         [
           {

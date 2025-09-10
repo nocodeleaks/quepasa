@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nocodeleaks/quepasa/environment"
@@ -99,54 +101,290 @@ func (source QpWebhook) IsSetExtra() bool {
 
 var ErrInvalidResponse error = errors.New("the requested url do not return 200 status code")
 
+// WebhookQueueMessage represents a webhook message in the queue
+type WebhookQueueMessage struct {
+	ID          string                    `json:"id"`
+	Webhook     *QpWebhook                `json:"webhook"`
+	Message     *whatsapp.WhatsappMessage `json:"message"`
+	Timestamp   time.Time                 `json:"timestamp"`
+	RetryCount  int                       `json:"retry_count"`
+	LastAttempt time.Time                 `json:"last_attempt"`
+	Status      string                    `json:"status"` // "queued", "processing", "completed", "failed", "discarded"
+}
+
+// WebhookQueueClient manages asynchronous webhook processing with caching
+type WebhookQueueClient struct {
+	messageCache    chan WebhookQueueMessage // In-memory queue for webhook messages
+	cacheProcessing sync.Once                // Ensures cache processor starts only once
+	maxCacheSize    int                      // Maximum number of messages to hold in cache
+	closed          chan struct{}            // Signals that the client should stop
+	wg              sync.WaitGroup           // To wait for goroutines to finish
+	processingDelay time.Duration            // Delay between processing messages
+}
+
+// Global webhook queue client instance
+var WebhookQueueClientInstance *WebhookQueueClient
+var webhookQueueOnce sync.Once
+
+// InitializeWebhookQueue initializes the global webhook queue client
+func InitializeWebhookQueue() {
+	webhookQueueOnce.Do(func() {
+		// Only initialize if queue is enabled
+		if !environment.Settings.API.WebhookQueueEnabled {
+			log.Info("Webhook queue system is disabled")
+			return
+		}
+
+		size := environment.Settings.API.GetWebhookQueueSize()
+		delay := time.Duration(environment.Settings.API.GetWebhookQueueDelay()) * time.Second
+		workers := environment.Settings.API.GetWebhookWorkers()
+
+		// Validate configuration
+		if size <= 0 {
+			log.Warnf("Invalid webhook queue size %d, using default 100", size)
+			size = 100
+		}
+		if workers <= 0 {
+			log.Warnf("Invalid webhook workers count %d, using default 1", workers)
+			workers = 1
+		}
+
+		WebhookQueueClientInstance = &WebhookQueueClient{
+			messageCache:    make(chan WebhookQueueMessage, size),
+			maxCacheSize:    size,
+			closed:          make(chan struct{}),
+			processingDelay: delay,
+		}
+
+		// Start multiple cache processors (workers)
+		WebhookQueueClientInstance.cacheProcessing.Do(func() {
+			for i := 0; i < workers; i++ {
+				WebhookQueueClientInstance.wg.Add(1)
+				go WebhookQueueClientInstance.processCache(i)
+			}
+		})
+
+		log.Infof("Webhook queue client initialized with size %d, delay %v, and %d workers", size, delay, workers)
+	})
+}
+
+// AddToCache adds a webhook message to the cache
+// Returns true if added to cache, false if cache is full
+func (w *WebhookQueueClient) AddToCache(webhook *QpWebhook, message *whatsapp.WhatsappMessage) bool {
+	msg := WebhookQueueMessage{
+		ID:          fmt.Sprintf("webhook-%d", time.Now().UnixNano()),
+		Webhook:     webhook,
+		Message:     message,
+		Timestamp:   time.Now(),
+		RetryCount:  0,
+		LastAttempt: time.Time{},
+		Status:      "queued",
+	}
+
+	select {
+	case w.messageCache <- msg:
+		// Log queue status
+		queueSize := len(w.messageCache)
+		log.WithFields(log.Fields{
+			"webhook_id": msg.ID,
+			"url":        webhook.Url,
+			"queue_size": queueSize,
+			"max_size":   w.maxCacheSize,
+			"status":     "enqueued",
+		}).Infof("Webhook enqueued for processing (Queue: %d/%d)", queueSize, w.maxCacheSize)
+
+		metrics.WebhookQueueSize.Set(float64(queueSize))
+		return true
+	default:
+		// Cache is full, discard message
+		log.WithFields(log.Fields{
+			"webhook_id": msg.ID,
+			"url":        webhook.Url,
+			"queue_size": len(w.messageCache),
+			"max_size":   w.maxCacheSize,
+			"status":     "discarded",
+		}).Warnf("Webhook queue full, discarding message (Queue: %d/%d)", len(w.messageCache), w.maxCacheSize)
+
+		metrics.WebhookQueueDiscarded.Inc()
+		return false
+	}
+}
+
+// processCache processes messages from the cache
+func (w *WebhookQueueClient) processCache(workerId int) {
+	defer w.wg.Done()
+	log.Infof("Webhook queue processor (worker %d) started", workerId)
+
+	for {
+		select {
+		case <-w.closed:
+			log.Infof("Webhook queue processor (worker %d) shutting down", workerId)
+			return
+
+		case msg := <-w.messageCache:
+			w.processMessage(msg)
+
+			// Apply processing delay if configured
+			if w.processingDelay > 0 {
+				time.Sleep(w.processingDelay)
+			}
+		}
+	}
+}
+
+// processMessage processes a single webhook message
+func (w *WebhookQueueClient) processMessage(msg WebhookQueueMessage) {
+	// Update message status to processing
+	msg.Status = "processing"
+	msg.LastAttempt = time.Now()
+
+	log.WithFields(log.Fields{
+		"webhook_id":  msg.ID,
+		"url":         msg.Webhook.Url,
+		"status":      msg.Status,
+		"retry_count": msg.RetryCount,
+	}).Info("Processing webhook from queue")
+
+	// Process the webhook
+	err := msg.Webhook.postWebhook(msg.Message)
+
+	// Update metrics and status based on result
+	if err != nil {
+		// postWebhook already exhausted all retry attempts
+		// No need to retry at queue level - mark as final failure
+		msg.Status = "failed_final"
+
+		log.WithFields(log.Fields{
+			"webhook_id":  msg.ID,
+			"url":         msg.Webhook.Url,
+			"status":      msg.Status,
+			"retry_count": msg.RetryCount,
+		}).Error("Webhook failed after all retry attempts - marking as final failure")
+
+		metrics.WebhookQueueFailed.Inc()
+	} else {
+		msg.Status = "completed"
+		log.WithFields(log.Fields{
+			"webhook_id": msg.ID,
+			"url":        msg.Webhook.Url,
+			"status":     msg.Status,
+		}).Info("Webhook processed successfully")
+		metrics.WebhookQueueCompleted.Inc()
+	}
+
+	// Update processed counter
+	metrics.WebhookQueueProcessed.Inc()
+
+	// Update queue size metric
+	metrics.WebhookQueueSize.Set(float64(len(w.messageCache)))
+}
+
+// shouldRetryMessage determines if a failed message should be retried
+func (w *WebhookQueueClient) shouldRetryMessage(msg WebhookQueueMessage) bool {
+	maxRetries := environment.Settings.API.GetWebhookRetryCount()
+	return msg.RetryCount < maxRetries
+}
+
+// GetQueueStatus returns current queue status information
+func (w *WebhookQueueClient) GetQueueStatus() map[string]interface{} {
+	workers := environment.Settings.API.GetWebhookWorkers()
+	return map[string]interface{}{
+		"current_size":     len(w.messageCache),
+		"max_size":         w.maxCacheSize,
+		"utilization":      float64(len(w.messageCache)) / float64(w.maxCacheSize) * 100,
+		"is_enabled":       environment.Settings.API.WebhookQueueEnabled,
+		"processing_delay": w.processingDelay.String(),
+		"workers":          workers,
+	}
+}
+
+// Close shuts down the webhook queue client gracefully
+func (w *WebhookQueueClient) Close() {
+	log.Info("Closing webhook queue client...")
+	close(w.closed)
+	
+	// Wait for workers to finish with a timeout
+	done := make(chan struct{})
+	go func() {
+		w.wg.Wait()
+		close(done)
+	}()
+	
+	select {
+	case <-done:
+		log.Info("All webhook queue workers finished gracefully")
+	case <-time.After(30 * time.Second):
+		log.Warn("Timeout waiting for webhook queue workers to finish")
+	}
+	
+	log.Info("Webhook queue client closed")
+}
+
 // shouldRetry determines if an error should trigger a retry attempt
 func shouldRetry(err error, statusCode int) bool {
 	if err == nil && statusCode == 200 {
 		return false // Success, no retry needed
 	}
-	
+
 	if err != nil {
 		errStr := strings.ToLower(err.Error())
-		
+
 		// Retry on timeout errors
 		if strings.Contains(errStr, "timeout") ||
-		   strings.Contains(errStr, "deadline exceeded") ||
-		   strings.Contains(errStr, "context deadline exceeded") {
+			strings.Contains(errStr, "deadline exceeded") ||
+			strings.Contains(errStr, "context deadline exceeded") {
 			return true
 		}
-		
+
 		// Retry on network errors
 		if strings.Contains(errStr, "connection refused") ||
-		   strings.Contains(errStr, "connection reset") ||
-		   strings.Contains(errStr, "no such host") ||
-		   strings.Contains(errStr, "network is unreachable") {
+			strings.Contains(errStr, "connection reset") ||
+			strings.Contains(errStr, "no such host") ||
+			strings.Contains(errStr, "network is unreachable") {
 			return true
 		}
-		
+
 		// Check for net.Error timeout
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 			return true
 		}
-		
+
 		// Don't retry on other client errors (malformed URL, etc.)
 		return false
 	}
-	
-	// Retry on server errors (5xx) but not client errors (4xx)
-	if statusCode >= 500 && statusCode < 600 {
-		return true
-	}
-	
+
 	// Don't retry on client errors (4xx) - these are permanent failures
 	if statusCode >= 400 && statusCode < 500 {
 		return false
 	}
-	
+
+	// Retry on server errors (5xx)
+	if statusCode >= 500 && statusCode < 600 {
+		return true
+	}
+
 	// Retry on other non-200 responses (3xx, etc.)
 	return statusCode != 200
 }
 
 func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
+	// Check if queue system is enabled
+	if WebhookQueueClientInstance != nil && environment.Settings.API.WebhookQueueEnabled {
+		// Enqueue the webhook for asynchronous processing
+		if WebhookQueueClientInstance.AddToCache(source, message) {
+			return nil // Success, enqueued
+		} else {
+			// Queue full, fallback to direct processing
+			logentry := source.LogWithField(LogFields.MessageId, message.Id)
+			logentry.Warn("Webhook queue full, processing directly")
+		}
+	}
+
+	// Direct processing (original behavior or fallback)
+	return source.postWebhook(message)
+}
+
+func (source *QpWebhook) postWebhook(message *whatsapp.WhatsappMessage) (err error) {
 	startTime := time.Now()
 
 	// updating log
@@ -181,7 +419,7 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 	attemptsMade := 0
 	for attempt := 0; attempt <= retryCount; attempt++ {
 		attemptsMade++
-		
+
 		if attempt > 0 {
 			metrics.WebhookRetryAttempts.Inc()
 			logentry.Infof("webhook retry attempt %d/%d after %v delay", attempt, retryCount, retryDelay)
@@ -203,7 +441,7 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 		client := &http.Client{}
 		client.Timeout = timeout
 		resp, clientErr := client.Do(req)
-		
+
 		metrics.WebhooksSent.Inc()
 
 		var statusCode int
@@ -245,7 +483,11 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 
 		// Check if we should retry this error
 		if !shouldRetry(currentErr, statusCode) {
-			logentry.Infof("error is not retryable, stopping attempts")
+			if statusCode >= 400 && statusCode < 500 {
+				logentry.Warnf("client error (4xx) detected - not retryable (status: %d)", statusCode)
+			} else {
+				logentry.Infof("error is not retryable, stopping attempts")
+			}
 			break
 		}
 
@@ -281,7 +523,7 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 
 // postSingleAttempt handles the original single-attempt webhook logic (no retry)
 func (source *QpWebhook) postSingleAttempt(payloadJson []byte, logentry *log.Entry, startTime time.Time) (err error) {
-	
+
 	timeout := time.Duration(environment.Settings.API.GetWebhookTimeout()) * time.Second
 
 	req, err := http.NewRequest("POST", source.Url, bytes.NewBuffer(payloadJson))
@@ -296,9 +538,9 @@ func (source *QpWebhook) postSingleAttempt(payloadJson []byte, logentry *log.Ent
 	client := &http.Client{}
 	client.Timeout = timeout
 	resp, err := client.Do(req)
-	
+
 	metrics.WebhooksSent.Inc()
-	
+
 	if err != nil {
 		logentry.Warnf("error at post webhook: %s", err.Error())
 	}
@@ -327,4 +569,83 @@ func (source *QpWebhook) postSingleAttempt(payloadJson []byte, logentry *log.Ent
 	}
 
 	return
+}
+
+// Initialize webhook queue if enabled
+func init() {
+	// Only initialize if queue is enabled
+	if environment.Settings.API.WebhookQueueEnabled {
+		InitializeWebhookQueue()
+	}
+}
+
+var WebhookQueueDiscarded = metrics.WebhookQueueDiscarded
+
+// GetWebhookQueueStatus returns current webhook queue status
+func GetWebhookQueueStatus() map[string]interface{} {
+	if WebhookQueueClientInstance == nil {
+		return map[string]interface{}{
+			"enabled": false,
+			"status":  "not_initialized",
+			"message": "Webhook queue system is not enabled or initialized",
+		}
+	}
+
+	status := WebhookQueueClientInstance.GetQueueStatus()
+	status["enabled"] = environment.Settings.API.WebhookQueueEnabled
+	status["status"] = "active"
+	status["message"] = "Webhook queue system is active and processing messages"
+
+	// Add health check information
+	queueSize := status["current_size"].(int)
+	maxSize := status["max_size"].(int)
+	utilization := status["utilization"].(float64)
+
+	if utilization > 90.0 {
+		status["health"] = "critical"
+		status["message"] = "Queue utilization is critically high"
+	} else if utilization > 75.0 {
+		status["health"] = "warning"
+		status["message"] = "Queue utilization is high"
+	} else {
+		status["health"] = "healthy"
+	}
+
+	// Add queue statistics
+	status["statistics"] = map[string]interface{}{
+		"queue_size":          queueSize,
+		"max_size":            maxSize,
+		"available_slots":     maxSize - queueSize,
+		"utilization_percent": utilization,
+		"processing_delay":    status["processing_delay"],
+	}
+
+	return status
+}
+
+// CleanupWebhookQueue shuts down the global webhook queue client
+func CleanupWebhookQueue() {
+	if WebhookQueueClientInstance != nil {
+		WebhookQueueClientInstance.Close()
+		WebhookQueueClientInstance = nil
+		log.Info("Webhook queue client cleaned up")
+	}
+}
+
+// RestartWebhookQueue shuts down and reinitializes the webhook queue
+// Useful for configuration changes without full application restart
+func RestartWebhookQueue() {
+	log.Info("Restarting webhook queue system...")
+	CleanupWebhookQueue()
+
+	// Reset the sync.Once to allow reinitialization
+	webhookQueueOnce = sync.Once{}
+
+	// Only restart if queue is enabled
+	if environment.Settings.API.WebhookQueueEnabled {
+		InitializeWebhookQueue()
+		log.Info("Webhook queue system restarted successfully")
+	} else {
+		log.Info("Webhook queue system remains disabled after restart")
+	}
 }

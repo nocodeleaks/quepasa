@@ -7,6 +7,7 @@ import (
 
 	api "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 //region CONTROLLER - HEALTH
@@ -20,6 +21,7 @@ func BasicHealthController(w http.ResponseWriter, r *http.Request) {
 			Status:  "application is running",
 		},
 		Timestamp: time.Now(),
+		Queue:     getWebhookQueueStats(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -40,6 +42,9 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		stats := calculateHealthStats(healthItems)
 		response.Stats = &stats
 
+		// Add queue stats
+		response.Queue = getWebhookQueueStats()
+
 		// Set success to true only if all servers are healthy
 		response.Success = stats.Unhealthy == 0 && stats.Total > 0
 
@@ -55,6 +60,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 			user, err := models.WhatsappService.GetUser(username, password)
 			if err != nil {
 				response.ParseError(fmt.Errorf("authentication failed: %s", err.Error()))
+				response.Queue = getWebhookQueueStats()
 				RespondInterface(w, response)
 				return
 			}
@@ -74,6 +80,9 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 			stats := calculateHealthStats(healthItems)
 			response.Stats = &stats
 
+			// Add queue stats
+			response.Queue = getWebhookQueueStats()
+
 			// Set success to true only if all user servers are healthy
 			response.Success = stats.Unhealthy == 0 && stats.Total > 0
 
@@ -85,6 +94,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		server, err := GetServer(r)
 		if err != nil {
 			response.ParseError(err)
+			response.Queue = getWebhookQueueStats()
 			RespondInterface(w, response)
 			return
 		}
@@ -100,6 +110,9 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 			Unhealthy:  boolToInt(!status.IsHealthy()),
 			Percentage: boolToFloat(status.IsHealthy()) * 100,
 		}
+
+		// Add queue stats
+		response.Queue = getWebhookQueueStats()
 
 		RespondInterface(w, response)
 		return
@@ -152,4 +165,59 @@ func All[T any](ts []T, pred func(T) bool) bool {
 		}
 	}
 	return true
+}
+
+// getWebhookQueueStats retrieves current webhook queue statistics
+func getWebhookQueueStats() *api.WebhookQueueStats {
+	if models.WebhookQueueClientInstance == nil {
+		return &api.WebhookQueueStats{
+			Enabled: false,
+		}
+	}
+
+	queueStatus := models.WebhookQueueClientInstance.GetQueueStatus()
+
+	// Get metric values from global registry
+	processedTotal := getMetricValue("quepasa_webhook_queue_processed_total")
+	discardedTotal := getMetricValue("quepasa_webhook_queue_discarded_total")
+	retriesTotal := getMetricValue("quepasa_webhook_queue_retries_total")
+	completedTotal := getMetricValue("quepasa_webhook_queue_completed_total")
+	failedTotal := getMetricValue("quepasa_webhook_queue_failed_total")
+
+	return &api.WebhookQueueStats{
+		Enabled:         queueStatus["is_enabled"].(bool),
+		CurrentSize:     queueStatus["current_size"].(int),
+		MaxSize:         queueStatus["max_size"].(int),
+		Utilization:     queueStatus["utilization"].(float64),
+		ProcessingDelay: queueStatus["processing_delay"].(string),
+		Workers:         queueStatus["workers"].(int),
+		ProcessedTotal:  processedTotal,
+		DiscardedTotal:  discardedTotal,
+		RetriesTotal:    retriesTotal,
+		CompletedTotal:  completedTotal,
+		FailedTotal:     failedTotal,
+	}
+}
+
+// getMetricValue retrieves the current value of a Prometheus metric by name
+func getMetricValue(metricName string) float64 {
+	// Use the default registry to gather metrics
+	metrics, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		return 0
+	}
+
+	for _, metricFamily := range metrics {
+		if *metricFamily.Name == metricName {
+			for _, metric := range metricFamily.Metric {
+				if metric.Counter != nil {
+					return *metric.Counter.Value
+				}
+				if metric.Gauge != nil {
+					return *metric.Gauge.Value
+				}
+			}
+		}
+	}
+	return 0
 }

@@ -1,7 +1,6 @@
 package whatsmeow
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -951,21 +950,13 @@ func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]
 
 // enrichParticipantName enriches participant name for group messages using cached contact information
 func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.WhatsappChat, senderJID types.JID) {
-	if handler.Client == nil || handler.Client.Store == nil || handler.Client.Store.Contacts == nil {
+	// Use the centralized GetContactName function for consistency and null checks
+	name := GetContactName(handler.Client, senderJID)
+	if len(name) == 0 {
 		return
 	}
 
-	// Buscar informações de contato em cache usando o JID do sender
-	contactInfo, err := handler.Client.Store.Contacts.GetContact(context.Background(), senderJID)
-	if err != nil || !contactInfo.Found {
-		return
-	}
-
-	// Aplicar mesma hierarquia do GetChatTitle: BusinessName > FullName > PushName > FirstName
-	name := ExtractContactName(contactInfo)
-	if len(name) > 0 {
-		participant.Title = library.NormalizeForTitle(name)
-	}
+	participant.Title = library.NormalizeForTitle(name)
 
 	// Log quando o nome foi enriquecido via cache
 	if len(participant.Title) > 0 {

@@ -2,7 +2,6 @@ package whatsmeow
 
 import (
 	"context"
-	"reflect"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -17,36 +16,44 @@ import (
  * @param cInfo Contact info from WhatsApp store
  * @return The best available name or empty string if none found
  */
-func ExtractContactName(cInfo interface{}) string {
-	// Use reflection to access the fields dynamically
-	v := reflect.ValueOf(cInfo)
-	if v.Kind() == reflect.Struct {
-		// Try BusinessName
-		if businessName := v.FieldByName("BusinessName"); businessName.IsValid() && businessName.Kind() == reflect.String {
-			if name := businessName.String(); len(name) > 0 {
-				return name
-			}
-		}
-		// Try FullName
-		if fullName := v.FieldByName("FullName"); fullName.IsValid() && fullName.Kind() == reflect.String {
-			if name := fullName.String(); len(name) > 0 {
-				return name
-			}
-		}
-		// Try PushName
-		if pushName := v.FieldByName("PushName"); pushName.IsValid() && pushName.Kind() == reflect.String {
-			if name := pushName.String(); len(name) > 0 {
-				return name
-			}
-		}
-		// Try FirstName
-		if firstName := v.FieldByName("FirstName"); firstName.IsValid() && firstName.Kind() == reflect.String {
-			if name := firstName.String(); len(name) > 0 {
-				return name
-			}
-		}
+func ExtractContactName(cInfo types.ContactInfo) string {
+	if !cInfo.Found {
+		return ""
+	}
+	if len(cInfo.BusinessName) > 0 {
+		return cInfo.BusinessName
+	}
+	if len(cInfo.FullName) > 0 {
+		return cInfo.FullName
+	}
+	if len(cInfo.PushName) > 0 {
+		return cInfo.PushName
+	}
+	if len(cInfo.FirstName) > 0 {
+		return cInfo.FirstName
 	}
 	return ""
+}
+
+/**
+ * GetContactName retrieves the contact name for a given JID from the WhatsApp store.
+ * Performs null checks to avoid errors and uses ExtractContactName for name extraction.
+ *
+ * @param client Whatsmeow client instance
+ * @param jid WhatsApp JID to look up
+ * @return The best available contact name or empty string if not found or on error
+ */
+func GetContactName(client *whatsmeow.Client, jid types.JID) string {
+	if client == nil || client.Store == nil || client.Store.Contacts == nil {
+		return ""
+	}
+
+	cInfo, err := client.Store.Contacts.GetContact(context.Background(), jid)
+	if err != nil || !cInfo.Found {
+		return ""
+	}
+
+	return ExtractContactName(cInfo)
 }
 
 /**
@@ -75,14 +82,7 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 			goto found
 		}
 	} else {
-		if client.Store == nil || client.Store.Contacts == nil {
-			return ""
-		}
-
-		cInfo, _ := client.Store.Contacts.GetContact(context.Background(), jid)
-		if cInfo.Found {
-			title = ExtractContactName(cInfo)
-		}
+		title = GetContactName(client, jid)
 	}
 	return ""
 found:

@@ -2,12 +2,84 @@ package whatsmeow
 
 import (
 	"context"
+	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	types "go.mau.fi/whatsmeow/types"
 )
+
+/**
+ * CleanJID removes the session suffix from a JID if present.
+ * Example: 554792857088:72@s.whatsapp.net -> 554792857088@s.whatsapp.net
+ *
+ * @param jid The JID to clean
+ * @return JID without session suffix
+ */
+func CleanJID(jid types.JID) types.JID {
+	// If JID has a session suffix, remove it
+	if strings.Contains(jid.User, ":") {
+		baseUser := strings.Split(jid.User, ":")[0]
+		return types.JID{
+			User:   baseUser,
+			Server: jid.Server,
+		}
+	}
+
+	// Return original JID if no session suffix
+	return jid
+}
+
+/**
+ * ExtractContactName extracts the best available contact name following the hierarchy:
+ * BusinessName > FullName > PushName > FirstName
+ *
+ * @param cInfo Contact info from WhatsApp store
+ * @return The best available name or empty string if none found
+ */
+func ExtractContactName(cInfo types.ContactInfo) string {
+	if !cInfo.Found {
+		return ""
+	}
+	if len(cInfo.BusinessName) > 0 {
+		return cInfo.BusinessName
+	}
+	if len(cInfo.FullName) > 0 {
+		return cInfo.FullName
+	}
+	if len(cInfo.PushName) > 0 {
+		return cInfo.PushName
+	}
+	if len(cInfo.FirstName) > 0 {
+		return cInfo.FirstName
+	}
+	return ""
+}
+
+/**
+ * GetContactName retrieves the contact name for a given JID from the WhatsApp store.
+ * Performs null checks to avoid errors and uses ExtractContactName for name extraction.
+ * Handles JIDs with session suffixes by trying both full JID and base JID (without session).
+ *
+ * @param client Whatsmeow client instance
+ * @param jid WhatsApp JID to look up
+ * @return The best available contact name or empty string if not found or on error
+ */
+func GetContactName(client *whatsmeow.Client, jid types.JID) string {
+	if client == nil || client.Store == nil || client.Store.Contacts == nil {
+		return ""
+	}
+
+	// Always use cleaned JID (without session) for contact lookup
+	cleanJID := CleanJID(jid)
+	cInfo, err := client.Store.Contacts.GetContact(context.Background(), cleanJID)
+	if err != nil || !cInfo.Found {
+		return ""
+	}
+
+	return ExtractContactName(cInfo)
+}
 
 /**
  * GetChatTitle returns a valid chat title from the local memory store or WhatsApp contact/group info.
@@ -35,26 +107,7 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 			goto found
 		}
 	} else {
-		if client.Store == nil || client.Store.Contacts == nil {
-			return ""
-		}
-
-		cInfo, _ := client.Store.Contacts.GetContact(context.Background(), jid)
-		if cInfo.Found {
-			if len(cInfo.BusinessName) > 0 {
-				title = cInfo.BusinessName
-				goto found
-			} else if len(cInfo.FullName) > 0 {
-				title = cInfo.FullName
-				goto found
-			} else if len(cInfo.PushName) > 0 {
-				title = cInfo.PushName
-				goto found
-			} else if len(cInfo.FirstName) > 0 {
-				title = cInfo.FirstName
-				goto found
-			}
-		}
+		title = GetContactName(client, jid)
 	}
 	return ""
 found:

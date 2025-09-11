@@ -1,7 +1,6 @@
 package whatsmeow
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
+	metrics "github.com/nocodeleaks/quepasa/metrics"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/appstate"
@@ -498,6 +498,9 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 
 		jsonstring, _ := json.Marshal(evt)
 		logentry.Errorf("nil message on receiving whatsmeow events | try use rawMessage ! json: %s", string(jsonstring))
+
+		// Count message receive error
+		metrics.MessageReceiveErrors.Inc()
 		return
 	}
 
@@ -543,6 +546,8 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		if message.Debug == nil {
 			logentry.Warnf("unhandled message type, no debug information: %s", message.Type)
 		}
+		// Count unhandled message as error
+		metrics.MessageReceiveUnhandled.Inc()
 	}
 
 	handler.Follow(message, from)
@@ -560,6 +565,16 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 
 // Append to cache handlers if exists, and then webhook
 func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from string) {
+	// Increment received messages counter for all incoming messages
+	// Only count messages that are not from us (FromMe = false)
+	if !message.FromMe {
+		metrics.MessagesReceived.Inc()
+
+		logentry := handler.GetLogger()
+		logentry.Debugf("received message counted: type=%s, from=%s, chat=%s",
+			message.Type, from, message.Chat.Id)
+	}
+
 	if handler.WAHandlers != nil {
 
 		// following to internal handlers
@@ -612,6 +627,9 @@ func (handler *WhatsmeowHandlers) MarkRead(message *whatsapp.WhatsappMessage, re
 func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	logentry := source.GetLogger()
 	logentry.Trace("event CallMessage !")
+
+	// Count incoming call as received message
+	metrics.MessagesReceived.Inc()
 
 	message := &whatsapp.WhatsappMessage{Content: evt}
 
@@ -882,6 +900,7 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncC
 	handler.sendSyncWebhook("sync_completed", map[string]interface{}{
 		"count": evt.Count,
 	})
+	metrics.MessageReceiveSyncEvents.Inc()
 
 	logentry.Info("history sync period ended based on OfflineSyncCompleted event")
 }
@@ -931,30 +950,15 @@ func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]
 
 // enrichParticipantName enriches participant name for group messages using cached contact information
 func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.WhatsappChat, senderJID types.JID) {
-	if handler.Client == nil || handler.Client.Store == nil || handler.Client.Store.Contacts == nil {
-		return
-	}
+	// Use the centralized GetContactName function for consistency and null checks
+	name := GetContactName(handler.Client, senderJID)
 
-	// Buscar informações de contato em cache usando o JID do sender
-	contactInfo, err := handler.Client.Store.Contacts.GetContact(context.Background(), senderJID)
-	if err != nil || !contactInfo.Found {
-		return
-	}
+	logentry := handler.GetLogger()
 
-	// Aplicar mesma hierarquia do GetChatTitle: BusinessName > FullName > PushName > FirstName
-	if len(contactInfo.BusinessName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.BusinessName)
-	} else if len(contactInfo.FullName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.FullName)
-	} else if len(contactInfo.PushName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.PushName)
-	} else if len(contactInfo.FirstName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.FirstName)
-	}
-
-	// Log quando o nome foi enriquecido via cache
-	if len(participant.Title) > 0 {
-		logentry := handler.GetLogger()
+	if len(name) > 0 {
+		participant.Title = library.NormalizeForTitle(name)
 		logentry.Debugf("Participant name enriched via cache for JID %s: %s", senderJID.String(), participant.Title)
+	} else {
+		logentry.Warnf("Could not find contact name for JID %s, title remains empty", senderJID.String())
 	}
 }

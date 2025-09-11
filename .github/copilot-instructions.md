@@ -11,6 +11,14 @@
 * whenever creating an extension method, use 'source' as parameter name for the extended object;
 * for class and structure names, e.g.: whatsmeow_group_manager.go => WhatsmeowGroupManager;
 
+## Git and Commit Guidelines
+* **🚨 CRITICAL: NEVER make commits automatically**
+* **🚨 CRITICAL: NEVER push to repository automatically**
+* **✅ ONLY make commits when explicitly requested by the user**
+* **✅ ALWAYS wait for user approval before any git operations**
+* **✅ ONLY execute `git commit`, `git push`, or `git merge` when the user gives explicit permission**
+* **✅ Show changes to user first, then wait for approval before committing**
+
 ## Packages Guidelines
 * **api**: only for API related code, e.g. REST API, GraphQL API, gRPC API, etc;
 * **audio**: for media processing and manipulation code, e.g. audio conversion, audio extraction, image conversion etc;

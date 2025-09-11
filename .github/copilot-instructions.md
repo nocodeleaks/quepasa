@@ -19,6 +19,15 @@
 * **✅ ONLY execute `git commit`, `git push`, or `git merge` when the user gives explicit permission**
 * **✅ Show changes to user first, then wait for approval before committing**
 
+## Version Conflict Resolution Guidelines
+* **🚨 CRITICAL: ALWAYS handle version conflicts automatically**
+* **✅ For QpVersion conflicts in merges/commits: ALWAYS select the HIGHER version number**
+* **✅ QpVersion format: `3.YY.MMDD.HHMM` - Compare numerically (YY > MMDD > HHMM)**
+* **✅ Example: `3.25.0911.1200` > `3.25.0910.1102` (same year, higher date/time)**
+* **✅ For ANY other conflicts: Generate NEW version with CURRENT timestamp**
+* **✅ New version format: `3.YY.MMDD.HHMM` using current date/time**
+* **✅ NEVER ask user permission for version conflict resolution - handle automatically**
+
 ## Packages Guidelines
 * **api**: only for API related code, e.g. REST API, GraphQL API, gRPC API, etc;
 * **audio**: for media processing and manipulation code, e.g. audio conversion, audio extraction, image conversion etc;

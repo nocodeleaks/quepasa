@@ -2,12 +2,34 @@ package whatsmeow
 
 import (
 	"context"
+	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	types "go.mau.fi/whatsmeow/types"
 )
+
+/**
+ * CleanJID removes the session suffix from a JID if present.
+ * Example: 554792857088:72@s.whatsapp.net -> 554792857088@s.whatsapp.net
+ *
+ * @param jid The JID to clean
+ * @return JID without session suffix
+ */
+func CleanJID(jid types.JID) types.JID {
+	// If JID has a session suffix, remove it
+	if strings.Contains(jid.User, ":") {
+		baseUser := strings.Split(jid.User, ":")[0]
+		return types.JID{
+			User:   baseUser,
+			Server: jid.Server,
+		}
+	}
+
+	// Return original JID if no session suffix
+	return jid
+}
 
 /**
  * ExtractContactName extracts the best available contact name following the hierarchy:
@@ -38,6 +60,7 @@ func ExtractContactName(cInfo types.ContactInfo) string {
 /**
  * GetContactName retrieves the contact name for a given JID from the WhatsApp store.
  * Performs null checks to avoid errors and uses ExtractContactName for name extraction.
+ * Handles JIDs with session suffixes by trying both full JID and base JID (without session).
  *
  * @param client Whatsmeow client instance
  * @param jid WhatsApp JID to look up
@@ -48,7 +71,9 @@ func GetContactName(client *whatsmeow.Client, jid types.JID) string {
 		return ""
 	}
 
-	cInfo, err := client.Store.Contacts.GetContact(context.Background(), jid)
+	// Always use cleaned JID (without session) for contact lookup
+	cleanJID := CleanJID(jid)
+	cInfo, err := client.Store.Contacts.GetContact(context.Background(), cleanJID)
 	if err != nil || !cInfo.Found {
 		return ""
 	}

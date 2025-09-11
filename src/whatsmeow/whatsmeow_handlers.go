@@ -952,15 +952,13 @@ func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]
 func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.WhatsappChat, senderJID types.JID) {
 	// Use the centralized GetContactName function for consistency and null checks
 	name := GetContactName(handler.Client, senderJID)
-	if len(name) == 0 {
-		return
-	}
 
-	participant.Title = library.NormalizeForTitle(name)
+	logentry := handler.GetLogger()
 
-	// Log quando o nome foi enriquecido via cache
-	if len(participant.Title) > 0 {
-		logentry := handler.GetLogger()
+	if len(name) > 0 {
+		participant.Title = library.NormalizeForTitle(name)
 		logentry.Debugf("Participant name enriched via cache for JID %s: %s", senderJID.String(), participant.Title)
+	} else {
+		logentry.Warnf("Could not find contact name for JID %s, title remains empty", senderJID.String())
 	}
 }

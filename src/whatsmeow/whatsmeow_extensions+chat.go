@@ -2,12 +2,52 @@ package whatsmeow
 
 import (
 	"context"
+	"reflect"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	types "go.mau.fi/whatsmeow/types"
 )
+
+/**
+ * ExtractContactName extracts the best available contact name following the hierarchy:
+ * BusinessName > FullName > PushName > FirstName
+ *
+ * @param cInfo Contact info from WhatsApp store
+ * @return The best available name or empty string if none found
+ */
+func ExtractContactName(cInfo interface{}) string {
+	// Use reflection to access the fields dynamically
+	v := reflect.ValueOf(cInfo)
+	if v.Kind() == reflect.Struct {
+		// Try BusinessName
+		if businessName := v.FieldByName("BusinessName"); businessName.IsValid() && businessName.Kind() == reflect.String {
+			if name := businessName.String(); len(name) > 0 {
+				return name
+			}
+		}
+		// Try FullName
+		if fullName := v.FieldByName("FullName"); fullName.IsValid() && fullName.Kind() == reflect.String {
+			if name := fullName.String(); len(name) > 0 {
+				return name
+			}
+		}
+		// Try PushName
+		if pushName := v.FieldByName("PushName"); pushName.IsValid() && pushName.Kind() == reflect.String {
+			if name := pushName.String(); len(name) > 0 {
+				return name
+			}
+		}
+		// Try FirstName
+		if firstName := v.FieldByName("FirstName"); firstName.IsValid() && firstName.Kind() == reflect.String {
+			if name := firstName.String(); len(name) > 0 {
+				return name
+			}
+		}
+	}
+	return ""
+}
 
 /**
  * GetChatTitle returns a valid chat title from the local memory store or WhatsApp contact/group info.
@@ -41,19 +81,7 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 
 		cInfo, _ := client.Store.Contacts.GetContact(context.Background(), jid)
 		if cInfo.Found {
-			if len(cInfo.BusinessName) > 0 {
-				title = cInfo.BusinessName
-				goto found
-			} else if len(cInfo.FullName) > 0 {
-				title = cInfo.FullName
-				goto found
-			} else if len(cInfo.PushName) > 0 {
-				title = cInfo.PushName
-				goto found
-			} else if len(cInfo.FirstName) > 0 {
-				title = cInfo.FirstName
-				goto found
-			}
+			title = ExtractContactName(cInfo)
 		}
 	}
 	return ""

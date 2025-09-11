@@ -962,14 +962,9 @@ func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.Wh
 	}
 
 	// Aplicar mesma hierarquia do GetChatTitle: BusinessName > FullName > PushName > FirstName
-	if len(contactInfo.BusinessName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.BusinessName)
-	} else if len(contactInfo.FullName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.FullName)
-	} else if len(contactInfo.PushName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.PushName)
-	} else if len(contactInfo.FirstName) > 0 {
-		participant.Title = library.NormalizeForTitle(contactInfo.FirstName)
+	name := ExtractContactName(contactInfo)
+	if len(name) > 0 {
+		participant.Title = library.NormalizeForTitle(name)
 	}
 
 	// Log quando o nome foi enriquecido via cache

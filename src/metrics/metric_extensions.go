@@ -24,3 +24,13 @@ var MessageReceiveErrors = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quepasa_receive_message_errors_total",
 	Help: "Total message receive errors",
 })
+
+var MessageReceiveUnhandled = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "quepasa_receive_message_unhandled_total",
+	Help: "Total unhandled messages received",
+})
+
+var MessageReceiveSyncEvents = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "quepasa_receive_sync_events_total",
+	Help: "Total sync events received",
+})

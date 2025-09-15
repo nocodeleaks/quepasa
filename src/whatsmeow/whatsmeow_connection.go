@@ -282,7 +282,7 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	}
 
 	var participant *string
-	if (types.MessageInfo{}) != info {
+	if info.ID != "" {
 		var sender string
 		if msg.FromGroup() {
 			sender = fmt.Sprint(info.Sender.User, "@", info.Sender.Server)

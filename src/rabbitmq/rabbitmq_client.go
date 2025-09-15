@@ -242,8 +242,9 @@ func (r *RabbitMQClient) processCache() {
 						false,
 						false,
 						amqp.Publishing{
-							ContentType: "application/json",
-							Body:        body,
+							ContentType:  "application/json",
+							Body:         body,
+							DeliveryMode: amqp.Persistent,
 						})
 
 					if err != nil {
@@ -359,8 +360,9 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
 		})
 
 	if err != nil {
@@ -421,8 +423,9 @@ func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey strin
 		false,        // mandatory
 		false,        // immediate
 		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
 		})
 
 	if err != nil {

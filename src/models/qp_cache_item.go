@@ -4,7 +4,7 @@ import "time"
 
 type QpCacheItem struct {
 	Key        string
-	Value      interface{}
+	Value      any
 	Expiration time.Time
 }
 

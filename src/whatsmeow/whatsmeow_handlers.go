@@ -505,7 +505,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	}
 
 	// Determine if message is from history based on multiple criteria
-	isFromHistory := handler.isHistoryMessage(evt, from)
+	isFromHistory := handler.isHistoryMessage(from)
 
 	message := &whatsapp.WhatsappMessage{
 		Content:        evt.Message,
@@ -813,7 +813,7 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 //#region CONNECTION WEBHOOKS AND HISTORY CONTROL
 
 // isHistoryMessage determines if a message should be classified as history
-func (handler *WhatsmeowHandlers) isHistoryMessage(evt events.Message, from string) bool {
+func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
 	// If explicitly marked as history, return true
 	if from == "history" {
 		return true
@@ -955,10 +955,14 @@ func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.Wh
 
 	logentry := handler.GetLogger()
 
+	// Log detailed debug information about the contact lookup process
+	cleanJID := CleanJID(senderJID)
+	logentry.Debugf("Enriching participant name - Original JID: %s, Clean JID: %s", senderJID.String(), cleanJID.String())
+
 	if len(name) > 0 {
 		participant.Title = library.NormalizeForTitle(name)
 		logentry.Debugf("Participant name enriched via cache for JID %s: %s", senderJID.String(), participant.Title)
 	} else {
-		logentry.Warnf("Could not find contact name for JID %s, title remains empty", senderJID.String())
+		logentry.Warnf("Could not find contact name for JID %s (clean: %s), title remains empty", senderJID.String(), cleanJID.String())
 	}
 }

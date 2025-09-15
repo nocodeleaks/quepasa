@@ -2,7 +2,6 @@ package whatsmeow
 
 import (
 	"context"
-	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -18,17 +17,14 @@ import (
  * @return JID without session suffix
  */
 func CleanJID(jid types.JID) types.JID {
-	// If JID has a session suffix, remove it
-	if strings.Contains(jid.User, ":") {
-		baseUser := strings.Split(jid.User, ":")[0]
-		return types.JID{
-			User:   baseUser,
-			Server: jid.Server,
-		}
+	// Always reconstruct the JID using only User and Server
+	// This automatically removes any session suffix that might be present in the original string representation
+	cleanJID := types.JID{
+		User:   jid.User,
+		Server: jid.Server,
 	}
 
-	// Return original JID if no session suffix
-	return jid
+	return cleanJID
 }
 
 /**

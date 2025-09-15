@@ -22,11 +22,11 @@ import (
 )
 
 type QpDatabase struct {
-	Parameters library.DatabaseParameters `json:"parameters,omitempty"`
-	Connection *sqlx.DB
-	Users      QpDataUsersInterface
-	Servers    QpDataServersInterface
-	Webhooks   QpDataWebhooksInterface
+	Parameters  library.DatabaseParameters `json:"parameters,omitempty"`
+	Connection  *sqlx.DB
+	Users       QpDataUsersInterface
+	Servers     QpDataServersInterface
+	Dispatching QpDataDispatchingInterface
 }
 
 var (
@@ -68,15 +68,15 @@ func GetDatabase() *QpDatabase {
 	db := GetDB()
 
 	var iusers = QpDataUserSql{db}
-	var iwebhooks = QpDataServerWebhookSql{db}
 	var iservers = QpDataServerSql{db}
+	var idispatching = QpDataServerDispatchingSql{db}
 
 	return &QpDatabase{
 		dbParameters,
 		db,
 		iusers,
 		iservers,
-		iwebhooks}
+		idispatching}
 }
 
 // MigrateToLatest updates the database to the latest schema
@@ -201,9 +201,10 @@ func GetBase() migrate.SqlxMigration {
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 	  );
 	  
-	  CREATE TABLE IF NOT EXISTS "webhooks" (
+	  CREATE TABLE IF NOT EXISTS "dispatching" (
 		"context" CHAR (100) NOT NULL REFERENCES "servers"("token"),
-		"url" VARCHAR (255) NOT NULL,
+		"connection_string" VARCHAR (255) NOT NULL,
+		"type" VARCHAR (50) NOT NULL DEFAULT 'webhook',
 		"forwardinternal" BOOLEAN NOT NULL DEFAULT FALSE,
 		"trackid" VARCHAR (100) NOT NULL DEFAULT '',
 		"readreceipts" INT(1) NOT NULL DEFAULT 0,
@@ -211,7 +212,7 @@ func GetBase() migrate.SqlxMigration {
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
 		"extra" BLOB DEFAULT NULL,
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		CONSTRAINT "webhooks_pkey" PRIMARY KEY ("context", "url")
+		CONSTRAINT "dispatching_pkey" PRIMARY KEY ("context", "connection_string")
 	  );
 	  
 	  INSERT OR REPLACE INTO migrations (id) VALUES
@@ -220,7 +221,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202303011900'),
 	  ('202402291556'),
 	  ('202403021242'),
-	  ('202403141920');
+	  ('202403141920'),
+	  ('202512151400');
 	  `, "")
 	return migration
 }
@@ -291,19 +293,8 @@ func MigrationHandler_202303011900(id string) {
 
 			log.Infof("wid updated with success: %s", server.Token)
 
-			webhooks, err := db.Webhooks.FindAll(oldWid)
-			if err != nil {
-				log.Fatalf("cant get webhook from database")
-			}
-
-			for _, webhook := range webhooks {
-				err = db.Webhooks.UpdateContext(webhook, server.Token)
-				if err != nil {
-					log.Fatalf("cant update webhook from database")
-				}
-
-				log.Infof("webhook updated with success for: %s, url: %s", webhook.Context, webhook.Url)
-			}
+			// Removido bloco legado que usava db.Webhooks (deprecated)
+			// Todos os webhooks e RabbitMQ agora são tratados via Dispatching
 		}
 	}
 }

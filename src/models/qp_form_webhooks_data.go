@@ -4,4 +4,5 @@ type QPFormWebHooksData struct {
 	PageTitle    string
 	ErrorMessage string
 	Server       *QpWhatsappServer
+	Webhooks     []*QpWebhook
 }

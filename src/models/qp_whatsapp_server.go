@@ -14,7 +14,8 @@ import (
 
 type QpWhatsappServer struct {
 	*QpServer
-	QpDataWebhooks
+	QpDataWebhooks    // deprecated, use QpDataDispatching
+	QpDataDispatching // new dispatching system
 
 	// should auto reconnect, false for qrcode scanner
 	Reconnect bool `json:"reconnect"`
@@ -25,11 +26,11 @@ type QpWhatsappServer struct {
 
 	StartTime time.Time `json:"starttime,omitempty"`
 
-	Handler        *QPWhatsappHandlers `json:"-"`
-	WebHook        *QPWebhookHandler   `json:"-"`
-	GroupManager   *QpGroupManager     `json:"-"` // composition for group operations
-	StatusManager  *QpStatusManager    `json:"-"` // composition for status operations
-	ContactManager *QpContactManager   `json:"-"` // composition for contact operations
+	Handler        *QPWhatsappHandlers   `json:"-"`
+	WebHook        *QPDispatchingHandler `json:"-"`
+	GroupManager   *QpGroupManager       `json:"-"` // composition for group operations
+	StatusManager  *QpStatusManager      `json:"-"` // composition for status operations
+	ContactManager *QpContactManager     `json:"-"` // composition for contact operations
 
 	// Stop request token
 	StopRequested bool                   `json:"-"`
@@ -210,9 +211,9 @@ func (source *QpWhatsappServer) Edit(id string, newContent string) (err error) {
 
 //endregion
 
-//#region WEBHOOKS
+//#region LEGACY WEBHOOKS (DEPRECATED - USE DISPATCHING METHODS ABOVE)
 
-func (source *QpWhatsappServer) GetWebHook(url string) *QpWhatsappServerWebhook {
+func (source *QpWhatsappServer) GetWebHook_Legacy(url string) *QpWhatsappServerWebhook {
 	for _, item := range source.Webhooks {
 		if item.Url == url {
 			return &QpWhatsappServerWebhook{
@@ -224,7 +225,7 @@ func (source *QpWhatsappServer) GetWebHook(url string) *QpWhatsappServerWebhook 
 	return nil
 }
 
-func (source *QpWhatsappServer) GetWebHooksByUrl(filter string) (out []*QpWebhook) {
+func (source *QpWhatsappServer) GetWebHooksByUrl_Legacy(filter string) (out []*QpWebhook) {
 	for _, element := range source.Webhooks {
 		if strings.Contains(element.Url, filter) {
 			out = append(out, element)
@@ -236,16 +237,16 @@ func (source *QpWhatsappServer) GetWebHooksByUrl(filter string) (out []*QpWebhoo
 // Ensure default webhook handler
 func (server *QpWhatsappServer) WebHookEnsure() {
 	if server.WebHook == nil {
-		webHookHandler := &QPWebhookHandler{server: server}
+		dispatchingHandler := &QPDispatchingHandler{server: server}
 
 		logentry := server.GetLogger()
 		logentry.Debug("ensuring webhook handler for server")
 
 		// logging
-		webHookHandler.LogEntry = logentry
+		dispatchingHandler.LogEntry = logentry
 
 		// updating
-		server.WebHook = webHookHandler
+		server.WebHook = dispatchingHandler
 	}
 }
 
@@ -298,9 +299,9 @@ func (source *QpWhatsappServer) UpdateConnection(connection whatsapp.IWhatsappCo
 	source.connection.UpdateHandler(source.Handler)
 
 	// Registrando webhook
-	webhookDispatcher := &QPWebhookHandler{server: source}
+	dispatchingHandler := &QPDispatchingHandler{server: source}
 	if !source.Handler.IsAttached() {
-		source.Handler.Register(webhookDispatcher)
+		source.Handler.Register(dispatchingHandler)
 	}
 }
 
@@ -359,7 +360,7 @@ func (source *QpWhatsappServer) Start() (err error) {
 
 	if !IsValidToStart(state) {
 		err = fmt.Errorf("trying to start a server on an invalid state :: %s", state)
-		logentry.Warnf(err.Error())
+		logentry.Warnf("%s", err.Error())
 		return
 	}
 
@@ -666,9 +667,9 @@ func (server *QpWhatsappServer) Delete() error {
 		server.connection = nil
 	}
 
-	err := server.QpDataWebhooks.WebhookClear()
+	err := server.QpDataDispatching.DispatchingClear()
 	if err != nil {
-		return fmt.Errorf("whatsapp server, webhook clear, error: %s", err.Error())
+		return fmt.Errorf("whatsapp server, dispatching clear, error: %s", err.Error())
 	}
 
 	err = server.db.Delete(server.Token)
@@ -843,4 +844,94 @@ func (server *QpWhatsappServer) GetPhoneFromLID(lid string) (string, error) {
 func (server *QpWhatsappServer) GetUserInfo(jids []string) ([]interface{}, error) {
 	contactManager := server.GetContactManager()
 	return contactManager.GetUserInfo(jids)
+}
+
+//#endregion
+
+//#region RABBITMQ CONFIGS
+
+func (source *QpWhatsappServer) GetRabbitMQConfig(exchangeName string) *QpRabbitMQConfig {
+	configs := source.QpDataDispatching.GetRabbitMQConfigs()
+	for _, config := range configs {
+		if config.ExchangeName == exchangeName {
+			return config
+		}
+	}
+	return nil
+}
+
+func (source *QpWhatsappServer) GetRabbitMQConfigsByQueue(filter string) (out []*QpRabbitMQConfig) {
+	configs := source.QpDataDispatching.GetRabbitMQConfigs()
+	for _, element := range configs {
+		if len(filter) == 0 || strings.Contains(element.ExchangeName, filter) {
+			out = append(out, element)
+		}
+	}
+	return
+}
+
+// GetRabbitMQConfigs returns all RabbitMQ configurations for this server
+func (source *QpWhatsappServer) GetRabbitMQConfigs() []*QpRabbitMQConfig {
+	return source.QpDataDispatching.GetRabbitMQConfigs()
+}
+
+// HasRabbitMQConfigs returns true if the server has RabbitMQ configurations
+func (server *QpWhatsappServer) HasRabbitMQConfigs() bool {
+	configs := server.GetRabbitMQConfigsByQueue("")
+	return len(configs) > 0
+}
+
+//#endregion
+
+//#region DISPATCHING
+
+// Get dispatching by connection string
+func (source *QpWhatsappServer) GetDispatching(connectionString string) *QpDispatching {
+	for _, item := range source.QpDataDispatching.Dispatching {
+		if item.ConnectionString == connectionString {
+			return item
+		}
+	}
+	return nil
+}
+
+// Get dispatching by connection string and type
+func (source *QpWhatsappServer) GetDispatchingByType(connectionString string, dispatchType string) *QpDispatching {
+	for _, item := range source.QpDataDispatching.Dispatching {
+		if item.ConnectionString == connectionString && item.Type == dispatchType {
+			return item
+		}
+	}
+	return nil
+}
+
+// Get all dispatching by filter
+func (source *QpWhatsappServer) GetDispatchingByFilter(filter string) (out []*QpDispatching) {
+	for _, element := range source.QpDataDispatching.Dispatching {
+		if len(filter) == 0 || strings.Contains(element.ConnectionString, filter) {
+			out = append(out, element)
+		}
+	}
+	return
+}
+
+// Ensure dispatching handler
+func (server *QpWhatsappServer) DispatchingEnsure() {
+	if server.WebHook == nil {
+		dispatchingHandler := &QPDispatchingHandler{server: server}
+
+		logentry := server.GetLogger()
+		logentry.Debug("ensuring dispatching handler for server")
+
+		// logging
+		dispatchingHandler.LogEntry = logentry
+
+		// updating
+		server.WebHook = dispatchingHandler
+	}
+}
+
+// GetWebhooks returns all webhook configurations for this server using the new dispatching system
+func (source *QpWhatsappServer) GetWebhooks() []*QpWebhook {
+	return source.QpDataDispatching.GetWebhooks()
 }

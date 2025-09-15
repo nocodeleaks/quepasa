@@ -10,6 +10,7 @@
 * **when making relevant code changes, always create or update internal documentation following the Internal Documentation Guidelines**;
 * whenever creating an extension method, use 'source' as parameter name for the extended object;
 * for class and structure names, e.g.: whatsmeow_group_manager.go => WhatsmeowGroupManager;
+* the lastest routes should be in the file without version name, for example api_handlers.go;
 
 ## Git and Commit Guidelines
 * **🚨 CRITICAL: NEVER make commits automatically**

@@ -505,7 +505,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	}
 
 	// Determine if message is from history based on multiple criteria
-	isFromHistory := handler.isHistoryMessage(evt, from)
+	isFromHistory := handler.isHistoryMessage(from)
 
 	message := &whatsapp.WhatsappMessage{
 		Content:        evt.Message,
@@ -813,7 +813,7 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 //#region CONNECTION WEBHOOKS AND HISTORY CONTROL
 
 // isHistoryMessage determines if a message should be classified as history
-func (handler *WhatsmeowHandlers) isHistoryMessage(evt events.Message, from string) bool {
+func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
 	// If explicitly marked as history, return true
 	if from == "history" {
 		return true

@@ -19,18 +19,21 @@ require (
 )
 
 require (
-	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/go-chi/chi/v5 v5.2.2 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
-	github.com/prometheus/client_golang v1.16.0 // indirect
-	github.com/prometheus/client_model v0.4.0 // indirect
-	github.com/prometheus/common v0.44.0 // indirect
-	github.com/prometheus/procfs v0.11.1 // indirect
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
-	golang.org/x/text v0.28.0 // indirect
+        github.com/beeper/argo-go v1.1.2 // indirect
+        github.com/beorn7/perks v1.0.1 // indirect
+        github.com/cespare/xxhash/v2 v2.2.0 // indirect
+        github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
+        github.com/go-chi/chi/v5 v5.2.2 // indirect
+        github.com/golang/protobuf v1.5.3 // indirect
+        github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+        github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
+        github.com/prometheus/client_golang v1.16.0 // indirect
+        github.com/prometheus/client_model v0.4.0 // indirect
+        github.com/prometheus/common v0.44.0 // indirect
+        github.com/prometheus/procfs v0.11.1 // indirect
+        github.com/vektah/gqlparser/v2 v2.5.30 // indirect
+        golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
+        golang.org/x/text v0.29.0 // indirect
 )
 
 require (
@@ -45,10 +48,10 @@ require (
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sirupsen/logrus v1.9.3
 	go.mau.fi/libsignal v0.2.0 // indirect
-	go.mau.fi/util v0.9.0
-	go.mau.fi/whatsmeow v0.0.0-20250829123043-72d2ed58e998
-	golang.org/x/crypto v0.41.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	google.golang.org/protobuf v1.36.8
+	go.mau.fi/util v0.9.1-0.20250912114103-419604f95907
+	go.mau.fi/whatsmeow v0.0.0-20250913213658-6e8bb0a6f77f
+	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	google.golang.org/protobuf v1.36.9
 )

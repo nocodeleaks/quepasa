@@ -66,7 +66,7 @@ func (gm *WhatsmeowGroupManager) GetJoinedGroups() ([]interface{}, error) {
 	}
 
 	// Get the group info slice
-	groupInfos, err := client.GetJoinedGroups()
+	groupInfos, err := client.GetJoinedGroups(context.Background())
 	if err != nil {
 		return nil, err
 	}

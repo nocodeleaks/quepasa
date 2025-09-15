@@ -75,3 +75,8 @@ func (source *QpWhatsappServerWebhook) ToggleForwardInternal() (handle bool, err
 	reason := fmt.Sprintf("toggle forward internal: %v", source.ForwardInternal)
 	return source.ForwardInternal, source.Save(reason)
 }
+
+// SetServer sets the server reference for this webhook
+func (source *QpWhatsappServerWebhook) SetServer(server *QpWhatsappServer) {
+	source.server = server
+}

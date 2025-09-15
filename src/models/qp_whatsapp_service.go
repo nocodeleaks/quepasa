@@ -172,7 +172,13 @@ func (source *QPWhatsappService) NewQpWhatsappServer(info *QpServer) (server *Qp
 
 	server.HandlerEnsure()
 	server.WebHookEnsure()
-	server.WebhookFill(info, source.DB.Webhooks)
+	server.DispatchingEnsure()
+	// Preenche webhooks diretamente a partir do dispatching (novo método)
+	if source.DB.Dispatching != nil {
+		webhooks := source.DB.Dispatching.GetWebhooks()
+		server.Webhooks = webhooks
+	}
+	server.DispatchingFill(info, source.DB.Dispatching)
 	return
 }
 

@@ -369,7 +369,44 @@ func WebHookAPIHandlerV2(w http.ResponseWriter, r *http.Request) {
 		return
 	default:
 		url := r.Header.Get("X-QUEPASA-WHURL")
-		response.Webhooks = server.GetWebHooksByUrl(url)
+
+		// Get dispatching entries and convert to webhooks
+		dispatching := server.GetDispatchingByFilter(url)
+		webhooks := []*models.QpWebhook{}
+		for _, item := range dispatching {
+			if item.IsWebhook() {
+				// Garantir que Extra seja JSON parseado
+				var extraParsed interface{}
+				if item.Extra != nil {
+					// Se Extra for string (JSON), fazer parse
+					if extraStr, ok := item.Extra.(string); ok && extraStr != "" {
+						err := json.Unmarshal([]byte(extraStr), &extraParsed)
+						if err != nil {
+							logentry.Warnf("failed to parse extra JSON: %v", err)
+							extraParsed = item.Extra
+						}
+					} else {
+						extraParsed = item.Extra
+					}
+				}
+
+				webhook := &models.QpWebhook{
+					LogStruct:       item.LogStruct,
+					WhatsappOptions: item.WhatsappOptions,
+					Url:             item.ConnectionString,
+					ForwardInternal: item.ForwardInternal,
+					TrackId:         item.TrackId,
+					Extra:           extraParsed,
+					Failure:         item.Failure,
+					Success:         item.Success,
+					Timestamp:       item.Timestamp,
+					Wid:             item.Wid,
+				}
+				webhooks = append(webhooks, webhook)
+			}
+		}
+
+		response.Webhooks = webhooks
 		if len(url) > 0 {
 			response.ParseSuccess(fmt.Sprintf("getting with filter, url=%s", url))
 		} else {

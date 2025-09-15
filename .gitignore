@@ -39,6 +39,7 @@ src/*.sqlite-journal
 
 # production or testing directory
 src/.dist/
+.dist/
 
 # symbolic link to src folder under linux
 quepasa/

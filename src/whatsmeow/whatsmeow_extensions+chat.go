@@ -22,15 +22,8 @@ func CleanJID(jid types.JID) types.JID {
 	cleanJID := types.JID{
 		User:   jid.User,
 		Server: jid.Server,
-	// Always reconstruct the JID using only User and Server
-	// This automatically removes any session suffix that might be present in the original string representation
-	cleanJID := types.JID{
-		User:   jid.User,
-		Server: jid.Server,
 	}
 
-	return cleanJID
-	
 	return cleanJID
 }
 
@@ -80,7 +73,7 @@ func GetContactName(client *whatsmeow.Client, jid types.JID) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	if !cInfo.Found {
 		return ""
 	}

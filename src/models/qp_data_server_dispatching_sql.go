@@ -111,7 +111,7 @@ func (source QpDataServerDispatchingSql) GetWebhooks() []*QpWebhook {
 			Failure:         dispatching.Failure,
 			Success:         dispatching.Success,
 			Timestamp:       dispatching.Timestamp,
-			Wid:             dispatching.Context, // Context é o token do servidor
+			Wid:             dispatching.Context, // Context is the connected number of the server
 		}
 
 		webhooks = append(webhooks, webhook)

@@ -968,13 +968,13 @@ func (server *QpWhatsappServer) DispatchingEnsure() {
 func (source *QpWhatsappServer) GetWebhookDispatchings() []*QpDispatching {
 	allDispatchings := source.GetDispatchingByFilter("")
 	webhooks := []*QpDispatching{}
-	
+
 	for _, dispatching := range allDispatchings {
 		if dispatching.IsWebhook() {
 			webhooks = append(webhooks, dispatching)
 		}
 	}
-	
+
 	return webhooks
 }
 

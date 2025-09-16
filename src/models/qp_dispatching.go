@@ -245,7 +245,7 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 // PublishRabbitMQ sends message via RabbitMQ using QuePasa fixed Exchange and routing key with intelligent routing
 func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) (err error) {
 	startTime := time.Now()
-	
+
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
 

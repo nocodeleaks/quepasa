@@ -76,12 +76,7 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`ACCOUNTSETUP`** - Enable account creation (default: `true`)
 - **`TESTING`** - Testing mode (default: `false`)
 - **`DISPATCHUNHANDLED`** - Dispatch unhandled messages (default: `false`)
-
-## 🐰 RabbitMQ Configuration
-
-- **`RABBITMQ_QUEUE`** - RabbitMQ queue name
-- **`RABBITMQ_CONNECTIONSTRING`** - RabbitMQ connection string
-- **`RABBITMQ_CACHELENGTH`** - RabbitMQ cache length (default: `0`)
+- **`TZ`** - Timezone (default: `UTC`)
 
 ## 📋 Current Working Configuration
 

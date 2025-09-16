@@ -50,3 +50,4 @@ docker/chatwoot/.n8n
 docker/chatwoot/data
 src/.vs/
 main.exe
+.dist/win-quepasa-service.exe

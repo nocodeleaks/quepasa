@@ -1,27 +1,165 @@
-version: '3'
-
+version: "3.7"
 services:
 
   quepasa:
-    env_file: .env
-    image: quepasa
-    container_name: $QUEPASA_CONTAINER_NAME
-    hostname: $QUEPASA_HOST_NAME
-    mem_limit: $QUEPASA_MEMORY_LIMIT
-    restart: always
-    stdin_open: true
-    tty: true
-    ports:
-      - $QUEPASA_EXTERNAL_PORT:$QUEPASA_INTERNAL_PORT
-    build:
-      context: ../
-      dockerfile: ./docker/Dockerfile
+    image: codeleaks/quepasa:latest ## image:version of quepasa
     volumes:
-      - ../src:/opt/quepasa
+      - quepasa_volume:/opt/quepasa
     networks:
-      - quepasa_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - <your-network> 
+
+    environment:
+      ## check all available environment variables on
+      ## src\environment\README.md
+
+      ## Basic Config
+      - DOMAIN=quepasa.example.com ## change here to your domain
+      - ACCOUNTSETUP=false ## change to true if first time setup
+      - MASTERKEY=YOUR_MASTER_KEY ## change here to your master key
+      - MIGRATIONS=/builder/migrations
+      
+      ## Email Quepasa
+      - EMAIL="Change This QuePassa EMAIL"
+      - QUEPASA_BASIC_AUTH_USER="Change This QuePassa EMAIL"
+      - QUEPASA_BASIC_AUTH_PASSWORD="Change This QuePassa Password"
+      
+      ## App Title
+      - APP_TITLE=Quepasa ## change here to your app title on mobile app
+      
+      ## TimeZone
+      - TZ=America/Sao_Paulo
+      
+      ## Features on whatsapp
+      # Options: true, false, forcedfalse (force disable)
+      - GROUPS=true
+      - BROADCASTS=false
+      - READRECEIPTS=true
+      - CALLS=true
+
+      ## Auto Read Messages on Arrive
+      # Options: true, false
+      - READUPDATE=false
+
+      ## Remove Digit 9 on Brazil Numbers
+      # Options: true, false
+      - REMOVEDIGIT9=true
+      
+      ## Log Level
+      # Options: ERROR, WARN, INFO, DEBUG, TRACE
+      - LOGLEVEL=TRACE
+      - WHATSMEOW_LOGLEVEL=debug
+      - WHATSMEOW_DBLOGLEVEL=debug
+      
+      ## Configurações quepasa
+      - QUEPASA_HOST_NAME=Quepasa
+      - QUEPASA_MEMORY_LIMIT=4096M
+      - WEBSOCKETSSL=true (TRUE if using https/ssl)
+      - REMOVEDIGIT9=true
+      - SIGNING_SECRET='BLA!2#BlA123bLA1' #some random test this will be used for password encription 
+            
+      ## Ports
+      - QUEPASA_EXTERNAL_PORT=31000
+      - QUEPASA_INTERNAL_PORT=31000
+      - WEBAPIPORT=31000
+      
+      ## Debug Options
+      - DEBUGREQUESTS=false
+      - DISPATCHUNHANDLED=true
+      - DEBUGJSONMESSAGES=false
+      - HTTPLOGS=false
+
+      ## Metrics configs
+      - METRICS_HOST=
+      - METRICS_PORT=9392
+
+      ## Adjust lengths of in reply messages context
+      - SYNOPSISLENGTH=500
+      
+      ## History Sync Configs
+      # HISTORYSYNCDAYS: Number of days to sync history from when a new device
+      - HISTORYSYNCDAYS=30
+
+      ## Cache Length
+      # Number of messages to keep in memory for quick access
+      - CACHEDAYS=7
+      - CACHELENGTH=800      
+      
+      ## Env Mode
+      - APP_ENV=production                                                       
+      
+      ## DB Config
+      - DBDRIVER=postgres
+      - DBHOST=dbhost
+      - DBDATABASE=quepasa_whatsmeow
+      - DBPORT=dbport
+      - DBUSER=dbuser
+      - DBPASSWORD=dbpass
+      - DBSSLMODE=disable (disbaled if localhost or same network/server)
+
+
+      ## Convert PNG to JPG
+      # Options: true, false
+      - CONVERT_PNG_TO_JPG=true
+
+
+    healthcheck:
+    ## Healthcheck to verify if service is up and running
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:31000/healthapi > /dev/null || exit 1"]
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+      
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+          constraints:
+          - node.role == manager
+
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 60s
+      update_config:
+        parallelism: 1
+        delay: 15s
+        failure_action: rollback
+        monitor: 30s
+        max_failure_ratio: 0
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+        delay: 15s
+        failure_action: pause
+        monitor: 60s
+                      
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.quepasa.rule=Host(`quepasa.example.com`) ## change here to your domain
+        - traefik.http.routers.quepasa.tls=true
+        - traefik.http.routers.quepasa.entrypoints=web,websecure
+        - traefik.http.routers.quepasa.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.quepasa.service=quepasa
+        - traefik.http.routers.quepasa.priority=1      
+        - traefik.http.middlewares.quepasa.headers.SSLRedirect=true
+        - traefik.http.middlewares.quepasa.headers.STSSeconds=315360000
+        - traefik.http.middlewares.quepasa.headers.browserXSSFilter=true
+        - traefik.http.middlewares.quepasa.headers.contentTypeNosniff=true
+        - traefik.http.middlewares.quepasa.headers.forceSTSHeader=true
+        - traefik.http.middlewares.quepasa.headers.SSLHost=quepasa.example.com ## change here to your domain
+        - traefik.http.middlewares.quepasa.headers.STSIncludeSubdomains=true
+        - traefik.http.middlewares.quepasa.headers.STSPreload=true
+        - traefik.http.services.quepasa.loadbalancer.server.port=31000
+        - traefik.http.services.quepasa.loadbalancer.passHostHeader=true              
+
+volumes:
+  quepasa_volume:
+    external: true
+    name: quepasa_volume
 
 networks:
-  quepasa_network:
+  <your-network>:  ## change here to your network
+    external: true
+    name: <your-network>  ## change here to your network

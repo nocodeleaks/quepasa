@@ -113,7 +113,7 @@ func (source QpRabbitMQConfig) GetExtraText() string {
 // PublishMessage publishes message to RabbitMQ exchange using the specific connection string and routing key
 func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage) (err error) {
 	startTime := time.Now()
-	
+
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
 	logentry.Infof("publishing to QuePasa Exchange: %s using connection: %s", rabbitmq.QuePasaExchangeName, source.ConnectionString)
@@ -137,7 +137,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		err = client.EnsureExchangeAndQueues()
 		if err != nil {
 			logentry.Errorf("failed to ensure QuePasa exchange and queues: %s", err.Error())
-			
+
 			// Record RabbitMQ publish error
 			metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "setup_failed")
 			return err
@@ -241,7 +241,7 @@ func (source *QpRabbitMQConfig) ValidateConfig() error {
 
 	// Set default exchange name if not provided
 	if source.ExchangeName == "" {
-		source.ExchangeName = "quepasa-exchange"
+		source.ExchangeName = "quepasa.exchange"
 	}
 
 	// Set default routing key if not provided (will be overridden by intelligent routing)

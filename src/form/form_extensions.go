@@ -105,22 +105,7 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 			dispatching := server.GetDispatching(url)
 			var webhook *models.QpWhatsappServerDispatching = nil
 			if dispatching != nil && dispatching.IsWebhook() {
-				qpWebhook := &models.QpWebhook{
-					LogStruct:       dispatching.LogStruct,
-					WhatsappOptions: dispatching.WhatsappOptions,
-					Url:             dispatching.ConnectionString,
-					ForwardInternal: dispatching.ForwardInternal,
-					TrackId:         dispatching.TrackId,
-					Extra:           dispatching.Extra,
-					Failure:         dispatching.Failure,
-					Success:         dispatching.Success,
-					Timestamp:       dispatching.Timestamp,
-					Wid:             dispatching.Wid,
-				}
-				webhook = &models.QpWhatsappServerDispatching{
-					QpWebhook: qpWebhook,
-				}
-				webhook.SetServer(server)
+				webhook = models.NewQpWhatsappServerDispatchingFromDispatching(dispatching, server)
 			}
 			if webhook != nil {
 				switch key {
@@ -157,6 +142,52 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				err = fmt.Errorf("webhook not found for url: %s", url)
+			}
+		} else if strings.HasPrefix(key, "rabbitmq") {
+			destination = FormRabbitMQEndpoint + "?token=" + server.Token
+			connectionString := library.GetRequestParameter(r, "connection_string")
+			// Get RabbitMQ configuration via dispatching system
+			dispatching := server.GetDispatching(connectionString)
+			var rabbitmq *models.QpWhatsappServerDispatching = nil
+			if dispatching != nil && dispatching.IsRabbitMQ() {
+				// Use the new method that preserves the original type
+				rabbitmq = models.NewQpWhatsappServerDispatchingFromDispatching(dispatching, server)
+			}
+			if rabbitmq != nil {
+				switch key {
+				case "rabbitmq-forwardinternal":
+					{
+						_, err = rabbitmq.ToggleForwardInternal()
+						break
+					}
+				case "rabbitmq-broadcasts":
+					{
+						err = models.ToggleBroadcasts(rabbitmq)
+						break
+					}
+				case "rabbitmq-groups":
+					{
+						err = models.ToggleGroups(rabbitmq)
+						break
+					}
+				case "rabbitmq-readreceipts":
+					{
+						err = models.ToggleReadReceipts(rabbitmq)
+						break
+					}
+				case "rabbitmq-calls":
+					{
+						err = models.ToggleCalls(rabbitmq)
+						break
+					}
+				default:
+					{
+						err = fmt.Errorf("invalid rabbitmq key: %s", key)
+						break
+					}
+				}
+			} else {
+				err = fmt.Errorf("rabbitmq configuration not found for connection: %s", connectionString)
 			}
 		} else {
 			err = fmt.Errorf("invalid key or prefix: %s", key)

@@ -15,7 +15,7 @@ type QpDataDispatchingInterface interface {
 	DispatchingRemove(context string, connectionString string) (affected uint, err error)
 	DispatchingClear(context string) (err error)
 
-	// Backward compatibility methods for webhooks
+	// Compatibility methods for interface - converts dispatching to legacy format
 	GetWebhooks() []*QpWebhook
 	GetRabbitMQConfigs() []*QpRabbitMQConfig
 }

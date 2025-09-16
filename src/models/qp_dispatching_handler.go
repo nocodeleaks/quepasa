@@ -36,7 +36,7 @@ func (source *QPDispatchingHandler) HasDispatching() bool {
 
 func (source *QPDispatchingHandler) HasWebhook() bool {
 	if source.server != nil {
-		webhooks := source.server.QpDataDispatching.GetWebhooks()
+		webhooks := source.server.GetWebhooks()
 		return len(webhooks) > 0
 	}
 	return false

@@ -27,8 +27,7 @@ type QpWhatsappServer struct {
 	StartTime time.Time `json:"starttime,omitempty"`
 
 	Handler            *QPWhatsappHandlers   `json:"-"`
-	WebHook            *QPWebhookHandler     `json:"-"` // deprecated, kept for backward compatibility
-	DispatchingHandler *QPDispatchingHandler `json:"-"` // new dispatching system
+	DispatchingHandler *QPDispatchingHandler `json:"-"`
 	GroupManager       *QpGroupManager       `json:"-"` // composition for group operations
 	StatusManager      *QpStatusManager      `json:"-"` // composition for status operations
 	ContactManager     *QpContactManager     `json:"-"` // composition for contact operations
@@ -965,7 +964,23 @@ func (server *QpWhatsappServer) DispatchingEnsure() {
 	}
 }
 
-// GetWebhooks returns all webhook configurations for this server using the new dispatching system
+// GetWebhookDispatchings returns all webhook configurations as QpDispatching
+func (source *QpWhatsappServer) GetWebhookDispatchings() []*QpDispatching {
+	allDispatchings := source.GetDispatchingByFilter("")
+	webhooks := []*QpDispatching{}
+	
+	for _, dispatching := range allDispatchings {
+		if dispatching.IsWebhook() {
+			webhooks = append(webhooks, dispatching)
+		}
+	}
+	
+	return webhooks
+}
+
+// GetWebhooks returns webhook dispatchings converted to QpWebhook format for interface compatibility
 func (source *QpWhatsappServer) GetWebhooks() []*QpWebhook {
 	return source.QpDataDispatching.GetWebhooks()
 }
+
+//#endregion

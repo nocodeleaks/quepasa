@@ -9,7 +9,7 @@ import (
 )
 
 type QpWhatsappServerDispatching struct {
-	*QpWebhook
+	*QpDispatching
 
 	server *QpWhatsappServer
 }
@@ -19,8 +19,8 @@ func (source *QpWhatsappServerDispatching) GetLogger() *log.Entry {
 	var logentry *log.Entry
 	if source != nil && source.server != nil {
 		logentry = source.server.GetLogger()
-		if source.QpWebhook != nil {
-			logentry = source.QpWebhook.GetLogger()
+		if source.QpDispatching != nil {
+			logentry = source.QpDispatching.GetLogger()
 		}
 	} else {
 		logentry = log.New().WithContext(context.Background())
@@ -53,7 +53,7 @@ func (source *QpWhatsappServerDispatching) Save(reason string) (err error) {
 		return err
 	}
 
-	if source.QpWebhook == nil {
+	if source.QpDispatching == nil {
 		err = fmt.Errorf("nil source configuration")
 		return err
 	}
@@ -61,11 +61,9 @@ func (source *QpWhatsappServerDispatching) Save(reason string) (err error) {
 	logentry := source.GetLogger()
 	logentry.Debugf("saving configuration info, reason: %s, content: %+v", reason, source)
 
-	// Convert to dispatching format and save via new system
-	dispatching := source.QpWebhook.ToDispatching()
-	affected, err := source.server.DispatchingAddOrUpdate(dispatching)
+	affected, err := source.server.DispatchingAddOrUpdate(source.QpDispatching)
 	if err == nil {
-		logentry.Infof("saved configuration as dispatching with %v affected rows", affected)
+		logentry.Infof("saved configuration as dispatching with %v affected rows, type: %s", affected, source.QpDispatching.Type)
 	}
 
 	return err
@@ -81,4 +79,18 @@ func (source *QpWhatsappServerDispatching) ToggleForwardInternal() (handle bool,
 // SetServer sets the server reference for this dispatching configuration
 func (source *QpWhatsappServerDispatching) SetServer(server *QpWhatsappServer) {
 	source.server = server
+}
+
+// NewFromDispatching creates a QpWhatsappServerDispatching from a QpDispatching
+func NewQpWhatsappServerDispatchingFromDispatching(dispatching *QpDispatching, server *QpWhatsappServer) *QpWhatsappServerDispatching {
+	if dispatching == nil {
+		return nil
+	}
+
+	result := &QpWhatsappServerDispatching{
+		QpDispatching: dispatching,
+		server:        server,
+	}
+
+	return result
 }

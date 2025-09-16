@@ -10,61 +10,6 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-// handle message deliver to individual webhook distribution
-func PostToWebHookFromServer(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
-	if server == nil {
-		err = fmt.Errorf("server nil")
-		return err
-	}
-
-	// ignoring ssl issues
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	for _, webhook := range server.GetWebhooks() {
-
-		// updating log
-		logentry := webhook.GetLogger()
-		loglevel := logentry.Level
-		logentry = logentry.WithField(LogFields.MessageId, message.Id)
-		logentry.Level = loglevel
-
-		if message.Id == "readreceipt" && webhook.IsSetReadReceipts() && !webhook.ReadReceipts.Boolean() {
-			logentry.Debugf("ignoring read receipt message: %s", message.Text)
-			continue
-		}
-
-		if message.FromGroup() && webhook.IsSetGroups() && !webhook.Groups.Boolean() {
-			logentry.Debug("ignoring group message")
-			continue
-		}
-
-		if message.FromBroadcast() && webhook.IsSetBroadcasts() && !webhook.Broadcasts.Boolean() {
-			logentry.Debug("ignoring broadcast message")
-			continue
-		}
-
-		if message.Type == whatsapp.CallMessageType && webhook.IsSetCalls() && !webhook.Calls.Boolean() {
-			logentry.Debug("ignoring call message")
-			continue
-		}
-
-		if !message.FromInternal || (webhook.ForwardInternal && (len(webhook.TrackId) == 0 || webhook.TrackId != message.TrackId)) {
-			logentry.Debugf("executing webhook post to: %s", webhook.Url)
-			elerr := webhook.Post(message)
-			if elerr != nil {
-				logentry.Errorf("error on post webhook: %s", elerr.Error())
-			} else {
-				logentry.Debugf("webhook post completed successfully to: %s", webhook.Url)
-			}
-		} else {
-			logentry.Debugf("webhook skipped due to internal message conditions: FromInternal=%v, ForwardInternal=%v, TrackId=%s, MessageTrackId=%s",
-				message.FromInternal, webhook.ForwardInternal, webhook.TrackId, message.TrackId)
-		}
-	}
-
-	return
-}
-
 // handle message deliver to individual dispatching distribution
 func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
 	if server == nil {
@@ -167,6 +112,56 @@ func GetServersForUserID(user string) (servers map[string]*QpWhatsappServer) {
 
 func GetServersForUser(user *QpUser) (servers map[string]*QpWhatsappServer) {
 	return GetServersForUserID(user.Username)
+}
+
+// PostToWebhooksModern sends a message to all webhook endpoints using the modern dispatching system
+func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
+	if server == nil {
+		err = fmt.Errorf("server nil")
+		return err
+	}
+
+	// ignoring ssl issues
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	webhookDispatchings := server.GetWebhookDispatchings()
+
+	for _, dispatching := range webhookDispatchings {
+		// updating log
+		logentry := dispatching.GetLogger()
+		loglevel := logentry.Level
+		logentry = logentry.WithField(LogFields.MessageId, message.Id)
+		logentry.Level = loglevel
+
+		// Check if should ignore based on message type and dispatching options
+		if message.Id == "readreceipt" && dispatching.IsSetReadReceipts() && !dispatching.ReadReceipts.Boolean() {
+			logentry.Debugf("ignoring read receipt message: %s", message.Text)
+			continue
+		}
+
+		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
+			logentry.Debug("ignoring group message")
+			continue
+		}
+
+		if message.FromBroadcast() && dispatching.IsSetBroadcasts() && !dispatching.Broadcasts.Boolean() {
+			logentry.Debug("ignoring broadcast message")
+			continue
+		}
+
+		if message.Type == whatsapp.CallMessageType && dispatching.IsSetCalls() && !dispatching.Calls.Boolean() {
+			logentry.Debug("ignoring call message")
+			continue
+		}
+
+		// Send the message using the dispatching
+		err = dispatching.PostWebhook(message)
+		if err != nil {
+			logentry.Errorf("error posting to webhook: %s", err.Error())
+		}
+	}
+
+	return err
 }
 
 //endregion

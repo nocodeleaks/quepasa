@@ -184,6 +184,7 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 }
 
 // ToDispatching converts webhook configuration to dispatching format
+// Deprecated: Use QpDispatching directly instead of converting from QpWebhook
 func (source *QpWebhook) ToDispatching() *QpDispatching {
 	return &QpDispatching{
 		LogStruct:        source.LogStruct,

@@ -29,7 +29,7 @@ require (
 	github.com/philippseith/signalr v0.6.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20250913213658-6e8bb0a6f77f
+	go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c
 	golang.org/x/crypto v0.42.0
 )
 

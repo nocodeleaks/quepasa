@@ -1,10 +1,12 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/nocodeleaks/quepasa/library"
+	metrics "github.com/nocodeleaks/quepasa/metrics"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -37,6 +39,28 @@ type QpRabbitMQConfig struct {
 }
 
 //#region VIEWS TRICKS
+
+// IsFailureMoreRecent checks if the last failure is more recent than the last success
+func (source QpRabbitMQConfig) IsFailureMoreRecent() bool {
+	if source.Failure == nil {
+		return false
+	}
+	if source.Success == nil {
+		return true
+	}
+	return source.Failure.After(*source.Success)
+}
+
+// HasRecentSuccess checks if there's a recent success and no more recent failure
+func (source QpRabbitMQConfig) HasRecentSuccess() bool {
+	if source.Success == nil {
+		return false
+	}
+	if source.Failure == nil {
+		return true
+	}
+	return source.Success.After(*source.Failure)
+}
 
 func (source QpRabbitMQConfig) GetReadReceipts() bool {
 	return source.ReadReceipts.Boolean()
@@ -74,10 +98,22 @@ func (source QpRabbitMQConfig) IsSetExtra() bool {
 	return source.Extra != nil
 }
 
+// GetExtraText converts extra field to JSON string for template display
+func (source QpRabbitMQConfig) GetExtraText() string {
+	if source.Extra != nil {
+		if bytes, err := json.Marshal(source.Extra); err == nil {
+			return string(bytes)
+		}
+	}
+	return ""
+}
+
 //#endregion
 
 // PublishMessage publishes message to RabbitMQ exchange using the specific connection string and routing key
 func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage) (err error) {
+	startTime := time.Now()
+	
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
 	logentry.Infof("publishing to QuePasa Exchange: %s using connection: %s", rabbitmq.QuePasaExchangeName, source.ConnectionString)
@@ -87,6 +123,13 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		Extra:           source.Extra,
 	}
 
+	// Calculate payload size for metrics
+	payloadJson, marshalErr := json.Marshal(&payload)
+	var payloadSizeBytes float64
+	if marshalErr == nil {
+		payloadSizeBytes = float64(len(payloadJson))
+	}
+
 	// Get or create RabbitMQ client for this specific connection string
 	client := rabbitmq.GetRabbitMQClient(source.ConnectionString)
 	if client != nil {
@@ -94,6 +137,9 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		err = client.EnsureExchangeAndQueues()
 		if err != nil {
 			logentry.Errorf("failed to ensure QuePasa exchange and queues: %s", err.Error())
+			
+			// Record RabbitMQ publish error
+			metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "setup_failed")
 			return err
 		}
 
@@ -101,14 +147,30 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		routingKey := source.DetermineRoutingKey(message)
 		client.PublishQuePasaMessage(routingKey, payload)
 
+		// Always increment RabbitMQ messages published counter
+		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey)
+
+		// Record publish duration
+		duration := time.Since(startTime)
+		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, duration.Seconds())
+
+		// Record message size if we have it
+		if payloadSizeBytes > 0 {
+			messageType := message.Type.String()
+			metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
+		}
+
 		currentTime := time.Now().UTC()
 		source.Failure = nil
 		source.Success = &currentTime
 
-		logentry.Infof("message published to QuePasa exchange: %s with routing key: %s", rabbitmq.QuePasaExchangeName, routingKey)
+		logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 	} else {
 		err = errors.New("failed to get rabbitmq client for connection: " + source.ConnectionString)
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
+
+		// Record RabbitMQ publish error
+		metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "client_unavailable")
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {

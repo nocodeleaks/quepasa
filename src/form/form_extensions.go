@@ -103,7 +103,7 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 			url := library.GetRequestParameter(r, "url")
 			// Get webhook via dispatching system
 			dispatching := server.GetDispatching(url)
-			var webhook *models.QpWhatsappServerWebhook = nil
+			var webhook *models.QpWhatsappServerDispatching = nil
 			if dispatching != nil && dispatching.IsWebhook() {
 				qpWebhook := &models.QpWebhook{
 					LogStruct:       dispatching.LogStruct,
@@ -117,7 +117,7 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 					Timestamp:       dispatching.Timestamp,
 					Wid:             dispatching.Wid,
 				}
-				webhook = &models.QpWhatsappServerWebhook{
+				webhook = &models.QpWhatsappServerDispatching{
 					QpWebhook: qpWebhook,
 				}
 				webhook.SetServer(server)
@@ -260,7 +260,7 @@ func FormDeleteController(w http.ResponseWriter, r *http.Request) {
 				destination = FormWebHooksEndpoint + "?token=" + server.Token
 				url := library.GetRequestParameter(r, "url")
 				var affected uint
-				affected, err = server.WebhookRemove(url)
+				affected, err = server.DispatchingRemove(url)
 				if affected > 0 {
 					logentry.Infof("webhook delete requested by from, affected rows: %v", affected)
 				}

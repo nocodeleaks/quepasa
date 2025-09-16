@@ -10,7 +10,7 @@ type QPDispatchingHandler struct {
 	server            *QpWhatsappServer
 }
 
-func (source *QPDispatchingHandler) HandleWebHook(payload *whatsapp.WhatsappMessage) {
+func (source *QPDispatchingHandler) HandleDispatching(payload *whatsapp.WhatsappMessage) {
 	if !source.HasDispatching() {
 		return
 	}

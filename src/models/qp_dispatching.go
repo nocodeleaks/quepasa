@@ -10,7 +10,9 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/nocodeleaks/quepasa/environment"
 	"github.com/nocodeleaks/quepasa/library"
+	metrics "github.com/nocodeleaks/quepasa/metrics"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
@@ -160,6 +162,8 @@ func (source *QpDispatching) Dispatch(message *whatsapp.WhatsappMessage) (err er
 
 // PostWebhook sends message via HTTP webhook
 func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err error) {
+	startTime := time.Now()
+
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
 	logentry.Infof("posting webhook")
@@ -178,32 +182,61 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 	logentry.Debugf("posting webhook payload: %s", payloadJson)
 
 	req, err := http.NewRequest("POST", source.ConnectionString, bytes.NewBuffer(payloadJson))
+	if err != nil {
+		return
+	}
+
 	req.Header.Set("User-Agent", "Quepasa")
 	req.Header.Set("X-QUEPASA-WID", source.Wid)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	client.Timeout = time.Second * 10
+	timeout := time.Duration(environment.Settings.API.GetWebhookTimeout()) * time.Second
+	client.Timeout = timeout
 	resp, err := client.Do(req)
-	if err != nil {
-		logentry.Warnf("error at post webhook: %s", err.Error())
+
+	// Always increment webhooks sent counter
+	metrics.WebhooksSent.Inc()
+
+	// Record latency
+	duration := time.Since(startTime)
+	metrics.WebhookLatency.Observe(duration.Seconds())
+
+	var statusCode int
+	if resp != nil {
+		statusCode = resp.StatusCode
+		defer resp.Body.Close()
 	}
 
-	if resp != nil {
-		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			err = ErrInvalidResponse
+	if err != nil {
+		logentry.Warnf("error at post webhook: %s", err.Error())
+
+		// Check if it's a timeout error
+		if netErr, ok := err.(interface{ Timeout() bool }); ok && netErr.Timeout() {
+			metrics.WebhookTimeouts.Inc()
+			logentry.Warnf("webhook timeout after %v", timeout)
 		}
+	}
+
+	if resp != nil && statusCode != 200 {
+		err = ErrInvalidResponse
+		// Record HTTP error with status code
+		metrics.WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
 	}
 
 	currentTime := time.Now().UTC()
 	if err != nil {
+		metrics.WebhookSendErrors.Inc()
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
+		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
 	} else {
+		// Webhook successful
+		metrics.WebhookSuccess.Inc()
 		source.Failure = nil
 		source.Success = &currentTime
+		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)
 	}
 
 	return
@@ -211,6 +244,8 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 
 // PublishRabbitMQ sends message via RabbitMQ using QuePasa fixed Exchange and routing key with intelligent routing
 func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) (err error) {
+	startTime := time.Now()
+	
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
 
@@ -224,11 +259,21 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		Extra:           source.Extra,
 	}
 
+	// Calculate payload size for metrics
+	payloadJson, marshalErr := json.Marshal(&payload)
+	var payloadSizeBytes float64
+	if marshalErr == nil {
+		payloadSizeBytes = float64(len(payloadJson))
+	}
+
 	// Get or create RabbitMQ client for this specific connection string
 	client := rabbitmq.GetRabbitMQClient(source.ConnectionString)
 	if client == nil {
 		err = errors.New("failed to get rabbitmq client for connection: " + source.ConnectionString)
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
+
+		// Record RabbitMQ publish error
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "client_unavailable")
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {
@@ -243,18 +288,59 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	if err != nil {
 		logentry.Warnf("QuePasa setup not ready yet, message will be cached: %s", err.Error())
 		// Don't return error - let the publish method handle caching
+		// Record as warning but not as error since message will be cached
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "setup_not_ready")
 	}
 
 	// Publish to QuePasa Exchange with routing key
 	// This will cache the message if connection is not ready
 	client.PublishQuePasaMessage(routingKey, payload)
 
-	// Consider it successful since message is cached if needed
+	// Check if connection is still ready after publish attempt
+	// If not ready, it means message was cached and we should mark as failure
+	if !client.IsConnectionReady() {
+		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached", source.ConnectionString)
+
+		// Record RabbitMQ publish error - connection lost/cached
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "connection_lost_cached")
+
+		// Mark as failure even though message was cached
+		currentTime := time.Now().UTC()
+		source.Failure = &currentTime
+		source.Success = nil
+
+		// Still record metrics since message was processed
+		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey)
+		duration := time.Since(startTime)
+		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, duration.Seconds())
+		if payloadSizeBytes > 0 {
+			messageType := message.Type.String()
+			metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
+		}
+
+		logentry.Infof("message cached for QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes) - marked as failure due to connection issue", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
+		return errors.New("rabbitmq connection not available, message cached")
+	}
+
+	// Always increment RabbitMQ messages published counter
+	metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey)
+
+	// Record publish duration
+	duration := time.Since(startTime)
+	metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, duration.Seconds())
+
+	// Record message size if we have it
+	if payloadSizeBytes > 0 {
+		messageType := message.Type.String()
+		metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
+	}
+
+	// Mark as success only if connection is ready and message was truly published
 	currentTime := time.Now().UTC()
 	source.Failure = nil
 	source.Success = &currentTime
 
-	logentry.Infof("message published to QuePasa exchange: %s with routing key: %s", rabbitmq.QuePasaExchangeName, routingKey)
+	logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 
 	return nil
 }

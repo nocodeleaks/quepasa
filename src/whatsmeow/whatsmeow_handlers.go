@@ -253,6 +253,9 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 		logentry.Info("connection established - assuming history sync period will start")
 
+		// Update connection metrics
+		metrics.ConnectionsConnected.Inc()
+
 		if source.Client != nil {
 			// zerando contador de tentativas de reconexão
 			// importante para zerar o tempo entre tentativas em caso de erro
@@ -262,8 +265,8 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 			source.SendPresence(presence, "'connected' event")
 		}
 
-		// Send connection webhook event
-		go source.sendConnectionWebhook("connected")
+		// Send connection dispatching event
+		go source.sendConnectionDispatching("connected")
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
 			go source.WAHandlers.OnConnected()
@@ -283,6 +286,9 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		} else {
 			logentry.Warn(msgDisconnected)
 		}
+
+		// Update connection metrics
+		metrics.ConnectionsDisconnected.Inc()
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
 			go source.WAHandlers.OnDisconnected()
@@ -350,7 +356,7 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		logentry.Debugf("event not handled: %v", reflect.TypeOf(evt))
 
 		// Only dispatch debug events if DEBUGEVENTS is true
-		// If DEBUGEVENTS=false or not set, do nothing (no webhook dispatch)
+		// If DEBUGEVENTS=false or not set, do nothing (no dispatch)
 		if source.ShouldDispatchUnhandled() {
 			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
 		}
@@ -563,12 +569,19 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 </summary>
 */
 
-// Append to cache handlers if exists, and then webhook
+// Append to cache handlers if exists, and then dispatch
 func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from string) {
 	// Increment received messages counter for all incoming messages
 	// Only count messages that are not from us (FromMe = false)
 	if !message.FromMe {
 		metrics.MessagesReceived.Inc()
+
+		// Count messages by type for better monitoring
+		messageType := message.Type.String()
+		if messageType == "" {
+			messageType = "unknown"
+		}
+		metrics.MessagesByType.WithLabelValues(messageType).Inc()
 
 		logentry := handler.GetLogger()
 		logentry.Debugf("received message counted: type=%s, from=%s, chat=%s",
@@ -810,7 +823,7 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 
 //#endregion
 
-//#region CONNECTION WEBHOOKS AND HISTORY CONTROL
+//#region CONNECTION DISPATCHING AND HISTORY CONTROL
 
 // isHistoryMessage determines if a message should be classified as history
 func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
@@ -829,14 +842,14 @@ func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
 	return false
 }
 
-// sendConnectionWebhook sends connection status events to configured webhooks
-func (handler *WhatsmeowHandlers) sendConnectionWebhook(event string) {
+// sendConnectionDispatching sends connection status events to configured dispatching systems
+func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
 	if handler.WAHandlers == nil {
 		return
 	}
 
 	logentry := handler.GetLogger()
-	logentry.Infof("sending connection webhook event: %s", event)
+	logentry.Infof("sending connection dispatching event: %s", event)
 
 	// Get phone number from connection
 	phone := ""
@@ -876,8 +889,8 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPre
 	handler.offlineSyncStarted = true
 	handler.offlineSyncCompleted = false
 
-	// Send sync preview webhook
-	handler.sendSyncWebhook("sync_preview", map[string]interface{}{
+	// Send sync preview dispatching
+	handler.sendSyncDispatching("sync_preview", map[string]interface{}{
 		"total":         evt.Total,
 		"messages":      evt.Messages,
 		"notifications": evt.Notifications,
@@ -896,8 +909,8 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncC
 	handler.offlineSyncCompleted = true
 	handler.offlineSyncStarted = false
 
-	// Send sync completed webhook
-	handler.sendSyncWebhook("sync_completed", map[string]interface{}{
+	// Send sync completed dispatching
+	handler.sendSyncDispatching("sync_completed", map[string]interface{}{
 		"count": evt.Count,
 	})
 	metrics.MessageReceiveSyncEvents.Inc()
@@ -905,14 +918,14 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncC
 	logentry.Info("history sync period ended based on OfflineSyncCompleted event")
 }
 
-// sendSyncWebhook sends synchronization events to configured webhooks
-func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]interface{}) {
+// sendSyncDispatching sends synchronization events to configured dispatching systems
+func (handler *WhatsmeowHandlers) sendSyncDispatching(event string, data map[string]interface{}) {
 	if handler.WAHandlers == nil {
 		return
 	}
 
 	logentry := handler.GetLogger()
-	logentry.Infof("sending sync webhook event: %s", event)
+	logentry.Infof("sending sync dispatching event: %s", event)
 
 	// Get phone number from connection
 	phone := ""

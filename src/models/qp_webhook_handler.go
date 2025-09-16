@@ -29,7 +29,8 @@ func (source *QPWebhookHandler) HandleWebHook(payload *whatsapp.WhatsappMessage)
 
 func (source *QPWebhookHandler) HasWebhook() bool {
 	if source.server != nil {
-		return len(source.server.Webhooks) > 0
+		webhooks := source.server.GetWebhooks()
+		return len(webhooks) > 0
 	}
 	return false
 }

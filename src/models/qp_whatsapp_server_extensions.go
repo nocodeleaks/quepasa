@@ -20,7 +20,7 @@ func PostToWebHookFromServer(server *QpWhatsappServer, message *whatsapp.Whatsap
 	// ignoring ssl issues
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	for _, webhook := range server.Webhooks {
+	for _, webhook := range server.GetWebhooks() {
 
 		// updating log
 		logentry := webhook.GetLogger()
@@ -49,10 +49,16 @@ func PostToWebHookFromServer(server *QpWhatsappServer, message *whatsapp.Whatsap
 		}
 
 		if !message.FromInternal || (webhook.ForwardInternal && (len(webhook.TrackId) == 0 || webhook.TrackId != message.TrackId)) {
+			logentry.Debugf("executing webhook post to: %s", webhook.Url)
 			elerr := webhook.Post(message)
 			if elerr != nil {
 				logentry.Errorf("error on post webhook: %s", elerr.Error())
+			} else {
+				logentry.Debugf("webhook post completed successfully to: %s", webhook.Url)
 			}
+		} else {
+			logentry.Debugf("webhook skipped due to internal message conditions: FromInternal=%v, ForwardInternal=%v, TrackId=%s, MessageTrackId=%s",
+				message.FromInternal, webhook.ForwardInternal, webhook.TrackId, message.TrackId)
 		}
 	}
 

@@ -21,7 +21,7 @@ type QPWhatsappHandlers struct {
 	syncRegister *sync.Mutex
 
 	// Appended events handler
-	aeh []QpWebhookHandlerInterface
+	aeh []QpDispatchingHandlerInterface
 }
 
 // Returns whatsapp controller id on E164
@@ -243,12 +243,12 @@ func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 	}
 
 	for _, handler := range source.aeh {
-		go handler.HandleWebHook(payload)
+		go handler.HandleDispatching(payload)
 	}
 }
 
 // Register an event handler that triggers on a new message received on cache
-func (handler *QPWhatsappHandlers) Register(evt QpWebhookHandlerInterface) {
+func (handler *QPWhatsappHandlers) Register(evt QpDispatchingHandlerInterface) {
 	handler.syncRegister.Lock() // await for avoid simultaneous calls
 
 	if !handler.IsRegistered(evt) {
@@ -259,13 +259,13 @@ func (handler *QPWhatsappHandlers) Register(evt QpWebhookHandlerInterface) {
 }
 
 // Removes an specific event handler
-func (handler *QPWhatsappHandlers) UnRegister(evt QpWebhookHandlerInterface) {
+func (handler *QPWhatsappHandlers) UnRegister(evt QpDispatchingHandlerInterface) {
 	handler.syncRegister.Lock() // await for avoid simultaneous calls
 
-	newHandlers := []QpWebhookHandlerInterface{}
+	newHandlers := []QpDispatchingHandlerInterface{}
 	for _, v := range handler.aeh {
 		if v != evt {
-			newHandlers = append(handler.aeh, evt)
+			newHandlers = append(newHandlers, v)
 		}
 	}
 

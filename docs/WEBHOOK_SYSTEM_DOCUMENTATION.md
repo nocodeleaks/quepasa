@@ -1,113 +1,73 @@
-# QuePasa Webhook System - Documentação Completa
+# QuePasa Webhook System - Documentação
 
 ## 📋 Índice
 - [Visão Geral](#visão-geral)
-- [Sistema de Retry](#sistema-de-retry)
-- [Sistema de Queue](#sistema-de-queue)
 - [Métricas e Monitoramento](#métricas-e-monitoramento)
 - [Health Endpoint](#health-endpoint)
 - [Configuração](#configuração)
 - [Exemplos Práticos](#exemplos-práticos)
 - [Troubleshooting](#troubleshooting)
-- [FAQ](#faq)
-- [Revisão Técnica e Melhorias](#revisão-técnica-e-melhorias)
-- [Implementação de Contadores](#implementação-de-contadores)
 
 ---
 
 ## 🎯 Visão Geral
 
-O **Sistema de Webhooks do QuePasa** é uma solução abrangente para processamento confiável e assíncrono de webhooks, incluindo:
+O **Sistema de Webhooks do QuePasa** é uma solução simples e direta para envio de webhooks:
 
 ### 🚀 Funcionalidades Principais
-- ✅ **Sistema de Retry Inteligente**: Recuperação automática de falhas temporárias
-- ✅ **Queue Assíncrona**: Processamento não-bloqueante com múltiplos workers
-- ✅ **Métricas Prometheus**: Monitoramento completo de performance
+- ✅ **Processamento Direto**: Envio imediato de webhooks
+- ✅ **Métricas Prometheus**: Monitoramento básico de performance
 - ✅ **Health Endpoint**: Status em tempo real da saúde do sistema
-- ✅ **Configuração Flexível**: Controle total via variáveis de ambiente
-- ✅ **Compatibilidade**: Funciona com código existente sem mudanças
+- ✅ **Configuração Simples**: Configuração via variáveis de ambiente
 
 ### 🏗️ Arquitetura
 ```
-Webhook Request → Queue System → Worker Pool → Retry Logic → External API
+Webhook Request → Direct Processing → External API
                       ↓
                Health Endpoint ← Metrics ← Prometheus
 ```
 
+# QuePasa Webhook System - Documentação
+
+## 📋 Índice
+- [Visão Geral](#visão-geral)
+- [Métricas e Monitoramento](#métricas-e-monitoramento)
+- [Health Endpoint](#health-endpoint)
+- [Configuração](#configuração)
+- [Exemplos Práticos](#exemplos-práticos)
+- [Troubleshooting](#troubleshooting)
+
 ---
 
-## 🔄 Sistema de Retry
+## 🎯 Visão Geral
 
-### ⚠️ IMPORTANTE: Sistema Condicional
+O **Sistema de Webhooks do QuePasa** é uma solução simples e direta para envio de webhooks:
 
-**O sistema de retry é OPCIONAL e ativado apenas quando configurado:**
+### � Funcionalidades Principais
+- ✅ **Processamento Direto**: Envio imediato de webhooks
+- ✅ **Métricas Prometheus**: Monitoramento básico de performance
+- ✅ **Health Endpoint**: Status em tempo real da saúde do sistema
+- ✅ **Configuração Simples**: Configuração via variáveis de ambiente
 
-1. **SEM `WEBHOOK_RETRY_COUNT` no .env**:
-   - ✅ Usa comportamento original
-   - ✅ Uma tentativa única
-   - ✅ Compatível com sistemas existentes
+### 🏗️ Arquitetura
+```
+Webhook Request → Direct Processing → External API
+                      ↓
+               Health Endpoint ← Metrics ← Prometheus
+```
 
-2. **COM `WEBHOOK_RETRY_COUNT` no .env**:
-   - ✅ Ativa sistema de retry automático
-   - ✅ Múltiplas tentativas conforme configurado
-   - ✅ Logs detalhados de retry
-
-### 🔧 Como Funciona
+### � Como Funciona
 
 #### Fluxo de Execução
 ```
-1. Tentativa Inicial
+1. Recebe Mensagem WhatsApp
    ↓
-2. Falhou? → Aguarda delay → Retry
+2. Processa e Cria Payload
    ↓
-3. Sucesso? → ✅ FIM
+3. Envia HTTP POST para URL Webhook
    ↓
-4. Falhou? → Aguarda delay → Retry
-   ↓
-5. Esgotar tentativas? → ❌ ERRO FINAL
+4. Registra Métricas (Sucesso/Erro)
 ```
-
-#### Condições de Retry (Tentam Novamente)
-- ✅ Network timeouts
-- ✅ Connection refused/reset
-- ✅ DNS resolution failures
-- ✅ HTTP 5xx server errors
-
-#### Condições sem Retry (Falham Imediatamente)
-- ❌ HTTP 4xx client errors (malformed requests, authentication failures)
-- ❌ Invalid URLs
-- ❌ Request creation errors
-
----
-
-## 📋 Sistema de Queue
-
-### 🏗️ Arquitetura Channel-based
-O sistema usa **Go channels** para processamento assíncrono:
-- **Thread-safe**: Sem necessidade de mutex
-- **Non-blocking**: Select statements previnem deadlocks
-- **Buffered**: Tamanho configurável previne problemas de memória
-- **Graceful shutdown**: Encerramento adequado dos canais
-
-### 📊 Estados das Mensagens
-- **queued**: Mensagem adicionada à fila, aguardando processamento
-- **processing**: Mensagem sendo processada pelo webhook
-- **completed**: Mensagem processada com sucesso
-- **failed**: Processamento falhou
-- **retry_queued**: Mensagem falhou e foi enfileirada para retry
-- **discarded**: Mensagem descartada por fila cheia
-- **discarded_after_retry**: Mensagem descartada após falhas de retry
-- **failed_final**: Mensagem falhou após todas as tentativas
-
-### 🔄 Fluxo de Dados
-```
-Webhook Request → WebhookQueueMessage → Channel Cache → Worker Pool → Status Updates
-```
-
-### 👷 Worker Pool
-- **Configurável**: Número de workers via `WEBHOOK_WORKERS`
-- **Escalável**: Processamento paralelo de múltiplos webhooks
-- **Eficiente**: Uso otimizado de recursos do sistema
 
 ---
 
@@ -135,76 +95,312 @@ Webhook Request → WebhookQueueMessage → Channel Cache → Worker Pool → St
 - **Descrição**: Total de erros ao processar mensagens recebidas
 - **Uso**: Monitora falhas no processamento de mensagens de entrada
 
-### 📈 Métricas de Retry
+### 📈 Métricas de Webhook
 
 #### `quepasa_webhooks_sent_total`
 - **Tipo**: Counter
-- **Descrição**: Total de webhooks enviados (todas as tentativas)
-- **Uso**: Monitora volume total de requests
+- **Descrição**: Total de webhooks enviados
+- **Uso**: Monitora volume total de webhooks
 
 #### `quepasa_webhook_send_errors_total`
 - **Tipo**: Counter
-- **Descrição**: Total de webhooks que falharam completamente
-- **Uso**: Monitora taxa de falha geral
-
-#### `quepasa_webhook_retry_attempts_total`
-- **Tipo**: Counter
-- **Descrição**: Total de tentativas de retry (não inclui primeira tentativa)
-- **Uso**: Monitora quantas vezes o sistema fez retry
-
-#### `quepasa_webhook_retries_successful_total`
-- **Tipo**: Counter
-- **Descrição**: Total de webhooks que tiveram sucesso após retry
-- **Uso**: Monitora eficácia do sistema de retry
-
-#### `quepasa_webhook_retry_failures_total`
-- **Tipo**: Counter
-- **Descrição**: Total de webhooks que falharam mesmo após todos os retries
-- **Uso**: Monitora casos onde retry não foi suficiente
-
-#### `quepasa_webhook_duration_seconds`
-- **Tipo**: Histogram
-- **Descrição**: Duração total de entrega do webhook (incluindo retries)
-- **Buckets**: Defaut do Prometheus
-- **Uso**: Monitora latência e performance
-
-### 📈 Métricas de Queue
-
-#### `quepasa_webhook_queue_size`
-- **Tipo**: Gauge
-- **Descrição**: Tamanho atual da fila
-- **Uso**: Monitora utilização da fila
-
-#### `quepasa_webhook_queue_discarded_total`
-- **Tipo**: Counter
-- **Descrição**: Total de webhooks descartados por fila cheia
-- **Uso**: Monitora pressão na fila
-
-#### `quepasa_webhook_queue_processed_total`
-- **Tipo**: Counter
-- **Descrição**: Total de webhooks processados da fila
-- **Uso**: Monitora throughput
-
-#### `quepasa_webhook_queue_retries_total`
-- **Tipo**: Counter
-- **Descrição**: Total de tentativas de retry da fila
-- **Uso**: Monitora retries no sistema de queue
-
-#### `quepasa_webhook_queue_completed_total`
-- **Tipo**: Counter
-- **Descrição**: Total de webhooks completados com sucesso da fila
-- **Uso**: Monitora sucesso no processamento
-
-#### `quepasa_webhook_queue_failed_total`
-- **Tipo**: Counter
-- **Descrição**: Total de webhooks que falharam após todos os retries da fila
-- **Uso**: Monitora falhas definitivas
+- **Descrição**: Total de webhooks que falharam
+- **Uso**: Monitora taxa de falha dos webhooks
 
 ### 📊 Queries do Prometheus
 
 #### Volume de Mensagens
 ```promql
 # Total de mensagens enviadas
+rate(quepasa_sent_messages_total[5m])
+
+# Total de mensagens recebidas
+rate(quepasa_received_messages_total[5m])
+```
+
+#### Taxa de Erro
+```promql
+# Taxa de erro de envio de mensagens
+rate(quepasa_send_message_errors_total[5m]) / rate(quepasa_sent_messages_total[5m]) * 100
+
+# Taxa de erro de webhook
+rate(quepasa_webhook_send_errors_total[5m]) / rate(quepasa_webhooks_sent_total[5m]) * 100
+```
+
+#### Performance de Webhook
+```promql
+# Volumetria de webhooks
+rate(quepasa_webhooks_sent_total[5m])
+
+# Taxa de sucesso
+(rate(quepasa_webhooks_sent_total[5m]) - rate(quepasa_webhook_send_errors_total[5m])) / rate(quepasa_webhooks_sent_total[5m]) * 100
+```
+
+### 🚨 Alertas Prometheus
+
+#### Configuração de Alertas
+```yaml
+groups:
+- name: quepasa.rules
+  rules:
+  - alert: HighWebhookErrorRate
+    expr: rate(quepasa_webhook_send_errors_total[5m]) / rate(quepasa_webhooks_sent_total[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Alta taxa de erro em webhooks"
+      description: "Taxa de erro de webhooks acima de 10% por mais de 2 minutos"
+
+  - alert: WebhookDown
+    expr: up{job="quepasa"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "QuePasa está down"
+      description: "Instância QuePasa não responde"
+```
+
+---
+
+## 🩺 Health Endpoint
+
+### 📋 Endpoint Principal
+
+- **GET /health**: Status básico do sistema
+
+### 📄 Exemplo de Response
+```json
+{
+  "success": true,
+  "message": "OK",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "stats": {
+    "total": 5,
+    "healthy": 4,
+    "unhealthy": 1,
+    "percentage": 80.0
+  },
+  "items": [
+    {
+      "wid": "5511999887766",
+      "status": "connected",
+      "healthy": true,
+      "timestamp": "2024-01-15T10:29:45Z"
+    }
+  ]
+}
+```
+
+---
+
+## ⚙️ Configuração
+
+### 📋 Variáveis de Ambiente
+
+#### Webhook Básico
+```bash
+# WEBHOOK_TIMEOUT - Timeout em segundos para requests webhook
+# Padrão: 10 segundos
+# Mínimo: 1 segundo
+# Máximo: 300 segundos (5 minutos)
+WEBHOOK_TIMEOUT=10
+```
+
+---
+
+## 💡 Exemplos Práticos
+
+### � Configuração Básica
+
+#### 1. Configuração Simples no .env
+```bash
+# Configuração básica
+WEBHOOK_TIMEOUT=10
+```
+
+#### 2. Webhook Payload Exemplo
+```json
+{
+  "message": {
+    "id": "msg_123456789",
+    "text": "Hello World",
+    "from": "5511999887766@s.whatsapp.net",
+    "to": "5511888776655@s.whatsapp.net",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "extra": {
+    "custom_field": "value"
+  }
+}
+```
+
+### 🔗 Integrações Comuns
+
+#### N8N Workflow
+```json
+{
+  "nodes": [
+    {
+      "name": "QuePasa Webhook",
+      "type": "webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "quepasa-webhook"
+      }
+    }
+  ]
+}
+```
+
+#### Chatwoot Integration
+```javascript
+// Processar webhook do QuePasa no Chatwoot
+app.post('/quepasa-webhook', (req, res) => {
+  const { message } = req.body;
+  
+  // Criar conversa no Chatwoot
+  createConversation({
+    contact_id: message.from,
+    message: message.text
+  });
+  
+  res.status(200).send('OK');
+});
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### 🚨 Problemas Comuns
+
+#### 1. Webhooks não estão sendo enviados
+**Sintomas:**
+- Mensagens chegam no WhatsApp mas webhook não é chamado
+
+**Verificações:**
+```bash
+# 1. Verificar se webhook está configurado
+curl http://localhost:31000/v1/bot/{token}/webhook
+
+# 2. Verificar logs
+tail -f quepasa.log | grep webhook
+
+# 3. Verificar métricas
+curl http://localhost:31000/metrics | grep webhook
+```
+
+#### 2. Timeout em webhooks
+**Sintomas:**
+- Logs mostram timeout errors
+- Métrica `webhook_send_errors` aumentando
+
+**Soluções:**
+```bash
+# Aumentar timeout no .env
+WEBHOOK_TIMEOUT=30
+
+# Verificar se URL webhook responde
+curl -I https://sua-url-webhook.com/endpoint
+```
+
+#### 3. URL webhook inválida
+**Sintomas:**
+- Erro 400 ou 404 consistente
+- Logs mostram "invalid response"
+
+**Verificações:**
+```bash
+# Testar URL manualmente
+curl -X POST https://sua-url-webhook.com/endpoint \
+  -H "Content-Type: application/json" \
+  -d '{"test": "payload"}'
+```
+
+### 📊 Monitoramento
+
+#### Dashboard Grafana Básico
+```json
+{
+  "dashboard": {
+    "title": "QuePasa Webhooks",
+    "panels": [
+      {
+        "title": "Taxa de Webhooks",
+        "targets": [
+          {
+            "expr": "rate(quepasa_webhooks_sent_total[5m])"
+          }
+        ]
+      },
+      {
+        "title": "Taxa de Erro",
+        "targets": [
+          {
+            "expr": "rate(quepasa_webhook_send_errors_total[5m]) / rate(quepasa_webhooks_sent_total[5m]) * 100"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 🔍 Debug Avançado
+
+#### Logs Detalhados
+```bash
+# Ativar logs debug
+export LOG_LEVEL=debug
+
+# Filtrar logs de webhook
+tail -f quepasa.log | grep "webhook\|http"
+```
+
+#### Health Check Script
+```bash
+#!/bin/bash
+# health-check.sh
+
+QUEPASA_URL="http://localhost:31000"
+
+echo "Verificando health endpoint..."
+curl -s "$QUEPASA_URL/health" | jq .
+
+echo "Verificando métricas..."
+curl -s "$QUEPASA_URL/metrics" | grep -E "(webhook|message)"
+```
+
+---
+
+## 📚 Referencias
+
+### 🔗 Links Úteis
+- [Documentação N8N](https://docs.n8n.io/webhooks/)
+- [Documentação Chatwoot](https://www.chatwoot.com/docs/product/webhooks)
+- [Prometheus Metrics](https://prometheus.io/docs/concepts/metric_types/)
+- [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/)
+
+### � Repositórios
+- [QuePasa GitHub](https://github.com/nocodeleaks/quepasa)
+- [Exemplos N8N](../extra/n8n+chatwoot/)
+- [Exemplos Chatwoot](../extra/chatwoot/)
+
+---
+
+## 📝 Changelog
+
+### Versão Atual
+- ✅ Sistema de webhook direto e simples
+- ✅ Métricas básicas do Prometheus
+- ✅ Health endpoint simplificado
+- ✅ Configuração via variáveis de ambiente
+
+---
+
+**📞 Suporte**: Para dúvidas, abra uma issue no repositório GitHub.
 quepasa_sent_messages_total
 
 # Total de mensagens recebidas  

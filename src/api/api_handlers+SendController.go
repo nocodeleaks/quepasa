@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	metrics "github.com/nocodeleaks/quepasa/metrics"
@@ -17,10 +18,12 @@ import (
 
 // SendAPIHandler renders route "/v3/bot/{token}/send"
 func SendAny(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
 
 	server, err := GetServer(r)
 	if err != nil {
 		metrics.MessageSendErrors.Inc()
+		metrics.ObserveAPIProcessingTime(r.Method, "/send", "400", time.Since(startTime).Seconds())
 
 		response := &models.QpSendResponse{}
 		response.ParseError(err)
@@ -29,6 +32,9 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendAnyWithServer(w, r, server)
+
+	// Record successful API processing time (assuming 200 status for now)
+	metrics.ObserveAPIProcessingTime(r.Method, "/send", "200", time.Since(startTime).Seconds())
 }
 
 func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {

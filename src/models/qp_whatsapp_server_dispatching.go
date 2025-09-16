@@ -8,14 +8,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type QpWhatsappServerWebhook struct {
+type QpWhatsappServerDispatching struct {
 	*QpWebhook
 
 	server *QpWhatsappServer
 }
 
 // get default log entry, never nil
-func (source *QpWhatsappServerWebhook) GetLogger() *log.Entry {
+func (source *QpWhatsappServerDispatching) GetLogger() *log.Entry {
 	var logentry *log.Entry
 	if source != nil && source.server != nil {
 		logentry = source.server.GetLogger()
@@ -31,7 +31,7 @@ func (source *QpWhatsappServerWebhook) GetLogger() *log.Entry {
 
 //#region IMPLEMENTING WHATSAPP OPTIONS INTERFACE
 
-func (source *QpWhatsappServerWebhook) GetOptions() *whatsapp.WhatsappOptions {
+func (source *QpWhatsappServerDispatching) GetOptions() *whatsapp.WhatsappOptions {
 	if source == nil {
 		return nil
 	}
@@ -41,10 +41,10 @@ func (source *QpWhatsappServerWebhook) GetOptions() *whatsapp.WhatsappOptions {
 
 //#endregion
 
-func (source *QpWhatsappServerWebhook) Save(reason string) (err error) {
+func (source *QpWhatsappServerDispatching) Save(reason string) (err error) {
 
 	if source == nil {
-		err = fmt.Errorf("nil webhook source")
+		err = fmt.Errorf("nil dispatching source")
 		return err
 	}
 
@@ -54,29 +54,31 @@ func (source *QpWhatsappServerWebhook) Save(reason string) (err error) {
 	}
 
 	if source.QpWebhook == nil {
-		err = fmt.Errorf("nil source webhook")
+		err = fmt.Errorf("nil source configuration")
 		return err
 	}
 
 	logentry := source.GetLogger()
-	logentry.Debugf("saving webhook info, reason: %s, content: %+v", reason, source)
+	logentry.Debugf("saving configuration info, reason: %s, content: %+v", reason, source)
 
-	affected, err := source.server.WebhookAddOrUpdate(source.QpWebhook)
+	// Convert to dispatching format and save via new system
+	dispatching := source.QpWebhook.ToDispatching()
+	affected, err := source.server.DispatchingAddOrUpdate(dispatching)
 	if err == nil {
-		logentry.Infof("saved webhook with %v affected rows", affected)
+		logentry.Infof("saved configuration as dispatching with %v affected rows", affected)
 	}
 
 	return err
 }
 
-func (source *QpWhatsappServerWebhook) ToggleForwardInternal() (handle bool, err error) {
+func (source *QpWhatsappServerDispatching) ToggleForwardInternal() (handle bool, err error) {
 	source.ForwardInternal = !source.ForwardInternal
 
 	reason := fmt.Sprintf("toggle forward internal: %v", source.ForwardInternal)
 	return source.ForwardInternal, source.Save(reason)
 }
 
-// SetServer sets the server reference for this webhook
-func (source *QpWhatsappServerWebhook) SetServer(server *QpWhatsappServer) {
+// SetServer sets the server reference for this dispatching configuration
+func (source *QpWhatsappServerDispatching) SetServer(server *QpWhatsappServer) {
 	source.server = server
 }

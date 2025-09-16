@@ -144,7 +144,7 @@
             </td>
             <td style="text-align: center;">
               <a class="button" href="/form/webhooks?token={{ .Token }}">
-                {{ if .Webhooks }}
+                {{ if .HasWebhooks }}
                   <span class="icon has-text-success" title="Active WebHooks"><i class="fas fa-check-square"></i> </span>
                 {{ else }}
                   <span class="icon has-text-warning"title="No WebHooks"><i class="fas fa-exclamation-triangle"></i> </span>

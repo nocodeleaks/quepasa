@@ -340,7 +340,9 @@ func WebHookAPIHandlerV2(w http.ResponseWriter, r *http.Request) {
 
 	switch os := r.Method; os {
 	case http.MethodPost:
-		affected, err := server.WebhookAddOrUpdate(webhook)
+		// Convert webhook to dispatching format and save via new system
+		dispatching := webhook.ToDispatching()
+		affected, err := server.DispatchingAddOrUpdate(dispatching)
 		if err != nil {
 			response.ParseError(err)
 			RespondInterface(w, response)
@@ -354,7 +356,7 @@ func WebHookAPIHandlerV2(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	case http.MethodDelete:
-		affected, err := server.WebhookRemove(webhook.Url)
+		affected, err := server.DispatchingRemove(webhook.Url)
 		if err != nil {
 			response.ParseError(err)
 			RespondInterface(w, response)

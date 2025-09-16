@@ -22,8 +22,15 @@ func CleanJID(jid types.JID) types.JID {
 	cleanJID := types.JID{
 		User:   jid.User,
 		Server: jid.Server,
+	// Always reconstruct the JID using only User and Server
+	// This automatically removes any session suffix that might be present in the original string representation
+	cleanJID := types.JID{
+		User:   jid.User,
+		Server: jid.Server,
 	}
 
+	return cleanJID
+	
 	return cleanJID
 }
 
@@ -70,11 +77,16 @@ func GetContactName(client *whatsmeow.Client, jid types.JID) string {
 	// Always use cleaned JID (without session) for contact lookup
 	cleanJID := CleanJID(jid)
 	cInfo, err := client.Store.Contacts.GetContact(context.Background(), cleanJID)
-	if err != nil || !cInfo.Found {
+	if err != nil {
+		return ""
+	}
+	
+	if !cInfo.Found {
 		return ""
 	}
 
-	return ExtractContactName(cInfo)
+	name := ExtractContactName(cInfo)
+	return name
 }
 
 /**
@@ -104,6 +116,9 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 		}
 	} else {
 		title = GetContactName(client, jid)
+		if len(title) > 0 {
+			goto found
+		}
 	}
 	return ""
 found:
@@ -118,8 +133,8 @@ func NewWhatsappChat(handler *WhatsmeowHandlers, jid types.JID) *whatsapp.Whatsa
 func NewWhatsappChatRaw(client *whatsmeow.Client, contactManager whatsapp.WhatsappContactManagerInterface, jid types.JID) *whatsapp.WhatsappChat {
 	chat := &whatsapp.WhatsappChat{}
 
-	// Always use User@Server format
-	// Remove any session ID if present
+	// Always use User@Server format WITHOUT session ID
+	// The types.JID already separates the user from session suffix
 	chat.Id = jid.User + "@" + jid.Server
 
 	chat.Title = GetChatTitle(client, jid)

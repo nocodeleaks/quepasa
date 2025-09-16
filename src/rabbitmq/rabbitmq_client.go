@@ -24,6 +24,10 @@ type RabbitMQClient struct {
 	messageCache    chan RabbitMQMessage // In-memory queue for messages when disconnected
 	cacheProcessing sync.Once            // Ensures cache processor starts only once
 	maxCacheSize    int                  // Maximum number of messages to hold in cache
+
+	// Flag to track if QuePasa Exchange and Queues have been set up
+	quepasaSetupDone bool
+	setupMutex       sync.Mutex // Protects quepasaSetupDone
 }
 
 // NewRabbitMQClient creates and initializes a new RabbitMQClient instance.
@@ -77,6 +81,11 @@ func (r *RabbitMQClient) connect() error {
 	// Configure the channel for close notifications
 	r.notify = make(chan *amqp.Error)
 	r.channel.NotifyClose(r.notify)
+
+	// Reset setup flag since we have a new connection
+	r.setupMutex.Lock()
+	r.quepasaSetupDone = false
+	r.setupMutex.Unlock()
 
 	log.Println("RabbitMQ connection and channel established successfully.")
 
@@ -233,8 +242,9 @@ func (r *RabbitMQClient) processCache() {
 						false,
 						false,
 						amqp.Publishing{
-							ContentType: "application/json",
-							Body:        body,
+							ContentType:  "application/json",
+							Body:         body,
+							DeliveryMode: amqp.Persistent,
 						})
 
 					if err != nil {
@@ -244,17 +254,18 @@ func (r *RabbitMQClient) processCache() {
 						default:
 							log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
 						}
-						break
+						goto CACHE_LOOP_END // Exit inner loop to check channel status
 					}
 					log.Printf("Cached message ID %s published successfully. Cache size: %d/%d", msg.ID, len(r.messageCache), r.maxCacheSize)
 
 				default:
-					break
+					goto CACHE_LOOP_END // No more messages in cache
 				}
 				if len(r.messageCache) == 0 {
-					break
+					goto CACHE_LOOP_END // Cache is empty
 				}
 			}
+		CACHE_LOOP_END:
 		}
 	}
 }
@@ -349,8 +360,9 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
 		})
 
 	if err != nil {
@@ -367,12 +379,194 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 	log.Printf("JSON message ID %s published successfully to queue '%s'!", msg.ID, queueName)
 }
 
+// PublishMessageToExchange publishes a JSON message to a RabbitMQ exchange with routing key.
+// It accepts any Go type as messageContent, which will be marshaled into the 'payload' field of RabbitMQMessage.
+// If the connection is unavailable, it caches the message. This method provides exchange-based routing.
+func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey string, messageContent any) {
+	msg := RabbitMQMessage{
+		ID:          fmt.Sprintf("msg-%d", time.Now().UnixNano()),
+		Payload:     messageContent,
+		Timestamp:   time.Now(),
+		TargetQueue: exchangeName + ":" + routingKey, // For logging/identification purposes
+	}
+
+	ch := r.channel
+	if ch == nil {
+		log.Printf("Connection is down. Attempting to cache message ID %s for exchange '%s' with routing key '%s'", msg.ID, exchangeName, routingKey)
+		if r.AddToCache(msg) {
+			payloadStr := fmt.Sprintf("%v", msg.Payload)
+			if len(payloadStr) > 50 {
+				payloadStr = payloadStr[:47] + "..."
+			}
+			log.Printf("Message ID %s with payload '%s' successfully added to cache for exchange '%s' with routing key '%s'.", msg.ID, payloadStr, exchangeName, routingKey)
+		}
+		return
+	}
+
+	log.Printf("Connection is active. Attempting to publish message ID %s to exchange '%s' with routing key '%s'", msg.ID, exchangeName, routingKey)
+
+	// Exchange should already be declared via EnsureExchangeAndQueues()
+	// No need to declare it again here
+
+	body, err := json.Marshal(msg)
+	handleError(err, fmt.Sprintf("Failed to convert RabbitMQMessage ID %s to JSON for exchange '%s'", msg.ID, exchangeName))
+	if err != nil {
+		log.Printf("Failed to marshal message ID %s (payload type %T). Not caching (invalid format or unmarshalable payload). Error: %v", msg.ID, msg.Payload, err)
+		return
+	}
+
+	log.Printf("JSON message created for exchange '%s' with routing key '%s': %s\n", exchangeName, routingKey, string(body))
+
+	err = ch.Publish(
+		exchangeName, // exchange
+		routingKey,   // routing key
+		false,        // mandatory
+		false,        // immediate
+		amqp.Publishing{
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
+		})
+
+	if err != nil {
+		log.Printf("Failed to publish message ID %s to exchange '%s' with routing key '%s': %v. Attempting to cache.", msg.ID, exchangeName, routingKey, err)
+		if r.AddToCache(msg) {
+			payloadStr := fmt.Sprintf("%v", msg.Payload)
+			if len(payloadStr) > 50 {
+				payloadStr = payloadStr[:47] + "..."
+			}
+			log.Printf("Message ID %s with payload '%s' successfully added to cache after publish failure for exchange '%s' with routing key '%s'.", msg.ID, payloadStr, exchangeName, routingKey)
+		}
+		return
+	}
+	log.Printf("JSON message ID %s published successfully to exchange '%s' with routing key '%s'!", msg.ID, exchangeName, routingKey)
+}
+
 // PublishMessage publishes a JSON message to the default RabbitMQ queue (RabbitMQQueueDefault).
 // It accepts any Go type as messageContent, which will be marshaled into the 'payload' field of RabbitMQMessage.
 // This is a convenience method that wraps PublishMessageOnQueue.
 func (r *RabbitMQClient) PublishMessage(messageContent any) { // Alterado para 'any'
 	log.Printf("Publishing message to default queue '%s' with payload type %T.", RabbitMQQueueDefault, messageContent)
 	r.PublishMessageOnQueue(RabbitMQQueueDefault, messageContent)
+}
+
+// EnsureExchangeAndQueues ensures that the QuePasa standard exchange and queues exist
+// All bots use the same fixed Exchange and Queue names
+// This method only runs once per connection to avoid repeated declarations
+func (r *RabbitMQClient) EnsureExchangeAndQueues() error {
+	// Check if already set up for this connection
+	r.setupMutex.Lock()
+	if r.quepasaSetupDone {
+		r.setupMutex.Unlock()
+		return nil // Already set up, no need to do it again
+	}
+	defer r.setupMutex.Unlock()
+
+	ch := r.channel
+	if ch == nil {
+		return fmt.Errorf("rabbitmq channel not available")
+	}
+
+	// Declare the QuePasa standard exchange
+	err := ch.ExchangeDeclare(
+		QuePasaExchangeName,
+		"direct", // exchange type - direct for routing keys
+		true,     // durable
+		false,    // auto-delete
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare exchange '%s': %v", QuePasaExchangeName, err)
+	}
+	log.Printf("Exchange '%s' declared successfully", QuePasaExchangeName)
+
+	// Define the standard QuePasa queues
+	queues := map[string]string{
+		QuePasaQueueProd:    QuePasaRoutingKeyProd,    // Production messages
+		QuePasaQueueHistory: QuePasaRoutingKeyHistory, // History sync messages
+		QuePasaQueueEvents:  QuePasaRoutingKeyEvents,  // Debug, contacts, read receipts, etc.
+	}
+
+	// Declare each queue and bind to exchange
+	for queueName, routingKey := range queues {
+		// Declare queue
+		q, err := ch.QueueDeclare(
+			queueName,
+			true,  // durable
+			false, // delete when unused
+			false, // exclusive
+			false, // no-wait
+			nil,   // arguments
+		)
+		if err != nil {
+			return fmt.Errorf("failed to declare queue '%s': %v", queueName, err)
+		}
+		log.Printf("Queue '%s' declared successfully. Consumers: %d, Messages: %d", q.Name, q.Consumers, q.Messages)
+
+		// Bind queue to exchange with routing key
+		err = ch.QueueBind(
+			queueName,           // queue name
+			routingKey,          // routing key
+			QuePasaExchangeName, // exchange
+			false,               // no-wait
+			nil,                 // arguments
+		)
+		if err != nil {
+			return fmt.Errorf("failed to bind queue '%s' to exchange '%s' with routing key '%s': %v", queueName, QuePasaExchangeName, routingKey, err)
+		}
+		log.Printf("Queue '%s' bound to exchange '%s' with routing key '%s'", queueName, QuePasaExchangeName, routingKey)
+	}
+
+	// Mark as set up
+	r.quepasaSetupDone = true
+	log.Printf("QuePasa Exchange and Queues setup completed successfully for this connection")
+
+	return nil
+}
+
+// EnsureExchangeAndQueuesWithRetry tries to ensure Exchange and Queues with retry logic
+func (r *RabbitMQClient) EnsureExchangeAndQueuesWithRetry() error {
+	// Try immediate setup first
+	err := r.EnsureExchangeAndQueues()
+	if err == nil {
+		return nil
+	}
+
+	// If failed, wait a bit for connection to be ready
+	if r.WaitForConnection(5 * time.Second) {
+		return r.EnsureExchangeAndQueues()
+	}
+
+	return fmt.Errorf("connection not ready after timeout")
+}
+
+// PublishQuePasaMessage publishes a message to the standard QuePasa Exchange and routes it to the appropriate queue
+// based on the routing key. This method uses the fixed QuePasa Exchange name and routing keys.
+// All bots use this method to ensure messages go to the same standard queues.
+func (r *RabbitMQClient) PublishQuePasaMessage(routingKey string, messageContent any) {
+	// Always use the fixed QuePasa Exchange
+	r.PublishMessageToExchange(QuePasaExchangeName, routingKey, messageContent)
+}
+
+// IsConnectionReady checks if the RabbitMQ connection and channel are ready
+func (r *RabbitMQClient) IsConnectionReady() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.channel != nil
+}
+
+// WaitForConnection waits for the RabbitMQ connection to be ready with timeout
+func (r *RabbitMQClient) WaitForConnection(timeout time.Duration) bool {
+	start := time.Now()
+	for time.Since(start) < timeout {
+		if r.IsConnectionReady() {
+			return true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return false
 }
 
 // handleError is a helper function to log errors.

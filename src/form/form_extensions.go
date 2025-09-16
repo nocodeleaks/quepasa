@@ -101,7 +101,27 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 		} else if strings.HasPrefix(key, "webhook") {
 			destination = FormWebHooksEndpoint + "?token=" + server.Token
 			url := library.GetRequestParameter(r, "url")
-			webhook := server.GetWebHook(url)
+			// Get webhook via dispatching system
+			dispatching := server.GetDispatching(url)
+			var webhook *models.QpWhatsappServerWebhook = nil
+			if dispatching != nil && dispatching.IsWebhook() {
+				qpWebhook := &models.QpWebhook{
+					LogStruct:       dispatching.LogStruct,
+					WhatsappOptions: dispatching.WhatsappOptions,
+					Url:             dispatching.ConnectionString,
+					ForwardInternal: dispatching.ForwardInternal,
+					TrackId:         dispatching.TrackId,
+					Extra:           dispatching.Extra,
+					Failure:         dispatching.Failure,
+					Success:         dispatching.Success,
+					Timestamp:       dispatching.Timestamp,
+					Wid:             dispatching.Wid,
+				}
+				webhook = &models.QpWhatsappServerWebhook{
+					QpWebhook: qpWebhook,
+				}
+				webhook.SetServer(server)
+			}
 			if webhook != nil {
 				switch key {
 				case "webhook-forwardinternal":
@@ -243,6 +263,23 @@ func FormDeleteController(w http.ResponseWriter, r *http.Request) {
 				affected, err = server.WebhookRemove(url)
 				if affected > 0 {
 					logentry.Infof("webhook delete requested by from, affected rows: %v", affected)
+				}
+			}
+		case "rabbitmq":
+			{
+				destination = FormRabbitMQEndpoint + "?token=" + server.Token
+				connectionString := library.GetRequestParameter(r, "connection_string")
+				if connectionString == "" {
+					connectionString = library.GetRequestParameter(r, "exchange_name") // fallback for compatibility
+				}
+				if connectionString == "" {
+					err = fmt.Errorf("connection_string is required for rabbitmq delete")
+					break
+				}
+				var affected uint
+				affected, err = server.DispatchingRemove(connectionString)
+				if affected > 0 {
+					logentry.Infof("rabbitmq delete requested by form, connection_string=%s, affected rows: %v", connectionString, affected)
 				}
 			}
 		default:

@@ -8,6 +8,8 @@ replace github.com/nocodeleaks/quepasa/metrics => ../metrics
 
 replace github.com/nocodeleaks/quepasa/library => ../library
 
+replace github.com/nocodeleaks/quepasa/metrics => ../metrics
+
 go 1.24.0
 
 toolchain go1.24.2

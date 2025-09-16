@@ -1,0 +1,206 @@
+{{ define "content" }}
+  {{ if .ErrorMessage }}
+    <div class="notification is-warning">
+      {{ .ErrorMessage }}
+    </div>
+  {{ end }}
+  <div class="container site-header">
+    <h1 class="title is-1">RabbitMQ Configurations</h1>
+    <p class="subtitle">({{ len .RabbitMQ }}) For <b>{{ .Server.Wid }}</b></p>
+  </div>
+
+  <!-- Information Box -->
+  <div class="container">
+    <div class="notification is-info">
+      <h4 class="title is-5">🔄 QuePasa RabbitMQ Routing System</h4>
+      <p><strong>Exchange:</strong> <code>quepasa-exchange</code></p>
+      <p><strong>Automatic Queues:</strong></p>
+      <ul>
+        <li><code>quepasa.production</code> - Production messages (normal chat messages)</li>
+        <li><code>quepasa.history</code> - History sync messages</li>
+        <li><code>quepasa.other</code> - System events, calls, contacts, etc.</li>
+      </ul>
+      <p><em>All bots use the same Exchange and Queues. Only the connection string is configured per bot.</em></p>
+    </div>
+  </div>
+
+  <!-- Add New RabbitMQ Configuration Form -->
+  <div class="container">
+    <div class="box">
+      <h2 class="title is-4">Add New RabbitMQ Configuration</h2>
+      <form id="addRabbitMQForm">
+        <div class="field">
+          <label class="label">RabbitMQ Connection String</label>
+          <div class="control">
+            <input class="input" type="text" id="connectionString" placeholder="amqp://username:password@host:port/vhost" required>
+          </div>
+          <p class="help">Complete RabbitMQ connection string including credentials and virtual host</p>
+          <p class="help has-text-info">Example: <code>amqp://admin:password@rabbitmq.example.com:5672/%2F</code></p>
+        </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Track ID (Optional)</label>
+          <div class="control">
+            <input class="input" type="text" id="trackId" placeholder="Enter tracking identifier">
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" id="forwardInternal">
+              Forward Internal Messages
+            </label>
+          </div>
+        </div>
+
+        <div class="field is-grouped">
+          <div class="control">
+            <button type="submit" class="button is-primary">
+              <span class="icon"><i class="fa fa-plus"></i></span>
+              <span>Add Configuration</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RabbitMQ Configurations Table -->
+  <div class="container">
+    <table class="table is-fullwidth">
+      <thead>
+        <tr>
+          <th>Connection String</th>
+          <th>Track ID</th>
+          <th style="text-align: center;">Settings</th>
+          <th style="width: 4rem;">Status</th>
+          <th style="width: 4rem;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .RabbitMQ }}   
+          <tr>
+            <td><small><code title="Connection String">{{ .ConnectionString }}</code></small></td>
+            <td><span>{{ .TrackId }}</span></td>
+            <td style="text-align: center;">
+              <div style="text-align: center; display: flex; justify-content: center;">          
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-forwardinternal" data-value="{{ .ForwardInternal }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}" />
+                    <button class="button {{ if .ForwardInternal }}is-info{{ else }}is-danger{{ end }}" title="ForwardInternal: {{ .ForwardInternal }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-forward"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p>&nbsp;</p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-broadcasts" data-value="{{ .Broadcasts }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts: {{ .Broadcasts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-groups" data-value="{{ .Groups }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups: {{ .Groups }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-readreceipts" data-value="{{ .ReadReceipts }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="ReadReceipts: {{ .ReadReceipts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-calls" data-value="{{ .Calls }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls: {{ .Calls }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
+                    </button>
+                  </form>
+                </p>
+              </div>
+            </td>
+            <td>
+              {{ if .Success }}
+                <button class="button is-success is-outlined" title="Last Success: {{ .Success }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                </button>
+              {{ else if .Failure }}
+                <button class="button is-warning is-outlined" title="Last Failure: {{ .Failure }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-exclamation"></i></span>
+                </button>
+              {{ else }}
+                <button class="button is-light" title="Not tested yet">
+                  <span class="icon is-small is-inline"><i class="fa fa-clock"></i></span>
+                </button>
+              {{ end }}
+            </td>
+            <td>
+              <form class="" method="post" action="/form/delete?token={{ $.Server.Token }}&key=rabbitmq">
+                <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                <button class="button is-danger is-outlined" title="Delete this RabbitMQ configuration">
+                  <i class="fa fa-trash"></i>&nbsp;&nbsp;
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>       
+        {{ end }}
+      </tbody>
+    </table>     
+  </div>
+  <div>&nbsp;</div>
+
+  <script>
+    // Add new RabbitMQ configuration
+    document.getElementById('addRabbitMQForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const connectionString = document.getElementById('connectionString').value;
+      const trackId = document.getElementById('trackId').value;
+      const forwardInternal = document.getElementById('forwardInternal').checked;
+      
+      if (!connectionString) {
+        alert('Connection string is required!');
+        return;
+      }
+      
+      const config = {
+        connection_string: connectionString,
+        trackid: trackId || '',
+        forwardinternal: forwardInternal
+      };
+      
+      fetch('/rabbitmq?token={{ .Server.Token }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer {{ .Server.Token }}'
+        },
+        body: JSON.stringify(config)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('RabbitMQ configuration added successfully!');
+          location.reload();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding RabbitMQ configuration');
+      });
+    });
+  </script>
+{{ end }}

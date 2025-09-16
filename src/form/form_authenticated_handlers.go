@@ -20,6 +20,7 @@ const FormEndpointPrefix string = "/form"
 var FormWebsocketEndpoint string = FormEndpointPrefix + "/verify/ws"
 var FormAccountEndpoint string = FormEndpointPrefix + "/account"
 var FormWebHooksEndpoint string = FormEndpointPrefix + "/webhooks"
+var FormRabbitMQEndpoint string = FormEndpointPrefix + "/rabbitmq"
 var FormVerifyEndpoint string = FormEndpointPrefix + "/verify"
 var FormDeleteEndpoint string = FormEndpointPrefix + "/delete"
 
@@ -33,6 +34,7 @@ func RegisterFormAuthenticatedControllers(r chi.Router) {
 	r.HandleFunc(FormWebsocketEndpoint, VerifyHandler)
 	r.Get(FormAccountEndpoint, FormAccountController)
 	r.Get(FormWebHooksEndpoint, FormWebHooksController)
+	r.Get(FormRabbitMQEndpoint, FormRabbitMQController)
 	r.Get(FormVerifyEndpoint, VerifyFormHandler)
 
 	r.Post(FormDeleteEndpoint, FormDeleteController)
@@ -121,6 +123,7 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 				data.ErrorMessage = "server token not found or dont owned by you"
 			} else {
 				data.Server = server
+				data.Webhooks = server.GetWebhooks()
 			}
 		}
 	} else {
@@ -130,6 +133,48 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 	templates := template.Must(template.ParseFiles(
 		"views/layouts/main.tmpl",
 		"views/webhooks.tmpl",
+	))
+
+	templates.ExecuteTemplate(w, "main", data)
+}
+
+// Controller responsible for RabbitMQ management interface
+func FormRabbitMQController(w http.ResponseWriter, r *http.Request) {
+	// setting default response type as json
+	w.Header().Set("Content-Type", "text/html")
+
+	type FormRabbitMQControllerData struct {
+		PageTitle    string                     `json:"pagetitle,omitempty"`
+		ErrorMessage string                     `json:"errormessage,omitempty"`
+		Server       *models.QpWhatsappServer   `json:"server,omitempty"`
+		RabbitMQ     []*models.QpRabbitMQConfig `json:"rabbitmq,omitempty"`
+	}
+
+	data := FormRabbitMQControllerData{
+		PageTitle: "RabbitMQ Configurations",
+	}
+
+	user, err := GetFormUser(r)
+	if err == nil {
+		token := r.URL.Query().Get("token")
+		if len(token) > 0 {
+			server, err := models.GetServerFromToken(token)
+			if err != nil {
+				data.ErrorMessage = "server token not found: " + err.Error()
+			} else if server.User != user.Username {
+				data.ErrorMessage = "server token not found or dont owned by you"
+			} else {
+				data.Server = server
+				data.RabbitMQ = server.GetRabbitMQConfigsByQueue("")
+			}
+		}
+	} else {
+		data.ErrorMessage = "missing token"
+	}
+
+	templates := template.Must(template.ParseFiles(
+		"views/layouts/main.tmpl",
+		"views/rabbitmq.tmpl",
 	))
 
 	templates.ExecuteTemplate(w, "main", data)

@@ -98,6 +98,16 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Get(endpoint+"/webhook", WebhookController)
 		r.Delete(endpoint+"/webhook", WebhookController)
 
+		// RABBITMQ DISPATCHING *******************
+		// ----------------------------------------
+
+		r.Post(endpoint+"/rabbitmq", RabbitMQController)
+		r.Get(endpoint+"/rabbitmq", RabbitMQController)
+		r.Delete(endpoint+"/rabbitmq", RabbitMQController)
+
+		// ----------------------------------------
+		// RABBITMQ DISPATCHING *******************
+
 		// INVITE METHODS ************************
 		// ----------------------------------------
 

@@ -35,7 +35,7 @@
           <th>Token</th>
           <th style="text-align: center;">Actions</th>
           <th style="text-align: center;">Extra</th>
-          <th style="text-align: center;">WH | WS</th>
+          <th style="text-align: center;">WH | RMQ | WS</th>
           <th>State</th>
         </tr>
         </thead>
@@ -150,6 +150,13 @@
                   <span class="icon has-text-warning"title="No WebHooks"><i class="fas fa-exclamation-triangle"></i> </span>
                 {{ end }}
               </a>  
+              <a class="button" href="/form/rabbitmq?token={{ .Token }}">
+                {{ if .HasRabbitMQConfigs }}
+                  <span class="icon has-text-success" title="Active RabbitMQ"><i class="fas fa-exchange-alt"></i> </span>
+                {{ else }}
+                  <span class="icon has-text-warning" title="No RabbitMQ"><i class="fas fa-exclamation-triangle"></i> </span>
+                {{ end }}
+              </a>
               <a class="button" href="/form/signalr?token={{ .Token }}">
                 {{ if .HasSignalRActiveConnections }}
                   <span class="icon has-text-success" title="Active WebSockets"><i class="fas fa-check-square"></i> </span>

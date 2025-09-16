@@ -6,7 +6,20 @@
   {{ end }}
   <div class="container site-header">
     <h1 class="title is-1">WebHooks</h1>
-    <p class="subtitle">({{ len .Server.Webhooks }}) For <b>{{ .Server.Wid }}</b></p>
+    <p class="subtitle">({{ len .Webhooks }}) For <b>{{ .Server.Wid }}</b></p>
+  </div>
+  <div>&nbsp;  </div>
+  <div class="container">
+    <div class="field is-grouped" style="margin-bottom: 1rem;">
+      <p class="control">
+        <button class="button is-primary" onclick="showAddWebhookModal()">
+          <span class="icon is-small">
+            <i class="fa fa-plus"></i>
+          </span>
+          <span>Add Webhook</span>
+        </button>
+      </p>
+    </div>
   </div>
   <div class="container">
     <table class="table is-fullwidth">
@@ -20,7 +33,7 @@
         </tr>
       </thead>
       <tbody>
-        {{ range .Server.Webhooks }}   
+        {{ range .Webhooks }}   
           <tr>
             <td><span>{{ .Url }}</span></td>
             <td><span>{{ .TrackId }}</span></td>
@@ -81,7 +94,11 @@
             </td>
             <td>
               {{ if .IsSetExtra }}
-                <button class="button" title="Extra: {{ .Extra }}">
+                <button class="button is-info" onclick="showExtraModal('{{ .Url }}', 'webhook', `{{ .Extra }}`)" title="Extra Data Available">
+                  <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
+                </button>
+              {{ else }}
+                <button class="button is-light" onclick="showExtraModal('{{ .Url }}', 'webhook', null)" title="Add Extra Data">
                   <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
                 </button>
               {{ end }}
@@ -98,5 +115,317 @@
       </tbody>
     </table>     
   </div>
-  <div>&nbsp;</div>
+  <div>&nbsp;  </div>
+
+  <!-- Modal para adicionar novo webhook -->
+  <div class="modal" id="addWebhookModal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Add New Webhook</p>
+        <button class="delete" aria-label="close" onclick="closeAddWebhookModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Webhook URL *</label>
+          <p class="control">
+            <input class="input" type="url" id="newWebhookUrl" placeholder="https://your-webhook-url.com/endpoint" required>
+          </p>
+          <p class="help">The webhook URL where messages will be sent</p>
+        </div>
+        
+        <div class="field">
+          <label class="label">Track ID</label>
+          <p class="control">
+            <input class="input" type="text" id="newWebhookTrackId" placeholder="Optional tracking identifier">
+          </p>
+          <p class="help">Optional identifier for tracking this webhook</p>
+        </div>
+
+        <div class="field">
+          <label class="label">Configuration</label>
+          <div class="field is-grouped is-grouped-multiline">
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newWebhookForwardInternal">
+                Forward Internal Messages
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newWebhookBroadcasts">
+                Receive Broadcasts
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newWebhookGroups">
+                Receive Group Messages
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newWebhookReadReceipts">
+                Receive Read Receipts
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newWebhookCalls">
+                Receive Call Events
+              </label>
+            </p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Extra Data (JSON)</label>
+          <p class="control">
+            <textarea class="textarea" id="newWebhookExtra" rows="6" placeholder='{"custom_field": "value", "api_key": "secret", "timeout": 30}'></textarea>
+          </p>
+          <p class="help">Optional JSON data to be included with webhook calls. Must be valid JSON format.</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="saveNewWebhook()">Add Webhook</button>
+        <button class="button" onclick="closeAddWebhookModal()">Cancel</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal para visualizar/editar Extra -->
+  <div class="modal" id="extraModal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Extra Field</p>
+        <button class="delete" aria-label="close" onclick="closeExtraModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Webhook URL:</label>
+          <p class="control">
+            <input class="input" type="text" id="extraWebhookUrl" readonly>
+          </p>
+        </div>
+        <div class="field">
+          <label class="label">Extra Data (JSON):</label>
+          <p class="control">
+            <textarea class="textarea" id="extraData" rows="10" placeholder='{"exemplo": "valor", "outro_campo": 123}'></textarea>
+          </p>
+          <p class="help">Enter valid JSON data or leave empty to remove extra field</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="saveExtra()">Save</button>
+        <button class="button" onclick="closeExtraModal()">Cancel</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const serverToken = "{{ .Server.Token }}";
+    
+    function showExtraModal(url, type, currentExtra) {
+      document.getElementById('extraWebhookUrl').value = url;
+      
+      // Format the extra data for display
+      let extraText = '';
+      if (currentExtra && currentExtra !== 'null' && currentExtra !== null) {
+        try {
+          // If currentExtra is a Go map/object string, try to parse and format it
+          let extraStr = String(currentExtra);
+          
+          // Handle Go map format like "map[key:value key2:value2]"
+          if (extraStr.startsWith('map[') && extraStr.endsWith(']')) {
+            // Convert Go map format to JSON
+            let mapContent = extraStr.slice(4, -1); // Remove "map[" and "]"
+            let jsonObj = {};
+            
+            // Simple parser for Go map format
+            let parts = mapContent.split(' ');
+            for (let part of parts) {
+              if (part.includes(':')) {
+                let [key, value] = part.split(':');
+                jsonObj[key] = value;
+              }
+            }
+            extraText = JSON.stringify(jsonObj, null, 2);
+          } else {
+            // Try to parse as JSON
+            let extraObj = typeof currentExtra === 'string' ? JSON.parse(currentExtra) : currentExtra;
+            extraText = JSON.stringify(extraObj, null, 2);
+          }
+        } catch (e) {
+          // If parsing fails, convert the Go object to a readable format
+          let extraStr = String(currentExtra);
+          if (extraStr.startsWith('map[') && extraStr.endsWith(']')) {
+            // Convert Go map format to JSON manually
+            let mapContent = extraStr.slice(4, -1);
+            let jsonObj = {};
+            
+            // Better parser for Go map format with more complex values
+            let regex = /(\w+):([^\s]+)/g;
+            let match;
+            while ((match = regex.exec(mapContent)) !== null) {
+              let key = match[1];
+              let value = match[2];
+              
+              // Try to parse value as number or boolean
+              if (value === 'true' || value === 'false') {
+                jsonObj[key] = value === 'true';
+              } else if (!isNaN(value)) {
+                jsonObj[key] = Number(value);
+              } else {
+                jsonObj[key] = value;
+              }
+            }
+            extraText = JSON.stringify(jsonObj, null, 2);
+          } else {
+            extraText = extraStr;
+          }
+        }
+      }
+      
+      document.getElementById('extraData').value = extraText;
+      document.getElementById('extraModal').classList.add('is-active');
+    }
+
+    function closeExtraModal() {
+      document.getElementById('extraModal').classList.remove('is-active');
+    }
+
+    function saveExtra() {
+      const url = document.getElementById('extraWebhookUrl').value;
+      const extraText = document.getElementById('extraData').value.trim();
+      
+      let extraData = null;
+      if (extraText) {
+        try {
+          extraData = JSON.parse(extraText);
+        } catch (e) {
+          alert('Invalid JSON format. Please check your syntax.');
+          return;
+        }
+      }
+
+      // Send request to update webhook
+      const requestData = {
+        url: url,
+        extra: extraData
+      };
+
+      fetch('/v3/bot/' + serverToken + '/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Extra field updated successfully!');
+          closeExtraModal();
+          location.reload(); // Refresh to show changes
+        } else {
+          alert('Error updating extra field: ' + (data.status || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred while updating extra field');
+      });
+    }
+
+    // Functions for Add Webhook Modal
+    function showAddWebhookModal() {
+      // Clear form
+      document.getElementById('newWebhookUrl').value = '';
+      document.getElementById('newWebhookTrackId').value = '';
+      document.getElementById('newWebhookForwardInternal').checked = false;
+      document.getElementById('newWebhookBroadcasts').checked = true; // Default to true
+      document.getElementById('newWebhookGroups').checked = true; // Default to true
+      document.getElementById('newWebhookReadReceipts').checked = false;
+      document.getElementById('newWebhookCalls').checked = false;
+      document.getElementById('newWebhookExtra').value = '';
+      
+      document.getElementById('addWebhookModal').classList.add('is-active');
+    }
+
+    function closeAddWebhookModal() {
+      document.getElementById('addWebhookModal').classList.remove('is-active');
+    }
+
+    function saveNewWebhook() {
+      const url = document.getElementById('newWebhookUrl').value.trim();
+      const trackId = document.getElementById('newWebhookTrackId').value.trim();
+      const forwardInternal = document.getElementById('newWebhookForwardInternal').checked;
+      const broadcasts = document.getElementById('newWebhookBroadcasts').checked;
+      const groups = document.getElementById('newWebhookGroups').checked;
+      const readReceipts = document.getElementById('newWebhookReadReceipts').checked;
+      const calls = document.getElementById('newWebhookCalls').checked;
+      const extraText = document.getElementById('newWebhookExtra').value.trim();
+
+      // Validate required fields
+      if (!url) {
+        alert('Webhook URL is required');
+        return;
+      }
+
+      // Validate URL format
+      try {
+        new URL(url);
+      } catch (e) {
+        alert('Please enter a valid URL');
+        return;
+      }
+
+      // Validate extra JSON if provided
+      let extraData = null;
+      if (extraText) {
+        try {
+          extraData = JSON.parse(extraText);
+        } catch (e) {
+          alert('Invalid JSON format in Extra Data. Please check your syntax.');
+          return;
+        }
+      }
+
+      // Prepare request data
+      const requestData = {
+        url: url,
+        trackId: trackId || undefined,
+        forwardInternal: forwardInternal,
+        broadcasts: broadcasts,
+        groups: groups,
+        readReceipts: readReceipts,
+        calls: calls,
+        extra: extraData
+      };
+
+      // Send request to add webhook
+      fetch('/v3/bot/' + serverToken + '/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Webhook added successfully!');
+          closeAddWebhookModal();
+          location.reload(); // Refresh to show changes
+        } else {
+          alert('Error adding webhook: ' + (data.status || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred while adding webhook');
+      });
+    }
+  </script>
 {{ end }}

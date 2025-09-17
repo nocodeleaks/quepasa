@@ -26,13 +26,13 @@ require (
 	github.com/go-chi/chi/v5 v5.2.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
+	github.com/petermattis/goid v0.0.0-20250904145737-900bdf8bb490 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
+	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
 
@@ -48,7 +48,7 @@ require (
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sirupsen/logrus v1.9.3
 	go.mau.fi/libsignal v0.2.0 // indirect
-	go.mau.fi/util v0.9.1-0.20250912114103-419604f95907
+	go.mau.fi/util v0.9.1
 	go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/net v0.44.0 // indirect

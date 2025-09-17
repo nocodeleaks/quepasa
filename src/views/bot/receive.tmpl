@@ -1,43 +1,1067 @@
 {{ define "content" }}
   {{ $DOWNLOADPREFIX := .DownloadPrefix }}
-  {{ if .ErrorMessage }}
-    <div class="notification is-warning">
-      {{ .ErrorMessage }}
+  
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">Messages</h1>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">{{ .Count }} messages for {{ .Number }}</p>
+          </div>
+          <div class="flex items-center space-x-2 flex-shrink-0">
+            <!-- Theme Toggle Button -->
+            <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Dark Mode">
+              <i id="themeIcon" class="fas fa-moon text-sm"></i>
+            </button>
+            <a href="/form/account" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm">
+              <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+              <span class="hidden sm:inline">Back to Dashboard</span>
+              <span class="sm:hidden">Back</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
-  {{ end }}
 
-  <div class="container is-fluid container-receive">
-    <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
-    <div class="messages">
+    <!-- Error Message -->
+    {{ if .ErrorMessage }}
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div class="flex">
+            <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+            <p class="text-yellow-700 dark:text-yellow-300">{{ .ErrorMessage }}</p>
+          </div>
+        </div>
+      </div>
+    {{ end }}
+
+    <!-- Message Statistics -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2 sm:p-4">
+        <div class="grid grid-cols-4 gap-1 sm:gap-4 text-center">
+          <div>
+            <span class="text-lg sm:text-3xl font-bold text-gray-900 dark:text-white block" id="totalCount">{{ .Count }}</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Total</p>
+          </div>
+          <div>
+            <span class="text-lg sm:text-3xl font-bold text-blue-600 dark:text-blue-400 block" id="sentCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Sent</p>
+          </div>
+          <div>
+            <span class="text-lg sm:text-3xl font-bold text-green-600 dark:text-green-400 block" id="receivedCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Received</p>
+          </div>
+          <div>
+            <span class="text-lg sm:text-3xl font-bold text-red-600 dark:text-red-400 block" id="debugCount">-</span>
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 -mt-1 sm:mt-0">Debug</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="space-y-4 mb-8" id="messagesContainer">
       {{ range .Messages }}
-      <div class="message">
-        <pre id="msg-{{ .Id }}">
-          On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}  
-          Type: {{ .Type }} => Chat: {{ .Chat.Id }}{{ if .Chat.Phone }} [{{ .Chat.Phone }}]{{ end }}{{ if .Chat.LId }} LId: {{ .Chat.LId }}{{ end }}{{ if .Chat.Title }} ({{ .Chat.Title }}){{ end }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
-          Participant: {{ .Participant.Id }}{{ if .Participant.Phone }} [{{ .Participant.Phone }}]{{ end }}{{ if .Participant.LId }} LId: {{ .Participant.LId }}{{ end }}{{ if .Participant.Title }} ({{ .Participant.Title }}){{ end }}{{ end }}{{ if .TrackId }}
-          TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
-          InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .Text }}
-          Text: {{ .Text }}{{ end }}
-        </pre>
-        {{ if .Url }}
-          <div title="Url" class="url">
-            <div class="header">Url</div>
-            <div class="title">Title: <span>{{ .Url.Title }}</span></div>
-            <div class="description">Description: <span>{{ .Url.Description }}</span></div>
-            <div class="reference">Reference: <a href="{{ .Url.Reference }}">{{ .Url.Reference }}</a></div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 dark:border-gray-700 overflow-hidden hover:shadow-md ml-8 mr-8 mb-8 transition-shadow message-item {{ if .Debug }}debug-message{{ else if .FromMe }}sent-message{{ else }}received-message{{ end }}" 
+           id="msg-{{ .Id }}" 
+           data-type="{{ .Type }}" 
+           data-timestamp="{{ .Timestamp }}"
+           data-has-debug="{{ if .Debug }}true{{ else }}false{{ end }}"
+           data-from-me="{{ if .FromMe }}true{{ else }}false{{ end }}">
+        
+        <!-- Message Header -->
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 {{ if .Debug }}bg-red-50 dark:bg-red-900/20{{ else }}bg-gray-50 dark:bg-gray-700{{ end }}">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-2">
+                {{ if .FromMe }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-arrow-right mr-1"></i>Sent
+                  </span>
+                {{ else }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-arrow-left mr-1"></i>Received
+                  </span>
+                {{ end }}
+                
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ if .Debug }}bg-red-100 text-red-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                  {{ .Type }}
+                </span>
+                
+                {{ if .Edited }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    <i class="fas fa-edit mr-1"></i>Edited
+                  </span>
+                {{ end }}
+              </div>
+            </div>
+            
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <span class="flex items-center">
+                <i class="fas fa-clock mr-1"></i>
+                {{ .Timestamp }}
+              </span>
+              <span class="flex items-center">
+                <i class="fas fa-hashtag mr-1"></i>
+                {{ .Id }}
+              </span>
+            </div>
+          </div>
+        </div>
 
-            {{ if .Url.Thumbnail }}
-            <div title="Url Thumbnail" class="url-thumbnail">
-              <div class="header">Url Thumbnail</div>
-              <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" />
+        <!-- Message Content -->
+        <div class="px-6 py-4">
+          <!-- Chat Info -->
+          <div class="mb-4">
+            <div class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+              <i class="fas fa-comments"></i>
+              <span>{{ .Chat }}</span>
+              {{ if .Participant }}
+                <span class="text-gray-400">•</span>
+                <i class="fas fa-user"></i>
+                <span>{{ .Participant }}</span>
+              {{ end }}
+            </div>
+          </div>
+
+          <!-- Message Text -->
+          {{ if .Text }}
+            <div class="mb-4">
+              <div class="prose prose-sm max-w-none dark:prose-invert">
+                <div id="message-text-{{ .Id }}" class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap" data-original-text="{{ .Text }}">{{ .Text }}</div>
+              </div>
             </div>
           {{ end }}
+
+          <!-- URL Preview -->
+          {{ if .Url }}
+            <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden">
+              <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                  <i class="fas fa-link mr-2"></i>Link Preview
+                </h4>
+              </div>
+              <div class="p-4">
+                {{ if .Url.Thumbnail }}
+                  <div class="flex space-x-4">
+                    <div class="flex-shrink-0">
+                      <img src="{{ .Url.Thumbnail.GetThumbnailAsUrl|safeURL }}" alt="Preview" class="w-16 h-16 rounded-lg object-cover">
+                    </div>
+                    <div class="flex-1">
+                {{ else }}
+                  <div>
+                {{ end }}
+                  {{ if .Url.Title }}
+                    <h5 class="font-medium text-gray-900 mb-1">{{ .Url.Title }}</h5>
+                  {{ end }}
+                  {{ if .Url.Description }}
+                    <p class="text-sm text-gray-600 mb-2">{{ .Url.Description }}</p>
+                  {{ end }}
+                  <a href="{{ .Url.Reference }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+                    {{ .Url.Reference }}
+                    <i class="fas fa-external-link-alt ml-1"></i>
+                  </a>
+                {{ if .Url.Thumbnail }}
+                    </div>
+                  </div>
+                {{ else }}
+                  </div>
+                {{ end }}
+              </div>
+            </div>
+          {{ end }}
+
+          <!-- Debug Information -->
+          {{ if .Debug }}
+            <div class="mb-4 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+              <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                  <i class="fas fa-info-circle mr-2"></i>Debug Information
+                </h4>
+              </div>
+              <div class="p-4">
+                <div class="space-y-4">
+                  
+                  <!-- Reason -->
+                  {{ if .Debug.Reason }}
+                    <div>
+                      <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Reason:</span>
+                      <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Reason }}</span>
+                    </div>
+                  {{ end }}
+
+                  {{ if .Debug.Event }}
+                  <div>
+                      <span class="text-xs font-medium text-gray-700 uppercase tracking-wide">Event:</span>
+                      <span class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded ml-2">{{ .Debug.Event }}</span>
+                    </div>
+                  {{ end }}
+
+                  <!-- Debug Info -->
+                  <div>
+                    <div class="relative">
+                      <div id="debug-info-{{ .Id }}" class="debug-info-container" data-debug-info="{{ .Debug.Info | printf "%+v" }}">
+                        
+                          
+                          
+                          {{ if .Debug.Info }}
+                            
+                            <div id="debug-info-content-{{ .Id }}" class="mt-1" data-raw-info="{{ .Debug.Info | printf "%+v" }}">
+                              <pre class="text-xs bg-white p-2 rounded border overflow-x-auto"><code>{{ .Debug.Info | printf "%+v" }}</code></pre>
+                            </div>
+                          {{ end }}
+                        
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {{ end }}
+
+          <!-- Attachment -->
+          {{ if .HasAttachment }}
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <h4 class="text-sm font-medium text-gray-900 flex items-center">
+                  <i class="fas fa-paperclip mr-2"></i>Attachment
+                </h4>
+              </div>
+              <div class="p-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-file text-gray-400 text-xl"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">
+                        {{ if .Attachment.FileName }}{{ .Attachment.FileName }}{{ else }}Attachment{{ end }}
+                      </p>
+                      <p class="text-xs text-gray-500">
+                        {{ .Attachment.Mimetype }} • {{ .Attachment.FileLength }} bytes
+                      </p>
+                    </div>
+                  </div>
+                  <a href="{{ $DOWNLOADPREFIX }}{{ .Id }}" download target="_blank" 
+                     class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md {{ if .Attachment.IsValidSize }}text-blue-600 bg-blue-100 hover:bg-blue-200{{ else }}text-red-600 bg-red-100 hover:bg-red-200{{ end }} transition-colors">
+                  <i class="fas fa-download mr-2"></i>
+                  Download
+                </a>
+                </div>
+              </div>
+            </div>
+          {{ end }}
+
+          <!-- Additional Info -->
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
+              {{ if eq .Status "read" }}
+                <span class="flex items-center">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Status: Read
+                </span>
+              {{ else if eq .Status "delivered" }}
+                <span class="flex items-center">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Status: Delivered
+                </span>
+              {{ else if eq .Status "" }}
+                <span class="flex items-center">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Status: {{if .Status}}{{.Status}}{{else}}Unknown{{end}}
+                </span>
+              {{ end }}
+              {{ if .TrackId }}
+                <span class="flex items-center">
+                  <i class="fas fa-route mr-1"></i>
+                  Track ID: {{ .TrackId }}
+                </span>
+              {{ end }}
+              {{ if .InReply }}
+                <a href="#msg-{{ .InReply }}" class="flex items-center text-blue-600 hover:text-blue-800">
+                  <i class="fas fa-reply mr-1"></i>
+                  Reply to: {{ .InReply }}
+                </a>
+              {{ end }}
+              {{ if .FromHistory }}
+                <span class="flex items-center text-orange-600">
+                  <i class="fas fa-history mr-1"></i>
+                  From History
+                </span>
+              {{ end }}
+              {{ if .FromAds }}
+                <span class="flex items-center text-purple-600">
+                  <i class="fas fa-ad mr-1"></i>
+                  From Ads
+                </span>
+              {{ end }}
+            </div>
           </div>
-        {{ end }}
+        </div>
       </div>
       {{ end }}
     </div>
-    <a style="padding: 2rem;" href="/form/account">Back</a>
+
+    <!-- No Messages State -->
+    {{ if eq .Count 0 }}
+      <div class="text-center py-12">
+        <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+          <i class="fas fa-inbox text-gray-400 dark:text-gray-500 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No messages found</h3>
+        <p class="text-gray-600 dark:text-gray-300">There are no messages to display for this bot.</p>
+      </div>
+    {{ end }}
+
   </div>
-  <link href="/assets/css/container-receive.css" rel="stylesheet">
+
+  <style>
+    /* Custom scrollbar for dark mode */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: #374151;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #6b7280;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+    
+    /* JSON Code Editor Styling - Base Styles */
+    .json-code-editor {
+      font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      /* Light mode styles */
+      background: #f8f9fa;
+      color: #495057;
+      border: 1px solid #dee2e6;
+    }
+    
+    .json-code-header {
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* Light mode styles */
+      background: #e9ecef;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .json-code-title {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      /* Light mode styles */
+      color: #495057;
+    }
+    
+    .json-code-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .json-code-button {
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s;
+      /* Light mode styles */
+      background: #007bff;
+      color: white;
+    }
+    
+    .json-code-button:hover {
+      /* Light mode styles */
+      background: #0056b3;
+    }
+    
+    .json-code-button.success {
+      background: #28a745;
+    }
+    
+    .json-code-content {
+      position: relative;
+      max-height: 500px;
+      overflow: auto;
+    }
+    
+    .json-code-lines {
+      display: flex;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .json-line-numbers {
+      padding: 12px 8px;
+      text-align: right;
+      user-select: none;
+      min-width: 40px;
+      font-size: 12px;
+      /* Light mode styles */
+      background: #f1f3f4;
+      color: #6c757d;
+      border-right: 1px solid #dee2e6;
+    }
+    
+    .json-line-numbers .line-number {
+      display: block;
+      height: 19.5px;
+      line-height: 19.5px;
+    }
+    
+    .json-code-text {
+      flex: 1;
+      padding: 12px;
+      white-space: pre;
+      overflow: visible;
+      font-size: 13px;
+      line-height: 1.5;
+      /* Light mode styles */
+      background: #ffffff;
+      color: #212529;
+    }
+
+    /* Dark Mode JSON Code Editor Overrides */
+    .dark .json-code-editor {
+      background: #0d1117;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dark .json-code-header {
+      background: #161b22;
+      border-bottom-color: #30363d;
+    }
+    
+    .dark .json-code-title {
+      color: #f0f6fc;
+    }
+    
+    .dark .json-code-button {
+      background: #238636;
+      color: #ffffff;
+    }
+    
+    .dark .json-code-button:hover {
+      background: #2ea043;
+    }
+    
+    .dark .json-code-button.success {
+      background: #1a7f37;
+    }
+    
+    .dark .json-line-numbers {
+      background: #161b22;
+      color: #7d8590;
+      border-right-color: #30363d;
+    }
+    
+    .dark .json-code-text {
+      background: #0d1117;
+      color: #e6edf3;
+    }
+    
+    /* JSON Syntax Highlighting - Light Mode */
+    .json-key { 
+      color: #d73a49; 
+      font-weight: normal;
+    }
+    .json-string { 
+      color: #032f62; 
+    }
+    .json-number { 
+      color: #005cc5; 
+    }
+    .json-boolean { 
+      color: #e36209; 
+      font-weight: bold;
+    }
+    .json-null { 
+      color: #e36209; 
+      font-style: italic;
+    }
+    .json-punctuation {
+      color: #24292e;
+    }
+
+    /* JSON Syntax Highlighting - Dark Mode */
+    .dark .json-key { 
+      color: #79c0ff; 
+      font-weight: normal;
+    }
+    .dark .json-string { 
+      color: #a5d6ff; 
+    }
+    .dark .json-number { 
+      color: #79c0ff; 
+    }
+    .dark .json-boolean { 
+      color: #ff7b72; 
+      font-weight: bold;
+    }
+    .dark .json-null { 
+      color: #ff7b72; 
+      font-style: italic;
+    }
+    .dark .json-punctuation {
+      color: #e6edf3;
+    }
+    
+    /* Legacy JSON container styling */
+    .json-container {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    .json-container pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .json-container code {
+      background: none;
+      padding: 0;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    
+    /* Enhanced pre/code styling for debug info */
+    pre {
+      background: #f8f9fa !important;
+      color: #212529 !important;
+      border: 1px solid #dee2e6 !important;
+    }
+    
+    .dark pre {
+      background: #0d1117 !important;
+      color: #e6edf3 !important;
+      border: 1px solid #30363d !important;
+    }
+    
+    pre code {
+      color: inherit !important;
+      background: transparent !important;
+    }
+    
+    /* Scrollbar styling for JSON editor */
+    .json-code-content::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    .json-code-content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    .dark .json-code-content::-webkit-scrollbar-track {
+      background: #161b22;
+    }
+    
+    .json-code-content::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    
+    .dark .json-code-content::-webkit-scrollbar-thumb {
+      background: #6e7681;
+      border-radius: 4px;
+    }
+    
+    .json-code-content::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    .dark .json-code-content::-webkit-scrollbar-thumb:hover {
+      background: #8b949e;
+    }
+    
+    /* Message filtering */
+    .message-item.hidden {
+      display: none !important;
+    }
+    
+    .debug-message {
+      border-left: 4px solid #EF4444;
+    }
+    
+    .sent-message {
+      border-left: 4px solid #3B82F6;
+    }
+    
+    .received-message {
+      border-left: 4px solid #10B981;
+    }
+    
+    /* Dark mode message borders */
+    .dark .debug-message {
+      border-left-color: #f87171;
+    }
+    
+    .dark .sent-message {
+      border-left-color: #60a5fa;
+    }
+    
+    .dark .received-message {
+      border-left-color: #34d399;
+    }
+    
+    /* Toggle buttons styling */
+    .view-toggle {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      color: #495057;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .dark .view-toggle {
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+    }
+    
+    .view-toggle.active {
+      background: #007bff;
+      color: white;
+    }
+    
+    .dark .view-toggle.active {
+      background: #238636;
+      color: white;
+    }
+    
+    .view-toggle:hover {
+      background: #e9ecef;
+    }
+    
+    .dark .view-toggle:hover {
+      background: #21262d;
+    }
+    
+    .view-toggle.active:hover {
+      background: #0056b3;
+    }
+    
+    .dark .view-toggle.active:hover {
+      background: #2ea043;
+    }
+  </style>
+
+<script>
+  // ---------------------------
+  // Theme management functions
+  // ---------------------------
+  
+  // Initialize theme: loads saved preference or system setting
+  function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Apply either saved or system theme
+    applyTheme(savedTheme || systemTheme);
+  }
+
+  // Apply theme by toggling 'dark' class and updating icon
+  function applyTheme(theme) {
+    const html = document.documentElement;
+    const icon = document.getElementById('themeIcon');
+    if (theme === 'dark') {
+      html.classList.add('dark');
+      if (icon) icon.className = 'fas fa-sun text-sm';  // sun icon when dark active
+    } else {
+      html.classList.remove('dark');
+      if (icon) icon.className = 'fas fa-moon text-sm'; // moon icon when light active
+    }
+    localStorage.setItem('theme', theme);
+  }
+
+  // Toggle between light and dark modes
+  function toggleTheme() {
+    const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  }
+
+  // ---------------------------
+  // JSON utility functions
+  // ---------------------------
+
+  // Quick check if string is valid JSON
+  function isValidJSON(str) {
+    if (typeof str !== 'string') return false;
+    const t = str.trim();
+    // Must start with object or array delimiters
+    if (!t.startsWith('{') && !t.startsWith('[')) return false;
+    try { JSON.parse(t); return true; } catch { return false; }
+  }
+
+  // Beautify JSON: pretty-print with indentation
+  function beautifyJSON(str) {
+    try {
+      return JSON.stringify(JSON.parse(str), null, 2);
+    } catch {
+      // If parse fails, return original
+      return str;
+    }
+  }
+
+  // Syntax-highlight JSON keys, strings, numbers, booleans, null, punctuation
+  function highlightJSON(s) {
+    return s
+      .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+      .replace(/([{}[\],])/g, '<span class="json-punctuation">$1</span>');
+  }
+
+  // Escape HTML entities to safely show raw JSON
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // --------------------------------
+  // JSON Code Editor UI generation
+  // --------------------------------
+
+  function createJSONCodeEditor(jsonString, id, title = 'JSON') {
+    // Beautify and split into lines
+    const pretty = beautifyJSON(jsonString);
+    const lines = pretty.split('\n');
+    // Highlighted HTML and line numbers
+    const highlighted = highlightJSON(pretty);
+    const nums = lines.map((_, i) => `<span class="line-number">${i+1}</span>`).join('');
+
+    // Build editor HTML block
+    return `
+      <div class="json-code-editor" id="${id}">
+        <div class="json-code-header">
+          <div class="json-code-title">
+            <i class="fas fa-code" style="margin-right:6px"></i>
+            ${title} (${lines.length} lines)
+          </div>
+          <div class="json-code-actions">
+            <button class="json-code-button" onclick="toggleJSONView('${id}')">
+              <i class="fas fa-eye"></i> <span class="view-mode">Formatted</span>
+            </button>
+            <button class="json-code-button" onclick="copyJSONCode('${id}')">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
+        </div>
+        <div class="json-code-content">
+          <div class="json-code-lines">
+            <div class="json-line-numbers">${nums}</div>
+            <div class="json-code-text formatted-view">${highlighted}</div>
+            <div class="json-code-text raw-view" style="display:none">${escapeHtml(jsonString)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Toggle between formatted and raw views
+  function toggleJSONView(id) {
+    const cont = document.getElementById(id);
+    const fmt = cont.querySelector('.formatted-view');
+    const raw = cont.querySelector('.raw-view');
+    const mode = cont.querySelector('.view-mode');
+    if (fmt.style.display === 'none') {
+      fmt.style.display = 'block'; raw.style.display = 'none'; mode.textContent = 'Formatted';
+    } else {
+      fmt.style.display = 'none'; raw.style.display = 'block'; mode.textContent = 'Raw';
+    }
+  }
+
+  // Copy currently visible JSON text to clipboard
+  function copyJSONCode(id) {
+    const cont = document.getElementById(id);
+    const fmt = cont.querySelector('.formatted-view');
+    const raw = cont.querySelector('.raw-view');
+    const txt = fmt.style.display === 'none' ? raw.textContent : fmt.textContent;
+    navigator.clipboard.writeText(txt).catch(() => {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea'); ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
+  }
+
+  // ---------------------------
+  // Go struct parsing logic
+  // ---------------------------
+
+  // Detect if string looks like a Go struct (colon-separated without JSON delimiters)
+  function isGoStruct(str) {
+    return typeof str === 'string' && str.includes(':') &&
+           !str.trim().startsWith('{') && !str.trim().startsWith('[');
+  }
+
+  // Parse fields from a Go struct syntax string
+  function parseGoStructFields(input) {
+    let s = input.trim();
+    // Strip surrounding "Type{...}" or "&{...}" or plain { }
+    const m = s.match(/\w+\{([^}]*)\}/);
+    if (m) s = m[1].trim();
+    else if (s.startsWith('&{') && s.endsWith('}')) s = s.slice(2, -1).trim();
+    else if (s.startsWith('{') && s.endsWith('}')) s = s.slice(1, -1).trim();
+
+    // Check if the content contains excessive binary data that would make parsing impossible
+    const binaryRatio = (s.match(/\\x[0-9A-Fa-f]{2}/g) || []).length / s.length;
+    if (binaryRatio > 0.3 || /[\x00-\x08\x0E-\x1F\x7F-\xFF]/.test(s)) {
+      return [{ key: 'data', value: s, isBinary: true }];
+    }
+
+    // Regex patterns for key:value, key:"quoted", nested {...}, nested [...]
+    const patterns = [
+      /(\w+):"([^"\\]*(?:\\.[^"\\]*)*)"/g,
+      /(\w+):([^\s{}\[\]]+)(?=\s+\w+:|$)/g,
+      /(\w+):(\{[^}]*\})/g,
+      /(\w+):(\[[^]*?\])/g
+    ];
+    const fields = [];
+    const used = new Set();
+
+    patterns.forEach(pat => {
+      let mm;
+      while ((mm = pat.exec(s)) !== null) {
+        const [full, key, val] = mm;
+        const start = mm.index, end = start + full.length;
+        // Skip overlapping matches
+        if ([...Array(end - start).keys()].some(i => used.has(start + i))) continue;
+        // Skip keys that contain binary data
+        if (hasBinaryData(key)) continue;
+        // Mark used positions
+        for (let i = start; i < end; i++) used.add(i);
+        fields.push({ key, value: val, isBinary: hasBinaryData(val) });
+      }
+    });
+
+    // Fallback splitting logic if no patterns matched
+    if (!fields.length) {
+      let parts = [];
+      let buf = '', inQ = false, brace = 0, bracket = 0;
+      for (let ch of s) {
+        if (ch === '"' && buf.slice(-1) !== '\\') inQ = !inQ;
+        else if (!inQ) {
+          if (ch === '{') brace++;
+          if (ch === '}') brace--;
+          if (ch === '[') bracket++;
+          if (ch === ']') bracket--;
+        }
+        if (!inQ && brace === 0 && bracket === 0 && ch === ' ') {
+          if (buf) parts.push(buf);
+          buf = '';
+        } else buf += ch;
+      }
+      if (buf) parts.push(buf);
+      
+      // Filter out parts with binary keys
+      const validParts = parts.filter(p => {
+        const idx = p.indexOf(':');
+        if (idx <= 0) return false;
+        const key = p.slice(0, idx);
+        return !hasBinaryData(key) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key);
+      });
+      
+      if (validParts.length === 0) {
+        // If no valid parts found, treat entire content as binary data
+        return [{ key: 'raw_data', value: s, isBinary: true }];
+      }
+      
+      validParts.forEach(p => {
+        const idx = p.indexOf(':');
+        fields.push({
+          key: p.slice(0, idx),
+          value: p.slice(idx + 1),
+          isBinary: hasBinaryData(p.slice(idx + 1))
+        });
+      });
+    }
+    return fields;
+  }
+
+  // Detect common binary patterns (hex escapes, nulls, or base64 data)
+  function hasBinaryData(str) {
+    return /\\x[0-9A-Fa-f]{2}/.test(str) || 
+           /\\0/.test(str) || 
+           /[\x00-\x08\x0E-\x1F\x7F-\xFF]/.test(str) ||
+           (str.length > 100 && /^[A-Za-z0-9+/=]+$/.test(str.trim()));
+  }
+
+  // Detect if string is likely a base64 thumbnail
+  function isThumbnailData(str, key) {
+    const isThumbKey = /thumb|image|photo|picture|avatar/i.test(key || '');
+    const isBase64 = str.length > 100 && /^[A-Za-z0-9+/=]+$/.test(str.trim());
+    const hasImageHeader = /^\/9j\/|^iVBORw0KGgo|^R0lGODlh|^UklGR/.test(str); // JPEG, PNG, GIF, WebP headers
+    return isThumbKey && (isBase64 || hasImageHeader);
+  }
+
+  // Get appropriate placeholder for binary data
+  function getBinaryPlaceholder(str, key) {
+    if (isThumbnailData(str, key)) {
+      return "[THUMBNAIL_BASE64_NOT_DISPLAYABLE]";
+    }
+    return "[BINARY_DATA_NOT_DISPLAYABLE]";
+  }
+
+  // ----------------------------------------------------
+  // Convert Go struct or JSON-escaped fields to object
+  // ----------------------------------------------------
+  function convertToJSONWithBinaryPlaceholders(raw, id) {
+    // First check if this is primarily binary data
+    if (isValidJSON(raw)) {
+      try {
+        const parsed = JSON.parse(raw);
+        const cleaned = cleanBinaryFromObject(parsed);
+        return createJSONCodeEditor(JSON.stringify(cleaned, null, 2), id, 'JSON Info');
+      } catch (e) {
+        // Fall through to Go struct parsing
+      }
+    }
+    
+    const fields = parseGoStructFields(raw);
+    const obj = {};
+    
+    fields.forEach(f => {
+      let v = f.value; 
+      // 1) Unescape JSON-escaped sequences
+      if (v.includes('\\"')) {
+        v = v.replace(/\\n/g, '\n')
+             .replace(/\\r/g, '\r')
+             .replace(/\\t/g, '\t')
+             .replace(/\\"/g, '"')
+             .replace(/\\\\/g, '\\');
+      }
+      // 2) If still valid JSON, parse it as nested object
+      let isJSONInner = false, parsedInner;
+      if ((v.startsWith('{') && v.endsWith('}')) || (v.startsWith('[') && v.endsWith(']'))) {
+        try { 
+          parsedInner = JSON.parse(v); 
+          parsedInner = cleanBinaryFromObject(parsedInner);
+          isJSONInner = true; 
+        } catch {};
+      }
+      let val;
+      if (isJSONInner) {
+        val = parsedInner;
+      } else if (hasBinaryData(v)) {
+        val = getBinaryPlaceholder(v, f.key);
+      } else {
+        const low = v.toLowerCase();
+        if (low === 'true') val = true;
+        else if (low === 'false') val = false;
+        else if (low === 'null' || v === '<nil>') val = null;
+        else if (!isNaN(v) && v.trim() !== '') val = parseFloat(v);
+        else val = v;
+      }
+      // 3) Accumulate duplicate keys into arrays
+      if (obj.hasOwnProperty(f.key)) {
+        if (!Array.isArray(obj[f.key])) obj[f.key] = [obj[f.key]];
+        obj[f.key].push(val);
+      } else {
+        obj[f.key] = val;
+      }
+    });
+    // Return rendered editor
+    return createJSONCodeEditor(JSON.stringify(obj, null, 2), id, 'Info');
+  }
+
+  // Clean binary data from parsed JSON objects
+  function cleanBinaryFromObject(obj) {
+    if (Array.isArray(obj)) {
+      return obj.map(cleanBinaryFromObject);
+    } else if (obj !== null && typeof obj === 'object') {
+      const cleaned = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'string' && hasBinaryData(value)) {
+          cleaned[key] = getBinaryPlaceholder(value, key);
+        } else if (typeof value === 'object') {
+          cleaned[key] = cleanBinaryFromObject(value);
+        } else {
+          cleaned[key] = value;
+        }
+      }
+      return cleaned;
+    }
+    return obj;
+  }
+
+  // ---------------------------
+  // DOM processing functions
+  // ---------------------------
+
+  // Find and render any valid JSON in message text
+  function processMessageText() {
+    document.querySelectorAll('[id^="message-text-"]').forEach(el => {
+      const txt = el.getAttribute('data-original-text') || el.textContent.trim();
+      if (isValidJSON(txt)) {
+        el.innerHTML = createJSONCodeEditor(txt, el.id, 'JSON Message');
+        el.classList.remove('whitespace-pre-wrap');
+      }
+    });
+  }
+
+  // Find and render Go struct or JSON in debug-info
+  function processDebugInfo() {
+    document.querySelectorAll('[id^="debug-info-content-"]').forEach(el => {
+      const raw = el.getAttribute('data-raw-info');
+      if (!raw) return;
+      if (isGoStruct(raw) || isValidJSON(raw)) {
+        el.innerHTML = convertToJSONWithBinaryPlaceholders(raw, el.id);
+      }
+    });
+  }
+
+  // Update counts of sent/received/debug messages
+  function updateMessageCounts() {
+    let sent = 0, recv = 0, dbg = 0;
+    document.querySelectorAll('.message-item').forEach(m => {
+      if (m.getAttribute('data-has-debug') === 'true') dbg++;
+      if (m.getAttribute('data-from-me') === 'true') sent++; else recv++;
+    });
+    document.getElementById('sentCount').textContent = sent;
+    document.getElementById('receivedCount').textContent = recv;
+    document.getElementById('debugCount').textContent = dbg;
+  }
+
+  // Initialize everything on DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeTheme();
+    setTimeout(() => {
+      document.querySelectorAll('.message-item').forEach(m => { m.classList.remove('hidden'); m.style.display = ''; });
+      processMessageText();
+      processDebugInfo();
+      updateMessageCounts();
+    }, 100);
+  });
+</script>
+
 {{ end }}

@@ -24,6 +24,8 @@ replace github.com/nocodeleaks/quepasa/sipproxy => ./sipproxy
 
 replace github.com/nocodeleaks/quepasa/environment => ./environment
 
+replace github.com/nocodeleaks/quepasa/docs => ./docs
+
 go 1.24.0
 
 toolchain go1.24.2
@@ -78,6 +80,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/docs v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
@@ -94,7 +97,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/swaggo/http-swagger v1.3.4 // indirect
-	github.com/swaggo/swag v1.16.2 // indirect
+	github.com/swaggo/swag v1.16.4 // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
 	github.com/teivah/onecontext v1.3.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.30 // indirect

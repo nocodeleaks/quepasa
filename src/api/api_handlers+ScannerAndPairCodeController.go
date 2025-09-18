@@ -12,6 +12,15 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+// ScannerController generates QR codes for WhatsApp Web authentication
+// @Summary Generate QR code
+// @Description Generates a QR code for WhatsApp Web authentication scanning
+// @Tags Connection
+// @Produce json
+// @Success 200 {object} models.QpResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /scan [get]
 func ScannerController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
@@ -84,6 +93,16 @@ func ValidateUsername(r *http.Request) (username string, ex ApiException) {
 	return
 }
 
+// PairCodeController generates pairing codes for WhatsApp authentication  
+// @Summary Generate pairing code
+// @Description Generates a pairing code for WhatsApp authentication using phone number
+// @Tags Connection
+// @Produce json
+// @Param phone query string true "Phone number for pairing"
+// @Success 200 {object} models.QpResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /paircode [get]
 func PairCodeController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

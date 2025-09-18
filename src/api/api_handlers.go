@@ -196,6 +196,17 @@ func RegisterAPIControllers(r chi.Router) {
 	}
 }
 
+// CommandController manages bot server commands
+// @Summary Execute bot commands
+// @Description Execute control commands for the bot server (start, stop, restart, status)
+// @Tags Bot
+// @Accept json
+// @Produce json
+// @Param action query string true "Command action" Enums(start, stop, restart, status)
+// @Success 200 {object} models.QpResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /command [get]
 func CommandController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

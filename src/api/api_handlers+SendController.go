@@ -16,7 +16,30 @@ import (
 // -------------------------- PUBLIC METHODS
 //region TYPES OF SENDING
 
-// SendAPIHandler renders route "/v3/bot/{token}/send"
+// SendAPIHandler renders route "/send" and "/sendencoded"
+// @Summary Send any type of message (text, file, poll, base64 content)
+// @Description Send text, file, poll, or any type of message to WhatsApp. Supports polls with JSON format in text field. For /sendencoded route, use 'content' field with base64 encoded file data.
+// @Description
+// @Description **Poll Example:**
+// @Description ```json
+// @Description {
+// @Description   "chatId": "5511999999999@s.whatsapp.net",
+// @Description   "poll": {
+// @Description     "question": "What programming languages do you know?",
+// @Description     "options": ["JavaScript", "Python", "Go", "Java", "C#", "Ruby"],
+// @Description     "selections": 3
+// @Description   }
+// @Description }
+// @Description ```
+// @Tags Send
+// @Accept json
+// @Produce json
+// @Param request body object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int}} false "Send request body (use 'content' field for base64 encoded files, 'url' for file URL, 'poll' for poll JSON)"
+// @Success 200 {object} models.QpSendResponse
+// @Failure 400 {object} models.QpSendResponse
+// @Security ApiKeyAuth
+// @Router /send [post]
+// @Router /sendencoded [post]
 func SendAny(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 

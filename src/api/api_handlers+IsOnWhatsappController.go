@@ -11,6 +11,17 @@ import (
 
 //region CONTROLLER - CONTACTS
 
+// IsOnWhatsappController checks if phone numbers are registered on WhatsApp
+// @Summary Check WhatsApp registration
+// @Description Checks if provided phone numbers are registered on WhatsApp
+// @Tags Contacts
+// @Accept json
+// @Produce json
+// @Param request body object{phones=[]string} true "Phone numbers to check"
+// @Success 200 {object} models.QpIsOnWhatsappResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /isonwhatsapp [post]
 func IsOnWhatsappController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json

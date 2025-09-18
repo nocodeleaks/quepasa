@@ -11,6 +11,17 @@ import (
 )
 
 // ReceiveAPIHandler renders route GET "/{version}/bot/{token}/receive"
+// @Summary Receive messages
+// @Description Retrieves pending messages from WhatsApp with optional timestamp filtering
+// @Tags Message
+// @Accept json
+// @Produce json
+// @Param timestamp query string false "Timestamp filter for messages"
+// @Success 200 {object} models.QpReceiveResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /v3/bot/{token}/receive [get]
+// @Router /v2/bot/{token}/receive [get]
 func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpReceiveResponse{}
 
@@ -67,24 +78,31 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-/*
-<summary>
-
-	Renders route POST "/{version}/bot/{token}/sendbinary/{chatid}/{filename}/{text}"
-
-	Any of then, at this order of priority
-	Path parameters: {chatid}
-	Path parameters: {filename}
-	Path parameters: {text} only images
-	Url parameters: ?chatid={chatid}
-	Url parameters: ?filename={filename}
-	Url parameters: ?text={text} only images
-	Header parameters: X-QUEPASA-CHATID = {chatid}
-	Header parameters: X-QUEPASA-FILENAME = {filename}
-	Header parameters: X-QUEPASA-TEXT = {text} only images
-
-</summary>
-*/
+// SendDocumentFromBinary handles route "/sendbinary"
+// @Summary Send binary file directly from request body
+// @Description Send any binary file (audio, video, image, document) using raw binary data in request body. Supports multiple parameter methods (path, query, headers).
+// @Tags Send
+// @Accept application/octet-stream,audio/mpeg,video/mp4,image/jpeg,image/png,application/pdf
+// @Produce json
+// @Param chatid path string false "Chat ID (path parameter)"
+// @Param filename path string false "File name (path parameter)"
+// @Param text path string false "Caption text for images (path parameter)"
+// @Param chatId query string false "Chat ID (query parameter)"
+// @Param filename query string false "File name (query parameter)" 
+// @Param text query string false "Caption text for images (query parameter)"
+// @Param inreply query string false "Message ID to reply to"
+// @Param X-QUEPASA-CHATID header string false "Chat ID (header parameter)"
+// @Param X-QUEPASA-FILENAME header string false "File name (header parameter)"
+// @Param X-QUEPASA-TEXT header string false "Caption text for images (header parameter)"
+// @Param X-QUEPASA-TRACKID header string false "Track ID for message tracking"
+// @Param Content-Type header string true "MIME type of the binary file (e.g., audio/mpeg, video/mp4, image/jpeg)"
+// @Success 200 {object} models.QpSendResponse
+// @Failure 400 {object} models.QpSendResponse
+// @Security ApiKeyAuth
+// @Router /sendbinary [post]
+// @Router /sendbinary/{chatid} [post]
+// @Router /sendbinary/{chatid}/{filename} [post]
+// @Router /sendbinary/{chatid}/{filename}/{text} [post]
 func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpSendResponse{}
 

@@ -12,6 +12,19 @@ import (
 
 //region CONTROLLER - Information
 
+// InformationController manages bot/server information and settings
+// @Summary Manage bot information
+// @Description Get, update, or delete bot/server information and settings
+// @Tags Information
+// @Accept json
+// @Produce json
+// @Param request body object{settings=object} false "Settings update (for PATCH)"
+// @Success 200 {object} models.QpInfoResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /info [get]
+// @Router /info [patch]
+// @Router /info [delete]
 func InformationController(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {

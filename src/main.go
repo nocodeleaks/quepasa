@@ -9,13 +9,25 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 
+	_ "github.com/nocodeleaks/quepasa/docs" // Swagger docs
 	logrus "github.com/sirupsen/logrus"
 )
 
-// @title chi-swagger example APIs
-// @version 1.0
-// @description chi-swagger example APIs
+// @title QuePasa WhatsApp API
+// @version 4.0.0
+// @description QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs for WhatsApp messaging integration
+// @termsOfService https://github.com/nocodeleaks/quepasa
+// @contact.name QuePasa Support
+// @contact.url https://github.com/nocodeleaks/quepasa
+// @contact.email support@quepasa.io
+// @license.name MIT
+// @license.url https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
+// @host localhost:31000
 // @BasePath /
+// @schemes http https
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-QUEPASA-TOKEN
 func main() {
 
 	// loading environment variables from .env file

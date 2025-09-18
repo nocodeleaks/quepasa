@@ -11,6 +11,17 @@ import (
 
 //region CONTROLLER - Message
 
+// GetMessageController retrieves a specific message by ID
+// @Summary Get message
+// @Description Retrieves a specific message by its ID
+// @Tags Message
+// @Accept json
+// @Produce json
+// @Param messageid path string true "Message ID"
+// @Success 200 {object} models.QpMessageResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /message/{messageid} [get]
 func GetMessageController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json
@@ -48,6 +59,17 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RevokeController revokes/deletes a message
+// @Summary Revoke message
+// @Description Revokes or deletes a specific message by its ID
+// @Tags Message
+// @Accept json
+// @Produce json
+// @Param messageid path string true "Message ID"
+// @Success 200 {object} models.QpMessageResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /message/{messageid} [delete]
 func RevokeController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json
@@ -94,6 +116,17 @@ func RevokeController(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// EditMessageController edits the content of an existing message
+// @Summary Edit message
+// @Description Edits the content of an existing message by its ID
+// @Tags Message
+// @Accept json
+// @Produce json
+// @Param request body object{content=string,messageId=string} true "Message edit request"
+// @Success 200 {object} models.QpResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /edit [put]
 func EditMessageController(w http.ResponseWriter, r *http.Request) {
 
 	response := &models.QpResponse{}

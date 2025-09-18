@@ -97,7 +97,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/swaggo/http-swagger v1.3.4 // indirect
-	github.com/swaggo/swag v1.16.4 // indirect
+	github.com/swaggo/swag v1.16.6 // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
 	github.com/teivah/onecontext v1.3.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
@@ -108,7 +108,9 @@ require (
 	go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
+	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect

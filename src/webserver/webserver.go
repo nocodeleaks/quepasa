@@ -192,14 +192,9 @@ func ServeSignalR(r chi.Router) {
 
 func ServeSwaggerUi(r chi.Router) {
 	log.Debug("starting swaggerUi service")
-
-	// Configure Swagger UI to hide models/schemas section
-	r.Mount("/swagger", httpSwagger.Handler(
-		httpSwagger.URL("doc.json"), // The url pointing to API definition
-		httpSwagger.UIConfig(map[string]string{
-			"defaultModelsExpandDepth": "-1", // Hide models section
-		}),
-	))
+	
+	// Simple Swagger UI configuration
+	r.Mount("/swagger", httpSwagger.WrapHandler)
 }
 
 func ServeMetrics(r chi.Router) {

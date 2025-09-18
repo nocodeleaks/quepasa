@@ -192,7 +192,7 @@ func ServeSignalR(r chi.Router) {
 
 func ServeSwaggerUi(r chi.Router) {
 	log.Debug("starting swaggerUi service")
-	
+
 	// Simple Swagger UI configuration
 	r.Mount("/swagger", httpSwagger.WrapHandler)
 }

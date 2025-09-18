@@ -68,22 +68,6 @@ var WebhookSuccess = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Total successful webhooks (HTTP 200)",
 })
 
-// Connection and server metrics
-var ConnectionsActive = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "quepasa_connections_active",
-	Help: "Number of active WhatsApp connections",
-})
-
-var ConnectionsConnected = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "quepasa_connections_connected",
-	Help: "Number of connected WhatsApp connections",
-})
-
-var ConnectionsDisconnected = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "quepasa_connections_disconnected",
-	Help: "Number of disconnected WhatsApp connections",
-})
-
 // Message type metrics
 var MessagesByType = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_messages_by_type_total",
@@ -101,37 +85,37 @@ var APIProcessingTime = promauto.NewHistogramVec(prometheus.HistogramOpts{
 var RabbitMQMessagesPublished = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_messages_published_total",
 	Help: "Total messages published to RabbitMQ",
-}, []string{"queue", "exchange", "routing_key"})
+}, []string{"queue", "exchange", "routing_key", "message_type"})
 
 var RabbitMQMessagesConsumed = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_messages_consumed_total",
 	Help: "Total messages consumed from RabbitMQ",
-}, []string{"queue", "consumer_tag"})
+}, []string{"queue", "consumer_tag", "message_type"})
 
 var RabbitMQMessagesAcknowledged = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_messages_acknowledged_total",
 	Help: "Total messages acknowledged in RabbitMQ",
-}, []string{"queue"})
+}, []string{"queue", "message_type"})
 
 var RabbitMQMessagesRejected = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_messages_rejected_total",
 	Help: "Total messages rejected in RabbitMQ",
-}, []string{"queue", "reason"})
+}, []string{"queue", "reason", "message_type"})
 
 var RabbitMQMessagesRequeued = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_messages_requeued_total",
 	Help: "Total messages requeued in RabbitMQ",
-}, []string{"queue"})
+}, []string{"queue", "message_type"})
 
 var RabbitMQPublishErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_publish_errors_total",
 	Help: "Total RabbitMQ publish errors",
-}, []string{"queue", "exchange", "error_type"})
+}, []string{"queue", "exchange", "error_type", "message_type"})
 
 var RabbitMQConsumeErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quepasa_rabbitmq_consume_errors_total",
 	Help: "Total RabbitMQ consume errors",
-}, []string{"queue", "error_type"})
+}, []string{"queue", "error_type", "message_type"})
 
 var RabbitMQConnectionStatus = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "quepasa_rabbitmq_connection_status",
@@ -156,19 +140,19 @@ var RabbitMQQueueConsumers = promauto.NewGaugeVec(prometheus.GaugeOpts{
 var RabbitMQPublishDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "quepasa_rabbitmq_publish_duration_seconds",
 	Help:    "Time spent publishing messages to RabbitMQ",
-	Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5},
-}, []string{"queue", "exchange"})
+	Buckets: []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0},
+}, []string{"queue", "exchange", "message_type"})
 
 var RabbitMQConsumeDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "quepasa_rabbitmq_consume_duration_seconds",
 	Help:    "Time spent processing consumed messages from RabbitMQ",
-	Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0},
+	Buckets: []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0},
 }, []string{"queue", "message_type"})
 
 var RabbitMQMessageSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "quepasa_rabbitmq_message_size_bytes",
 	Help:    "Size of messages published to RabbitMQ in bytes",
-	Buckets: []float64{100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000},
+	Buckets: []float64{50, 100, 250, 500, 750, 1000, 1500, 2500, 5000, 10000, 25000, 50000},
 }, []string{"queue", "message_type"})
 
 var RabbitMQConnectionReconnects = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -208,38 +192,38 @@ func ObserveAPIProcessingTime(method, endpoint, statusCode string, duration floa
 // RabbitMQ helper functions
 
 // RecordRabbitMQMessagePublished increments the published messages counter
-func RecordRabbitMQMessagePublished(queue, exchange, routingKey string) {
-	RabbitMQMessagesPublished.WithLabelValues(queue, exchange, routingKey).Inc()
+func RecordRabbitMQMessagePublished(queue, exchange, routingKey, messageType string) {
+	RabbitMQMessagesPublished.WithLabelValues(queue, exchange, routingKey, messageType).Inc()
 }
 
 // RecordRabbitMQMessageConsumed increments the consumed messages counter
-func RecordRabbitMQMessageConsumed(queue, consumerTag string) {
-	RabbitMQMessagesConsumed.WithLabelValues(queue, consumerTag).Inc()
+func RecordRabbitMQMessageConsumed(queue, consumerTag, messageType string) {
+	RabbitMQMessagesConsumed.WithLabelValues(queue, consumerTag, messageType).Inc()
 }
 
 // RecordRabbitMQMessageAcknowledged increments the acknowledged messages counter
-func RecordRabbitMQMessageAcknowledged(queue string) {
-	RabbitMQMessagesAcknowledged.WithLabelValues(queue).Inc()
+func RecordRabbitMQMessageAcknowledged(queue, messageType string) {
+	RabbitMQMessagesAcknowledged.WithLabelValues(queue, messageType).Inc()
 }
 
 // RecordRabbitMQMessageRejected increments the rejected messages counter
-func RecordRabbitMQMessageRejected(queue, reason string) {
-	RabbitMQMessagesRejected.WithLabelValues(queue, reason).Inc()
+func RecordRabbitMQMessageRejected(queue, reason, messageType string) {
+	RabbitMQMessagesRejected.WithLabelValues(queue, reason, messageType).Inc()
 }
 
 // RecordRabbitMQMessageRequeued increments the requeued messages counter
-func RecordRabbitMQMessageRequeued(queue string) {
-	RabbitMQMessagesRequeued.WithLabelValues(queue).Inc()
+func RecordRabbitMQMessageRequeued(queue, messageType string) {
+	RabbitMQMessagesRequeued.WithLabelValues(queue, messageType).Inc()
 }
 
 // RecordRabbitMQPublishError increments the publish error counter
-func RecordRabbitMQPublishError(queue, exchange, errorType string) {
-	RabbitMQPublishErrors.WithLabelValues(queue, exchange, errorType).Inc()
+func RecordRabbitMQPublishError(queue, exchange, errorType, messageType string) {
+	RabbitMQPublishErrors.WithLabelValues(queue, exchange, errorType, messageType).Inc()
 }
 
 // RecordRabbitMQConsumeError increments the consume error counter
-func RecordRabbitMQConsumeError(queue, errorType string) {
-	RabbitMQConsumeErrors.WithLabelValues(queue, errorType).Inc()
+func RecordRabbitMQConsumeError(queue, errorType, messageType string) {
+	RabbitMQConsumeErrors.WithLabelValues(queue, errorType, messageType).Inc()
 }
 
 // SetRabbitMQConnectionStatus sets the connection status (1 = connected, 0 = disconnected)
@@ -263,8 +247,8 @@ func SetRabbitMQQueueConsumers(queue string, consumers float64) {
 }
 
 // ObserveRabbitMQPublishDuration records the time spent publishing messages
-func ObserveRabbitMQPublishDuration(queue, exchange string, duration float64) {
-	RabbitMQPublishDuration.WithLabelValues(queue, exchange).Observe(duration)
+func ObserveRabbitMQPublishDuration(queue, exchange, messageType string, duration float64) {
+	RabbitMQPublishDuration.WithLabelValues(queue, exchange, messageType).Observe(duration)
 }
 
 // ObserveRabbitMQConsumeDuration records the time spent processing consumed messages
@@ -280,6 +264,13 @@ func ObserveRabbitMQMessageSize(queue, messageType string, sizeBytes float64) {
 // RecordRabbitMQConnectionReconnect increments the reconnection counter
 func RecordRabbitMQConnectionReconnect(connectionName, reason string) {
 	RabbitMQConnectionReconnects.WithLabelValues(connectionName, reason).Inc()
+}
+
+// UpdateConnectionMetricsFromService updates connection metrics based on current service state
+func UpdateConnectionMetricsFromService() {
+	// This will be called by the models package to update metrics
+	// We need to import models package or use dependency injection to avoid circular imports
+	// For now, we'll implement this via the health controller's updateConnectionMetrics function
 }
 
 // Message processing helper functions

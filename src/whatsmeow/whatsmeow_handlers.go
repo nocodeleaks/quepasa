@@ -253,9 +253,6 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 		logentry.Info("connection established - assuming history sync period will start")
 
-		// Update connection metrics
-		metrics.ConnectionsConnected.Inc()
-
 		if source.Client != nil {
 			// zerando contador de tentativas de reconexão
 			// importante para zerar o tempo entre tentativas em caso de erro
@@ -286,9 +283,6 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		} else {
 			logentry.Warn(msgDisconnected)
 		}
-
-		// Update connection metrics
-		metrics.ConnectionsDisconnected.Inc()
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
 			go source.WAHandlers.OnDisconnected()

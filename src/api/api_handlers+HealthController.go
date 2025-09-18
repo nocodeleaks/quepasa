@@ -6,7 +6,6 @@ import (
 	"time"
 
 	api "github.com/nocodeleaks/quepasa/api/models"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -40,9 +39,6 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		// Calculate statistics
 		stats := calculateHealthStats(healthItems)
 		response.Stats = &stats
-
-		// Update connection metrics based on health data
-		updateConnectionMetrics(healthItems)
 
 		// Set success to true only if all servers are healthy
 		response.Success = stats.Unhealthy == 0 && stats.Total > 0
@@ -145,25 +141,6 @@ func boolToFloat(b bool) float64 {
 		return 1.0
 	}
 	return 0.0
-}
-
-// updateConnectionMetrics updates connection metrics based on health data
-func updateConnectionMetrics(healthItems []models.QpHealthResponseItem) {
-	var activeConnections, connectedConnections, disconnectedConnections float64
-
-	for _, item := range healthItems {
-		activeConnections++
-		if item.GetHealth() {
-			connectedConnections++
-		} else {
-			disconnectedConnections++
-		}
-	}
-
-	// Update gauge metrics
-	metrics.ConnectionsActive.Set(activeConnections)
-	metrics.ConnectionsConnected.Set(connectedConnections)
-	metrics.ConnectionsDisconnected.Set(disconnectedConnections)
 }
 
 //endregion

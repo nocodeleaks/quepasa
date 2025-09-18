@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	library "github.com/nocodeleaks/quepasa/library"
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -376,6 +377,9 @@ func (source *QpWhatsappServer) Start() (err error) {
 
 	// Atualizando manipuladores de eventos
 	source.connection.UpdateHandler(source.Handler)
+
+	// Initialize RabbitMQ connections for this server
+	source.InitializeRabbitMQConnections()
 
 	logentry.Infof("requesting connection ...")
 	err = source.connection.Connect()
@@ -981,6 +985,36 @@ func (source *QpWhatsappServer) GetWebhookDispatchings() []*QpDispatching {
 // GetWebhooks returns webhook dispatchings converted to QpWebhook format for interface compatibility
 func (source *QpWhatsappServer) GetWebhooks() []*QpWebhook {
 	return source.QpDataDispatching.GetWebhooks()
+}
+
+// InitializeRabbitMQConnections initializes all RabbitMQ connections for this server
+func (source *QpWhatsappServer) InitializeRabbitMQConnections() {
+	logentry := source.GetLogger()
+
+	// Get all RabbitMQ configurations for this server
+	configs := source.GetRabbitMQConfigs()
+
+	if len(configs) == 0 {
+		logentry.Debug("no RabbitMQ configurations found for this server")
+		return
+	}
+
+	logentry.Infof("initializing %d RabbitMQ connection(s) for server", len(configs))
+
+	for _, config := range configs {
+		if config.ConnectionString != "" {
+			logentry.Infof("initializing RabbitMQ connection: %s", config.ConnectionString)
+
+			// Import rabbitmq package and get client to initialize connection
+			// This will create the connection pool if it doesn't exist
+			client := rabbitmq.GetRabbitMQClient(config.ConnectionString)
+			if client != nil {
+				logentry.Infof("RabbitMQ connection initialized successfully: %s", config.ConnectionString)
+			} else {
+				logentry.Warnf("failed to initialize RabbitMQ connection: %s", config.ConnectionString)
+			}
+		}
+	}
 }
 
 //#endregion

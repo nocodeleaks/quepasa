@@ -81,6 +81,9 @@ func newRouter() chi.Router {
 	// Metrics
 	ServeMetrics(r)
 
+	// Dashboard
+	ServeDashboard(r)
+
 	return r
 }
 
@@ -195,4 +198,9 @@ func ServeSwaggerUi(r chi.Router) {
 func ServeMetrics(r chi.Router) {
 	log.Debug("starting metrics service")
 	r.Handle("/metrics", promhttp.Handler())
+}
+
+func ServeDashboard(r chi.Router) {
+	log.Debug("starting dashboard service")
+	r.Get("/dashboard", DashboardHandler)
 }

@@ -273,7 +273,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
 
 		// Record RabbitMQ publish error
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "client_unavailable")
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "client_unavailable", message.Type.String())
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {
@@ -289,7 +289,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Warnf("QuePasa setup not ready yet, message will be cached: %s", err.Error())
 		// Don't return error - let the publish method handle caching
 		// Record as warning but not as error since message will be cached
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "setup_not_ready")
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "setup_not_ready", message.Type.String())
 	}
 
 	// Publish to QuePasa Exchange with routing key
@@ -302,7 +302,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached", source.ConnectionString)
 
 		// Record RabbitMQ publish error - connection lost/cached
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "connection_lost_cached")
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "connection_lost_cached", message.Type.String())
 
 		// Mark as failure even though message was cached
 		currentTime := time.Now().UTC()
@@ -310,9 +310,9 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		source.Success = nil
 
 		// Still record metrics since message was processed
-		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey)
+		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
 		duration := time.Since(startTime)
-		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, duration.Seconds())
+		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, message.Type.String(), duration.Seconds())
 		if payloadSizeBytes > 0 {
 			messageType := message.Type.String()
 			metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
@@ -323,11 +323,11 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	}
 
 	// Always increment RabbitMQ messages published counter
-	metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey)
+	metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
 
 	// Record publish duration
 	duration := time.Since(startTime)
-	metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, duration.Seconds())
+	metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, message.Type.String(), duration.Seconds())
 
 	// Record message size if we have it
 	if payloadSizeBytes > 0 {

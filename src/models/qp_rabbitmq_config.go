@@ -139,7 +139,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 			logentry.Errorf("failed to ensure QuePasa exchange and queues: %s", err.Error())
 
 			// Record RabbitMQ publish error
-			metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "setup_failed")
+			metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "setup_failed", message.Type.String())
 			return err
 		}
 
@@ -148,11 +148,11 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		client.PublishQuePasaMessage(routingKey, payload)
 
 		// Always increment RabbitMQ messages published counter
-		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey)
+		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
 
 		// Record publish duration
 		duration := time.Since(startTime)
-		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, duration.Seconds())
+		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, message.Type.String(), duration.Seconds())
 
 		// Record message size if we have it
 		if payloadSizeBytes > 0 {
@@ -170,7 +170,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
 
 		// Record RabbitMQ publish error
-		metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "client_unavailable")
+		metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "client_unavailable", message.Type.String())
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {

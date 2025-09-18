@@ -30,7 +30,7 @@ import (
 // @Tags Download
 // @Produce application/octet-stream
 // @Param messageid path string false "Message ID (path parameter)"
-// @Param id query string false "Message ID (query parameter)" 
+// @Param id query string false "Message ID (query parameter)"
 // @Param messageid query string false "Message ID (query parameter alternate)"
 // @Param cache query string false "Use cached content"
 // @Param X-QUEPASA-MESSAGEID header string false "Message ID (header parameter)"

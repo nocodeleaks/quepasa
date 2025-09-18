@@ -88,7 +88,7 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 // @Param filename path string false "File name (path parameter)"
 // @Param text path string false "Caption text for images (path parameter)"
 // @Param chatId query string false "Chat ID (query parameter)"
-// @Param filename query string false "File name (query parameter)" 
+// @Param filename query string false "File name (query parameter)"
 // @Param text query string false "Caption text for images (query parameter)"
 // @Param inreply query string false "Message ID to reply to"
 // @Param X-QUEPASA-CHATID header string false "Chat ID (header parameter)"

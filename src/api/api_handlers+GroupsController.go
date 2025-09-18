@@ -440,12 +440,12 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 }
 
 // GroupMembershipRequestsController handles retrieving and managing join requests for groups
-// @Summary Handle group join requests  
+// @Summary Handle group join requests
 // @Description Get, approve, or reject join requests for WhatsApp groups
 // @Tags Groups
 // @Accept json
 // @Produce json
-// @Param request body object{group_jid=string,participants=[]string,action=string} true "Membership request" 
+// @Param request body object{group_jid=string,participants=[]string,action=string} true "Membership request"
 // @Param group_jid query string false "Group JID (for GET requests)"
 // @Success 200 {object} models.QpRequestResponse
 // @Failure 400 {object} models.QpResponse
@@ -595,7 +595,7 @@ func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 
 // LeaveGroupController allows the bot to leave a WhatsApp group
 // @Summary Leave group
-// @Description Leave a specific WhatsApp group  
+// @Description Leave a specific WhatsApp group
 // @Tags Groups
 // @Accept json
 // @Produce json

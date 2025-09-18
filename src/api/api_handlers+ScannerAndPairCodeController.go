@@ -93,7 +93,7 @@ func ValidateUsername(r *http.Request) (username string, ex ApiException) {
 	return
 }
 
-// PairCodeController generates pairing codes for WhatsApp authentication  
+// PairCodeController generates pairing codes for WhatsApp authentication
 // @Summary Generate pairing code
 // @Description Generates a pairing code for WhatsApp authentication using phone number
 // @Tags Connection

@@ -131,12 +131,12 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 			connectionString,                  // Original
 			url.QueryEscape(connectionString), // URL encoded
 		}
-		
+
 		// Add URL decoded version if different
 		if decoded, err := url.QueryUnescape(connectionString); err == nil && decoded != connectionString {
 			connectionStrings = append(connectionStrings, decoded)
 		}
-		
+
 		// Add manual fix for common encoding issue
 		if len(connectionString) >= 2 && connectionString[len(connectionString)-2:] == "//" {
 			// Replace "//" with "/%2F" - common encoding difference
@@ -147,12 +147,12 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 		// Try to remove with each variation
 		var totalAffected uint = 0
 		var lastErr error
-		
+
 		for i, cs := range connectionStrings {
 			if cs == connectionString && i > 0 {
 				continue // Skip if it's the same as original (already tried)
 			}
-			
+
 			affected, err := server.DispatchingRemove(cs)
 			if err != nil {
 				lastErr = err

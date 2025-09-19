@@ -1758,6 +1758,37 @@ paths:
       summary: Manage RabbitMQ configurations
       tags:
       - RabbitMQ
+  /read:
+    post:
+      consumes:
+      - application/json
+      description: Marks one or more messages as read by id. Accepts a JSON array
+        in the request body (e.g. ["id1","id2"] or [{"id":"id1"},{"id":"id2"}])
+      parameters:
+      - description: Array of message ids or objects with id field
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark messages as read
+      tags:
+      - Message
   /receive:
     get:
       consumes:

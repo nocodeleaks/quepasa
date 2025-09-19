@@ -1461,6 +1461,54 @@
                 }
             }
         },
+        "/read": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Marks one or more messages as read by id. Accepts a JSON array in the request body (e.g. [\"id1\",\"id2\"] or [{\"id\":\"id1\"},{\"id\":\"id2\"}])",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Mark messages as read",
+                "parameters": [
+                    {
+                        "description": "Array of message ids or objects with id field",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/receive": {
             "get": {
                 "security": [

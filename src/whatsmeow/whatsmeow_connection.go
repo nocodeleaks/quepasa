@@ -209,6 +209,31 @@ func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newConten
 	return nil
 }
 
+// MarkRead sends a read receipt for the given message via Whatsmeow handlers
+func (source *WhatsmeowConnection) MarkRead(imsg whatsapp.IWhatsappMessage) error {
+	if imsg == nil {
+		return fmt.Errorf("nil message")
+	}
+	id := imsg.GetId()
+	logentry := source.GetLogger().WithField(LogFields.MessageId, id)
+
+	msg, ok := imsg.(*whatsapp.WhatsappMessage)
+	if !ok {
+		msg = &whatsapp.WhatsappMessage{
+			Id:        imsg.GetId(),
+			Timestamp: time.Now(),
+			Chat:      whatsapp.WhatsappChat{Id: imsg.GetChatId()},
+		}
+	}
+
+	// default to ReceiptTypeRead
+	err := source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
+	if err != nil {
+		logentry.Errorf("error marking read: %v", err)
+	}
+	return err
+}
+
 func isASCII(s string) bool {
 	for _, c := range s {
 		if c > unicode.MaxASCII {

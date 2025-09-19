@@ -248,6 +248,15 @@ func (source *QpWhatsappServer) Edit(id string, newContent string) (err error) {
 	return source.connection.Edit(msg, newContent)
 }
 
+func (source *QpWhatsappServer) MarkRead(id string) (err error) {
+	msg, err := source.Handler.GetById(id)
+	if err != nil {
+		return
+	}
+	source.GetLogger().Infof("marking msg %s as read", id)
+	return source.connection.MarkRead(msg)
+}
+
 //endregion
 
 //#region DEPRECATED LEGACY METHODS (TO BE REMOVED)

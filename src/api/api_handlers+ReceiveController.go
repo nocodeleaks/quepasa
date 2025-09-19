@@ -77,7 +77,7 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dispatchErrorFilter != "" {
-		msg += fmt.Sprintf(", dispatch_error filter: %s", dispatchErrorFilter)
+		msg += fmt.Sprintf(", dispatcherror filter: %s", dispatchErrorFilter)
 	}
 
 	response.ParseSuccess(msg)

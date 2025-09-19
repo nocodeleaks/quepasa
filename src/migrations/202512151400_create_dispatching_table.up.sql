@@ -14,7 +14,11 @@ CREATE TABLE IF NOT EXISTS `dispatching_temp` (
   PRIMARY KEY (`context`, `connection_string`)
 );
 
--- Migrate existing webhooks data if table exists
+-- Migrate existing webhooks data: only copy rows that have a matching server
+-- token to respect the foreign key constraint. Rows referencing missing
+-- servers will be skipped to avoid migration failure. If you need to keep
+-- those rows, review and re-insert them after creating the corresponding
+-- `servers` records.
 INSERT INTO `dispatching_temp` (
   `context`, 
   `connection_string`, 
@@ -28,18 +32,28 @@ INSERT INTO `dispatching_temp` (
   `timestamp`
 )
 SELECT 
-  `context`, 
-  `url` as `connection_string`,
+  w.`context`, 
+  w.`url` as `connection_string`,
   'webhook' as `type`,
-  `forwardinternal`, 
-  `trackid`, 
-  `readreceipts`, 
-  `groups`, 
-  `broadcasts`, 
-  `extra`, 
-  `timestamp`
-FROM `webhooks`
-WHERE EXISTS (SELECT name FROM sqlite_master WHERE type='table' AND name='webhooks');
+  w.`forwardinternal`, 
+  w.`trackid`, 
+  w.`readreceipts`, 
+  w.`groups`, 
+  w.`broadcasts`, 
+  w.`extra`, 
+  w.`timestamp`
+FROM `webhooks` w
+INNER JOIN `servers` s ON s.`token` = w.`context`;
+
+-- If you want to inspect webhooks that were NOT migrated because the
+-- referenced `servers.token` doesn't exist, you can run the following
+-- (manually, outside of this migration) to list them and decide how to
+-- recover them. This is intentionally commented out to avoid execution
+-- during automated migrations.
+--
+-- SELECT w.* FROM `webhooks` w
+-- LEFT JOIN `servers` s ON s.`token` = w.`context`
+-- WHERE s.`token` IS NULL;
 
 -- Drop old webhooks table if exists
 DROP TABLE IF EXISTS `webhooks`;

@@ -203,7 +203,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/download/{messageid}": {
+        "/download": {
             "get": {
                 "security": [
                     {
@@ -221,18 +221,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Message ID (path parameter)",
-                        "name": "messageid",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID (query parameter)",
-                        "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
                         "description": "Message ID (query parameter alternate)",
                         "name": "messageid",
                         "in": "query"
@@ -242,12 +230,6 @@ const docTemplate = `{
                         "description": "Use cached content",
                         "name": "cache",
                         "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID (header parameter)",
-                        "name": "X-QUEPASA-MESSAGEID",
-                        "in": "header"
                     }
                 ],
                 "responses": {

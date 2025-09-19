@@ -967,19 +967,11 @@ paths:
       summary: Get contacts
       tags:
       - Contacts
-  /download/{messageid}:
+  /download:
     get:
       description: Downloads media files (images, videos, documents) from WhatsApp
         messages
       parameters:
-      - description: Message ID (path parameter)
-        in: path
-        name: messageid
-        type: string
-      - description: Message ID (query parameter)
-        in: query
-        name: id
-        type: string
       - description: Message ID (query parameter alternate)
         in: query
         name: messageid
@@ -987,10 +979,6 @@ paths:
       - description: Use cached content
         in: query
         name: cache
-        type: string
-      - description: Message ID (header parameter)
-        in: header
-        name: X-QUEPASA-MESSAGEID
         type: string
       produces:
       - application/octet-stream

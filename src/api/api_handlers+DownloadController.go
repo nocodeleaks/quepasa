@@ -29,15 +29,12 @@ import (
 // @Description Downloads media files (images, videos, documents) from WhatsApp messages
 // @Tags Download
 // @Produce application/octet-stream
-// @Param messageid path string false "Message ID (path parameter)"
-// @Param id query string false "Message ID (query parameter)"
 // @Param messageid query string false "Message ID (query parameter alternate)"
 // @Param cache query string false "Use cached content"
-// @Param X-QUEPASA-MESSAGEID header string false "Message ID (header parameter)"
 // @Success 200 {file} binary "Media file"
 // @Failure 400 {object} models.QpResponse
 // @Security ApiKeyAuth
-// @Router /download/{messageid} [get]
+// @Router /download [get]
 func DownloadController(w http.ResponseWriter, r *http.Request) {
 
 	response := &models.QpResponse{}

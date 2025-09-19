@@ -32,6 +32,13 @@ func WebServerStart(logentry *log.Entry) error {
 		webAPIPort = "31000"
 	}
 
+	// If host is a domain name or external IP, use 0.0.0.0 for container environments
+	// This allows the server to bind to all interfaces and accept connections from outside
+	if webAPIHost != "" && webAPIHost != "localhost" && webAPIHost != "127.0.0.1" && !strings.HasPrefix(webAPIHost, "10.") && !strings.HasPrefix(webAPIHost, "192.168.") && !strings.HasPrefix(webAPIHost, "172.") {
+		logentry.Infof("External host detected (%s), binding to 0.0.0.0 for container compatibility", webAPIHost)
+		webAPIHost = "0.0.0.0"
+	}
+
 	var timeout = 30 * time.Second
 	server := http.Server{
 		Addr:         webAPIHost + ":" + webAPIPort,

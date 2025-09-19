@@ -16,7 +16,7 @@ func getSwaggerHost() string {
 	}
 
 	if host == "" {
-		return "http://127.0.0.1:" + port
+		return ":" + port
 	}
 
 	return host + ":" + port

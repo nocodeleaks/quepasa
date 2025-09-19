@@ -233,7 +233,7 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
 		// Mark dispatch error on message
 		if message != nil {
-			message.MarkDispatchError()
+			message.MarkDispatchErrorWithMessage(fmt.Sprintf("Webhook failed with status %d: %s", statusCode, err.Error()))
 		}
 	} else {
 		// Webhook successful
@@ -289,7 +289,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		}
 		// Mark dispatch error on message
 		if message != nil {
-			message.MarkDispatchError()
+			message.MarkDispatchErrorWithMessage(fmt.Sprintf("RabbitMQ client unavailable for connection %s", source.ConnectionString))
 		}
 		return err
 	}
@@ -323,7 +323,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 
 		// Mark dispatch error on message
 		if message != nil {
-			message.MarkDispatchError()
+			message.MarkDispatchErrorWithMessage("RabbitMQ connection lost - message cached")
 		}
 
 		// Still record metrics since message was processed

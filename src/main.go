@@ -22,7 +22,7 @@ import (
 // @contact.email support@quepasa.io
 // @license.name MIT
 // @license.url https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
-// @host localhost:31000
+// @host :31000
 // @BasePath /
 // @schemes http https
 // @securityDefinitions.apikey ApiKeyAuth

@@ -1,6 +1,26 @@
 package docs
 
-import "github.com/swaggo/swag"
+import (
+	"os"
+
+	"github.com/swaggo/swag"
+)
+
+// getSwaggerHost returns the host for Swagger documentation based on environment variables
+func getSwaggerHost() string {
+	host := os.Getenv("WEBAPIHOST")
+	port := os.Getenv("WEBAPIPORT")
+
+	if port == "" {
+		port = "31000"
+	}
+
+	if host == "" {
+		return "http://127.0.0.1:" + port
+	}
+
+	return host + ":" + port
+}
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
@@ -3880,7 +3900,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "4.0.0",
-	Host:             "localhost:31000",
+	Host:             getSwaggerHost(),
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},
 	Title:            "QuePasa WhatsApp API",

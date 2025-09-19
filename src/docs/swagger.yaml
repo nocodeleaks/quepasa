@@ -1,6 +1,19 @@
 basePath: /
 definitions:
-  github_com_nocodeleaks_quepasa_api_models.HealthResponse:
+  api.ChatPresenceRequest:
+    properties:
+      chatid:
+        description: 'Required: Chat to show typing in'
+        type: string
+      duration:
+        description: 'Optional: Auto-stop after duration (ms)'
+        type: integer
+      type:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappChatPresenceType'
+        description: Text or audio
+    type: object
+  api.HealthResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -9,10 +22,10 @@ definitions:
         type: array
       items:
         items:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpHealthResponseItem'
+          $ref: '#/definitions/models.QpHealthResponseItem'
         type: array
       stats:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_api_models.HealthStats'
+        $ref: '#/definitions/api.HealthStats'
       status:
         type: string
       success:
@@ -20,7 +33,7 @@ definitions:
       timestamp:
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_api_models.HealthStats:
+  api.HealthStats:
     properties:
       healthy:
         type: integer
@@ -31,20 +44,7 @@ definitions:
       unhealthy:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_main_api.ChatPresenceRequest:
-    properties:
-      chatid:
-        description: 'Required: Chat to show typing in'
-        type: string
-      duration:
-        description: 'Optional: Auto-stop after duration (ms)'
-        type: integer
-      type:
-        allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappChatPresenceType'
-        description: Text or audio
-    type: object
-  github_com_nocodeleaks_quepasa_main_api.LIDResponse:
+  api.LIDResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -60,14 +60,14 @@ definitions:
       success:
         type: boolean
     type: object
-  github_com_nocodeleaks_quepasa_main_api.UserInfoRequest:
+  api.UserInfoRequest:
     properties:
       jids:
         items:
           type: string
         type: array
     type: object
-  github_com_nocodeleaks_quepasa_main_api.UserInfoResponse:
+  api.UserInfoResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -84,11 +84,11 @@ definitions:
         items: {}
         type: array
     type: object
-  github_com_nocodeleaks_quepasa_models.QpContactsResponse:
+  models.QpContactsResponse:
     properties:
       contacts:
         items:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappChat'
+          $ref: '#/definitions/whatsapp.WhatsappChat'
         type: array
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -102,15 +102,15 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_models.QpDispatching:
+  models.QpDispatching:
     properties:
       broadcasts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle broadcast messages
       calls:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
       connection_string:
         description: destination URL (webhook) or connection string (rabbitmq)
@@ -125,11 +125,11 @@ definitions:
         type: boolean
       groups:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
       readreceipts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
       success:
         description: last success timestamp
@@ -143,7 +143,7 @@ definitions:
         description: webhook or rabbitmq
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_models.QpGroupsResponse:
+  models.QpGroupsResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -160,10 +160,10 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_models.QpHealthResponseItem:
+  models.QpHealthResponseItem:
     properties:
       status:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappConnectionState'
+        $ref: '#/definitions/whatsapp.WhatsappConnectionState'
       token:
         description: Public token
         type: string
@@ -171,7 +171,7 @@ definitions:
         description: Whatsapp session id
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_models.QpInfoResponse:
+  models.QpInfoResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -179,13 +179,13 @@ definitions:
           type: string
         type: array
       server:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpWhatsappServer'
+        $ref: '#/definitions/models.QpWhatsappServer'
       status:
         type: string
       success:
         type: boolean
     type: object
-  github_com_nocodeleaks_quepasa_models.QpInviteResponse:
+  models.QpInviteResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -200,7 +200,7 @@ definitions:
         description: invite public link
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_models.QpIsOnWhatsappResponse:
+  models.QpIsOnWhatsappResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -218,7 +218,7 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_models.QpMessageResponse:
+  models.QpMessageResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -226,13 +226,13 @@ definitions:
           type: string
         type: array
       message:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessage'
+        $ref: '#/definitions/whatsapp.WhatsappMessage'
       status:
         type: string
       success:
         type: boolean
     type: object
-  github_com_nocodeleaks_quepasa_models.QpParticipantResponse:
+  models.QpParticipantResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -249,15 +249,15 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_models.QpRabbitMQConfig:
+  models.QpRabbitMQConfig:
     properties:
       broadcasts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle broadcast messages
       calls:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
       connection_string:
         description: RabbitMQ Connection Settings
@@ -275,14 +275,14 @@ definitions:
         type: boolean
       groups:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
       queue_history:
         description: RabbitMQ history queue name (optional)
         type: string
       readreceipts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
       routing_key:
         description: RabbitMQ routing key for exchange routing
@@ -296,7 +296,7 @@ definitions:
         description: identifier of remote system to avoid loop
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_models.QpRabbitMQResponse:
+  models.QpRabbitMQResponse:
     properties:
       affected:
         description: items affected
@@ -309,34 +309,14 @@ definitions:
       rabbitmq:
         description: current rabbitmq items
         items:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpRabbitMQConfig'
+          $ref: '#/definitions/models.QpRabbitMQConfig'
         type: array
       status:
         type: string
       success:
         type: boolean
     type: object
-  github_com_nocodeleaks_quepasa_models.QpReceiveResponse:
-    properties:
-      debug:
-        description: Extra interface{} `json:"extra,omitempty"`
-        items:
-          type: string
-        type: array
-      messages:
-        items:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessage'
-        type: array
-      server:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpServer'
-      status:
-        type: string
-      success:
-        type: boolean
-      total:
-        type: integer
-    type: object
-  github_com_nocodeleaks_quepasa_models.QpRequestResponse:
+  models.QpRequestResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -353,7 +333,7 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_models.QpResponse:
+  models.QpResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -365,7 +345,7 @@ definitions:
       success:
         type: boolean
     type: object
-  github_com_nocodeleaks_quepasa_models.QpSendResponse:
+  models.QpSendResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -373,13 +353,13 @@ definitions:
           type: string
         type: array
       message:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponseMessage'
+        $ref: '#/definitions/models.QpSendResponseMessage'
       status:
         type: string
       success:
         type: boolean
     type: object
-  github_com_nocodeleaks_quepasa_models.QpSendResponseMessage:
+  models.QpSendResponseMessage:
     properties:
       chatId:
         type: string
@@ -390,43 +370,7 @@ definitions:
       wid:
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_models.QpServer:
-    properties:
-      broadcasts:
-        allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
-        description: should handle broadcast messages
-      calls:
-        allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
-        description: should handle calls
-      devel:
-        type: boolean
-      groups:
-        allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
-        description: should handle groups messages
-      readreceipts:
-        allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
-        description: should emit read receipts
-      timestamp:
-        type: string
-      token:
-        description: Public token
-        maxLength: 100
-        type: string
-      user:
-        maxLength: 36
-        type: string
-      verified:
-        type: boolean
-      wid:
-        description: Whatsapp session id
-        maxLength: 255
-        type: string
-    type: object
-  github_com_nocodeleaks_quepasa_models.QpSingleGroupResponse:
+  models.QpSingleGroupResponse:
     properties:
       debug:
         description: Extra interface{} `json:"extra,omitempty"`
@@ -441,15 +385,15 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_nocodeleaks_quepasa_models.QpWebhook:
+  models.QpWebhook:
     properties:
       broadcasts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle broadcast messages
       calls:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
       extra:
         description: extra info to append on payload
@@ -461,11 +405,11 @@ definitions:
         type: boolean
       groups:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
       readreceipts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
       success:
         description: last success timestamp
@@ -479,7 +423,7 @@ definitions:
         description: destination
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_models.QpWebhookResponse:
+  models.QpWebhookResponse:
     properties:
       affected:
         description: items affected
@@ -496,32 +440,32 @@ definitions:
       webhooks:
         description: current items
         items:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpWebhook'
+          $ref: '#/definitions/models.QpWebhook'
         type: array
     type: object
-  github_com_nocodeleaks_quepasa_models.QpWhatsappServer:
+  models.QpWhatsappServer:
     properties:
       broadcasts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle broadcast messages
       calls:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
       devel:
         type: boolean
       dispatching:
         items:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpDispatching'
+          $ref: '#/definitions/models.QpDispatching'
         type: array
       groups:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
       readreceipts:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean'
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
       reconnect:
         description: should auto reconnect, false for qrcode scanner
@@ -544,7 +488,7 @@ definitions:
         maxLength: 255
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappAttachment:
+  whatsapp.WhatsappAttachment:
     properties:
       checksum:
         description: |-
@@ -572,7 +516,7 @@ definitions:
         type: integer
       thumbnail:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageThumbnail'
+        - $ref: '#/definitions/whatsapp.WhatsappMessageThumbnail'
         description: 'small image representing something in this message, MIME: image/jpeg'
       url:
         description: Public access url helper content
@@ -582,7 +526,7 @@ definitions:
           type: integer
         type: array
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappBoolean:
+  whatsapp.WhatsappBoolean:
     enum:
     - -1
     - 0
@@ -592,7 +536,7 @@ definitions:
     - FalseBooleanType
     - UnSetBooleanType
     - TrueBooleanType
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappChat:
+  whatsapp.WhatsappChat:
     properties:
       id:
         description: (Identifier) whatsapp contact id, based on phone number or timestamp
@@ -606,7 +550,7 @@ definitions:
       title:
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappChatPresenceType:
+  whatsapp.WhatsappChatPresenceType:
     enum:
     - 0
     - 1
@@ -616,7 +560,7 @@ definitions:
     - WhatsappChatPresenceTypePaused
     - WhatsappChatPresenceTypeText
     - WhatsappChatPresenceTypeAudio
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappConnectionState:
+  whatsapp.WhatsappConnectionState:
     enum:
     - 0
     - 1
@@ -650,24 +594,28 @@ definitions:
     - Halting
     - Disconnected
     - Failed
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessage:
+  whatsapp.WhatsappMessage:
     properties:
       ads:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageAds'
+        $ref: '#/definitions/whatsapp.WhatsappMessageAds'
       attachment:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappAttachment'
+        $ref: '#/definitions/whatsapp.WhatsappAttachment'
       chat:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappChat'
+        - $ref: '#/definitions/whatsapp.WhatsappChat'
         description: Em qual chat (grupo ou direct) essa msg foi postada, para onde
           devemos responder
       debug:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageDebug'
+        - $ref: '#/definitions/whatsapp.WhatsappMessageDebug'
         description: Debug information for debug events
       edited:
         description: Edited message
         type: boolean
+      exceptions:
+        items:
+          type: string
+        type: array
       forwardingscore:
         description: How many times this message was forwarded
         type: integer
@@ -692,15 +640,15 @@ definitions:
         type: string
       participant:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappChat'
+        - $ref: '#/definitions/whatsapp.WhatsappChat'
         description: If this message was posted on a Group, Who posted it !
       poll:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappPoll'
+        - $ref: '#/definitions/whatsapp.WhatsappPoll'
         description: Poll if exists
       status:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageStatus'
+        - $ref: '#/definitions/whatsapp.WhatsappMessageStatus'
         description: Delivered, Read, Imported statuses
       synopsis:
         description: Msg in reply preview
@@ -714,16 +662,16 @@ definitions:
         description: Optional id of the system that send that message
         type: string
       type:
-        $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageType'
+        $ref: '#/definitions/whatsapp.WhatsappMessageType'
       url:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageUrl'
+        - $ref: '#/definitions/whatsapp.WhatsappMessageUrl'
         description: Url if exists
       wid:
         description: WhatsApp ID of the sender
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageAds:
+  whatsapp.WhatsappMessageAds:
     properties:
       app:
         type: string
@@ -735,14 +683,14 @@ definitions:
         type: string
       thumbnail:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageThumbnail'
+        - $ref: '#/definitions/whatsapp.WhatsappMessageThumbnail'
         description: 'small image representing something in this message, MIME: image/jpeg'
       title:
         type: string
       type:
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageDebug:
+  whatsapp.WhatsappMessageDebug:
     properties:
       event:
         type: string
@@ -752,7 +700,7 @@ definitions:
         description: Reason for the debug event
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageStatus:
+  whatsapp.WhatsappMessageStatus:
     enum:
     - ""
     - error
@@ -766,7 +714,7 @@ definitions:
     - WhatsappMessageStatusImported
     - WhatsappMessageStatusDelivered
     - WhatsappMessageStatusRead
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageThumbnail:
+  whatsapp.WhatsappMessageThumbnail:
     properties:
       data:
         description: base64 data
@@ -778,7 +726,7 @@ definitions:
         description: trick for '<img src=' urls prefix
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageType:
+  whatsapp.WhatsappMessageType:
     enum:
     - 0
     - 1
@@ -808,7 +756,7 @@ definitions:
     - GroupMessageType
     - RevokeMessageType
     - PollMessageType
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageUrl:
+  whatsapp.WhatsappMessageUrl:
     properties:
       description:
         type: string
@@ -816,12 +764,12 @@ definitions:
         type: string
       thumbnail:
         allOf:
-        - $ref: '#/definitions/github_com_nocodeleaks_quepasa_whatsapp.WhatsappMessageThumbnail'
+        - $ref: '#/definitions/whatsapp.WhatsappMessageThumbnail'
         description: 'small image representing something in this message, MIME: image/jpeg'
       title:
         type: string
     type: object
-  github_com_nocodeleaks_quepasa_whatsapp.WhatsappPoll:
+  whatsapp.WhatsappPoll:
     properties:
       options:
         description: 'Required: Array of poll options'
@@ -836,16 +784,14 @@ definitions:
           1)'
         type: integer
     type: object
-host: localhost:31000
 info:
   contact:
-    email: support@quepasa.io
     name: QuePasa Support
     url: https://github.com/nocodeleaks/quepasa
   description: QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs
     for WhatsApp messaging integration
   license:
-    name: MIT
+    name: GNU Affero General Public License v3.0
     url: https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
   termsOfService: https://github.com/nocodeleaks/quepasa
   title: QuePasa WhatsApp API
@@ -873,11 +819,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage user accounts
@@ -894,18 +840,18 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_main_api.ChatPresenceRequest'
+          $ref: '#/definitions/api.ChatPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Control chat presence
@@ -934,11 +880,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Execute bot commands
@@ -955,11 +901,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpContactsResponse'
+            $ref: '#/definitions/models.QpContactsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contacts
@@ -1000,7 +946,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Download media
@@ -1029,11 +975,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Edit message
@@ -1064,11 +1010,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSingleGroupResponse'
+            $ref: '#/definitions/models.QpSingleGroupResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new group
@@ -1097,11 +1043,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSingleGroupResponse'
+            $ref: '#/definitions/models.QpSingleGroupResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group topic
@@ -1124,11 +1070,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSingleGroupResponse'
+            $ref: '#/definitions/models.QpSingleGroupResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group information
@@ -1146,11 +1092,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpGroupsResponse'
+            $ref: '#/definitions/models.QpGroupsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Get all groups
@@ -1177,11 +1123,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Leave group
@@ -1210,11 +1156,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSingleGroupResponse'
+            $ref: '#/definitions/models.QpSingleGroupResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group name
@@ -1247,11 +1193,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpParticipantResponse'
+            $ref: '#/definitions/models.QpParticipantResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Update group participants
@@ -1280,11 +1226,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSingleGroupResponse'
+            $ref: '#/definitions/models.QpSingleGroupResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Set/Remove group photo
@@ -1321,11 +1267,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpRequestResponse'
+            $ref: '#/definitions/models.QpRequestResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Handle group join requests
@@ -1361,11 +1307,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpRequestResponse'
+            $ref: '#/definitions/models.QpRequestResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Handle group join requests
@@ -1380,7 +1326,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_api_models.HealthResponse'
+            $ref: '#/definitions/api.HealthResponse'
       security:
       - ApiKeyAuth: []
       summary: Health check
@@ -1396,7 +1342,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_api_models.HealthResponse'
+            $ref: '#/definitions/api.HealthResponse'
       summary: Detailed health check
       tags:
       - Health
@@ -1420,11 +1366,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpInfoResponse'
+            $ref: '#/definitions/models.QpInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage bot information
@@ -1449,11 +1395,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpInfoResponse'
+            $ref: '#/definitions/models.QpInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage bot information
@@ -1478,11 +1424,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpInfoResponse'
+            $ref: '#/definitions/models.QpInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage bot information
@@ -1504,11 +1450,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpInviteResponse'
+            $ref: '#/definitions/models.QpInviteResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Generate group invite link
@@ -1534,11 +1480,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpInviteResponse'
+            $ref: '#/definitions/models.QpInviteResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Generate group invite link
@@ -1567,11 +1513,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpIsOnWhatsappResponse'
+            $ref: '#/definitions/models.QpIsOnWhatsappResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Check WhatsApp registration
@@ -1594,11 +1540,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpMessageResponse'
+            $ref: '#/definitions/models.QpMessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Revoke message
@@ -1620,11 +1566,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpMessageResponse'
+            $ref: '#/definitions/models.QpMessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Get message
@@ -1646,11 +1592,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Generate pairing code
@@ -1684,11 +1630,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpRabbitMQResponse'
+            $ref: '#/definitions/models.QpRabbitMQResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage RabbitMQ configurations
@@ -1721,11 +1667,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpRabbitMQResponse'
+            $ref: '#/definitions/models.QpRabbitMQResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage RabbitMQ configurations
@@ -1758,11 +1704,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpRabbitMQResponse'
+            $ref: '#/definitions/models.QpRabbitMQResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage RabbitMQ configurations
@@ -1777,11 +1723,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Generate QR code
@@ -1840,11 +1786,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send any type of message (text, file, poll, base64 content)
@@ -1906,11 +1852,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send binary file directly from request body
@@ -1976,11 +1922,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send binary file directly from request body
@@ -2050,11 +1996,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send binary file directly from request body
@@ -2128,11 +2074,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send binary file directly from request body
@@ -2191,11 +2137,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send any type of message (text, file, poll, base64 content)
@@ -2224,11 +2170,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
         "423":
           description: No server available
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpSendResponse'
+            $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
       summary: Send spam messages
@@ -2254,11 +2200,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_main_api.LIDResponse'
+            $ref: '#/definitions/api.LIDResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Get user identifier (LID)
@@ -2275,50 +2221,23 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_nocodeleaks_quepasa_main_api.UserInfoRequest'
+          $ref: '#/definitions/api.UserInfoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_main_api.UserInfoResponse'
+            $ref: '#/definitions/api.UserInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Get user information
       tags:
       - Contacts
-  /v2/bot/{token}/receive:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves pending messages from WhatsApp with optional timestamp
-        filtering
-      parameters:
-      - description: Timestamp filter for messages
-        in: query
-        name: timestamp
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpReceiveResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Receive messages
-      tags:
-      - Message
   /v3/bot/{token}/download:
     get:
       description: Downloads media files (images, videos, documents) from WhatsApp
@@ -2350,7 +2269,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Download media
@@ -2387,39 +2306,12 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Download media
       tags:
       - Download
-  /v3/bot/{token}/receive:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves pending messages from WhatsApp with optional timestamp
-        filtering
-      parameters:
-      - description: Timestamp filter for messages
-        in: query
-        name: timestamp
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpReceiveResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Receive messages
-      tags:
-      - Message
   /webhook:
     delete:
       consumes:
@@ -2450,11 +2342,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpWebhookResponse'
+            $ref: '#/definitions/models.QpWebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage webhook configurations
@@ -2489,11 +2381,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpWebhookResponse'
+            $ref: '#/definitions/models.QpWebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage webhook configurations
@@ -2528,11 +2420,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpWebhookResponse'
+            $ref: '#/definitions/models.QpWebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_nocodeleaks_quepasa_models.QpResponse'
+            $ref: '#/definitions/models.QpResponse'
       security:
       - ApiKeyAuth: []
       summary: Manage webhook configurations

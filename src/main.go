@@ -19,10 +19,8 @@ import (
 // @termsOfService https://github.com/nocodeleaks/quepasa
 // @contact.name QuePasa Support
 // @contact.url https://github.com/nocodeleaks/quepasa
-// @contact.email support@quepasa.io
-// @license.name MIT
+// @license.name GNU Affero General Public License v3.0
 // @license.url https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
-// @host :31000
 // @BasePath /
 // @schemes http https
 // @securityDefinitions.apikey ApiKeyAuth

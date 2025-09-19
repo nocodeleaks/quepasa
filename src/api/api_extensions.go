@@ -61,38 +61,38 @@ func GetOrderedMessages(server *models.QpWhatsappServer, timestamp int64) (messa
 /*
 <summary>
 
-	Retrieve messages with timestamp parameter and dispatch error filter
+	Retrieve messages with timestamp parameter and exceptions error filter
 	Sorting then, by timestamp and id, desc
-	dispatchErrorFilter: "true" for messages with dispatch errors, "false" for messages without dispatch errors, "" for all messages
+	ExceptionsFilter: "true" for messages with exceptions, "false" for messages without exceptions, "" for all messages
 
 </summary>
 */
 /*
 <summary>
 
-	Retrieve messages with timestamp parameter and dispatch error filter
+	Retrieve messages with timestamp parameter and exceptions error filter
 	Sorting then, by timestamp and id, desc
-	dispatchErrorFilter: "true" for messages with dispatch errors, "false" for messages without dispatch errors, "" for all messages
+	ExceptionsFilter: "true" for messages with exceptions, "false" for messages without exceptions, "" for all messages
 
 </summary>
 */
-func GetOrderedMessagesWithDispatchFilter(server *models.QpWhatsappServer, timestamp int64, dispatchErrorFilter string) (messages []whatsapp.WhatsappMessage) {
+func GetOrderedMessagesWithExceptionsFilter(server *models.QpWhatsappServer, timestamp int64, ExceptionsFilter string) (messages []whatsapp.WhatsappMessage) {
 	searchTime := time.Unix(timestamp, 0)
 	allMessages := server.GetMessages(searchTime)
 
-	// Filter messages based on dispatch error status
-	switch dispatchErrorFilter {
+	// Filter messages based on exceptions status
+	switch ExceptionsFilter {
 	case "true":
-		// Return only messages with dispatch errors
+		// Return only messages with exceptions
 		for _, msg := range allMessages {
-			if msg.HasDispatchError() {
+			if msg.HasExceptions() {
 				messages = append(messages, msg)
 			}
 		}
 	case "false":
-		// Return only messages without dispatch errors
+		// Return only messages without exceptions
 		for _, msg := range allMessages {
-			if !msg.HasDispatchError() {
+			if !msg.HasExceptions() {
 				messages = append(messages, msg)
 			}
 		}

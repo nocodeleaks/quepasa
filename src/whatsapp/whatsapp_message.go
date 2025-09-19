@@ -168,28 +168,28 @@ func (source *WhatsappMessage) FromBroadcast() bool {
 
 //region DISPATCH ERROR MANAGEMENT
 
-// MarkDispatchError marks the message as having a dispatch error
-func (source *WhatsappMessage) MarkDispatchError() {
+// MarkExceptions marks the message as having a dispatch error
+func (source *WhatsappMessage) MarkExceptions() {
 	source.Exceptions = append(source.Exceptions, "Dispatch error occurred")
 }
 
-// MarkDispatchErrorWithMessage marks the message as having a dispatch error with a specific message
-func (source *WhatsappMessage) MarkDispatchErrorWithMessage(message string) {
+// MarkExceptionsWithMessage marks the message as having a dispatch error with a specific message
+func (source *WhatsappMessage) MarkExceptionsWithMessage(message string) {
 	source.Exceptions = append(source.Exceptions, message)
 }
 
-// ClearDispatchError clears all dispatch errors
-func (source *WhatsappMessage) ClearDispatchError() {
+// ClearExceptions clears all dispatch errors
+func (source *WhatsappMessage) ClearExceptions() {
 	source.Exceptions = nil
 }
 
-// HasDispatchError checks if the message has any dispatch errors
-func (source *WhatsappMessage) HasDispatchError() bool {
+// HasExceptions checks if the message has any dispatch errors
+func (source *WhatsappMessage) HasExceptions() bool {
 	return len(source.Exceptions) > 0
 }
 
-// GetDispatchErrors returns all dispatch error messages
-func (source *WhatsappMessage) GetDispatchErrors() []string {
+// GetExceptions returns all dispatch error messages
+func (source *WhatsappMessage) GetExceptions() []string {
 	return source.Exceptions
 }
 

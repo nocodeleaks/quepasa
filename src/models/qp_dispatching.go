@@ -231,9 +231,9 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 			source.Failure = &currentTime
 		}
 		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
-		// Mark dispatch error on message
+		// Mark exceptions on message
 		if message != nil {
-			message.MarkDispatchErrorWithMessage(fmt.Sprintf("Webhook failed with status %d: %s", statusCode, err.Error()))
+			message.MarkExceptionsWithMessage(fmt.Sprintf("Webhook failed with status %d: %s", statusCode, err.Error()))
 		}
 	} else {
 		// Webhook successful
@@ -241,9 +241,9 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 		source.Failure = nil
 		source.Success = &currentTime
 		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)
-		// Clear dispatch error on message
+		// Clear exceptions on message
 		if message != nil {
-			message.ClearDispatchError()
+			message.ClearExceptions()
 		}
 	}
 
@@ -287,9 +287,9 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
-		// Mark dispatch error on message
+		// Mark exceptions on message
 		if message != nil {
-			message.MarkDispatchErrorWithMessage(fmt.Sprintf("RabbitMQ client unavailable for connection %s", source.ConnectionString))
+			message.MarkExceptionsWithMessage(fmt.Sprintf("RabbitMQ client unavailable for connection %s", source.ConnectionString))
 		}
 		return err
 	}
@@ -321,9 +321,9 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		source.Failure = &currentTime
 		source.Success = nil
 
-		// Mark dispatch error on message
+		// Mark exceptions on message
 		if message != nil {
-			message.MarkDispatchErrorWithMessage("RabbitMQ connection lost - message cached")
+			message.MarkExceptionsWithMessage("RabbitMQ connection lost - message cached")
 		}
 
 		// Still record metrics since message was processed
@@ -357,9 +357,9 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	source.Failure = nil
 	source.Success = &currentTime
 
-	// Clear dispatch error on message
+	// Clear exceptions on message
 	if message != nil {
-		message.ClearDispatchError()
+		message.ClearExceptions()
 	}
 
 	logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)

@@ -1489,7 +1489,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and dispatch error filtering",
+                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering",
                 "consumes": [
                     "application/json"
                 ],
@@ -1509,8 +1509,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter by dispatch error status: 'true' for messages with dispatch errors, 'false' for messages without dispatch errors, omit for all messages",
-                        "name": "dispatcherror",
+                        "description": "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages",
+                        "name": "exceptions",
                         "in": "query"
                     }
                 ],

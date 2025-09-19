@@ -11,12 +11,12 @@ import (
 
 // ReceiveAPIHandler renders route GET "/receive"
 // @Summary Receive messages
-// @Description Retrieves pending messages from WhatsApp with optional timestamp filtering and dispatch error filtering
+// @Description Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering
 // @Tags Message
 // @Accept json
 // @Produce json
 // @Param timestamp query string false "Timestamp filter for messages"
-// @Param dispatcherror query string false "Filter by dispatch error status: 'true' for messages with dispatch errors, 'false' for messages without dispatch errors, omit for all messages"
+// @Param exceptions query string false "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages"
 // @Success 200 {object} models.QpReceiveResponse
 // @Failure 400 {object} models.QpResponse
 // @Security ApiKeyAuth
@@ -56,11 +56,11 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get dispatch error filter parameter
+	// Get exceptions filter parameter
 	queryValues := r.URL.Query()
-	dispatchErrorFilter := queryValues.Get("dispatcherror")
+	exceptionsFilter := queryValues.Get("exceptions")
 
-	messages := GetOrderedMessagesWithDispatchFilter(server, timestamp, dispatchErrorFilter)
+	messages := GetOrderedMessagesWithExceptionsFilter(server, timestamp, exceptionsFilter)
 
 	response.Server = server.QpServer
 	response.Messages = messages
@@ -75,8 +75,8 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 		msg = "getting without timestamp filter"
 	}
 
-	if dispatchErrorFilter != "" {
-		msg += fmt.Sprintf(", dispatcherror filter: %s", dispatchErrorFilter)
+	if exceptionsFilter != "" {
+		msg += fmt.Sprintf(", exceptions filter: %s", exceptionsFilter)
 	}
 
 	response.ParseSuccess(msg)

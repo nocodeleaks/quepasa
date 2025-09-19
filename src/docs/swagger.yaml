@@ -1775,17 +1775,17 @@ paths:
       consumes:
       - application/json
       description: Retrieves pending messages from WhatsApp with optional timestamp
-        filtering and dispatch error filtering
+        filtering and exceptions error filtering
       parameters:
       - description: Timestamp filter for messages
         in: query
         name: timestamp
         type: string
-      - description: 'Filter by dispatch error status: ''true'' for messages with
-          dispatch errors, ''false'' for messages without dispatch errors, omit for
-          all messages'
+      - description: 'Filter by exceptions error status: ''true'' for messages with
+          exceptions errors, ''false'' for messages without exceptions errors, omit
+          for all messages'
         in: query
-        name: dispatcherror
+        name: exceptions
         type: string
       produces:
       - application/json

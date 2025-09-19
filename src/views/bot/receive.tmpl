@@ -10,16 +10,16 @@
     <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
     <div class="messages">
       {{ range .Messages }}
-      <div class="message{{ if .HasDispatchError }} dispatch-error{{ end }}">
+      <div class="message{{ if .HasExceptions }} dispatch-error{{ end }}">
         <pre id="msg-{{ .Id }}">
           On: {{ .Timestamp }} => ID: {{ .Id }} => From Me: {{ .FromMe }}{{ if .HasStatus }} => Status: {{ .Status }}{{ end }} => Edited: {{ .Edited }}{{ if .HasAttachment }} => Attachment: <a download target="_blank" style="color: {{ if .Attachment.IsValidSize }}blue{{ else }}red{{ end }};" title="{{ .Attachment.Mimetype }} {{ if .Attachment.FileName }}({{ .Attachment.FileName }}) {{ end }}:: {{ .Attachment.FileLength }} bytes" href="{{ $DOWNLOADPREFIX }}{{ .Id }}">Download</a>{{ end }}
           Type: {{ .Type }} => Chat: {{ .Chat.Id }}{{ if .Chat.Phone }} [{{ .Chat.Phone }}]{{ end }}{{ if .Chat.LId }} LId: {{ .Chat.LId }}{{ end }}{{ if .Chat.Title }} ({{ .Chat.Title }}){{ end }}{{ if .Participant }}{{ if .FromHistory }} (From History){{ end }}{{ if .FromAds }} (From Ads){{ end }}
           Participant: {{ .Participant.Id }}{{ if .Participant.Phone }} [{{ .Participant.Phone }}]{{ end }}{{ if .Participant.LId }} LId: {{ .Participant.LId }}{{ end }}{{ if .Participant.Title }} ({{ .Participant.Title }}){{ end }}{{ end }}{{ if .TrackId }}
           TrackId:  {{ .TrackId }}{{ end }}{{ if .InReply }}
-          InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .HasDispatchError }} => <span style="color: red; font-weight: bold;">DISPATCH ERROR</span>{{ end }}{{ if .Text }}
+          InReply:  <a href="#msg-{{ .InReply }}">{{ .InReply }}</a>{{ end }}{{ if .HasExceptions }} => <span style="color: red; font-weight: bold;">DISPATCH ERROR</span>{{ end }}{{ if .Text }}
           Text: {{ .Text }}{{ end }}
         </pre>
-        {{ if .HasDispatchError }}
+        {{ if .HasExceptions }}
         <div class="dispatch-errors" style="background-color: #ffebee; border: 1px solid #f44336; border-radius: 4px; padding: 10px; margin: 5px 0;">
           <div style="color: #c62828; font-weight: bold; margin-bottom: 5px;">🚨 Dispatch Errors:</div>
           <ul style="color: #d32f2f; margin: 0; padding-left: 20px;">

@@ -1,75 +1,125 @@
 {{ define "content" }}
-<section class="hero is-fullheight">
+<section class="hero is-fullheight has-background-light">
   <div class="hero-body">
-    <div class="container has-text-centered">
-      <div class="column is-4 is-offset-4">
-        <h3 class="title has-text-grey">Welcome to QuePasa</h3>
-        <div class="notification is-warning">This project is under development and should not be considered secure.
-        </div>
-        <div class="box">
-          <h4 class="subtitle has-text-grey">Create your admin user</h4>
-          {{ if .ErrorMessage }}
-          <div class="notification is-warning">
-            {{ .ErrorMessage }}
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-10-tablet is-6-desktop is-4-widescreen">
+          <div class="has-text-centered mb-5">
+            <!-- Logo / Title -->
+            <figure class="image is-96x96 is-inline-block mb-3" aria-hidden="true">
+              <img src="/assets/favicon.png" alt="QuePasa logo">
+            </figure>
+            <h1 class="title is-3">QuePasa</h1>
+            <p class="subtitle is-6 has-text-grey">WhatsApp bot management console</p>
           </div>
-          {{ end }}
-          <form class="login" method="post" action="/setup">
-            <div class="field">
-              <div class="control">
-                <input class="input is-large
-                  {{ if .EmailError }}
-                  is-danger
-                  {{ end }}"
-                  name="email" type="email" placeholder="Your Email"
-                  value="{{ .Email }}"
-                  autofocus="">
-              </div>
-              {{ if .UserExistsError }}
-              <p class="help is-danger">
-                This email address is already taken. Please choose a new one.
-              </p>
-              {{ end }}
-              {{ if .EmailInvalidError }}
-              <p class="help is-danger">
-                Your email address is not valid. Please double check!
-              </p>
-              {{ end }}
-            </div>
+          <div> &nbsp; </div>
 
-            <div class="field">
-              <div class="control">
-                <input class="input is-large
+          <div class="card">
+            <div class="card-content">
+              <h2 class="title is-5 has-text-grey-dark">Create your admin user</h2>
+                <p class="subtitle is-6 has-text-danger">This project is under development and not secure.</p>
+
+              {{ if .ErrorMessage }}
+              <div class="notification is-warning">
+                {{ .ErrorMessage }}
+              </div>
+              {{ end }}
+
+              <form class="login" method="post" action="/setup" novalidate>
+
+                <div class="field">
+                  <label class="label is-sr-only" for="email">Email</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="email"
+                      name="email"
+                      class="input is-medium {{ if .EmailError }}is-danger{{ end }}"
+                      type="email"
+                      placeholder="Your email"
+                      value="{{ .Email }}"
+                      required
+                      autocomplete="username"
+                      aria-label="Email"
+                      autofocus>
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-envelope"></i>
+                    </span>
+                  </div>
+                  {{ if .UserExistsError }}
+                  <p class="help is-danger">
+                    This email address is already taken. Please choose a new one.
+                  </p>
+                  {{ end }}
+                  {{ if .EmailInvalidError }}
+                  <p class="help is-danger">
+                    Your email address is not valid. Please double check!
+                  </p>
+                  {{ end }}
+                </div>
+
+                <div class="field">
+                  <label class="label is-sr-only" for="password">Password</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="password"
+                      name="password"
+                      class="input is-medium {{ if .PasswordStrengthError }}is-danger{{ end }}"
+                      type="password"
+                      placeholder="Your password"
+                      required
+                      autocomplete="new-password"
+                      aria-label="Password">
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-lock"></i>
+                    </span>
+                  </div>
                   {{ if .PasswordStrengthError }}
-                  is-danger
-                  {{ end }}"
-                  name="password" type="password"
-                  placeholder="Your Password">
-              </div>
+                  <p class="help is-danger">
+                    This password would take {{ .PasswordCrackTime }} to crack.
+                  </p>
+                  {{ end }}
+                </div>
 
-              {{ if .PasswordStrengthError }}
-              <p class="help is-danger">
-                This password would take {{ .PasswordCrackTime }} to crack.
-              </p>
-              {{ end }}
-            </div>
-
-            <div class="field">
-              <div class="control">
-                <input class="input is-large
+                <div class="field">
+                  <label class="label is-sr-only" for="passwordConfirm">Confirm password</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="passwordConfirm"
+                      name="passwordConfirm"
+                      class="input is-medium {{ if .PasswordMatchError }}is-danger{{ end }}"
+                      type="password"
+                      placeholder="Confirm password"
+                      required
+                      autocomplete="new-password"
+                      aria-label="Confirm password">
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-lock"></i>
+                    </span>
+                  </div>
                   {{ if .PasswordMatchError }}
-                  is-danger
-                  {{ end }}"
-                  name="passwordConfirm" type="password"
-                  placeholder="Confirm password">
-              </div>
-              {{ if .PasswordMatchError }}
-              <p class="help is-danger">
-                The passwords do not match. Please double-check!
-              </p>
-              {{ end }}
+                  <p class="help is-danger">
+                    The passwords do not match. Please double-check!
+                  </p>
+                  {{ end }}
+                </div>
+
+                <div class="field mt-4">
+                  <div class="control">
+                    <button type="submit" class="button is-primary is-medium is-fullwidth">Create Admin User</button>
+                  </div>
+                </div>
+
+                <div class="has-text-centered mt-3">
+                  <p class="is-size-7 has-text-grey">Already have an account? <a href="/login">Sign in</a></p>
+                </div>
+
+              </form>
             </div>
-            <button class="button is-block is-info is-large is-fullwidth">Create Admin User</button>
-          </form>
+          </div>
+<div> &nbsp; </div>
+          <p class="has-text-centered is-size-7 has-text-grey mt-4">
+            Development build — use with caution.
+          </p>
         </div>
       </div>
     </div>

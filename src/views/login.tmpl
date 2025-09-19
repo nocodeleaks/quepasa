@@ -1,29 +1,83 @@
 {{ define "content" }}
-<section class="hero is-fullheight">
+<section class="hero is-fullheight has-background-light">
   <div class="hero-body">
-    <div class="container has-text-centered">
-      <div class="column is-4 is-offset-4">
-        <h3 class="title has-text-grey">QuePasa</h3>
-        <div class="notification is-warning">This project is under development and is not secure.</div>
-        <div class="box">
-          <h4 class="subtitle has-text-grey">Please login</h4>
-          <form class="login" method="post" action="/login">
-            <div class="field">
-              <div class="control">
-                <input class="input is-large" name="email" type="email" placeholder="Your Email" autofocus="">
-              </div>
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-10-tablet is-6-desktop is-4-widescreen">
+            <div class="has-text-centered mb-5">
+            <!-- Logo / Title -->
+            <figure class="image is-96x96 is-inline-block mb-3" aria-hidden="true">
+              <img src="/assets/favicon.png" alt="QuePasa logo">
+            </figure>
+            <h1 class="title is-3">QuePasa</h1>
+            <p class="subtitle is-6 has-text-grey">WhatsApp bot management console</p>
             </div>
+          <div> &nbsp; </div>
 
-            <div class="field">
-              <div class="control">
-                <input class="input is-large" name="password" type="password" placeholder="Your Password">
-              </div>
+          <div class="card">
+            <div class="card-content">
+              <h2 class="title is-5 has-text-grey-dark">Please sign in</h2>
+              <p class="subtitle is-6 has-text-danger">This project is under development and not secure.</p>
+
+              <form class="login" method="post" action="/login" novalidate>
+
+                <div class="field">
+                  <label class="label is-sr-only" for="email">Email</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="email"
+                      name="email"
+                      class="input is-medium"
+                      type="email"
+                      placeholder="Your email"
+                      required
+                      autocomplete="username"
+                      aria-label="Email">
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-envelope"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label is-sr-only" for="password">Password</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="password"
+                      name="password"
+                      class="input is-medium"
+                      type="password"
+                      placeholder="Your password"
+                      required
+                      autocomplete="current-password"
+                      aria-label="Password">
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-lock"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="field mt-4">
+                  <div class="control">
+                    <button type="submit" class="button is-primary is-medium is-fullwidth">
+                      Sign in
+                    </button>
+                  </div>
+                </div>
+
+                <div class="has-text-centered mt-3">
+                  <p class="is-size-7 has-text-grey">Don't have an account? <a href="/setup">Create one</a></p>
+                </div>
+              </form>
             </div>
-            <button class="button is-block is-info is-large is-fullwidth">Login</button>
-          </form>
+          </div>
+
+          <p class="has-text-centered is-size-7 has-text-grey mt-4">
+            Development build — use with caution.
+          </p>
         </div>
       </div>
     </div>
-    </div>
+  </div>
 </section>
 {{ end }}

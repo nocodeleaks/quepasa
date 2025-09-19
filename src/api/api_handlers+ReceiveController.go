@@ -21,7 +21,6 @@ import (
 // @Failure 400 {object} models.QpResponse
 // @Security ApiKeyAuth
 // @Router /receive [get]
-
 func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpReceiveResponse{}
 

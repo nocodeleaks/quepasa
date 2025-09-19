@@ -38,8 +38,6 @@ import (
 // @Failure 400 {object} models.QpResponse
 // @Security ApiKeyAuth
 // @Router /download/{messageid} [get]
-// @Router /v3/bot/{token}/download/{messageId} [get]
-// @Router /v3/bot/{token}/download [get]
 func DownloadController(w http.ResponseWriter, r *http.Request) {
 
 	response := &models.QpResponse{}

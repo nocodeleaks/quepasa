@@ -1479,6 +1479,54 @@
                 }
             }
         },
+        "/receive": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and dispatch error filtering",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Receive messages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Timestamp filter for messages",
+                        "name": "timestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by dispatch error status: 'true' for messages with dispatch errors, 'false' for messages without dispatch errors, omit for all messages",
+                        "name": "dispatcherror",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpReceiveResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/scan": {
             "get": {
                 "security": [
@@ -1517,7 +1565,7 @@
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send text, file, poll, or any type of message to WhatsApp. Supports polls with JSON format in text field. For /sendencoded route, use 'content' field with base64 encoded file data.\n\n**Poll Example:**\n```json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"What programming languages do you know?\",\n\"options\": [\"JavaScript\", \"Python\", \"Go\", \"Java\", \"C#\", \"Ruby\"],\n\"selections\": 3\n}\n}\n```",
+                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n\nExamples:\nText:\n```json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n```\nPoll:\n```json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n```\nBase64:\n```json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n```\nFile by URL:\n```json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n```",
                 "consumes": [
                     "application/json"
                 ],
@@ -1530,505 +1578,7 @@
                 "summary": "Send any type of message (text, file, poll, base64 content)",
                 "parameters": [
                     {
-                        "description": "Send request body (use 'content' field for base64 encoded files, 'url' for file URL, 'poll' for poll JSON)",
-                        "name": "request",
-                        "in": "body",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "chatId": {
-                                    "type": "string"
-                                },
-                                "content": {
-                                    "type": "string"
-                                },
-                                "fileName": {
-                                    "type": "string"
-                                },
-                                "poll": {
-                                    "type": "object",
-                                    "properties": {
-                                        "options": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        },
-                                        "question": {
-                                            "type": "string"
-                                        },
-                                        "selections": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                },
-                                "text": {
-                                    "type": "string"
-                                },
-                                "url": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sendbinary": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Send any binary file (audio, video, image, document) using raw binary data in request body. Supports multiple parameter methods (path, query, headers).",
-                "consumes": [
-                    "application/octet-stream",
-                    "audio/mpeg",
-                    "video/mp4",
-                    "image/jpeg",
-                    "image/png",
-                    "application/pdf"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Send"
-                ],
-                "summary": "Send binary file directly from request body",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chat ID (query parameter)",
-                        "name": "chatId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (query parameter)",
-                        "name": "filename",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (query parameter)",
-                        "name": "text",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID to reply to",
-                        "name": "inreply",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (header parameter)",
-                        "name": "X-QUEPASA-CHATID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (header parameter)",
-                        "name": "X-QUEPASA-FILENAME",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (header parameter)",
-                        "name": "X-QUEPASA-TEXT",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Track ID for message tracking",
-                        "name": "X-QUEPASA-TRACKID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "MIME type of the binary file (e.g., audio/mpeg, video/mp4, image/jpeg)",
-                        "name": "Content-Type",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sendbinary/{chatid}": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Send any binary file (audio, video, image, document) using raw binary data in request body. Supports multiple parameter methods (path, query, headers).",
-                "consumes": [
-                    "application/octet-stream",
-                    "audio/mpeg",
-                    "video/mp4",
-                    "image/jpeg",
-                    "image/png",
-                    "application/pdf"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Send"
-                ],
-                "summary": "Send binary file directly from request body",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chat ID (path parameter)",
-                        "name": "chatid",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (query parameter)",
-                        "name": "chatId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (query parameter)",
-                        "name": "filename",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (query parameter)",
-                        "name": "text",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID to reply to",
-                        "name": "inreply",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (header parameter)",
-                        "name": "X-QUEPASA-CHATID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (header parameter)",
-                        "name": "X-QUEPASA-FILENAME",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (header parameter)",
-                        "name": "X-QUEPASA-TEXT",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Track ID for message tracking",
-                        "name": "X-QUEPASA-TRACKID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "MIME type of the binary file (e.g., audio/mpeg, video/mp4, image/jpeg)",
-                        "name": "Content-Type",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sendbinary/{chatid}/{filename}": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Send any binary file (audio, video, image, document) using raw binary data in request body. Supports multiple parameter methods (path, query, headers).",
-                "consumes": [
-                    "application/octet-stream",
-                    "audio/mpeg",
-                    "video/mp4",
-                    "image/jpeg",
-                    "image/png",
-                    "application/pdf"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Send"
-                ],
-                "summary": "Send binary file directly from request body",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chat ID (path parameter)",
-                        "name": "chatid",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (path parameter)",
-                        "name": "filename",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (query parameter)",
-                        "name": "chatId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (query parameter)",
-                        "name": "filename",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (query parameter)",
-                        "name": "text",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID to reply to",
-                        "name": "inreply",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (header parameter)",
-                        "name": "X-QUEPASA-CHATID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (header parameter)",
-                        "name": "X-QUEPASA-FILENAME",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (header parameter)",
-                        "name": "X-QUEPASA-TEXT",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Track ID for message tracking",
-                        "name": "X-QUEPASA-TRACKID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "MIME type of the binary file (e.g., audio/mpeg, video/mp4, image/jpeg)",
-                        "name": "Content-Type",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sendbinary/{chatid}/{filename}/{text}": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Send any binary file (audio, video, image, document) using raw binary data in request body. Supports multiple parameter methods (path, query, headers).",
-                "consumes": [
-                    "application/octet-stream",
-                    "audio/mpeg",
-                    "video/mp4",
-                    "image/jpeg",
-                    "image/png",
-                    "application/pdf"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Send"
-                ],
-                "summary": "Send binary file directly from request body",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Chat ID (path parameter)",
-                        "name": "chatid",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (path parameter)",
-                        "name": "filename",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (path parameter)",
-                        "name": "text",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (query parameter)",
-                        "name": "chatId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (query parameter)",
-                        "name": "filename",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (query parameter)",
-                        "name": "text",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID to reply to",
-                        "name": "inreply",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat ID (header parameter)",
-                        "name": "X-QUEPASA-CHATID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "File name (header parameter)",
-                        "name": "X-QUEPASA-FILENAME",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Caption text for images (header parameter)",
-                        "name": "X-QUEPASA-TEXT",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Track ID for message tracking",
-                        "name": "X-QUEPASA-TRACKID",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "MIME type of the binary file (e.g., audio/mpeg, video/mp4, image/jpeg)",
-                        "name": "Content-Type",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sendencoded": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Send text, file, poll, or any type of message to WhatsApp. Supports polls with JSON format in text field. For /sendencoded route, use 'content' field with base64 encoded file data.\n\n**Poll Example:**\n```json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"What programming languages do you know?\",\n\"options\": [\"JavaScript\", \"Python\", \"Go\", \"Java\", \"C#\", \"Ruby\"],\n\"selections\": 3\n}\n}\n```",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Send"
-                ],
-                "summary": "Send any type of message (text, file, poll, base64 content)",
-                "parameters": [
-                    {
-                        "description": "Send request body (use 'content' field for base64 encoded files, 'url' for file URL, 'poll' for poll JSON)",
+                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON.",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -2221,120 +1771,6 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.UserInfoResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v3/bot/{token}/download": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Downloads media files (images, videos, documents) from WhatsApp messages",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "Download"
-                ],
-                "summary": "Download media",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Message ID (query parameter)",
-                        "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID (query parameter alternate)",
-                        "name": "messageid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Use cached content",
-                        "name": "cache",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID (header parameter)",
-                        "name": "X-QUEPASA-MESSAGEID",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Media file",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.QpResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v3/bot/{token}/download/{messageId}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Downloads media files (images, videos, documents) from WhatsApp messages",
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "Download"
-                ],
-                "summary": "Download media",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Message ID (query parameter)",
-                        "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID (query parameter alternate)",
-                        "name": "messageid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Use cached content",
-                        "name": "cache",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID (header parameter)",
-                        "name": "X-QUEPASA-MESSAGEID",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Media file",
-                        "schema": {
-                            "type": "file"
                         }
                     },
                     "400": {
@@ -3019,6 +2455,36 @@
                 }
             }
         },
+        "models.QpReceiveResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} `json:\"extra,omitempty\"`",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/whatsapp.WhatsappMessage"
+                    }
+                },
+                "server": {
+                    "$ref": "#/definitions/models.QpServer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.QpRequestResponse": {
             "type": "object",
             "properties": {
@@ -3097,6 +2563,66 @@
                 },
                 "wid": {
                     "type": "string"
+                }
+            }
+        },
+        "models.QpServer": {
+            "type": "object",
+            "properties": {
+                "broadcasts": {
+                    "description": "should handle broadcast messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "calls": {
+                    "description": "should handle calls",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "devel": {
+                    "type": "boolean"
+                },
+                "groups": {
+                    "description": "should handle groups messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "readreceipts": {
+                    "description": "should emit read receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "token": {
+                    "description": "Public token",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "user": {
+                    "type": "string",
+                    "maxLength": 36
+                },
+                "verified": {
+                    "type": "boolean"
+                },
+                "wid": {
+                    "description": "Whatsapp session id",
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },

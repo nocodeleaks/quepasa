@@ -265,6 +265,12 @@ func (source *QpRabbitMQConfig) DetermineRoutingKey(message *whatsapp.WhatsappMe
 		return rabbitmq.QuePasaRoutingKeyEvents
 	}
 
+	// Special-case: read-receipt system payloads created by the handlers use id "readreceipt"
+	// Route them to events so consumers receive read receipts in the events queue
+	if message.Id == "readreceipt" {
+		return rabbitmq.QuePasaRoutingKeyEvents
+	}
+
 	// Check if message is a system message
 	if message.Type == whatsapp.SystemMessageType {
 		return rabbitmq.QuePasaRoutingKeyEvents

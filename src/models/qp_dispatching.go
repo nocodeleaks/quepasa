@@ -231,12 +231,20 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 			source.Failure = &currentTime
 		}
 		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
+		// Mark dispatch error on message
+		if message != nil {
+			message.MarkDispatchError()
+		}
 	} else {
 		// Webhook successful
 		metrics.WebhookSuccess.Inc()
 		source.Failure = nil
 		source.Success = &currentTime
 		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)
+		// Clear dispatch error on message
+		if message != nil {
+			message.ClearDispatchError()
+		}
 	}
 
 	return
@@ -279,6 +287,10 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
+		// Mark dispatch error on message
+		if message != nil {
+			message.MarkDispatchError()
+		}
 		return err
 	}
 
@@ -308,6 +320,11 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		currentTime := time.Now().UTC()
 		source.Failure = &currentTime
 		source.Success = nil
+
+		// Mark dispatch error on message
+		if message != nil {
+			message.MarkDispatchError()
+		}
 
 		// Still record metrics since message was processed
 		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
@@ -339,6 +356,11 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	currentTime := time.Now().UTC()
 	source.Failure = nil
 	source.Success = &currentTime
+
+	// Clear dispatch error on message
+	if message != nil {
+		message.ClearDispatchError()
+	}
 
 	logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 

@@ -1,82 +1,11 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
 	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
-	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
-
-// ReceiveAPIHandler renders route GET "/{version}/bot/{token}/receive"
-// @Summary Receive messages
-// @Description Retrieves pending messages from WhatsApp with optional timestamp filtering
-// @Tags Message
-// @Accept json
-// @Produce json
-// @Param timestamp query string false "Timestamp filter for messages"
-// @Success 200 {object} models.QpReceiveResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /v3/bot/{token}/receive [get]
-// @Router /v2/bot/{token}/receive [get]
-func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpReceiveResponse{}
-
-	server, err := GetServer(r)
-	if err != nil {
-		metrics.MessageReceiveErrors.Inc()
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		metrics.MessageReceiveErrors.Inc()
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		response.ParseError(err)
-		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
-		return
-	}
-
-	if server.Handler == nil {
-		metrics.MessageReceiveErrors.Inc()
-		err = fmt.Errorf("handlers not attached")
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	response.Total = server.Handler.Count()
-
-	timestamp, err := GetTimestamp(r)
-	if err != nil {
-		metrics.MessageReceiveErrors.Inc()
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	messages := GetOrderedMessages(server, timestamp)
-	metrics.MessagesReceived.Add(float64(len(messages)))
-
-	response.Server = server.QpServer
-	response.Messages = messages
-
-	if timestamp > 0 {
-		searchTime := time.Unix(timestamp, 0)
-		msg := fmt.Sprintf("getting with timestamp: %v => %s", timestamp, searchTime)
-		response.ParseSuccess(msg)
-	} else {
-		response.ParseSuccess("getting without filter")
-	}
-
-	RespondSuccess(w, response)
-}
 
 // SendDocumentFromBinary handles route "/sendbinary"
 // @Summary Send binary file directly from request body

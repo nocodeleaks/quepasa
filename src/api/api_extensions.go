@@ -61,6 +61,53 @@ func GetOrderedMessages(server *models.QpWhatsappServer, timestamp int64) (messa
 /*
 <summary>
 
+	Retrieve messages with timestamp parameter and dispatch error filter
+	Sorting then, by timestamp and id, desc
+	dispatchErrorFilter: "true" for messages with dispatch errors, "false" for messages without dispatch errors, "" for all messages
+
+</summary>
+*/
+/*
+<summary>
+
+	Retrieve messages with timestamp parameter and dispatch error filter
+	Sorting then, by timestamp and id, desc
+	dispatchErrorFilter: "true" for messages with dispatch errors, "false" for messages without dispatch errors, "" for all messages
+
+</summary>
+*/
+func GetOrderedMessagesWithDispatchFilter(server *models.QpWhatsappServer, timestamp int64, dispatchErrorFilter string) (messages []whatsapp.WhatsappMessage) {
+	searchTime := time.Unix(timestamp, 0)
+	allMessages := server.GetMessages(searchTime)
+
+	// Filter messages based on dispatch error status
+	switch dispatchErrorFilter {
+	case "true":
+		// Return only messages with dispatch errors
+		for _, msg := range allMessages {
+			if msg.HasDispatchError() {
+				messages = append(messages, msg)
+			}
+		}
+	case "false":
+		// Return only messages without dispatch errors
+		for _, msg := range allMessages {
+			if !msg.HasDispatchError() {
+				messages = append(messages, msg)
+			}
+		}
+	default:
+		// Return all messages (no filter)
+		messages = allMessages
+	}
+
+	sort.Sort(sort.Reverse(whatsapp.WhatsappOrderedMessages(messages)))
+	return
+}
+
+/*
+<summary>
+
 	Find a system track identifier to follow the message
 	Getting from PATH => QUERY => HEADER
 

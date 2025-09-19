@@ -71,6 +71,9 @@ type WhatsappMessage struct {
 
 	// Debug information for debug events
 	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
+
+	// Dispatch error flag - indicates if message failed to be published to external systems
+	DispatchError bool `json:"dispatch_error,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP
@@ -161,6 +164,27 @@ func (source *WhatsappMessage) FromBroadcast() bool {
 
 	return false
 }
+
+//endregion
+
+//region DISPATCH ERROR MANAGEMENT
+
+// MarkDispatchError marks the message as having a dispatch error
+func (source *WhatsappMessage) MarkDispatchError() {
+	source.DispatchError = true
+}
+
+// ClearDispatchError clears the dispatch error flag
+func (source *WhatsappMessage) ClearDispatchError() {
+	source.DispatchError = false
+}
+
+// HasDispatchError checks if the message has a dispatch error
+func (source *WhatsappMessage) HasDispatchError() bool {
+	return source.DispatchError
+}
+
+//endregion
 
 func (source *WhatsappMessage) GetAttachment() *WhatsappAttachment {
 	return source.Attachment

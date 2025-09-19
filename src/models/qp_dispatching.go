@@ -255,7 +255,19 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	startTime := time.Now()
 
 	// updating log
-	logentry := source.LogWithField(LogFields.MessageId, message.Id)
+	var messageIdForLog string
+	if message != nil {
+		messageIdForLog = message.Id
+	}
+	logentry := source.LogWithField(LogFields.MessageId, messageIdForLog)
+
+	// Safely derive message type string to avoid nil pointer dereference
+	var messageType string
+	if message != nil {
+		messageType = message.Type.String()
+	} else {
+		messageType = "unknown"
+	}
 
 	// Determine the routing key based on message type
 	routingKey := source.DetermineRoutingKey(message)
@@ -281,7 +293,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
 
 		// Record RabbitMQ publish error
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "client_unavailable", message.Type.String())
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "client_unavailable", messageType)
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {
@@ -301,7 +313,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Warnf("QuePasa setup not ready yet, message will be cached: %s", err.Error())
 		// Don't return error - let the publish method handle caching
 		// Record as warning but not as error since message will be cached
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "setup_not_ready", message.Type.String())
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "setup_not_ready", messageType)
 	}
 
 	// Publish to QuePasa Exchange with routing key
@@ -314,7 +326,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached", source.ConnectionString)
 
 		// Record RabbitMQ publish error - connection lost/cached
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "connection_lost_cached", message.Type.String())
+		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "connection_lost_cached", messageType)
 
 		// Mark as failure even though message was cached
 		currentTime := time.Now().UTC()
@@ -327,11 +339,10 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		}
 
 		// Still record metrics since message was processed
-		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
+		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, messageType)
 		duration := time.Since(startTime)
-		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, message.Type.String(), duration.Seconds())
+		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, messageType, duration.Seconds())
 		if payloadSizeBytes > 0 {
-			messageType := message.Type.String()
 			metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
 		}
 
@@ -340,15 +351,14 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	}
 
 	// Always increment RabbitMQ messages published counter
-	metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
+	metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, messageType)
 
 	// Record publish duration
 	duration := time.Since(startTime)
-	metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, message.Type.String(), duration.Seconds())
+	metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, messageType, duration.Seconds())
 
 	// Record message size if we have it
 	if payloadSizeBytes > 0 {
-		messageType := message.Type.String()
 		metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
 	}
 
@@ -400,6 +410,10 @@ func (source *QpDispatching) isEventMessage(message *whatsapp.WhatsappMessage) b
 	// Special case: Contact message with specific conditions
 	if message.Type == whatsapp.ContactMessageType {
 		return message.Edited && message.Attachment != nil
+	}
+
+	if message.Id == "readreceipt" {
+		return true
 	}
 
 	return false

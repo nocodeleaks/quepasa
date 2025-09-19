@@ -273,7 +273,7 @@ func (source *QpRabbitMQConfig) DetermineRoutingKey(message *whatsapp.WhatsappMe
 
 	// Check if message is a system message
 	if message.Type == whatsapp.SystemMessageType {
-		return rabbitmq.QuePasaRoutingKeyEvents
+		return rabbitmq.QuePasaRoutingKeyProd
 	}
 
 	// Check if message is a contact message with edited=true and has attachment
@@ -285,12 +285,12 @@ func (source *QpRabbitMQConfig) DetermineRoutingKey(message *whatsapp.WhatsappMe
 
 	// Check if message is a call message (could be considered events)
 	if message.Type == whatsapp.CallMessageType {
-		return rabbitmq.QuePasaRoutingKeyEvents
+		return rabbitmq.QuePasaRoutingKeyProd
 	}
 
 	// Check if message is a revoke message
 	if message.Type == whatsapp.RevokeMessageType {
-		return rabbitmq.QuePasaRoutingKeyEvents
+		return rabbitmq.QuePasaRoutingKeyProd
 	}
 
 	// Default to production queue for normal messages

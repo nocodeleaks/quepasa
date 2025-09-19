@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -228,13 +227,6 @@ func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 		// If a reason is returned, it means the message should be ignored.
 		// No further action is needed, so we simply return.
 		return
-	}
-
-	if rabbitmq.RabbitMQClientInstance != nil {
-		// This is done in a new goroutine to ensure the publishing process
-		// doesn't block the execution of the calling function, allowing for
-		// non-blocking message processing.
-		go rabbitmq.RabbitMQClientInstance.PublishMessage(payload)
 	}
 
 	if source.server != nil {

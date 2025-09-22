@@ -701,7 +701,7 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 	chatID := fmt.Sprint(evt.Chat.User, "@", evt.Chat.Server)
 
 	// Ignore chats with @broadcast and @newsletter
-	if strings.Contains(chatID, "@broadcast") || strings.Contains(chatID, "@newsletter") {
+	if strings.Contains(chatID, "@broadcast") || strings.Contains(chatID, "@newsletter") || strings.Contains(chatID, "@g.us") {
 		return
 	}
 

@@ -548,6 +548,13 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		}
 		// Count unhandled message as error
 		metrics.MessageReceiveUnhandled.Inc()
+
+		// If this message originates from history, do NOT dispatch it further.
+		// Historical unhandled messages are noisy and should not reach downstream handlers.
+		if message.FromHistory {
+			logentry.Debugf("skipping dispatch of historical unhandled message: %s", message.Id)
+			return
+		}
 	}
 
 	handler.Follow(message, from)

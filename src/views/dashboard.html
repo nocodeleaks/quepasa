@@ -529,12 +529,6 @@
                     <div class="metric-detail">quepasa_received_messages_total</div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon">🔃</div>
-                    <div class="stat-value" id="rabbitmqMessages">-</div>
-                    <div class="stat-label">RabbitMQ Publicadas</div>
-                    <div class="metric-detail">quepasa_rabbitmq_messages_published_total</div>
-                </div>
 
                 <div class="stat-card">
                     <div class="stat-icon">❌</div>
@@ -602,6 +596,62 @@
                     <div class="stat-value" id="successRate">-</div>
                     <div class="stat-label">Taxa de Sucesso</div>
                     <div class="metric-detail">Calculado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RabbitMQ Summary Section -->
+        <div class="stats-section">
+            <h2 class="stats-section-title">🐇 Dados do RabbitMQ</h2>
+            <div class="stats-section-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-value" id="rabbitmqTotalPublished">-</div>
+                    <div class="stat-label">Total Publicado</div>
+                    <div class="metric-detail">quepasa_rabbitmq_messages_published_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🚀</div>
+                    <div class="stat-value" id="rabbitmqProd">-</div>
+                    <div class="stat-label">Fila prod</div>
+                    <div class="metric-detail">Filtrar por queue="prod"</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🧾</div>
+                    <div class="stat-value" id="rabbitmqHistory">-</div>
+                    <div class="stat-label">Fila history</div>
+                    <div class="metric-detail">Filtrar por queue="history"</div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="rabbitmqEvents">-</div>
+                    <div class="stat-label">Fila events</div>
+                    <div class="metric-detail">Filtrar por queue="events"</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🔎</div>
+                    <div class="stat-value" id="rabbitmqTopType">-</div>
+                    <div class="stat-label">Tipo mais publicado</div>
+                    <div class="metric-detail">message_type por quantidade</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value" id="rabbitmqTopTypeHistory">-</div>
+                    <div class="stat-label">Top em history</div>
+                    <div class="metric-detail">message_type na fila history</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">📍</div>
+                    <div class="stat-value" id="rabbitmqTopQueue">-</div>
+                    <div class="stat-label">Queue com mais msgs</div>
+                    <div class="metric-detail">queue por quantidade</div>
                 </div>
             </div>
         </div>
@@ -745,6 +795,10 @@
                         <div class="performance-item">
                             <span class="performance-label">Webhook Médio:</span>
                             <span class="performance-value" id="avgWebhookDuration">-</span>
+                        </div>
+                        <div class="performance-item">
+                            <span class="performance-label">RabbitMQ Latência:</span>
+                            <span class="performance-value" id="avgRabbitMQLatency">-</span>
                         </div>
                         <div class="performance-item">
                             <span class="performance-label">Total Processado:</span>
@@ -905,8 +959,6 @@
             document.getElementById('messagesReceived').textContent =
                 getMetricValue(metrics, 'quepasa_received_messages_total').toLocaleString();
 
-            document.getElementById('rabbitmqMessages').textContent =
-                getMetricValue(metrics, 'quepasa_rabbitmq_messages_published_total').toLocaleString();
 
             // Additional metrics
             document.getElementById('webhooksSentTotal').textContent =
@@ -963,6 +1015,7 @@
             updateRabbitMQSizeHistogram(metrics);
             updateRabbitMQLatencyHistogram(metrics);
             updateWebhookDurationHistogram(metrics);
+            updateRabbitMQSummary(metrics);
             updateGoMetrics(metrics);
             updatePerformanceSummary(metrics);
 
@@ -975,6 +1028,61 @@
 
             // Update timestamp
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Compute RabbitMQ summary and update UI
+        function updateRabbitMQSummary(metrics) {
+            const metricName = 'quepasa_rabbitmq_messages_published_total';
+
+            // Build totals
+            const totals = { total: 0, history: 0, prod: 0, events: 0 };
+            const byType = {};
+            const byQueue = {};
+
+            if (metrics[metricName]) {
+                metrics[metricName].forEach(m => {
+                    const value = Number(m.value || 0);
+                    totals.total += value;
+
+                    const queue = m.labels.queue || 'unknown';
+                    const type = m.labels.message_type || 'unknown';
+
+                    // Per queue
+                    byQueue[queue] = (byQueue[queue] || 0) + value;
+
+                    // Per type
+                    byType[type] = (byType[type] || 0) + value;
+
+                    if (queue === 'history') totals.history += value;
+                    if (queue === 'prod') totals.prod += value;
+                    if (queue === 'events') totals.events += value;
+                });
+            }
+
+            // Find top type and top queue
+            const topType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0];
+            const topQueue = Object.entries(byQueue).sort((a, b) => b[1] - a[1])[0];
+
+            // Top type inside history queue
+            const historyTypes = {};
+            if (metrics[metricName]) {
+                metrics[metricName].forEach(m => {
+                    if ((m.labels.queue || '') === 'history') {
+                        const t = m.labels.message_type || 'unknown';
+                        historyTypes[t] = (historyTypes[t] || 0) + Number(m.value || 0);
+                    }
+                });
+            }
+            const topHistoryType = Object.entries(historyTypes).sort((a, b) => b[1] - a[1])[0];
+
+            document.getElementById('rabbitmqTotalPublished').textContent = totals.total.toLocaleString();
+            document.getElementById('rabbitmqHistory').textContent = totals.history.toLocaleString();
+            document.getElementById('rabbitmqProd').textContent = totals.prod.toLocaleString();
+            document.getElementById('rabbitmqEvents').textContent = totals.events.toLocaleString();
+
+            document.getElementById('rabbitmqTopType').textContent = topType ? `${topType[0]} (${topType[1].toLocaleString()})` : '-';
+            document.getElementById('rabbitmqTopQueue').textContent = topQueue ? `${topQueue[0]} (${topQueue[1].toLocaleString()})` : '-';
+            document.getElementById('rabbitmqTopTypeHistory').textContent = topHistoryType ? `${topHistoryType[0]} (${topHistoryType[1].toLocaleString()})` : '-';
         }
 
         // Update webhook chart
@@ -1365,6 +1473,11 @@
             const avgWebhookDuration = getHistogramAverage(metrics, 'quepasa_webhook_duration_seconds_bucket');
             document.getElementById('avgWebhookDuration').textContent = 
                 avgWebhookDuration > 0 ? (avgWebhookDuration * 1000).toFixed(2) + ' ms' : '-';
+
+            // Calculate average RabbitMQ publish latency (convert to ms)
+            const avgRabbitMQLatency = getHistogramAverage(metrics, 'quepasa_rabbitmq_publish_duration_seconds_bucket');
+            document.getElementById('avgRabbitMQLatency').textContent =
+                avgRabbitMQLatency > 0 ? (avgRabbitMQLatency * 1000).toFixed(2) + ' ms' : '-';
 
             // Calculate total processed messages
             const totalSent = getMetricValue(metrics, 'quepasa_sent_messages_total');

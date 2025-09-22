@@ -505,6 +505,14 @@
 
 <body>
     <button class="refresh-button" onclick="refreshData()" title="Atualizar Dados">🔄</button>
+    <!-- Refresh interval selector -->
+    <select id="refreshIntervalSelector" title="Intervalo de atualização" style="position: fixed; top: 20px; right: 90px; background: #ffffff; border: 1px solid var(--border-light); padding: 6px 8px; border-radius: 8px;">
+        <option value="5">5s</option>
+        <option value="10">10s</option>
+        <option value="30">30s</option>
+        <option value="60">1m</option>
+        <option value="0">Não atualizar</option>
+    </select>
 
     <div class="container">
         <h1>
@@ -880,6 +888,7 @@
     <script>
         let metricsData = {};
         let isLoading = false;
+    let refreshTimer = null;
 
         // Parse Prometheus metrics format
         function parsePrometheusMetrics(text) {
@@ -1546,8 +1555,23 @@
             // Fetch initial data
             fetchMetrics();
 
-            // Auto-refresh every 5 seconds
-            setInterval(fetchMetrics, 5000);
+            // Setup refresh interval selector
+            const selector = document.getElementById('refreshIntervalSelector');
+            function applyInterval() {
+                // clear previous timer
+                if (refreshTimer) {
+                    clearInterval(refreshTimer);
+                    refreshTimer = null;
+                }
+
+                const val = Number(selector.value);
+                if (val > 0) {
+                    refreshTimer = setInterval(fetchMetrics, val * 1000);
+                }
+            }
+            selector.addEventListener('change', applyInterval);
+            // default selection -> apply
+            applyInterval();
 
             // Update timestamp every second
             setInterval(() => {

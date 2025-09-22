@@ -10,6 +10,7 @@ const (
 	// and should not be processed further
 	// It must contains a reason for the discard on Debug property
 	UnhandledMessageType WhatsappMessageType = iota
+	ViewOnceMessageType
 	ImageMessageType
 	DocumentMessageType
 	AudioMessageType
@@ -54,6 +55,8 @@ func (Type WhatsappMessageType) String() string {
 		return "revoke"
 	case PollMessageType:
 		return "poll"
+	case ViewOnceMessageType:
+		return "view_once"
 	}
 
 	// If the type is not recognized, return "unhandled"

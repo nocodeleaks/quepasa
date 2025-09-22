@@ -328,6 +328,10 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		go source.OnOfflineSyncCompleted(*evt)
 		return
 
+	case *events.UndecryptableMessage:
+		go source.UndecryptableMessage(*evt)
+		return
+
 	case
 		*events.AppState,
 		*events.CallTerminate,
@@ -403,6 +407,48 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 	// Fallback to system chat if we can't extract chat information
 	message.Chat = whatsapp.WASYSTEMCHAT
 	source.Follow(message, "debug")
+}
+
+// UndecryptableMessage handles events where message decryption failed.
+// Special-case: if the message is a view_once (self-destructing) item,
+// treat it as a custom message type and attempt to populate chat/participant
+// info when available.
+// Otherwise, dispatch as an unhandled debug event if configured to do so.
+
+func (source *WhatsmeowHandlers) UndecryptableMessage(evt events.UndecryptableMessage) {
+	logentry := source.GetLogger()
+	logentry = logentry.WithField(LogFields.MessageId, evt.Info.ID)
+	logentry.Tracef("undecryptable message received: %v", evt)
+
+	// If unavailable type indicates view_once, create a custom message for it
+	if strings.EqualFold(string(evt.UnavailableType), "view_once") {
+		message := &whatsapp.WhatsappMessage{
+			Id:        evt.Info.ID,
+			Timestamp: ImproveTimestamp(evt.Info.Timestamp),
+			Type:      whatsapp.ViewOnceMessageType,
+			FromMe:    evt.Info.IsFromMe,
+		}
+
+		// Try to populate chat/participant when Info is present
+		if len(evt.Info.ID) > 0 {
+			message.Id = evt.Info.ID
+			source.PopulateChatAndParticipant(message, evt.Info)
+		} else {
+			// fallback to system chat if not available
+			message.Chat = whatsapp.WASYSTEMCHAT
+		}
+
+		// Follow the dispatching  flow
+		source.Follow(message, "view_once")
+		return
+	}
+
+	// Not a view_once: dispatch as an unhandled debug event
+	if source.ShouldDispatchUnhandled() {
+		go source.DispatchUnhandledEvent(evt, reflect.TypeOf(evt).String())
+	} else {
+		logentry.Debugf("undecryptable event ignored (dispatch disabled): %v", reflect.TypeOf(evt))
+	}
 }
 
 func HistorySyncSaveJSON(evt events.HistorySync) {

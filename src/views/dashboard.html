@@ -218,6 +218,7 @@
             padding: 25px;
             border: 1px solid var(--border-light);
             transition: all 0.3s ease;
+            overflow: hidden; /* keep internal charts inside the card */
         }
 
         .chart-item:hover {
@@ -238,6 +239,8 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            /* ensure charts don't overflow their card vertically */
+            overflow: hidden;
         }
 
         .donut-chart {
@@ -274,19 +277,26 @@
         .bar-chart {
             display: flex;
             align-items: end;
-            justify-content: center;
-            gap: 15px;
+            /* allow wrapping when there are many bars and keep them inside the card */
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 12px;
             height: 200px;
-            padding: 20px 0;
+            /* extra bottom padding to make room for labels */
+            padding: 20px 8px 48px 8px;
+            /* allow horizontal scroll if there are more bars than fit */
+            overflow-x: auto;
         }
 
         .bar {
             background: linear-gradient(to top, var(--accent-color), var(--text-accent));
             border-radius: 4px 4px 0 0;
-            width: 40px;
+            width: 38px;
+            min-width: 28px;
             min-height: 10px;
             position: relative;
             transition: all 0.3s ease;
+            flex: 0 0 auto; /* prevent bars from stretching/shrinking unpredictably */
         }
 
         .bar:hover {
@@ -296,12 +306,16 @@
 
         .bar-label {
             position: absolute;
-            bottom: -25px;
+            bottom: -28px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 0.7rem;
-            white-space: nowrap;
+            font-size: 0.72rem;
             color: var(--text-secondary);
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
         }
 
         .bar-value {
@@ -338,10 +352,13 @@
         .histogram-chart {
             display: flex;
             align-items: end;
-            justify-content: center;
-            gap: 15px;
+            /* allow wrapping and horizontal scroll for many categories */
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 12px;
             height: 200px;
-            padding: 20px 0;
+            padding: 20px 8px 48px 8px;
+            overflow-x: auto;
         }
 
         .histogram-bar {
@@ -352,7 +369,7 @@
             min-height: 5px;
             position: relative;
             transition: all 0.3s ease;
-            flex: 1;
+            flex: 0 0 auto; /* keep each bar a fixed block so wrapping/scroll works well */
         }
 
         .histogram-bar:hover {
@@ -373,12 +390,14 @@
 
         .histogram-bar-label {
             position: absolute;
-            bottom: -30px;
+            bottom: -36px;
             left: 50%;
             transform: translateX(-50%) rotate(-45deg);
-            font-size: 0.6rem;
+            font-size: 0.62rem;
             color: var(--text-secondary);
-            white-space: nowrap;
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
             transform-origin: center;
         }
 

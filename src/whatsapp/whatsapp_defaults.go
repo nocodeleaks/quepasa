@@ -26,11 +26,11 @@ var WhatsappMIMEAudio = [...]string{"audio/oga", "audio/ogx", "audio/x-mpeg-3", 
 var WhatsappMIMEVideo = [...]string{"video/mp4"}
 
 // Mime types for image messages, tested 3º
-var WhatsappMIMEImage = [...]string{"image/jpeg", "image/jpg", "image/webp", "image/png"}
+var WhatsappMIMEImage = [...]string{"image/jpeg", "image/jpg", "image/webp"}
 
 // Mime types for document messages, tested 4º
 var WhatsappMIMEDocument = [...]string{
-	"text/xml", "application/pdf",
+	"text/xml", "application/pdf", "image/png",
 	"application/ogg", "audio/ogg", "audio/wav", "audio/wave", "audio/x-wav", // not accepted anymore as audio msgs, but still compatible for convert to ptt
 }
 

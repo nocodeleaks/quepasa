@@ -249,6 +249,8 @@ go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c h1:G8mT+1CY76BM49kCnw2OQm
 go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c/go.mod h1:dvltpCF0rOHbbur25DHbQ3Ovi747z2Pm11S2M7p1T74=
 go.mau.fi/whatsmeow v0.0.0-20250922112717-258fd9454b95 h1:1NnI9nUaulwP0c3I0arl+hSAl/1QKzTonWNLWi5gAEI=
 go.mau.fi/whatsmeow v0.0.0-20250922112717-258fd9454b95/go.mod h1:dvltpCF0rOHbbur25DHbQ3Ovi747z2Pm11S2M7p1T74=
+go.mau.fi/whatsmeow v0.0.0-20250927223058-95e557a3b528 h1:Z3TToJNr4SrD4/8PwK1/OSHC+GOMVvu31C2nT01DXwI=
+go.mau.fi/whatsmeow v0.0.0-20250927223058-95e557a3b528/go.mod h1:dvltpCF0rOHbbur25DHbQ3Ovi747z2Pm11S2M7p1T74=
 go.uber.org/goleak v1.1.10/go.mod h1:8a7PlsEVH3e/a/GLqe5IIrQx6GzcnRmZEufDUTk4A7A=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=

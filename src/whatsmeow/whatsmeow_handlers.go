@@ -14,6 +14,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/appstate"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
@@ -587,6 +588,18 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	// Process diferent message types
 	HandleKnowingMessages(handler, message, evt.Message)
 
+	// Process mentions using the centralized function
+	if message.FromGroup() && evt.Message != nil {
+		// Extract ContextInfo from ExtendedTextMessage (most common case for mentions)
+		var contextInfo *waE2E.ContextInfo
+		if evt.Message.ExtendedTextMessage != nil && evt.Message.ExtendedTextMessage.ContextInfo != nil {
+			contextInfo = evt.Message.ExtendedTextMessage.ContextInfo
+		}
+
+		// Process mentions using the function
+		handler.ProcessMentions(message, contextInfo)
+	}
+
 	// discard and return
 	if message.Type == whatsapp.UnhandledMessageType {
 		if message.Debug == nil {
@@ -1024,5 +1037,63 @@ func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.Wh
 		logentry.Debugf("Participant name enriched via cache for JID %s: %s", senderJID.String(), participant.Title)
 	} else {
 		logentry.Warnf("Could not find contact name for JID %s (clean: %s), title remains empty", senderJID.String(), cleanJID.String())
+	}
+
+}
+
+// ProcessMentions processes mentions in message text and converts them to readable format
+func (handler *WhatsmeowHandlers) ProcessMentions(message *whatsapp.WhatsappMessage, contextInfo *waE2E.ContextInfo) {
+	if contextInfo == nil || len(contextInfo.GetMentionedJID()) == 0 {
+		return
+	}
+
+	logentry := handler.GetLogger()
+	originalText := message.Text
+	formattedText := originalText
+
+	// Process each mentioned JID
+	for _, jidStr := range contextInfo.GetMentionedJID() {
+		if parsedJID, err := types.ParseJID(jidStr); err == nil {
+			var replacement string
+			var originalMention string = "@" + parsedJID.User
+
+			// Check if it's a LID
+			if parsedJID.Server == whatsapp.WHATSAPP_SERVERDOMAIN_LID && handler.GetContactManager() != nil {
+				// Try to resolve LID to phone
+				if phone, err := handler.GetContactManager().GetPhoneFromLID(jidStr); err == nil && phone != "" {
+					// Try to get contact name using centralized function
+					contactName := GetContactName(handler.Client, parsedJID)
+
+					// Format: @telefone (nome) or just @telefone
+					replacement = "@" + phone
+					if contactName != "" {
+						replacement += " (" + contactName + ")"
+					}
+				}
+			} else if parsedJID.Server == whatsapp.WHATSAPP_SERVERDOMAIN_USER {
+				// Handle regular user mentions (@s.whatsapp.net)
+				phone := parsedJID.User
+
+				// Try to get contact name using centralized function
+				contactName := GetContactName(handler.Client, parsedJID)
+
+				// Always format with phone and name if available
+				replacement = "@" + phone
+				if contactName != "" {
+					replacement += " (" + contactName + ")"
+				}
+			}
+
+			// Apply replacement if we have one
+			if replacement != "" && strings.Contains(formattedText, originalMention) {
+				formattedText = strings.ReplaceAll(formattedText, originalMention, replacement)
+			}
+		}
+	}
+
+	// Update message text if it was changed
+	if formattedText != originalText {
+		message.Text = formattedText
+		logentry.Infof("Mention converted: %s -> %s", originalText, formattedText)
 	}
 }

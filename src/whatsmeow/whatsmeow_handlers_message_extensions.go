@@ -101,6 +101,14 @@ func HandleTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.
 	log.Debug("received a text message !")
 	out.Type = whatsapp.TextMessageType
 	out.Text = in.GetConversation()
+
+	// Check for mentions in simple text messages too
+	if len(out.Text) > 0 {
+		extractedMentions := GetMentions(out.Text)
+		if len(extractedMentions) > 0 {
+			log.Debugf("TextMessage mentions: %v", extractedMentions)
+		}
+	}
 }
 
 func HandleEditTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.FutureProofMessage) {
@@ -219,6 +227,11 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 	if info != nil {
 		out.ForwardingScore = info.GetForwardingScore()
 		out.InReply = info.GetStanzaID()
+
+		// Check for mentions and add debug information
+		if len(info.GetMentionedJID()) > 0 {
+			logentry.Debugf("ExtendedTextMessage mentions: %v", info.GetMentionedJID())
+		}
 	}
 
 	// ads -------------------

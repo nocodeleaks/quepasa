@@ -99,6 +99,13 @@ func HandleTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.
 	log.Debug("received a text message !")
 	out.Type = whatsapp.TextMessageType
 	out.Text = in.GetConversation()
+
+	if len(out.Text) > 0 {
+		extractedMentions := GetMentions(out.Text)
+		if len(extractedMentions) > 0 {
+			log.Debugf("TextMessage mentions: %v", extractedMentions)
+		}
+	}
 }
 
 func HandleEditTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.FutureProofMessage) {
@@ -219,6 +226,10 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 		out.InReply = info.GetStanzaID()
 	}
 
+	if len(info.GetMentionedJID()) > 0 {
+		logentry.Debugf("ExtendedTextMessage mentions: %v", info.GetMentionedJID())
+	}
+
 	// ads -------------------
 	adreply := info.GetExternalAdReply()
 	if adreply != nil {
@@ -243,6 +254,9 @@ func HandleReactionMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 
 	out.Type = whatsapp.TextMessageType
 	out.Text = in.GetText()
+	// marking as reaction
+	out.InReaction = true
+	// setting the message ID being reacted to
 	out.InReply = in.Key.GetID()
 }
 

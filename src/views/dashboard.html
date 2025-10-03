@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuePasa Dashboard</title>
+    <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-accent: #3b82f6;
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --accent-color: #3b82f6;
+            --accent-light: #dbeafe;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-medium: rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark mode colors */
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --bg-card: #334155;
+                --bg-card-hover: #475569;
+                --text-primary: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --text-accent: #60a5fa;
+                --border-light: #475569;
+                --border-medium: #64748b;
+                --accent-color: #60a5fa;
+                --accent-light: #1e40af;
+                --success-color: #34d399;
+                --error-color: #f87171;
+                --warning-color: #fbbf24;
+                --shadow-light: rgba(0, 0, 0, 0.2);
+                --shadow-medium: rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px var(--shadow-light);
+            border: 1px solid var(--border-light);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text-primary);
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.online {
+            background: var(--success-color);
+            box-shadow: 0 0 10px var(--success-color);
+        }
+
+        .status-indicator.offline {
+            background: var(--error-color);
+            box-shadow: 0 0 10px var(--error-color);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stats-section {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid var(--border-light);
+        }
+
+        .stats-section-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--text-accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--shadow-medium);
+            background: var(--bg-card-hover);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-color);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--text-accent);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-section {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid var(--border-light);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .chart-item {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+            overflow: hidden; /* keep internal charts inside the card */
+        }
+
+        .chart-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--shadow-medium);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--text-accent);
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            /* ensure charts don't overflow their card vertically */
+            overflow: hidden;
+        }
+
+        .donut-chart {
+            width: 200px;
+            height: 200px;
+            position: relative;
+        }
+
+        .donut-chart svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .donut-chart .center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .donut-chart .center-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .donut-chart .center-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: end;
+            /* allow wrapping when there are many bars and keep them inside the card */
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 12px;
+            height: 200px;
+            /* extra bottom padding to make room for labels */
+            padding: 20px 8px 48px 8px;
+            /* allow horizontal scroll if there are more bars than fit */
+            overflow-x: auto;
+        }
+
+        .bar {
+            background: linear-gradient(to top, var(--accent-color), var(--text-accent));
+            border-radius: 4px 4px 0 0;
+            width: 38px;
+            min-width: 28px;
+            min-height: 10px;
+            position: relative;
+            transition: all 0.3s ease;
+            flex: 0 0 auto; /* prevent bars from stretching/shrinking unpredictably */
+        }
+
+        .bar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px var(--shadow-medium);
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-accent);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .histogram-chart {
+            display: flex;
+            align-items: end;
+            /* allow wrapping and horizontal scroll for many categories */
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 12px;
+            height: 200px;
+            padding: 20px 8px 48px 8px;
+            overflow-x: auto;
+        }
+
+        .histogram-bar {
+            background: linear-gradient(to top, var(--accent-color), var(--text-accent));
+            border-radius: 4px 4px 0 0;
+            min-width: 20px;
+            max-width: 40px;
+            min-height: 5px;
+            position: relative;
+            transition: all 0.3s ease;
+            flex: 0 0 auto; /* keep each bar a fixed block so wrapping/scroll works well */
+        }
+
+        .histogram-bar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px var(--shadow-medium);
+        }
+
+        .histogram-bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--text-accent);
+            white-space: nowrap;
+        }
+
+        .histogram-bar-label {
+            position: absolute;
+            bottom: -36px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-45deg);
+            font-size: 0.62rem;
+            color: var(--text-secondary);
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transform-origin: center;
+        }
+
+        .refresh-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--shadow-medium);
+        }
+
+        .refresh-button:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+
+        .last-update {
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: var(--error-color);
+        }
+
+        .metric-detail {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            margin-top: 5px;
+            color: var(--text-secondary);
+        }
+
+        .no-data {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 150px;
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .performance-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .performance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+        }
+
+        .performance-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .performance-value {
+            font-weight: bold;
+            color: var(--text-accent);
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .chart-item {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="refresh-button" onclick="refreshData()" title="Atualizar Dados">🔄</button>
+    <!-- Refresh interval selector -->
+    <select id="refreshIntervalSelector" title="Intervalo de atualização" style="position: fixed; top: 20px; right: 90px; background: #ffffff; border: 1px solid var(--border-light); padding: 6px 8px; border-radius: 8px;">
+        <option value="5">5s</option>
+        <option value="10">10s</option>
+        <option value="30">30s</option>
+        <option value="60">1m</option>
+        <option value="0">Não atualizar</option>
+    </select>
+
+    <div class="container">
+        <h1>
+            <span class="status-indicator" id="statusIndicator"></span>
+            QuePasa Dashboard
+        </h1>
+
+        <div class="stats-section">
+            <h2 class="stats-section-title">📨 Dados de Mensagens</h2>
+            <div class="stats-section-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📨</div>
+                    <div class="stat-value" id="messagesSent">-</div>
+                    <div class="stat-label">Mensagens Enviadas</div>
+                    <div class="metric-detail">quepasa_sent_messages_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">📬</div>
+                    <div class="stat-value" id="messagesReceived">-</div>
+                    <div class="stat-label">Mensagens Recebidas</div>
+                    <div class="metric-detail">quepasa_received_messages_total</div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-value" id="messageErrors">-</div>
+                    <div class="stat-label">Erros de Mensagem</div>
+                    <div class="metric-detail">quepasa_receive_message_errors_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-value" id="syncEvents">-</div>
+                    <div class="stat-label">Eventos de Sync</div>
+                    <div class="metric-detail">quepasa_receive_sync_events_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-value" id="unhandledMessages">-</div>
+                    <div class="stat-label">Mensagens Não Tratadas</div>
+                    <div class="metric-detail">quepasa_receive_message_unhandled_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="avgMessageSize">-</div>
+                    <div class="stat-label">Tamanho Médio (bytes)</div>
+                    <div class="metric-detail">quepasa_rabbitmq_message_size_bytes</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-value" id="avgPublishDuration">-</div>
+                    <div class="stat-label">Latência Média (ms)</div>
+                    <div class="metric-detail">quepasa_rabbitmq_publish_duration_seconds</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h2 class="stats-section-title">🌐 Dados de Webhook</h2>
+            <div class="stats-section-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🌐</div>
+                    <div class="stat-value" id="webhooksSentTotal">-</div>
+                    <div class="stat-label">Webhooks Enviados</div>
+                    <div class="metric-detail">quepasa_webhooks_sent_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="webhookSuccessTotal">-</div>
+                    <div class="stat-label">Webhooks Sucesso</div>
+                    <div class="metric-detail">quepasa_webhook_success_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-value" id="webhookTimeoutsTotal">-</div>
+                    <div class="stat-label">Webhook Timeouts</div>
+                    <div class="metric-detail">quepasa_webhook_timeouts_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">✈️</div>
+                    <div class="stat-value" id="successRate">-</div>
+                    <div class="stat-label">Taxa de Sucesso</div>
+                    <div class="metric-detail">Calculado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RabbitMQ Summary Section -->
+        <div class="stats-section">
+            <h2 class="stats-section-title">🐇 Dados do RabbitMQ</h2>
+            <div class="stats-section-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-value" id="rabbitmqTotalPublished">-</div>
+                    <div class="stat-label">Total Publicado</div>
+                    <div class="metric-detail">quepasa_rabbitmq_messages_published_total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🚀</div>
+                    <div class="stat-value" id="rabbitmqProd">-</div>
+                    <div class="stat-label">Fila prod</div>
+                    <div class="metric-detail">quepasa.production</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🧾</div>
+                    <div class="stat-value" id="rabbitmqHistory">-</div>
+                    <div class="stat-label">Fila history</div>
+                    <div class="metric-detail">quepasa.history</div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="rabbitmqEvents">-</div>
+                    <div class="stat-label">Fila events</div>
+                    <div class="metric-detail">quepasa.events</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🔎</div>
+                    <div class="stat-value" id="rabbitmqTopType">-</div>
+                    <div class="stat-label">Tipo mais publicado</div>
+                    <div class="metric-detail">message_type por quantidade</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value" id="rabbitmqTopTypeHistory">-</div>
+                    <div class="stat-label">Top em history</div>
+                    <div class="metric-detail">message_type na fila history</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">📍</div>
+                    <div class="stat-value" id="rabbitmqTopQueue">-</div>
+                    <div class="stat-label">Queue com mais msgs</div>
+                    <div class="metric-detail">queue por quantidade</div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="charts-grid">
+            <div class="chart-item">
+                <div class="chart-title">📊 Mensagens por Tipo</div>
+                <div class="chart-container">
+                    <div class="bar-chart" id="messageTypesChart">
+                        <!-- Bars will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-item">
+                <div class="chart-title">🔌 Status dos Webhooks</div>
+                <div class="chart-container">
+                    <div class="bar-chart" id="webhooksChart">
+                        <div class="bar" style="height: 20px;">
+                            <div class="bar-value" id="webhooksSent">0</div>
+                            <div class="bar-label">Enviados</div>
+                        </div>
+                        <div class="bar" style="height: 10px;">
+                            <div class="bar-value" id="webhookErrors">0</div>
+                            <div class="bar-label">Erros</div>
+                        </div>
+                        <div class="bar" style="height: 5px;">
+                            <div class="bar-value" id="webhookTimeouts">0</div>
+                            <div class="bar-label">Timeouts</div>
+                        </div>
+                        <div class="bar" style="height: 15px;">
+                            <div class="bar-value" id="webhookSuccess">0</div>
+                            <div class="bar-label">Sucessos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-item">
+                <div class="chart-title">📈 RabbitMQ - Tamanho das Mensagens</div>
+                <div class="chart-container">
+                    <div class="bar-chart" id="rabbitmqSizeChart">
+                        <!-- Bars will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-item">
+                <div class="chart-title">⚡ RabbitMQ - Latência de Publicação</div>
+                <div class="chart-container">
+                    <div class="bar-chart" id="rabbitmqLatencyChart">
+                        <!-- Bars will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span>Latência Média por Tipo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Histogramas RabbitMQ e Webhooks -->
+        <div class="charts-grid">
+            <div class="chart-item">
+                <div class="chart-title">📊 RabbitMQ - Histograma de Tamanho (Buckets)</div>
+                <div class="chart-container">
+                    <div class="histogram-chart" id="rabbitmqSizeHistogram">
+                        <!-- Histogram bars will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <span>Mensagens por Bucket</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-item">
+                <div class="chart-title">⏱️ RabbitMQ - Histograma de Latência (Buckets)</div>
+                <div class="chart-container">
+                    <div class="histogram-chart" id="rabbitmqLatencyHistogram">
+                        <!-- Histogram bars will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <span>Latência por Bucket</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-item">
+                <div class="chart-title">🌐 Webhook - Histograma de Duração (Buckets)</div>
+                <div class="chart-container">
+                    <div class="histogram-chart" id="webhookDurationHistogram">
+                        <!-- Histogram bars will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f59e0b;"></div>
+                        <span>Duração por Bucket</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-item">
+                <div class="chart-title">📊 Resumo de Performance</div>
+                <div class="chart-container">
+                    <div class="performance-summary">
+                        <div class="performance-item">
+                            <span class="performance-label">RabbitMQ Médio:</span>
+                            <span class="performance-value" id="avgRabbitMQSize">-</span>
+                        </div>
+                        <div class="performance-item">
+                            <span class="performance-label">Webhook Médio:</span>
+                            <span class="performance-value" id="avgWebhookDuration">-</span>
+                        </div>
+                        <div class="performance-item">
+                            <span class="performance-label">RabbitMQ Latência:</span>
+                            <span class="performance-value" id="avgRabbitMQLatency">-</span>
+                        </div>
+                        <div class="performance-item">
+                            <span class="performance-label">Total Processado:</span>
+                            <span class="performance-value" id="totalProcessed">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Sistema Go -->
+        <div class="stats-section">
+            <h2 class="stats-section-title">🔧 Informações do Sistema Go</h2>
+            <div class="stats-section-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🔢</div>
+                    <div class="stat-value" id="goVersion">-</div>
+                    <div class="stat-label">Versão do Go</div>
+                    <div class="metric-detail">go_info</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🧵</div>
+                    <div class="stat-value" id="goGoroutines">-</div>
+                    <div class="stat-label">Goroutines Ativas</div>
+                    <div class="metric-detail">go_goroutines</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🧵</div>
+                    <div class="stat-value" id="goThreads">-</div>
+                    <div class="stat-label">Threads do SO</div>
+                    <div class="metric-detail">go_threads</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🗑️</div>
+                    <div class="stat-value" id="goGCCount">-</div>
+                    <div class="stat-label">Ciclos de GC</div>
+                    <div class="metric-detail">go_gc_duration_seconds_count</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-value" id="goGCDuration">-</div>
+                    <div class="stat-label">Duração Total GC (ms)</div>
+                    <div class="metric-detail">go_gc_duration_seconds_sum</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🧠</div>
+                    <div class="stat-value" id="goMemHeapAlloc">-</div>
+                    <div class="stat-label">Heap Alocado (MB)</div>
+                    <div class="metric-detail">go_memstats_heap_alloc_bytes</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="goMemHeapInuse">-</div>
+                    <div class="stat-label">Heap em Uso (MB)</div>
+                    <div class="metric-detail">go_memstats_heap_inuse_bytes</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">💾</div>
+                    <div class="stat-value" id="goMemSys">-</div>
+                    <div class="stat-label">Memória do Sistema (MB)</div>
+                    <div class="metric-detail">go_memstats_sys_bytes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-update">
+            <span class="status-indicator" id="updateIndicator"></span>
+            Última atualização: <span id="lastUpdate">-</span>
+        </div>
+    </div>
+
+    <script>
+        let metricsData = {};
+        let isLoading = false;
+    let refreshTimer = null;
+
+        // Parse Prometheus metrics format
+        function parsePrometheusMetrics(text) {
+            const lines = text.split('\n');
+            const metrics = {};
+
+            for (const line of lines) {
+                if (line.startsWith('#') || !line.trim()) continue;
+
+                const match = line.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)\{?([^}]*)\}?\s+([^\s]+)/);
+                if (match) {
+                    const [, name, labels, value] = match;
+
+                    if (!metrics[name]) {
+                        metrics[name] = [];
+                    }
+
+                    const labelObj = {};
+                    if (labels) {
+                        const labelPairs = labels.match(/([a-zA-Z_][a-zA-Z0-9_]*)="([^"]*)"/g);
+                        if (labelPairs) {
+                            labelPairs.forEach(pair => {
+                                const [key, val] = pair.split('=');
+                                labelObj[key] = val.replace(/"/g, '');
+                            });
+                        }
+                    }
+
+                    metrics[name].push({
+                        labels: labelObj,
+                        value: parseFloat(value)
+                    });
+                }
+            }
+
+            return metrics;
+        }
+
+        // Get metric value by name and optional labels
+        function getMetricValue(metrics, name, labels = {}) {
+            if (!metrics[name]) return 0;
+
+            for (const metric of metrics[name]) {
+                let matches = true;
+                for (const [key, value] of Object.entries(labels)) {
+                    if (metric.labels[key] !== value) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    return metric.value;
+                }
+            }
+
+            // If no exact match, return sum of all values
+            return metrics[name].reduce((sum, metric) => sum + metric.value, 0);
+        }
+
+        // Calculate average from histogram
+        function getHistogramAverage(metrics, name, labels = {}) {
+            const sumName = name.replace('_bucket', '_sum');
+            const countName = name.replace('_bucket', '_count');
+
+            const sum = getMetricValue(metrics, sumName, labels);
+            const count = getMetricValue(metrics, countName, labels);
+
+            return count > 0 ? sum / count : 0;
+        }
+
+        // Color helpers: deterministic color per string (keeps fixed overrides)
+        function hashStringToHue(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0; // convert to 32bit
+            }
+            return Math.abs(hash) % 360;
+        }
+
+        function hslToHex(h, s, l) {
+            s /= 100; l /= 100;
+            const k = n => (n + h / 30) % 12;
+            const a = s * Math.min(l, 1 - l);
+            const f = n => {
+                const color = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+                return Math.round(255 * color).toString(16).padStart(2, '0');
+            };
+            return `#${f(0)}${f(8)}${f(4)}`;
+        }
+
+        function hexToRgb(hex) {
+            const clean = hex.replace('#', '');
+            const bigint = parseInt(clean, 16);
+            return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+        }
+
+        function rgbToHsl(r, g, b){
+            r/=255; g/=255; b/=255;
+            const max = Math.max(r,g,b), min = Math.min(r,g,b);
+            let h, s, l = (max + min) / 2;
+            if(max === min){ h = s = 0; }
+            else{
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch(max){
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+        }
+
+        // fixed override colors (kept from original map)
+        const FIXED_TYPE_COLORS = {
+            'text': '#3b82f6',
+            'system': '#10b981',
+            'image': '#f59e0b',
+            'audio': '#8b5cf6',
+            'video': '#ef4444',
+            'document': '#06b6d4'
+        };
+
+        function getGradientForType(type){
+            // if fixed color exists, use it as primary and create a darker secondary
+            if(FIXED_TYPE_COLORS[type]){
+                const primary = FIXED_TYPE_COLORS[type];
+                // convert to HSL and darken
+                const [r,g,b] = hexToRgb(primary);
+                const [h,s,l] = rgbToHsl(r,g,b);
+                const secondary = hslToHex(h, s, Math.max(10, l - 18));
+                return [primary, secondary];
+            }
+
+            // otherwise generate deterministic HSL based on type string
+            const h = hashStringToHue(type);
+            const primary = hslToHex(h, 62, 48);
+            const secondary = hslToHex(h, 62, 34);
+            return [primary, secondary];
+        }
+
+        // Update dashboard with metrics data
+        function updateDashboard(metrics) {
+            // Basic counters
+            document.getElementById('messagesSent').textContent =
+                getMetricValue(metrics, 'quepasa_sent_messages_total').toLocaleString();
+
+            document.getElementById('messagesReceived').textContent =
+                getMetricValue(metrics, 'quepasa_received_messages_total').toLocaleString();
+
+
+            // Additional metrics
+            document.getElementById('webhooksSentTotal').textContent =
+                getMetricValue(metrics, 'quepasa_webhooks_sent_total').toLocaleString();
+
+            document.getElementById('webhookSuccessTotal').textContent =
+                getMetricValue(metrics, 'quepasa_webhook_success_total').toLocaleString();
+
+            document.getElementById('messageErrors').textContent =
+                getMetricValue(metrics, 'quepasa_receive_message_errors_total').toLocaleString();
+
+            document.getElementById('syncEvents').textContent =
+                getMetricValue(metrics, 'quepasa_receive_sync_events_total').toLocaleString();
+
+            document.getElementById('unhandledMessages').textContent =
+                getMetricValue(metrics, 'quepasa_receive_message_unhandled_total').toLocaleString();
+
+            document.getElementById('webhookTimeoutsTotal').textContent =
+                getMetricValue(metrics, 'quepasa_webhook_timeouts_total').toLocaleString();
+
+            // Average message size
+            const avgSize = getHistogramAverage(metrics, 'quepasa_rabbitmq_message_size_bytes_bucket');
+            document.getElementById('avgMessageSize').textContent =
+                avgSize > 0 ? Math.round(avgSize).toLocaleString() : '-';
+
+            // Average publish duration (convert to ms)
+            const avgDuration = getHistogramAverage(metrics, 'quepasa_rabbitmq_publish_duration_seconds_bucket');
+            document.getElementById('avgPublishDuration').textContent =
+                avgDuration > 0 ? (avgDuration * 1000).toFixed(2) : '-';
+
+            // Success rate calculation
+            const sent = getMetricValue(metrics, 'quepasa_sent_messages_total');
+            const errors = getMetricValue(metrics, 'quepasa_send_message_errors_total');
+            const total = sent + errors;
+            const successRate = total > 0 ? ((sent / total) * 100) : 0;
+
+            document.getElementById('successRate').textContent = total > 0 ? successRate.toFixed(1) + '%' : '-';
+
+            // Webhook metrics for chart (keeping original IDs for chart compatibility)
+            document.getElementById('webhooksSent').textContent =
+                getMetricValue(metrics, 'quepasa_webhooks_sent_total');
+            document.getElementById('webhookErrors').textContent =
+                getMetricValue(metrics, 'quepasa_webhook_send_errors_total');
+            document.getElementById('webhookTimeouts').textContent =
+                getMetricValue(metrics, 'quepasa_webhook_timeouts_total');
+            document.getElementById('webhookSuccess').textContent =
+                getMetricValue(metrics, 'quepasa_webhook_success_total');
+
+            // Update charts
+            updateWebhookChart(metrics);
+            updateMessageTypesChart(metrics);
+            updateRabbitMQSizeChart(metrics);
+            updateRabbitMQLatencyChart(metrics);
+            updateRabbitMQSizeHistogram(metrics);
+            updateRabbitMQLatencyHistogram(metrics);
+            updateWebhookDurationHistogram(metrics);
+            updateRabbitMQSummary(metrics);
+            updateGoMetrics(metrics);
+            updatePerformanceSummary(metrics);
+
+            // Update status indicator - API is online if we can fetch metrics
+            const statusIndicator = document.getElementById('statusIndicator');
+            const updateIndicator = document.getElementById('updateIndicator');
+            
+            statusIndicator.className = 'status-indicator online';
+            updateIndicator.className = 'status-indicator online';
+
+            // Update timestamp
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Compute RabbitMQ summary and update UI
+        function updateRabbitMQSummary(metrics) {
+            const metricName = 'quepasa_rabbitmq_messages_published_total';
+
+            // Build totals
+            const totals = { total: 0, history: 0, prod: 0, events: 0 };
+            const byType = {};
+            const byQueue = {};
+
+            if (metrics[metricName]) {
+                metrics[metricName].forEach(m => {
+                    const value = Number(m.value || 0);
+                    totals.total += value;
+
+                    const queue = m.labels.queue || 'unknown';
+                    const type = m.labels.message_type || 'unknown';
+
+                    // Per queue
+                    byQueue[queue] = (byQueue[queue] || 0) + value;
+
+                    // Per type
+                    byType[type] = (byType[type] || 0) + value;
+
+                    if (queue === 'history') totals.history += value;
+                    if (queue === 'prod') totals.prod += value;
+                    if (queue === 'events') totals.events += value;
+                });
+            }
+
+            // Find top type and top queue
+            const topType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0];
+            const topQueue = Object.entries(byQueue).sort((a, b) => b[1] - a[1])[0];
+
+            // Top type inside history queue
+            const historyTypes = {};
+            if (metrics[metricName]) {
+                metrics[metricName].forEach(m => {
+                    if ((m.labels.queue || '') === 'history') {
+                        const t = m.labels.message_type || 'unknown';
+                        historyTypes[t] = (historyTypes[t] || 0) + Number(m.value || 0);
+                    }
+                });
+            }
+            const topHistoryType = Object.entries(historyTypes).sort((a, b) => b[1] - a[1])[0];
+
+            document.getElementById('rabbitmqTotalPublished').textContent = totals.total.toLocaleString();
+            document.getElementById('rabbitmqHistory').textContent = totals.history.toLocaleString();
+            document.getElementById('rabbitmqProd').textContent = totals.prod.toLocaleString();
+            document.getElementById('rabbitmqEvents').textContent = totals.events.toLocaleString();
+
+            document.getElementById('rabbitmqTopType').textContent = topType ? `${topType[0]} (${topType[1].toLocaleString()})` : '-';
+            document.getElementById('rabbitmqTopQueue').textContent = topQueue ? `${topQueue[0]} (${topQueue[1].toLocaleString()})` : '-';
+            document.getElementById('rabbitmqTopTypeHistory').textContent = topHistoryType ? `${topHistoryType[0]} (${topHistoryType[1].toLocaleString()})` : '-';
+        }
+
+        // Update message types legend
+        function updateMessageTypesLegend(types) {
+            const legend = document.getElementById('messageTypesLegend');
+            if (!legend) return;
+            legend.innerHTML = ''; // clear
+            const entries = Object.entries(types).sort((a,b) => b[1] - a[1]);
+            entries.forEach(([type, value]) => {
+                const [primary] = getGradientForType(type);
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <span class="legend-swatch" style="background: ${primary};"></span>
+                    <span class="legend-label">${type}</span>
+                    <span class="legend-value">${Number(value).toLocaleString()}</span>
+                `;
+                legend.appendChild(item);
+            });
+        }
+
+        // Update webhook chart
+        function updateWebhookChart(metrics) {
+            const sent = getMetricValue(metrics, 'quepasa_webhooks_sent_total');
+            const errors = getMetricValue(metrics, 'quepasa_webhook_send_errors_total');
+            const timeouts = getMetricValue(metrics, 'quepasa_webhook_timeouts_total');
+            const success = getMetricValue(metrics, 'quepasa_webhook_success_total');
+
+            const maxValue = Math.max(sent, errors, timeouts, success, 1);
+
+            // Update bar heights proportionally
+            const bars = document.querySelectorAll('#webhooksChart .bar');
+            const values = [sent, errors, timeouts, success];
+
+            // Define explicit colors in the same order as values: Enviados, Erros, Timeouts, Sucessos
+            const webhookColors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981'];
+
+            bars.forEach((bar, index) => {
+                const height = Math.max((values[index] / maxValue) * 150, 5);
+                bar.style.height = height + 'px';
+
+                // apply gradient: primary (webhookColors) -> darker secondary
+                const primary = webhookColors[index] || '#6b7280';
+                // derive secondary by converting to HSL and darkening
+                try {
+                    const [r, g, b] = hexToRgb(primary);
+                    const [h, s, l] = rgbToHsl(r, g, b);
+                    const secondary = hslToHex(h, s, Math.max(8, l - 18));
+                    bar.style.background = `linear-gradient(to top, ${primary}, ${secondary})`;
+                } catch (e) {
+                    // fallback
+                    bar.style.background = `linear-gradient(to top, ${primary}, #4b5563)`;
+                }
+            });
+        }
+
+        // Update message types chart
+        function updateMessageTypesChart(metrics) {
+            const chart = document.getElementById('messageTypesChart');
+            chart.innerHTML = '';
+
+            // Get message types from quepasa_messages_by_type_total
+            const messageTypes = {};
+            if (metrics['quepasa_messages_by_type_total']) {
+                metrics['quepasa_messages_by_type_total'].forEach(metric => {
+                    const type = metric.labels.type || 'unknown';
+                    messageTypes[type] = metric.value;
+                });
+            }
+
+            const maxValue = Math.max(...Object.values(messageTypes), 1);
+
+            Object.entries(messageTypes).forEach(([type, count]) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = Math.max((count / maxValue) * 150, 5) + 'px';
+                const [primary, secondary] = getGradientForType(type);
+                bar.style.background = `linear-gradient(to top, ${primary}, ${secondary})`;
+
+                const value = document.createElement('div');
+                value.className = 'bar-value';
+                value.textContent = count;
+
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+            // Update legend for message types
+            updateMessageTypesLegend(messageTypes);
+        }
+
+        // Update RabbitMQ message size chart
+        function updateRabbitMQSizeChart(metrics) {
+            const chart = document.getElementById('rabbitmqSizeChart');
+            chart.innerHTML = '';
+
+            // Get RabbitMQ message sizes by type
+            const messageSizes = {};
+
+            // Calculate average size per message type
+            if (metrics['quepasa_rabbitmq_message_size_bytes_sum'] &&
+                metrics['quepasa_rabbitmq_message_size_bytes_count']) {
+
+                const sums = {};
+                const counts = {};
+
+                metrics['quepasa_rabbitmq_message_size_bytes_sum'].forEach(metric => {
+                    const type = metric.labels.message_type || 'unknown';
+                    sums[type] = metric.value;
+                });
+
+                metrics['quepasa_rabbitmq_message_size_bytes_count'].forEach(metric => {
+                    const type = metric.labels.message_type || 'unknown';
+                    counts[type] = metric.value;
+                });
+
+                Object.keys(sums).forEach(type => {
+                    if (counts[type] && counts[type] > 0) {
+                        messageSizes[type] = Math.round(sums[type] / counts[type]);
+                    }
+                });
+            }
+
+            const maxValue = Math.max(...Object.values(messageSizes), 1);
+
+            Object.entries(messageSizes).forEach(([type, avgSize]) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = Math.max((avgSize / maxValue) * 150, 5) + 'px';
+                const [primary, secondary] = getGradientForType(type);
+                bar.style.background = `linear-gradient(to top, ${primary}, ${secondary})`;
+
+                const value = document.createElement('div');
+                value.className = 'bar-value';
+                value.textContent = avgSize + 'B';
+
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+        }
+
+        // Update RabbitMQ latency chart
+        function updateRabbitMQLatencyChart(metrics) {
+            const chart = document.getElementById('rabbitmqLatencyChart');
+            chart.innerHTML = '';
+
+            // Get RabbitMQ latency by message type
+            const latencies = {};
+
+            // Calculate average latency per message type
+            if (metrics['quepasa_rabbitmq_publish_duration_seconds_sum'] &&
+                metrics['quepasa_rabbitmq_publish_duration_seconds_count']) {
+
+                const sums = {};
+                const counts = {};
+
+                metrics['quepasa_rabbitmq_publish_duration_seconds_sum'].forEach(metric => {
+                    const type = metric.labels.message_type || 'unknown';
+                    sums[type] = metric.value;
+                });
+
+                metrics['quepasa_rabbitmq_publish_duration_seconds_count'].forEach(metric => {
+                    const type = metric.labels.message_type || 'unknown';
+                    counts[type] = metric.value;
+                });
+
+                Object.keys(sums).forEach(type => {
+                    if (counts[type] && counts[type] > 0) {
+                        // Convert to milliseconds
+                        latencies[type] = (sums[type] / counts[type]) * 1000;
+                    }
+                });
+            }
+
+            const maxValue = Math.max(...Object.values(latencies), 1);
+
+            Object.entries(latencies).forEach(([type, avgLatency]) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = Math.max((avgLatency / maxValue) * 150, 5) + 'px';
+                const [primary, secondary] = getGradientForType(type);
+                bar.style.background = `linear-gradient(to top, ${primary}, ${secondary})`;
+
+                const value = document.createElement('div');
+                value.className = 'bar-value';
+                value.textContent = avgLatency.toFixed(1) + 'ms';
+
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+        }
+
+        // Update RabbitMQ size histogram
+        function updateRabbitMQSizeHistogram(metrics) {
+            const chart = document.getElementById('rabbitmqSizeHistogram');
+            chart.innerHTML = '';
+
+            // Get size histogram buckets
+            const buckets = [];
+            if (metrics['quepasa_rabbitmq_message_size_bytes_bucket']) {
+                const bucketData = {};
+                
+                metrics['quepasa_rabbitmq_message_size_bytes_bucket'].forEach(metric => {
+                    const le = metric.labels.le;
+                    if (le && le !== '+Inf') {
+                        bucketData[le] = (bucketData[le] || 0) + metric.value;
+                    }
+                });
+
+                // Convert to array and sort by bucket size
+                Object.entries(bucketData).forEach(([le, count]) => {
+                    buckets.push({ le: parseFloat(le), count });
+                });
+                buckets.sort((a, b) => a.le - b.le);
+            }
+
+            if (buckets.length === 0) return;
+
+            const maxCount = Math.max(...buckets.map(b => b.count), 1);
+
+            buckets.forEach(bucket => {
+                const bar = document.createElement('div');
+                bar.className = 'histogram-bar';
+                bar.style.height = Math.max((bucket.count / maxCount) * 150, 5) + 'px';
+
+                const value = document.createElement('div');
+                value.className = 'histogram-bar-value';
+                value.textContent = bucket.count;
+
+                const label = document.createElement('div');
+                label.className = 'histogram-bar-label';
+                label.textContent = bucket.le + 'B';
+
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+        }
+
+        // Update RabbitMQ latency histogram
+        function updateRabbitMQLatencyHistogram(metrics) {
+            const chart = document.getElementById('rabbitmqLatencyHistogram');
+            chart.innerHTML = '';
+
+            // Get latency histogram buckets
+            const buckets = [];
+            if (metrics['quepasa_rabbitmq_publish_duration_seconds_bucket']) {
+                const bucketData = {};
+                
+                metrics['quepasa_rabbitmq_publish_duration_seconds_bucket'].forEach(metric => {
+                    const le = metric.labels.le;
+                    if (le && le !== '+Inf') {
+                        bucketData[le] = (bucketData[le] || 0) + metric.value;
+                    }
+                });
+
+                // Convert to array and sort by bucket size
+                Object.entries(bucketData).forEach(([le, count]) => {
+                    buckets.push({ le: parseFloat(le), count });
+                });
+                buckets.sort((a, b) => a.le - b.le);
+            }
+
+            if (buckets.length === 0) return;
+
+            const maxCount = Math.max(...buckets.map(b => b.count), 1);
+
+            buckets.forEach(bucket => {
+                const bar = document.createElement('div');
+                bar.className = 'histogram-bar';
+                bar.style.height = Math.max((bucket.count / maxCount) * 150, 5) + 'px';
+
+                const value = document.createElement('div');
+                value.className = 'histogram-bar-value';
+                value.textContent = bucket.count;
+
+                const label = document.createElement('div');
+                label.className = 'histogram-bar-label';
+                label.textContent = (bucket.le * 1000).toFixed(0) + 'ms';
+
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+        }
+
+        // Update Webhook duration histogram
+        function updateWebhookDurationHistogram(metrics) {
+            const chart = document.getElementById('webhookDurationHistogram');
+            chart.innerHTML = '';
+
+            // Get webhook duration histogram buckets
+            const buckets = [];
+            if (metrics['quepasa_webhook_duration_seconds_bucket']) {
+                const bucketData = {};
+                
+                metrics['quepasa_webhook_duration_seconds_bucket'].forEach(metric => {
+                    const le = parseFloat(metric.labels.le);
+                    if (le !== Infinity) {
+                        bucketData[le] = metric.value;
+                    }
+                });
+
+                // Convert to array and sort by bucket value
+                const sortedBuckets = Object.entries(bucketData)
+                    .map(([le, count]) => ({ le: parseFloat(le), count: count }))
+                    .sort((a, b) => a.le - b.le);
+
+                // Calculate actual counts per bucket (not cumulative)
+                for (let i = 0; i < sortedBuckets.length; i++) {
+                    const actualCount = i === 0 ? 
+                        sortedBuckets[i].count : 
+                        sortedBuckets[i].count - sortedBuckets[i-1].count;
+                    
+                    buckets.push({
+                        le: sortedBuckets[i].le,
+                        count: actualCount
+                    });
+                }
+            }
+
+            if (buckets.length === 0) {
+                chart.innerHTML = '<div class="no-data">Nenhum dado disponível</div>';
+                return;
+            }
+
+            const maxCount = Math.max(...buckets.map(b => b.count), 1);
+
+            buckets.forEach(bucket => {
+                const bar = document.createElement('div');
+                bar.className = 'histogram-bar';
+                bar.style.height = Math.max((bucket.count / maxCount) * 150, 5) + 'px';
+                bar.style.background = 'linear-gradient(to top, #f59e0b, #d97706)';
+
+                const value = document.createElement('div');
+                value.className = 'histogram-bar-value';
+                value.textContent = bucket.count;
+
+                const label = document.createElement('div');
+                label.className = 'histogram-bar-label';
+                label.textContent = bucket.le >= 1 ? 
+                    bucket.le.toFixed(1) + 's' : 
+                    (bucket.le * 1000).toFixed(0) + 'ms';
+
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+        }
+
+        // Update Go system metrics
+        function updateGoMetrics(metrics) {
+            // Go version
+            if (metrics['go_info'] && metrics['go_info'][0]) {
+                const version = metrics['go_info'][0].labels.version || '-';
+                document.getElementById('goVersion').textContent = version;
+            }
+
+            // Goroutines
+            document.getElementById('goGoroutines').textContent =
+                getMetricValue(metrics, 'go_goroutines').toLocaleString();
+
+            // Threads
+            document.getElementById('goThreads').textContent =
+                getMetricValue(metrics, 'go_threads').toLocaleString();
+
+            // GC count
+            document.getElementById('goGCCount').textContent =
+                getMetricValue(metrics, 'go_gc_duration_seconds_count').toLocaleString();
+
+            // GC duration (convert to ms)
+            const gcDuration = getMetricValue(metrics, 'go_gc_duration_seconds_sum') * 1000;
+            document.getElementById('goGCDuration').textContent =
+                gcDuration > 0 ? gcDuration.toFixed(2) : '-';
+
+            // Memory stats (convert to MB)
+            const heapAlloc = getMetricValue(metrics, 'go_memstats_heap_alloc_bytes') / (1024 * 1024);
+            document.getElementById('goMemHeapAlloc').textContent =
+                heapAlloc > 0 ? heapAlloc.toFixed(1) : '-';
+
+            const heapInuse = getMetricValue(metrics, 'go_memstats_heap_inuse_bytes') / (1024 * 1024);
+            document.getElementById('goMemHeapInuse').textContent =
+                heapInuse > 0 ? heapInuse.toFixed(1) : '-';
+
+            const sysMem = getMetricValue(metrics, 'go_memstats_sys_bytes') / (1024 * 1024);
+            document.getElementById('goMemSys').textContent =
+                sysMem > 0 ? sysMem.toFixed(1) : '-';
+        }
+
+        // Update performance summary
+        function updatePerformanceSummary(metrics) {
+            // Calculate average RabbitMQ message size
+            const avgRabbitMQSize = getHistogramAverage(metrics, 'quepasa_rabbitmq_message_size_bytes_bucket');
+            document.getElementById('avgRabbitMQSize').textContent = 
+                avgRabbitMQSize > 0 ? Math.round(avgRabbitMQSize) + ' bytes' : '-';
+
+            // Calculate average webhook duration
+            const avgWebhookDuration = getHistogramAverage(metrics, 'quepasa_webhook_duration_seconds_bucket');
+            document.getElementById('avgWebhookDuration').textContent = 
+                avgWebhookDuration > 0 ? (avgWebhookDuration * 1000).toFixed(2) + ' ms' : '-';
+
+            // Calculate average RabbitMQ publish latency (convert to ms)
+            const avgRabbitMQLatency = getHistogramAverage(metrics, 'quepasa_rabbitmq_publish_duration_seconds_bucket');
+            document.getElementById('avgRabbitMQLatency').textContent =
+                avgRabbitMQLatency > 0 ? (avgRabbitMQLatency * 1000).toFixed(2) + ' ms' : '-';
+
+            // Calculate total processed messages
+            const totalSent = getMetricValue(metrics, 'quepasa_sent_messages_total');
+            const totalReceived = getMetricValue(metrics, 'quepasa_received_messages_total');
+            const totalRabbitMQ = getMetricValue(metrics, 'quepasa_rabbitmq_messages_published_total');
+            
+            document.getElementById('totalProcessed').textContent = 
+                (totalSent + totalReceived + totalRabbitMQ).toLocaleString();
+        }
+
+        // Fetch metrics from /metrics endpoint
+        async function fetchMetrics() {
+            if (isLoading) return;
+
+            isLoading = true;
+            document.body.classList.add('loading');
+
+            try {
+                const response = await fetch('/metrics');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const text = await response.text();
+                const metrics = parsePrometheusMetrics(text);
+
+                metricsData = metrics;
+                updateDashboard(metrics);
+
+                // Remove any error messages
+                const errorMsg = document.querySelector('.error-message');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+
+            } catch (error) {
+                console.error('Erro ao buscar métricas:', error);
+
+                // Show error message
+                let errorMsg = document.querySelector('.error-message');
+                if (!errorMsg) {
+                    errorMsg = document.createElement('div');
+                    errorMsg.className = 'error-message';
+                    document.querySelector('.container').appendChild(errorMsg);
+                }
+                errorMsg.textContent = `Erro ao carregar métricas: ${error.message}`;
+
+                // Update status to offline
+                document.getElementById('statusIndicator').className = 'status-indicator offline';
+                document.getElementById('updateIndicator').className = 'status-indicator offline';
+            } finally {
+                isLoading = false;
+                document.body.classList.remove('loading');
+            }
+        }
+
+        // Refresh data manually
+        function refreshData() {
+            fetchMetrics();
+        }
+
+        // Initialize dashboard
+        function init() {
+            console.log('🚀 QuePasa Dashboard inicializado');
+
+            // Fetch initial data
+            fetchMetrics();
+
+            // Setup refresh interval selector
+            const selector = document.getElementById('refreshIntervalSelector');
+            function applyInterval() {
+                // clear previous timer
+                if (refreshTimer) {
+                    clearInterval(refreshTimer);
+                    refreshTimer = null;
+                }
+
+                const val = Number(selector.value);
+                if (val > 0) {
+                    refreshTimer = setInterval(fetchMetrics, val * 1000);
+                }
+            }
+            selector.addEventListener('change', applyInterval);
+            // default selection -> apply
+            applyInterval();
+
+            // Update timestamp every second
+            setInterval(() => {
+                if (document.getElementById('lastUpdate').textContent !== '-') {
+                    // Just update the display, don't fetch new data
+                }
+            }, 1000);
+        }
+
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

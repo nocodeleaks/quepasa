@@ -11,6 +11,19 @@ import (
 
 //region CONTROLLER - INVITE
 
+// InviteController generates invite links for WhatsApp groups
+// @Summary Generate group invite link
+// @Description Generates an invite link for a specific WhatsApp group
+// @Tags Groups
+// @Accept json
+// @Produce json
+// @Param chatid path string false "Chat ID (path parameter)"
+// @Param chatid query string false "Chat ID (query parameter)"
+// @Success 200 {object} models.QpInviteResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /invite/{chatid} [get]
+// @Router /invite [get]
 func InviteController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json

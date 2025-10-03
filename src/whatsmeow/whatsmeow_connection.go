@@ -16,6 +16,7 @@ import (
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
 )
@@ -207,6 +208,31 @@ func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newConten
 	}
 
 	return nil
+}
+
+// MarkRead sends a read receipt for the given message via Whatsmeow handlers
+func (source *WhatsmeowConnection) MarkRead(imsg whatsapp.IWhatsappMessage) error {
+	if imsg == nil {
+		return fmt.Errorf("nil message")
+	}
+	id := imsg.GetId()
+	logentry := source.GetLogger().WithField(LogFields.MessageId, id)
+
+	msg, ok := imsg.(*whatsapp.WhatsappMessage)
+	if !ok {
+		msg = &whatsapp.WhatsappMessage{
+			Id:        imsg.GetId(),
+			Timestamp: time.Now(),
+			Chat:      whatsapp.WhatsappChat{Id: imsg.GetChatId()},
+		}
+	}
+
+	// default to ReceiptTypeRead
+	err := source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
+	if err != nil {
+		logentry.Errorf("error marking read: %v", err)
+	}
+	return err
 }
 
 func isASCII(s string) bool {
@@ -773,4 +799,55 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 		media = types.ChatPresenceMediaText
 	}
 	return conn.Client.SendChatPresence(jid, state, media)
+}
+
+// sendAppState sends app state patch to WhatsApp (no retry, returns error as-is)
+func sendAppState(conn *WhatsmeowConnection, patch appstate.PatchInfo) error {
+	ctx := context.Background()
+	return conn.Client.SendAppState(ctx, patch)
+}
+
+// MarkChatAsRead marks a chat as read using app state protocol
+func MarkChatAsRead(conn *WhatsmeowConnection, chatId string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildMarkChatAsRead(jid, true, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// MarkChatAsUnread marks a chat as unread using app state protocol
+func MarkChatAsUnread(conn *WhatsmeowConnection, chatId string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildMarkChatAsRead(jid, false, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// ArchiveChat archives or unarchives a chat using app state protocol
+func ArchiveChat(conn *WhatsmeowConnection, chatId string, archive bool) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildArchive(jid, archive, time.Time{}, nil)
+	return sendAppState(conn, patch)
 }

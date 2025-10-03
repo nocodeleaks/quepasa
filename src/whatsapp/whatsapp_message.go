@@ -47,7 +47,7 @@ type WhatsappMessage struct {
 	// How many times this message was forwarded
 	ForwardingScore uint32 `json:"forwardingscore,omitempty"`
 
-	// Msg is reaction ? boolean
+	// Is this message a reaction to another message ?
 	InReaction bool `json:"inreaction,omitempty"`
 
 	// Msg in reply of another ? Message ID
@@ -74,6 +74,8 @@ type WhatsappMessage struct {
 
 	// Debug information for debug events
 	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
+
+	Exceptions []string `json:"exceptions,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP
@@ -164,6 +166,37 @@ func (source *WhatsappMessage) FromBroadcast() bool {
 
 	return false
 }
+
+//endregion
+
+//region DISPATCH ERROR MANAGEMENT
+
+// MarkExceptions marks the message as having a dispatch error
+func (source *WhatsappMessage) MarkExceptions() {
+	source.Exceptions = append(source.Exceptions, "Dispatch error occurred")
+}
+
+// MarkExceptionsWithMessage marks the message as having a dispatch error with a specific message
+func (source *WhatsappMessage) MarkExceptionsWithMessage(message string) {
+	source.Exceptions = append(source.Exceptions, message)
+}
+
+// ClearExceptions clears all dispatch errors
+func (source *WhatsappMessage) ClearExceptions() {
+	source.Exceptions = nil
+}
+
+// HasExceptions checks if the message has any dispatch errors
+func (source *WhatsappMessage) HasExceptions() bool {
+	return len(source.Exceptions) > 0
+}
+
+// GetExceptions returns all dispatch error messages
+func (source *WhatsappMessage) GetExceptions() []string {
+	return source.Exceptions
+}
+
+//endregion
 
 func (source *WhatsappMessage) GetAttachment() *WhatsappAttachment {
 	return source.Attachment

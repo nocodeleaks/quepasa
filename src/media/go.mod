@@ -1,6 +1,6 @@
 module github.com/nocodeleaks/quepasa/media
 
-go 1.23.0 // Ou a sua versão do Go
+go 1.24.0 // Ou a sua versão do Go
 
 toolchain go1.24.2
 
@@ -21,7 +21,7 @@ require (
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 )
 
 replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp

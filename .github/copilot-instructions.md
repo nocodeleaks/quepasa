@@ -1,16 +1,63 @@
+# QuePasa AI Development Guidelines
+
+## Project Architecture Overview
+QuePasa is a **Go-based WhatsApp bot platform** that exposes HTTP APIs for WhatsApp messaging. Core architecture:
+
+- **Whatsmeow Integration**: Uses `go.mau.fi/whatsmeow` library for WhatsApp Web API connections
+- **Message Flow**: `WhatsmeowHandlers` → `QPWhatsappHandlers` → `Webhook/RabbitMQ/Dispatching`
+- **Multi-Layered APIs**: v1, v2, v3 endpoints with latest routes in non-versioned files (e.g., `api_handlers.go`)
+- **Modular Packages**: Each `src/` subdirectory is a Go module with specific responsibilities
+
+## Core Components & Data Flow
+1. **Connection Layer**: `whatsmeow/WhatsmeowConnection` manages WhatsApp Web connections
+2. **Handler Layer**: `WhatsmeowHandlers` processes raw WhatsApp events → `QPWhatsappHandlers` for business logic
+3. **Message Processing**: Events flow through caching, triggering webhooks, RabbitMQ, and dispatching
+4. **API Layer**: REST endpoints in `api/` with controller pattern (`api_handlers+*Controller.go`)
+5. **Server Management**: `QpWhatsappServer` coordinates everything for each WhatsApp account
+
+## Identifier System (Critical)
+- **JId**: WhatsApp Jabber Identifier (`types.JID` from whatsmeow)
+- **WId**: WhatsApp String Identifier (string format)
+- **LId**: WhatsApp Local Identifier (new default, hides phone numbers)
+
 ## Common Guidelines
-* code comments should always be in English;
-* response to user queries should be in IDE current language;
-* avoid to change code that was not related to the query;
-* when agent has to change a method and it change the async status, the agent should update the method callers too;
-* for extensions methods use always "source" as default parameter name
-* use one file for each class
-* for #region tags: no blank lines between consecutive regions, but always add one blank line after region opening and one blank line before region closing
-* do not try to build if you just changed the code comments or documentation files;
+* Code comments should always be in English
+* Response to user queries should be in IDE current language
+* Avoid changing code unrelated to the query
+* When changing method async status, update all callers
+* For extension methods, always use "source" as default parameter name
+* Use one file per class/struct
+* For #region tags: no blank lines between consecutive regions, but always add one blank line after region opening and one blank line before region closing
+* Don't build when only changing comments or documentation
 * **when making relevant code changes, always create or update internal documentation following the Internal Documentation Guidelines**;
 * whenever creating an extension method, use 'source' as parameter name for the extended object;
 * for class and structure names, e.g.: whatsmeow_group_manager.go => WhatsmeowGroupManager;
-* the lastest routes should be in the file without version name, for example api_handlers.go;
+* Latest routes should be in files without version name (e.g., `api_handlers.go`)
+
+## Development Workflows
+
+### Build & Run
+- **Build**: `go build -o .dist/win-quepasa-service.exe` (VS Code task available)
+- **Environment**: `.env` file in project root for configuration
+- **Dependencies**: Uses module replacement for local packages (see `src/go.mod`)
+
+### Key Files for Development
+- **Main Entry**: `src/main.go` - initializes all systems (DB, WhatsApp, web server)
+- **Version Management**: `src/models/qp_defaults.go` - contains `QpVersion` constant
+- **Environment Config**: `src/environment/` - centralized environment variable management
+- **API Routes**: `src/api/api_handlers.go` - REST endpoint definitions
+- **Message Handlers**: `src/whatsmeow/whatsmeow_handlers.go` - WhatsApp event processing
+
+### Package Structure
+- **api**: REST API endpoints and controllers
+- **environment**: Environment variable management with 8 categories, 45+ variables
+- **models**: Data structures and business logic
+- **whatsmeow**: WhatsApp Web integration layer  
+- **whatsapp**: Core WhatsApp abstractions and interfaces
+- **webserver**: HTTP server, routing, middleware, forms, websockets
+- **library**: Reusable utilities (Go packages only, no third-party)
+- **metrics**: Prometheus monitoring and performance metrics
+- **rabbitmq**: Message queueing and async processing
 
 ## Git and Commit Guidelines
 * **🚨 CRITICAL: NEVER make commits automatically**
@@ -89,3 +136,21 @@ const QpVersion = "3.25.2207.0127" // <-- ALWAYS UPDATE BEFORE MERGE TO MAIN
 🚨 **NEVER merge to main without updating QpVersion** 🚨
 
 This is a mandatory project rule for version control.
+
+## Message Processing Flow (Critical Understanding)
+- **Raw WhatsApp Events** → `WhatsmeowHandlers.Message()` 
+- **Message Processing** → `WhatsmeowHandlers.Follow()` → `QPWhatsappHandlers.Message()`
+- **Caching & Dispatch** → `appendMsgToCache()` → `Trigger()` → Webhooks/RabbitMQ
+- **API Response** → Various v1/v2/v3 endpoints transform and return messages
+
+## Key Integration Points
+- **Connection Management**: `WhatsmeowConnection` wraps whatsmeow client with QuePasa abstractions
+- **Event Handlers**: `WhatsmeowHandlers.EventsHandler()` dispatches to specific message/receipt/call handlers
+- **Server Coordination**: `QpWhatsappServer` manages connection lifecycle and message routing
+- **Environment System**: 45+ variables across 8 categories (Database, API, WhatsApp, etc.)
+
+## Development Patterns
+- **Handler Composition**: Use embedded interfaces (e.g., `IWhatsappHandlers`, `IWhatsappConnection`)
+- **Concurrent Processing**: Heavy use of goroutines for event processing (`go handler.Follow()`)
+- **Module Replacement**: Local packages use `replace` directives in `go.mod`
+- **Controller Pattern**: API endpoints follow `api_handlers+*Controller.go` naming

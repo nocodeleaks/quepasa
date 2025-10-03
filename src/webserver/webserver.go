@@ -81,6 +81,9 @@ func newRouter() chi.Router {
 	// Metrics
 	ServeMetrics(r)
 
+	// Dashboard
+	ServeDashboard(r)
+
 	return r
 }
 
@@ -189,10 +192,21 @@ func ServeSignalR(r chi.Router) {
 
 func ServeSwaggerUi(r chi.Router) {
 	log.Debug("starting swaggerUi service")
-	r.Mount("/swagger", httpSwagger.WrapHandler)
+
+	// Configure Swagger UI to hide models/schemas section
+	r.Mount("/swagger", httpSwagger.Handler(
+		httpSwagger.UIConfig(map[string]string{
+			"defaultModelsExpandDepth": "-1", // Hide models section
+		}),
+	))
 }
 
 func ServeMetrics(r chi.Router) {
 	log.Debug("starting metrics service")
 	r.Handle("/metrics", promhttp.Handler())
+}
+
+func ServeDashboard(r chi.Router) {
+	log.Debug("starting dashboard service")
+	r.Get("/dashboard", DashboardHandler)
 }

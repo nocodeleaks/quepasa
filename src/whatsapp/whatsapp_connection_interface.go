@@ -32,6 +32,8 @@ type IWhatsappConnection interface {
 	// Edit an existing message with new content
 	Edit(IWhatsappMessage, string) error
 
+	MarkRead(IWhatsappMessage) error
+
 	// Default send message method
 	Send(*WhatsappMessage) (IWhatsappSendResponse, error)
 

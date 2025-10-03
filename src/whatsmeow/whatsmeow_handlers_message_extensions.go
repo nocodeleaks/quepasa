@@ -50,6 +50,8 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 		HandleTemplateMessage(logentry, out, in.TemplateMessage)
 	case in.TemplateButtonReplyMessage != nil:
 		HandleTemplateButtonReplyMessage(logentry, out, in.TemplateButtonReplyMessage)
+	case in.ContactsArrayMessage != nil:
+		HandleContactsArrayMessage(handler, logentry, out, in.ContactsArrayMessage)
 	case in.ListMessage != nil:
 		HandleListMessage(logentry, out, in.ListMessage)
 	case in.SenderKeyDistributionMessage != nil:
@@ -100,6 +102,7 @@ func HandleTextMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.
 	out.Type = whatsapp.TextMessageType
 	out.Text = in.GetConversation()
 
+	// Check for mentions in simple text messages too
 	if len(out.Text) > 0 {
 		extractedMentions := GetMentions(out.Text)
 		if len(extractedMentions) > 0 {
@@ -224,10 +227,11 @@ func HandleExtendedTextMessage(logentry *log.Entry, out *whatsapp.WhatsappMessag
 	if info != nil {
 		out.ForwardingScore = info.GetForwardingScore()
 		out.InReply = info.GetStanzaID()
-	}
 
-	if len(info.GetMentionedJID()) > 0 {
-		logentry.Debugf("ExtendedTextMessage mentions: %v", info.GetMentionedJID())
+		// Check for mentions and add debug information
+		if len(info.GetMentionedJID()) > 0 {
+			logentry.Debugf("ExtendedTextMessage mentions: %v", info.GetMentionedJID())
+		}
 	}
 
 	// ads -------------------
@@ -466,4 +470,54 @@ func HandleContactMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 
 	content := []byte(in.GetVcard())
 	out.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
+}
+
+// Dispatch one WhatsappMessage per contact in the array. The first contact is
+// populated into the provided `out` message so the existing caller flow can
+// continue to use it. Additional contacts are cloned from `out`, given a
+// suffix on the message Id ("-2", "-3", ...) and dispatched through the
+// handler by calling handler.Follow(...).
+func HandleContactsArrayMessage(handler *WhatsmeowHandlers, logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.ContactsArrayMessage) {
+	logentry.Debug("received a contacts array message !")
+	out.Type = whatsapp.ContactMessageType
+	if len(in.Contacts) == 0 {
+		logentry.Warn("ContactsArrayMessage has no contacts")
+		return
+	}
+
+	// For each contact, create a separate message
+	for idx, contact := range in.Contacts {
+		// prepare a vcard content for this single contact
+		content := []byte(contact.GetVcard())
+
+		// prepare filename
+		filename := contact.GetDisplayName()
+		if len(filename) == 0 {
+			// use base out.Id as fallback
+			filename = out.Id
+		}
+		filename = fmt.Sprintf("%s.vcf", slug.Make(filename))
+
+		// For the first contact reuse `out` to preserve caller expectations
+		if idx == 0 {
+			out.Text = contact.GetDisplayName()
+			out.Attachment = whatsapp.GenerateVCardAttachment(content, filename)
+			// ensure the message Id keeps original (no suffix)
+		} else {
+			// clone minimal message fields from out to create a new message
+			msg := &whatsapp.WhatsappMessage{
+				Content:    contact,
+				Id:         fmt.Sprintf("%s-%d", out.Id, idx+1),
+				Timestamp:  out.Timestamp,
+				FromMe:     out.FromMe,
+				Type:       whatsapp.ContactMessageType,
+				Text:       contact.GetDisplayName(),
+				Attachment: whatsapp.GenerateVCardAttachment(content, filename),
+				Chat:       out.Chat,
+			}
+
+			// dispatch the additional message asynchronously
+			go handler.Follow(msg, "contacts_array")
+		}
+	}
 }

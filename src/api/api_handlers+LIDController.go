@@ -23,6 +23,18 @@ type LIDResponse struct {
 	LID   string `json:"lid,omitempty"`
 }
 
+// GetPhoneController retrieves LID (Local Identifier) for a phone number
+// @Summary Get user identifier (LID)
+// @Description Retrieves the Local Identifier (LID) for a given phone number
+// @Tags Contacts
+// @Accept json
+// @Produce json
+// @Param phone query string false "Phone number"
+// @Param lid query string false "Local identifier"
+// @Success 200 {object} LIDResponse
+// @Failure 400 {object} models.QpResponse
+// @Security ApiKeyAuth
+// @Router /useridentifier [get]
 func GetPhoneController(w http.ResponseWriter, r *http.Request) {
 	response := &LIDResponse{}
 	server, err := GetServer(r)

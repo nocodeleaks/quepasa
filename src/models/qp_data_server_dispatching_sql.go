@@ -90,7 +90,7 @@ func (source QpDataServerDispatchingSql) Clear(context string) error {
 	return err
 }
 
-// GetWebhooks retorna apenas os registros do tipo webhook (para compatibilidade)
+// GetWebhooks converts webhook dispatchings to QpWebhook format for interface compatibility
 func (source QpDataServerDispatchingSql) GetWebhooks() []*QpWebhook {
 	result := []*QpServerDispatching{}
 	err := source.db.Select(&result, "SELECT * FROM dispatching WHERE type = 'webhook'")
@@ -102,18 +102,17 @@ func (source QpDataServerDispatchingSql) GetWebhooks() []*QpWebhook {
 	for _, dispatching := range result {
 		dispatching.ParseExtra()
 		webhook := &QpWebhook{
+			LogStruct:       dispatching.LogStruct,
+			WhatsappOptions: dispatching.WhatsappOptions,
 			Url:             dispatching.ConnectionString,
 			ForwardInternal: dispatching.ForwardInternal,
 			TrackId:         dispatching.TrackId,
 			Extra:           dispatching.Extra,
+			Failure:         dispatching.Failure,
+			Success:         dispatching.Success,
 			Timestamp:       dispatching.Timestamp,
-			Wid:             dispatching.Context, // Context é o token do servidor
+			Wid:             dispatching.Context, // Context is the connected number of the server
 		}
-
-		// Copiar WhatsappOptions
-		webhook.ReadReceipts = dispatching.ReadReceipts
-		webhook.Groups = dispatching.Groups
-		webhook.Broadcasts = dispatching.Broadcasts
 
 		webhooks = append(webhooks, webhook)
 	}
@@ -134,7 +133,7 @@ func (source QpDataServerDispatchingSql) GetRabbitMQConfigs() []*QpRabbitMQConfi
 		dispatching.ParseExtra()
 		config := &QpRabbitMQConfig{
 			ConnectionString: dispatching.ConnectionString,
-			ExchangeName:     "quepasa-exchange", // Fixo para todos
+			ExchangeName:     "quepasa.exchange", // Fixo para todos
 			RoutingKey:       "fixed",            // Fixo para todos
 			TrackId:          dispatching.TrackId,
 			Extra:            dispatching.Extra,
@@ -199,12 +198,12 @@ func (source QpDataServerDispatchingSql) DispatchingRemove(context string, conne
 	if err != nil {
 		return
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return
 	}
-	
+
 	affected = uint(rowsAffected)
 	return
 }

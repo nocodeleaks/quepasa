@@ -10,7 +10,7 @@ import (
 // WhatsApp environment variable names
 const (
 	ENV_READUPDATE      = "READUPDATE"      // mark chat read when send any msg
-	ENV_READRECEIPTS    = "READRECEIPTS"    // trigger webhooks for read receipts events
+	ENV_READRECEIPTS    = "READRECEIPTS"    // trigger dispatch methods for read receipts events
 	ENV_CALLS           = "CALLS"           // defines if will be accepted calls
 	ENV_GROUPS          = "GROUPS"          // handle groups
 	ENV_BROADCASTS      = "BROADCASTS"      // handle broadcasts

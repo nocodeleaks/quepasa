@@ -1,0 +1,2158 @@
+basePath: /
+definitions:
+  api.ChatPresenceRequest:
+    properties:
+      chatid:
+        description: 'Required: Chat to show typing in'
+        type: string
+      duration:
+        description: 'Optional: Auto-stop after duration (ms)'
+        type: integer
+      type:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappChatPresenceType'
+        description: Text or audio
+    type: object
+  api.HealthResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      items:
+        items:
+          $ref: '#/definitions/models.QpHealthResponseItem'
+        type: array
+      stats:
+        $ref: '#/definitions/api.HealthStats'
+      status:
+        type: string
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  api.HealthStats:
+    properties:
+      healthy:
+        type: integer
+      percentage:
+        type: number
+      total:
+        type: integer
+      unhealthy:
+        type: integer
+    type: object
+  api.LIDResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      lid:
+        type: string
+      phone:
+        type: string
+      status:
+        type: string
+      success:
+        type: boolean
+    type: object
+  api.UserInfoRequest:
+    properties:
+      jids:
+        items:
+          type: string
+        type: array
+    type: object
+  api.UserInfoResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+      userinfos:
+        items: {}
+        type: array
+    type: object
+  models.QpContactsResponse:
+    properties:
+      contacts:
+        items:
+          $ref: '#/definitions/whatsapp.WhatsappChat'
+        type: array
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpDispatching:
+    properties:
+      broadcasts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle broadcast messages
+      calls:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle calls
+      connection_string:
+        description: destination URL (webhook) or connection string (rabbitmq)
+        type: string
+      extra:
+        description: extra info to append on payload
+      failure:
+        description: first failure timestamp
+        type: string
+      forwardinternal:
+        description: forward internal msg from api
+        type: boolean
+      groups:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle groups messages
+      readreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit read receipts
+      success:
+        description: last success timestamp
+        type: string
+      timestamp:
+        type: string
+      trackid:
+        description: identifier of remote system to avoid loop
+        type: string
+      type:
+        description: webhook or rabbitmq
+        type: string
+    type: object
+  models.QpGroupsResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      groups:
+        items: {}
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpHealthResponseItem:
+    properties:
+      status:
+        $ref: '#/definitions/whatsapp.WhatsappConnectionState'
+      token:
+        description: Public token
+        type: string
+      wid:
+        description: Whatsapp session id
+        type: string
+    type: object
+  models.QpInfoResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      server:
+        $ref: '#/definitions/models.QpWhatsappServer'
+      status:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.QpInviteResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      url:
+        description: invite public link
+        type: string
+    type: object
+  models.QpIsOnWhatsappResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      registered:
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpMessageResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      message:
+        $ref: '#/definitions/whatsapp.WhatsappMessage'
+      status:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.QpParticipantResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      participants:
+        items: {}
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpRabbitMQConfig:
+    properties:
+      broadcasts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle broadcast messages
+      calls:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle calls
+      connection_string:
+        description: RabbitMQ Connection Settings
+        type: string
+      exchange_name:
+        description: RabbitMQ exchange name for routing
+        type: string
+      extra:
+        description: extra info to append on payload
+      failure:
+        description: Status Tracking
+        type: string
+      forwardinternal:
+        description: Configuration Options
+        type: boolean
+      groups:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle groups messages
+      queue_history:
+        description: RabbitMQ history queue name (optional)
+        type: string
+      readreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit read receipts
+      routing_key:
+        description: RabbitMQ routing key for exchange routing
+        type: string
+      success:
+        description: last success timestamp
+        type: string
+      timestamp:
+        type: string
+      trackid:
+        description: identifier of remote system to avoid loop
+        type: string
+    type: object
+  models.QpRabbitMQResponse:
+    properties:
+      affected:
+        description: items affected
+        type: integer
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      rabbitmq:
+        description: current rabbitmq items
+        items:
+          $ref: '#/definitions/models.QpRabbitMQConfig'
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.QpReceiveResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      messages:
+        items:
+          $ref: '#/definitions/whatsapp.WhatsappMessage'
+        type: array
+      server:
+        $ref: '#/definitions/models.QpServer'
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpRequestResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      requests:
+        items: {}
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.QpSendResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      message:
+        $ref: '#/definitions/models.QpSendResponseMessage'
+      status:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.QpSendResponseMessage:
+    properties:
+      chatId:
+        type: string
+      id:
+        type: string
+      trackId:
+        type: string
+      wid:
+        type: string
+    type: object
+  models.QpServer:
+    properties:
+      broadcasts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle broadcast messages
+      calls:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle calls
+      devel:
+        type: boolean
+      groups:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle groups messages
+      readreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit read receipts
+      timestamp:
+        type: string
+      token:
+        description: Public token
+        maxLength: 100
+        type: string
+      user:
+        maxLength: 36
+        type: string
+      verified:
+        type: boolean
+      wid:
+        description: Whatsapp session id
+        maxLength: 255
+        type: string
+    type: object
+  models.QpSingleGroupResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      groupinfo: {}
+      status:
+        type: string
+      success:
+        type: boolean
+      total:
+        type: integer
+    type: object
+  models.QpWebhook:
+    properties:
+      broadcasts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle broadcast messages
+      calls:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle calls
+      extra:
+        description: extra info to append on payload
+      failure:
+        description: first failure timestamp
+        type: string
+      forwardinternal:
+        description: forward internal msg from api
+        type: boolean
+      groups:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle groups messages
+      readreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit read receipts
+      success:
+        description: last success timestamp
+        type: string
+      timestamp:
+        type: string
+      trackid:
+        description: identifier of remote system to avoid loop
+        type: string
+      url:
+        description: destination
+        type: string
+    type: object
+  models.QpWebhookResponse:
+    properties:
+      affected:
+        description: items affected
+        type: integer
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      success:
+        type: boolean
+      webhooks:
+        description: current items
+        items:
+          $ref: '#/definitions/models.QpWebhook'
+        type: array
+    type: object
+  models.QpWhatsappServer:
+    properties:
+      broadcasts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle broadcast messages
+      calls:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle calls
+      devel:
+        type: boolean
+      dispatching:
+        items:
+          $ref: '#/definitions/models.QpDispatching'
+        type: array
+      groups:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle groups messages
+      readreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit read receipts
+      reconnect:
+        description: should auto reconnect, false for qrcode scanner
+        type: boolean
+      starttime:
+        type: string
+      timestamp:
+        type: string
+      token:
+        description: Public token
+        maxLength: 100
+        type: string
+      user:
+        maxLength: 36
+        type: string
+      verified:
+        type: boolean
+      wid:
+        description: Whatsapp session id
+        maxLength: 255
+        type: string
+    type: object
+  whatsapp.WhatsappAttachment:
+    properties:
+      checksum:
+        description: |-
+          Checksum for the message, used to verify integrity
+          and avoid duplicates
+        type: string
+      filelength:
+        description: important to navigate throw content, declared file length
+        type: integer
+      filename:
+        description: document
+        type: string
+      latitude:
+        description: location msgs
+        type: number
+      longitude:
+        type: number
+      mime:
+        type: string
+      seconds:
+        description: audio/video
+        type: integer
+      sequence:
+        description: live location
+        type: integer
+      thumbnail:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappMessageThumbnail'
+        description: 'small image representing something in this message, MIME: image/jpeg'
+      url:
+        description: Public access url helper content
+        type: string
+      waveform:
+        items:
+          type: integer
+        type: array
+    type: object
+  whatsapp.WhatsappBoolean:
+    enum:
+    - -1
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - FalseBooleanType
+    - UnSetBooleanType
+    - TrueBooleanType
+  whatsapp.WhatsappChat:
+    properties:
+      id:
+        description: (Identifier) whatsapp contact id, based on phone number or timestamp
+        type: string
+      lid:
+        description: (Local Identifier) new whatsapp unique contact id
+        type: string
+      phone:
+        description: phone number in E164 format
+        type: string
+      title:
+        type: string
+    type: object
+  whatsapp.WhatsappChatPresenceType:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - WhatsappChatPresenceTypePaused
+    - WhatsappChatPresenceTypeText
+    - WhatsappChatPresenceTypeAudio
+  whatsapp.WhatsappConnectionState:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    type: integer
+    x-enum-varnames:
+    - Unknown
+    - UnPrepared
+    - UnVerified
+    - Starting
+    - Connecting
+    - Stopping
+    - Stopped
+    - Restarting
+    - Reconnecting
+    - Connected
+    - Fetching
+    - Ready
+    - Halting
+    - Disconnected
+    - Failed
+  whatsapp.WhatsappMessage:
+    properties:
+      ads:
+        $ref: '#/definitions/whatsapp.WhatsappMessageAds'
+      attachment:
+        $ref: '#/definitions/whatsapp.WhatsappAttachment'
+      chat:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappChat'
+        description: Em qual chat (grupo ou direct) essa msg foi postada, para onde
+          devemos responder
+      debug:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappMessageDebug'
+        description: Debug information for debug events
+      edited:
+        description: Edited message
+        type: boolean
+      exceptions:
+        items:
+          type: string
+        type: array
+      forwardingscore:
+        description: How many times this message was forwarded
+        type: integer
+      fromhistory:
+        description: Generated from history sync
+        type: boolean
+      frominternal:
+        description: Sended via api
+        type: boolean
+      fromme:
+        description: |-
+          Do i send that ?
+          From any connected device and api
+        type: boolean
+      id:
+        description: Upper text msg id
+        type: string
+      info:
+        description: Extra information for custom messages
+      inreply:
+        description: Msg in reply of another ? Message ID
+        type: string
+      participant:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappChat'
+        description: If this message was posted on a Group, Who posted it !
+      poll:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappPoll'
+        description: Poll if exists
+      status:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappMessageStatus'
+        description: Delivered, Read, Imported statuses
+      synopsis:
+        description: Msg in reply preview
+        type: string
+      text:
+        description: Message text if exists
+        type: string
+      timestamp:
+        type: string
+      trackid:
+        description: Optional id of the system that send that message
+        type: string
+      type:
+        $ref: '#/definitions/whatsapp.WhatsappMessageType'
+      url:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappMessageUrl'
+        description: Url if exists
+      wid:
+        description: WhatsApp ID of the sender
+        type: string
+    type: object
+  whatsapp.WhatsappMessageAds:
+    properties:
+      app:
+        type: string
+      id:
+        type: string
+      sourceid:
+        type: string
+      sourceurl:
+        type: string
+      thumbnail:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappMessageThumbnail'
+        description: 'small image representing something in this message, MIME: image/jpeg'
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  whatsapp.WhatsappMessageDebug:
+    properties:
+      event:
+        type: string
+      info:
+        description: Additional information about the event
+      reason:
+        description: Reason for the debug event
+        type: string
+    type: object
+  whatsapp.WhatsappMessageStatus:
+    enum:
+    - ""
+    - error
+    - imported
+    - delivered
+    - read
+    type: string
+    x-enum-varnames:
+    - WhatsappMessageStatusUnknown
+    - WhatsappMessageStatusError
+    - WhatsappMessageStatusImported
+    - WhatsappMessageStatusDelivered
+    - WhatsappMessageStatusRead
+  whatsapp.WhatsappMessageThumbnail:
+    properties:
+      data:
+        description: base64 data
+        type: string
+      mime:
+        description: content mime type
+        type: string
+      urlprefix:
+        description: trick for '<img src=' urls prefix
+        type: string
+    type: object
+  whatsapp.WhatsappMessageType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    type: integer
+    x-enum-varnames:
+    - UnhandledMessageType
+    - ImageMessageType
+    - DocumentMessageType
+    - AudioMessageType
+    - VideoMessageType
+    - TextMessageType
+    - LocationMessageType
+    - ContactMessageType
+    - CallMessageType
+    - SystemMessageType
+    - GroupMessageType
+    - RevokeMessageType
+    - PollMessageType
+  whatsapp.WhatsappMessageUrl:
+    properties:
+      description:
+        type: string
+      reference:
+        type: string
+      thumbnail:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappMessageThumbnail'
+        description: 'small image representing something in this message, MIME: image/jpeg'
+      title:
+        type: string
+    type: object
+  whatsapp.WhatsappPoll:
+    properties:
+      options:
+        description: 'Required: Array of poll options'
+        items:
+          type: string
+        type: array
+      question:
+        description: 'Required: Poll question/title'
+        type: string
+      selections:
+        description: 'Optional: Maximum number of options a user can select (default:
+          1)'
+        type: integer
+    type: object
+info:
+  contact:
+    name: QuePasa Support
+    url: https://github.com/nocodeleaks/quepasa
+  description: QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs
+    for WhatsApp messaging integration
+  license:
+    name: GNU Affero General Public License v3.0
+    url: https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
+  termsOfService: https://github.com/nocodeleaks/quepasa
+  title: QuePasa WhatsApp API
+  version: 4.0.0
+paths:
+  /account:
+    post:
+      consumes:
+      - application/json
+      description: Create, update, or manage user accounts (master access required)
+      parameters:
+      - description: Account request
+        in: body
+        name: request
+        schema:
+          properties:
+            password:
+              type: string
+            username:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage user accounts
+      tags:
+      - Application
+  /chat/presence:
+    post:
+      consumes:
+      - application/json
+      description: Controls typing indicators and chat presence in WhatsApp conversations
+      parameters:
+      - description: Chat presence request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ChatPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Control chat presence
+      tags:
+      - Chat
+  /command:
+    get:
+      consumes:
+      - application/json
+      description: Execute control commands for the bot server (start, stop, restart,
+        status)
+      parameters:
+      - description: Command action
+        enum:
+        - start
+        - stop
+        - restart
+        - status
+        in: query
+        name: action
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Execute bot commands
+      tags:
+      - Bot
+  /contacts:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all WhatsApp contacts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpContactsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contacts
+      tags:
+      - Contacts
+  /download:
+    get:
+      description: Downloads media files (images, videos, documents) from WhatsApp
+        messages
+      parameters:
+      - description: Message ID (query parameter alternate)
+        in: query
+        name: messageid
+        type: string
+      - description: Use cached content
+        in: query
+        name: cache
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Media file
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Download media
+      tags:
+      - Download
+  /edit:
+    put:
+      consumes:
+      - application/json
+      description: Edits the content of an existing message by its ID
+      parameters:
+      - description: Message edit request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            content:
+              type: string
+            messageId:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Edit message
+      tags:
+      - Message
+  /groups/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new WhatsApp group with specified title and participants
+      parameters:
+      - description: Group creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            participants:
+              items:
+                type: string
+              type: array
+            title:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSingleGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new group
+      tags:
+      - Groups
+  /groups/description:
+    put:
+      consumes:
+      - application/json
+      description: Updates the topic/description of a specific WhatsApp group
+      parameters:
+      - description: Group topic update request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            group_jid:
+              type: string
+            topic:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSingleGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group topic
+      tags:
+      - Groups
+  /groups/get:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed information about a specific WhatsApp group
+      parameters:
+      - description: Group ID
+        in: query
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSingleGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get group information
+      tags:
+      - Groups
+  /groups/getall:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all WhatsApp groups that the bot is currently
+        a member of
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpGroupsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all groups
+      tags:
+      - Groups
+  /groups/leave:
+    post:
+      consumes:
+      - application/json
+      description: Leave a specific WhatsApp group
+      parameters:
+      - description: Leave group request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            chatId:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Leave group
+      tags:
+      - Groups
+  /groups/name:
+    put:
+      consumes:
+      - application/json
+      description: Updates the name of a specific WhatsApp group
+      parameters:
+      - description: Group name update request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            group_jid:
+              type: string
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSingleGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group name
+      tags:
+      - Groups
+  /groups/participants:
+    put:
+      consumes:
+      - application/json
+      description: Add, remove, promote, or demote participants in a WhatsApp group
+      parameters:
+      - description: Participants update request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            action:
+              type: string
+            group_jid:
+              type: string
+            participants:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpParticipantResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update group participants
+      tags:
+      - Groups
+  /groups/photo:
+    put:
+      consumes:
+      - application/json
+      description: Updates or removes the photo of a specific WhatsApp group
+      parameters:
+      - description: Group photo update request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            group_jid:
+              type: string
+            remove_img:
+              type: boolean
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSingleGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set/Remove group photo
+      tags:
+      - Groups
+  /groups/requests:
+    get:
+      consumes:
+      - application/json
+      description: Get, approve, or reject join requests for WhatsApp groups
+      parameters:
+      - description: Membership request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            action:
+              type: string
+            group_jid:
+              type: string
+            participants:
+              items:
+                type: string
+              type: array
+          type: object
+      - description: Group JID (for GET requests)
+        in: query
+        name: group_jid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpRequestResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Handle group join requests
+      tags:
+      - Groups
+    post:
+      consumes:
+      - application/json
+      description: Get, approve, or reject join requests for WhatsApp groups
+      parameters:
+      - description: Membership request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            action:
+              type: string
+            group_jid:
+              type: string
+            participants:
+              items:
+                type: string
+              type: array
+          type: object
+      - description: Group JID (for GET requests)
+        in: query
+        name: group_jid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpRequestResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Handle group join requests
+      tags:
+      - Groups
+  /health:
+    get:
+      description: Basic health check endpoint to verify if the application is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.HealthResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Health check
+      tags:
+      - Health
+  /healthapi:
+    get:
+      description: Provides detailed health information for WhatsApp servers with
+        authentication support
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.HealthResponse'
+      summary: Detailed health check
+      tags:
+      - Health
+  /info:
+    delete:
+      consumes:
+      - application/json
+      description: Get, update, or delete bot/server information and settings
+      parameters:
+      - description: Settings update (for PATCH)
+        in: body
+        name: request
+        schema:
+          properties:
+            settings:
+              type: object
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage bot information
+      tags:
+      - Information
+    get:
+      consumes:
+      - application/json
+      description: Get, update, or delete bot/server information and settings
+      parameters:
+      - description: Settings update (for PATCH)
+        in: body
+        name: request
+        schema:
+          properties:
+            settings:
+              type: object
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage bot information
+      tags:
+      - Information
+    patch:
+      consumes:
+      - application/json
+      description: Get, update, or delete bot/server information and settings
+      parameters:
+      - description: Settings update (for PATCH)
+        in: body
+        name: request
+        schema:
+          properties:
+            settings:
+              type: object
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage bot information
+      tags:
+      - Information
+  /invite:
+    get:
+      consumes:
+      - application/json
+      description: Generates an invite link for a specific WhatsApp group
+      parameters:
+      - description: Chat ID (query parameter)
+        in: query
+        name: chatid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpInviteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Generate group invite link
+      tags:
+      - Groups
+  /invite/{chatid}:
+    get:
+      consumes:
+      - application/json
+      description: Generates an invite link for a specific WhatsApp group
+      parameters:
+      - description: Chat ID (path parameter)
+        in: path
+        name: chatid
+        type: string
+      - description: Chat ID (query parameter)
+        in: query
+        name: chatid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpInviteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Generate group invite link
+      tags:
+      - Groups
+  /isonwhatsapp:
+    post:
+      consumes:
+      - application/json
+      description: Checks if provided phone numbers are registered on WhatsApp
+      parameters:
+      - description: Phone numbers to check
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            phones:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpIsOnWhatsappResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Check WhatsApp registration
+      tags:
+      - Contacts
+  /message/{messageid}:
+    delete:
+      consumes:
+      - application/json
+      description: Revokes or deletes a specific message by its ID
+      parameters:
+      - description: Message ID
+        in: path
+        name: messageid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Revoke message
+      tags:
+      - Message
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a specific message by its ID
+      parameters:
+      - description: Message ID
+        in: path
+        name: messageid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpMessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get message
+      tags:
+      - Message
+  /paircode:
+    get:
+      description: Generates a pairing code for WhatsApp authentication using phone
+        number
+      parameters:
+      - description: Phone number for pairing
+        in: query
+        name: phone
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Generate pairing code
+      tags:
+      - Connection
+  /rabbitmq:
+    delete:
+      consumes:
+      - application/json
+      description: Create, get, or delete RabbitMQ configurations for message queueing
+      parameters:
+      - description: RabbitMQ config (for POST)
+        in: body
+        name: request
+        schema:
+          properties:
+            connection_string:
+              type: string
+            exchange:
+              type: string
+            routing_key:
+              type: string
+          type: object
+      - description: Connection string (for DELETE)
+        in: query
+        name: connection_string
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpRabbitMQResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage RabbitMQ configurations
+      tags:
+      - RabbitMQ
+    get:
+      consumes:
+      - application/json
+      description: Create, get, or delete RabbitMQ configurations for message queueing
+      parameters:
+      - description: RabbitMQ config (for POST)
+        in: body
+        name: request
+        schema:
+          properties:
+            connection_string:
+              type: string
+            exchange:
+              type: string
+            routing_key:
+              type: string
+          type: object
+      - description: Connection string (for DELETE)
+        in: query
+        name: connection_string
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpRabbitMQResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage RabbitMQ configurations
+      tags:
+      - RabbitMQ
+    post:
+      consumes:
+      - application/json
+      description: Create, get, or delete RabbitMQ configurations for message queueing
+      parameters:
+      - description: RabbitMQ config (for POST)
+        in: body
+        name: request
+        schema:
+          properties:
+            connection_string:
+              type: string
+            exchange:
+              type: string
+            routing_key:
+              type: string
+          type: object
+      - description: Connection string (for DELETE)
+        in: query
+        name: connection_string
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpRabbitMQResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage RabbitMQ configurations
+      tags:
+      - RabbitMQ
+  /read:
+    post:
+      consumes:
+      - application/json
+      description: Marks one or more messages as read by id. Accepts a JSON array
+        in the request body (e.g. ["id1","id2"] or [{"id":"id1"},{"id":"id2"}])
+      parameters:
+      - description: Array of message ids or objects with id field
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark messages as read
+      tags:
+      - Message
+  /receive:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves pending messages from WhatsApp with optional timestamp
+        filtering and exceptions error filtering
+      parameters:
+      - description: Timestamp filter for messages
+        in: query
+        name: timestamp
+        type: string
+      - description: 'Filter by exceptions error status: ''true'' for messages with
+          exceptions errors, ''false'' for messages without exceptions errors, omit
+          for all messages'
+        in: query
+        name: exceptions
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpReceiveResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Receive messages
+      tags:
+      - Message
+  /scan:
+    get:
+      description: Generates a QR code for WhatsApp Web authentication scanning
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Generate QR code
+      tags:
+      - Connection
+  /send:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Endpoint to send messages via WhatsApp. Accepts sending of:
+        - Plain text (field "text")
+        - Files by URL (field "url") — server will download and send as attachment
+        - Base64 content (field "content") — use format data:<mime>;base64,<data>
+        - Polls (field "poll") — send the poll JSON in the "poll" field
+
+        Main fields:
+        - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
+        - text: message text
+        - url: public URL to download a file
+        - content: embedded base64 content (e.g.: data:image/png;base64,...)
+        - fileName: file name (optional, used when name cannot be inferred)
+        - poll: JSON object with the poll (question, options, selections)
+
+        Examples:
+        Text:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "text": "Hello, world!"
+        }
+        ```
+        Poll:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "poll": {
+        "question": "Which languages do you know?",
+        "options": ["JavaScript","Python","Go","Java","C#","Ruby"],
+        "selections": 3
+        }
+        }
+        ```
+        Base64:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "content": "data:image/png;base64,...."
+        }
+        ```
+        File by URL:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "url": "https://example.com/path/to/file.jpg"
+        }
+        ```
+      parameters:
+      - description: Request body. Use 'content' for base64, 'url' for remote files,
+          'poll' for poll JSON.
+        in: body
+        name: request
+        schema:
+          properties:
+            chatId:
+              type: string
+            content:
+              type: string
+            fileName:
+              type: string
+            poll:
+              properties:
+                options:
+                  items:
+                    type: string
+                  type: array
+                question:
+                  type: string
+                selections:
+                  type: integer
+              type: object
+            text:
+              type: string
+            url:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpSendResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send any type of message (text, file, poll, base64 content)
+      tags:
+      - Send
+  /spam:
+    post:
+      consumes:
+      - application/json
+      description: Send messages using any available server (spam/broadcast functionality)
+      parameters:
+      - description: Spam message request
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            chatId:
+              type: string
+            text:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSendResponse'
+        "423":
+          description: No server available
+          schema:
+            $ref: '#/definitions/models.QpSendResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send spam messages
+      tags:
+      - Application
+  /useridentifier:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the Local Identifier (LID) for a given phone number
+      parameters:
+      - description: Phone number
+        in: query
+        name: phone
+        type: string
+      - description: Local identifier
+        in: query
+        name: lid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LIDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user identifier (LID)
+      tags:
+      - Contacts
+  /userinfo:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves detailed information for WhatsApp users by their JIDs
+      parameters:
+      - description: User info request with JIDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.UserInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.UserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user information
+      tags:
+      - Contacts
+  /webhook:
+    delete:
+      consumes:
+      - application/json
+      description: Create, get, or delete webhook configurations for event notifications
+      parameters:
+      - description: Webhook config (for POST/DELETE)
+        in: body
+        name: request
+        schema:
+          properties:
+            bearer_token:
+              type: string
+            failure_bearer_token:
+              type: string
+            failure_method:
+              type: string
+            failure_url:
+              type: string
+            method:
+              type: string
+            url:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage webhook configurations
+      tags:
+      - Webhooks
+    get:
+      consumes:
+      - application/json
+      description: Create, get, or delete webhook configurations for event notifications
+      parameters:
+      - description: Webhook config (for POST/DELETE)
+        in: body
+        name: request
+        schema:
+          properties:
+            bearer_token:
+              type: string
+            failure_bearer_token:
+              type: string
+            failure_method:
+              type: string
+            failure_url:
+              type: string
+            method:
+              type: string
+            url:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage webhook configurations
+      tags:
+      - Webhooks
+    post:
+      consumes:
+      - application/json
+      description: Create, get, or delete webhook configurations for event notifications
+      parameters:
+      - description: Webhook config (for POST/DELETE)
+        in: body
+        name: request
+        schema:
+          properties:
+            bearer_token:
+              type: string
+            failure_bearer_token:
+              type: string
+            failure_method:
+              type: string
+            failure_url:
+              type: string
+            method:
+              type: string
+            url:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Manage webhook configurations
+      tags:
+      - Webhooks
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-QUEPASA-TOKEN
+    type: apiKey
+swagger: "2.0"

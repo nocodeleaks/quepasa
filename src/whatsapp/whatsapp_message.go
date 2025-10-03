@@ -47,6 +47,9 @@ type WhatsappMessage struct {
 	// How many times this message was forwarded
 	ForwardingScore uint32 `json:"forwardingscore,omitempty"`
 
+	// Msg is reaction ? boolean
+	InReaction bool `json:"inreaction,omitempty"`
+
 	// Msg in reply of another ? Message ID
 	InReply string `json:"inreply,omitempty"`
 

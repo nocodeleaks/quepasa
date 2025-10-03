@@ -10,15 +10,16 @@
         "sourceId": "={{$json[\"chat\"][\"hex\"]}}",
         "operation": "contactCreate",
         "contactIdentifier": "={{$json[\"chat\"][\"id\"]}}",
-        "name": "={{$json[\"chat\"][\"title\"]}}"
+        "name": "={{$json.chat.title ?? $json.chat.phone?.replace(/^(\\+)/,\"\") ?? $json.chat.id.split('@')[0] }}",
+        "phoneNumber": "={{$json.chat.phone}}"
       },
-      "id": "e61d0428-a65c-468f-9a5b-50efd60d6f85",
+      "id": "8fdda5cf-c0f0-4785-96be-f8a570fbc4f6",
       "name": "Create Chat Contact",
       "type": "n8n-nodes-chatwoot.chatwoot",
       "typeVersion": 1,
       "position": [
-        3720,
-        -140
+        4544,
+        80
       ],
       "continueOnFail": true
     },
@@ -43,26 +44,26 @@
         },
         "options": {}
       },
-      "id": "0ca19ab0-a14e-4829-90a5-81a1aa367035",
+      "id": "455b9c57-6aa2-497f-95f2-e2a42bba34e4",
       "name": "Clearing Payload For Contacts",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1040,
-        -220
+        1872,
+        -16
       ]
     },
     {
       "parameters": {
-        "jsCode": "function a2hex(str) {\n  var arr = [];\n  for (var i = 0, l = str.length; i < l; i ++) {\n    var hex = Number(str.charCodeAt(i)).toString(16);\n    arr.push(hex);\n  }\n  return arr.join('');\n}\n\nfor (const item of $input.all()) {\n  let body = item.json;\n  if(body){\n    \n    // Covering participant id\n    if(body.participant){\n\n      if(!body.participant.id || body.participant.id.length == 0)\n      {\n        delete body.participant;\n      } \n      else {\n        body.participant.phone = \"+\" + body.participant.id.split('@').shift();\n        body.participant.hex = a2hex(body.participant.id);\n      }\n    }\n\n    // Covering chat id\n    if(body.chat.id){\n      if(body.chat.id.endsWith('@s.whatsapp.net')){\n        if (!body.chat.phone){\n          body.chat.phone = \"+\" + body.chat.id.split('@').shift();\n        }\n      } else if (body.chat.id.endsWith('@g.us')) {\n        // adding contact suffix\n        if(body.chat.title){\n          if(!body.chat.title.endsWith('(GROUP)')) {\n            body.chat.title = body.chat.title + ' (GROUP)'\n          }\n        } else {\n          body.chat.title = 'UNKNOWN (GROUP)'\n        }\n      }\n      body.chat.hex = a2hex(body.chat.id);\n    }\n  }\n}\nreturn $input.all();"
+        "jsCode": "function a2hex(str) {\n  var arr = [];\n  for (var i = 0, l = str.length; i < l; i ++) {\n    var hex = Number(str.charCodeAt(i)).toString(16);\n    arr.push(hex);\n  }\n  return arr.join('');\n}\n\nfor (const item of $input.all()) {\n  let body = item.json;\n  if(body){\n    \n    // Covering participant id\n    if(body.participant){\n\n      if(!body.participant.id || body.participant.id.length == 0)\n      {\n        delete body.participant;\n      } \n      else {\n        // Skip phone extraction for @lid identifiers (no real phone number)\n        if (!body.participant.id.endsWith('@lid')) {\n          body.participant.phone = \"+\" + body.participant.id.split('@').shift();\n        }\n        \n        // Fix participant title when it's just the ID prefix\n        const idPrefix = body.participant.id.split('@').shift();\n        if (body.participant.title === idPrefix) {\n          body.participant.title = 'Contato Desconhecido';\n        }\n        body.participant.hex = a2hex(body.participant.id);\n      }\n    }\n\n    // Covering chat id\n    if(body.chat.id){\n      if(body.chat.id.endsWith('@s.whatsapp.net')){\n        if (!body.chat.phone){\n          body.chat.phone = \"+\" + body.chat.id.split('@').shift();\n        }\n      } else if (body.chat.id.endsWith('@g.us')) {\n        // adding contact suffix\n        if(body.chat.title){\n          if(!body.chat.title.endsWith('(GROUP)')) {\n            body.chat.title = body.chat.title + ' (GROUP)'\n          }\n        } else {\n          body.chat.title = 'UNKNOWN (GROUP)'\n        }\n      }\n      body.chat.hex = a2hex(body.chat.id);\n    }\n  }\n}\nreturn $input.all();"
       },
-      "id": "999b09b5-e4c2-498f-bc3c-cb2d71c8af72",
+      "id": "a1003bcc-337c-4394-9661-5299c352baeb",
       "name": "Cover Ids & Set Phone",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1240,
-        -220
+        2064,
+        -16
       ]
     },
     {
@@ -124,13 +125,13 @@
         },
         "options": {}
       },
-      "id": "28da6748-a03a-49b2-ac9a-9203b1f131fc",
+      "id": "20dafe21-d4bc-41c6-9a74-582f4057756f",
       "name": "Clearing Payload For Workflow",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        680,
-        -320
+        1504,
+        -112
       ]
     },
     {
@@ -144,28 +145,28 @@
           ]
         }
       },
-      "id": "c192b4fa-faa2-4b80-8e67-c46219e4c123",
+      "id": "3bfed2fe-b986-48fa-8d37-f3b22bd3b5a9",
       "name": "If Chat Contact Exists",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3340,
-        -300
+        4160,
+        -96
       ]
     },
     {
       "parameters": {
         "content": "## Chat Contact\n",
         "height": 847.6671229170042,
-        "width": 3756.8229819799326
+        "width": 3923.5592581739947
       },
-      "id": "4f66fe31-7400-4bc7-81a5-2c373e0e6aaa",
+      "id": "47a39deb-fe4a-4ee4-b471-e1d1519d6d72",
       "name": "Note6",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1600,
-        -537.1307485178368
+        2432,
+        -336
       ]
     },
     {
@@ -179,13 +180,13 @@
           ]
         }
       },
-      "id": "fac2f5bd-5021-4667-b1f5-95b17481c1e3",
+      "id": "619ad2a2-8cca-41cd-9155-7ce0f23053dd",
       "name": "If Chat Exists ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        4500,
-        -380
+        5552,
+        -176
       ]
     },
     {
@@ -203,13 +204,13 @@
           ]
         }
       },
-      "id": "06523944-3049-4fd4-a8c3-933dc46ccdc3",
+      "id": "5e505b07-84b4-444d-8146-03744ba269a4",
       "name": "IF",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        4100,
-        -200
+        4928,
+        16
       ]
     },
     {
@@ -217,13 +218,13 @@
         "amount": "={{ (Math.random() * 5) + 1 }}",
         "unit": "seconds"
       },
-      "id": "ae3087c5-2d2e-474e-8060-bb9a5aeb40fd",
+      "id": "ab475f2a-cdcc-4a3c-9179-33025cea8b3d",
       "name": "Wait a while (5s)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        4500,
-        -120
+        5552,
+        96
       ],
       "webhookId": "57209d6b-e7a6-4d78-b55c-82f677b13d42"
     },
@@ -253,10 +254,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        3520,
-        -380
+        4352,
+        -176
       ],
-      "id": "97926abf-33b0-428e-bf6f-309150109677"
+      "id": "bcad0980-01a9-49d1-b0df-41cf6133984d"
     },
     {
       "parameters": {
@@ -288,10 +289,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        4300,
-        -280
+        5344,
+        -80
       ],
-      "id": "92bcd719-3b08-4049-bdb0-0fb9dfa43f17"
+      "id": "99100470-a4b0-4d70-a7b4-c1b8bb36c869"
     },
     {
       "parameters": {
@@ -311,24 +312,24 @@
         },
         "options": {}
       },
-      "id": "39b7bfba-7006-459c-ac97-aebefd0ceac5",
+      "id": "518f4533-be79-46ce-bd9b-fe3fe21c3ceb",
       "name": "Set Increment For Chat Contact Attempt",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1700,
-        -300
+        2528,
+        -96
       ]
     },
     {
       "parameters": {},
-      "id": "2910ad5d-2e85-42e7-a9de-dca3cf593567",
+      "id": "0843cf51-61c9-482a-bab8-4d9fcf982ba0",
       "name": "Retry To Chat Contact",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4720,
-        60
+        5760,
+        272
       ]
     },
     {
@@ -379,57 +380,57 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        3140,
-        -300
+        3968,
+        -96
       ],
-      "id": "bdd5f78c-39b2-48ad-a58c-e54ada812375"
+      "id": "36f28e10-c9a2-4142-8e51-cc4cd96e7e37"
     },
     {
       "parameters": {
-        "content": "## (1.0.18) Updates\n* ed: operation - new\n* ed: chatserver\n\n## Recommendations \n* Remember set timeout to 20 seconds",
-        "height": 201.45401153644474,
-        "width": 467.54452018877896
+        "content": "## (1.0.21) Updates\n* phone recognize\n* Skip phone extraction for @lid identifiers (no real phone number)\n* Fix participant title when it's just the ID prefix (replace with 'Contato Desconhecido')\n\n## Recommendations \n* Remember set timeout to 20 seconds",
+        "height": 265,
+        "width": 612
       },
-      "id": "b20bb1e1-0739-4d97-8141-ab52a7832a9f",
+      "id": "26dafbf7-e239-41c4-aefa-d04fa5ef1742",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        60,
-        -660
+        736,
+        -448
       ]
     },
     {
       "parameters": {},
-      "id": "7f1c1530-39b3-4115-89ad-8eccfbdc20ed",
+      "id": "5158a257-a353-45b3-9194-ed87c9dc7136",
       "name": "When Called By Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        -320
+        1024,
+        -112
       ]
     },
     {
       "parameters": {},
-      "id": "3e744323-b1c8-4f03-b57e-3c8c6140c34a",
+      "id": "78328ab2-4e98-4501-ba61-864f0253e1eb",
       "name": "No Operation, do nothing1",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3520,
-        -220
+        4352,
+        -16
       ]
     },
     {
       "parameters": {},
-      "id": "6e17e1bc-1711-48e4-ae62-5e7bfd5c84bc",
+      "id": "b57d49f3-fed3-4890-a106-018f6789f691",
       "name": "Return Payload",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5040,
-        -300
+        6080,
+        -96
       ],
       "alwaysOutputData": true,
       "continueOnFail": true
@@ -440,13 +441,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "090a963c-e931-42e8-a7bb-b2dffc4c7ad8",
+      "id": "5bb03e85-6771-4e90-8429-8540151c5bbd",
       "name": "Parameters + Contacts",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        1440,
-        -300
+        2272,
+        -96
       ],
       "executeOnce": false
     },
@@ -456,13 +457,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "7ace0dc7-1341-4125-94c2-9901124f29af",
+      "id": "4a0cc287-c2d8-49c3-a38f-755296196fff",
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3920,
-        -200
+        4752,
+        16
       ]
     },
     {
@@ -483,13 +484,13 @@
           ]
         }
       },
-      "id": "f77dcec2-cdee-4350-98fe-0f388a06388d",
+      "id": "f62e955d-df5f-4f8d-8ba2-b9c085b1427f",
       "name": "If Error 422 & Has Attempts Remaning ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        4300,
-        -100
+        5344,
+        112
       ]
     },
     {
@@ -498,13 +499,13 @@
         "query": "=SELECT id as ctid, custom_attributes as ctatts FROM contacts WHERE account_id = '{{ $json.extra.account }}' AND identifier = '{{ $json.chat.id }}'",
         "additionalFields": {}
       },
-      "id": "23a1d175-e956-4f48-a3f0-a9ef598c41e0",
+      "id": "8b7bf31e-d071-40ca-9111-8a4640e46bf0",
       "name": "Get Contact Data By Identifier",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        1860,
-        -200
+        2688,
+        16
       ],
       "retryOnFail": true,
       "waitBetweenTries": 2000,
@@ -523,13 +524,13 @@
         "query": "=SELECT id as ctid, custom_attributes as ctatts FROM contacts WHERE account_id = '{{ $json.extra.account }}' AND phone_number = '{{ $json.chat.phone }}' limit 1",
         "additionalFields": {}
       },
-      "id": "9a0f018c-22a0-4560-93e1-577f8bdaf2da",
+      "id": "0743a91c-af48-4b06-8b38-ab500df9f87a",
       "name": "Get Contact Data By Phone",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        2600,
-        -120
+        3424,
+        96
       ],
       "retryOnFail": true,
       "waitBetweenTries": 2000,
@@ -554,13 +555,13 @@
         },
         "combineOperation": "any"
       },
-      "id": "95a77279-feef-4314-94e1-4fdb4c09bf2c",
+      "id": "ffcfa4ab-65fc-4a1d-ab4f-37d5b9023337",
       "name": "If Identifier Found ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2220,
-        -280
+        3040,
+        -80
       ]
     },
     {
@@ -569,13 +570,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "3c471025-24f8-4282-89d2-e6d11f73ca76",
+      "id": "d2bf820d-6051-4692-8c1c-79cec57d9790",
       "name": "Merge Extra With Id",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        2040,
-        -280
+        2864,
+        -80
       ],
       "notesInFlow": false
     },
@@ -585,25 +586,25 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "dd7ee04e-2a80-4e6d-8fe2-b2d76ad8a206",
+      "id": "b875802b-954c-4f33-bc9a-3dd531d2c8a3",
       "name": "Merge Extra With Phone",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        2780,
-        -180
+        3600,
+        32
       ],
       "notesInFlow": false
     },
     {
       "parameters": {},
-      "id": "b7724cd2-efe5-4ea1-9477-3c3e9b53802a",
+      "id": "18569746-1cb0-48ff-94dc-ac637c6718c9",
       "name": "No Operation, do nothing",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2960,
-        -240
+        3792,
+        -32
       ]
     },
     {
@@ -617,13 +618,13 @@
           ]
         }
       },
-      "id": "0483410d-ff9b-45e8-bc60-90f17ab612ee",
+      "id": "82505283-0a5a-4b62-9345-61c3c32a7bc0",
       "name": "If Has No Phone ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2420,
-        -220
+        3248,
+        -16
       ]
     },
     {
@@ -642,13 +643,13 @@
         },
         "options": {}
       },
-      "id": "a280c016-e515-4e00-af76-4a1bc196c6e4",
+      "id": "df9465ae-238e-4c21-9ee1-b650f8d2af68",
       "name": "Defaults",
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        840,
-        -320
+        1664,
+        -112
       ]
     },
     {
@@ -666,17 +667,21 @@
             {
               "key": "chatid",
               "value": "={{ $json.body.chat.id }}"
+            },
+            {
+              "key": "chatserver",
+              "value": "={{ $json.body.chat.id.split('@')[1] ?? '' }}"
             }
           ]
         }
       },
-      "id": "cece8931-d9f3-444f-9e89-3674ec8fe4a8",
+      "id": "7d60249c-c5ce-46ab-ab8d-2369ecc91e5f",
       "name": "Execution Data",
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        680,
-        -580
+        1504,
+        -368
       ],
       "alwaysOutputData": false,
       "onError": "continueRegularOutput"
@@ -687,13 +692,13 @@
         "height": 278.9574374256098,
         "width": 388.46252278582097
       },
-      "id": "7b08c37d-938b-4641-9355-d76e8713bf59",
+      "id": "21d99d2e-4173-4739-8af6-d56fed6d4f68",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        540,
-        -660
+        1360,
+        -448
       ]
     },
     {
@@ -721,39 +726,39 @@
         },
         "options": {}
       },
-      "id": "bb2f509c-15bb-4892-b313-55198b1176ec",
+      "id": "af067390-b73f-4766-895c-01270dd12171",
       "name": "If Skip Contact",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4740,
-        -400
+        5792,
+        -192
       ]
     },
     {
       "parameters": {
         "errorMessage": "Error on create contact (expected 422)"
       },
-      "id": "823e8d62-0030-4035-8e56-091b6492250c",
+      "id": "996721a7-af04-44f7-80d5-2186cc6f453b",
       "name": "! Unknown Error",
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4500,
-        60
+        5552,
+        272
       ]
     },
     {
       "parameters": {
         "errorMessage": "chat not processed "
       },
-      "id": "7c019522-9df4-4a74-95ea-e4614c6e8d5c",
+      "id": "979c39ff-6304-4622-ba73-58c6f13090c7",
       "name": "Stop And Error",
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        4740,
-        -220
+        5792,
+        -16
       ]
     },
     {
@@ -770,13 +775,33 @@
         },
         "options": {}
       },
-      "id": "89c28c2f-12c2-4844-9888-6ab7a3239987",
+      "id": "fc7782c2-945d-400e-8240-8034441f1e7e",
       "name": "Skipped",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5040,
-        -500
+        6080,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "operation",
+              "value": "new"
+            }
+          ]
+        }
+      },
+      "id": "d843a412-05c4-45d1-9101-48fcc473e0cf",
+      "name": "ED - Operation",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        4544,
+        -112
       ]
     }
   ],
@@ -979,6 +1004,11 @@
             "node": "Merge",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "ED - Operation",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1155,12 +1185,8 @@
     }
   },
   "active": false,
-  "settings": {
-    "saveManualExecutions": false,
-    "callerPolicy": "workflowsFromSameOwner",
-    "executionTimeout": 30
-  },
-  "versionId": "83472b2e-681a-4443-aaab-9b1668a1fa20",
+  "settings": {},
+  "versionId": "c5e1f130-5173-4cee-a63b-a56ffc2ae67d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
@@ -1168,16 +1194,16 @@
   "id": "1002",
   "tags": [
     {
-      "createdAt": "2022-10-13T15:26:19.857Z",
-      "updatedAt": "2023-08-24T21:01:00.296Z",
-      "id": "6",
-      "name": "chatwoot"
-    },
-    {
       "createdAt": "2023-05-19T22:54:38.266Z",
       "updatedAt": "2023-05-19T22:54:38.266Z",
       "id": "13",
       "name": "github.com/nocodeleaks"
+    },
+    {
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
     }
   ]
 }

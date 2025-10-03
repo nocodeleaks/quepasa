@@ -27,7 +27,6 @@ require (
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
-	github.com/prometheus/client_golang v1.16.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )
@@ -67,6 +66,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20250904145737-900bdf8bb490 // indirect
 	github.com/philippseith/signalr v0.6.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
@@ -79,12 +79,12 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.0 // indirect
 	go.mau.fi/util v0.9.1 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c // indirect
+	go.mau.fi/whatsmeow v0.0.0-20251003154939-d562355c4d82 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )

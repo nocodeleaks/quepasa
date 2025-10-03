@@ -10,11 +10,11 @@ replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
 
 replace github.com/nocodeleaks/quepasa/rabbitmq => ../rabbitmq
 
+replace github.com/nocodeleaks/quepasa/metrics => ../metrics
+
 replace github.com/nocodeleaks/quepasa/models => ./
 
 replace github.com/nocodeleaks/quepasa/environment => ../environment
-
-replace github.com/nocodeleaks/quepasa/metrics => ../metrics
 
 require (
 	github.com/google/uuid v1.6.0
@@ -25,14 +25,13 @@ require (
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/philippseith/signalr v0.6.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20250916115455-914d640cc83c
+	go.mau.fi/whatsmeow v0.0.0-20251003154939-d562355c4d82
 	golang.org/x/crypto v0.42.0
 )
 
@@ -61,6 +60,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20250904145737-900bdf8bb490 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
@@ -80,7 +80,7 @@ require (
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )
 

@@ -189,6 +189,21 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 		// Typing Controller ********************
 
+		// CHAT READ STATUS CONTROLLER **********
+		// ----------------------------------------
+		r.Post(endpoint+"/chat/markread", MarkChatAsReadController)
+		r.Post(endpoint+"/chat/markunread", MarkChatAsUnreadController)
+
+		// ----------------------------------------
+		// CHAT READ STATUS CONTROLLER **********
+
+		// CHAT ARCHIVE CONTROLLER **************
+		// ----------------------------------------
+		r.Post(endpoint+"/chat/archive", ArchiveChatController)
+
+		// ----------------------------------------
+		// CHAT ARCHIVE CONTROLLER **************
+
 		// MESSAGE EDITING CONTROLLER ***********
 		// ----------------------------------------
 		r.Put(endpoint+"/edit", EditMessageController)

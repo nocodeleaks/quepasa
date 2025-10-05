@@ -18,6 +18,7 @@ type EnvironmentSettings struct {
 	API       APISettings
 	WebServer WebServerSettings
 	Swagger   SwaggerSettings
+	Metrics   MetricsSettings
 	WhatsApp  WhatsAppSettings
 	Whatsmeow WhatsmeowSettings
 	SIPProxy  SIPProxySettings
@@ -46,6 +47,7 @@ func init() {
 		API:       NewAPISettings(),
 		WebServer: NewWebServerSettings(),
 		Swagger:   NewSwaggerSettings(),
+		Metrics:   NewMetricsSettings(),
 		WhatsApp:  NewWhatsAppSettings(),
 		Whatsmeow: NewWhatsmeowSettings(),
 		SIPProxy:  NewSIPProxySettings(),

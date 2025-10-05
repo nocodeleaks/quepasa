@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 	api "github.com/nocodeleaks/quepasa/api"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,7 +28,7 @@ func RegisterFormControllers(r chi.Router) {
 	r.Get(FormLogoutEndpoint, LogoutHandler)
 
 	// disable /setup if environment is false
-	if models.ENV.AccountSetup() {
+	if environment.Settings.General.AccountSetup {
 		r.Get(FormSetupEndpoint, SetupFormHandler)
 		r.Post(FormSetupEndpoint, SetupHandler)
 	}

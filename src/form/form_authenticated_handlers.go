@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/jwtauth"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -86,7 +87,7 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 		WMOptions: whatsmeow.WhatsmeowService.Options,
 	}
 
-	masterkey := models.ENV.MasterKey()
+	masterkey := environment.Settings.API.MasterKey
 	data.HasMasterKey = len(masterkey) > 0
 	if data.HasMasterKey {
 		data.HasSignalRActiveConnections = models.SignalRHub.HasActiveConnections(masterkey)

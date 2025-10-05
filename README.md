@@ -125,6 +125,26 @@ go build -o quepasa main.go
 ./quepasa
 ```
 
+#### API Documentation (Swagger)
+QuePasa uses Swagger/OpenAPI for API documentation:
+
+```bash
+# Install swag CLI tool (one-time setup)
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate/update API documentation
+cd src
+swag init --output ./swagger
+
+# Or use the provided script
+# Windows: double-click generate-swagger.bat
+# Or run: .\generate-swagger.bat
+
+# Or use VS Code task: Ctrl+Shift+P → "Tasks: Run Task" → "Generate Swagger Docs"
+```
+
+The documentation will be available at `http://localhost:PORT/swagger` (with or without trailing slash) when the application is running.
+
 ## 🔗 Integration Examples
 
 ### N8N Automation Workflows

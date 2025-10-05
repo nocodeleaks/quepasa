@@ -14,16 +14,17 @@ import (
 //region CONTROLLER - HEALTH
 
 // AccountController manages user accounts and authentication
-// @Summary Manage user accounts
-// @Description Create, update, or manage user accounts (master access required)
-// @Tags Application
-// @Accept json
-// @Produce json
-// @Param request body object{username=string,password=string} false "Account request"
-// @Success 200 {object} models.QpResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /account [post]
+//
+//	@Summary		Manage user accounts
+//	@Description	Create, update, or manage user accounts (master access required)
+//	@Tags			Application
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{username=string,password=string}	false	"Account request"
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/account [post]
 func AccountController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json

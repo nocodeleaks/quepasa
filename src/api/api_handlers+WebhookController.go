@@ -12,18 +12,19 @@ import (
 //region CONTROLLER - WEBHOOK
 
 // WebhookController manages webhook configurations
-// @Summary Manage webhook configurations
-// @Description Create, get, or delete webhook configurations for event notifications
-// @Tags Webhooks
-// @Accept json
-// @Produce json
-// @Param request body object{url=string,bearer_token=string,method=string,failure_url=string,failure_bearer_token=string,failure_method=string} false "Webhook config (for POST/DELETE)"
-// @Success 200 {object} models.QpWebhookResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /webhook [get]
-// @Router /webhook [post]
-// @Router /webhook [delete]
+//
+//	@Summary		Manage webhook configurations
+//	@Description	Create, get, or delete webhook configurations for event notifications
+//	@Tags			Webhooks
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{url=string,bearer_token=string,method=string,failure_url=string,failure_bearer_token=string,failure_method=string}	false	"Webhook config (for POST/DELETE)"
+//	@Success		200		{object}	models.QpWebhookResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/webhook [get]
+//	@Router			/webhook [post]
+//	@Router			/webhook [delete]
 func WebhookController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json

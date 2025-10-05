@@ -16,16 +16,17 @@ import (
 //region CONTROLLER - GET GROUP
 
 // GetGroupController retrieves information about a specific WhatsApp group
-// @Summary Get group information
-// @Description Retrieves detailed information about a specific WhatsApp group
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param groupId query string true "Group ID"
-// @Success 200 {object} models.QpSingleGroupResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/get [get]
+//
+//	@Summary		Get group information
+//	@Description	Retrieves detailed information about a specific WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			groupId	query		string	true	"Group ID"
+//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/get [get]
 func GetGroupController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json
@@ -64,15 +65,16 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 //region CONTROLLER - FETCH ALL GROUPS
 
 // FetchAllGroupsController retrieves all WhatsApp groups the bot has joined
-// @Summary Get all groups
-// @Description Retrieves a list of all WhatsApp groups that the bot is currently a member of
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Success 200 {object} models.QpGroupsResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/getall [get]
+//
+//	@Summary		Get all groups
+//	@Description	Retrieves a list of all WhatsApp groups that the bot is currently a member of
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	models.QpGroupsResponse
+//	@Failure		400	{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/getall [get]
 func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
@@ -107,16 +109,17 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 //region CONTROLLER - CREATE GROUP
 
 // CreateGroupController creates a new WhatsApp group
-// @Summary Create a new group
-// @Description Creates a new WhatsApp group with specified title and participants
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{title=string,participants=[]string} true "Group creation request"
-// @Success 200 {object} models.QpSingleGroupResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/create [post]
+//
+//	@Summary		Create a new group
+//	@Description	Creates a new WhatsApp group with specified title and participants
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{title=string,participants=[]string}	true	"Group creation request"
+//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/create [post]
 func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
@@ -186,16 +189,17 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetGroupNameController updates the name of a WhatsApp group
-// @Summary Set group name
-// @Description Updates the name of a specific WhatsApp group
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{group_jid=string,name=string} true "Group name update request"
-// @Success 200 {object} models.QpSingleGroupResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/name [put]
+//
+//	@Summary		Set group name
+//	@Description	Updates the name of a specific WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{group_jid=string,name=string}	true	"Group name update request"
+//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/name [put]
 func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -251,16 +255,17 @@ func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetGroupPhotoController updates or removes the photo of a WhatsApp group
-// @Summary Set/Remove group photo
-// @Description Updates or removes the photo of a specific WhatsApp group
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{group_jid=string,remove_img=boolean} true "Group photo update request"
-// @Success 200 {object} models.QpSingleGroupResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/photo [put]
+//
+//	@Summary		Set/Remove group photo
+//	@Description	Updates or removes the photo of a specific WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{group_jid=string,remove_img=boolean}	true	"Group photo update request"
+//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/photo [put]
 func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -364,16 +369,17 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 // endregion
 
 // UpdateGroupParticipantsController handles adding, removing, promoting, and demoting group members
-// @Summary Update group participants
-// @Description Add, remove, promote, or demote participants in a WhatsApp group
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{group_jid=string,participants=[]string,action=string} true "Participants update request"
-// @Success 200 {object} models.QpParticipantResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/participants [put]
+//
+//	@Summary		Update group participants
+//	@Description	Add, remove, promote, or demote participants in a WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{group_jid=string,participants=[]string,action=string}	true	"Participants update request"
+//	@Success		200		{object}	models.QpParticipantResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/participants [put]
 func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	response := &models.QpParticipantResponse{}
@@ -440,18 +446,19 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 }
 
 // GroupMembershipRequestsController handles retrieving and managing join requests for groups
-// @Summary Handle group join requests
-// @Description Get, approve, or reject join requests for WhatsApp groups
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{group_jid=string,participants=[]string,action=string} true "Membership request"
-// @Param group_jid query string false "Group JID (for GET requests)"
-// @Success 200 {object} models.QpRequestResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/requests [get]
-// @Router /groups/requests [post]
+//
+//	@Summary		Handle group join requests
+//	@Description	Get, approve, or reject join requests for WhatsApp groups
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request		body		object{group_jid=string,participants=[]string,action=string}	true	"Membership request"
+//	@Param			group_jid	query		string															false	"Group JID (for GET requests)"
+//	@Success		200			{object}	models.QpRequestResponse
+//	@Failure		400			{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/requests [get]
+//	@Router			/groups/requests [post]
 func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	response := &models.QpRequestResponse{}
@@ -536,16 +543,17 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 }
 
 // SetGroupTopicController updates the topic/description of a WhatsApp group
-// @Summary Set group topic
-// @Description Updates the topic/description of a specific WhatsApp group
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{group_jid=string,topic=string} true "Group topic update request"
-// @Success 200 {object} models.QpSingleGroupResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/description [put]
+//
+//	@Summary		Set group topic
+//	@Description	Updates the topic/description of a specific WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{group_jid=string,topic=string}	true	"Group topic update request"
+//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/description [put]
 func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -594,16 +602,17 @@ func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 }
 
 // LeaveGroupController allows the bot to leave a WhatsApp group
-// @Summary Leave group
-// @Description Leave a specific WhatsApp group
-// @Tags Groups
-// @Accept json
-// @Produce json
-// @Param request body object{chatId=string} true "Leave group request"
-// @Success 200 {object} models.QpResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /groups/leave [post]
+//
+//	@Summary		Leave group
+//	@Description	Leave a specific WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{chatId=string}	true	"Leave group request"
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/leave [post]
 func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpResponse{}
 

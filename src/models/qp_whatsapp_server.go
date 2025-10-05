@@ -25,7 +25,7 @@ type QpWhatsappServer struct {
 	syncConnection *sync.Mutex                  `json:"-"` // Objeto de sinaleiro para evitar chamadas simultâneas a este objeto
 	syncMessages   *sync.Mutex                  `json:"-"` // Objeto de sinaleiro para evitar chamadas simultâneas a este objeto
 
-	StartTime time.Time `json:"starttime,omitempty"`
+	Timestamps QpTimestamps `json:"timestamps"`
 
 	Handler            *QPWhatsappHandlers   `json:"-"`
 	DispatchingHandler *QPDispatchingHandler `json:"-"`
@@ -45,6 +45,7 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 		*QpServer
 		Reconnect   bool             `json:"reconnect"`
 		StartTime   time.Time        `json:"starttime,omitempty"`
+		Timestamps  QpTimestamps     `json:"timestamps"`
 		Dispatching []*QpDispatching `json:"dispatching,omitempty"`
 	}
 
@@ -66,10 +67,15 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	// Prepare timestamps for serialization
+	timestamps := source.Timestamps
+	timestamps.Update = source.Timestamp
+
 	custom := CustomServer{
 		QpServer:    source.QpServer,
 		Reconnect:   source.Reconnect,
-		StartTime:   source.StartTime,
+		StartTime:   timestamps.Start,
+		Timestamps:  timestamps,
 		Dispatching: dispatchingData,
 	}
 
@@ -575,11 +581,11 @@ func (server *QpWhatsappServer) GetNumber() string {
 }
 
 func (server *QpWhatsappServer) GetTimestamp() time.Time {
-	return server.Timestamp
+	return server.Timestamps.Update
 }
 
 func (server *QpWhatsappServer) GetStartedTime() time.Time {
-	return server.StartTime
+	return server.Timestamps.Start
 }
 
 func (server *QpWhatsappServer) GetConnection() whatsapp.IWhatsappConnection {
@@ -633,7 +639,9 @@ func (source *QpWhatsappServer) Save(reason string) (err error) {
 	}
 
 	// updating timestamp
-	source.Timestamp = time.Now().UTC()
+	currentTime := time.Now().UTC()
+	source.Timestamp = currentTime
+	source.Timestamps.Update = currentTime
 
 	if ok {
 		logger.Debugf("updating server info: %+v", source)

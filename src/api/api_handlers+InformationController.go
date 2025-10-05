@@ -12,33 +12,50 @@ import (
 
 //region CONTROLLER - Information
 
-// InformationController manages bot/server information and settings
-// @Summary Manage bot information
-// @Description Get, update, or delete bot/server information and settings
-// @Tags Information
-// @Accept json
-// @Produce json
-// @Param request body object{settings=object} false "Settings update (for PATCH)"
-// @Success 200 {object} models.QpInfoResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /info [get]
-// @Router /info [patch]
-// @Router /info [delete]
-func InformationController(w http.ResponseWriter, r *http.Request) {
+// GetInformationController handles GET requests for bot/server information
+//
+//	@Summary		Get bot information
+//	@Description	Get bot/server information and settings
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{object}	models.QpInfoResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [get]
+func GetInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationGetRequest(w, r)
+}
 
-	switch r.Method {
-	case http.MethodPatch:
-		InformationPatchRequest(w, r)
-	case http.MethodGet:
-		InformationGetRequest(w, r)
-	case http.MethodDelete:
-		InformationDeleteRequest(w, r)
-	default:
-		err := fmt.Errorf("invalid http method: %s", r.Method)
-		RespondErrorCode(w, err, http.StatusMethodNotAllowed)
-		return
-	}
+// UpdateInformationController handles PATCH requests for updating bot/server information
+//
+//	@Summary		Update bot information
+//	@Description	Update bot/server information and settings
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{settings=object}	false	"Settings update"
+//	@Success		200		{object}	models.QpInfoResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [patch]
+func UpdateInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationPatchRequest(w, r)
+}
+
+// DeleteInformationController handles DELETE requests for bot/server information
+//
+//	@Summary		Delete bot information
+//	@Description	Delete bot/server information and settings
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{object}	models.QpInfoResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [delete]
+func DeleteInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationDeleteRequest(w, r)
 }
 
 //endregion

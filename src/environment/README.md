@@ -1,6 +1,6 @@
 # QuePasa Environment Variables Documentation
 
-This document describes all environment variables used by the QuePasa application, organized by category.
+This document describes all environment variables used by the QuePasa application, organized by category. **Total: 47 variables across 9 categories**.
 
 ## 📡 SIP Proxy Configuration
 
@@ -29,8 +29,10 @@ This document describes all environment variables used by the QuePasa applicatio
 
 ## 🔗 API/Web Server Configuration
 
-- **`WEBAPIHOST`** - Web server bind host
-- **`WEBAPIPORT`** - Web server port (default: `31000`)
+- **`WEBAPIHOST`** - Web server bind host *(deprecated, use WEBSERVER_HOST)*
+- **`WEBAPIPORT`** - Web server port (default: `31000`) *(deprecated, use WEBSERVER_PORT)*
+- **`WEBSERVER_HOST`** - Web server bind host (fallback: `WEBAPIHOST`)
+- **`WEBSERVER_PORT`** - Web server port (default: `31000`, fallback: `WEBAPIPORT`)
 - **`WEBSOCKETSSL`** - Use SSL for WebSocket QR code (default: `false`)
 - **`SIGNING_SECRET`** - Token for hash signing cookies
 - **`MASTERKEY`** - Master key for super admin methods
@@ -160,7 +162,7 @@ project/
 3. **`TestEnvironmentVariablesFromSystem`** - Tests real environment loading
 4. **`TestSIPProxyActivationLogic`** - Tests SIP proxy HOST-based activation
 5. **`TestEnvironmentSettingsSingleton`** - Tests Settings initialization
-6. **`TestEnvironmentVariablesCoverage`** - Tests all 45 environment variables
+6. **`TestEnvironmentVariablesCoverage`** - Tests all 47 environment variables
 
 #### 🎯 Running Specific Tests
 ```bash
@@ -178,7 +180,7 @@ go test -v -cover
 - Environment variables are loaded from VS Code's `.env` injection when debugging
 - When running via `go test` in terminal, default values are used
 - SIP Proxy activation depends on `SIPPROXY_HOST` being set
-- All 45 environment variables are tested for accessibility
+- All 47 environment variables are tested for accessibility
 
 ## 💡 Usage Examples
 

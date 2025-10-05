@@ -10,17 +10,18 @@ import (
 )
 
 // ReceiveAPIHandler renders route GET "/receive"
-// @Summary Receive messages
-// @Description Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering
-// @Tags Message
-// @Accept json
-// @Produce json
-// @Param timestamp query string false "Timestamp filter for messages"
-// @Param exceptions query string false "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages"
-// @Success 200 {object} models.QpReceiveResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /receive [get]
+//
+//	@Summary		Receive messages
+//	@Description	Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering
+//	@Tags			Message
+//	@Accept			json
+//	@Produce		json
+//	@Param			timestamp	query		string	false	"Timestamp filter for messages"
+//	@Param			exceptions	query		string	false	"Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages"
+//	@Success		200			{object}	models.QpReceiveResponse
+//	@Failure		400			{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/receive [get]
 func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpReceiveResponse{}
 

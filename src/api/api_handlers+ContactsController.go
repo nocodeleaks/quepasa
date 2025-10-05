@@ -9,15 +9,16 @@ import (
 //region CONTROLLER - CONTACTS
 
 // ContactsController retrieves all contacts from WhatsApp
-// @Summary Get contacts
-// @Description Retrieves a list of all WhatsApp contacts
-// @Tags Contacts
-// @Accept json
-// @Produce json
-// @Success 200 {object} models.QpContactsResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /contacts [get]
+//
+//	@Summary		Get contacts
+//	@Description	Retrieves a list of all WhatsApp contacts
+//	@Tags			Contacts
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	models.QpContactsResponse
+//	@Failure		400	{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/contacts [get]
 func ContactsController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json

@@ -17,17 +17,18 @@ type ChatArchiveRequest struct {
 }
 
 // ArchiveChatController handles API requests for archiving or unarchiving a chat
-// @Summary Archive or unarchive chat
-// @Description Archives or unarchives a WhatsApp chat. Archiving also unpins the chat automatically.
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param request body ChatArchiveRequest true "Chat archive request"
-// @Success 200 {object} models.QpResponse
-// @Failure 400 {object} models.QpResponse
-// @Failure 503 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /chat/archive [post]
+//
+//	@Summary		Archive or unarchive chat
+//	@Description	Archives or unarchives a WhatsApp chat. Archiving also unpins the chat automatically.
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		ChatArchiveRequest	true	"Chat archive request"
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Failure		503		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/chat/archive [post]
 func ArchiveChatController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

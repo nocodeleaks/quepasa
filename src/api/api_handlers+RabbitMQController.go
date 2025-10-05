@@ -13,19 +13,20 @@ import (
 //region CONTROLLER - RABBITMQ
 
 // RabbitMQController manages RabbitMQ configurations
-// @Summary Manage RabbitMQ configurations
-// @Description Create, get, or delete RabbitMQ configurations for message queueing
-// @Tags RabbitMQ
-// @Accept json
-// @Produce json
-// @Param request body object{connection_string=string,exchange=string,routing_key=string} false "RabbitMQ config (for POST)"
-// @Param connection_string query string false "Connection string (for DELETE)"
-// @Success 200 {object} models.QpRabbitMQResponse
-// @Failure 400 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /rabbitmq [get]
-// @Router /rabbitmq [post]
-// @Router /rabbitmq [delete]
+//
+//	@Summary		Manage RabbitMQ configurations
+//	@Description	Create, get, or delete RabbitMQ configurations for message queueing
+//	@Tags			RabbitMQ
+//	@Accept			json
+//	@Produce		json
+//	@Param			request				body		object{connection_string=string,exchange=string,routing_key=string}	false	"RabbitMQ config (for POST)"
+//	@Param			connection_string	query		string																false	"Connection string (for DELETE)"
+//	@Success		200					{object}	models.QpRabbitMQResponse
+//	@Failure		400					{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/rabbitmq [get]
+//	@Router			/rabbitmq [post]
+//	@Router			/rabbitmq [delete]
 func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 
 	// setting default response type as json

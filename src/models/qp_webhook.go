@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/nocodeleaks/quepasa/environment"
-	"github.com/nocodeleaks/quepasa/library"
+	environment "github.com/nocodeleaks/quepasa/environment"
+	library "github.com/nocodeleaks/quepasa/library"
 	metrics "github.com/nocodeleaks/quepasa/metrics"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"

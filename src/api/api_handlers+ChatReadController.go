@@ -16,17 +16,18 @@ type ChatReadRequest struct {
 }
 
 // MarkChatAsReadController handles API requests for marking a chat as read
-// @Summary Mark chat as read
-// @Description Marks a WhatsApp chat as read (removes unread badge)
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param request body ChatReadRequest true "Chat read request"
-// @Success 200 {object} models.QpResponse
-// @Failure 400 {object} models.QpResponse
-// @Failure 503 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /chat/markread [post]
+//
+//	@Summary		Mark chat as read
+//	@Description	Marks a WhatsApp chat as read (removes unread badge)
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		ChatReadRequest	true	"Chat read request"
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Failure		503		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/chat/markread [post]
 func MarkChatAsReadController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
@@ -101,17 +102,18 @@ func MarkChatAsReadController(w http.ResponseWriter, r *http.Request) {
 }
 
 // MarkChatAsUnreadController handles API requests for marking a chat as unread
-// @Summary Mark chat as unread
-// @Description Marks a WhatsApp chat as unread (shows unread badge)
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param request body ChatReadRequest true "Chat unread request"
-// @Success 200 {object} models.QpResponse
-// @Failure 400 {object} models.QpResponse
-// @Failure 503 {object} models.QpResponse
-// @Security ApiKeyAuth
-// @Router /chat/markunread [post]
+//
+//	@Summary		Mark chat as unread
+//	@Description	Marks a WhatsApp chat as unread (shows unread badge)
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		ChatReadRequest	true	"Chat unread request"
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Failure		503		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/chat/markunread [post]
 func MarkChatAsUnreadController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

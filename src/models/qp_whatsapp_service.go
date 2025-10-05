@@ -137,12 +137,15 @@ func (source *QPWhatsappService) NewQpWhatsappServer(info *QpServer) (server *Qp
 		return
 	}
 
+	startTime := time.Now().UTC()
 	server = &QpWhatsappServer{
 		QpServer:       info,
 		Reconnect:      true,
 		syncConnection: &sync.Mutex{},
 		syncMessages:   &sync.Mutex{},
-		StartTime:      time.Now().UTC(),
+		Timestamps: QpTimestamps{
+			Start: startTime,
+		},
 
 		StopRequested: false, // setting initial state
 		db:            source.DB.Servers,

@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	form "github.com/nocodeleaks/quepasa/form"
 	models "github.com/nocodeleaks/quepasa/models"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -19,28 +21,35 @@ import (
 
 	kitlog "github.com/go-kit/log"
 	signalr "github.com/philippseith/signalr"
-
-	// swagger embed files
-	httpSwagger "github.com/swaggo/http-swagger"
 )
+
+// RouterConfigurator é uma função que pode configurar rotas adicionais no router
+type RouterConfigurator func(r chi.Router)
+
+// configurators armazena as funções de configuração adicionais que serão executadas
+// durante a criação do router. Módulos externos podem registrar suas configurações aqui.
+var configurators []RouterConfigurator
+
+// RegisterRouterConfigurator permite que módulos externos registrem funções
+// para configurar rotas adicionais no router principal
+func RegisterRouterConfigurator(configurator RouterConfigurator) {
+	configurators = append(configurators, configurator)
+}
 
 func WebServerStart(logentry *log.Entry) error {
 	r := newRouter()
-	webAPIPort := os.Getenv(models.ENV_WEBAPIPORT)
-	webAPIHost := os.Getenv(models.ENV_WEBAPIHOST)
-	if len(webAPIPort) == 0 {
-		webAPIPort = "31000"
-	}
+	webAPIPort := environment.Settings.WebServer.Port
+	webAPIHost := environment.Settings.WebServer.Host
 
 	var timeout = 30 * time.Second
 	server := http.Server{
-		Addr:         webAPIHost + ":" + webAPIPort,
+		Addr:         fmt.Sprintf("%s:%d", webAPIHost, webAPIPort),
 		ReadTimeout:  timeout,
 		WriteTimeout: timeout,
 		Handler:      r,
 	}
 
-	logentry.Infof("starting web server on port: %s", webAPIPort)
+	logentry.Infof("starting web server on port: %d", webAPIPort)
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +66,7 @@ func newRouter() chi.Router {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 
-	if models.ENV.HttpLogs() {
+	if environment.Settings.WebServer.Logs {
 		r.Use(middleware.Logger)
 	}
 
@@ -72,11 +81,10 @@ func newRouter() chi.Router {
 	// SignalR
 	ServeSignalR(r)
 
-	// Static content
-	ServeStaticContent(r)
-
-	// Swagger Ui
-	ServeSwaggerUi(r)
+	// Execute registered configurators (e.g., Swagger, custom modules)
+	for _, configurator := range configurators {
+		configurator(r)
+	}
 
 	// Metrics
 	ServeMetrics(r)
@@ -88,6 +96,9 @@ func newRouter() chi.Router {
 }
 
 func ServeForms(r chi.Router) {
+
+	// Static Forms content
+	ServeStaticContent(r)
 
 	// setting group
 	r.Group(func(r chi.Router) {
@@ -105,6 +116,7 @@ func ServeForms(r chi.Router) {
 }
 
 func ServeAPI(r chi.Router) {
+	apiPrefix := environment.Settings.API.Prefix
 
 	// setting group
 	r.Group(func(r chi.Router) {
@@ -125,9 +137,12 @@ func ServeAPI(r chi.Router) {
 		}))
 		*/
 
-		r.Group(api.RegisterAPIControllers)
-		r.Group(api.RegisterAPIV2Controllers)
-		r.Group(api.RegisterAPIV3Controllers)
+		// Mount API routes under the configured prefix
+		r.Route("/"+apiPrefix, func(r chi.Router) {
+			r.Group(api.RegisterAPIControllers)
+			r.Group(api.RegisterAPIV2Controllers)
+			r.Group(api.RegisterAPIV3Controllers)
+		})
 	})
 }
 
@@ -188,17 +203,6 @@ func ServeSignalR(r chi.Router) {
 		mappable := WithChiRouter(r)
 		server.MapHTTP(mappable, "/signalr")
 	})
-}
-
-func ServeSwaggerUi(r chi.Router) {
-	log.Debug("starting swaggerUi service")
-
-	// Configure Swagger UI to hide models/schemas section
-	r.Mount("/swagger", httpSwagger.Handler(
-		httpSwagger.UIConfig(map[string]string{
-			"defaultModelsExpandDepth": "-1", // Hide models section
-		}),
-	))
 }
 
 func ServeMetrics(r chi.Router) {

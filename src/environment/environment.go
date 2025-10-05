@@ -16,6 +16,8 @@ type EnvironmentSettings struct {
 	// Embedded structs for organized access to different environment categories
 	Database  DatabaseSettings
 	API       APISettings
+	WebServer WebServerSettings
+	Swagger   SwaggerSettings
 	WhatsApp  WhatsAppSettings
 	Whatsmeow WhatsmeowSettings
 	SIPProxy  SIPProxySettings
@@ -42,6 +44,8 @@ func init() {
 	Settings = EnvironmentSettings{
 		Database:  NewDatabaseSettings(),
 		API:       NewAPISettings(),
+		WebServer: NewWebServerSettings(),
+		Swagger:   NewSwaggerSettings(),
 		WhatsApp:  NewWhatsAppSettings(),
 		Whatsmeow: NewWhatsmeowSettings(),
 		SIPProxy:  NewSIPProxySettings(),

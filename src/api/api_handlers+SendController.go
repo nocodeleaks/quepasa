@@ -17,62 +17,63 @@ import (
 //region TYPES OF SENDING
 
 // SendAPIHandler renders route "/send" and "/sendencoded"
-// @Summary Send any type of message (text, file, poll, base64 content)
-// @Description Endpoint to send messages via WhatsApp. Accepts sending of:
-// @Description - Plain text (field "text")
-// @Description - Files by URL (field "url") — server will download and send as attachment
-// @Description - Base64 content (field "content") — use format data:<mime>;base64,<data>
-// @Description - Polls (field "poll") — send the poll JSON in the "poll" field
-// @Description
-// @Description Main fields:
-// @Description - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
-// @Description - text: message text
-// @Description - url: public URL to download a file
-// @Description - content: embedded base64 content (e.g.: data:image/png;base64,...)
-// @Description - fileName: file name (optional, used when name cannot be inferred)
-// @Description - poll: JSON object with the poll (question, options, selections)
-// @Description
-// @Description Examples:
-// @Description Text:
-// @Description ```json
-// @Description {
-// @Description   "chatId": "5511999999999@s.whatsapp.net",
-// @Description   "text": "Hello, world!"
-// @Description }
-// @Description ```
-// @Description Poll:
-// @Description ```json
-// @Description {
-// @Description   "chatId": "5511999999999@s.whatsapp.net",
-// @Description   "poll": {
-// @Description     "question": "Which languages do you know?",
-// @Description     "options": ["JavaScript","Python","Go","Java","C#","Ruby"],
-// @Description     "selections": 3
-// @Description   }
-// @Description }
-// @Description ```
-// @Description Base64:
-// @Description ```json
-// @Description {
-// @Description   "chatId": "5511999999999@s.whatsapp.net",
-// @Description   "content": "data:image/png;base64,...."
-// @Description }
-// @Description ```
-// @Description File by URL:
-// @Description ```json
-// @Description {
-// @Description   "chatId": "5511999999999@s.whatsapp.net",
-// @Description   "url": "https://example.com/path/to/file.jpg"
-// @Description }
-// @Description ```
-// @Tags Send
-// @Accept json
-// @Produce json
-// @Param request body object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int}} false "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON."
-// @Success 200 {object} models.QpSendResponse
-// @Failure 400 {object} models.QpSendResponse
-// @Security ApiKeyAuth
-// @Router /send [post]
+//
+//	@Summary		Send any type of message (text, file, poll, base64 content)
+//	@Description	Endpoint to send messages via WhatsApp. Accepts sending of:
+//	@Description	- Plain text (field "text")
+//	@Description	- Files by URL (field "url") — server will download and send as attachment
+//	@Description	- Base64 content (field "content") — use format data:<mime>;base64,<data>
+//	@Description	- Polls (field "poll") — send the poll JSON in the "poll" field
+//	@Description
+//	@Description	Main fields:
+//	@Description	- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
+//	@Description	- text: message text
+//	@Description	- url: public URL to download a file
+//	@Description	- content: embedded base64 content (e.g.: data:image/png;base64,...)
+//	@Description	- fileName: file name (optional, used when name cannot be inferred)
+//	@Description	- poll: JSON object with the poll (question, options, selections)
+//	@Description
+//	@Description	Examples:
+//	@Description	Text:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"text": "Hello, world!"
+//	@Description	}
+//	@Description	```
+//	@Description	Poll:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"poll": {
+//	@Description	"question": "Which languages do you know?",
+//	@Description	"options": ["JavaScript","Python","Go","Java","C#","Ruby"],
+//	@Description	"selections": 3
+//	@Description	}
+//	@Description	}
+//	@Description	```
+//	@Description	Base64:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"content": "data:image/png;base64,...."
+//	@Description	}
+//	@Description	```
+//	@Description	File by URL:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"url": "https://example.com/path/to/file.jpg"
+//	@Description	}
+//	@Description	```
+//	@Tags			Send
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON."
+//	@Success		200		{object}	models.QpSendResponse
+//	@Failure		400		{object}	models.QpSendResponse
+//	@Security		ApiKeyAuth
+//	@Router			/send [post]
 func SendAny(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 

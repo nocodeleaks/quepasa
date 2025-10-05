@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
@@ -23,7 +24,7 @@ func RedirectToLogin(w http.ResponseWriter, r *http.Request) {
 // Google chrome bloqueou wss, portanto retornaremos sempre ws apatir de agora
 func WebSocketProtocol() string {
 	protocol := "ws"
-	isSecure := models.ENV.UseSSLForWebSocket()
+	isSecure := environment.Settings.API.UseSSLWebSocket
 	if isSecure {
 		protocol = "wss"
 	}

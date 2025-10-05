@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
@@ -227,6 +228,23 @@ func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 		// If a reason is returned, it means the message should be ignored.
 		// No further action is needed, so we simply return.
 		return
+	}
+
+	// Update last message/event timestamps
+	if source.server != nil {
+		currentTime := time.Now().UTC()
+
+		// Check if this is an event (system messages, unhandled messages, or read receipts)
+		isEvent := payload.Type == whatsapp.UnhandledMessageType ||
+			payload.Type == whatsapp.SystemMessageType ||
+			payload.Id == "readreceipt"
+
+		if isEvent {
+			source.server.Timestamps.Event = &currentTime
+		} else {
+			// Regular message content (text, image, audio, video, etc.) - received messages only
+			source.server.Timestamps.Message = &currentTime
+		}
 	}
 
 	if source.server != nil {

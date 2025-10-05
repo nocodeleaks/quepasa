@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	slug "github.com/gosimple/slug"
-	"github.com/nocodeleaks/quepasa/library"
+	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/proto/waE2E"

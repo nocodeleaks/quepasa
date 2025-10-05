@@ -9,7 +9,6 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 
-	_ "github.com/nocodeleaks/quepasa/metrics" // Metrics endpoint
 	_ "github.com/nocodeleaks/quepasa/swagger" // Swagger docs
 	logrus "github.com/sirupsen/logrus"
 )

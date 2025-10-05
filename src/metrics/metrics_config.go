@@ -2,7 +2,7 @@ package metrics
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/nocodeleaks/quepasa/environment"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

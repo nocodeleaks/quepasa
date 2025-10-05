@@ -90,7 +90,7 @@ func newRouter() chi.Router {
 	metrics.ConfigureMetrics(r)
 
 	// Dashboard
-	ServeDashboard(r)
+	ConfigureDashboard(r)
 
 	return r
 }
@@ -208,4 +208,16 @@ func ServeSignalR(r chi.Router) {
 func ServeDashboard(r chi.Router) {
 	log.Debug("starting dashboard service")
 	r.Get("/dashboard", DashboardHandler)
+}
+
+func ConfigureDashboard(r chi.Router) {
+	if environment.Settings.Dashboard.Enabled {
+		ServeDashboardWithPrefix(r)
+	}
+}
+
+func ServeDashboardWithPrefix(r chi.Router) {
+	log.Debug("starting dashboard service")
+	prefix := environment.Settings.Dashboard.Prefix
+	r.Get("/"+prefix, DashboardHandler)
 }

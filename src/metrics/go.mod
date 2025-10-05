@@ -1,5 +1,7 @@
 module github.com/nocodeleaks/quepasa/metrics
 
+replace github.com/nocodeleaks/quepasa/environment => ../environment
+
 require github.com/prometheus/client_golang v1.16.0
 
 require (

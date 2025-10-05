@@ -4,6 +4,8 @@ replace github.com/nocodeleaks/quepasa/media => ./media
 
 replace github.com/nocodeleaks/quepasa/api => ./api
 
+replace github.com/nocodeleaks/quepasa/docs => ./docs
+
 replace github.com/nocodeleaks/quepasa/library => ./library
 
 replace github.com/nocodeleaks/quepasa/metrics => ./metrics
@@ -30,6 +32,7 @@ toolchain go1.24.2
 
 require (
 	github.com/joho/godotenv v1.5.1
+	github.com/nocodeleaks/quepasa/docs v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000

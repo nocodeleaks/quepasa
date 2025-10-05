@@ -77,9 +77,9 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	go.mau.fi/libsignal v0.2.0 // indirect
-	go.mau.fi/util v0.9.1 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20251003154939-d562355c4d82 // indirect
+	go.mau.fi/libsignal v0.2.1-0.20251004173110-6e0a3f2435ed // indirect
+	go.mau.fi/util v0.9.2-0.20251005111801-c13b66219cee // indirect
+	go.mau.fi/whatsmeow v0.0.0-20251005115322-65f6143fa407 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
 	golang.org/x/net v0.44.0 // indirect

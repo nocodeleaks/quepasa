@@ -47,9 +47,9 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sirupsen/logrus v1.9.3
-	go.mau.fi/libsignal v0.2.0 // indirect
-	go.mau.fi/util v0.9.1
-	go.mau.fi/whatsmeow v0.0.0-20251003154939-d562355c4d82
+	go.mau.fi/libsignal v0.2.1-0.20251004173110-6e0a3f2435ed // indirect
+	go.mau.fi/util v0.9.2-0.20251005111801-c13b66219cee
+	go.mau.fi/whatsmeow v0.0.0-20251005115322-65f6143fa407
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect

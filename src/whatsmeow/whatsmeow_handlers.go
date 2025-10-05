@@ -35,6 +35,9 @@ type WhatsmeowHandlers struct {
 	// Connection control for history sync
 	offlineSyncStarted   bool
 	offlineSyncCompleted bool
+
+	// Sequential counter for precise timestamp ordering within this handler
+	eventSequence uint64
 }
 
 func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowHandlers {
@@ -43,6 +46,23 @@ func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions,
 		WhatsmeowOptions:    wmOptions,
 		WhatsappOptions:     waOptions,
 	}
+}
+
+// getTimestamp returns a timestamp with high precision using sequential counter
+func (handler *WhatsmeowHandlers) getTimestamp() time.Time {
+	if handler == nil {
+		return time.Now().UTC()
+	}
+
+	// Increment sequence counter for ordering
+	sequence := atomic.AddUint64(&handler.eventSequence, 1)
+
+	// Get current time with nanosecond precision
+	now := time.Now().UTC()
+
+	// Add sequence as nanoseconds to ensure ordering
+	// This gives us microsecond-level precision even with same base timestamp
+	return now.Add(time.Duration(sequence%1000000) * time.Nanosecond)
 }
 
 func (source *WhatsmeowHandlers) GetServiceOptions() (options whatsapp.WhatsappOptionsExtended) {
@@ -378,7 +398,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 	message := &whatsapp.WhatsappMessage{
 		Content:   evt,
 		Id:        fmt.Sprintf("event_%s_%s", randomizer, source.Client.GenerateMessageID()),
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: source.getTimestamp(),
 		Type:      whatsapp.UnhandledMessageType,
 		FromMe:    false,
 	}
@@ -838,7 +858,7 @@ func (handler *WhatsmeowHandlers) OnLoggedOutEvent(evt events.LoggedOut) {
 	}
 
 	message := &whatsapp.WhatsappMessage{
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		Id:        handler.Client.GenerateMessageID(),
 		Chat:      whatsapp.WASYSTEMCHAT,
@@ -864,7 +884,7 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 		Content: evt,
 
 		Id:        id,
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.GroupMessageType,
 		Chat:      whatsapp.WhatsappChat{Id: evt.GroupInfo.JID.String(), Title: evt.GroupInfo.GroupName.Name},
 		Text:      "joined group",
@@ -923,7 +943,7 @@ func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
 	// Create connection event message
 	message := &whatsapp.WhatsappMessage{
 		Id:        handler.Client.GenerateMessageID(),
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		FromMe:    false,
 		Chat:      whatsapp.WASYSTEMCHAT,
@@ -1009,7 +1029,7 @@ func (handler *WhatsmeowHandlers) sendSyncDispatching(event string, data map[str
 	// Create sync event message
 	message := &whatsapp.WhatsappMessage{
 		Id:        handler.Client.GenerateMessageID(),
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		FromMe:    false,
 		Chat:      whatsapp.WASYSTEMCHAT,

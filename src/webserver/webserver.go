@@ -13,7 +13,7 @@ import (
 	environment "github.com/nocodeleaks/quepasa/environment"
 	form "github.com/nocodeleaks/quepasa/form"
 	models "github.com/nocodeleaks/quepasa/models"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	metrics "github.com/nocodeleaks/quepasa/metrics"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi/v5"
@@ -87,7 +87,7 @@ func newRouter() chi.Router {
 	}
 
 	// Metrics
-	ServeMetrics(r)
+	metrics.ConfigureMetrics(r)
 
 	// Dashboard
 	ServeDashboard(r)
@@ -203,11 +203,6 @@ func ServeSignalR(r chi.Router) {
 		mappable := WithChiRouter(r)
 		server.MapHTTP(mappable, "/signalr")
 	})
-}
-
-func ServeMetrics(r chi.Router) {
-	log.Debug("starting metrics service")
-	r.Handle("/metrics", promhttp.Handler())
 }
 
 func ServeDashboard(r chi.Router) {

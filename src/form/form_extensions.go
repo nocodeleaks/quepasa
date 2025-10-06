@@ -221,8 +221,8 @@ func VerifyFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates := template.Must(template.ParseFiles(
-		"views/layouts/main.tmpl",
-		"views/bot/verify.tmpl",
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("bot/verify.tmpl"),
 	))
 	templates.ExecuteTemplate(w, "main", data)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func renderSetupForm(w http.ResponseWriter, data FormSetupData) {
-	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/setup.tmpl"))
+	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("setup.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)
 }
 

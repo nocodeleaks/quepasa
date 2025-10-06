@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -139,7 +138,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 			logentry.Errorf("failed to ensure QuePasa exchange and queues: %s", err.Error())
 
 			// Record RabbitMQ publish error
-			metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "setup_failed", message.Type.String())
+			rabbitmq.MessagePublishErrors.Inc()
 			return err
 		}
 
@@ -148,17 +147,11 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		client.PublishQuePasaMessage(routingKey, payload)
 
 		// Always increment RabbitMQ messages published counter
-		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, message.Type.String())
+		rabbitmq.MessagesPublished.Inc()
 
 		// Record publish duration
 		duration := time.Since(startTime)
-		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, message.Type.String(), duration.Seconds())
-
-		// Record message size if we have it
-		if payloadSizeBytes > 0 {
-			messageType := message.Type.String()
-			metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
-		}
+		// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
 
 		currentTime := time.Now().UTC()
 		source.Failure = nil
@@ -170,7 +163,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
 
 		// Record RabbitMQ publish error
-		metrics.RecordRabbitMQPublishError("unknown", rabbitmq.QuePasaExchangeName, "client_unavailable", message.Type.String())
+		rabbitmq.MessagePublishErrors.Inc()
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {

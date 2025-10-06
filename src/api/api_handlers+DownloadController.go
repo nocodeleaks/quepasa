@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -59,7 +58,7 @@ func DownloadController(w http.ResponseWriter, r *http.Request) {
 	messageid := GetMessageId(r)
 
 	if len(messageid) == 0 {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		err := fmt.Errorf("empty message id")
 		response.ParseError(err)
 		RespondInterface(w, response)

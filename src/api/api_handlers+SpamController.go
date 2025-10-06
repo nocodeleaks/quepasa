@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -26,7 +25,7 @@ import (
 func Spam(w http.ResponseWriter, r *http.Request) {
 	server, err := GetServerFromMaster(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 
 		response := &models.QpSendResponse{}
 		response.ParseError(err)

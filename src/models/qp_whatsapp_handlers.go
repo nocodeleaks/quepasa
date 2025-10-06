@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -249,7 +250,7 @@ func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 
 	if source.server != nil {
 		payload.Wid = source.GetWId()
-		go SignalRHub.Dispatch(source.server.Token, payload)
+		go signalr.SignalRHub.Dispatch(source.server.Token, payload)
 	}
 
 	for _, handler := range source.aeh {

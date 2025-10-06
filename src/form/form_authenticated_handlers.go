@@ -11,12 +11,18 @@ import (
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
 
+// GetFormEndpointPrefix returns the configured prefix for form endpoints
+func GetFormEndpointPrefix() string {
+	return "/" + environment.Settings.Form.Prefix
+}
+
 // Prefix on forms endpoints to avoid conflict with api
-const FormEndpointPrefix string = "/form"
+var FormEndpointPrefix string = GetFormEndpointPrefix()
 
 var FormWebsocketEndpoint string = FormEndpointPrefix + "/verify/ws"
 var FormAccountEndpoint string = FormEndpointPrefix + "/account"
@@ -90,12 +96,12 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 	masterkey := environment.Settings.API.MasterKey
 	data.HasMasterKey = len(masterkey) > 0
 	if data.HasMasterKey {
-		data.HasSignalRActiveConnections = models.SignalRHub.HasActiveConnections(masterkey)
+		data.HasSignalRActiveConnections = signalr.SignalRHub.HasActiveConnections(masterkey)
 	}
 
 	data.Servers = models.GetServersForUser(user)
 	data.Version = models.QpVersion
-	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/account.tmpl"))
+	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("account.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)
 }
 
@@ -132,8 +138,8 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates := template.Must(template.ParseFiles(
-		"views/layouts/main.tmpl",
-		"views/webhooks.tmpl",
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("webhooks.tmpl"),
 	))
 
 	templates.ExecuteTemplate(w, "main", data)
@@ -174,8 +180,8 @@ func FormRabbitMQController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates := template.Must(template.ParseFiles(
-		"views/layouts/main.tmpl",
-		"views/rabbitmq.tmpl",
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("rabbitmq.tmpl"),
 	))
 
 	templates.ExecuteTemplate(w, "main", data)

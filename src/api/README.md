@@ -9,7 +9,6 @@ REST API endpoints for QuePasa WhatsApp bot platform.
 ### API Versions
 
 - **v1**: Legacy endpoints (deprecated)
-- **v2**: Stable version with extended features
 - **v3**: Latest stable version
 - **latest**: Non-versioned routes (current development)
 

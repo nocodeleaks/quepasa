@@ -1,7 +1,6 @@
 package webserver
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,18 +8,11 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	form "github.com/nocodeleaks/quepasa/form"
-	models "github.com/nocodeleaks/quepasa/models"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-
-	kitlog "github.com/go-kit/log"
-	signalr "github.com/philippseith/signalr"
 )
 
 // RouterConfigurator é uma função que pode configurar rotas adicionais no router
@@ -72,78 +64,14 @@ func newRouter() chi.Router {
 
 	r.Use(middleware.Recoverer)
 
-	// API routes, main content
-	ServeAPI(r)
-
-	// Form routes, extra content
-	ServeForms(r)
-
-	// SignalR
-	ServeSignalR(r)
+	// Form and SignalR routes are now configured automatically via configurators
 
 	// Execute registered configurators (e.g., Swagger, custom modules)
 	for _, configurator := range configurators {
 		configurator(r)
 	}
 
-	// Metrics
-	metrics.ConfigureMetrics(r)
-
-	// Dashboard
-	ConfigureDashboard(r)
-
 	return r
-}
-
-func ServeForms(r chi.Router) {
-
-	// Static Forms content
-	ServeStaticContent(r)
-
-	// setting group
-	r.Group(func(r chi.Router) {
-
-		// setting timeout for the group
-		r.Use(middleware.Timeout(30 * time.Second))
-
-		// web routes
-		// authenticated web routes
-		r.Group(form.RegisterFormAuthenticatedControllers)
-
-		// unauthenticated web routes
-		r.Group(form.RegisterFormControllers)
-	})
-}
-
-func ServeAPI(r chi.Router) {
-	apiPrefix := environment.Settings.API.Prefix
-
-	// setting group
-	r.Group(func(r chi.Router) {
-
-		// setting timeout for the group
-		r.Use(middleware.Timeout(30 * time.Second))
-
-		/* CORS TESTING
-		r.Use(cors.Handler(cors.Options{
-			//AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-			//AllowedOrigins: []string{"https://*", "http://*"},
-			AllowOriginFunc: func(r *http.Request, origin string) bool { return true },
-			//AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			//AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-			//ExposedHeaders:   []string{"Link"},
-			//AllowCredentials: false,
-			// MaxAge: 300, // Maximum value not ignored by any of major browsers
-		}))
-		*/
-
-		// Mount API routes under the configured prefix
-		r.Route("/"+apiPrefix, func(r chi.Router) {
-			r.Group(api.RegisterAPIControllers)
-			r.Group(api.RegisterAPIV2Controllers)
-			r.Group(api.RegisterAPIV3Controllers)
-		})
-	})
 }
 
 func ServeStaticContent(r chi.Router) {
@@ -173,51 +101,4 @@ func ServeStaticContent(r chi.Router) {
 		}))
 
 	})
-}
-
-func ServeSignalR(r chi.Router) {
-
-	// setting group
-	r.Group(func(r chi.Router) {
-		log.Debug("starting signalr service")
-
-		factory := signalr.UseHub(models.SignalRHub)
-		//keepalive := signalr.KeepAliveInterval(2 * time.Second)
-		//timeout := signalr.ChanReceiveTimeout(1 * time.Hour)
-
-		ctx := context.Background()
-		logentry := log.New().WithContext(ctx)
-
-		// setting signalr log level
-		logentry.Level = log.InfoLevel
-
-		// should generate debug logs
-		debug := logentry.Level >= log.DebugLevel
-
-		slogger := signalr.Logger(kitlog.NewLogfmtLogger(logentry.Writer()), debug)
-		server, err := signalr.NewServer(ctx, factory, slogger)
-		if err != nil {
-			logentry.Errorf("error on set signalr server: %s", err.Error())
-		}
-
-		mappable := WithChiRouter(r)
-		server.MapHTTP(mappable, "/signalr")
-	})
-}
-
-func ServeDashboard(r chi.Router) {
-	log.Debug("starting dashboard service")
-	r.Get("/dashboard", DashboardHandler)
-}
-
-func ConfigureDashboard(r chi.Router) {
-	if environment.Settings.Dashboard.Enabled {
-		ServeDashboardWithPrefix(r)
-	}
-}
-
-func ServeDashboardWithPrefix(r chi.Router) {
-	log.Debug("starting dashboard service")
-	prefix := environment.Settings.Dashboard.Prefix
-	r.Get("/"+prefix, DashboardHandler)
 }

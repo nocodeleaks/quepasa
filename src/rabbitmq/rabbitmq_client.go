@@ -95,6 +95,8 @@ func (r *RabbitMQClient) connect() error {
 		go r.processCache()
 	})
 
+	ConnectionsEstablished.Inc()
+
 	return nil
 }
 
@@ -113,6 +115,7 @@ func (r *RabbitMQClient) monitorConnection() {
 			err := r.connect()
 			if err != nil {
 				log.Printf("Error connecting: %v. Retrying in 5 seconds...", err)
+				ReconnectionAttempts.Inc()
 				select {
 				case <-time.After(5 * time.Second):
 					continue
@@ -126,6 +129,8 @@ func (r *RabbitMQClient) monitorConnection() {
 		case err := <-r.notify:
 			if err != nil {
 				log.Printf("RabbitMQ connection closed unexpectedly: %v. Attempting to reconnect...", err)
+				ConnectionsLost.Inc()
+				ReconnectionAttempts.Inc()
 			} else {
 				log.Println("RabbitMQ connection closed (clean disconnect). Attempting to reconnect...")
 			}
@@ -257,6 +262,7 @@ func (r *RabbitMQClient) processCache() {
 						goto CACHE_LOOP_END // Exit inner loop to check channel status
 					}
 					log.Printf("Cached message ID %s published successfully. Cache size: %d/%d", msg.ID, len(r.messageCache), r.maxCacheSize)
+					MessagesCacheProcessed.Inc()
 
 				default:
 					goto CACHE_LOOP_END // No more messages in cache
@@ -316,6 +322,7 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 				payloadStr = payloadStr[:47] + "..."
 			}
 			log.Printf("Message ID %s with payload '%s' successfully added to cache for queue '%s'.", msg.ID, payloadStr, queueName)
+			MessagesCached.Inc()
 		}
 		return
 	}
@@ -333,12 +340,14 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 	handleError(err, fmt.Sprintf("Failed to declare queue '%s'", queueName))
 	if err != nil {
 		log.Printf("Queue declaration failed for message ID %s on queue '%s': %v. Attempting to cache.", msg.ID, queueName, err)
+		MessagePublishErrors.Inc()
 		if r.AddToCache(msg) {
 			payloadStr := fmt.Sprintf("%v", msg.Payload)
 			if len(payloadStr) > 50 {
 				payloadStr = payloadStr[:47] + "..."
 			}
 			log.Printf("Message ID %s with payload '%s' successfully added to cache after queue declaration failure for queue '%s'.", msg.ID, payloadStr, queueName)
+			MessagesCached.Inc()
 		}
 		return
 	}
@@ -349,6 +358,7 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 	handleError(err, fmt.Sprintf("Failed to convert RabbitMQMessage ID %s to JSON for queue '%s'", msg.ID, queueName))
 	if err != nil {
 		log.Printf("Failed to marshal message ID %s (payload type %T). Not caching (invalid format or unmarshalable payload). Error: %v", msg.ID, msg.Payload, err)
+		MessagePublishErrors.Inc()
 		return
 	}
 
@@ -367,16 +377,19 @@ func (r *RabbitMQClient) PublishMessageOnQueue(queueName string, messageContent 
 
 	if err != nil {
 		log.Printf("Failed to publish message ID %s directly to queue '%s': %v. Attempting to cache.", msg.ID, queueName, err)
+		MessagePublishErrors.Inc()
 		if r.AddToCache(msg) {
 			payloadStr := fmt.Sprintf("%v", msg.Payload)
 			if len(payloadStr) > 50 {
 				payloadStr = payloadStr[:47] + "..."
 			}
 			log.Printf("Message ID %s with payload '%s' successfully added to cache after publish failure for queue '%s'.", msg.ID, payloadStr, queueName)
+			MessagesCached.Inc()
 		}
 		return
 	}
 	log.Printf("JSON message ID %s published successfully to queue '%s'!", msg.ID, queueName)
+	MessagesPublished.Inc()
 }
 
 // PublishMessageToExchange publishes a JSON message to a RabbitMQ exchange with routing key.
@@ -399,6 +412,7 @@ func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey strin
 				payloadStr = payloadStr[:47] + "..."
 			}
 			log.Printf("Message ID %s with payload '%s' successfully added to cache for exchange '%s' with routing key '%s'.", msg.ID, payloadStr, exchangeName, routingKey)
+			MessagesCached.Inc()
 		}
 		return
 	}
@@ -430,16 +444,19 @@ func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey strin
 
 	if err != nil {
 		log.Printf("Failed to publish message ID %s to exchange '%s' with routing key '%s': %v. Attempting to cache.", msg.ID, exchangeName, routingKey, err)
+		MessagePublishErrors.Inc()
 		if r.AddToCache(msg) {
 			payloadStr := fmt.Sprintf("%v", msg.Payload)
 			if len(payloadStr) > 50 {
 				payloadStr = payloadStr[:47] + "..."
 			}
 			log.Printf("Message ID %s with payload '%s' successfully added to cache after publish failure for exchange '%s' with routing key '%s'.", msg.ID, payloadStr, exchangeName, routingKey)
+			MessagesCached.Inc()
 		}
 		return
 	}
 	log.Printf("JSON message ID %s published successfully to exchange '%s' with routing key '%s'!", msg.ID, exchangeName, routingKey)
+	MessagesPublished.Inc()
 }
 
 // PublishMessage publishes a JSON message to the default RabbitMQ queue (RabbitMQQueueDefault).

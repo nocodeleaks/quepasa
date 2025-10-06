@@ -19,7 +19,7 @@ type EnvironmentSettings struct {
 	WebServer WebServerSettings
 	Swagger   SwaggerSettings
 	Metrics   MetricsSettings
-	Dashboard DashboardSettings
+	Form      FormSettings
 	WhatsApp  WhatsAppSettings
 	Whatsmeow WhatsmeowSettings
 	SIPProxy  SIPProxySettings
@@ -49,7 +49,7 @@ func init() {
 		WebServer: NewWebServerSettings(),
 		Swagger:   NewSwaggerSettings(),
 		Metrics:   NewMetricsSettings(),
-		Dashboard: NewDashboardSettings(),
+		Form:      NewFormSettings(),
 		WhatsApp:  NewWhatsAppSettings(),
 		Whatsmeow: NewWhatsmeowSettings(),
 		SIPProxy:  NewSIPProxySettings(),

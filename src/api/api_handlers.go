@@ -62,8 +62,8 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// SENDING MSG ATTACH ---------------------
 
-		// deprecated, discard/remove on next version
-		r.Post(endpoint+"/senddocument", SendDocumentAPIHandlerV2)
+		r.Post(endpoint+"/senddocument", SendDocument)
+		r.Post(endpoint+"/senddocument/{chatid}", SendDocument)
 
 		r.Post(endpoint+"/sendurl", SendAny)
 		r.Post(endpoint+"/sendbinary/{chatid}/{filename}/{text}", SendDocumentFromBinary)
@@ -76,7 +76,6 @@ func RegisterAPIControllers(r chi.Router) {
 		// SENDING MSG ----------------------------
 
 		r.Get(endpoint+"/receive", ReceiveAPIHandler)
-		r.Post(endpoint+"/attachment", AttachmentAPIHandlerV2)
 
 		r.Get(endpoint+"/download/{messageid}", DownloadController)
 		r.Get(endpoint+"/download", DownloadController)

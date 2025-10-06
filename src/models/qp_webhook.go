@@ -12,7 +12,6 @@ import (
 
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
@@ -129,19 +128,19 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	timeout := time.Duration(environment.Settings.API.GetWebhookTimeout()) * time.Second
+	timeout := time.Duration(environment.Settings.API.WebhookTimeout) * time.Millisecond
 	client.Timeout = timeout
 
 	logentry.Debugf("executing HTTP request to: %s, timeout: %v", source.Url, timeout)
 	resp, err := client.Do(req)
 
 	// Always increment webhooks sent counter
-	metrics.WebhooksSent.Inc()
+	WebhooksSent.Inc()
 	logentry.Debugf("webhook sent counter incremented")
 
 	// Record latency
 	duration := time.Since(startTime)
-	metrics.WebhookLatency.Observe(duration.Seconds())
+	WebhookLatency.WithLabelValues().Observe(duration.Seconds())
 
 	var statusCode int
 	if resp != nil {
@@ -154,7 +153,7 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 
 		// Check if it's a timeout error
 		if netErr, ok := err.(interface{ Timeout() bool }); ok && netErr.Timeout() {
-			metrics.WebhookTimeouts.Inc()
+			WebhookTimeouts.Inc()
 			logentry.Warnf("webhook timeout after %v", timeout)
 		}
 	}
@@ -162,19 +161,19 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 	if resp != nil && statusCode != 200 {
 		err = ErrInvalidResponse
 		// Record HTTP error with status code
-		metrics.WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+		WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
 	}
 
 	currentTime := time.Now().UTC()
 	if err != nil {
-		metrics.WebhookSendErrors.Inc()
+		WebhookSendErrors.Inc()
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
 		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
 	} else {
 		// Webhook successful
-		metrics.WebhookSuccess.Inc()
+		WebhookSuccess.Inc()
 		source.Failure = nil
 		source.Success = &currentTime
 		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)

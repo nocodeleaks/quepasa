@@ -8,7 +8,6 @@ import (
 	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -79,8 +78,8 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetServer(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
-		metrics.ObserveAPIProcessingTime(r.Method, "/send", "400", time.Since(startTime).Seconds())
+		MessageSendErrors.Inc()
+		ObserveAPIRequestDuration(r.Method, "/send", "400", time.Since(startTime).Seconds())
 
 		response := &models.QpSendResponse{}
 		response.ParseError(err)
@@ -91,7 +90,7 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 	SendAnyWithServer(w, r, server)
 
 	// Record successful API processing time (assuming 200 status for now)
-	metrics.ObserveAPIProcessingTime(r.Method, "/send", "200", time.Since(startTime).Seconds())
+	ObserveAPIRequestDuration(r.Method, "/send", "200", time.Since(startTime).Seconds())
 }
 
 func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
@@ -115,7 +114,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 	// Getting ChatId parameter
 	err := request.EnsureValidChatId(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -133,7 +132,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		// download content to byte array
 		err = request.GenerateUrlContent()
 		if err != nil {
-			metrics.MessageSendErrors.Inc()
+			MessageSendErrors.Inc()
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -143,7 +142,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		// BASE64 content to byte array
 		err = request.GenerateEmbedContent()
 		if err != nil {
-			metrics.MessageSendErrors.Inc()
+			MessageSendErrors.Inc()
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -186,7 +185,7 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 	}
 
 	if request.Poll == nil && att.Attach == nil && len(request.Text) == 0 {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		err = fmt.Errorf("text not found, do not send empty messages")
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -204,10 +203,16 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 
 // finally sends to the whatsapp server
 func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+	SendWithMessageType(server, response, request, w, attach, whatsapp.UnhandledMessageType)
+}
+
+// SendWithMessageType sends to the whatsapp server with specified message type
+// If messageType is UnhandledMessageType, it will auto-detect the type
+func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
 	waMsg, err := request.ToWhatsappMessage()
 
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -224,7 +229,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 			err = json.Unmarshal([]byte(pollText), &poll)
 			if err != nil {
 				err = fmt.Errorf("error converting text to json poll: %s", err.Error())
-				metrics.MessageSendErrors.Inc()
+				MessageSendErrors.Inc()
 				response.ParseError(err)
 				RespondInterface(w, response)
 				return
@@ -236,8 +241,13 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 	if attach != nil {
 		waMsg.Attachment = attach
-		waMsg.Type = whatsapp.GetMessageType(attach)
-		logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		if messageType == whatsapp.UnhandledMessageType {
+			waMsg.Type = whatsapp.GetMessageType(attach)
+			logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		} else {
+			waMsg.Type = messageType
+			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		}
 	} else {
 		// test for poll, already set from ToWhatsappMessage
 		waMsg.Type = whatsapp.TextMessageType
@@ -282,7 +292,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 			sendResponse, err := server.SendMessage(waMsg)
 			if err == nil {
 				// Success sending to LID directly
-				metrics.MessagesSent.Inc()
+				MessagesSent.Inc()
 
 				result := &models.QpSendResponseMessage{}
 				result.Wid = server.GetWId()
@@ -297,7 +307,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 			// Failed to send to LID, return error
 			logentry.Errorf("failed to find phone number for LID %s and failed to send message to LID: %v", originalChatId, err)
-			metrics.MessageSendErrors.Inc()
+			MessageSendErrors.Inc()
 			response.ParseError(fmt.Errorf("failed to resolve LID to phone number and failed to send message to LID: %v", err))
 			RespondInterface(w, response)
 			return
@@ -309,14 +319,14 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 	sendResponse, err := server.SendMessage(waMsg)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
 	// success
-	metrics.MessagesSent.Inc()
+	MessagesSent.Inc()
 
 	result := &models.QpSendResponseMessage{}
 	result.Wid = server.GetWId()

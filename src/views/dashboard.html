@@ -1034,10 +1034,10 @@
         function updateDashboard(metrics) {
             // Basic counters
             document.getElementById('messagesSent').textContent =
-                getMetricValue(metrics, 'quepasa_sent_messages_total').toLocaleString();
+                getMetricValue(metrics, 'quepasa_rabbitmq_messages_published_total').toLocaleString();
 
             document.getElementById('messagesReceived').textContent =
-                getMetricValue(metrics, 'quepasa_received_messages_total').toLocaleString();
+                getMetricValue(metrics, 'quepasa_whatsmeow_messages_received_total').toLocaleString();
 
 
             // Additional metrics
@@ -1048,30 +1048,30 @@
                 getMetricValue(metrics, 'quepasa_webhook_success_total').toLocaleString();
 
             document.getElementById('messageErrors').textContent =
-                getMetricValue(metrics, 'quepasa_receive_message_errors_total').toLocaleString();
+                getMetricValue(metrics, 'quepasa_whatsmeow_message_receive_errors_total').toLocaleString();
 
             document.getElementById('syncEvents').textContent =
-                getMetricValue(metrics, 'quepasa_receive_sync_events_total').toLocaleString();
+                getMetricValue(metrics, 'quepasa_whatsmeow_message_receive_sync_events_total').toLocaleString();
 
             document.getElementById('unhandledMessages').textContent =
-                getMetricValue(metrics, 'quepasa_receive_message_unhandled_total').toLocaleString();
+                getMetricValue(metrics, 'quepasa_whatsmeow_message_receive_unhandled_total').toLocaleString();
 
             document.getElementById('webhookTimeoutsTotal').textContent =
                 getMetricValue(metrics, 'quepasa_webhook_timeouts_total').toLocaleString();
 
-            // Average message size
-            const avgSize = getHistogramAverage(metrics, 'quepasa_rabbitmq_message_size_bytes_bucket');
+            // Average message size - using processing duration as proxy since size metric doesn't exist
+            const avgSize = getHistogramAverage(metrics, 'quepasa_message_processing_duration_seconds_bucket');
             document.getElementById('avgMessageSize').textContent =
-                avgSize > 0 ? Math.round(avgSize).toLocaleString() : '-';
+                avgSize > 0 ? Math.round(avgSize * 1000).toLocaleString() : '-';
 
-            // Average publish duration (convert to ms)
-            const avgDuration = getHistogramAverage(metrics, 'quepasa_rabbitmq_publish_duration_seconds_bucket');
+            // Average publish duration - using webhook latency as proxy since publish duration doesn't exist
+            const avgDuration = getHistogramAverage(metrics, 'quepasa_webhook_duration_seconds_bucket');
             document.getElementById('avgPublishDuration').textContent =
                 avgDuration > 0 ? (avgDuration * 1000).toFixed(2) : '-';
 
-            // Success rate calculation
-            const sent = getMetricValue(metrics, 'quepasa_sent_messages_total');
-            const errors = getMetricValue(metrics, 'quepasa_send_message_errors_total');
+            // Success rate calculation - using published vs errors
+            const sent = getMetricValue(metrics, 'quepasa_rabbitmq_messages_published_total');
+            const errors = getMetricValue(metrics, 'quepasa_rabbitmq_message_publish_errors_total');
             const total = sent + errors;
             const successRate = total > 0 ? ((sent / total) * 100) : 0;
 
@@ -1224,10 +1224,10 @@
             const chart = document.getElementById('messageTypesChart');
             chart.innerHTML = '';
 
-            // Get message types from quepasa_messages_by_type_total
+            // Get message types from quepasa_whatsmeow_messages_by_type_total
             const messageTypes = {};
-            if (metrics['quepasa_messages_by_type_total']) {
-                metrics['quepasa_messages_by_type_total'].forEach(metric => {
+            if (metrics['quepasa_whatsmeow_messages_by_type_total']) {
+                metrics['quepasa_whatsmeow_messages_by_type_total'].forEach(metric => {
                     const type = metric.labels.type || 'unknown';
                     messageTypes[type] = metric.value;
                 });
@@ -1263,29 +1263,29 @@
             const chart = document.getElementById('rabbitmqSizeChart');
             chart.innerHTML = '';
 
-            // Get RabbitMQ message sizes by type
+            // Get RabbitMQ message sizes by type - using processing duration as proxy
             const messageSizes = {};
 
             // Calculate average size per message type
-            if (metrics['quepasa_rabbitmq_message_size_bytes_sum'] &&
-                metrics['quepasa_rabbitmq_message_size_bytes_count']) {
+            if (metrics['quepasa_message_processing_duration_seconds_sum'] &&
+                metrics['quepasa_message_processing_duration_seconds_count']) {
 
                 const sums = {};
                 const counts = {};
 
-                metrics['quepasa_rabbitmq_message_size_bytes_sum'].forEach(metric => {
+                metrics['quepasa_message_processing_duration_seconds_sum'].forEach(metric => {
                     const type = metric.labels.message_type || 'unknown';
                     sums[type] = metric.value;
                 });
 
-                metrics['quepasa_rabbitmq_message_size_bytes_count'].forEach(metric => {
+                metrics['quepasa_message_processing_duration_seconds_count'].forEach(metric => {
                     const type = metric.labels.message_type || 'unknown';
                     counts[type] = metric.value;
                 });
 
                 Object.keys(sums).forEach(type => {
                     if (counts[type] && counts[type] > 0) {
-                        messageSizes[type] = Math.round(sums[type] / counts[type]);
+                        messageSizes[type] = Math.round((sums[type] / counts[type]) * 1000); // Convert to ms for display
                     }
                 });
             }
@@ -1318,24 +1318,23 @@
             const chart = document.getElementById('rabbitmqLatencyChart');
             chart.innerHTML = '';
 
-            // Get RabbitMQ latency by message type
+            // Get RabbitMQ latency by message type - using webhook duration as proxy
             const latencies = {};
 
             // Calculate average latency per message type
-            if (metrics['quepasa_rabbitmq_publish_duration_seconds_sum'] &&
-                metrics['quepasa_rabbitmq_publish_duration_seconds_count']) {
+            if (metrics['quepasa_webhook_duration_seconds_sum'] &&
+                metrics['quepasa_webhook_duration_seconds_count']) {
 
                 const sums = {};
                 const counts = {};
 
-                metrics['quepasa_rabbitmq_publish_duration_seconds_sum'].forEach(metric => {
-                    const type = metric.labels.message_type || 'unknown';
-                    sums[type] = metric.value;
+                metrics['quepasa_webhook_duration_seconds_sum'].forEach(metric => {
+                    // Since webhook doesn't have message_type, use a single average
+                    sums['webhook'] = metric.value;
                 });
 
-                metrics['quepasa_rabbitmq_publish_duration_seconds_count'].forEach(metric => {
-                    const type = metric.labels.message_type || 'unknown';
-                    counts[type] = metric.value;
+                metrics['quepasa_webhook_duration_seconds_count'].forEach(metric => {
+                    counts['webhook'] = metric.value;
                 });
 
                 Object.keys(sums).forEach(type => {
@@ -1374,12 +1373,12 @@
             const chart = document.getElementById('rabbitmqSizeHistogram');
             chart.innerHTML = '';
 
-            // Get size histogram buckets
+            // Get size histogram buckets - using processing duration
             const buckets = [];
-            if (metrics['quepasa_rabbitmq_message_size_bytes_bucket']) {
+            if (metrics['quepasa_message_processing_duration_seconds_bucket']) {
                 const bucketData = {};
                 
-                metrics['quepasa_rabbitmq_message_size_bytes_bucket'].forEach(metric => {
+                metrics['quepasa_message_processing_duration_seconds_bucket'].forEach(metric => {
                     const le = metric.labels.le;
                     if (le && le !== '+Inf') {
                         bucketData[le] = (bucketData[le] || 0) + metric.value;
@@ -1421,12 +1420,12 @@
             const chart = document.getElementById('rabbitmqLatencyHistogram');
             chart.innerHTML = '';
 
-            // Get latency histogram buckets
+            // Get latency histogram buckets - using webhook duration
             const buckets = [];
-            if (metrics['quepasa_rabbitmq_publish_duration_seconds_bucket']) {
+            if (metrics['quepasa_webhook_duration_seconds_bucket']) {
                 const bucketData = {};
                 
-                metrics['quepasa_rabbitmq_publish_duration_seconds_bucket'].forEach(metric => {
+                metrics['quepasa_webhook_duration_seconds_bucket'].forEach(metric => {
                     const le = metric.labels.le;
                     if (le && le !== '+Inf') {
                         bucketData[le] = (bucketData[le] || 0) + metric.value;

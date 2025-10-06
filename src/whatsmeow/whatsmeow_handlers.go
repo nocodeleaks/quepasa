@@ -10,7 +10,6 @@ import (
 	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/appstate"
@@ -567,7 +566,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		logentry.Errorf("nil message on receiving whatsmeow events | try use rawMessage ! json: %s", string(jsonstring))
 
 		// Count message receive error
-		metrics.MessageReceiveErrors.Inc()
+		MessageReceiveErrors.Inc()
 		return
 	}
 
@@ -626,7 +625,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 			logentry.Warnf("unhandled message type, no debug information: %s", message.Type)
 		}
 		// Count unhandled message as error
-		metrics.MessageReceiveUnhandled.Inc()
+		MessageReceiveUnhandled.Inc()
 
 		// If this message originates from history, do NOT dispatch it further.
 		// Historical unhandled messages are noisy and should not reach downstream handlers.
@@ -654,14 +653,14 @@ func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from
 	// Increment received messages counter for all incoming messages
 	// Only count messages that are not from us (FromMe = false)
 	if !message.FromMe {
-		metrics.MessagesReceived.Inc()
+		MessagesReceived.Inc()
 
 		// Count messages by type for better monitoring
 		messageType := message.Type.String()
 		if messageType == "" {
 			messageType = "unknown"
 		}
-		metrics.MessagesByType.WithLabelValues(messageType).Inc()
+		MessagesByType.WithLabelValues(messageType).Inc()
 
 		logentry := handler.GetLogger()
 		logentry.Debugf("received message counted: type=%s, from=%s, chat=%s",
@@ -722,7 +721,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	logentry.Trace("event CallMessage !")
 
 	// Count incoming call as received message
-	metrics.MessagesReceived.Inc()
+	MessagesReceived.Inc()
 
 	message := &whatsapp.WhatsappMessage{Content: evt}
 
@@ -993,7 +992,7 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncC
 	handler.sendSyncDispatching("sync_completed", map[string]interface{}{
 		"count": evt.Count,
 	})
-	metrics.MessageReceiveSyncEvents.Inc()
+	MessageReceiveSyncEvents.Inc()
 
 	logentry.Info("history sync period ended based on OfflineSyncCompleted event")
 }

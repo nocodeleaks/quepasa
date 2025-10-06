@@ -11,6 +11,7 @@ import (
 
 	library "github.com/nocodeleaks/quepasa/library"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -137,7 +138,7 @@ func (server *QpWhatsappServer) HasSignalRActiveConnections() bool {
 		return false // invalid state
 	}
 
-	return SignalRHub.HasActiveConnections(server.Token)
+	return signalr.SignalRHub.HasActiveConnections(server.Token)
 }
 
 //region IMPLEMENT OF INTERFACE STATE RECOVERY

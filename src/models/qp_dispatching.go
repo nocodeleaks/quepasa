@@ -12,7 +12,6 @@ import (
 
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
@@ -191,16 +190,16 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	timeout := time.Duration(environment.Settings.API.GetWebhookTimeout()) * time.Second
+	timeout := time.Duration(environment.Settings.API.WebhookTimeout) * time.Millisecond
 	client.Timeout = timeout
 	resp, err := client.Do(req)
 
 	// Always increment webhooks sent counter
-	metrics.WebhooksSent.Inc()
+	WebhooksSent.Inc()
 
 	// Record latency
 	duration := time.Since(startTime)
-	metrics.WebhookLatency.Observe(duration.Seconds())
+	WebhookLatency.WithLabelValues().Observe(duration.Seconds())
 
 	var statusCode int
 	if resp != nil {
@@ -213,7 +212,7 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 
 		// Check if it's a timeout error
 		if netErr, ok := err.(interface{ Timeout() bool }); ok && netErr.Timeout() {
-			metrics.WebhookTimeouts.Inc()
+			WebhookTimeouts.Inc()
 			logentry.Warnf("webhook timeout after %v", timeout)
 		}
 	}
@@ -221,12 +220,12 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 	if resp != nil && statusCode != 200 {
 		err = ErrInvalidResponse
 		// Record HTTP error with status code
-		metrics.WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+		WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
 	}
 
 	currentTime := time.Now().UTC()
 	if err != nil {
-		metrics.WebhookSendErrors.Inc()
+		WebhookSendErrors.Inc()
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
@@ -237,7 +236,7 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 		}
 	} else {
 		// Webhook successful
-		metrics.WebhookSuccess.Inc()
+		WebhookSuccess.Inc()
 		source.Failure = nil
 		source.Success = &currentTime
 		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)
@@ -262,11 +261,11 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	logentry := source.LogWithField(LogFields.MessageId, messageIdForLog)
 
 	// Safely derive message type string to avoid nil pointer dereference
-	var messageType string
+	// var messageType string - removed as no longer used after metrics refactoring
 	if message != nil {
-		messageType = message.Type.String()
+		// messageType = message.Type.String() - removed
 	} else {
-		messageType = "unknown"
+		// messageType = "unknown" - removed
 	}
 
 	// Determine the routing key based on message type
@@ -293,7 +292,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
 
 		// Record RabbitMQ publish error
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "client_unavailable", messageType)
+		rabbitmq.MessagePublishErrors.Inc()
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {
@@ -313,7 +312,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Warnf("QuePasa setup not ready yet, message will be cached: %s", err.Error())
 		// Don't return error - let the publish method handle caching
 		// Record as warning but not as error since message will be cached
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "setup_not_ready", messageType)
+		rabbitmq.MessagePublishErrors.Inc()
 	}
 
 	// Publish to QuePasa Exchange with routing key
@@ -326,7 +325,7 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached", source.ConnectionString)
 
 		// Record RabbitMQ publish error - connection lost/cached
-		metrics.RecordRabbitMQPublishError(routingKey, rabbitmq.QuePasaExchangeName, "connection_lost_cached", messageType)
+		rabbitmq.MessagePublishErrors.Inc()
 
 		// Mark as failure even though message was cached
 		currentTime := time.Now().UTC()
@@ -339,28 +338,20 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		}
 
 		// Still record metrics since message was processed
-		metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, messageType)
+		rabbitmq.MessagesPublished.Inc()
 		duration := time.Since(startTime)
-		metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, messageType, duration.Seconds())
-		if payloadSizeBytes > 0 {
-			metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
-		}
+		// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
 
 		logentry.Infof("message cached for QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes) - marked as failure due to connection issue", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 		return errors.New("rabbitmq connection not available, message cached")
 	}
 
 	// Always increment RabbitMQ messages published counter
-	metrics.RecordRabbitMQMessagePublished(routingKey, rabbitmq.QuePasaExchangeName, routingKey, messageType)
+	rabbitmq.MessagesPublished.Inc()
 
 	// Record publish duration
 	duration := time.Since(startTime)
-	metrics.ObserveRabbitMQPublishDuration(routingKey, rabbitmq.QuePasaExchangeName, messageType, duration.Seconds())
-
-	// Record message size if we have it
-	if payloadSizeBytes > 0 {
-		metrics.ObserveRabbitMQMessageSize(routingKey, messageType, payloadSizeBytes)
-	}
+	// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
 
 	// Mark as success only if connection is ready and message was truly published
 	currentTime := time.Now().UTC()

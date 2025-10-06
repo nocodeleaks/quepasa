@@ -1,4 +1,4 @@
-package webserver
+package metrics
 
 import (
 	"io"
@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
-	// swagger embed files
 )
 
 // DashboardHandler serves the QuePasa metrics dashboard

@@ -29,6 +29,6 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		PageTitle: "Home",
 	}
 
-	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/index.tmpl"))
+	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("index.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)
 }

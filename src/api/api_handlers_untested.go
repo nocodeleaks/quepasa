@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -13,7 +12,7 @@ func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetServer(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -25,7 +24,7 @@ func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
 	// Getting ChatId parameter
 	err = request.EnsureValidChatId(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -33,7 +32,7 @@ func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
 
 	err = request.GenerateBodyContent(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return

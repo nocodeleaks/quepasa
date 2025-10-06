@@ -29,7 +29,7 @@ func NewAPISettings() APISettings {
 		SigningSecret:   getEnvOrDefaultString(ENV_SIGNING_SECRET, ""),
 		MasterKey:       getEnvOrDefaultString(ENV_MASTER_KEY, ""),
 		WebhookTimeout:  getEnvOrDefaultUint32(ENV_WEBHOOK_TIMEOUT, 10000),
-		Prefix:          getEnvOrDefaultString(ENV_API_PREFIX, "api"),
+		Prefix:          getEnvOrDefaultString(ENV_API_PREFIX, ""),
 		Timeout:         getEnvOrDefaultUint32(ENV_API_TIMEOUT, 30000),
 	}
 }

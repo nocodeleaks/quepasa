@@ -68,7 +68,10 @@ var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
 // getEnvOrDefaultString fetches an environment variable, returning a default value if not set.
 func getEnvOrDefaultString(key, defaultValue string) string {
 	if value, ok := os.LookupEnv(key); ok {
-		return strings.TrimSpace(value)
+		trimmedValue := strings.TrimSpace(value)
+		if len(trimmedValue) > 0 {
+			return trimmedValue
+		}
 	}
 	return defaultValue
 }

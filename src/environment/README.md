@@ -85,7 +85,7 @@ This document describes all environment variables used by the QuePasa applicatio
 
 ## 📋 Form/Web Interface Configuration
 
-- **`FORM_ENABLED`** - Enable/disable web form interface (default: `true`)
+- **`FORM`** - Enable/disable web form interface (default: `true`)
 - **`FORM_PREFIX`** - Form endpoint path prefix (default: `form`)
 
 ## 📊 Metrics Configuration

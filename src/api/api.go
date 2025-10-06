@@ -22,9 +22,10 @@ func Configure(r chi.Router) {
 
 	// setting group
 	r.Group(func(r chi.Router) {
+		timeout := environment.Settings.API.GetAPITimeout()
 
 		// setting timeout for the group
-		r.Use(middleware.Timeout(environment.Settings.API.GetAPITimeout()))
+		r.Use(middleware.Timeout(timeout))
 
 		/* CORS TESTING
 		r.Use(cors.Handler(cors.Options{

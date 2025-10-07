@@ -72,6 +72,7 @@ type WhatsappMessage struct {
 
 	Poll     *WhatsappPoll     `json:"poll,omitempty"`     // Poll if exists
 	Location *WhatsappLocation `json:"location,omitempty"` // Location if exists
+	Contact  *WhatsappContact  `json:"contact,omitempty"`  // Contact if exists
 
 	// Debug information for debug events
 	Debug *WhatsappMessageDebug `json:"debug,omitempty"`

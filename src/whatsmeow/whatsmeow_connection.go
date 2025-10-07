@@ -355,8 +355,29 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 
 	var newMessage *waE2E.Message
 
-	// Check if this is a location message
-	if msg.Type == whatsapp.LocationMessageType && msg.HasAttachment() {
+	// Check if this is a contact message
+	if msg.Type == whatsapp.ContactMessageType && msg.Contact != nil {
+		contact := msg.Contact
+
+		// Generate vCard if not provided
+		vcard := contact.Vcard
+		if len(vcard) == 0 {
+			// Generate vCard checking if contact is on WhatsApp
+			vcard = source.generateVCardForContact(contact)
+		}
+
+		newMessage = &waE2E.Message{
+			ContactMessage: &waE2E.ContactMessage{
+				DisplayName: proto.String(contact.Name),
+				Vcard:       proto.String(vcard),
+			},
+		}
+		// Add context info for replies if needed
+		if len(msg.InReply) > 0 {
+			newMessage.ContactMessage.ContextInfo = source.GetContextInfo(*msg)
+		}
+	} else if msg.Type == whatsapp.LocationMessageType && msg.HasAttachment() {
+		// Check if this is a location message
 		attach := msg.Attachment
 		newMessage = &waE2E.Message{
 			LocationMessage: &waE2E.LocationMessage{
@@ -661,6 +682,84 @@ func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool
 	// Always allow reconnection attempts - return true
 	// This hook provides visibility into reconnection events for the client
 	return true
+}
+
+// generateVCardForContact creates a vCard string with WhatsApp status detection
+// Returns different vCard formats based on whether contact is:
+// - Business WhatsApp account (has businessName)
+// - Regular WhatsApp account (has devices but no businessName)
+// - Not on WhatsApp (empty userinfos)
+func (source *WhatsmeowConnection) generateVCardForContact(contact *whatsapp.WhatsappContact) string {
+	// Extract phone number without formatting for waid parameter
+	phoneWaid := strings.ReplaceAll(contact.Phone, " ", "")
+	phoneWaid = strings.ReplaceAll(phoneWaid, "-", "")
+	phoneWaid = strings.ReplaceAll(phoneWaid, "(", "")
+	phoneWaid = strings.ReplaceAll(phoneWaid, ")", "")
+	phoneWaid = strings.TrimPrefix(phoneWaid, "+")
+
+	// Format phone to JID for lookup
+	jid := phoneWaid + "@s.whatsapp.net"
+	jids := []types.JID{}
+	parsedJid, err := types.ParseJID(jid)
+	if err == nil {
+		jids = append(jids, parsedJid)
+	}
+
+	// Try to get user info to detect WhatsApp status
+	var isBusiness bool
+	var isOnWhatsApp bool
+	var businessName string
+
+	if len(jids) > 0 && source.Client != nil {
+		userInfos, err := source.Client.GetUserInfo(jids)
+		if err == nil && len(userInfos) > 0 {
+			userInfo := userInfos[parsedJid]
+
+			// Log detailed user info for debugging
+			source.GetLogger().Debugf("Contact %s - UserInfo details: Devices=%d, Status='%s', VerifiedName=%v",
+				contact.Phone, len(userInfo.Devices), userInfo.Status, userInfo.VerifiedName != nil)
+
+			// Check if has devices
+			// Empty device list means NOT on WhatsApp
+			if len(userInfo.Devices) > 0 {
+				isOnWhatsApp = true
+				source.GetLogger().Debugf("Contact %s IS on WhatsApp (has %d devices)", contact.Phone, len(userInfo.Devices))
+			} else {
+				source.GetLogger().Debugf("Contact %s is NOT on WhatsApp (no devices)", contact.Phone)
+			}
+
+			// Check if this is a business account by looking at contact store
+			if isOnWhatsApp && source.Client.Store != nil {
+				contactInfo, contactErr := source.Client.Store.Contacts.GetContact(context.Background(), parsedJid)
+				if contactErr == nil && contactInfo.BusinessName != "" {
+					isBusiness = true
+					businessName = contactInfo.BusinessName
+					source.GetLogger().Debugf("Contact %s is a Business account: %s", contact.Phone, businessName)
+				}
+			}
+		} else {
+			source.GetLogger().Debugf("Contact %s - GetUserInfo failed or empty result (error: %v, results: %d)", contact.Phone, err, len(userInfos))
+		}
+	}
+
+	// Generate appropriate vCard based on WhatsApp status
+	if isBusiness {
+		// Business WhatsApp: include waid, X-ABLabel:WhatsApp Business, X-WA-BIZ-NAME, X-WA-BIZ-DESCRIPTION
+		bizDescription := businessName
+		if bizDescription == "" {
+			bizDescription = contact.Name
+		}
+		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL;waid=%s:%s\nitem1.X-ABLabel:WhatsApp Business\nX-WA-BIZ-NAME:%s\nX-WA-BIZ-DESCRIPTION:%s\nEND:VCARD",
+			contact.Name, contact.Name, phoneWaid, contact.Phone, businessName, bizDescription)
+	} else if isOnWhatsApp {
+		// Regular WhatsApp: include waid, X-ABLabel:Celular (no X-WA-BIZ-* fields)
+		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL;waid=%s:%s\nitem1.X-ABLabel:Celular\nEND:VCARD",
+			contact.Name, contact.Name, phoneWaid, contact.Phone)
+	} else {
+		// Not on WhatsApp: no waid, X-ABLabel:Celular
+		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL:%s\nitem1.X-ABLabel:Celular\nEND:VCARD",
+			contact.Name, contact.Name, contact.Phone)
+	}
 }
 
 //endregion

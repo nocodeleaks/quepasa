@@ -47,6 +47,7 @@ type QpSendRequest struct {
 
 	Poll     *whatsapp.WhatsappPoll     `json:"poll,omitempty"`     // Poll if exists
 	Location *whatsapp.WhatsappLocation `json:"location,omitempty"` // Location if exists
+	Contact  *whatsapp.WhatsappContact  `json:"contact,omitempty"`  // Contact if exists
 }
 
 // get default log entry, never nil
@@ -110,6 +111,14 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	}
 
 	msg.Poll = source.Poll
+
+	// Check if this is a contact message
+	if source.Contact != nil {
+		msg.Type = whatsapp.ContactMessageType
+		// Store contact data in message
+		msg.Contact = source.Contact
+		return
+	}
 
 	// Check if this is a location message
 	if source.Location != nil {

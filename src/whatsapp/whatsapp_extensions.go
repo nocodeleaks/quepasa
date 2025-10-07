@@ -190,6 +190,6 @@ func GetMessageTypeFromMIME(mime string) WhatsappMessageType {
 		}
 	}
 
-	log.Debugf("whatsapp extensions default, full mime: (" + mime + ") extract mime: " + mimeOnly)
+	log.Debugf("whatsapp extensions default, full mime: (%s) extract mime: %s", mime, mimeOnly)
 	return DocumentMessageType
 }

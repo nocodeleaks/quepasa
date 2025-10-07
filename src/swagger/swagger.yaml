@@ -680,6 +680,18 @@ definitions:
     - Halting
     - Disconnected
     - Failed
+  whatsapp.WhatsappContact:
+    properties:
+      name:
+        description: 'Required: Contact display name'
+        type: string
+      phone:
+        description: 'Required: Contact phone number'
+        type: string
+      vcard:
+        description: 'Optional: Full vCard string'
+        type: string
+    type: object
   whatsapp.WhatsappLocation:
     properties:
       address:
@@ -694,9 +706,6 @@ definitions:
       name:
         description: 'Optional: Location name/description'
         type: string
-      url:
-        description: 'Optional: URL with link to the map'
-        type: string
     type: object
   whatsapp.WhatsappMessage:
     properties:
@@ -709,6 +718,10 @@ definitions:
         - $ref: '#/definitions/whatsapp.WhatsappChat'
         description: Em qual chat (grupo ou direct) essa msg foi postada, para onde
           devemos responder
+      contact:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappContact'
+        description: Contact if exists
       debug:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappMessageDebug'
@@ -1988,6 +2001,7 @@ paths:
         - Base64 content (field "content") — use format data:<mime>;base64,<data>
         - Polls (field "poll") — send the poll JSON in the "poll" field
         - Location (field "location") — send location with latitude/longitude in the "location" object
+        - Contact (field "contact") — send contact with phone/name in the "contact" object
 
         Main fields:
         - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -1997,6 +2011,7 @@ paths:
         - fileName: file name (optional, used when name cannot be inferred)
         - poll: JSON object with the poll (question, options, selections)
         - location: JSON object with location data (latitude, longitude, name, address, url)
+        - contact: JSON object with contact data (phone, name, vcard)
 
         Location object fields:
         - latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -2004,6 +2019,11 @@ paths:
         - name (string, optional): Location name/description
         - address (string, optional): Location full address
         - url (string, optional): URL with link to the map
+
+        Contact object fields:
+        - phone (string, required): Contact phone number
+        - name (string, required): Contact display name
+        - vcard (string, optional): Full vCard string (auto-generated if not provided)
 
         Examples:
         Text:
@@ -2035,6 +2055,16 @@ paths:
         }
         }
         ```
+        Contact:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "contact": {
+        "phone": "5511999999999",
+        "name": "John Doe"
+        }
+        }
+        ```
         Base64:
         ```json
         {
@@ -2051,13 +2081,23 @@ paths:
         ```
       parameters:
       - description: Request body. Use 'content' for base64, 'url' for remote files,
-          'poll' for poll JSON, or 'location' for location object.
+          'poll' for poll JSON, 'location' for location object, or 'contact' for contact
+          object.
         in: body
         name: request
         schema:
           properties:
             chatId:
               type: string
+            contact:
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                vcard:
+                  type: string
+              type: object
             content:
               type: string
             fileName:
@@ -2106,7 +2146,8 @@ paths:
             $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
-      summary: Send any type of message (text, file, poll, base64 content, location)
+      summary: Send any type of message (text, file, poll, base64 content, location,
+        contact)
       tags:
       - Send
   /senddocument:

@@ -1721,7 +1721,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `",
+                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -1731,10 +1731,10 @@ const docTemplate = `{
                 "tags": [
                     "Send"
                 ],
-                "summary": "Send any type of message (text, file, poll, base64 content)",
+                "summary": "Send any type of message (text, file, poll, base64 content, location)",
                 "parameters": [
                     {
-                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON.",
+                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, or 'location' for location object.",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -1748,6 +1748,28 @@ const docTemplate = `{
                                 },
                                 "fileName": {
                                     "type": "string"
+                                },
+                                "location": {
+                                    "type": "object",
+                                    "properties": {
+                                        "address": {
+                                            "type": "string"
+                                        },
+                                        "latitude": {
+                                            "type": "number",
+                                            "format": "float64"
+                                        },
+                                        "longitude": {
+                                            "type": "number",
+                                            "format": "float64"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "url": {
+                                            "type": "string"
+                                        }
+                                    }
                                 },
                                 "poll": {
                                     "type": "object",
@@ -1765,6 +1787,67 @@ const docTemplate = `{
                                             "type": "integer"
                                         }
                                     }
+                                },
+                                "text": {
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpSendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpSendResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/senddocument": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Endpoint to send documents via WhatsApp, forcing document type recognition regardless of file mimetype. Useful for sending images, audio files, or other content as documents.\nAccepts the same parameters as /send but always treats attachments as documents.\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text (optional)\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n\nExample:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/document.pdf\",\n\"text\": \"Please check this document\"\n}\n` + "`" + `` + "`" + `` + "`" + `",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Send"
+                ],
+                "summary": "Send document with forced document type",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "chatId": {
+                                    "type": "string"
+                                },
+                                "content": {
+                                    "type": "string"
+                                },
+                                "fileName": {
+                                    "type": "string"
                                 },
                                 "text": {
                                     "type": "string"
@@ -2826,6 +2909,27 @@ const docTemplate = `{
                 }
             }
         },
+        "models.QpTimestamps": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "description": "Last received event timestamp",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Last received message timestamp",
+                    "type": "string"
+                },
+                "start": {
+                    "description": "Server start timestamp",
+                    "type": "string"
+                },
+                "update": {
+                    "description": "Last database update timestamp",
+                    "type": "string"
+                }
+            }
+        },
         "models.QpWebhook": {
             "type": "object",
             "properties": {
@@ -2966,11 +3070,11 @@ const docTemplate = `{
                     "description": "should auto reconnect, false for qrcode scanner",
                     "type": "boolean"
                 },
-                "starttime": {
-                    "type": "string"
-                },
                 "timestamp": {
                     "type": "string"
+                },
+                "timestamps": {
+                    "$ref": "#/definitions/models.QpTimestamps"
                 },
                 "token": {
                     "description": "Public token",
@@ -3127,6 +3231,31 @@ const docTemplate = `{
                 "Failed"
             ]
         },
+        "whatsapp.WhatsappLocation": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Optional: Location full address",
+                    "type": "string"
+                },
+                "latitude": {
+                    "description": "Required: Location latitude in degrees",
+                    "type": "number"
+                },
+                "longitude": {
+                    "description": "Required: Location longitude in degrees",
+                    "type": "number"
+                },
+                "name": {
+                    "description": "Optional: Location name/description",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "Optional: URL with link to the map",
+                    "type": "string"
+                }
+            }
+        },
         "whatsapp.WhatsappMessage": {
             "type": "object",
             "properties": {
@@ -3192,6 +3321,14 @@ const docTemplate = `{
                 "inreply": {
                     "description": "Msg in reply of another ? Message ID",
                     "type": "string"
+                },
+                "location": {
+                    "description": "Location if exists",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappLocation"
+                        }
+                    ]
                 },
                 "participant": {
                     "description": "If this message was posted on a Group, Who posted it !",

@@ -19,8 +19,8 @@ import (
 //	@Tags			Information
 //	@Accept			json
 //	@Produce		json
-//	@Success		200		{object}	models.QpInfoResponse
-//	@Failure		400		{object}	models.QpResponse
+//	@Success		200	{object}	models.QpInfoResponse
+//	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [get]
 func GetInformationController(w http.ResponseWriter, r *http.Request) {
@@ -50,8 +50,8 @@ func UpdateInformationController(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Information
 //	@Accept			json
 //	@Produce		json
-//	@Success		200		{object}	models.QpInfoResponse
-//	@Failure		400		{object}	models.QpResponse
+//	@Success		200	{object}	models.QpInfoResponse
+//	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [delete]
 func DeleteInformationController(w http.ResponseWriter, r *http.Request) {

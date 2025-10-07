@@ -456,6 +456,21 @@ definitions:
       total:
         type: integer
     type: object
+  models.QpTimestamps:
+    properties:
+      event:
+        description: Last received event timestamp
+        type: string
+      message:
+        description: Last received message timestamp
+        type: string
+      start:
+        description: Server start timestamp
+        type: string
+      update:
+        description: Last database update timestamp
+        type: string
+    type: object
   models.QpWebhook:
     properties:
       broadcasts:
@@ -541,10 +556,10 @@ definitions:
       reconnect:
         description: should auto reconnect, false for qrcode scanner
         type: boolean
-      starttime:
-        type: string
       timestamp:
         type: string
+      timestamps:
+        $ref: '#/definitions/models.QpTimestamps'
       token:
         description: Public token
         maxLength: 100
@@ -665,6 +680,24 @@ definitions:
     - Halting
     - Disconnected
     - Failed
+  whatsapp.WhatsappLocation:
+    properties:
+      address:
+        description: 'Optional: Location full address'
+        type: string
+      latitude:
+        description: 'Required: Location latitude in degrees'
+        type: number
+      longitude:
+        description: 'Required: Location longitude in degrees'
+        type: number
+      name:
+        description: 'Optional: Location name/description'
+        type: string
+      url:
+        description: 'Optional: URL with link to the map'
+        type: string
+    type: object
   whatsapp.WhatsappMessage:
     properties:
       ads:
@@ -712,6 +745,10 @@ definitions:
       inreply:
         description: Msg in reply of another ? Message ID
         type: string
+      location:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappLocation'
+        description: Location if exists
       participant:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappChat'
@@ -1950,6 +1987,7 @@ paths:
         - Files by URL (field "url") — server will download and send as attachment
         - Base64 content (field "content") — use format data:<mime>;base64,<data>
         - Polls (field "poll") — send the poll JSON in the "poll" field
+        - Location (field "location") — send location with latitude/longitude in the "location" object
 
         Main fields:
         - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -1958,6 +1996,14 @@ paths:
         - content: embedded base64 content (e.g.: data:image/png;base64,...)
         - fileName: file name (optional, used when name cannot be inferred)
         - poll: JSON object with the poll (question, options, selections)
+        - location: JSON object with location data (latitude, longitude, name, address, url)
+
+        Location object fields:
+        - latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
+        - longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)
+        - name (string, optional): Location name/description
+        - address (string, optional): Location full address
+        - url (string, optional): URL with link to the map
 
         Examples:
         Text:
@@ -1978,6 +2024,17 @@ paths:
         }
         }
         ```
+        Location:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "location": {
+        "latitude": -23.550520,
+        "longitude": -46.633308,
+        "name": "Avenida Paulista, São Paulo"
+        }
+        }
+        ```
         Base64:
         ```json
         {
@@ -1994,7 +2051,7 @@ paths:
         ```
       parameters:
       - description: Request body. Use 'content' for base64, 'url' for remote files,
-          'poll' for poll JSON.
+          'poll' for poll JSON, or 'location' for location object.
         in: body
         name: request
         schema:
@@ -2005,6 +2062,21 @@ paths:
               type: string
             fileName:
               type: string
+            location:
+              properties:
+                address:
+                  type: string
+                latitude:
+                  format: float64
+                  type: number
+                longitude:
+                  format: float64
+                  type: number
+                name:
+                  type: string
+                url:
+                  type: string
+              type: object
             poll:
               properties:
                 options:
@@ -2034,7 +2106,63 @@ paths:
             $ref: '#/definitions/models.QpSendResponse'
       security:
       - ApiKeyAuth: []
-      summary: Send any type of message (text, file, poll, base64 content)
+      summary: Send any type of message (text, file, poll, base64 content, location)
+      tags:
+      - Send
+  /senddocument:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Endpoint to send documents via WhatsApp, forcing document type recognition regardless of file mimetype. Useful for sending images, audio files, or other content as documents.
+        Accepts the same parameters as /send but always treats attachments as documents.
+
+        Main fields:
+        - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
+        - text: message text (optional)
+        - url: public URL to download a file
+        - content: embedded base64 content (e.g.: data:image/png;base64,...)
+        - fileName: file name (optional, used when name cannot be inferred)
+
+        Example:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "url": "https://example.com/document.pdf",
+        "text": "Please check this document"
+        }
+        ```
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        schema:
+          properties:
+            chatId:
+              type: string
+            content:
+              type: string
+            fileName:
+              type: string
+            text:
+              type: string
+            url:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpSendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpSendResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send document with forced document type
       tags:
       - Send
   /spam:

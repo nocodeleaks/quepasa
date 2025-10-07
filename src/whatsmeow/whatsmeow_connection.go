@@ -354,7 +354,26 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	messageText := msg.GetText()
 
 	var newMessage *waE2E.Message
-	if !msg.HasAttachment() {
+
+	// Check if this is a location message
+	if msg.Type == whatsapp.LocationMessageType && msg.HasAttachment() {
+		attach := msg.Attachment
+		newMessage = &waE2E.Message{
+			LocationMessage: &waE2E.LocationMessage{
+				DegreesLatitude:  proto.Float64(attach.Latitude),
+				DegreesLongitude: proto.Float64(attach.Longitude),
+			},
+		}
+		// Add optional fields if available
+		if len(messageText) > 0 {
+			newMessage.LocationMessage.Name = proto.String(messageText)
+		}
+		// Add context info for replies if needed
+		if len(msg.InReply) > 0 {
+			newMessage.LocationMessage.ContextInfo = source.GetContextInfo(*msg)
+		}
+	} else if !msg.HasAttachment() {
+		// Text messages, buttons, polls
 		if IsValidForButtons(messageText) {
 			internal := GenerateButtonsMessage(messageText)
 			internal.ContextInfo = source.GetContextInfo(*msg)
@@ -374,6 +393,7 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			}
 		}
 	} else {
+		// Other attachment types (images, videos, documents, etc.)
 		newMessage, err = source.UploadAttachment(*msg)
 		if err != nil {
 			return msg, err

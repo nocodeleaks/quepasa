@@ -17,13 +17,14 @@ import (
 
 // SendAPIHandler renders route "/send" and "/sendencoded"
 //
-//	@Summary		Send any type of message (text, file, poll, base64 content, location)
+//	@Summary		Send any type of message (text, file, poll, base64 content, location, contact)
 //	@Description	Endpoint to send messages via WhatsApp. Accepts sending of:
 //	@Description	- Plain text (field "text")
 //	@Description	- Files by URL (field "url") — server will download and send as attachment
 //	@Description	- Base64 content (field "content") — use format data:<mime>;base64,<data>
 //	@Description	- Polls (field "poll") — send the poll JSON in the "poll" field
 //	@Description	- Location (field "location") — send location with latitude/longitude in the "location" object
+//	@Description	- Contact (field "contact") — send contact with phone/name in the "contact" object
 //	@Description
 //	@Description	Main fields:
 //	@Description	- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -33,6 +34,7 @@ import (
 //	@Description	- fileName: file name (optional, used when name cannot be inferred)
 //	@Description	- poll: JSON object with the poll (question, options, selections)
 //	@Description	- location: JSON object with location data (latitude, longitude, name, address, url)
+//	@Description	- contact: JSON object with contact data (phone, name, vcard)
 //	@Description
 //	@Description	Location object fields:
 //	@Description	- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -40,6 +42,11 @@ import (
 //	@Description	- name (string, optional): Location name/description
 //	@Description	- address (string, optional): Location full address
 //	@Description	- url (string, optional): URL with link to the map
+//	@Description
+//	@Description	Contact object fields:
+//	@Description	- phone (string, required): Contact phone number
+//	@Description	- name (string, required): Contact display name
+//	@Description	- vcard (string, optional): Full vCard string (auto-generated if not provided)
 //	@Description
 //	@Description	Examples:
 //	@Description	Text:
@@ -71,6 +78,16 @@ import (
 //	@Description	}
 //	@Description	}
 //	@Description	```
+//	@Description	Contact:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"contact": {
+//	@Description	"phone": "5511999999999",
+//	@Description	"name": "John Doe"
+//	@Description	}
+//	@Description	}
+//	@Description	```
 //	@Description	Base64:
 //	@Description	```json
 //	@Description	{
@@ -88,7 +105,7 @@ import (
 //	@Tags			Send
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, or 'location' for location object."
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
 //	@Success		200		{object}	models.QpSendResponse
 //	@Failure		400		{object}	models.QpSendResponse
 //	@Security		ApiKeyAuth
@@ -204,7 +221,7 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 		}
 	}
 
-	if request.Poll == nil && request.Location == nil && att.Attach == nil && len(request.Text) == 0 {
+	if request.Poll == nil && request.Location == nil && request.Contact == nil && att.Attach == nil && len(request.Text) == 0 {
 		MessageSendErrors.Inc()
 		err = fmt.Errorf("text not found, do not send empty messages")
 		response.ParseError(err)

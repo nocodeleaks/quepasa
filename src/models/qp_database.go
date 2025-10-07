@@ -150,16 +150,22 @@ func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
 			status := dotSplitted[1]
 			filepath := fullPath + "/" + info
 			if v, ok := confMap[id]; ok {
-				if status == "up" {
+				switch status {
+				case "up":
 					v.FileUp = filepath
-				} else if status == "down" {
+				case "down":
 					v.FileDown = filepath
+				default:
+					// unknown status - ignore
 				}
 			} else {
-				if status == "up" {
+				switch status {
+				case "up":
 					confMap[id] = &QpMigration{Id: id, Title: title, FileUp: filepath}
-				} else if status == "down" {
+				case "down":
 					confMap[id] = &QpMigration{Id: id, Title: title, FileDown: filepath}
+				default:
+					// unknown status - ignore
 				}
 			}
 		}

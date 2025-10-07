@@ -1,7 +1,7 @@
 package models
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/jmoiron/sqlx"
@@ -53,7 +53,9 @@ func FileToString(filename string) (string, bool) {
 		// think it makes more sense to panic here.
 		panic(err)
 	}
-	fileBytes, err := ioutil.ReadAll(f)
+	defer f.Close()
+
+	fileBytes, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}

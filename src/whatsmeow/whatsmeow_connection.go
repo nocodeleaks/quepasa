@@ -538,21 +538,10 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 		}
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	for evt := range qrChan {
-		if evt.Event == "code" {
-			result = evt.Code
-		}
-
-		wg.Done()
-
-		// ending after the first the loop
-		break
+	evt, ok := <-qrChan
+	if ok && evt.Event == "code" {
+		result = evt.Code
 	}
-
-	wg.Wait()
 	return result
 }
 
@@ -863,11 +852,7 @@ func (conn *WhatsmeowConnection) GetContactManager() whatsapp.WhatsappContactMan
 // GetResume returns detailed connection status information
 // This method delegates to the StatusManager for comprehensive status snapshot
 func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus {
-	statusManager := conn.GetStatusManager()
-	if statusManager == nil {
-		return nil
-	}
-	return statusManager.GetResume()
+	return conn.GetStatusManager().GetResume()
 }
 
 // Call managers are omitted in this build per team decision.

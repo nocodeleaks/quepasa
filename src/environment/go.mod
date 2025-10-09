@@ -1,6 +1,8 @@
 module github.com/nocodeleaks/quepasa/environment
 
-go 1.23.2
+go 1.24.0
+
+toolchain go1.24.2
 
 require (
 	github.com/joho/godotenv v1.5.1
@@ -11,7 +13,8 @@ require (
 
 require (
 	github.com/go-chi/chi/v5 v5.2.2 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 )
 
 replace github.com/nocodeleaks/quepasa/library => ../library

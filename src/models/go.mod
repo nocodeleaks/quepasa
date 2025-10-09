@@ -31,7 +31,7 @@ require (
 	github.com/philippseith/signalr v0.6.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20251005115322-65f6143fa407
+	go.mau.fi/whatsmeow v0.0.0-20251008162918-54a1f619e047
 	golang.org/x/crypto v0.42.0
 )
 

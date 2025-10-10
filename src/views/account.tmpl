@@ -1,193 +1,1085 @@
 {{ define "content" }}
   <script src="/assets/copytoclipboard.js"></script>
-  <div class="container site-header">
-    <h1 class="title is-1">QuePasa (v{{ .Version }}) Bots</h1>
-    <p class="subtitle">Welcome <b>{{ .User.Username }}</b></p>
-  </div>
-  <div class="container">
-    <h2 class="title is-2">({{ len .Servers }}) Your bots</h2>
-
-    <a class="button is-primary" href="/form/verify?mode=md">Add or Update Bot</a>
-
-    {{ if .HasMasterKey }}
-      <div class="button">
-          <span class="icon has-text-success" title="Master Key Is Set"><i class="fas fa-key"></i> </span>
-      </div>
-      <div class="button">
-        {{ if .HasSignalRActiveConnections }}
-          <span class="icon has-text-success" title="Active Master WebSockets"><i class="fas fa-check-square"></i> </span>
-        {{ else }}
-          <span class="icon has-text-warning" title="No Master WebSockets"><i class="fas fa-exclamation-triangle"></i> </span>
+  
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+        <div class="flex items-center justify-between gap-2 sm:gap-4">
+          <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+            <div class="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
+              <img src="/assets/favicon.png" alt="QuePasa" class="w-8 h-8 sm:w-12 sm:h-12 object-contain">
+            </div>
+            <div class="min-w-0 flex-1">
+              <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">QuePasa Dashboard</h1>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">Welcome <span class="font-semibold text-primary">{{ .User.Username }}</span></p>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">Version <span class="font-semibold text-secondary">v{{ .Version }}</span></p>
+            </div>
+          </div>
+          
+          <div class="flex flex-col items-end space-y-2 flex-shrink-0">
+            <!-- Theme Toggle and Status badges on top -->
+            <div class="flex items-center space-x-2">
+              <!-- Theme Toggle Button -->
+              <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Dark Mode">
+                <i id="themeIcon" class="fas fa-moon text-sm"></i>
+              </button>
+              
+              {{ if .HasMasterKey }}
+                <div class="hidden sm:flex items-center space-x-1">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <i class="fas fa-key mr-1"></i>
+                  <span class="hidden md:inline">Master Key</span>
+                  <span class="md:hidden">Master Key</span>
+                </span>
+                {{ if .HasSignalRActiveConnections }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <i class="fas fa-wifi mr-1"></i>
+                  <span class="hidden md:inline">WebSockets</span>
+                  <span class="md:hidden">WebSockets</span>
+                  </span>
+                {{ else }}
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                  <i class="fas fa-exclamation-triangle mr-1"></i>
+                  <span class="hidden md:inline">No WebSockets</span>
+                  <span class="md:hidden">No WebSockets</span>
+                  </span>
+                {{ end }}
+                </div>
+              {{ end }}
+            </div>
+            
+            <!-- Add Bot button on bottom -->
+            <a href="/form/verify?mode=md" class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm flex-shrink-0">
+              <i class="fas fa-plus mr-1 sm:mr-2"></i>
+              <span class="hidden sm:inline">Add Bot</span>
+              <span class="sm:hidden">Add</span>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Mobile Status Badges - Only show on small screens -->
+        {{ if .HasMasterKey }}
+          <div class="flex sm:hidden items-center space-x-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <i class="fas fa-key mr-1"></i>Master Key
+            </span>
+            {{ if .HasSignalRActiveConnections }}
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <i class="fas fa-wifi mr-1"></i>WebSockets
+              </span>
+            {{ else }}
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                <i class="fas fa-exclamation-triangle mr-1"></i>No WebSockets
+              </span>
+            {{ end }}
+          </div>
         {{ end }}
       </div>
-    {{ end }}
+    </div>
 
+    <!-- Error Message -->
     {{ if .ErrorMessage }}
-      <div class="notification is-warning">
-        {{ .ErrorMessage }}
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div class="flex">
+            <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+            <p class="text-yellow-700 dark:text-yellow-300">{{ .ErrorMessage }}</p>
+          </div>
+        </div>
       </div>
     {{ end }}
-    <table class="table is-fullwidth">
-      <thead>
-        <tr>
-          <th>Number</th>
-          <th>Verified</th>
-          <th>Token</th>
-          <th style="text-align: center;">Actions</th>
-          <th style="text-align: center;">Extra</th>
-          <th style="text-align: center;">WH | WS</th>
-          <th>State</th>
-        </tr>
-        </thead>
-        <tbody>
-        {{ range .Servers }}   
-          <tr>
-            <td>
-              <span>{{ .GetNumber }}</span>
-            </td>
-            <td>
-              <span class="button" disabled>
-                {{ if .Verified }}
-                  <span class="icon has-text-success"><i class="fas fa-check-square"></i></span>
+
+    <!-- Bots Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <!-- Header with Search and View Toggle -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Your Bots</h2>
+          <p class="text-gray-600 dark:text-gray-300 mt-1">
+            <span id="visibleCount">{{ len .Servers }}</span> of {{ len .Servers }} bot(s) displayed
+          </p>
+        </div>
+        
+        <!-- Search and View Controls -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <!-- View Toggle -->
+          <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <button 
+              id="gridViewBtn"
+              onclick="setView('grid')"
+              class="flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+            >
+              <i class="fas fa-th mr-2"></i>Cards
+            </button>
+            <button 
+              id="listViewBtn"
+              onclick="setView('list')"
+              class="flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            >
+              <i class="fas fa-list mr-2"></i>List
+            </button>
+          </div>
+          
+          <!-- Search Field -->
+          <div class="relative w-full sm:w-80">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-search text-gray-400 dark:text-gray-500"></i>
+            </div>
+            <input 
+              type="text" 
+              id="botSearch"
+              placeholder="Search by phone number or token..."
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+              onkeyup="filterBots()"
+            >
+            <button 
+              id="clearSearch"
+              onclick="clearSearch()"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hidden"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid View (Default) -->
+      <div id="gridView" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {{ range .Servers }}
+        <div class="bot-card bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow" 
+             data-phone="{{ .GetNumber }}" 
+             data-token="{{ .Token }}">
+          
+          <!-- Bot Header -->
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                  <i class="fas fa-robot text-white"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-gray-900 dark:text-white" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-2">
+                {{ if eq .GetStatusString "Ready" }}
+                  <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                  <span class="text-xs text-green-700 font-medium">Ready</span>
+                {{ else if eq .GetStatusString "Connected" }}
+                  <span class="w-3 h-3 bg-blue-400 rounded-full"></span>
+                  <span class="text-xs text-blue-700 font-medium">Connected</span>
+                {{ else if eq .GetStatusString "Connecting" }}
+                  <span class="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></span>
+                  <span class="text-xs text-yellow-700 font-medium">Connecting</span>
+                {{ else if eq .GetStatusString "Starting" }}
+                  <span class="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></span>
+                  <span class="text-xs text-yellow-700 font-medium">Starting</span>
+                {{ else if eq .GetStatusString "Fetching" }}
+                  <span class="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></span>
+                  <span class="text-xs text-blue-700 font-medium">Fetching</span>
+                {{ else if eq .GetStatusString "UnVerified" }}
+                  <span class="w-3 h-3 bg-orange-400 rounded-full"></span>
+                  <span class="text-xs text-orange-700 font-medium">Unverified</span>
+                {{ else if eq .GetStatusString "Stopping" }}
+                  <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+                  <span class="text-xs text-gray-700 font-medium">Stopping</span>
+                {{ else if eq .GetStatusString "Stopped" }}
+                  <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+                  <span class="text-xs text-gray-700 font-medium">Stopped</span>
+                {{ else if eq .GetStatusString "Restarting" }}
+                  <span class="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></span>
+                  <span class="text-xs text-yellow-700 font-medium">Restarting</span>
+                {{ else if eq .GetStatusString "Disconnected" }}
+                  <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+                  <span class="text-xs text-gray-700 font-medium">Disconnected</span>
+                {{ else if eq .GetStatusString "Failed" }}
+                  <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                  <span class="text-xs text-red-700 font-medium">Failed</span>
+                {{ else if eq .GetStatusString "Halting" }}
+                  <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+                  <span class="text-xs text-gray-700 font-medium">Halting</span>
                 {{ else }}
-                  <span class="icon has-text-warning"><i class="fas fa-exclamation-triangle"></i></span>
+                  <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+                  <span class="text-xs text-gray-700 font-medium">{{ .GetStatusString }}</span>
                 {{ end }}
-              </span>
-            </td>
-            <td>
-              <small><code title="click to copy" style="cursor: pointer;" onclick="CopyToClipboard(this.textContent)">{{ .Token }}</code></small>
-            </td>
-            <td style="text-align: center;">              
-              <div class="field has-addons">
-                {{ if .IsDevelopmentGlobal }}
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/debug">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button is-warning {{ if .Devel }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Debug for this bot">
-                        <span class="icon is-small is-inline"><i class="fa fa-bug"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                {{ end }}
-                {{ if .Verified }}                  
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button is-danger {{ if not .GetWorking }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Running state for this bot">
-                        <span class="icon is-small is-inline"><i class="fa fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p>&nbsp;</p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-broadcasts" data-value="{{ .Broadcasts }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Broadcast Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-groups" data-value="{{ .Groups }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Group Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comments"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-readreceipts" data-value="{{ .ReadReceipts }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Receipts">
-                        <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-calls" data-value="{{ .Calls }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Calls">
-                        <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                {{ end }}
-                <p>&nbsp;&nbsp;</p>
-                <p class="control">
-                  <form class="" method="post" action="/form/delete?key=server">
+              </div>
+            </div>
+          </div>
+
+          <!-- Bot Content -->
+          <div class="px-6 py-4">
+            <!-- Token -->
+            <div class="mb-4">
+              <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Token</label>
+              <div class="mt-1 flex items-center space-x-2">
+                <code class="flex-1 text-xs text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
+                      onclick="CopyToClipboard(this.textContent)" 
+                      title="Click to copy">
+                  {{ .Token }}
+                </code>
+              </div>
+            </div>
+
+            <!-- Feature Toggles -->
+            {{ if .Verified }}
+              <!-- Desktop View - Inline Buttons (Hidden on Mobile) -->
+              <div class="mb-4 hidden lg:block">
+                <div class="grid grid-cols-2 gap-2">
+                  <form method="post" action="/form/toggle?key=server-broadcasts">
                     <input name="token" type="hidden" value="{{ .Token }}">
-                    <button class="button  is-danger is-outlined" title="Delete this server">
-                      <i class="fa fa-trash"></i>&nbsp;&nbsp;
-                      Delete
+                    <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                      <i class="fas fa-comment-dots mr-1"></i>Broadcasts
                     </button>
                   </form>
-                </p>
+                  
+                  <form method="post" action="/form/toggle?key=server-groups">
+                    <input name="token" type="hidden" value="{{ .Token }}">
+                    <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                      <i class="fas fa-comments mr-1"></i>Groups
+                    </button>
+                  </form>
+                  
+                  <form method="post" action="/form/toggle?key=server-readreceipts">
+                    <input name="token" type="hidden" value="{{ .Token }}">
+                    <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                      <i class="fas fa-check mr-1"></i>Receipts
+                    </button>
+                  </form>
+                  
+                  <form method="post" action="/form/toggle?key=server-calls">
+                    <input name="token" type="hidden" value="{{ .Token }}">
+                    <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-100 border-blue-300 text-blue-700{{ else }}bg-red-100 border-red-300 text-red-700{{ end }}{{ else }}bg-gray-100 border-gray-300 text-gray-700{{ end }}">
+                      <i class="fas fa-phone mr-1"></i>Calls
+                    </button>
+                  </form>
+                </div>
               </div>
-            </td>
-            <td style="text-align: center;"> 
-              <div class="field has-addons">
-                {{ if eq .GetStatusString "Ready" }}               
-                  <p class="control">
-                    <a href="/form/server/{{ .Token }}/send" class="button" title="Send a message as this bot">
-                      <i class="fa fa-paper-plane"></i>&nbsp;&nbsp;
-                      Send
-                    </a>
-                  </p>
-                  <p class="control">
-                    <a href="/form/server/{{ .Token }}/receive" class="button" title="Receive messages for this bot">
-                      <i class="fa fa-download"></i>&nbsp;&nbsp;
-                      Receive
-                    </a>
-                  </p>
-                {{ end }}                
-              </div>
-            </td>
-            <td style="text-align: center;">
-              <a class="button" href="/form/webhooks?token={{ .Token }}">
-                {{ if .Webhooks }}
-                  <span class="icon has-text-success" title="Active WebHooks"><i class="fas fa-check-square"></i> </span>
-                {{ else }}
-                  <span class="icon has-text-warning"title="No WebHooks"><i class="fas fa-exclamation-triangle"></i> </span>
-                {{ end }}
-              </a>  
-              <a class="button" href="/form/signalr?token={{ .Token }}">
-                {{ if .HasSignalRActiveConnections }}
-                  <span class="icon has-text-success" title="Active WebSockets"><i class="fas fa-check-square"></i> </span>
-                {{ else }}
-                  <span class="icon has-text-warning" title="No WebSockets"><i class="fas fa-exclamation-triangle"></i> </span>
-                {{ end }}
-              </a>
-            </td>
-            <td><span title="{{ .GetStartedTime }}">{{ .GetStatusString }}</span></td>
-            </tr>            
-        {{ end }}
-        </tbody>
-    </table>
-      
-    {{ if not .Options.IsDefault }}
-      <div class="notification is-light is-small">
-        <div class="subtitle"><b>Whatsapp</b> service environment options:</div>
-        <div>
-          {{ if .Options.Groups }}<p>Groups: {{ .Options.Groups.String  }}</p>{{ end }}
-          {{ if .Options.Broadcasts }}<p>Broadcasts: {{ .Options.Broadcasts.String  }}</p>{{ end }}
-          {{ if .Options.ReadReceipts }}<p>ReadReceipts: {{ .Options.ReadReceipts.String  }}</p>{{ end }}
-          {{ if .Options.Calls }}<p>Calls: {{ .Options.Calls.String  }}</p>{{ end }}
-          {{ if .Options.HistorySync }}<p>HistorySync: {{ .Options.HistorySync  }} days</p>{{ end }}
-          {{ if .Options.LogLevel }}<p>LogLevel: {{ .Options.LogLevel  }}</p>{{ end }}
-        </div>
-      </div>
-    {{ end }}
-    
-    {{ if not .WMOptions.IsDefault }}
-      <div class="notification is-light is-small">
-        <div class="subtitle"><b>Whatsmeow</b> service environment options:</div>
-        <div>
-          {{ if .WMOptions.WMLogLevel }}<p>LogLevel: {{ .WMOptions.WMLogLevel  }}</p>{{ end }}
-          {{ if .WMOptions.DBLogLevel }}<p>Database LogLevel: {{ .WMOptions.DBLogLevel  }}</p>{{ end }}
-        </div>
-      </div>
-    {{ end }}
 
+              <!-- Mobile/Tablet View - Dropdown Menu (Hidden on Desktop) -->
+              <div class="mb-4 lg:hidden">
+                <div class="relative inline-block text-left">
+                  <button onclick="toggleDropdown('dropdown-{{ .Token }}')" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-xs dark:text-white bg-white dark:bg-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary">
+                    <i class="fas fa-cog mr-2"></i>
+                    Settings
+                    <i class="fas fa-chevron-down ml-2"></i>
+                  </button>
+                  
+                  <div id="dropdown-{{ .Token }}" class="hidden absolute right-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                    <div class="p-4 space-y-3">
+                      <h4 class="text-sm font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Bot Configuration</h4>
+                      
+                      <!-- Broadcasts -->
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <i class="fas fa-comment-dots text-gray-400 mr-2"></i>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Broadcasts</span>
+                        </div>
+                        <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
+                          <input name="token" type="hidden" value="{{ .Token }}">
+                          <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                          </button>
+                        </form>
+                      </div>
+                      
+                      <!-- Groups -->
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <i class="fas fa-comments text-gray-400 mr-2"></i>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
+                        </div>
+                        <form method="post" action="/form/toggle?key=server-groups" class="inline">
+                          <input name="token" type="hidden" value="{{ .Token }}">
+                          <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                          </button>
+                        </form>
+                      </div>
+                      
+                      <!-- Read Receipts -->
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <i class="fas fa-check text-gray-400 mr-2"></i>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Read Receipts</span>
+                        </div>
+                        <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
+                          <input name="token" type="hidden" value="{{ .Token }}">
+                          <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                          </button>
+                        </form>
+                      </div>
+                      
+                      <!-- Calls -->
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <i class="fas fa-phone text-gray-400 mr-2"></i>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
+                        </div>
+                        <form method="post" action="/form/toggle?key=server-calls" class="inline">
+                          <input name="token" type="hidden" value="{{ .Token }}">
+                          <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {{ end }}
+
+            <!-- Connection Status -->
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center space-x-4">
+                <a href="/form/webhooks?token={{ .Token }}" class="flex items-center text-xs">
+                  {{ if .Webhooks }}
+                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                    <span class="text-green-700">WebHooks</span>
+                  {{ else }}
+                    <i class="fas fa-exclamation-circle text-yellow-500 mr-1"></i>
+                    <span class="text-yellow-700">No WebHooks</span>
+                  {{ end }}
+                </a>
+                
+                <a href="/form/signalr?token={{ .Token }}" class="flex items-center text-xs">
+                  {{ if .HasSignalRActiveConnections }}
+                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                    <span class="text-green-700">WebSockets</span>
+                  {{ else }}
+                    <i class="fas fa-exclamation-circle text-yellow-500 mr-1"></i>
+                    <span class="text-yellow-700">No WebSockets</span>
+                  {{ end }}
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bot Actions -->
+          <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div class="flex flex-wrap gap-2">
+              {{ if eq .GetStatusString "Ready" }}
+                <a href="/form/server/{{ .Token }}/send" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
+                  <i class="fas fa-paper-plane mr-1"></i>Send
+                </a>
+                <a href="/form/server/{{ .Token }}/receive" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors">
+                  <i class="fas fa-download mr-1"></i>Receive
+                </a>
+              {{ end }}
+              
+              <form method="post" action="/form/toggle?key=server" class="flex-1">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="w-full px-3 py-2 text-xs rounded-lg border transition-colors {{ if not .GetWorking }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-red-100 border-red-300 text-red-700 hover:bg-red-200{{ end }}">
+                  <i class="fas fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle mr-1"></i>
+                  {{ if not .GetWorking }}Start{{ else }}Stop{{ end }}
+                </button>
+              </form>
+              
+              <form method="post" action="/form/delete?key=server" class="flex-1">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="w-full px-3 py-2 bg-red-100 border border-red-300 text-red-700 text-xs rounded-lg hover:bg-red-200 transition-colors"
+                        onclick="return confirm('⚠️ Are you sure you want to delete this bot?\n\nBot: {{ .GetNumber }}\nToken: {{ .Token }}\n\nThis action cannot be undone!')"
+                        title="Delete Bot">
+                  <i class="fas fa-trash mr-1"></i>Delete
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {{ end }}
+      </div>
+
+      <!-- List View (Hidden by default) -->
+      <div id="listView" class="hidden space-y-4">
+        {{ range .Servers }}
+        <div class="bot-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow mx-0 sm:mx-0" 
+             data-phone="{{ .GetNumber }}" 
+             data-token="{{ .Token }}">
+          <div class="px-4 py-4">
+            <!-- Main Bot Info Row -->
+            <div class="flex items-center justify-between mb-3">
+              <!-- Bot Info - Left Side -->
+              <div class="flex items-center space-x-3 min-w-0 flex-1">
+                <div class="w-10 h-10 {{ if eq .GetStatusString "Ready" }}bg-green-500{{ else if eq .GetStatusString "Connected" }}bg-blue-500{{ else if eq .GetStatusString "Connecting" }}bg-yellow-500{{ else if eq .GetStatusString "Starting" }}bg-yellow-500{{ else if eq .GetStatusString "Fetching" }}bg-blue-500{{ else if eq .GetStatusString "UnVerified" }}bg-orange-500{{ else if eq .GetStatusString "Stopping" }}bg-gray-500{{ else if eq .GetStatusString "Stopped" }}bg-gray-500{{ else if eq .GetStatusString "Restarting" }}bg-yellow-500{{ else if eq .GetStatusString "Disconnected" }}bg-gray-500{{ else if eq .GetStatusString "Failed" }}bg-red-500{{ else if eq .GetStatusString "Halting" }}bg-gray-500{{ else }}bg-gray-500{{ end }} rounded-full flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center space-x-2 mb-1">
+                    <h3 class="font-semibold text-gray-900 dark:text-white truncate w-32 text-sm" data-original="{{ .GetNumber }}">{{ .GetNumber }}</h3>
+                    
+                    <!-- Status Indicator -->
+                    <div class="flex items-center space-x-1 flex-shrink-0">
+                      {{ if eq .GetStatusString "Ready" }}
+                        <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+                        <span class="text-sm text-green-700 font-medium">Ready</span>
+                      {{ else if eq .GetStatusString "Connected" }}
+                        <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
+                        <span class="text-sm text-blue-700 font-medium">Connected</span>
+                      {{ else if eq .GetStatusString "Connecting" }}
+                        <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                        <span class="text-sm text-yellow-700 font-medium">Connecting</span>
+                      {{ else if eq .GetStatusString "UnVerified" }}
+                        <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
+                        <span class="text-sm text-orange-700 font-medium">Unverified</span>
+                      {{ else if eq .GetStatusString "Failed" }}
+                        <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                        <span class="text-sm text-red-700 font-medium">Failed</span>
+                      {{ else }}
+                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        <span class="text-sm text-gray-700 font-medium">{{ .GetStatusString }}</span>
+                      {{ end }}
+                    </div>
+                    
+                    <div class="flex items-center justify-between w-full">
+                      <div class="flex items-center space-x-2 min-w-0"></div>
+
+                      <code class="text-xs text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-mono max-w-100 truncate flex-shrink-0" 
+                        onclick="CopyToClipboard('{{ .Token }}')" 
+                        title="Click to copy: {{ .Token }}">
+                        Token: {{ .Token }}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Action Buttons Row -->
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+              <div class="flex items-center space-x-2">
+                {{ if eq .GetStatusString "Ready" }}
+                  <a href="/form/server/{{ .Token }}/send" 
+                     class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                     title="Send Message">
+                    <i class="fas fa-paper-plane mr-1"></i>Send
+                  </a>
+                  <a href="/form/server/{{ .Token }}/receive" 
+                     class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                     title="View Messages">
+                    <i class="fas fa-download mr-1"></i>Receive
+                  </a>
+                {{ end }}
+              </div>
+              
+              <div class="flex items-center justify-center space-x-2">
+                {{ if .Verified }}
+                  <!-- Desktop View - Inline Toggles (Hidden on Small Screens) -->
+                  <div class="hidden xl:flex items-center space-x-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Broadcast</span>
+                      <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
+                      <form method="post" action="/form/toggle?key=server-groups" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Receipts</span>
+                      <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
+                      <form method="post" action="/form/toggle?key=server-calls" class="inline">
+                        <input name="token" type="hidden" value="{{ .Token }}">
+                        <button class="relative inline-flex h-4 w-7 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-red-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none">
+                          <span class="inline-block h-2 w-2 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-4{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <!-- Mobile/Small Screen View - Settings Dropdown (Shown on Small Screens) -->
+                  <div class="xl:hidden relative inline-block text-left">
+                    <button onclick="toggleDropdown('list-dropdown-{{ .Token }}')" class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary">
+                      <i class="fas fa-cog mr-1"></i>
+                      Settings
+                      <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    
+                    <div id="list-dropdown-{{ .Token }}" class="hidden absolute right-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <div class="p-4 space-y-3">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Bot Configuration</h4>
+                        
+                        <!-- Broadcasts -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-comment-dots text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Broadcasts</span>
+                          </div>
+                          <form method="post" action="/form/toggle?key=server-broadcasts" class="inline">
+                            <input name="token" type="hidden" value="{{ .Token }}">
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            </button>
+                          </form>
+                        </div>
+                        
+                        <!-- Groups -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-comments text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Groups</span>
+                          </div>
+                          <form method="post" action="/form/toggle?key=server-groups" class="inline">
+                            <input name="token" type="hidden" value="{{ .Token }}">
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetGroups }}{{ if .GetGroups }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetGroups }}{{ if .GetGroups }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            </button>
+                          </form>
+                        </div>
+                        
+                        <!-- Read Receipts -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-check text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Read Receipts</span>
+                          </div>
+                          <form method="post" action="/form/toggle?key=server-readreceipts" class="inline">
+                            <input name="token" type="hidden" value="{{ .Token }}">
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            </button>
+                          </form>
+                        </div>
+                        
+                        <!-- Calls -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center">
+                            <i class="fas fa-phone text-gray-400 mr-2"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Calls</span>
+                          </div>
+                          <form method="post" action="/form/toggle?key=server-calls" class="inline">
+                            <input name="token" type="hidden" value="{{ .Token }}">
+                            <button class="relative inline-flex h-5 w-9 items-center rounded-full {{ if .IsSetCalls }}{{ if .GetCalls }}bg-blue-600{{ else }}bg-gray-300{{ end }}{{ else }}bg-gray-300{{ end }} transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                              <span class="inline-block h-3 w-3 transform rounded-full bg-white transition {{ if .IsSetCalls }}{{ if .GetCalls }}translate-x-5{{ else }}translate-x-1{{ end }}{{ else }}translate-x-1{{ end }}"></span>
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {{ end }}
+
+                <!-- WebHooks & WebSockets -->
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                  <a href="/form/webhooks?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .Webhooks }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                    {{ if .Webhooks }}<i class="fas fa-check-circle mr-1"></i>{{ else }}<i class="fas fa-times-circle mr-1"></i>{{ end }}
+                    <span class="hidden xl:inline">{{ if .Webhooks }}Webhooks{{ else }}Webhooks{{ end }}</span>
+                    <span class="xl:hidden">{{ if .Webhooks }}WH{{ else }}WH{{ end }}</span>
+                  </a>
+                  <a href="/form/signalr?token={{ .Token }}" class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if .HasSignalRActiveConnections }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-yellow-100 border-gray-300 text-gray-700 hover:bg-gray-200{{ end }}">
+                    {{ if .HasSignalRActiveConnections }}<i class="fas fa-check-circle mr-1"></i>{{ else }}<i class="fas fa-times-circle mr-1"></i>{{ end }}
+                    <span class="hidden xl:inline">{{ if .HasSignalRActiveConnections }}WebSockets{{ else }}WebSockets{{ end }}</span>
+                    <span class="xl:hidden">{{ if .HasSignalRActiveConnections }}WS{{ else }}WS{{ end }}</span>
+                  </a>
+                </div>
+
+                <form method="post" action="/form/toggle?key=server" class="inline">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="inline-flex items-center px-2 py-1 text-sm rounded border transition-colors {{ if not .GetWorking }}bg-green-100 border-green-300 text-green-700 hover:bg-green-200{{ else }}bg-red-100 border-red-300 text-red-700 hover:bg-red-200{{ end }}"
+                          title="{{ if not .GetWorking }}Start Bot{{ else }}Stop Bot{{ end }}">
+                    <i class="fas fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle mr-1"></i>
+                    <span class="hidden sm:inline">{{ if not .GetWorking }}Start{{ else }}Stop{{ end }}</span>
+                  </button>
+                </form>
+                
+                <form method="post" action="/form/delete?key=server" class="inline">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="inline-flex items-center px-2 py-1 bg-red-100 border border-red-300 text-red-700 text-sm rounded hover:bg-red-200 transition-colors"
+                          title="Delete Bot"
+                          onclick="return confirm('⚠️ Are you sure you want to delete this bot?\n\nBot: {{ .GetNumber }}\nToken: {{ .Token }}\n\nThis action cannot be undone!')">
+                    <i class="fas fa-trash mr-1"></i>
+                    <span class="hidden sm:inline">Delete</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {{ end }}
+      </div>
+
+      <!-- No Results State -->
+      <div id="noResults" class="text-center py-12 hidden">
+        <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+          <i class="fas fa-search text-gray-400 dark:text-gray-500 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No bots found</h3>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">No bots match your search criteria.</p>
+        <button onclick="clearSearch()" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
+          <i class="fas fa-times mr-2"></i>
+          Clear Search
+        </button>
+      </div>
+
+      <!-- Environment Options -->
+      {{ if not .Options.IsDefault }}
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">WhatsApp Service Options</h3>
+          </div>
+          <div class="px-6 py-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300">
+              {{ if .Options.Groups }}<div><span class="font-medium">Groups:</span> {{ .Options.Groups.String }}</div>{{ end }}
+              {{ if .Options.Broadcasts }}<div><span class="font-medium">Broadcasts:</span> {{ .Options.Broadcasts.String }}</div>{{ end }}
+              {{ if .Options.ReadReceipts }}<div><span class="font-medium">Read Receipts:</span> {{ .Options.ReadReceipts.String }}</div>{{ end }}
+              {{ if .Options.Calls }}<div><span class="font-medium">Calls:</span> {{ .Options.Calls.String }}</div>{{ end }}
+              {{ if .Options.HistorySync }}<div><span class="font-medium">History Sync:</span> {{ .Options.HistorySync }} days</div>{{ end }}
+              {{ if .Options.LogLevel }}<div><span class="font-medium">Log Level:</span> {{ .Options.LogLevel }}</div>{{ end }}
+            </div>
+          </div>
+        </div>
+      {{ end }}
+
+      {{ if not .WMOptions.IsDefault }}
+        <div class="mt-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
+          <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Whatsmeow Service Options</h3>
+          </div>
+          <div class="px-6 py-4">
+            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
+              {{ if .WMOptions.WMLogLevel }}<div><span class="font-medium">Log Level:</span> {{ .WMOptions.WMLogLevel }}</div>{{ end }}
+              {{ if .WMOptions.DBLogLevel }}<div><span class="font-medium">Database Log Level:</span> {{ .WMOptions.DBLogLevel }}</div>{{ end }}
+            </div>
+          </div>
+        </div>
+      {{ end }}
+    </div>
   </div>
-  <div>&nbsp;</div>
+
+  <style>
+    /* Ensure dropdowns appear above other content */
+    .relative {
+      position: relative;
+    }
+    
+    /* Fix for dropdown positioning */
+    .bot-card {
+      position: relative;
+      overflow: visible;
+    }
+    
+    /* Ensure proper stacking */
+    [id^="dropdown-"], [id^="list-dropdown-"] {
+      z-index: 1000;
+      position: absolute;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Prevent container overflow from clipping dropdowns */
+    #gridView, #listView {
+      overflow: visible;
+    }
+    
+    .max-w-7xl {
+      overflow: visible;
+    }
+    
+    /* List view specific styling */
+    #listView .bot-card {
+      overflow: visible;
+    }
+    
+    /* Ensure dropdowns don't get clipped */
+    [id^="list-dropdown-"] {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      margin-top: 4px;
+      z-index: 1000;
+      min-width: 192px;
+    }
+    
+    /* Mobile adjustments for list view */
+    @media (max-width: 640px) {
+      #listView {
+        padding: 0 0.5rem;
+      }
+      
+      #listView .bot-card {
+        margin: 0;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      
+      #listView .space-y-4 > * + * {
+        margin-top: 1rem;
+      }
+      
+      [id^="list-dropdown-"] {
+        right: -1rem;
+        min-width: 180px;
+      }
+      
+      /* Adjust spacing for mobile list view */
+      #listView .flex.items-center.space-x-2 {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      
+      #listView .inline-flex.items-center {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+      }
+    }
+    
+    /* Extra large screen adjustments */
+    @media (min-width: 1280px) {
+      #listView .xl\\:flex {
+        display: flex !important;
+      }
+      
+      #listView .xl\\:hidden {
+        display: none !important;
+      }
+      
+      #listView .xl\\:inline {
+        display: inline !important;
+      }
+    }
+
+  </style>
+
+  <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-sm';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-sm';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+      
+      // Set initial view state
+      const savedView = localStorage.getItem('botsViewType') || 'grid';
+      
+      // Make sure both views exist before setting
+      const gridView = document.getElementById('gridView');
+      const listView = document.getElementById('listView');
+      
+      if (gridView && listView) {
+        setView(savedView);
+      } else {
+        console.error('Grid or List view elements not found');
+      }
+    });
+    
+    // View management
+    let currentView = 'grid';
+    
+    function setView(viewType) {
+      
+      currentView = viewType;
+      const gridView = document.getElementById('gridView');
+      const listView = document.getElementById('listView');
+      const gridBtn = document.getElementById('gridViewBtn');
+      const listBtn = document.getElementById('listViewBtn');
+      
+      // Hide both views first
+      gridView.style.display = 'none';
+      listView.style.display = 'none';
+      
+      if (viewType === 'grid') {
+        gridView.style.display = 'grid';
+        listView.style.display = 'none';
+        
+        // Update button styles
+        gridBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm';
+        listBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white';
+      } else {
+        gridView.style.display = 'none';
+        listView.style.display = 'block';
+        
+        // Update button styles
+        listBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm';
+        gridBtn.className = 'flex items-center px-3 py-2 text-sm rounded-md transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white';
+      }
+      
+      // Save preference
+      localStorage.setItem('botsViewType', viewType);
+      
+      // Re-apply current filter
+      filterBots();
+    }
+    
+    // Enhanced filter function for both views
+    function filterBots() {
+      const searchTerm = document.getElementById('botSearch').value.toLowerCase().trim();
+      const clearButton = document.getElementById('clearSearch');
+      const noResults = document.getElementById('noResults');
+      const visibleCount = document.getElementById('visibleCount');
+      
+      // Get bot cards from current view
+      const currentViewElement = currentView === 'grid' ? document.getElementById('gridView') : document.getElementById('listView');
+      const botCards = currentViewElement.querySelectorAll('.bot-card');
+      
+      let visibleBots = 0;
+      
+      // Show/hide clear button
+      if (searchTerm.length > 0) {
+        clearButton.classList.remove('hidden');
+      } else {
+        clearButton.classList.add('hidden');
+        // Restore original text when clearing search
+        botCards.forEach(card => {
+          const phoneElement = card.querySelector('h3');
+          const tokenElement = card.querySelector('code');
+          
+          if (phoneElement && phoneElement.getAttribute('data-original')) {
+            phoneElement.textContent = phoneElement.getAttribute('data-original');
+          }
+          if (tokenElement && tokenElement.getAttribute('data-original')) {
+            tokenElement.textContent = tokenElement.getAttribute('data-original');
+          }
+        });
+      }
+      
+      botCards.forEach(card => {
+        const phone = card.getAttribute('data-phone').toLowerCase();
+        const token = card.getAttribute('data-token').toLowerCase();
+        
+        // Check if search term matches phone number or token
+        const matchesPhone = phone.includes(searchTerm);
+        const matchesToken = token.includes(searchTerm);
+        
+        if (searchTerm === '' || matchesPhone || matchesToken) {
+          card.style.display = 'block';
+          visibleBots++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Apply highlighting after filtering
+      if (searchTerm.length > 0) {
+        setTimeout(() => highlightSearchTerm(currentViewElement), 10);
+      }
+      
+      // Update visible count
+      visibleCount.textContent = visibleBots;
+      
+      // Show/hide no results message
+      if (visibleBots === 0 && searchTerm.length > 0) {
+        noResults.classList.remove('hidden');
+        currentViewElement.style.display = 'none';
+      } else {
+        noResults.classList.add('hidden');
+        currentViewElement.style.display = currentView === 'grid' ? 'grid' : 'block';
+      }
+    }
+    
+    function highlightSearchTerm(container) {
+      const searchTerm = document.getElementById('botSearch').value.toLowerCase().trim();
+      
+      if (searchTerm.length === 0) return;
+      
+      const visibleCards = container.querySelectorAll('.bot-card:not([style*="display: none"])');
+      
+      visibleCards.forEach(card => {
+        const phoneElement = card.querySelector('h3');
+        const tokenElement = card.querySelector('code');
+        
+        if (phoneElement) {
+          const originalPhone = phoneElement.getAttribute('data-original') || phoneElement.textContent;
+          if (!phoneElement.getAttribute('data-original')) {
+            phoneElement.setAttribute('data-original', originalPhone);
+          }
+          
+          const highlightedPhone = originalPhone.replace(
+            new RegExp(`(${searchTerm})`, 'gi'),
+            '<mark class="bg-yellow-200 px-1 rounded">$1</mark>'
+          );
+          phoneElement.innerHTML = highlightedPhone;
+        }
+        
+        if (tokenElement) {
+          const originalToken = tokenElement.getAttribute('data-original') || tokenElement.textContent;
+          if (!tokenElement.getAttribute('data-original')) {
+            tokenElement.setAttribute('data-original', originalToken);
+          }
+          
+          const highlightedToken = originalToken.replace(
+            new RegExp(`(${searchTerm})`, 'gi'),
+            '<mark class="bg-yellow-200 px-1 rounded">$1</mark>'
+          );
+          tokenElement.innerHTML = highlightedToken;
+        }
+      });
+    }
+    
+    function clearSearch() {
+      const searchInput = document.getElementById('botSearch');
+      searchInput.value = '';
+      filterBots();
+      searchInput.focus();
+    }
+    
+    // Dropdown functionality
+    function toggleDropdown(dropdownId) {
+      const dropdown = document.getElementById(dropdownId);
+      const isHidden = dropdown.classList.contains('hidden');
+      
+      // Close all other dropdowns first
+      document.querySelectorAll('[id^="dropdown-"], [id^="list-dropdown-"]').forEach(el => {
+        if (el.id !== dropdownId) {
+          el.classList.add('hidden');
+        }
+      });
+      
+      // Toggle the current dropdown
+      if (isHidden) {
+        dropdown.classList.remove('hidden');
+        
+        // Check if dropdown goes outside viewport and adjust position
+        setTimeout(() => {
+          const dropdownRect = dropdown.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          
+          // For grid view dropdowns (cards), check if it's a card dropdown
+          const isCardDropdown = dropdownId.startsWith('dropdown-') && !dropdownId.startsWith('list-dropdown-');
+          
+          if (isCardDropdown) {
+            // Mobile specific adjustments for card dropdowns
+            if (window.innerWidth <= 768) { // Mobile/tablet breakpoint
+              // Position dropdown to stay within viewport
+              dropdown.style.position = 'fixed';
+              dropdown.style.left = '1rem';
+              dropdown.style.right = '1rem';
+              dropdown.style.width = 'auto';
+              dropdown.style.maxWidth = 'none';
+              dropdown.style.transform = 'none';
+              
+              // Position vertically relative to button
+              const button = dropdown.previousElementSibling;
+              const buttonRect = button.getBoundingClientRect();
+              
+              // Check if there's space below the button
+              if (buttonRect.bottom + 200 < viewportHeight) {
+                dropdown.style.top = `${buttonRect.bottom + 8}px`;
+                dropdown.style.bottom = 'auto';
+              } else {
+                dropdown.style.bottom = `${viewportHeight - buttonRect.top + 8}px`;
+                dropdown.style.top = 'auto';
+              }
+            } else {
+              // Desktop positioning
+              dropdown.style.position = 'absolute';
+              dropdown.style.top = '100%';
+              dropdown.style.bottom = 'auto';
+              dropdown.style.marginTop = '4px';
+              dropdown.style.marginBottom = '0';
+              
+              if (dropdownRect.right > viewportWidth - 20) {
+                dropdown.style.right = '0';
+                dropdown.style.left = 'auto';
+              } else {
+                dropdown.style.left = '0';
+                dropdown.style.right = 'auto';
+              }
+            }
+          } else {
+            // List view dropdown positioning (existing logic)
+            dropdown.style.position = 'absolute';
+            
+            if (dropdownRect.top < 20) {
+              dropdown.style.bottom = 'auto';
+              dropdown.style.top = '100%';
+              dropdown.style.marginBottom = '0';
+              dropdown.style.marginTop = '4px';
+            } else {
+              dropdown.style.bottom = '100%';
+              dropdown.style.top = 'auto';
+              dropdown.style.marginBottom = '4px';
+              dropdown.style.marginTop = '0';
+            }
+            
+            if (dropdownRect.right > viewportWidth - 20) {
+              dropdown.style.right = '1rem';
+              dropdown.style.left = 'auto';
+            } else {
+              dropdown.style.right = '0';
+              dropdown.style.left = 'auto';
+            }
+          }
+        }, 10);
+      } else {
+        dropdown.classList.add('hidden');
+        // Reset positioning
+        dropdown.style.position = '';
+        dropdown.style.left = '';
+        dropdown.style.right = '';
+        dropdown.style.top = '';
+        dropdown.style.bottom = '';
+        dropdown.style.width = '';
+        dropdown.style.maxWidth = '';
+        dropdown.style.transform = '';
+        dropdown.style.marginTop = '';
+        dropdown.style.marginBottom = '';
+      }
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('[onclick*="toggleDropdown"]') && !e.target.closest('[id^="dropdown-"], [id^="list-dropdown-"]')) {
+        document.querySelectorAll('[id^="dropdown-"], [id^="list-dropdown-"]').forEach(el => {
+          el.classList.add('hidden');
+          // Reset positioning when closing
+          el.style.position = '';
+          el.style.left = '';
+          el.style.right = '';
+          el.style.top = '';
+          el.style.bottom = '';
+          el.style.width = '';
+          el.style.maxWidth = '';
+          el.style.transform = '';
+          el.style.marginTop = '';
+          el.style.marginBottom = '';
+        });
+      }
+    });
+  </script>
 {{ end }}

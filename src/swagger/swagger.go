@@ -2,9 +2,10 @@ package swagger
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nocodeleaks/quepasa/environment"
@@ -32,11 +33,27 @@ func Configure(r chi.Router) {
 func ServeSwaggerJSON(w http.ResponseWriter, r *http.Request, apiPrefix string) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// Read the swagger.json file
-	swaggerPath := filepath.Join("swagger", "swagger.json")
-	spec, err := ioutil.ReadFile(swaggerPath)
+	// Try multiple possible locations for swagger.json
+	possiblePaths := []string{
+		filepath.Join("swagger", "swagger.json"),        // Production: /opt/quepasa/swagger/swagger.json
+		filepath.Join("src", "swagger", "swagger.json"), // Development: src/swagger/swagger.json
+	}
+
+	var spec []byte
+	var err error
+	var pathsChecked []string
+
+	for _, path := range possiblePaths {
+		absPath, _ := filepath.Abs(path)
+		pathsChecked = append(pathsChecked, absPath)
+		spec, err = os.ReadFile(path)
+		if err == nil {
+			break
+		}
+	}
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "swagger.json not found. Tried paths: "+strings.Join(pathsChecked, ", ")+" Last error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

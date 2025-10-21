@@ -132,11 +132,7 @@ func GetPhoneIfValid(source string) (phone string, err error) {
 <remarks>
 */
 func IsValidGroupId(id string) bool {
-	return strings.HasSuffix(id, WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX) && len(id) <= 25
-	/*
-		regex, _ := regexp.Compile(`^[0-9]{1,20}\@g\.us$`)
-		return regex.MatchString(id)
-	*/
+	return strings.HasSuffix(id, WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX) && len(id) <= 29
 }
 
 func GetMessageType(attach *WhatsappAttachment) WhatsappMessageType {

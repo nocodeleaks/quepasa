@@ -28,6 +28,7 @@ func BasicHealthController(w http.ResponseWriter, r *http.Request) {
 			Status:  "application is running",
 		},
 		Timestamp: time.Now(),
+		Version:   models.QpVersion,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -45,7 +46,10 @@ func BasicHealthController(w http.ResponseWriter, r *http.Request) {
 //	@Router			/healthapi [get]
 func HealthController(w http.ResponseWriter, r *http.Request) {
 
-	response := &api.HealthResponse{Timestamp: time.Now()}
+	response := &api.HealthResponse{
+		Timestamp: time.Now(),
+		Version:   models.QpVersion,
+	}
 
 	master := IsMatchForMaster(r)
 	if master {

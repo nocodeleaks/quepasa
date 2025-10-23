@@ -21,6 +21,8 @@ func RegisterAPIControllers(r chi.Router) {
 	for _, endpoint := range aliases {
 
 		r.Get(endpoint+"/health", HealthController)
+		r.Head(endpoint+"/health", HealthController)
+
 		r.Post(endpoint+"/account", AccountController)
 
 		// CONTROL METHODS ************************

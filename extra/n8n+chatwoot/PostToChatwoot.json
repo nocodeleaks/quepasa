@@ -17,7 +17,7 @@
       "typeVersion": 1,
       "position": [
         -2000,
-        900
+        912
       ],
       "id": "6af41726-dedf-4662-a464-1c19bb71be40"
     },
@@ -37,8 +37,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1580,
-        1060
+        -1584,
+        1072
       ],
       "id": "4cc64138-d2f9-4419-95a6-a8a2bee9a464"
     },
@@ -55,7 +55,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -760,
+        -768,
         720
       ],
       "continueOnFail": true
@@ -67,8 +67,8 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -3740,
-        760
+        -3744,
+        768
       ]
     },
     {
@@ -86,7 +86,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1380,
+        -1376,
         880
       ],
       "id": "0af31fae-f50e-469b-83d0-77d80f4e72fc"
@@ -103,7 +103,7 @@
       "typeVersion": 2,
       "position": [
         -320,
-        780
+        784
       ]
     },
     {
@@ -122,8 +122,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -140,
-        780
+        -144,
+        784
       ]
     },
     {
@@ -137,7 +137,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2840,
+        3072,
         1360
       ]
     },
@@ -166,13 +166,13 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -2920,
-        760
+        -2928,
+        768
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.24) Updates\n* execution data\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "content": "## (1.0.25) Updates\n* removed audio transcriptions\n* theated by captain workflow\n\n## Recommendations \n* Remember set timeout to 10 seconds",
         "height": 262.55904520292785,
         "width": 442.12799981446017
       },
@@ -201,7 +201,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2380,
+        -2384,
         880
       ]
     },
@@ -222,7 +222,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -2200,
+        -2208,
         800
       ]
     },
@@ -241,7 +241,7 @@
       "typeVersion": 2,
       "position": [
         -1840,
-        620
+        624
       ],
       "id": "943ba096-84d6-4793-9b53-d856db56a478",
       "retryOnFail": true,
@@ -265,7 +265,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        3140,
+        3152,
         1520
       ],
       "id": "4ebd53bb-6850-419e-a7b1-2e5f336b0a88",
@@ -288,7 +288,7 @@
       "type": "n8n-nodes-base.moveBinaryData",
       "typeVersion": 1,
       "position": [
-        1820,
+        1824,
         1440
       ],
       "alwaysOutputData": true
@@ -303,8 +303,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1880,
-        1060
+        1888,
+        1072
       ]
     },
     {
@@ -338,7 +338,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        4120,
+        4128,
         1040
       ],
       "id": "741bdae9-353f-4da0-8444-7f5ce9e3865c",
@@ -356,8 +356,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
       "position": [
-        -2360,
-        540
+        -2368,
+        544
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -383,8 +383,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2760,
-        760
+        -2768,
+        768
       ]
     },
     {
@@ -402,8 +402,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2520,
-        860
+        2528,
+        864
       ],
       "id": "2f0a55d2-bc66-432d-b63b-55e10b63e78e",
       "retryOnFail": true,
@@ -431,8 +431,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        660,
-        1060
+        672,
+        1072
       ]
     },
     {
@@ -443,7 +443,7 @@
       "typeVersion": 1,
       "position": [
         1200,
-        1500
+        1504
       ]
     },
     {
@@ -453,8 +453,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1260,
-        1080
+        1264,
+        1088
       ]
     },
     {
@@ -465,7 +465,7 @@
       "typeVersion": 1,
       "position": [
         1200,
-        1800
+        1808
       ]
     },
     {
@@ -475,8 +475,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2520,
-        1060
+        2528,
+        1072
       ]
     },
     {
@@ -490,7 +490,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3900,
+        3904,
         1040
       ]
     },
@@ -510,8 +510,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3000,
-        940
+        3008,
+        944
       ]
     },
     {
@@ -531,7 +531,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3180,
+        3184,
         800
       ]
     },
@@ -553,8 +553,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3420,
-        660
+        3424,
+        672
       ]
     },
     {
@@ -575,7 +575,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3420,
+        3424,
         960
       ]
     },
@@ -597,8 +597,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3420,
-        820
+        3424,
+        832
       ]
     },
     {
@@ -608,8 +608,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3700,
-        820
+        3712,
+        832
       ]
     },
     {
@@ -629,8 +629,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        2100,
-        1060
+        2112,
+        1072
       ]
     },
     {
@@ -640,7 +640,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1980,
+        1984,
         1520
       ]
     },
@@ -660,7 +660,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        460,
+        464,
         960
       ],
       "retryOnFail": true,
@@ -673,7 +673,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        660,
+        672,
         880
       ]
     },
@@ -684,8 +684,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1660,
-        1220
+        1664,
+        1232
       ]
     },
     {
@@ -711,7 +711,7 @@
       "typeVersion": 2.1,
       "position": [
         -2160,
-        620
+        624
       ]
     },
     {
@@ -742,7 +742,7 @@
       "typeVersion": 2,
       "position": [
         -2000,
-        620
+        624
       ]
     },
     {
@@ -793,8 +793,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        2780,
-        940
+        2784,
+        944
       ],
       "alwaysOutputData": true,
       "continueOnFail": true,
@@ -807,7 +807,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -780,
+        -784,
         960
       ]
     },
@@ -827,8 +827,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1180,
-        980
+        -1184,
+        992
       ]
     },
     {
@@ -859,8 +859,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -980,
-        1060
+        -976,
+        1072
       ]
     },
     {
@@ -880,8 +880,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        60,
-        700
+        64,
+        704
       ]
     },
     {
@@ -901,77 +901,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1420,
-        1500
-      ]
-    },
-    {
-      "parameters": {
-        "workflowId": "={{ $env['C8Q_TOCHATWOOTTRANSCRIPT'] ?? 'pi4APHD9F05Dv6FR' }}",
-        "mode": "each",
-        "options": {
-          "waitForSubWorkflow": false
-        }
-      },
-      "id": "4aa1546e-d2aa-4843-92f2-96716486666e",
-      "name": "Throw Audio Transcript Workflow",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
-      "position": [
-        3920,
-        1640
-      ],
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "19a56ff4-9d4b-4b6a-82cc-4cc55b3ee1ad",
-              "leftValue": "={{ $json.event }}",
-              "rightValue": "audio",
-              "operator": {
-                "type": "string",
-                "operation": "contains"
-              }
-            },
-            {
-              "id": "2a96a9dc-5069-441c-abf2-995aa10ef929",
-              "leftValue": "={{ $json.payload.message_type }}",
-              "rightValue": "incoming",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            },
-            {
-              "id": "e49bac21-445a-47a1-826d-1ecdcd06d0d5",
-              "leftValue": "={{ $json.chat.chatwoot?.skipaudiotranscript ?? false }}",
-              "rightValue": false,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "0ac5f4ea-6591-4381-a62b-4e20bed9b3ea",
-      "name": "Is Valid Audio For Transcript",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        3240,
-        1800
+        1424,
+        1504
       ]
     },
     {
@@ -981,8 +912,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2680,
-        1220
+        2464,
+        1232
       ]
     },
     {
@@ -992,57 +923,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2460,
+        2464,
         1520
-      ]
-    },
-    {
-      "parameters": {},
-      "id": "e260f983-f4d6-4adf-b7c8-c348ae9f409e",
-      "name": "From any *",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        2460,
-        1800
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "823c5aa8-d3fa-452d-9d8e-9a6b7ad8c0f0",
-              "name": "msgid",
-              "value": "={{ $json.id }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "1f1a357c-40d4-4cf5-ab33-81a8705ecb28",
-      "name": "Getting Msg Id",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3460,
-        1520
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineAll",
-        "options": {}
-      },
-      "id": "ea82e6e6-1bfd-42b5-9d29-ec096c58c2d1",
-      "name": "Merge With Posted Msg Id",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [
-        3700,
-        1640
       ]
     },
     {
@@ -1074,8 +956,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -1800,
-        980
+        -1808,
+        992
       ]
     },
     {
@@ -1094,8 +976,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1580,
-        920
+        -1584,
+        928
       ],
       "id": "ca99dcc2-4a93-4452-b092-073bf6a5e236"
     },
@@ -1112,8 +994,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        1660,
-        1060
+        1664,
+        1072
       ]
     },
     {
@@ -1127,8 +1009,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -3240,
-        760
+        -3248,
+        768
       ]
     },
     {
@@ -1142,8 +1024,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -3080,
-        760
+        -3088,
+        768
       ]
     },
     {
@@ -1176,8 +1058,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1020,
-        700
+        -1024,
+        704
       ]
     },
     {
@@ -1187,7 +1069,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1180,
+        -1184,
         800
       ]
     },
@@ -1203,8 +1085,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -760,
-        540
+        -768,
+        544
       ],
       "id": "b797e32f-c7ca-4b92-a90a-8597db96abf7",
       "name": "Convert to File",
@@ -1240,8 +1122,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1620,
-        1500
+        1632,
+        1504
       ]
     },
     {
@@ -1276,8 +1158,8 @@
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        -3240,
-        540
+        -3248,
+        544
       ]
     },
     {
@@ -1291,8 +1173,19 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -3372.5251754053243,
+        -3376,
         480
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e260f983-f4d6-4adf-b7c8-c348ae9f409e",
+      "name": "From any *",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        1808
       ]
     }
   ],
@@ -1863,17 +1756,6 @@
         ]
       ]
     },
-    "Is Valid Audio For Transcript": {
-      "main": [
-        [
-          {
-            "node": "Merge With Posted Msg Id",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
     "From .vcf": {
       "main": [
         [
@@ -1896,53 +1778,9 @@
         ]
       ]
     },
-    "From any *": {
-      "main": [
-        [
-          {
-            "node": "Is Valid Audio For Transcript",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Post Incoming Message Attachment",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Post Incoming Message Attachment": {
       "main": [
-        [
-          {
-            "node": "Getting Msg Id",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge With Posted Msg Id": {
-      "main": [
-        [
-          {
-            "node": "Throw Audio Transcript Workflow",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Getting Msg Id": {
-      "main": [
-        [
-          {
-            "node": "Merge With Posted Msg Id",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "If Has Phone ?": {
@@ -2069,6 +1907,17 @@
           }
         ]
       ]
+    },
+    "From any *": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -2078,7 +1927,7 @@
     "executionTimeout": 10,
     "executionOrder": "v1"
   },
-  "versionId": "ebd2fd01-ce8e-47f2-9f03-e911cfe08330",
+  "versionId": "00c7c777-ddd2-48eb-a0e1-d5b802af51c8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
@@ -2086,16 +1935,16 @@
   "id": "1006",
   "tags": [
     {
-      "createdAt": "2022-10-13T15:26:19.857Z",
-      "updatedAt": "2023-08-24T21:01:00.296Z",
-      "id": "6",
-      "name": "chatwoot"
-    },
-    {
       "createdAt": "2023-05-19T22:54:38.266Z",
       "updatedAt": "2023-05-19T22:54:38.266Z",
       "id": "13",
       "name": "github.com/nocodeleaks"
+    },
+    {
+      "createdAt": "2022-10-13T15:26:19.857Z",
+      "updatedAt": "2023-08-24T21:01:00.296Z",
+      "id": "6",
+      "name": "chatwoot"
     }
   ]
 }

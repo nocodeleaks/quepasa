@@ -11,4 +11,5 @@ type HealthResponse struct {
 	Items     []models.QpHealthResponseItem `json:"items,omitempty"`
 	Stats     *HealthStats                  `json:"stats,omitempty"`
 	Timestamp time.Time                     `json:"timestamp"`
+	Version   string                        `json:"version"`
 }

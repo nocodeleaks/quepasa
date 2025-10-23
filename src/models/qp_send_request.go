@@ -45,7 +45,9 @@ type QpSendRequest struct {
 	TypingDuration int    `json:"typing_duration,omitempty"` // How long to show typing (ms)
 	MediaType      string `json:"media_type,omitempty"`      // For audio recording indicator
 
-	Poll *whatsapp.WhatsappPoll `json:"poll,omitempty"` // Poll if exists
+	Poll     *whatsapp.WhatsappPoll     `json:"poll,omitempty"`     // Poll if exists
+	Location *whatsapp.WhatsappLocation `json:"location,omitempty"` // Location if exists
+	Contact  *whatsapp.WhatsappContact  `json:"contact,omitempty"`  // Contact if exists
 }
 
 // get default log entry, never nil
@@ -110,8 +112,36 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 
 	msg.Poll = source.Poll
 
-	// setting default type
+	// Check if this is a contact message
+	if source.Contact != nil {
+		msg.Type = whatsapp.ContactMessageType
+		// Store contact data in message
+		msg.Contact = source.Contact
+		return
+	}
+
+	// Check if this is a location message
+	if source.Location != nil {
+		msg.Type = whatsapp.LocationMessageType
+		// Create attachment with location data
+		msg.Attachment = &whatsapp.WhatsappAttachment{
+			Latitude:  source.Location.Latitude,
+			Longitude: source.Location.Longitude,
+			Mimetype:  "text/x-uri; location",
+		}
+		// Use location name as text if provided
+		if len(source.Location.Name) > 0 {
+			msg.Text = source.Location.Name
+		}
+		return
+	}
+
+	// Only set text type if no location was provided
 	if len(msg.Text) > 0 {
+		// setting default type for text messages
+		msg.Type = whatsapp.TextMessageType
+	} else {
+		// No location, no text - set as text type by default
 		msg.Type = whatsapp.TextMessageType
 	}
 
@@ -140,7 +170,7 @@ func (source *QpSendRequest) ToWhatsappAttachment() (result QpToWhatsappAttachme
 
 		warn := fmt.Sprintf("invalid attachment length, request length: %v != content length: %v, revalidating for security", attach.FileLength, contentLength)
 		result.Debug = append(result.Debug, "[warn][ToWhatsappAttachment] "+warn)
-		logentry.Warnf(warn)
+		logentry.Warnf("%s", warn)
 	}
 
 	// end source use and set content

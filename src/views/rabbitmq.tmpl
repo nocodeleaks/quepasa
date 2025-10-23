@@ -1,0 +1,464 @@
+{{ define "content" }}
+  {{ if .ErrorMessage }}
+    <div class="notification is-warning">
+      {{ .ErrorMessage }}
+    </div>
+  {{ end }}
+  <div class="container site-header">
+    <h1 class="title is-1">RabbitMQ Configurations</h1>
+    <p class="subtitle">({{ len .RabbitMQ }}) For <b>{{ .Server.Wid }}</b></p>
+  </div>
+
+
+
+  <div class="container">
+    <div>&nbsp;  </div>
+    <div class="field is-grouped" style="margin-bottom: 1rem;">
+      <p class="control">
+        <button class="button is-primary" onclick="showAddRabbitMQModal()">
+          <span class="icon is-small">
+            <i class="fa fa-plus"></i>
+          </span>
+          <span>Add RabbitMQ Configuration</span>
+        </button>
+      </p>
+    </div>
+  </div>
+
+  <!-- RabbitMQ Configurations Table -->
+  <div class="container">
+    <table class="table is-fullwidth">
+      <thead>
+        <tr>
+          <th>Connection String</th>
+          <th>Track ID</th>
+          <th style="text-align: center;">Settings</th>
+          <th style="width: 4rem;">Extra</th>
+          <th style="width: 4rem;">Status</th>
+          <th style="width: 4rem;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .RabbitMQ }}   
+          <tr>
+            <td><small><code title="Connection String">{{ .ConnectionString }}</code></small></td>
+            <td><span>{{ .TrackId }}</span></td>
+            <td style="text-align: center;">
+              <div style="text-align: center; display: flex; justify-content: center;">          
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-forwardinternal" data-value="{{ .ForwardInternal }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}" />
+                    <button class="button {{ if .ForwardInternal }}is-info{{ else }}is-danger{{ end }}" title="ForwardInternal: {{ .ForwardInternal }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-forward"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p>&nbsp;</p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-broadcasts" data-value="{{ .Broadcasts }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts: {{ .Broadcasts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-groups" data-value="{{ .Groups }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups: {{ .Groups }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-readreceipts" data-value="{{ .ReadReceipts }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="ReadReceipts: {{ .ReadReceipts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control"> 
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-calls" data-value="{{ .Calls }}">
+                    <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                    <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls: {{ .Calls }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
+                    </button>
+                  </form>
+                </p>
+              </div>
+            </td>
+            <td>
+              {{ if .IsSetExtra }}
+                <button class="button is-info" onclick="showExtraModal('{{ .ConnectionString }}', 'rabbitmq', `{{ .GetExtraText }}`)" title="Extra Data Available">
+                  <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
+                </button>
+              {{ else }}
+                <button class="button is-light" onclick="showExtraModal('{{ .ConnectionString }}', 'rabbitmq', null)" title="Add Extra Data">
+                  <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
+                </button>
+              {{ end }}
+            </td>
+            <td>
+              {{ if .IsFailureMoreRecent }}
+                <button class="button is-danger is-outlined" title="Last Failure: {{ .Failure }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-exclamation-triangle"></i></span>
+                </button>
+              {{ else if .HasRecentSuccess }}
+                <button class="button is-success is-outlined" title="Last Success: {{ .Success }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                </button>
+              {{ else if .Failure }}
+                <button class="button is-danger is-outlined" title="Last Failure: {{ .Failure }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-exclamation-triangle"></i></span>
+                </button>
+              {{ else if .Success }}
+                <button class="button is-success is-outlined" title="Last Success: {{ .Success }}">
+                  <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                </button>
+              {{ else }}
+                <button class="button is-light" title="Not tested yet">
+                  <span class="icon is-small is-inline"><i class="fa fa-clock"></i></span>
+                </button>
+              {{ end }}
+            </td>
+            <td>
+              <form class="" method="post" action="/form/delete?token={{ $.Server.Token }}&key=rabbitmq">
+                <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
+                <button class="button is-danger is-outlined" title="Delete this RabbitMQ configuration">
+                  <i class="fa fa-trash"></i>&nbsp;&nbsp;
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>       
+        {{ end }}
+      </tbody>
+    </table>     
+  </div>
+  <div>&nbsp;</div>
+
+  <!-- Modal para adicionar novo RabbitMQ -->
+  <div class="modal" id="addRabbitMQModal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Add New RabbitMQ Configuration</p>
+        <button class="delete" aria-label="close" onclick="closeAddRabbitMQModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <!-- Information about RabbitMQ Routing System -->
+        <div class="notification is-info" style="margin-bottom: 1.5rem;">
+          <h4 class="title is-6">🔄 QuePasa RabbitMQ Routing System</h4>
+          <p><strong>Exchange:</strong> <code>quepasa.exchange</code></p>
+          <p><strong>Automatic Queues:</strong></p>
+          <ul style="margin-left: 1rem;">
+            <li><code>quepasa.production</code> - Production messages (normal chat messages)</li>
+            <li><code>quepasa.history</code> - History sync messages</li>
+            <li><code>quepasa.other</code> - System events, calls, contacts, etc.</li>
+          </ul>
+          <p><em>All bots use the same Exchange and Queues. Only the connection string is configured per bot.</em></p>
+        </div>
+
+        <div class="field">
+          <label class="label">RabbitMQ Connection String *</label>
+          <p class="control">
+            <input class="input" type="text" id="newConnectionString" placeholder="amqp://username:password@host:port/vhost" required>
+          </p>
+          <p class="help">Complete RabbitMQ connection string including credentials and virtual host</p>
+          <p class="help has-text-info">Example: <code>amqp://admin:password@rabbitmq.example.com:5672/%2F</code></p>
+        </div>
+        
+        <div class="field">
+          <label class="label">Track ID</label>
+          <p class="control">
+            <input class="input" type="text" id="newTrackId" placeholder="Optional tracking identifier">
+          </p>
+          <p class="help">Optional identifier for tracking this RabbitMQ configuration</p>
+        </div>
+
+        <div class="field">
+          <label class="label">Configuration</label>
+          <div class="field is-grouped is-grouped-multiline">
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newForwardInternal">
+                Forward Internal Messages
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newBroadcasts">
+                Receive Broadcasts
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newGroups">
+                Receive Group Messages
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newReadReceipts">
+                Receive Read Receipts
+              </label>
+            </p>
+            <p class="control">
+              <label class="checkbox">
+                <input type="checkbox" id="newCalls">
+                Receive Call Events
+              </label>
+            </p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Extra Data (JSON)</label>
+          <p class="control">
+            <textarea class="textarea" id="newExtra" rows="6" placeholder='{"custom_field": "value", "api_key": "secret", "timeout": 30}'></textarea>
+          </p>
+          <p class="help">Optional JSON data to be included with RabbitMQ messages. Must be valid JSON format.</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="saveNewRabbitMQ()">Add Configuration</button>
+        <button class="button" onclick="closeAddRabbitMQModal()">Cancel</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal para visualizar/editar Extra -->
+  <div class="modal" id="extraModal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Extra Field</p>
+        <button class="delete" aria-label="close" onclick="closeExtraModal()"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Connection String:</label>
+          <p class="control">
+            <input class="input" type="text" id="extraConnectionString" readonly>
+          </p>
+        </div>
+        <div class="field">
+          <label class="label">Extra Data (JSON):</label>
+          <p class="control">
+            <textarea class="textarea" id="extraData" rows="10" placeholder='{"exemplo": "valor", "outro_campo": 123}'></textarea>
+          </p>
+          <p class="help">Enter valid JSON data or leave empty to remove extra field</p>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="saveExtra()">Save</button>
+        <button class="button" onclick="closeExtraModal()">Cancel</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const serverToken = "{{ .Server.Token }}";
+    
+    function showExtraModal(connectionString, type, currentExtra) {
+      document.getElementById('extraConnectionString').value = connectionString;
+      
+      // Format the extra data for display
+      let extraText = '';
+      if (currentExtra && currentExtra !== 'null' && currentExtra !== null) {
+        try {
+          // If currentExtra is a Go map/object string, try to parse and format it
+          let extraStr = String(currentExtra);
+          
+          // Handle Go map format like "map[key:value key2:value2]"
+          if (extraStr.startsWith('map[') && extraStr.endsWith(']')) {
+            // Convert Go map format to JSON
+            let mapContent = extraStr.slice(4, -1); // Remove "map[" and "]"
+            let jsonObj = {};
+            
+            // Simple parser for Go map format
+            let parts = mapContent.split(' ');
+            for (let part of parts) {
+              if (part.includes(':')) {
+                let [key, value] = part.split(':');
+                jsonObj[key] = value;
+              }
+            }
+            extraText = JSON.stringify(jsonObj, null, 2);
+          } else {
+            // Try to parse as JSON
+            let extraObj = typeof currentExtra === 'string' ? JSON.parse(currentExtra) : currentExtra;
+            extraText = JSON.stringify(extraObj, null, 2);
+          }
+        } catch (e) {
+          // If parsing fails, convert the Go object to a readable format
+          let extraStr = String(currentExtra);
+          if (extraStr.startsWith('map[') && extraStr.endsWith(']')) {
+            // Convert Go map format to JSON manually
+            let mapContent = extraStr.slice(4, -1);
+            let jsonObj = {};
+            
+            // Better parser for Go map format with more complex values
+            let regex = /(\w+):([^\s]+)/g;
+            let match;
+            while ((match = regex.exec(mapContent)) !== null) {
+              let key = match[1];
+              let value = match[2];
+              
+              // Try to parse value as number or boolean
+              if (value === 'true' || value === 'false') {
+                jsonObj[key] = value === 'true';
+              } else if (!isNaN(value)) {
+                jsonObj[key] = Number(value);
+              } else {
+                jsonObj[key] = value;
+              }
+            }
+            extraText = JSON.stringify(jsonObj, null, 2);
+          } else {
+            extraText = extraStr;
+          }
+        }
+      }
+      
+      document.getElementById('extraData').value = extraText;
+      document.getElementById('extraModal').classList.add('is-active');
+    }
+
+    function closeExtraModal() {
+      document.getElementById('extraModal').classList.remove('is-active');
+    }
+
+    function saveExtra() {
+      const connectionString = document.getElementById('extraConnectionString').value;
+      const extraText = document.getElementById('extraData').value.trim();
+      
+      let extraData = null;
+      if (extraText) {
+        try {
+          extraData = JSON.parse(extraText);
+        } catch (e) {
+          alert('Invalid JSON format. Please check your syntax.');
+          return;
+        }
+      }
+
+      // Send request to update RabbitMQ configuration
+      const requestData = {
+        connection_string: connectionString,
+        extra: extraData
+      };
+
+      fetch('/rabbitmq?token=' + serverToken, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Extra field updated successfully!');
+          closeExtraModal();
+          location.reload(); // Refresh to show changes
+        } else {
+          alert('Error updating extra field: ' + (data.message || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred while updating extra field');
+      });
+    }
+
+    // Functions for Add RabbitMQ Modal
+    function showAddRabbitMQModal() {
+      // Clear form
+      document.getElementById('newConnectionString').value = '';
+      document.getElementById('newTrackId').value = '';
+      document.getElementById('newForwardInternal').checked = false;
+      document.getElementById('newBroadcasts').checked = true; // Default to true
+      document.getElementById('newGroups').checked = true; // Default to true
+      document.getElementById('newReadReceipts').checked = false;
+      document.getElementById('newCalls').checked = false;
+      document.getElementById('newExtra').value = '';
+      
+      document.getElementById('addRabbitMQModal').classList.add('is-active');
+    }
+
+    function closeAddRabbitMQModal() {
+      document.getElementById('addRabbitMQModal').classList.remove('is-active');
+    }
+
+    function saveNewRabbitMQ() {
+      const connectionString = document.getElementById('newConnectionString').value.trim();
+      const trackId = document.getElementById('newTrackId').value.trim();
+      const forwardInternal = document.getElementById('newForwardInternal').checked;
+      const broadcasts = document.getElementById('newBroadcasts').checked;
+      const groups = document.getElementById('newGroups').checked;
+      const readReceipts = document.getElementById('newReadReceipts').checked;
+      const calls = document.getElementById('newCalls').checked;
+      const extraText = document.getElementById('newExtra').value.trim();
+
+      // Validate required fields
+      if (!connectionString) {
+        alert('Connection string is required');
+        return;
+      }
+
+      // Validate connection string format (basic validation)
+      if (!connectionString.startsWith('amqp://') && !connectionString.startsWith('amqps://')) {
+        alert('Please enter a valid AMQP connection string (should start with amqp:// or amqps://)');
+        return;
+      }
+
+      // Validate extra JSON if provided
+      let extraData = null;
+      if (extraText) {
+        try {
+          extraData = JSON.parse(extraText);
+        } catch (e) {
+          alert('Invalid JSON format in Extra Data. Please check your syntax.');
+          return;
+        }
+      }
+
+      // Prepare request data
+      const requestData = {
+        connection_string: connectionString,
+        trackid: trackId || '',
+        forwardinternal: forwardInternal,
+        broadcasts: broadcasts,
+        groups: groups,
+        readreceipts: readReceipts,
+        calls: calls,
+        extra: extraData
+      };
+
+      // Send request to add RabbitMQ configuration
+      fetch('/rabbitmq?token=' + serverToken, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('RabbitMQ configuration added successfully!');
+          closeAddRabbitMQModal();
+          location.reload(); // Refresh to show changes
+        } else {
+          alert('Error adding RabbitMQ configuration: ' + (data.message || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Network error occurred while adding RabbitMQ configuration');
+      });
+    }
+  </script>
+{{ end }}

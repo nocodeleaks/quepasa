@@ -1,4 +1,4 @@
-package webserver
+package signalr
 
 import (
 	"net/http"

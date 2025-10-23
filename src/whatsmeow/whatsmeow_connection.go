@@ -16,6 +16,7 @@ import (
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
 )
@@ -209,6 +210,31 @@ func (source *WhatsmeowConnection) Edit(msg whatsapp.IWhatsappMessage, newConten
 	return nil
 }
 
+// MarkRead sends a read receipt for the given message via Whatsmeow handlers
+func (source *WhatsmeowConnection) MarkRead(imsg whatsapp.IWhatsappMessage) error {
+	if imsg == nil {
+		return fmt.Errorf("nil message")
+	}
+	id := imsg.GetId()
+	logentry := source.GetLogger().WithField(LogFields.MessageId, id)
+
+	msg, ok := imsg.(*whatsapp.WhatsappMessage)
+	if !ok {
+		msg = &whatsapp.WhatsappMessage{
+			Id:        imsg.GetId(),
+			Timestamp: time.Now(),
+			Chat:      whatsapp.WhatsappChat{Id: imsg.GetChatId()},
+		}
+	}
+
+	// default to ReceiptTypeRead
+	err := source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
+	if err != nil {
+		logentry.Errorf("error marking read: %v", err)
+	}
+	return err
+}
+
 func isASCII(s string) bool {
 	for _, c := range s {
 		if c > unicode.MaxASCII {
@@ -328,7 +354,47 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	messageText := msg.GetText()
 
 	var newMessage *waE2E.Message
-	if !msg.HasAttachment() {
+
+	// Check if this is a contact message
+	if msg.Type == whatsapp.ContactMessageType && msg.Contact != nil {
+		contact := msg.Contact
+
+		// Generate vCard if not provided
+		vcard := contact.Vcard
+		if len(vcard) == 0 {
+			// Generate vCard checking if contact is on WhatsApp
+			vcard = source.generateVCardForContact(contact)
+		}
+
+		newMessage = &waE2E.Message{
+			ContactMessage: &waE2E.ContactMessage{
+				DisplayName: proto.String(contact.Name),
+				Vcard:       proto.String(vcard),
+			},
+		}
+		// Add context info for replies if needed
+		if len(msg.InReply) > 0 {
+			newMessage.ContactMessage.ContextInfo = source.GetContextInfo(*msg)
+		}
+	} else if msg.Type == whatsapp.LocationMessageType && msg.HasAttachment() {
+		// Check if this is a location message
+		attach := msg.Attachment
+		newMessage = &waE2E.Message{
+			LocationMessage: &waE2E.LocationMessage{
+				DegreesLatitude:  proto.Float64(attach.Latitude),
+				DegreesLongitude: proto.Float64(attach.Longitude),
+			},
+		}
+		// Add optional fields if available
+		if len(messageText) > 0 {
+			newMessage.LocationMessage.Name = proto.String(messageText)
+		}
+		// Add context info for replies if needed
+		if len(msg.InReply) > 0 {
+			newMessage.LocationMessage.ContextInfo = source.GetContextInfo(*msg)
+		}
+	} else if !msg.HasAttachment() {
+		// Text messages, buttons, polls
 		if IsValidForButtons(messageText) {
 			internal := GenerateButtonsMessage(messageText)
 			internal.ContextInfo = source.GetContextInfo(*msg)
@@ -348,6 +414,7 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			}
 		}
 	} else {
+		// Other attachment types (images, videos, documents, etc.)
 		newMessage, err = source.UploadAttachment(*msg)
 		if err != nil {
 			return msg, err
@@ -471,21 +538,10 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 		}
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	for evt := range qrChan {
-		if evt.Event == "code" {
-			result = evt.Code
-		}
-
-		wg.Done()
-
-		// ending after the first the loop
-		break
+	evt, ok := <-qrChan
+	if ok && evt.Event == "code" {
+		result = evt.Code
 	}
-
-	wg.Wait()
 	return result
 }
 
@@ -617,6 +673,84 @@ func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool
 	return true
 }
 
+// generateVCardForContact creates a vCard string with WhatsApp status detection
+// Returns different vCard formats based on whether contact is:
+// - Business WhatsApp account (has businessName)
+// - Regular WhatsApp account (has devices but no businessName)
+// - Not on WhatsApp (empty userinfos)
+func (source *WhatsmeowConnection) generateVCardForContact(contact *whatsapp.WhatsappContact) string {
+	// Extract phone number without formatting for waid parameter
+	phoneWaid := strings.ReplaceAll(contact.Phone, " ", "")
+	phoneWaid = strings.ReplaceAll(phoneWaid, "-", "")
+	phoneWaid = strings.ReplaceAll(phoneWaid, "(", "")
+	phoneWaid = strings.ReplaceAll(phoneWaid, ")", "")
+	phoneWaid = strings.TrimPrefix(phoneWaid, "+")
+
+	// Format phone to JID for lookup
+	jid := phoneWaid + "@s.whatsapp.net"
+	jids := []types.JID{}
+	parsedJid, err := types.ParseJID(jid)
+	if err == nil {
+		jids = append(jids, parsedJid)
+	}
+
+	// Try to get user info to detect WhatsApp status
+	var isBusiness bool
+	var isOnWhatsApp bool
+	var businessName string
+
+	if len(jids) > 0 && source.Client != nil {
+		userInfos, err := source.Client.GetUserInfo(jids)
+		if err == nil && len(userInfos) > 0 {
+			userInfo := userInfos[parsedJid]
+
+			// Log detailed user info for debugging
+			source.GetLogger().Debugf("Contact %s - UserInfo details: Devices=%d, Status='%s', VerifiedName=%v",
+				contact.Phone, len(userInfo.Devices), userInfo.Status, userInfo.VerifiedName != nil)
+
+			// Check if has devices
+			// Empty device list means NOT on WhatsApp
+			if len(userInfo.Devices) > 0 {
+				isOnWhatsApp = true
+				source.GetLogger().Debugf("Contact %s IS on WhatsApp (has %d devices)", contact.Phone, len(userInfo.Devices))
+			} else {
+				source.GetLogger().Debugf("Contact %s is NOT on WhatsApp (no devices)", contact.Phone)
+			}
+
+			// Check if this is a business account by looking at contact store
+			if isOnWhatsApp && source.Client.Store != nil {
+				contactInfo, contactErr := source.Client.Store.Contacts.GetContact(context.Background(), parsedJid)
+				if contactErr == nil && contactInfo.BusinessName != "" {
+					isBusiness = true
+					businessName = contactInfo.BusinessName
+					source.GetLogger().Debugf("Contact %s is a Business account: %s", contact.Phone, businessName)
+				}
+			}
+		} else {
+			source.GetLogger().Debugf("Contact %s - GetUserInfo failed or empty result (error: %v, results: %d)", contact.Phone, err, len(userInfos))
+		}
+	}
+
+	// Generate appropriate vCard based on WhatsApp status
+	if isBusiness {
+		// Business WhatsApp: include waid, X-ABLabel:WhatsApp Business, X-WA-BIZ-NAME, X-WA-BIZ-DESCRIPTION
+		bizDescription := businessName
+		if bizDescription == "" {
+			bizDescription = contact.Name
+		}
+		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL;waid=%s:%s\nitem1.X-ABLabel:WhatsApp Business\nX-WA-BIZ-NAME:%s\nX-WA-BIZ-DESCRIPTION:%s\nEND:VCARD",
+			contact.Name, contact.Name, phoneWaid, contact.Phone, businessName, bizDescription)
+	} else if isOnWhatsApp {
+		// Regular WhatsApp: include waid, X-ABLabel:Celular (no X-WA-BIZ-* fields)
+		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL;waid=%s:%s\nitem1.X-ABLabel:Celular\nEND:VCARD",
+			contact.Name, contact.Name, phoneWaid, contact.Phone)
+	} else {
+		// Not on WhatsApp: no waid, X-ABLabel:Celular
+		return fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nN:;%s;;;\nFN:%s\nitem1.TEL:%s\nitem1.X-ABLabel:Celular\nEND:VCARD",
+			contact.Name, contact.Name, contact.Phone)
+	}
+}
+
 //endregion
 
 /*
@@ -718,11 +852,7 @@ func (conn *WhatsmeowConnection) GetContactManager() whatsapp.WhatsappContactMan
 // GetResume returns detailed connection status information
 // This method delegates to the StatusManager for comprehensive status snapshot
 func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus {
-	statusManager := conn.GetStatusManager()
-	if statusManager == nil {
-		return nil
-	}
-	return statusManager.GetResume()
+	return conn.GetStatusManager().GetResume()
 }
 
 // Call managers are omitted in this build per team decision.
@@ -773,4 +903,55 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 		media = types.ChatPresenceMediaText
 	}
 	return conn.Client.SendChatPresence(jid, state, media)
+}
+
+// sendAppState sends app state patch to WhatsApp (no retry, returns error as-is)
+func sendAppState(conn *WhatsmeowConnection, patch appstate.PatchInfo) error {
+	ctx := context.Background()
+	return conn.Client.SendAppState(ctx, patch)
+}
+
+// MarkChatAsRead marks a chat as read using app state protocol
+func MarkChatAsRead(conn *WhatsmeowConnection, chatId string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildMarkChatAsRead(jid, true, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// MarkChatAsUnread marks a chat as unread using app state protocol
+func MarkChatAsUnread(conn *WhatsmeowConnection, chatId string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildMarkChatAsRead(jid, false, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// ArchiveChat archives or unarchives a chat using app state protocol
+func ArchiveChat(conn *WhatsmeowConnection, chatId string, archive bool) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildArchive(jid, archive, time.Time{}, nil)
+	return sendAppState(conn, patch)
 }

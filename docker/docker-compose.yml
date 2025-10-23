@@ -1,27 +1,93 @@
-version: '3'
-
+version: "3.7"
 services:
 
-  quepasa:
-    env_file: .env
-    image: quepasa
-    container_name: $QUEPASA_CONTAINER_NAME
-    hostname: $QUEPASA_HOST_NAME
-    mem_limit: $QUEPASA_MEMORY_LIMIT
-    restart: always
-    stdin_open: true
-    tty: true
-    ports:
-      - $QUEPASA_EXTERNAL_PORT:$QUEPASA_INTERNAL_PORT
-    build:
-      context: ../
-      dockerfile: ./docker/Dockerfile
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DBDATABASE}
+      POSTGRES_USER: ${DBUSER}
+      POSTGRES_PASSWORD: ${DBPASSWORD}
     volumes:
-      - ../src:/opt/quepasa
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - quepasa_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - ${DOCKER_NETWORK}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DBUSER} -d ${DBDATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  quepasa:
+    image: codeleaks/quepasa:latest
+    env_file:
+      - .env
+    ports:
+      - "${QUEPASA_EXTERNAL_PORT}:${QUEPASA_INTERNAL_PORT}"
+    volumes:
+      - quepasa_volume:/opt/quepasa
+    networks:
+      - ${DOCKER_NETWORK}
+    depends_on:
+      - postgres
+
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${QUEPASA_INTERNAL_PORT}/healthapi > /dev/null || exit 1"]
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+      
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+          constraints:
+          - node.role == manager
+
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 60s
+      update_config:
+        parallelism: 1
+        delay: 15s
+        failure_action: rollback
+        monitor: 30s
+        max_failure_ratio: 0
+        order: stop-first
+      rollback_config:
+        parallelism: 1
+        delay: 15s
+        failure_action: pause
+        monitor: 60s
+                      
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.quepasa.rule=Host(`${DOMAIN}`)
+        - traefik.http.routers.quepasa.tls=true
+        - traefik.http.routers.quepasa.entrypoints=web,websecure
+        - traefik.http.routers.quepasa.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.quepasa.service=quepasa
+        - traefik.http.routers.quepasa.priority=1      
+        - traefik.http.middlewares.quepasa.headers.SSLRedirect=true
+        - traefik.http.middlewares.quepasa.headers.STSSeconds=315360000
+        - traefik.http.middlewares.quepasa.headers.browserXSSFilter=true
+        - traefik.http.middlewares.quepasa.headers.contentTypeNosniff=true
+        - traefik.http.middlewares.quepasa.headers.forceSTSHeader=true
+        - traefik.http.middlewares.quepasa.headers.SSLHost=${DOMAIN}
+        - traefik.http.middlewares.quepasa.headers.STSIncludeSubdomains=true
+        - traefik.http.middlewares.quepasa.headers.STSPreload=true
+        - traefik.http.services.quepasa.loadbalancer.server.port=${QUEPASA_INTERNAL_PORT}
+        - traefik.http.services.quepasa.loadbalancer.passHostHeader=true              
+
+volumes:
+  quepasa_volume:
+    driver: local
+  postgres_data:
+    driver: local
 
 networks:
   quepasa_network:
+    driver: bridge

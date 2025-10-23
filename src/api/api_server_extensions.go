@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -26,13 +27,13 @@ func GetServerRespondOnError(w http.ResponseWriter, r *http.Request) (server *mo
 	token := GetToken(r)
 	server, err = models.GetServerFromToken(token)
 	if err != nil {
-		RespondNoContentV2(w, fmt.Errorf("token '%s' not found", token))
+		RespondNotFound(w, fmt.Errorf("token '%s' not found", token))
 	}
 	return
 }
 
 func GetServerFromMaster(r *http.Request) (server *models.QpWhatsappServer, err error) {
-	system := models.ENV.MasterKey()
+	system := environment.Settings.API.MasterKey
 	if len(system) == 0 {
 		return nil, errors.New("server is not allowed to use this method")
 	}
@@ -47,7 +48,7 @@ func GetServerFromMaster(r *http.Request) (server *models.QpWhatsappServer, err 
 
 // <summary>Checks if was passed a valid master key</summary>
 func IsMatchForMaster(r *http.Request) bool {
-	system := models.ENV.MasterKey()
+	system := environment.Settings.API.MasterKey
 	if len(system) > 0 {
 		request := GetMasterKey(r)
 		if strings.EqualFold(system, request) {

@@ -48,8 +48,8 @@ func FormReceiveController(w http.ResponseWriter, r *http.Request) {
 	templates := template.New("receive")
 	templates = templates.Funcs(funcMap)
 	templates, err = templates.ParseFiles(
-		"views/layouts/main.tmpl",
-		"views/bot/receive.tmpl")
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("bot/receive.tmpl"))
 	if err != nil {
 		data.ErrorMessage = err.Error()
 	}

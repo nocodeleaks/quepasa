@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/nocodeleaks/quepasa/api"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -82,7 +81,7 @@ func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
 	data.MessageId = msg.GetId()
 
 	// Increment counter statistics
-	metrics.MessagesSent.Inc()
+	api.MessagesSent.Inc()
 
 	renderSendForm(w, data)
 }
@@ -143,6 +142,6 @@ func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *wh
 }
 
 func renderSendForm(w http.ResponseWriter, data models.QPFormSendData) {
-	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/bot/send.tmpl"))
+	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("bot/send.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)
 }

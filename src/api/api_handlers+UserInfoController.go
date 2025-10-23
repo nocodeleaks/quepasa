@@ -22,6 +22,18 @@ type UserInfoResponse struct {
 	UserInfos []interface{} `json:"userinfos"`
 }
 
+// UserInfoController retrieves detailed user information for specified JIDs
+//
+//	@Summary		Get user information
+//	@Description	Retrieves detailed information for WhatsApp users by their JIDs
+//	@Tags			Contacts
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		UserInfoRequest	true	"User info request with JIDs"
+//	@Success		200		{object}	UserInfoResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/userinfo [post]
 func UserInfoController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

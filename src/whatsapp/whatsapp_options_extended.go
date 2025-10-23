@@ -46,8 +46,10 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 
 /*
 <summary>
+
 	default options from environment variables
 	should be set on main
+
 </summary>
 */
 var Options WhatsappOptionsExtended

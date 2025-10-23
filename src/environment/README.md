@@ -1,6 +1,6 @@
 # QuePasa Environment Variables Documentation
 
-This document describes all environment variables used by the QuePasa application, organized by category.
+This document describes all environment variables used by the QuePasa application, organized by category. **Total: 63 variables across 12 categories**.
 
 ## 📡 SIP Proxy Configuration
 
@@ -26,15 +26,22 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`SIPPROXY_TIMEOUT`** - SIP transaction timeout in seconds (default: `30`)
 - **`SIPPROXY_RETRIES`** - SIP INVITE retry attempts (default: `3`)
 - **`SIPPROXY_LOGLEVEL`** - SIP proxy specific log level (default: `info`)
+- **`SIPPROXY_PROTOCOL`** - SIP server protocol (default: `UDP`)
+- **`SIPPROXY_SDPSESSIONNAME`** - SDP session name
 
 ## 🔗 API/Web Server Configuration
 
-- **`WEBAPIHOST`** - Web server bind host
-- **`WEBAPIPORT`** - Web server port (default: `31000`)
+- **`WEBAPIHOST`** - Web server bind host *(deprecated, use WEBSERVER_HOST)*
+- **`WEBAPIPORT`** - Web server port (default: `31000`) *(deprecated, use WEBSERVER_PORT)*
+- **`WEBSERVER_HOST`** - Web server bind host (fallback: `WEBAPIHOST`)
+- **`WEBSERVER_PORT`** - Web server port (default: `31000`, fallback: `WEBAPIPORT`)
 - **`WEBSOCKETSSL`** - Use SSL for WebSocket QR code (default: `false`)
 - **`SIGNING_SECRET`** - Token for hash signing cookies
 - **`MASTERKEY`** - Master key for super admin methods
 - **`HTTPLOGS`** - Log HTTP requests (default: `false`)
+- **`WEBHOOK_TIMEOUT`** - Webhook request timeout in milliseconds (default: `10000` = 10 seconds, minimum: `1`)
+- **`API_TIMEOUT`** - API request timeout in milliseconds (default: `30000` = 30 seconds, minimum: `1`)
+- **`API_PREFIX`** - API routes prefix
 
 ## 💾 Database Configuration
 
@@ -75,13 +82,41 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`CONVERT_PNG_TO_JPG`** - Convert PNG images to JPG using FFmpeg (default: `false`)
 - **`ACCOUNTSETUP`** - Enable account creation (default: `true`)
 - **`TESTING`** - Testing mode (default: `false`)
-- **`DISPATCHUNHANDLED`** - Dispatch unhandled messages (default: `false`)
+
+## 📋 Form/Web Interface Configuration
+
+- **`FORM`** - Enable/disable web form interface (default: `true`)
+- **`FORM_PREFIX`** - Form endpoint path prefix (default: `form`)
+
+## 📊 Metrics Configuration
+
+- **`METRICS`** - Enable/disable metrics endpoint (default: `true`)
+- **`METRICS_PREFIX`** - Metrics endpoint path prefix (default: `metrics`)
+- **`METRICS_DASHBOARD`** - Enable/disable metrics dashboard endpoint (default: `true`)
+- **`METRICS_DASHBOARD_PREFIX`** - Metrics dashboard endpoint path prefix (default: `dashboard`)
 
 ## 🐰 RabbitMQ Configuration
 
 - **`RABBITMQ_QUEUE`** - RabbitMQ queue name
 - **`RABBITMQ_CONNECTIONSTRING`** - RabbitMQ connection string
 - **`RABBITMQ_CACHELENGTH`** - RabbitMQ cache length (default: `0`)
+
+## 📖 Swagger Configuration
+
+- **`SWAGGER`** - Enable/disable Swagger UI (default: `true`)
+- **`SWAGGER_PREFIX`** - Swagger UI path prefix (default: `swagger`)
+
+## 🌐 WebServer Configuration
+
+- **`WEBSERVER_HOST`** - Web server bind host (fallback: `WEBAPIHOST`)
+- **`WEBSERVER_PORT`** - Web server port (default: `31000`, fallback: `WEBAPIPORT`)
+- **`WEBSERVER_LOGS`** - Enable web server HTTP logs (default: `false`, fallback: `HTTPLOGS`)
+
+## 📱 Whatsmeow Configuration
+
+- **`DISPATCHUNHANDLED`** - Dispatch unhandled messages (default: `false`)
+- **`WHATSMEOW_LOGLEVEL`** - Whatsmeow library log level
+- **`WHATSMEOW_DBLOGLEVEL`** - Whatsmeow database log level
 
 ## 📋 Current Working Configuration
 
@@ -138,11 +173,11 @@ The `.env` file includes automatic versioning headers:
 # ================================================================
 # QUEPASA ENVIRONMENT CONFIGURATION
 # ================================================================
-# Version: 20250812143000 (YYYYMMDDHHMMSS)
-# Last Updated: 12 de Agosto de 2025 - 14:30:00
+# Version: 20251005120000 (YYYYMMDDHHMMSS)
+# Last Updated: 5 de outubro de 2025 - 12:00:00
 # Build Target: Development/Production Environment
-# Source: Merged from main branch to calls branch
-# Environment Package: 45 variables across 8 categories
+# Source: Updated documentation for develop branch
+# Environment Package: 63 variables across 12 categories
 # ================================================================
 ```
 
@@ -165,7 +200,7 @@ project/
 3. **`TestEnvironmentVariablesFromSystem`** - Tests real environment loading
 4. **`TestSIPProxyActivationLogic`** - Tests SIP proxy HOST-based activation
 5. **`TestEnvironmentSettingsSingleton`** - Tests Settings initialization
-6. **`TestEnvironmentVariablesCoverage`** - Tests all 45 environment variables
+6. **`TestEnvironmentVariablesCoverage`** - Tests all 47 environment variables
 
 #### 🎯 Running Specific Tests
 ```bash
@@ -183,7 +218,7 @@ go test -v -cover
 - Environment variables are loaded from VS Code's `.env` injection when debugging
 - When running via `go test` in terminal, default values are used
 - SIP Proxy activation depends on `SIPPROXY_HOST` being set
-- All 45 environment variables are tested for accessibility
+- All 47 environment variables are tested for accessibility
 
 ## 💡 Usage Examples
 

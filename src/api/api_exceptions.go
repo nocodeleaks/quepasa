@@ -29,7 +29,7 @@ func (e *ApiExceptionBase) Prepend(message string) {
 }
 
 func (e *ApiExceptionBase) Prependf(format string, a ...any) {
-	message := fmt.Sprintf(format, a)
+	message := fmt.Sprintf(format, a...)
 	e.Prepend(message)
 }
 

@@ -6,6 +6,7 @@ echo "Working dir: `pwd`"
 
 cp -rf /builder/assets ./
 cp -rf /builder/views ./
+cp -rf /builder/swagger ./
 cp -rf /builder/service ./ 2>/dev/null || :
 
 # cleanup builded service for avoid cache on updates

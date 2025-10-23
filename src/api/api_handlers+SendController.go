@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -15,12 +15,108 @@ import (
 // -------------------------- PUBLIC METHODS
 //region TYPES OF SENDING
 
-// SendAPIHandler renders route "/v3/bot/{token}/send"
+// SendAPIHandler renders route "/send" and "/sendencoded"
+//
+//	@Summary		Send any type of message (text, file, poll, base64 content, location, contact)
+//	@Description	Endpoint to send messages via WhatsApp. Accepts sending of:
+//	@Description	- Plain text (field "text")
+//	@Description	- Files by URL (field "url") — server will download and send as attachment
+//	@Description	- Base64 content (field "content") — use format data:<mime>;base64,<data>
+//	@Description	- Polls (field "poll") — send the poll JSON in the "poll" field
+//	@Description	- Location (field "location") — send location with latitude/longitude in the "location" object
+//	@Description	- Contact (field "contact") — send contact with phone/name in the "contact" object
+//	@Description
+//	@Description	Main fields:
+//	@Description	- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
+//	@Description	- text: message text
+//	@Description	- url: public URL to download a file
+//	@Description	- content: embedded base64 content (e.g.: data:image/png;base64,...)
+//	@Description	- fileName: file name (optional, used when name cannot be inferred)
+//	@Description	- poll: JSON object with the poll (question, options, selections)
+//	@Description	- location: JSON object with location data (latitude, longitude, name, address, url)
+//	@Description	- contact: JSON object with contact data (phone, name, vcard)
+//	@Description
+//	@Description	Location object fields:
+//	@Description	- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
+//	@Description	- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)
+//	@Description	- name (string, optional): Location name/description
+//	@Description	- address (string, optional): Location full address
+//	@Description	- url (string, optional): URL with link to the map
+//	@Description
+//	@Description	Contact object fields:
+//	@Description	- phone (string, required): Contact phone number
+//	@Description	- name (string, required): Contact display name
+//	@Description	- vcard (string, optional): Full vCard string (auto-generated if not provided)
+//	@Description
+//	@Description	Examples:
+//	@Description	Text:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"text": "Hello, world!"
+//	@Description	}
+//	@Description	```
+//	@Description	Poll:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"poll": {
+//	@Description	"question": "Which languages do you know?",
+//	@Description	"options": ["JavaScript","Python","Go","Java","C#","Ruby"],
+//	@Description	"selections": 3
+//	@Description	}
+//	@Description	}
+//	@Description	```
+//	@Description	Location:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"location": {
+//	@Description	"latitude": -23.550520,
+//	@Description	"longitude": -46.633308,
+//	@Description	"name": "Avenida Paulista, São Paulo"
+//	@Description	}
+//	@Description	}
+//	@Description	```
+//	@Description	Contact:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"contact": {
+//	@Description	"phone": "5511999999999",
+//	@Description	"name": "John Doe"
+//	@Description	}
+//	@Description	}
+//	@Description	```
+//	@Description	Base64:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"content": "data:image/png;base64,...."
+//	@Description	}
+//	@Description	```
+//	@Description	File by URL:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"url": "https://example.com/path/to/file.jpg"
+//	@Description	}
+//	@Description	```
+//	@Tags			Send
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
+//	@Success		200		{object}	models.QpSendResponse
+//	@Failure		400		{object}	models.QpSendResponse
+//	@Security		ApiKeyAuth
+//	@Router			/send [post]
 func SendAny(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
 
 	server, err := GetServer(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
+		ObserveAPIRequestDuration(r.Method, "/send", "400", time.Since(startTime).Seconds())
 
 		response := &models.QpSendResponse{}
 		response.ParseError(err)
@@ -29,6 +125,9 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendAnyWithServer(w, r, server)
+
+	// Record successful API processing time (assuming 200 status for now)
+	ObserveAPIRequestDuration(r.Method, "/send", "200", time.Since(startTime).Seconds())
 }
 
 func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
@@ -52,7 +151,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 	// Getting ChatId parameter
 	err := request.EnsureValidChatId(r)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -70,7 +169,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		// download content to byte array
 		err = request.GenerateUrlContent()
 		if err != nil {
-			metrics.MessageSendErrors.Inc()
+			MessageSendErrors.Inc()
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -80,7 +179,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		// BASE64 content to byte array
 		err = request.GenerateEmbedContent()
 		if err != nil {
-			metrics.MessageSendErrors.Inc()
+			MessageSendErrors.Inc()
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -122,8 +221,8 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 		}
 	}
 
-	if request.Poll == nil && att.Attach == nil && len(request.Text) == 0 {
-		metrics.MessageSendErrors.Inc()
+	if request.Poll == nil && request.Location == nil && request.Contact == nil && att.Attach == nil && len(request.Text) == 0 {
+		MessageSendErrors.Inc()
 		err = fmt.Errorf("text not found, do not send empty messages")
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -141,10 +240,16 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 
 // finally sends to the whatsapp server
 func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+	SendWithMessageType(server, response, request, w, attach, whatsapp.UnhandledMessageType)
+}
+
+// SendWithMessageType sends to the whatsapp server with specified message type
+// If messageType is UnhandledMessageType, it will auto-detect the type
+func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
 	waMsg, err := request.ToWhatsappMessage()
 
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -161,7 +266,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 			err = json.Unmarshal([]byte(pollText), &poll)
 			if err != nil {
 				err = fmt.Errorf("error converting text to json poll: %s", err.Error())
-				metrics.MessageSendErrors.Inc()
+				MessageSendErrors.Inc()
 				response.ParseError(err)
 				RespondInterface(w, response)
 				return
@@ -173,11 +278,18 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 	if attach != nil {
 		waMsg.Attachment = attach
-		waMsg.Type = whatsapp.GetMessageType(attach)
-		logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		if messageType == whatsapp.UnhandledMessageType {
+			waMsg.Type = whatsapp.GetMessageType(attach)
+			logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		} else {
+			waMsg.Type = messageType
+			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		}
 	} else {
-		// test for poll, already set from ToWhatsappMessage
-		waMsg.Type = whatsapp.TextMessageType
+		// Only set text type if type was not already set (e.g., by Poll or Location)
+		if waMsg.Type == whatsapp.UnhandledMessageType {
+			waMsg.Type = whatsapp.TextMessageType
+		}
 	}
 
 	// if not set, try to recover "text"
@@ -219,7 +331,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 			sendResponse, err := server.SendMessage(waMsg)
 			if err == nil {
 				// Success sending to LID directly
-				metrics.MessagesSent.Inc()
+				MessagesSent.Inc()
 
 				result := &models.QpSendResponseMessage{}
 				result.Wid = server.GetWId()
@@ -234,7 +346,7 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 			// Failed to send to LID, return error
 			logentry.Errorf("failed to find phone number for LID %s and failed to send message to LID: %v", originalChatId, err)
-			metrics.MessageSendErrors.Inc()
+			MessageSendErrors.Inc()
 			response.ParseError(fmt.Errorf("failed to resolve LID to phone number and failed to send message to LID: %v", err))
 			RespondInterface(w, response)
 			return
@@ -246,14 +358,14 @@ func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, requ
 
 	sendResponse, err := server.SendMessage(waMsg)
 	if err != nil {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
 	// success
-	metrics.MessagesSent.Inc()
+	MessagesSent.Inc()
 
 	result := &models.QpSendResponseMessage{}
 	result.Wid = server.GetWId()

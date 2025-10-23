@@ -8,18 +8,26 @@ import (
 	"github.com/go-chi/jwtauth"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
 
+// GetFormEndpointPrefix returns the configured prefix for form endpoints
+func GetFormEndpointPrefix() string {
+	return "/" + environment.Settings.Form.Prefix
+}
+
 // Prefix on forms endpoints to avoid conflict with api
-const FormEndpointPrefix string = "/form"
+var FormEndpointPrefix string = GetFormEndpointPrefix()
 
 var FormWebsocketEndpoint string = FormEndpointPrefix + "/verify/ws"
 var FormAccountEndpoint string = FormEndpointPrefix + "/account"
 var FormWebHooksEndpoint string = FormEndpointPrefix + "/webhooks"
+var FormRabbitMQEndpoint string = FormEndpointPrefix + "/rabbitmq"
 var FormVerifyEndpoint string = FormEndpointPrefix + "/verify"
 var FormDeleteEndpoint string = FormEndpointPrefix + "/delete"
 
@@ -33,6 +41,7 @@ func RegisterFormAuthenticatedControllers(r chi.Router) {
 	r.HandleFunc(FormWebsocketEndpoint, VerifyHandler)
 	r.Get(FormAccountEndpoint, FormAccountController)
 	r.Get(FormWebHooksEndpoint, FormWebHooksController)
+	r.Get(FormRabbitMQEndpoint, FormRabbitMQController)
 	r.Get(FormVerifyEndpoint, VerifyFormHandler)
 
 	r.Post(FormDeleteEndpoint, FormDeleteController)
@@ -84,15 +93,15 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 		WMOptions: whatsmeow.WhatsmeowService.Options,
 	}
 
-	masterkey := models.ENV.MasterKey()
+	masterkey := environment.Settings.API.MasterKey
 	data.HasMasterKey = len(masterkey) > 0
 	if data.HasMasterKey {
-		data.HasSignalRActiveConnections = models.SignalRHub.HasActiveConnections(masterkey)
+		data.HasSignalRActiveConnections = signalr.SignalRHub.HasActiveConnections(masterkey)
 	}
 
 	data.Servers = models.GetServersForUser(user)
 	data.Version = models.QpVersion
-	templates := template.Must(template.ParseFiles("views/layouts/main.tmpl", "views/account.tmpl"))
+	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("account.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)
 }
 
@@ -121,6 +130,7 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 				data.ErrorMessage = "server token not found or dont owned by you"
 			} else {
 				data.Server = server
+				data.Webhooks = server.GetWebhooks()
 			}
 		}
 	} else {
@@ -128,8 +138,50 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates := template.Must(template.ParseFiles(
-		"views/layouts/main.tmpl",
-		"views/webhooks.tmpl",
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("webhooks.tmpl"),
+	))
+
+	templates.ExecuteTemplate(w, "main", data)
+}
+
+// Controller responsible for RabbitMQ management interface
+func FormRabbitMQController(w http.ResponseWriter, r *http.Request) {
+	// setting default response type as json
+	w.Header().Set("Content-Type", "text/html")
+
+	type FormRabbitMQControllerData struct {
+		PageTitle    string                     `json:"pagetitle,omitempty"`
+		ErrorMessage string                     `json:"errormessage,omitempty"`
+		Server       *models.QpWhatsappServer   `json:"server,omitempty"`
+		RabbitMQ     []*models.QpRabbitMQConfig `json:"rabbitmq,omitempty"`
+	}
+
+	data := FormRabbitMQControllerData{
+		PageTitle: "RabbitMQ Configurations",
+	}
+
+	user, err := GetFormUser(r)
+	if err == nil {
+		token := r.URL.Query().Get("token")
+		if len(token) > 0 {
+			server, err := models.GetServerFromToken(token)
+			if err != nil {
+				data.ErrorMessage = "server token not found: " + err.Error()
+			} else if server.User != user.Username {
+				data.ErrorMessage = "server token not found or dont owned by you"
+			} else {
+				data.Server = server
+				data.RabbitMQ = server.GetRabbitMQConfigsByQueue("")
+			}
+		}
+	} else {
+		data.ErrorMessage = "missing token"
+	}
+
+	templates := template.Must(template.ParseFiles(
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("rabbitmq.tmpl"),
 	))
 
 	templates.ExecuteTemplate(w, "main", data)

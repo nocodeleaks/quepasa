@@ -264,7 +264,7 @@ func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 		options.Groups = whatsapp.UnSetBooleanType
 	}
 
-	reason := fmt.Sprintf("toggle groups: %s", options.ReadReceipts)
+	reason := fmt.Sprintf("toggle groups: %s", options.Groups)
 	return source.Save(reason)
 }
 
@@ -280,7 +280,7 @@ func ToggleBroadcasts(source whatsapp.IWhatsappOptions) error {
 		options.Broadcasts = whatsapp.UnSetBooleanType
 	}
 
-	reason := fmt.Sprintf("toggle broadcasts: %s", options.ReadReceipts)
+	reason := fmt.Sprintf("toggle broadcasts: %s", options.Broadcasts)
 	return source.Save(reason)
 }
 
@@ -296,7 +296,7 @@ func ToggleCalls(source whatsapp.IWhatsappOptions) error {
 		options.Calls = whatsapp.UnSetBooleanType
 	}
 
-	reason := fmt.Sprintf("toggle calls: %s", options.ReadReceipts)
+	reason := fmt.Sprintf("toggle calls: %s", options.Calls)
 	return source.Save(reason)
 }
 

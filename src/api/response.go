@@ -23,11 +23,6 @@ func RespondUnauthorized(w http.ResponseWriter, err error) {
 	RespondErrorCode(w, err, http.StatusUnauthorized)
 }
 
-func RespondNoContentV2(w http.ResponseWriter, err error) {
-	log.Debugf("Request Not found: %s", err.Error())
-	RespondErrorCode(w, err, http.StatusNoContent)
-}
-
 func RespondNoContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 	w.Header().Del("Content-Type")
@@ -105,4 +100,14 @@ func RespondSuccess(w http.ResponseWriter, response interface{}) {
 	}
 
 	RespondInterfaceCode(w, response, http.StatusOK)
+}
+
+func RespondNotFound(w http.ResponseWriter, err error) {
+	log.Debugf("Request Not Found: %s", err.Error())
+	RespondErrorCode(w, err, http.StatusNotFound)
+}
+
+func RespondNoContentV2(w http.ResponseWriter, err error) {
+	log.Debugf("Request No Content V2: %s", err.Error())
+	RespondErrorCode(w, err, http.StatusNoContent)
 }

@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -24,6 +23,17 @@ import (
 
 </summary>
 */
+// DownloadController downloads media files from messages
+//	@Summary		Download media
+//	@Description	Downloads media files (images, videos, documents) from WhatsApp messages
+//	@Tags			Download
+//	@Produce		application/octet-stream
+//	@Param			messageid	query		string	false	"Message ID (query parameter alternate)"
+//	@Param			cache		query		string	false	"Use cached content"
+//	@Success		200			{file}		binary	"Media file"
+//	@Failure		400			{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/download [get]
 func DownloadController(w http.ResponseWriter, r *http.Request) {
 
 	response := &models.QpResponse{}
@@ -48,7 +58,7 @@ func DownloadController(w http.ResponseWriter, r *http.Request) {
 	messageid := GetMessageId(r)
 
 	if len(messageid) == 0 {
-		metrics.MessageSendErrors.Inc()
+		MessageSendErrors.Inc()
 		err := fmt.Errorf("empty message id")
 		response.ParseError(err)
 		RespondInterface(w, response)

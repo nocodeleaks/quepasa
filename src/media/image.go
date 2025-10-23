@@ -111,12 +111,12 @@ func ConvertPngToJpg(pngData []byte) (jpgData []byte, newMime string, err error)
 func ShouldConvertImage(mimeType, filename string) bool {
 	// First check MIME type - this is the most reliable indicator
 	lowerMimeType := strings.ToLower(mimeType)
-	
+
 	// If MIME type is definitely an image/png, convert it
 	if lowerMimeType == "image/png" {
 		return true
 	}
-	
+
 	// If MIME type indicates it's another format (audio, video, etc.), don't convert
 	// even if filename has .png extension
 	if strings.HasPrefix(lowerMimeType, "audio/") ||

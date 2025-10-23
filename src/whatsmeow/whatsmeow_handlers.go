@@ -10,7 +10,6 @@ import (
 	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	metrics "github.com/nocodeleaks/quepasa/metrics"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/appstate"
@@ -35,6 +34,9 @@ type WhatsmeowHandlers struct {
 	// Connection control for history sync
 	offlineSyncStarted   bool
 	offlineSyncCompleted bool
+
+	// Sequential counter for precise timestamp ordering within this handler
+	eventSequence uint64
 }
 
 func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowHandlers {
@@ -43,6 +45,23 @@ func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions,
 		WhatsmeowOptions:    wmOptions,
 		WhatsappOptions:     waOptions,
 	}
+}
+
+// getTimestamp returns a timestamp with high precision using sequential counter
+func (handler *WhatsmeowHandlers) getTimestamp() time.Time {
+	if handler == nil {
+		return time.Now().UTC()
+	}
+
+	// Increment sequence counter for ordering
+	sequence := atomic.AddUint64(&handler.eventSequence, 1)
+
+	// Get current time with nanosecond precision
+	now := time.Now().UTC()
+
+	// Add sequence as nanoseconds to ensure ordering
+	// This gives us microsecond-level precision even with same base timestamp
+	return now.Add(time.Duration(sequence%1000000) * time.Nanosecond)
 }
 
 func (source *WhatsmeowHandlers) GetServiceOptions() (options whatsapp.WhatsappOptionsExtended) {
@@ -263,8 +282,8 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 			source.SendPresence(presence, "'connected' event")
 		}
 
-		// Send connection webhook event
-		go source.sendConnectionWebhook("connected")
+		// Send connection dispatching event
+		go source.sendConnectionDispatching("connected")
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
 			go source.WAHandlers.OnConnected()
@@ -329,6 +348,10 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		go source.OnOfflineSyncCompleted(*evt)
 		return
 
+	case *events.UndecryptableMessage:
+		go source.UndecryptableMessage(*evt)
+		return
+
 	case
 		*events.AppState,
 		*events.CallTerminate,
@@ -351,7 +374,7 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		logentry.Debugf("event not handled: %v", reflect.TypeOf(evt))
 
 		// Only dispatch debug events if DEBUGEVENTS is true
-		// If DEBUGEVENTS=false or not set, do nothing (no webhook dispatch)
+		// If DEBUGEVENTS=false or not set, do nothing (no dispatch)
 		if source.ShouldDispatchUnhandled() {
 			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
 		}
@@ -374,7 +397,7 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 	message := &whatsapp.WhatsappMessage{
 		Content:   evt,
 		Id:        fmt.Sprintf("event_%s_%s", randomizer, source.Client.GenerateMessageID()),
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: source.getTimestamp(),
 		Type:      whatsapp.UnhandledMessageType,
 		FromMe:    false,
 	}
@@ -404,6 +427,48 @@ func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventTy
 	// Fallback to system chat if we can't extract chat information
 	message.Chat = whatsapp.WASYSTEMCHAT
 	source.Follow(message, "debug")
+}
+
+// UndecryptableMessage handles events where message decryption failed.
+// Special-case: if the message is a view_once (self-destructing) item,
+// treat it as a custom message type and attempt to populate chat/participant
+// info when available.
+// Otherwise, dispatch as an unhandled debug event if configured to do so.
+
+func (source *WhatsmeowHandlers) UndecryptableMessage(evt events.UndecryptableMessage) {
+	logentry := source.GetLogger()
+	logentry = logentry.WithField(LogFields.MessageId, evt.Info.ID)
+	logentry.Tracef("undecryptable message received: %v", evt)
+
+	// If unavailable type indicates view_once, create a custom message for it
+	if strings.EqualFold(string(evt.UnavailableType), "view_once") {
+		message := &whatsapp.WhatsappMessage{
+			Id:        evt.Info.ID,
+			Timestamp: ImproveTimestamp(evt.Info.Timestamp),
+			Type:      whatsapp.ViewOnceMessageType,
+			FromMe:    evt.Info.IsFromMe,
+		}
+
+		// Try to populate chat/participant when Info is present
+		if len(evt.Info.ID) > 0 {
+			message.Id = evt.Info.ID
+			source.PopulateChatAndParticipant(message, evt.Info)
+		} else {
+			// fallback to system chat if not available
+			message.Chat = whatsapp.WASYSTEMCHAT
+		}
+
+		// Follow the dispatching  flow
+		source.Follow(message, "view_once")
+		return
+	}
+
+	// Not a view_once: dispatch as an unhandled debug event
+	if source.ShouldDispatchUnhandled() {
+		go source.DispatchUnhandledEvent(evt, reflect.TypeOf(evt).String())
+	} else {
+		logentry.Debugf("undecryptable event ignored (dispatch disabled): %v", reflect.TypeOf(evt))
+	}
 }
 
 func HistorySyncSaveJSON(evt events.HistorySync) {
@@ -501,7 +566,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		logentry.Errorf("nil message on receiving whatsmeow events | try use rawMessage ! json: %s", string(jsonstring))
 
 		// Count message receive error
-		metrics.MessageReceiveErrors.Inc()
+		MessageReceiveErrors.Inc()
 		return
 	}
 
@@ -560,7 +625,7 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 			logentry.Warnf("unhandled message type, no debug information: %s", message.Type)
 		}
 		// Count unhandled message as error
-		metrics.MessageReceiveUnhandled.Inc()
+		MessageReceiveUnhandled.Inc()
 
 		// If this message originates from history, do NOT dispatch it further.
 		// Historical unhandled messages are noisy and should not reach downstream handlers.
@@ -583,12 +648,19 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 </summary>
 */
 
-// Append to cache handlers if exists, and then webhook
+// Append to cache handlers if exists, and then dispatch
 func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from string) {
 	// Increment received messages counter for all incoming messages
 	// Only count messages that are not from us (FromMe = false)
 	if !message.FromMe {
-		metrics.MessagesReceived.Inc()
+		MessagesReceived.Inc()
+
+		// Count messages by type for better monitoring
+		messageType := message.Type.String()
+		if messageType == "" {
+			messageType = "unknown"
+		}
+		MessagesByType.WithLabelValues(messageType).Inc()
 
 		logentry := handler.GetLogger()
 		logentry.Debugf("received message counted: type=%s, from=%s, chat=%s",
@@ -649,7 +721,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	logentry.Trace("event CallMessage !")
 
 	// Count incoming call as received message
-	metrics.MessagesReceived.Inc()
+	MessagesReceived.Inc()
 
 	message := &whatsapp.WhatsappMessage{Content: evt}
 
@@ -785,7 +857,7 @@ func (handler *WhatsmeowHandlers) OnLoggedOutEvent(evt events.LoggedOut) {
 	}
 
 	message := &whatsapp.WhatsappMessage{
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		Id:        handler.Client.GenerateMessageID(),
 		Chat:      whatsapp.WASYSTEMCHAT,
@@ -811,7 +883,7 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 		Content: evt,
 
 		Id:        id,
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.GroupMessageType,
 		Chat:      whatsapp.WhatsappChat{Id: evt.GroupInfo.JID.String(), Title: evt.GroupInfo.GroupName.Name},
 		Text:      "joined group",
@@ -830,7 +902,7 @@ func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 
 //#endregion
 
-//#region CONNECTION WEBHOOKS AND HISTORY CONTROL
+//#region CONNECTION DISPATCHING AND HISTORY CONTROL
 
 // isHistoryMessage determines if a message should be classified as history
 func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
@@ -849,14 +921,14 @@ func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
 	return false
 }
 
-// sendConnectionWebhook sends connection status events to configured webhooks
-func (handler *WhatsmeowHandlers) sendConnectionWebhook(event string) {
+// sendConnectionDispatching sends connection status events to configured dispatching systems
+func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
 	if handler.WAHandlers == nil {
 		return
 	}
 
 	logentry := handler.GetLogger()
-	logentry.Infof("sending connection webhook event: %s", event)
+	logentry.Infof("sending connection dispatching event: %s", event)
 
 	// Get phone number from connection
 	phone := ""
@@ -870,7 +942,7 @@ func (handler *WhatsmeowHandlers) sendConnectionWebhook(event string) {
 	// Create connection event message
 	message := &whatsapp.WhatsappMessage{
 		Id:        handler.Client.GenerateMessageID(),
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		FromMe:    false,
 		Chat:      whatsapp.WASYSTEMCHAT,
@@ -896,8 +968,8 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPre
 	handler.offlineSyncStarted = true
 	handler.offlineSyncCompleted = false
 
-	// Send sync preview webhook
-	handler.sendSyncWebhook("sync_preview", map[string]interface{}{
+	// Send sync preview dispatching
+	handler.sendSyncDispatching("sync_preview", map[string]interface{}{
 		"total":         evt.Total,
 		"messages":      evt.Messages,
 		"notifications": evt.Notifications,
@@ -916,23 +988,23 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncC
 	handler.offlineSyncCompleted = true
 	handler.offlineSyncStarted = false
 
-	// Send sync completed webhook
-	handler.sendSyncWebhook("sync_completed", map[string]interface{}{
+	// Send sync completed dispatching
+	handler.sendSyncDispatching("sync_completed", map[string]interface{}{
 		"count": evt.Count,
 	})
-	metrics.MessageReceiveSyncEvents.Inc()
+	MessageReceiveSyncEvents.Inc()
 
 	logentry.Info("history sync period ended based on OfflineSyncCompleted event")
 }
 
-// sendSyncWebhook sends synchronization events to configured webhooks
-func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]interface{}) {
+// sendSyncDispatching sends synchronization events to configured dispatching systems
+func (handler *WhatsmeowHandlers) sendSyncDispatching(event string, data map[string]interface{}) {
 	if handler.WAHandlers == nil {
 		return
 	}
 
 	logentry := handler.GetLogger()
-	logentry.Infof("sending sync webhook event: %s", event)
+	logentry.Infof("sending sync dispatching event: %s", event)
 
 	// Get phone number from connection
 	phone := ""
@@ -956,7 +1028,7 @@ func (handler *WhatsmeowHandlers) sendSyncWebhook(event string, data map[string]
 	// Create sync event message
 	message := &whatsapp.WhatsappMessage{
 		Id:        handler.Client.GenerateMessageID(),
-		Timestamp: time.Now().Truncate(time.Second),
+		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		FromMe:    false,
 		Chat:      whatsapp.WASYSTEMCHAT,

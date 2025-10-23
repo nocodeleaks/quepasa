@@ -17,6 +17,17 @@ type ChatPresenceRequest struct {
 }
 
 // ChatPresenceController handles API requests for typing indicators
+//
+//	@Summary		Control chat presence
+//	@Description	Controls typing indicators and chat presence in WhatsApp conversations
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		ChatPresenceRequest	true	"Chat presence request"
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/chat/presence [post]
 func ChatPresenceController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

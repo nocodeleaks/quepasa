@@ -16,6 +16,10 @@ type EnvironmentSettings struct {
 	// Embedded structs for organized access to different environment categories
 	Database  DatabaseSettings
 	API       APISettings
+	WebServer WebServerSettings
+	Swagger   SwaggerSettings
+	Metrics   MetricsSettings
+	Form      FormSettings
 	WhatsApp  WhatsAppSettings
 	Whatsmeow WhatsmeowSettings
 	SIPProxy  SIPProxySettings
@@ -42,6 +46,10 @@ func init() {
 	Settings = EnvironmentSettings{
 		Database:  NewDatabaseSettings(),
 		API:       NewAPISettings(),
+		WebServer: NewWebServerSettings(),
+		Swagger:   NewSwaggerSettings(),
+		Metrics:   NewMetricsSettings(),
+		Form:      NewFormSettings(),
 		WhatsApp:  NewWhatsAppSettings(),
 		Whatsmeow: NewWhatsmeowSettings(),
 		SIPProxy:  NewSIPProxySettings(),
@@ -60,7 +68,10 @@ var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
 // getEnvOrDefaultString fetches an environment variable, returning a default value if not set.
 func getEnvOrDefaultString(key, defaultValue string) string {
 	if value, ok := os.LookupEnv(key); ok {
-		return strings.TrimSpace(value)
+		trimmedValue := strings.TrimSpace(value)
+		if len(trimmedValue) > 0 {
+			return trimmedValue
+		}
 	}
 	return defaultValue
 }
@@ -136,4 +147,36 @@ func getOptionalEnvBool(key string) *bool {
 		}
 	}
 	return nil // Not set or invalid means "use default logic"
+}
+
+// getEnvOrDefaultInt fetches a signed integer environment variable, returning a default value.
+// It logs a warning if the environment variable exists but cannot be parsed as an integer.
+func getEnvOrDefaultInt(key string, defaultValue int) int {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		if parsedValue, err := strconv.Atoi(trimmedValueStr); err == nil {
+			return parsedValue
+		}
+		logrus.Warnf("Invalid integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
+	}
+	return defaultValue
+}
+
+// isEnvVarSet checks if an environment variable is explicitly set
+func isEnvVarSet(key string) bool {
+	_, exists := os.LookupEnv(key)
+	return exists
+}
+
+// getOptionalEnvInt fetches an integer environment variable.
+// Returns the value if set, or -1 if not set (indicating disabled/not configured)
+func getOptionalEnvInt(key string) int {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		if parsedValue, err := strconv.Atoi(trimmedValueStr); err == nil {
+			return parsedValue
+		}
+		logrus.Warnf("Invalid integer value for environment variable %s: '%s'. Feature will be disabled", key, valueStr)
+	}
+	return -1 // Not set or invalid means "disabled"
 }

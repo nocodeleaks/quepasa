@@ -1,10 +1,12 @@
 package library
 
 /*
-	<summary>
-		Multipurpose Internet Mail Extensions
-		Override default system types
-	</summary>
+<summary>
+
+	Multipurpose Internet Mail Extensions
+	Override default system types
+
+</summary>
 */
 var MIMEs = map[string]string{
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":       ".xlsx",

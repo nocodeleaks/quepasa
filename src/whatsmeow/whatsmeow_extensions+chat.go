@@ -23,7 +23,7 @@ func CleanJID(jid types.JID) types.JID {
 		User:   jid.User,
 		Server: jid.Server,
 	}
-	
+
 	return cleanJID
 }
 
@@ -73,7 +73,7 @@ func GetContactName(client *whatsmeow.Client, jid types.JID) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	if !cInfo.Found {
 		return ""
 	}
@@ -132,7 +132,8 @@ func NewWhatsappChatRaw(client *whatsmeow.Client, contactManager whatsapp.Whatsa
 
 	chat.Title = GetChatTitle(client, jid)
 
-	if jid.Server == whatsapp.WHATSAPP_SERVERDOMAIN_USER {
+	switch jid.Server {
+	case whatsapp.WHATSAPP_SERVERDOMAIN_USER:
 		phone, err := contactManager.GetPhoneFromContactId(chat.Id)
 		if err == nil && len(phone) > 0 {
 			chat.Phone = phone
@@ -144,7 +145,7 @@ func NewWhatsappChatRaw(client *whatsmeow.Client, contactManager whatsapp.Whatsa
 				chat.LId = lid
 			}
 		}
-	} else if jid.Server == whatsapp.WHATSAPP_SERVERDOMAIN_LID {
+	case whatsapp.WHATSAPP_SERVERDOMAIN_LID:
 		// For @lid contacts, get the corresponding phone number
 		phone, err := contactManager.GetPhoneFromContactId(chat.Id)
 		if err == nil && len(phone) > 0 {

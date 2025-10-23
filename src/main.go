@@ -1,27 +1,35 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
+	environment "github.com/nocodeleaks/quepasa/environment"
+	_ "github.com/nocodeleaks/quepasa/form"
 	library "github.com/nocodeleaks/quepasa/library"
+	_ "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 
+	_ "github.com/nocodeleaks/quepasa/swagger" // Swagger docs
 	logrus "github.com/sirupsen/logrus"
 )
 
-// @title chi-swagger example APIs
-// @version 1.0
-// @description chi-swagger example APIs
-// @BasePath /
+// @title						QuePasa WhatsApp API
+// @version					4.0.0
+// @description				QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs for WhatsApp messaging integration
+// @termsOfService				https://github.com/nocodeleaks/quepasa
+// @contact.name				QuePasa Support
+// @contact.url				https://github.com/nocodeleaks/quepasa
+// @license.name				GNU Affero General Public License v3.0
+// @license.url				https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
+// @BasePath					/
+// @schemes					http https
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						X-QUEPASA-TOKEN
 func main() {
 
-	// loading environment variables from .env file
-	godotenv.Load()
-
-	loglevel := models.ENV.LogLevelFromLogrus(logrus.InfoLevel)
+	loglevel := environment.Settings.General.LogLevelFromLogrus(logrus.InfoLevel)
 	logrus.SetLevel(loglevel)
 
 	logentry := library.NewLogEntry("main")
@@ -35,20 +43,20 @@ func main() {
 	}
 
 	// should became before whatsmeow start
-	title := models.ENV.AppTitle()
+	title := environment.Settings.General.AppTitle
 	if len(title) > 0 {
 		whatsapp.WhatsappWebAppSystem = title
 	}
 
 	whatsappOptions := &whatsapp.WhatsappOptionsExtended{
-		Groups:            models.ENV.Groups(),
-		Broadcasts:        models.ENV.Broadcasts(),
-		ReadReceipts:      models.ENV.ReadReceipts(),
-		Calls:             models.ENV.Calls(),
-		ReadUpdate:        models.ENV.ReadUpdate(),
-		HistorySync:       models.ENV.HistorySync(),
-		Presence:          models.ENV.Presence(),
-		DispatchUnhandled: models.ENV.DispatchUnhandled(),
+		Groups:            environment.Settings.WhatsApp.Groups,
+		Broadcasts:        environment.Settings.WhatsApp.Broadcasts,
+		ReadReceipts:      environment.Settings.WhatsApp.ReadReceipts,
+		Calls:             environment.Settings.WhatsApp.Calls,
+		ReadUpdate:        environment.Settings.WhatsApp.ReadUpdate,
+		HistorySync:       environment.Settings.WhatsApp.HistorySyncDays,
+		Presence:          environment.Settings.WhatsApp.Presence,
+		DispatchUnhandled: environment.Settings.Whatsmeow.DispatchUnhandled,
 		LogLevel:          logentry.Level.String(),
 	}
 
@@ -56,11 +64,11 @@ func main() {
 
 	options := whatsmeow.WhatsmeowOptions{
 		WhatsappOptionsExtended: whatsapp.Options,
-		WMLogLevel:              models.ENV.WhatsmeowLogLevel(),
-		DBLogLevel:              models.ENV.WhatsmeowDBLogLevel(),
+		WMLogLevel:              environment.Settings.Whatsmeow.LogLevel,
+		DBLogLevel:              environment.Settings.Whatsmeow.DBLogLevel,
 	}
 
-	dbParameters := models.ENV.GetDBParameters()
+	dbParameters := environment.Settings.Database.GetDBParameters()
 	whatsmeow.Start(options, dbParameters, logentry)
 
 	// must execute after whatsmeow started
@@ -68,17 +76,6 @@ func main() {
 		if handler, ok := models.MigrationHandlers[element]; ok {
 			handler(element)
 		}
-	}
-
-	rabbitmq_connection_string := models.ENV.RabbitMQConnectionString()
-	if len(rabbitmq_connection_string) > 0 {
-		rabbitmq_queue := models.ENV.RabbitMQQueue()
-		if len(rabbitmq_queue) > 0 {
-			rabbitmq.RabbitMQQueueDefault = rabbitmq_queue
-		}
-
-		cachelength := models.ENV.RabbitMQCacheLength()
-		rabbitmq.InitializeRabbitMQClient(rabbitmq_connection_string, cachelength)
 	}
 
 	// Inicializando serviço de controle do whatsapp

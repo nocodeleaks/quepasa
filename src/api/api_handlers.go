@@ -25,9 +25,9 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// CONTROL METHODS ************************
 		// ----------------------------------------
-		r.Get(endpoint+"/info", InformationController)
-		r.Patch(endpoint+"/info", InformationController)
-		r.Delete(endpoint+"/info", InformationController)
+		r.Get(endpoint+"/info", GetInformationController)
+		r.Patch(endpoint+"/info", UpdateInformationController)
+		r.Delete(endpoint+"/info", DeleteInformationController)
 
 		r.Get(endpoint+"/scan", ScannerController)
 		r.Get(endpoint+"/paircode", PairCodeController)
@@ -46,6 +46,9 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Delete(endpoint+"/message/{messageid}", RevokeController)
 		r.Delete(endpoint+"/message", RevokeController)
 
+		// Mark message as read
+		r.Post(endpoint+"/read", MarkReadController)
+
 		// used to send alert msgs via url, triggers on monitor systems like zabbix
 		r.Get(endpoint+"/send", SendAny)
 
@@ -59,8 +62,8 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// SENDING MSG ATTACH ---------------------
 
-		// deprecated, discard/remove on next version
-		r.Post(endpoint+"/senddocument", SendDocumentAPIHandlerV2)
+		r.Post(endpoint+"/senddocument", SendDocument)
+		r.Post(endpoint+"/senddocument/{chatid}", SendDocument)
 
 		r.Post(endpoint+"/sendurl", SendAny)
 		r.Post(endpoint+"/sendbinary/{chatid}/{filename}/{text}", SendDocumentFromBinary)
@@ -73,7 +76,6 @@ func RegisterAPIControllers(r chi.Router) {
 		// SENDING MSG ----------------------------
 
 		r.Get(endpoint+"/receive", ReceiveAPIHandler)
-		r.Post(endpoint+"/attachment", AttachmentAPIHandlerV2)
 
 		r.Get(endpoint+"/download/{messageid}", DownloadController)
 		r.Get(endpoint+"/download", DownloadController)
@@ -97,6 +99,16 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Post(endpoint+"/webhook", WebhookController)
 		r.Get(endpoint+"/webhook", WebhookController)
 		r.Delete(endpoint+"/webhook", WebhookController)
+
+		// RABBITMQ DISPATCHING *******************
+		// ----------------------------------------
+
+		r.Post(endpoint+"/rabbitmq", RabbitMQController)
+		r.Get(endpoint+"/rabbitmq", RabbitMQController)
+		r.Delete(endpoint+"/rabbitmq", RabbitMQController)
+
+		// ----------------------------------------
+		// RABBITMQ DISPATCHING *******************
 
 		// INVITE METHODS ************************
 		// ----------------------------------------
@@ -176,6 +188,21 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 		// Typing Controller ********************
 
+		// CHAT READ STATUS CONTROLLER **********
+		// ----------------------------------------
+		r.Post(endpoint+"/chat/markread", MarkChatAsReadController)
+		r.Post(endpoint+"/chat/markunread", MarkChatAsUnreadController)
+
+		// ----------------------------------------
+		// CHAT READ STATUS CONTROLLER **********
+
+		// CHAT ARCHIVE CONTROLLER **************
+		// ----------------------------------------
+		r.Post(endpoint+"/chat/archive", ArchiveChatController)
+
+		// ----------------------------------------
+		// CHAT ARCHIVE CONTROLLER **************
+
 		// MESSAGE EDITING CONTROLLER ***********
 		// ----------------------------------------
 		r.Put(endpoint+"/edit", EditMessageController)
@@ -186,6 +213,18 @@ func RegisterAPIControllers(r chi.Router) {
 	}
 }
 
+// CommandController manages bot server commands
+//
+//	@Summary		Execute bot commands
+//	@Description	Execute control commands for the bot server (start, stop, restart, status)
+//	@Tags			Bot
+//	@Accept			json
+//	@Produce		json
+//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, status)
+//	@Success		200		{object}	models.QpResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/command [get]
 func CommandController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")

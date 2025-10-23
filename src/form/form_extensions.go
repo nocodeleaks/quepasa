@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
@@ -23,7 +24,7 @@ func RedirectToLogin(w http.ResponseWriter, r *http.Request) {
 // Google chrome bloqueou wss, portanto retornaremos sempre ws apatir de agora
 func WebSocketProtocol() string {
 	protocol := "ws"
-	isSecure := models.ENV.UseSSLForWebSocket()
+	isSecure := environment.Settings.API.UseSSLWebSocket
 	if isSecure {
 		protocol = "wss"
 	}
@@ -101,7 +102,12 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 		} else if strings.HasPrefix(key, "webhook") {
 			destination = FormWebHooksEndpoint + "?token=" + server.Token
 			url := library.GetRequestParameter(r, "url")
-			webhook := server.GetWebHook(url)
+			// Get webhook via dispatching system
+			dispatching := server.GetDispatching(url)
+			var webhook *models.QpWhatsappServerDispatching = nil
+			if dispatching != nil && dispatching.IsWebhook() {
+				webhook = models.NewQpWhatsappServerDispatchingFromDispatching(dispatching, server)
+			}
 			if webhook != nil {
 				switch key {
 				case "webhook-forwardinternal":
@@ -138,6 +144,52 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 			} else {
 				err = fmt.Errorf("webhook not found for url: %s", url)
 			}
+		} else if strings.HasPrefix(key, "rabbitmq") {
+			destination = FormRabbitMQEndpoint + "?token=" + server.Token
+			connectionString := library.GetRequestParameter(r, "connection_string")
+			// Get RabbitMQ configuration via dispatching system
+			dispatching := server.GetDispatching(connectionString)
+			var rabbitmq *models.QpWhatsappServerDispatching = nil
+			if dispatching != nil && dispatching.IsRabbitMQ() {
+				// Use the new method that preserves the original type
+				rabbitmq = models.NewQpWhatsappServerDispatchingFromDispatching(dispatching, server)
+			}
+			if rabbitmq != nil {
+				switch key {
+				case "rabbitmq-forwardinternal":
+					{
+						_, err = rabbitmq.ToggleForwardInternal()
+						break
+					}
+				case "rabbitmq-broadcasts":
+					{
+						err = models.ToggleBroadcasts(rabbitmq)
+						break
+					}
+				case "rabbitmq-groups":
+					{
+						err = models.ToggleGroups(rabbitmq)
+						break
+					}
+				case "rabbitmq-readreceipts":
+					{
+						err = models.ToggleReadReceipts(rabbitmq)
+						break
+					}
+				case "rabbitmq-calls":
+					{
+						err = models.ToggleCalls(rabbitmq)
+						break
+					}
+				default:
+					{
+						err = fmt.Errorf("invalid rabbitmq key: %s", key)
+						break
+					}
+				}
+			} else {
+				err = fmt.Errorf("rabbitmq configuration not found for connection: %s", connectionString)
+			}
 		} else {
 			err = fmt.Errorf("invalid key or prefix: %s", key)
 		}
@@ -169,8 +221,8 @@ func VerifyFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates := template.Must(template.ParseFiles(
-		"views/layouts/main.tmpl",
-		"views/bot/verify.tmpl",
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("bot/verify.tmpl"),
 	))
 	templates.ExecuteTemplate(w, "main", data)
 }
@@ -240,9 +292,26 @@ func FormDeleteController(w http.ResponseWriter, r *http.Request) {
 				destination = FormWebHooksEndpoint + "?token=" + server.Token
 				url := library.GetRequestParameter(r, "url")
 				var affected uint
-				affected, err = server.WebhookRemove(url)
+				affected, err = server.DispatchingRemove(url)
 				if affected > 0 {
 					logentry.Infof("webhook delete requested by from, affected rows: %v", affected)
+				}
+			}
+		case "rabbitmq":
+			{
+				destination = FormRabbitMQEndpoint + "?token=" + server.Token
+				connectionString := library.GetRequestParameter(r, "connection_string")
+				if connectionString == "" {
+					connectionString = library.GetRequestParameter(r, "exchange_name") // fallback for compatibility
+				}
+				if connectionString == "" {
+					err = fmt.Errorf("connection_string is required for rabbitmq delete")
+					break
+				}
+				var affected uint
+				affected, err = server.DispatchingRemove(connectionString)
+				if affected > 0 {
+					logentry.Infof("rabbitmq delete requested by form, connection_string=%s, affected rows: %v", connectionString, affected)
 				}
 			}
 		default:

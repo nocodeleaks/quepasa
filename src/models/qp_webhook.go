@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"time"
 
-	"github.com/nocodeleaks/quepasa/library"
+	environment "github.com/nocodeleaks/quepasa/environment"
+	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
@@ -96,6 +98,7 @@ func (source QpWebhook) IsSetExtra() bool {
 var ErrInvalidResponse error = errors.New("the requested url do not return 200 status code")
 
 func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
+	startTime := time.Now()
 
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
@@ -115,33 +118,84 @@ func (source *QpWebhook) Post(message *whatsapp.WhatsappMessage) (err error) {
 	logentry.Debugf("posting webhook payload: %s", payloadJson)
 
 	req, err := http.NewRequest("POST", source.Url, bytes.NewBuffer(payloadJson))
+	if err != nil {
+		logentry.Errorf("failed to create HTTP request: %s", err.Error())
+		return
+	}
+
 	req.Header.Set("User-Agent", "Quepasa")
 	req.Header.Set("X-QUEPASA-WID", source.Wid)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
-	client.Timeout = time.Second * 10
+	timeout := time.Duration(environment.Settings.API.WebhookTimeout) * time.Millisecond
+	client.Timeout = timeout
+
+	logentry.Debugf("executing HTTP request to: %s, timeout: %v", source.Url, timeout)
 	resp, err := client.Do(req)
+
+	// Always increment webhooks sent counter
+	WebhooksSent.Inc()
+	logentry.Debugf("webhook sent counter incremented")
+
+	// Record latency
+	duration := time.Since(startTime)
+	WebhookLatency.WithLabelValues().Observe(duration.Seconds())
+
+	var statusCode int
+	if resp != nil {
+		statusCode = resp.StatusCode
+		defer resp.Body.Close()
+	}
+
 	if err != nil {
 		logentry.Warnf("error at post webhook: %s", err.Error())
-	}
 
-	if resp != nil {
-		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			err = ErrInvalidResponse
+		// Check if it's a timeout error
+		if netErr, ok := err.(interface{ Timeout() bool }); ok && netErr.Timeout() {
+			WebhookTimeouts.Inc()
+			logentry.Warnf("webhook timeout after %v", timeout)
 		}
 	}
 
-	time := time.Now().UTC()
+	if resp != nil && statusCode != 200 {
+		err = ErrInvalidResponse
+		// Record HTTP error with status code
+		WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
+	}
+
+	currentTime := time.Now().UTC()
 	if err != nil {
+		WebhookSendErrors.Inc()
 		if source.Failure == nil {
-			source.Failure = &time
+			source.Failure = &currentTime
 		}
+		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
 	} else {
+		// Webhook successful
+		WebhookSuccess.Inc()
 		source.Failure = nil
-		source.Success = &time
+		source.Success = &currentTime
+		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)
 	}
 
 	return
+}
+
+// ToDispatching converts webhook configuration to dispatching format
+// Deprecated: Use QpDispatching directly instead of converting from QpWebhook
+func (source *QpWebhook) ToDispatching() *QpDispatching {
+	return &QpDispatching{
+		LogStruct:        source.LogStruct,
+		WhatsappOptions:  source.WhatsappOptions,
+		ConnectionString: source.Url,
+		Type:             DispatchingTypeWebhook,
+		ForwardInternal:  source.ForwardInternal,
+		TrackId:          source.TrackId,
+		Extra:            source.Extra,
+		Failure:          source.Failure,
+		Success:          source.Success,
+		Timestamp:        source.Timestamp,
+		Wid:              source.Wid,
+	}
 }

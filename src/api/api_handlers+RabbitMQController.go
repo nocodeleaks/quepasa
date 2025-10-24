@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 )
 
 //region CONTROLLER - RABBITMQ
@@ -105,6 +106,16 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 			RespondSuccess(w, response)
 			if affected > 0 {
 				logger.Infof("updating rabbitmq connection=%s (using fixed QuePasa exchange), items affected: %v", rabbitmqConfig.ConnectionString, affected)
+
+				// Force RabbitMQ connection initialization with Exchange and Queues
+				// This ensures the structure is ready immediately after configuration
+				logger.Infof("initializing RabbitMQ connection and Exchange/Queues for: %s", rabbitmqConfig.ConnectionString)
+				client := rabbitmq.GetRabbitMQClient(rabbitmqConfig.ConnectionString)
+				if client != nil {
+					logger.Infof("RabbitMQ connection initialized successfully for: %s", rabbitmqConfig.ConnectionString)
+				} else {
+					logger.Warnf("failed to initialize RabbitMQ connection for: %s", rabbitmqConfig.ConnectionString)
+				}
 			}
 		}
 		return

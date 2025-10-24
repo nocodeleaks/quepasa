@@ -1,7 +1,9 @@
 package rabbitmq
 
 import (
+	"log"
 	"sync"
+	"time"
 )
 
 // QuePasa RabbitMQ Fixed Configuration
@@ -59,6 +61,23 @@ func GetRabbitMQClient(connectionString string) *RabbitMQClient {
 	// Create new client with default cache size
 	client = NewRabbitMQClient(connectionString, 0) // 0 means unlimited cache
 	clientManager[connectionString] = client
+
+	// SYNCHRONOUSLY initialize Exchange and Queues immediately
+	// This ensures the structure is ready when the connection is configured
+	log.Printf("Waiting for RabbitMQ connection to be ready: %s", connectionString)
+
+	// Wait for connection to be ready (max 15 seconds)
+	if client.WaitForConnection(15 * time.Second) {
+		log.Printf("Connection ready, initializing Exchange and Queues for: %s", connectionString)
+		err := client.EnsureExchangeAndQueues()
+		if err != nil {
+			log.Printf("ERROR: Failed to initialize Exchange and Queues for connection %s: %v", connectionString, err)
+		} else {
+			log.Printf("SUCCESS: Exchange and Queues initialized for connection: %s", connectionString)
+		}
+	} else {
+		log.Printf("WARNING: Connection not ready after timeout for %s. Exchange and Queues will be initialized on first message.", connectionString)
+	}
 
 	return client
 }

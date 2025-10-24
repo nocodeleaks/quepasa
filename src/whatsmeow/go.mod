@@ -8,6 +8,26 @@ replace github.com/nocodeleaks/quepasa/library => ../library
 
 replace github.com/nocodeleaks/quepasa/metrics => ../metrics
 
+replace github.com/nocodeleaks/quepasa/api => ../api
+
+replace github.com/nocodeleaks/quepasa/environment => ../environment
+
+replace github.com/nocodeleaks/quepasa/form => ../form
+
+replace github.com/nocodeleaks/quepasa/media => ../media
+
+replace github.com/nocodeleaks/quepasa/models => ../models
+
+replace github.com/nocodeleaks/quepasa/rabbitmq => ../rabbitmq
+
+replace github.com/nocodeleaks/quepasa/signalr => ../signalr
+
+replace github.com/nocodeleaks/quepasa/sipproxy => ../sipproxy
+
+replace github.com/nocodeleaks/quepasa/swagger => ../swagger
+
+replace github.com/nocodeleaks/quepasa/webserver => ../webserver
+
 go 1.24.0
 
 toolchain go1.24.2
@@ -23,9 +43,12 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
-	github.com/go-chi/chi/v5 v5.2.2 // indirect
+	github.com/go-chi/chi/v5 v5.2.3 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20250904145737-900bdf8bb490 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
@@ -49,7 +72,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.2
-	go.mau.fi/whatsmeow v0.0.0-20251016095441-02c50743e601
+	go.mau.fi/whatsmeow v0.0.0-20251023183934-2ced35dd7e8c
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect

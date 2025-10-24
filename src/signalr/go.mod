@@ -1,5 +1,23 @@
 module github.com/nocodeleaks/quepasa/signalr
 
+replace github.com/nocodeleaks/quepasa/api => ../api
+
+replace github.com/nocodeleaks/quepasa/form => ../form
+
+replace github.com/nocodeleaks/quepasa/media => ../media
+
+replace github.com/nocodeleaks/quepasa/metrics => ../metrics
+
+replace github.com/nocodeleaks/quepasa/rabbitmq => ../rabbitmq
+
+replace github.com/nocodeleaks/quepasa/signalr => ../signalr
+
+replace github.com/nocodeleaks/quepasa/sipproxy => ../sipproxy
+
+replace github.com/nocodeleaks/quepasa/swagger => ../swagger
+
+replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
+
 go 1.24.0
 
 toolchain go1.24.2
@@ -37,7 +55,7 @@ require (
 	github.com/teivah/onecontext v1.3.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )
 

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-﻿# PowerShell script to update go.mau.fi/whatsmeow to latest version in all modules
-=======
 # PowerShell script to update go.mau.fi/whatsmeow to latest version in all modules
->>>>>>> b6a70ec61d951dc631cd2e3de027860d8c97895f
 # Usage: .\update-whatsmeow.ps1
 
 Write-Host '=== Updating go.mau.fi/whatsmeow to @latest in all modules ===' -ForegroundColor Cyan
@@ -100,8 +96,4 @@ if ($LASTEXITCODE -eq 0) {
 
 Pop-Location
 Write-Host ''
-<<<<<<< HEAD
 Write-Host 'Done!' -ForegroundColor Cyan
-=======
-Write-Host 'Done!' -ForegroundColor Cyan
->>>>>>> b6a70ec61d951dc631cd2e3de027860d8c97895f

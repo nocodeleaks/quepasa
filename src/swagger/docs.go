@@ -2295,6 +2295,9 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },

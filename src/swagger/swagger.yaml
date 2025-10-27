@@ -47,6 +47,8 @@ definitions:
         type: boolean
       timestamp:
         type: string
+      version:
+        type: string
     type: object
   api.HealthStats:
     properties:

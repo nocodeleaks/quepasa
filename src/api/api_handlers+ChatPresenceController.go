@@ -81,7 +81,18 @@ func ChatPresenceController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	found := ChatPresenceRequestsController.Cancel(request.ChatId)
+	err = server.SendChatPresence(request.ChatId, request.Type)
+	if err != nil {
+		err = fmt.Errorf("failed to send presence update: %s", err.Error())
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	//ChatPresenceRequestsController.Cancel(request.ChatId)
+
+	//logentry.Debug("sent presence indicator")
+	/*found := ChatPresenceRequestsController.Cancel(request.ChatId)
 
 	// For paused type, just cancel and send a single presence update
 	err = server.SendChatPresence(request.ChatId, request.Type)
@@ -101,7 +112,9 @@ func ChatPresenceController(w http.ResponseWriter, r *http.Request) {
 		logentry.Debugf("started presence indicator %s with duration %d ms", request.Type, request.Duration)
 	}
 
-	message := fmt.Sprintf("presence indicator %s, previous: %v", request.Type, found)
+	message := fmt.Sprintf("presence indicator %s, previous: %v", request.Type, found)*/
+
+	message := fmt.Sprintf("presence indicator %s", request.Type)
 
 	// Create successful response
 	response.Success = true

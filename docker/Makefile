@@ -51,6 +51,7 @@ docker_build:
   --build-arg VCS_URL=$(shell git config --get remote.origin.url) \
   --build-arg VCS_REF=$(GIT_COMMIT) \
   -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	-t $(DOCKER_IMAGE):$(DOCKER_TAG) ..
 
 # --build-arg VCS_URL=$(shell git config --get remote.origin.url)
 

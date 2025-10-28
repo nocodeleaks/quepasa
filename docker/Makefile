@@ -1,5 +1,5 @@
 # Image and binary can be overidden with env vars.
-DOCKER_IMAGE ?= codeleaks/quepasa
+DOCKER_IMAGE ?= deivisonrpg/quepasa
 
 # Get the latest commit.
 GIT_COMMIT = $(strip $(shell git rev-parse --short HEAD))
@@ -8,7 +8,7 @@ GIT_COMMIT = $(strip $(shell git rev-parse --short HEAD))
 # PACKAGE_VERSION=$(shell sed -nE 's/^\s*"version": "(.*?)",$$/\1/p' package.json)
 
 # temp
-PACKAGE_VERSION=0.4
+PACKAGE_VERSION=$(shell grep -oP 'QpVersion = "\K[^"]+' ../src/models/qp_defaults.go)
 
 # Find out if the working directory is clean
 GIT_NOT_CLEAN_CHECK = $(shell git status --porcelain)
@@ -25,11 +25,6 @@ ifndef PACKAGE_VERSION
 $(error Could not read version)
 endif
 
-# See what commit is tagged to match the version
-VERSION_COMMIT = $(strip $(shell git rev-list $(PACKAGE_VERSION) -n 1 | cut -c1-7))
-ifneq ($(VERSION_COMMIT), $(GIT_COMMIT))
-$(error echo You are trying to push a build based on commit $(GIT_COMMIT) but the tagged release version is $(VERSION_COMMIT))
-endif
 
 # Don't push to Docker Hub if this isn't a clean repo
 ifneq (x$(GIT_NOT_CLEAN_CHECK), x)

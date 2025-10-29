@@ -54,7 +54,7 @@ func (gm *WhatsmeowGroupManager) GetInvite(groupId string) (link string, err err
 		return "", err
 	}
 
-	link, err = client.GetGroupInviteLink(jid, false)
+	link, err = client.GetGroupInviteLink(context.Background(), jid, false)
 	return
 }
 
@@ -119,7 +119,7 @@ func (gm *WhatsmeowGroupManager) GetGroupInfo(groupId string) (interface{}, erro
 		return nil, err
 	}
 
-	groupInfo, err := client.GetGroupInfo(jid)
+	groupInfo, err := client.GetGroupInfo(context.Background(), jid)
 	if err != nil {
 		return nil, err
 	}
@@ -222,13 +222,13 @@ func (gm *WhatsmeowGroupManager) UpdateGroupSubject(groupID string, name string)
 	}
 
 	// Update the group subject
-	err = client.SetGroupName(jid, name)
+	err = client.SetGroupName(context.Background(), jid, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update group subject: %v", err)
 	}
 
 	// Return the updated group info
-	return client.GetGroupInfo(jid)
+	return client.GetGroupInfo(context.Background(), jid)
 }
 
 // UpdateGroupPhoto updates the photo of a group
@@ -245,7 +245,7 @@ func (gm *WhatsmeowGroupManager) UpdateGroupPhoto(groupID string, imageData []by
 	}
 
 	// Update the group photo
-	pictureID, err := client.SetGroupPhoto(jid, imageData)
+	pictureID, err := client.SetGroupPhoto(context.Background(), jid, imageData)
 	if err != nil {
 		return "", fmt.Errorf("failed to update group photo: %v", err)
 	}
@@ -269,13 +269,13 @@ func (gm *WhatsmeowGroupManager) UpdateGroupTopic(groupID string, topic string) 
 	// Update the group topic (description)
 	// SetGroupTopic requires: jid, previousID, newID, topic
 	// Let the whatsmeow library handle previousID and newID automatically by passing empty strings
-	err = client.SetGroupTopic(jid, "", "", topic)
+	err = client.SetGroupTopic(context.Background(), jid, "", "", topic)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update group topic: %v", err)
 	}
 
 	// Return the updated group info
-	return client.GetGroupInfo(jid)
+	return client.GetGroupInfo(context.Background(), jid)
 }
 
 // UpdateGroupParticipants adds, removes, promotes, or demotes participants in a group
@@ -316,7 +316,7 @@ func (gm *WhatsmeowGroupManager) UpdateGroupParticipants(groupJID string, partic
 	}
 
 	// Call the whatsmeow method
-	result, err := client.UpdateGroupParticipants(jid, participantJIDs, participantAction)
+	result, err := client.UpdateGroupParticipants(context.Background(), jid, participantJIDs, participantAction)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update group participants: %v", err)
 	}
@@ -344,7 +344,7 @@ func (gm *WhatsmeowGroupManager) GetGroupJoinRequests(groupJID string) ([]interf
 	}
 
 	// Call the whatsmeow method
-	requests, err := client.GetGroupRequestParticipants(jid)
+	requests, err := client.GetGroupRequestParticipants(context.Background(), jid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group join requests: %v", err)
 	}
@@ -392,7 +392,7 @@ func (gm *WhatsmeowGroupManager) HandleGroupJoinRequests(groupJID string, partic
 	}
 
 	// Call the correct WhatsApp method which returns participant results
-	result, err := client.UpdateGroupRequestParticipants(jid, participantJIDs, requestAction)
+	result, err := client.UpdateGroupRequestParticipants(context.Background(), jid, participantJIDs, requestAction)
 	if err != nil {
 		return nil, fmt.Errorf("failed to handle group join requests: %v", err)
 	}
@@ -438,7 +438,7 @@ func (gm *WhatsmeowGroupManager) LeaveGroup(groupID string) error {
 	}
 
 	// Leave the group
-	err = client.LeaveGroup(jid)
+	err = client.LeaveGroup(context.Background(), jid)
 	if err != nil {
 		logger.Errorf("failed to leave group %s: %v", groupID, err)
 		return fmt.Errorf("failed to leave group: %v", err)

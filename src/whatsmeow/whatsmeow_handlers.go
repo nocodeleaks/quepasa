@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -704,7 +705,11 @@ func (handler *WhatsmeowHandlers) MarkRead(message *whatsapp.WhatsappMessage, re
 	}
 
 	readtime := time.Now()
-	err = client.MarkRead(ids, readtime, chatJID, senderJID, receipt)
+	messageIDs := make([]types.MessageID, len(ids))
+	for i, id := range ids {
+		messageIDs[i] = types.MessageID(id)
+	}
+	err = client.MarkRead(context.Background(), messageIDs, readtime, chatJID, senderJID, receipt)
 	if err != nil {
 		logentry.Errorf("error on mark read: %s", err.Error())
 		return
@@ -741,7 +746,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 	// should reject this call
 	if !source.HandleCalls() {
-		err := source.Client.RejectCall(evt.From, evt.CallID)
+		err := source.Client.RejectCall(context.Background(), evt.From, evt.CallID)
 		if err != nil {
 			logentry.Errorf("error on rejecting call: %s", err.Error())
 		} else {

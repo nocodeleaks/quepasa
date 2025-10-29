@@ -154,7 +154,7 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 
 // IsOnWhatsApp checks if phone numbers are registered on WhatsApp
 func (cm *WhatsmeowContactManager) IsOnWhatsApp(phones ...string) (registered []string, err error) {
-	results, err := cm.Client.IsOnWhatsApp(phones)
+	results, err := cm.Client.IsOnWhatsApp(context.Background(), phones)
 	if err != nil {
 		return
 	}
@@ -179,7 +179,7 @@ func (cm *WhatsmeowContactManager) GetProfilePicture(wid string, knowingId strin
 	params.ExistingID = knowingId
 	params.Preview = false
 
-	pictureInfo, err := cm.Client.GetProfilePictureInfo(jid, params)
+	pictureInfo, err := cm.Client.GetProfilePictureInfo(context.Background(), jid, params)
 	if err != nil {
 		return
 	}
@@ -346,7 +346,7 @@ func (cm *WhatsmeowContactManager) GetUserInfo(jids []string) ([]interface{}, er
 	}
 
 	// Get user info from WhatsApp - this returns a map[types.JID]types.UserInfo
-	userInfoMap, err := cm.Client.GetUserInfo(parsedJIDs)
+	userInfoMap, err := cm.Client.GetUserInfo(context.Background(), parsedJIDs)
 	logentry := cm.GetLogger()
 	logentry.Debugf("GetUserInfo for JIDs: %v, result: %v", parsedJIDs, userInfoMap)
 	if err != nil {

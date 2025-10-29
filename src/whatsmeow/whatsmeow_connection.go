@@ -700,7 +700,7 @@ func (source *WhatsmeowConnection) generateVCardForContact(contact *whatsapp.Wha
 	var businessName string
 
 	if len(jids) > 0 && source.Client != nil {
-		userInfos, err := source.Client.GetUserInfo(jids)
+		userInfos, err := source.Client.GetUserInfo(context.Background(), jids)
 		if err == nil && len(userInfos) > 0 {
 			userInfo := userInfos[parsedJid]
 
@@ -902,7 +902,7 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 		state = types.ChatPresencePaused
 		media = types.ChatPresenceMediaText
 	}
-	return conn.Client.SendChatPresence(jid, state, media)
+	return conn.Client.SendChatPresence(context.Background(), jid, state, media)
 }
 
 // sendAppState sends app state patch to WhatsApp (no retry, returns error as-is)

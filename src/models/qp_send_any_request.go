@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 )
 
 /*
@@ -31,12 +32,41 @@ type QpSendAnyRequest struct {
 
 // From BASE64 content
 func (source *QpSendAnyRequest) GenerateEmbedContent() (err error) {
-	decoded, err := base64.StdEncoding.DecodeString(source.Content)
+	content := source.Content
+
+	// Check if content is a data URI (e.g., "data:image/png;base64,<base64data>")
+	if strings.HasPrefix(content, "data:") {
+		// Parse data URI
+		parts := strings.SplitN(content, ",", 2)
+		if len(parts) != 2 {
+			err = fmt.Errorf("invalid data URI format")
+			return
+		}
+
+		// Extract MIME type from data URI
+		header := parts[0]
+		if strings.HasPrefix(header, "data:") && strings.Contains(header, ";base64") {
+			mimePart := header[5:] // Remove "data:"
+			mimeType := strings.Split(mimePart, ";")[0] // Get MIME before ";base64"
+			if len(source.Mimetype) == 0 {
+				source.Mimetype = mimeType
+			}
+		}
+
+		// Use the base64 part
+		content = parts[1]
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
 		return
 	}
 
 	source.QpSendRequest.Content = decoded
+
+	// Set the correct file length for decoded content
+	source.FileLength = uint64(len(decoded))
+
 	return
 }
 

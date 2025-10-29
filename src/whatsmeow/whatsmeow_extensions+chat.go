@@ -101,7 +101,7 @@ func GetChatTitle(client *whatsmeow.Client, jid types.JID) (title string) {
 		if len(title) > 0 {
 			goto found
 		}
-		gInfo, _ := client.GetGroupInfo(jid)
+		gInfo, _ := client.GetGroupInfo(context.Background(), jid)
 		if gInfo != nil {
 			title = gInfo.Name
 			_ = GroupInfoCache.Append(jid.String(), title, "GetChatTitle")

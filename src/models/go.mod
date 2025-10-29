@@ -32,7 +32,7 @@ require (
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20251023183934-2ced35dd7e8c
+	go.mau.fi/whatsmeow v0.0.0-20251028165006-ad7a618ba42f
 	golang.org/x/crypto v0.43.0
 )
 
@@ -43,13 +43,13 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427 // indirect
+	github.com/coder/websocket v1.8.14 // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gopxl/beep/v2 v2.1.1 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gosimple/slug v1.13.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect

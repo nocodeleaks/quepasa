@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/base64"
 	"reflect"
 	"strings"
@@ -198,7 +199,7 @@ func GetStringFromBytes(bytes []byte) string {
  */
 func SendPresence(client *whatsmeow.Client, presence types.Presence, from string, logentry *log.Entry) {
 	if len(client.Store.PushName) > 0 {
-		err := client.SendPresence(presence)
+		err := client.SendPresence(context.Background(), presence)
 		if err != nil {
 			logentry.Warnf("failed to send presence: '%s', error: %s, from: %s", presence, err.Error(), from)
 		} else {

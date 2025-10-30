@@ -33,9 +33,9 @@ func (config *DatabaseParameters) GetConnectionString() (connection string) {
 
 func GetSQLite(database string) string {
 	if _, err := os.Stat(database + ".db"); err == nil {
-		return "file:" + database + ".db?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)"
+		return "file:" + database + ".db?_foreign_keys=true&_journal_mode=WAL&_busy_timeout=10000"
 	} else {
 		// using new *.sqlite
-		return "file:" + database + ".sqlite?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)"
+		return "file:" + database + ".sqlite?_foreign_keys=true&_journal_mode=WAL&_busy_timeout=10000"
 	}
 }

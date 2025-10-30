@@ -36,6 +36,8 @@ src/service
 *.db
 *.sqlite
 *.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 
 # production or testing directory
 src/.dist/

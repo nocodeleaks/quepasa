@@ -27,32 +27,40 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 		logentry.Infof("new type: %s, %v", reflect.TypeOf(item.Value), item.Value)
 		logentry.Infof("equals: %v, deep equals: %v", item.Value == prevItem.Value, reflect.DeepEqual(item.Value, prevItem.Value))
 
-		var prevContent interface{}
-		if prevWaMsg, ok := prevItem.Value.(*whatsapp.WhatsappMessage); ok {
-			prevContent = prevWaMsg.Content
-
-			if nee, ok := prevContent.(*waE2E.Message); ok {
-				if neeETM, ok := prevContent.(*waE2E.ExtendedTextMessage); ok {
-					prevContent = neeETM.Text
-					logentry.Infof("old content from .ExtendedTextMessage as string: %s", prevContent)
+	var prevContent interface{}
+	var prevOriginalMsg *waE2E.Message // Keep original Message for ads field comparison
+	if prevWaMsg, ok := prevItem.Value.(*whatsapp.WhatsappMessage); ok {
+		if nee, ok := prevWaMsg.Content.(*waE2E.Message); ok {
+			prevOriginalMsg = nee // Save the full Message
+			
+			// Extract content for comparison (same as before)
+			if nee.ExtendedTextMessage != nil {
+				prevContent = nee.ExtendedTextMessage.GetText()
+				logentry.Infof("old content from .ExtendedTextMessage as string: %s", prevContent)
+			} else {
+				conversation := nee.GetConversation()
+				if len(conversation) > 0 {
+					prevContent = conversation
+					logentry.Infof("old content from .Message.Conversation: %s", prevContent)
 				} else {
-					conversation := nee.GetConversation()
-					if len(conversation) > 0 {
-						prevContent = conversation
-						logentry.Infof("old content from .Message.Conversation: %s", prevContent)
-					} else {
-						prevContent = nee.String()
-						logentry.Infof("old content as string: %s", prevContent)
-					}
+					prevContent = nee.String()
+					logentry.Infof("old content as string: %s", prevContent)
 				}
 			}
 		}
+	}
 
-		var newContent interface{}
-		if newWaMsg, ok := item.Value.(*whatsapp.WhatsappMessage); ok {
-			newContent = newWaMsg.Content
-
-			if nee, ok := newContent.(*waE2E.Message); ok {
+	var newContent interface{}
+	var newOriginalMsg *waE2E.Message // Keep original Message for ads field comparison
+	if newWaMsg, ok := item.Value.(*whatsapp.WhatsappMessage); ok {
+		if nee, ok := newWaMsg.Content.(*waE2E.Message); ok {
+			newOriginalMsg = nee // Save the full Message
+			
+			// Extract content for comparison (same as before)
+			if nee.ExtendedTextMessage != nil {
+				newContent = nee.ExtendedTextMessage.GetText()
+				logentry.Infof("new content from .ExtendedTextMessage as string: %s", newContent)
+			} else {
 				conversation := nee.GetConversation()
 				if len(conversation) > 0 {
 					newContent = conversation
@@ -63,43 +71,45 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 				}
 			}
 		}
+	}
 
-		if prevContent != nil && newContent != nil {
-			logentry.Infof("content equals: %v, content deep equals: %v", prevContent == newContent, reflect.DeepEqual(prevContent, newContent))
+	if prevContent != nil && newContent != nil {
+		logentry.Infof("content equals: %v, content deep equals: %v", prevContent == newContent, reflect.DeepEqual(prevContent, newContent))
 
-			// CRITICAL FIX: For Message comparison, ignore conversionDelaySeconds field
-			// This field changes from 4 to 0 on retries but doesn't affect actual message content
-			prevMsg, prevIsMsg := prevContent.(*waE2E.Message)
-			newMsg, newIsMsg := newContent.(*waE2E.Message)
+		// CRITICAL FIX: For ads messages (ExtendedTextMessage), ignore volatile delay fields
+		// These fields change from N to 0 on retries but don't affect actual message content:
+		// - conversionDelaySeconds (5→0, 4→0, 3→0, etc)
+		// - entryPointConversionDelaySeconds (same behavior)
+		if prevOriginalMsg != nil && newOriginalMsg != nil {
+			if prevOriginalMsg.ExtendedTextMessage != nil && newOriginalMsg.ExtendedTextMessage != nil {
+				if prevOriginalMsg.ExtendedTextMessage.ContextInfo != nil && newOriginalMsg.ExtendedTextMessage.ContextInfo != nil {
+					// Clone both messages to avoid modifying originals
+					prevClone := proto.Clone(prevOriginalMsg).(*waE2E.Message)
+					newClone := proto.Clone(newOriginalMsg).(*waE2E.Message)
 
-			if prevIsMsg && newIsMsg {
-				// Clone both messages to avoid modifying originals
-				prevClone := proto.Clone(prevMsg).(*waE2E.Message)
-				newClone := proto.Clone(newMsg).(*waE2E.Message)
-
-				// Remove conversionDelaySeconds before comparison (this is the only difference on retry)
-				if prevClone.ExtendedTextMessage != nil && prevClone.ExtendedTextMessage.ContextInfo != nil {
+					// Remove volatile delay fields before comparison
 					prevClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
-				}
-				if newClone.ExtendedTextMessage != nil && newClone.ExtendedTextMessage.ContextInfo != nil {
+					prevClone.ExtendedTextMessage.ContextInfo.EntryPointConversionDelaySeconds = nil
 					newClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
+					newClone.ExtendedTextMessage.ContextInfo.EntryPointConversionDelaySeconds = nil
+
+					// Compare the clones (without volatile delay fields)
+					isEqual := reflect.DeepEqual(prevClone, newClone)
+
+					if isEqual {
+						logentry.Info("content is equal ignoring volatile delay fields, denying trigger - duplicate ads message detected")
+						return false // Deny trigger
+					}
+
+					logentry.Debug("content differs even ignoring volatile delay fields, allowing trigger")
+					return true // Allow trigger
 				}
-
-				// Compare the clones (without conversionDelaySeconds)
-				isEqual := reflect.DeepEqual(prevClone, newClone)
-
-				if isEqual {
-					logentry.Info("content is equal ignoring conversionDelaySeconds, denying trigger - duplicate detected")
-					return false // Deny trigger
-				}
-
-				logentry.Debug("content differs even ignoring conversionDelaySeconds, allowing trigger")
-				return true // Allow trigger
 			}
-
-			// if equals, deny triggers
-			return !reflect.DeepEqual(prevContent, newContent)
 		}
+
+		// Default behavior: if equals, deny triggers
+		return !reflect.DeepEqual(prevContent, newContent)
+	}
 	}
 
 	return true

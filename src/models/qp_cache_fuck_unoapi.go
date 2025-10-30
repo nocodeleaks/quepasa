@@ -83,6 +83,7 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 				// These fields change from N to 0 on retries but don't affect actual message content:
 				// - conversionDelaySeconds (5→0, 4→0, 3→0, etc)
 				// - entryPointConversionDelaySeconds (same behavior)
+				// - messageContextInfo (contains volatile deviceListMetadata and messageSecret)
 
 				if prevOriginalMsg != nil && newOriginalMsg != nil {
 					if prevOriginalMsg.ExtendedTextMessage != nil && newOriginalMsg.ExtendedTextMessage != nil {
@@ -100,15 +101,19 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 							newClone.ExtendedTextMessage.ContextInfo.EntryPointConversionDelaySeconds = nil
 						}
 
-						// Compare the clones (without volatile delay fields)
+						// Remove volatile messageContextInfo (contains deviceListMetadata, messageSecret, etc.)
+						prevClone.MessageContextInfo = nil
+						newClone.MessageContextInfo = nil
+
+						// Compare the clones (without volatile delay fields and messageContextInfo)
 						messagesEqual := reflect.DeepEqual(prevClone, newClone)
 
 						if messagesEqual {
-							logentry.Info("messages are identical ignoring volatile delay fields, denying trigger - duplicate ads message detected")
+							logentry.Info("messages are identical ignoring volatile fields, denying trigger - duplicate ads message detected")
 							return false // Deny trigger - this is a duplicate
 						}
 
-						logentry.Info("messages differ even after ignoring volatile delay fields, allowing trigger")
+						logentry.Info("messages differ even after ignoring volatile fields, allowing trigger")
 						return true // Allow trigger - real content change
 					}
 				}

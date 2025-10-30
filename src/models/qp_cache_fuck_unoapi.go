@@ -8,6 +8,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"google.golang.org/protobuf/proto"
 )
 
 func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous any) bool {
@@ -65,6 +66,36 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 
 		if prevContent != nil && newContent != nil {
 			logentry.Infof("content equals: %v, content deep equals: %v", prevContent == newContent, reflect.DeepEqual(prevContent, newContent))
+
+			// CRITICAL FIX: For Message comparison, ignore conversionDelaySeconds field
+			// This field changes from 4 to 0 on retries but doesn't affect actual message content
+			prevMsg, prevIsMsg := prevContent.(*waE2E.Message)
+			newMsg, newIsMsg := newContent.(*waE2E.Message)
+
+			if prevIsMsg && newIsMsg {
+				// Clone both messages to avoid modifying originals
+				prevClone := proto.Clone(prevMsg).(*waE2E.Message)
+				newClone := proto.Clone(newMsg).(*waE2E.Message)
+
+				// Remove conversionDelaySeconds before comparison (this is the only difference on retry)
+				if prevClone.ExtendedTextMessage != nil && prevClone.ExtendedTextMessage.ContextInfo != nil {
+					prevClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
+				}
+				if newClone.ExtendedTextMessage != nil && newClone.ExtendedTextMessage.ContextInfo != nil {
+					newClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
+				}
+
+				// Compare the clones (without conversionDelaySeconds)
+				isEqual := reflect.DeepEqual(prevClone, newClone)
+
+				if isEqual {
+					logentry.Info("content is equal ignoring conversionDelaySeconds, denying trigger - duplicate detected")
+					return false // Deny trigger
+				}
+
+				logentry.Debug("content differs even ignoring conversionDelaySeconds, allowing trigger")
+				return true // Allow trigger
+			}
 
 			// if equals, deny triggers
 			return !reflect.DeepEqual(prevContent, newContent)

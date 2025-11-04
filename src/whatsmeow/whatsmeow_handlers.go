@@ -730,35 +730,27 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 	message := &whatsapp.WhatsappMessage{Content: evt}
 
-	// basic information
+	// Basic information
 	message.Id = evt.CallID
 	message.Timestamp = evt.Timestamp
 	message.FromMe = false
-
-	var chatJID types.JID
-
-	// Determine chat JID based on available creator fields
-	if !evt.CallCreatorAlt.IsEmpty() {
-		chatJID = evt.CallCreatorAlt
-		logentry.Debugf("using CallCreatorAlt as chat JID: %s", chatJID)
-	} else if !evt.CallCreator.IsEmpty() {
-		chatJID = evt.CallCreator
-		logentry.Debugf("using CallCreator as chat JID: %s", chatJID)
-	} else {
-		chatJID = evt.From
-		logentry.Debugf("using From as chat JID: %s", chatJID)
-	}
-
-	message.Chat = *NewWhatsappChat(source, chatJID)
 	message.Type = whatsapp.CallMessageType
 
-	if source.WAHandlers != nil {
+	// Resolve call identifiers (determines best JID to use)
+	identifiers := ResolveCallIdentifiers(evt, logentry)
 
-		// following to internal handlers
+	// Create chat object with resolved JID
+	message.Chat = *NewWhatsappChat(source, identifiers.ChatJID)
+
+	// Enrich chat with LID information and resolve phone/title if needed
+	EnrichCallChat(source, &message.Chat, identifiers, identifiers.ChatJID, logentry)
+
+	if source.WAHandlers != nil {
+		// Following to internal handlers
 		go source.WAHandlers.Message(message, "call")
 	}
 
-	// should reject this call
+	// Should reject this call
 	if !source.HandleCalls() {
 		err := source.Client.RejectCall(context.Background(), evt.From, evt.CallID)
 		if err != nil {

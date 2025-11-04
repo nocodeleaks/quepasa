@@ -735,7 +735,21 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	message.Timestamp = evt.Timestamp
 	message.FromMe = false
 
-	message.Chat = *NewWhatsappChat(source, evt.From)
+	var chatJID types.JID
+
+	// Determine chat JID based on available creator fields
+	if !evt.CallCreatorAlt.IsEmpty() {
+		chatJID = evt.CallCreatorAlt
+		logentry.Debugf("using CallCreatorAlt as chat JID: %s", chatJID)
+	} else if !evt.CallCreator.IsEmpty() {
+		chatJID = evt.CallCreator
+		logentry.Debugf("using CallCreator as chat JID: %s", chatJID)
+	} else {
+		chatJID = evt.From
+		logentry.Debugf("using From as chat JID: %s", chatJID)
+	}
+
+	message.Chat = *NewWhatsappChat(source, chatJID)
 	message.Type = whatsapp.CallMessageType
 
 	if source.WAHandlers != nil {

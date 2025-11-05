@@ -92,6 +92,11 @@ func parseWakeUpHour(hourStr string) (time.Time, error) {
 	now := time.Now()
 	todayTime := time.Date(now.Year(), now.Month(), now.Day(), hour, 0, 0, 0, now.Location())
 
+	// If the scheduled time already passed today (including 10-minute window), schedule for tomorrow
+	if now.After(todayTime.Add(10 * time.Minute)) {
+		todayTime = todayTime.Add(24 * time.Hour)
+	}
+
 	return todayTime, nil
 }
 
@@ -105,7 +110,20 @@ func (ws *WakeUpScheduler) IsEnabled() bool {
 // run is the main scheduler loop that checks for wake-up hour
 func (ws *WakeUpScheduler) run() {
 	logentry := ws.connection.GetLogger()
-	logentry.Infof("wake-up scheduler started for hour: %d:00", ws.wakeUpTime.Hour())
+
+	ws.mu.RLock()
+	nextWakeUp := ws.wakeUpTime
+	ws.mu.RUnlock()
+
+	// Check if wake-up is today or tomorrow
+	now := time.Now()
+	if nextWakeUp.Day() != now.Day() || nextWakeUp.After(now.Add(24*time.Hour)) {
+		logentry.Infof("wake-up scheduler started for hour: %d:00 (TOMORROW at %s)",
+			ws.wakeUpTime.Hour(), nextWakeUp.Format("2006-01-02 15:04:05"))
+	} else {
+		logentry.Infof("wake-up scheduler started for hour: %d:00 (TODAY at %s)",
+			ws.wakeUpTime.Hour(), nextWakeUp.Format("15:04:05"))
+	}
 
 	ticker := time.NewTicker(5 * time.Minute) // Check every 5 minutes (once per day execution)
 	defer ticker.Stop()
@@ -137,14 +155,20 @@ func (ws *WakeUpScheduler) checkAndExecuteWakeUp() {
 
 	// If the wake-up time is in the past but less than 10 minutes ago, execute
 	if diff >= 0 && diff < 10*time.Minute {
-		logentry.Infof("wake-up triggered at scheduled hour: %d:00", wakeUpTime.Hour())
+		logentry.Infof("wake-up triggered at scheduled hour: %d:00 (actual time: %s)",
+			wakeUpTime.Hour(), now.Format("15:04:05"))
 		ws.executeWakeUp(duration, logentry)
 
 		// Update wake-up time to tomorrow to avoid re-triggering
 		ws.mu.Lock()
 		ws.wakeUpTime = ws.wakeUpTime.Add(24 * time.Hour)
-		logentry.Debugf("next wake-up scheduled for: %s", ws.wakeUpTime.Format("2006-01-02 15:00"))
+		logentry.Infof("next wake-up scheduled for: %s",
+			ws.wakeUpTime.Format("2006-01-02 15:04:05"))
 		ws.mu.Unlock()
+	} else if diff < 0 && diff > -5*time.Minute {
+		// Wake-up is coming up in the next check cycle
+		logentry.Debugf("wake-up approaching: %s (in %v)",
+			wakeUpTime.Format("15:04:05"), -diff)
 	}
 }
 

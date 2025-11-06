@@ -28,12 +28,14 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 		logentry.Infof("equals: %v, deep equals: %v", item.Value == prevItem.Value, reflect.DeepEqual(item.Value, prevItem.Value))
 
 		var prevContent interface{}
+		var prevOriginalMsg *waE2E.Message // Keep original Message for ads field comparison
 		if prevWaMsg, ok := prevItem.Value.(*whatsapp.WhatsappMessage); ok {
-			prevContent = prevWaMsg.Content
+			if nee, ok := prevWaMsg.Content.(*waE2E.Message); ok {
+				prevOriginalMsg = nee // Save the full Message
 
-			if nee, ok := prevContent.(*waE2E.Message); ok {
-				if neeETM, ok := prevContent.(*waE2E.ExtendedTextMessage); ok {
-					prevContent = neeETM.Text
+				// Extract content for comparison (same as before)
+				if nee.ExtendedTextMessage != nil {
+					prevContent = nee.ExtendedTextMessage.GetText()
 					logentry.Infof("old content from .ExtendedTextMessage as string: %s", prevContent)
 				} else {
 					conversation := nee.GetConversation()
@@ -49,56 +51,81 @@ func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous a
 		}
 
 		var newContent interface{}
+		var newOriginalMsg *waE2E.Message // Keep original Message for ads field comparison
 		if newWaMsg, ok := item.Value.(*whatsapp.WhatsappMessage); ok {
-			newContent = newWaMsg.Content
+			if nee, ok := newWaMsg.Content.(*waE2E.Message); ok {
+				newOriginalMsg = nee // Save the full Message
 
-			if nee, ok := newContent.(*waE2E.Message); ok {
-				conversation := nee.GetConversation()
-				if len(conversation) > 0 {
-					newContent = conversation
-					logentry.Infof("new content from .Message.Conversation: %s", newContent)
+				// Extract content for comparison (same as before)
+				if nee.ExtendedTextMessage != nil {
+					newContent = nee.ExtendedTextMessage.GetText()
+					logentry.Infof("new content from .ExtendedTextMessage as string: %s", newContent)
 				} else {
-					newContent = nee.String()
-					logentry.Infof("new content as string: %s", newContent)
+					conversation := nee.GetConversation()
+					if len(conversation) > 0 {
+						newContent = conversation
+						logentry.Infof("new content from .Message.Conversation: %s", newContent)
+					} else {
+						newContent = nee.String()
+						logentry.Infof("new content as string: %s", newContent)
+					}
 				}
 			}
 		}
 
 		if prevContent != nil && newContent != nil {
-			logentry.Infof("content equals: %v, content deep equals: %v", prevContent == newContent, reflect.DeepEqual(prevContent, newContent))
+			contentEquals := reflect.DeepEqual(prevContent, newContent)
+			logentry.Infof("content equals: %v, content deep equals: %v", prevContent == newContent, contentEquals)
 
-			// CRITICAL FIX: For Message comparison, ignore conversionDelaySeconds field
-			// This field changes from 4 to 0 on retries but doesn't affect actual message content
-			prevMsg, prevIsMsg := prevContent.(*waE2E.Message)
-			newMsg, newIsMsg := newContent.(*waE2E.Message)
+			// If text content is equal, check for volatile ads fields before deciding
+			if contentEquals {
+				// CRITICAL FIX: For ads messages (ExtendedTextMessage), ignore volatile delay fields
+				// These fields change from N to 0 on retries but don't affect actual message content:
+				// - conversionDelaySeconds (5→0, 4→0, 3→0, etc)
+				// - entryPointConversionDelaySeconds (same behavior)
+				// - messageContextInfo (contains volatile deviceListMetadata and messageSecret)
 
-			if prevIsMsg && newIsMsg {
-				// Clone both messages to avoid modifying originals
-				prevClone := proto.Clone(prevMsg).(*waE2E.Message)
-				newClone := proto.Clone(newMsg).(*waE2E.Message)
+				if prevOriginalMsg != nil && newOriginalMsg != nil {
+					if prevOriginalMsg.ExtendedTextMessage != nil && newOriginalMsg.ExtendedTextMessage != nil {
+						// Clone both messages to avoid modifying originals
+						prevClone := proto.Clone(prevOriginalMsg).(*waE2E.Message)
+						newClone := proto.Clone(newOriginalMsg).(*waE2E.Message)
 
-				// Remove conversionDelaySeconds before comparison (this is the only difference on retry)
-				if prevClone.ExtendedTextMessage != nil && prevClone.ExtendedTextMessage.ContextInfo != nil {
-					prevClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
+						// Remove volatile delay fields before comparison (if ContextInfo exists)
+						if prevClone.ExtendedTextMessage.ContextInfo != nil {
+							prevClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
+							prevClone.ExtendedTextMessage.ContextInfo.EntryPointConversionDelaySeconds = nil
+						}
+						if newClone.ExtendedTextMessage.ContextInfo != nil {
+							newClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
+							newClone.ExtendedTextMessage.ContextInfo.EntryPointConversionDelaySeconds = nil
+						}
+
+						// Remove volatile messageContextInfo (contains deviceListMetadata, messageSecret, etc.)
+						prevClone.MessageContextInfo = nil
+						newClone.MessageContextInfo = nil
+
+						// Compare the clones (without volatile delay fields and messageContextInfo)
+						messagesEqual := reflect.DeepEqual(prevClone, newClone)
+
+						if messagesEqual {
+							logentry.Info("messages are identical ignoring volatile fields, denying trigger - duplicate ads message detected")
+							return false // Deny trigger - this is a duplicate
+						}
+
+						logentry.Info("messages differ even after ignoring volatile fields, allowing trigger")
+						return true // Allow trigger - real content change
+					}
 				}
-				if newClone.ExtendedTextMessage != nil && newClone.ExtendedTextMessage.ContextInfo != nil {
-					newClone.ExtendedTextMessage.ContextInfo.ConversionDelaySeconds = nil
-				}
 
-				// Compare the clones (without conversionDelaySeconds)
-				isEqual := reflect.DeepEqual(prevClone, newClone)
-
-				if isEqual {
-					logentry.Info("content is equal ignoring conversionDelaySeconds, denying trigger - duplicate detected")
-					return false // Deny trigger
-				}
-
-				logentry.Debug("content differs even ignoring conversionDelaySeconds, allowing trigger")
-				return true // Allow trigger
+				// Content is equal and no volatile field fix applied - deny trigger
+				logentry.Info("content is equal, denying trigger - duplicate message detected")
+				return false // Deny trigger
 			}
 
-			// if equals, deny triggers
-			return !reflect.DeepEqual(prevContent, newContent)
+			// Content is different - allow trigger
+			logentry.Info("content differs, allowing trigger - new message")
+			return true // Allow trigger
 		}
 	}
 

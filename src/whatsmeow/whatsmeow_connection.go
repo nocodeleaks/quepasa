@@ -26,10 +26,11 @@ type WhatsmeowConnection struct {
 	library.LogStruct // logging
 	Client            *whatsmeow.Client
 
-	Handlers       *WhatsmeowHandlers       // composition for handlers
-	GroupManager   *WhatsmeowGroupManager   // composition for group operations
-	StatusManager  *WhatsmeowStatusManager  // composition for status operations
-	ContactManager *WhatsmeowContactManager // composition for contact operations
+	Handlers        *WhatsmeowHandlers       // composition for handlers
+	GroupManager    *WhatsmeowGroupManager   // composition for group operations
+	StatusManager   *WhatsmeowStatusManager  // composition for status operations
+	ContactManager  *WhatsmeowContactManager // composition for contact operations
+	WakeUpScheduler *WakeUpScheduler         // composition for scheduled presence wake-ups
 	// call managers intentionally omitted per request (do not include CallManager / SIPCallManager)
 
 	failedToken  bool
@@ -767,6 +768,11 @@ func (source *WhatsmeowConnection) Dispose(reason string) {
 
 	logentry := source.GetLogger()
 	logentry.Infof("disposing connection: %s", reason)
+
+	if source.WakeUpScheduler != nil {
+		source.WakeUpScheduler.Dispose()
+		source.WakeUpScheduler = nil
+	}
 
 	if source.Handlers != nil {
 		go source.Handlers.UnRegister("dispose")

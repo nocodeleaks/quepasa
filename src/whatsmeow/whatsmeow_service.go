@@ -161,6 +161,9 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 		LogStruct: library.LogStruct{LogEntry: logentry},
 	}
 
+	// Initialize wake-up scheduler
+	conn.WakeUpScheduler = NewWakeUpScheduler(conn)
+
 	// Initialize handlers with proper options after connection is created
 	err = conn.initializeHandlers(options.WhatsappOptions, source.Options)
 	if err != nil {

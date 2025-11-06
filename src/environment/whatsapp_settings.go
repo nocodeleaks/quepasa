@@ -16,6 +16,8 @@ const (
 	ENV_BROADCASTS      = "BROADCASTS"      // handle broadcasts
 	ENV_HISTORYSYNCDAYS = "HISTORYSYNCDAYS" // history sync days
 	ENV_PRESENCE        = "PRESENCE"        // presence state
+	ENV_WAKEUP_HOUR     = "WAKEUP_HOUR"     // scheduled hour(s) to activate presence (0-23, can be comma-separated for multiple hours)
+	ENV_WAKEUP_DURATION = "WAKEUP_DURATION" // duration in seconds to keep presence online during wake up (default: 10)
 )
 
 // WhatsAppSettings holds all WhatsApp configuration loaded from environment
@@ -27,6 +29,8 @@ type WhatsAppSettings struct {
 	Broadcasts      whatsapp.WhatsappBooleanExtended `json:"broadcasts"`
 	HistorySyncDays *uint32                          `json:"history_sync_days,omitempty"`
 	Presence        string                           `json:"presence"`
+	WakeUpHour      string                           `json:"wakeup_hour"`     // Hour(s) as integers: 0-23 or 0,8,16 for multiple hours
+	WakeUpDuration  int                              `json:"wakeup_duration"` // duration in seconds
 }
 
 // NewWhatsAppSettings creates a new WhatsApp settings by loading all values from environment
@@ -39,6 +43,8 @@ func NewWhatsAppSettings() WhatsAppSettings {
 		Broadcasts:      getWhatsappBooleanExtended(ENV_BROADCASTS),
 		HistorySyncDays: getOptionalEnvUint32(ENV_HISTORYSYNCDAYS),
 		Presence:        getEnvOrDefaultString(ENV_PRESENCE, "unavailable"),
+		WakeUpHour:      getEnvOrDefaultString(ENV_WAKEUP_HOUR, ""),
+		WakeUpDuration:  getEnvOrDefaultInt(ENV_WAKEUP_DURATION, 10),
 	}
 }
 

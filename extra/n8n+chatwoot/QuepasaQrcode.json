@@ -17,8 +17,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        5515.95709678845,
-        820
+        5520,
+        832
       ]
     },
     {
@@ -44,8 +44,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1836,
-        700
+        1840,
+        704
       ]
     },
     {
@@ -68,8 +68,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3215.95709678845,
-        740
+        3216,
+        752
       ]
     },
     {
@@ -83,8 +83,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        460,
-        460
+        464,
+        464
       ]
     },
     {
@@ -98,13 +98,13 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2337.40505425976,
-        540
+        2352,
+        544
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.7) Updates\n* removed private msg type to avoid trigger again",
+        "content": "## (1.0.8) Updates\n* follow error message",
         "height": 203.09211018757583,
         "width": 521.2175484615022
       },
@@ -114,7 +114,7 @@
       "typeVersion": 1,
       "position": [
         -2160,
-        460
+        464
       ]
     },
     {
@@ -149,8 +149,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1080,
-        740
+        1088,
+        752
       ]
     },
     {
@@ -164,8 +164,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1276,
-        660
+        1280,
+        672
       ]
     },
     {
@@ -175,8 +175,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1080,
-        600
+        1088,
+        608
       ]
     },
     {
@@ -190,8 +190,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        -540,
-        700
+        -544,
+        704
       ]
     },
     {
@@ -217,8 +217,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        2435.9570967884506,
-        660
+        2448,
+        672
       ],
       "webhookId": "b8706931-81cb-4f18-93e0-0a5d5416734b"
     },
@@ -233,8 +233,8 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        3000,
-        740
+        3008,
+        752
       ],
       "continueOnFail": true
     },
@@ -245,8 +245,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2695.95709678845,
-        660
+        2704,
+        672
       ]
     },
     {
@@ -256,8 +256,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3675.95709678845,
-        660
+        3680,
+        672
       ]
     },
     {
@@ -271,8 +271,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3455.95709678845,
-        900
+        3456,
+        912
       ]
     },
     {
@@ -282,8 +282,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2975.95709678845,
-        920
+        2976,
+        928
       ]
     },
     {
@@ -309,8 +309,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        3735.95709678845,
-        900
+        3744,
+        912
       ]
     },
     {
@@ -331,7 +331,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        3495.95709678845,
+        3504,
         720
       ]
     },
@@ -346,8 +346,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3875.95709678845,
-        700
+        3888,
+        704
       ]
     },
     {
@@ -373,7 +373,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        4135.95709678845,
+        4144,
         800
       ]
     },
@@ -386,7 +386,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        4375.95709678845,
+        4384,
         720
       ]
     },
@@ -397,7 +397,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4595.95709678845,
+        4608,
         720
       ]
     },
@@ -410,8 +410,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        5715.95709678845,
-        600
+        5728,
+        608
       ]
     },
     {
@@ -447,8 +447,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        5955.95709678845,
-        1000
+        5968,
+        1008
       ]
     },
     {
@@ -474,8 +474,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        5895.95709678845,
-        460
+        5904,
+        464
       ]
     },
     {
@@ -485,8 +485,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4775.95709678845,
-        1020
+        4784,
+        1024
       ]
     },
     {
@@ -499,8 +499,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        5715.95709678845,
-        1000
+        5728,
+        1008
       ]
     },
     {
@@ -513,7 +513,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        6540,
+        6544,
         560
       ]
     },
@@ -528,8 +528,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        6055.95709678845,
-        580
+        6064,
+        592
       ]
     },
     {
@@ -560,8 +560,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        6255.95709678845,
-        580
+        6256,
+        592
       ]
     },
     {
@@ -587,8 +587,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        280,
-        1400
+        288,
+        1408
       ]
     },
     {
@@ -609,7 +609,7 @@
           "parameters": [
             {
               "name": "content",
-              "value": "=❌ Erro ao gerar o PairCode"
+              "value": "=❌ Erro ao gerar o PairCode: {{ $json.error.message }}"
             },
             {
               "name": "message_type",
@@ -624,8 +624,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1444,
-        1140
+        1456,
+        1152
       ]
     },
     {
@@ -699,7 +699,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.1,
       "position": [
-        1160,
+        1168,
         1040
       ]
     },
@@ -746,7 +746,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1660,
+        1664,
         960
       ]
     },
@@ -761,8 +761,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        455.9570967884506,
-        920
+        464,
+        928
       ]
     },
     {
@@ -782,8 +782,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        4915.95709678845,
-        780
+        4928,
+        784
       ],
       "notes": "Criado para lidar com typebot"
     },
@@ -804,8 +804,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        5095.95709678845,
-        700
+        5104,
+        704
       ],
       "notes": "Criado para lidar com typebot"
     },
@@ -859,7 +859,7 @@
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5275.95709678845,
+        5280,
         880
       ],
       "continueOnFail": true
@@ -919,7 +919,7 @@
       "typeVersion": 1,
       "position": [
         5280,
-        700
+        704
       ],
       "continueOnFail": true
     },
@@ -930,8 +930,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4775.95709678845,
-        580
+        4784,
+        592
       ]
     },
     {
@@ -957,8 +957,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        760,
-        1080
+        768,
+        1088
       ],
       "onError": "continueRegularOutput"
     },
@@ -980,8 +980,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        1476,
-        660
+        1488,
+        672
       ],
       "id": "bb122461-bf69-4ee5-92b0-707cac1d0d10"
     },
@@ -994,8 +994,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1676,
-        620
+        1680,
+        624
       ]
     },
     {
@@ -1008,7 +1008,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -1300,
+        -1296,
         720
       ],
       "executeOnce": false
@@ -1024,8 +1024,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -100,
-        440
+        -96,
+        448
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -1045,8 +1045,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -280,
-        440
+        -288,
+        448
       ]
     },
     {
@@ -1073,8 +1073,8 @@
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        -1380,
-        120
+        -1376,
+        128
       ]
     },
     {
@@ -1102,7 +1102,7 @@
       "typeVersion": 1,
       "position": [
         -400,
-        100
+        112
       ]
     },
     {
@@ -1129,7 +1129,7 @@
       "typeVersion": 3,
       "position": [
         80,
-        440
+        448
       ]
     },
     {
@@ -1179,7 +1179,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -940,
+        -944,
         720
       ]
     },
@@ -1271,8 +1271,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.1,
       "position": [
-        -40,
-        700
+        -48,
+        704
       ]
     },
     {
@@ -1282,8 +1282,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        600,
-        660
+        608,
+        672
       ]
     },
     {
@@ -1294,7 +1294,7 @@
       "typeVersion": 1,
       "position": [
         560,
-        1020
+        1024
       ]
     },
     {
@@ -1310,8 +1310,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        280,
-        1180
+        288,
+        1184
       ]
     },
     {
@@ -1328,7 +1328,7 @@
       "typeVersion": 1.1,
       "position": [
         480,
-        1400
+        1408
       ]
     },
     {
@@ -1361,7 +1361,7 @@
       "typeVersion": 2.2,
       "position": [
         -1520,
-        700
+        704
       ]
     },
     {
@@ -1375,8 +1375,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        -1300,
-        540
+        -1296,
+        544
       ]
     },
     {
@@ -1389,7 +1389,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -740,
+        -736,
         640
       ]
     },
@@ -1404,8 +1404,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -1780,
-        700
+        -1776,
+        704
       ],
       "webhookId": "e8d38d79-8f79-4bd1-85f8-fce3d8200233"
     }
@@ -2082,7 +2082,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "efc43d67-e293-491e-bb17-04e017d5c0c3",
+  "versionId": "794c1775-cd50-4274-80a7-594a7e9b15f1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

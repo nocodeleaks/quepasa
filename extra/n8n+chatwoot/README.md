@@ -5,12 +5,12 @@
 * [(1.0.25) Post To Chatwoot](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/PostToChatwoot.json)
 
 * [(1.0.0) Quepasa Contacts Import](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaContactsImport.json)
-* [(1.0.7) Quepasa Qrcode](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaQrcode.json)
+* [(1.0.8) Quepasa Qrcode](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaQrcode.json)
 * [(1.0.26) Quepasa To Chatwoot](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaToChatwoot.json)
 * [(1.0.11) Quepasa Automatic](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaAutomatic.json)
 * [(1.0.9) Quepasa Chat Control](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaChatControl.json)
 
-* [(1.0.13) Quepasa Inbox Control](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaInboxControl.json)
+* [(1.0.15) Quepasa Inbox Control](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/QuepasaInboxControl.json)
 * [(1.0.1) Quepasa Inbox Control + typebot](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaInboxControl_typebot.json)
 * [(1.0.1) Quepasa Inbox Control + soc](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaInboxControl_soc.json)
 * [(1.0.2) Quepasa Inbox Control + webhook](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaInboxControl_webhook.json)

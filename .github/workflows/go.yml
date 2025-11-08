@@ -50,14 +50,8 @@ jobs:
         
       run: go build -o "${{env.BINARYNAME}}" -tags="${{ matrix.build-tags }}" -v ./...
       
-    - name: Update README Version
-      if: github.ref == 'refs/heads/main'
-      run: |
-        go run update-readme-version.go
-        if [[ -n $(git status --porcelain) ]]; then
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add README.md
-          git commit -m "docs: Update README with current version"
-          git push
-        fi
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./src/${{env.BINARYNAME}}
+        tag_name: latest

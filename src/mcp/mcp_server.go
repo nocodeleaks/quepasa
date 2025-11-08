@@ -217,10 +217,10 @@ func RegisterMCPRoutes(mux *http.ServeMux, mcpServer *MCPServer) {
 	}
 
 	path := mcpServer.GetPath()
-	
+
 	// Remove trailing slash if present
 	path = strings.TrimSuffix(path, "/")
-	
+
 	mux.HandleFunc(path, mcpServer.HandleRequest)
 	mux.HandleFunc(path+"/", mcpServer.HandleRequest)
 

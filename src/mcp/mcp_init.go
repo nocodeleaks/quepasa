@@ -16,9 +16,9 @@ func init() {
 	webserver.RegisterRouterConfigurator(func(r chi.Router) {
 		if mcpServerInstance.IsEnabled() {
 			path := mcpServerInstance.GetPath()
-			
+
 			log.Infof("Registering MCP routes at: %s", path)
-			
+
 			r.Post(path, mcpServerInstance.HandleRequest)
 			r.Post(path+"/", mcpServerInstance.HandleRequest)
 		} else {

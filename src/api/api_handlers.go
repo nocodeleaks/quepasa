@@ -284,8 +284,14 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			message := "calls toggled: " + server.Calls.String()
 			response.ParseSuccess(message)
 		}
+	case "debug":
+		_, err := server.ToggleDevel()
+		if err == nil {
+			message := "debug toggled: " + fmt.Sprintf("%t", server.Devel)
+			response.ParseSuccess(message)
+		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,status,groups}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,status,groups,broadcasts,readreceipts,calls,debug}", action)
 	}
 
 	if err != nil {

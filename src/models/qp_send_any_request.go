@@ -46,7 +46,7 @@ func (source *QpSendAnyRequest) GenerateEmbedContent() (err error) {
 		// Extract MIME type from data URI
 		header := parts[0]
 		if strings.HasPrefix(header, "data:") && strings.Contains(header, ";base64") {
-			mimePart := header[5:] // Remove "data:"
+			mimePart := header[5:]                      // Remove "data:"
 			mimeType := strings.Split(mimePart, ";")[0] // Get MIME before ";base64"
 			if len(source.Mimetype) == 0 {
 				source.Mimetype = mimeType

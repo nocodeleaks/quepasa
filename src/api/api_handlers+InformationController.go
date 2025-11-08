@@ -177,6 +177,15 @@ func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if request.Debug != nil {
+		debugValue := *request.Debug
+
+		if server.Devel != debugValue {
+			server.Devel = debugValue
+			update += fmt.Sprintf("debug to: {%t}; ", debugValue)
+		}
+	}
+
 	//#endregion
 
 	if len(update) > 0 {

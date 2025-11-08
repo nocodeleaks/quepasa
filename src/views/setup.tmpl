@@ -91,6 +91,7 @@
                       placeholder="Confirm password"
                       required
                       autocomplete="new-password"
+                      data-form-type="password-confirm"
                       aria-label="Confirm password">
                     <span class="icon is-small is-left" aria-hidden="true">
                       <i class="fas fa-lock"></i>
@@ -125,4 +126,39 @@
     </div>
   </div>
 </section>
+<script>
+// Auto-fill password confirmation when browser autofills password
+document.addEventListener('DOMContentLoaded', function() {
+  const passwordField = document.getElementById('password');
+  const confirmField = document.getElementById('passwordConfirm');
+  
+  if (passwordField && confirmField) {
+    // Listen for input changes (including autofill)
+    passwordField.addEventListener('input', function() {
+      if (this.value && !confirmField.value) {
+        confirmField.value = this.value;
+      }
+    });
+    
+    // Also check on change event for browser autofill
+    passwordField.addEventListener('change', function() {
+      if (this.value && !confirmField.value) {
+        confirmField.value = this.value;
+      }
+    });
+    
+    // Use MutationObserver to detect autofill changes
+    const observer = new MutationObserver(function(mutations) {
+      if (passwordField.value && !confirmField.value) {
+        confirmField.value = passwordField.value;
+      }
+    });
+    
+    observer.observe(passwordField, {
+      attributes: true,
+      attributeFilter: ['value']
+    });
+  }
+});
+</script>
 {{ end }}

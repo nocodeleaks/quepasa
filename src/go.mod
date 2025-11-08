@@ -28,6 +28,8 @@ replace github.com/nocodeleaks/quepasa/signalr => ./signalr
 
 replace github.com/nocodeleaks/quepasa/swagger => ./swagger
 
+replace github.com/nocodeleaks/quepasa/mcp => ./mcp
+
 go 1.24.0
 
 toolchain go1.24.2
@@ -37,6 +39,7 @@ require (
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/mcp v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/swagger v0.0.0-00010101000000-000000000000

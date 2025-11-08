@@ -177,12 +177,12 @@ func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if request.Debug != nil {
-		debugValue := *request.Debug
+	if request.Devel != nil {
+		develValue := *request.Devel
 
-		if server.Devel != debugValue {
-			server.Devel = debugValue
-			update += fmt.Sprintf("debug to: {%t}; ", debugValue)
+		if server.Devel != develValue {
+			server.Devel = develValue
+			update += fmt.Sprintf("devel to: {%t}; ", develValue)
 		}
 	}
 

@@ -42,7 +42,7 @@ The API provides toggle functionality to control WhatsApp event processing throu
 - **Broadcasts**: Controls processing of broadcast messages
 - **ReadReceipts**: Controls read receipt confirmations
 - **Calls**: Controls call event processing
-- **Debug**: Controls debug mode (devel) for enhanced logging
+- **Devel**: Controls debug mode (devel) for enhanced logging
 
 ### Toggle States
 - `unset` (0): Not configured (default)
@@ -84,7 +84,7 @@ The API provides toggle functionality to control WhatsApp event processing throu
   "broadcasts": "false",
   "readReceipts": "unset",
   "calls": "forcedtrue",
-  "debug": true
+  "devel": true
 }
 ```
 
@@ -95,7 +95,7 @@ The API provides toggle functionality to control WhatsApp event processing throu
   "updated": {
     "groups": "true",
     "broadcasts": "false",
-    "debug": true
+    "devel": true
   },
   "message": "Server configuration updated successfully"
 }

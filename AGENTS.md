@@ -47,3 +47,8 @@ This module implements the MCP (Model Context Protocol) server for QuePasa, allo
 - Verify tool responses
 - Check error handling
 - Validate MCP protocol compliance
+
+## Notes / Known issues
+
+- 2025-11-08: Couldn't run MCP request due to SSE error: Non-200 status code (405). Reproduction: invoke the MCP tools endpoint (/mcp) using SSE/long-poll and observe 405 response when attempting to open the SSE stream. Likely causes: wrong HTTP method for SSE endpoint or route mismatch (server expects POST on /mcp/tools/call while SSE client used GET). Next step: investigate server route handling for SSE and add dedicated SSE handler or correct client method. Continue debugging tomorrow.
+

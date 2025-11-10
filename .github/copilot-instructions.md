@@ -158,3 +158,6 @@ This is a mandatory project rule for version control.
 - **Event Handlers**: `WhatsmeowHandlers.EventsHandler()` dispatches to specific message/receipt/call handlers
 - **Server Coordination**: `QpWhatsappServer` manages connection lifecycle and message routing
 - **Environment System**: 47 variables across 9 categories (Database, API, WebServer, WhatsApp, etc.)
+
+### GitHub 
+* **Token**: file `.github/.token`, for issues and PR management via GH Cli or API

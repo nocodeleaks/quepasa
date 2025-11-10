@@ -1,0 +1,2 @@
+# Git attributes for merge strategies
+AGENTS.md merge=ours

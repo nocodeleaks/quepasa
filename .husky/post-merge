@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Post-merge hook to clean AGENTS.md after merges to main branches
+# This ensures AGENTS.md stays empty on develop/main while preserving it on feature branches
+
+# Get the current branch name
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Only clean on develop or main branches
+if [ "$current_branch" = "develop" ] || [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
+    # Check if AGENTS.md has content and clean it
+    if [ -f "AGENTS.md" ] && [ -s "AGENTS.md" ]; then
+        > AGENTS.md  # Empty the file
+        git add AGENTS.md
+        git commit -m "chore: clean AGENTS.md after merge to $current_branch
+
+AGENTS.md is automatically cleaned after merges to main branches.
+This preserves the file on feature branches while keeping it empty on $current_branch."
+    fi
+fi
+
+exit 0

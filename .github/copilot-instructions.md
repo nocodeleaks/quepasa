@@ -71,14 +71,15 @@
 CRITICAL: ALWAYS regenerate Swagger after API changes
 After adding/modifying API endpoints, controllers, or request/response structs:
   1. cd src
-  2. swag init --output ../swagger
+  2. swag init --output ./swagger
   3. cd ..
 Changes that require Swagger regeneration:
   - New API endpoints (routes)
   - Modified controller annotations (@Summary, @Description, @Router, etc.)
   - New or modified request/response structs
   - Changes to API parameters or response types
-Swagger files affected: swagger/docs.go, swagger/swagger.json, swagger/swagger.yaml
+Swagger files affected: src/swagger/docs.go, src/swagger/swagger.json, src/swagger/swagger.yaml
+Note: Swagger files are generated inside src/swagger (not root /swagger)
 Can also run via VS Code task "Generate Swagger Docs"
 
 ## Git and Commit Guidelines

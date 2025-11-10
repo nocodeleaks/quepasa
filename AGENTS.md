@@ -8,47 +8,185 @@ This module implements the MCP (Model Context Protocol) server for QuePasa, allo
 
 ## Architecture
 - MCP server endpoint: `/mcp`
-- Authentication: Master key (full access) or Bot token (server-specific access)
-- Protocol: SSE (Server-Sent Events) based communication
+- Authentication: Bearer token (Master key or Bot token)
+- Protocol: JSON-RPC 2.0 with SSE support
 - Tools: Exposed as MCP tools for AI assistants
 
 ## Authentication Levels
-1. **Master Key** - Full access to all servers and operations
-   - Uses `MASTERKEY` environment variable
-   - Can access any bot/server
-   - Administrative privileges
 
-2. **Bot Token** - Server-specific access
-   - Uses individual bot tokens
-   - Limited to specific server operations
-   - Standard user privileges
+### 1. Master Key - Full Access (Super User)
+- Uses `MASTERKEY` environment variable
+- Header: `Authorization: Bearer <MASTERKEY>`
+- Can access all servers and operations
+- Administrative privileges
+- Tools return global system information
+
+### 2. Bot Token - Server-Specific Access
+- Uses individual bot tokens
+- Header: `Authorization: Bearer <bot-token>`
+- Limited to specific server operations
+- Standard user privileges
+- Tools return server-specific information
 
 ## Environment Variables
 - **`MCP_ENABLED`** - Enable/disable MCP server (default: `false`)
 - **`MCP_PATH`** - MCP endpoint path (default: `/mcp`)
+- **`MASTERKEY`** - Master key for super admin access
+
+## Protocol Flow
+
+### SSE Connection (GET /mcp)
+1. Client opens SSE connection with Bearer token
+2. Server authenticates and keeps connection alive
+3. Connection remains open for real-time updates
+
+### JSON-RPC Messages (POST /mcp)
+All messages follow JSON-RPC 2.0 format:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "method_name",
+  "params": {}
+}
+```
+
+### Supported Methods
+1. **initialize** - Returns server capabilities and protocol version
+2. **notifications/initialized** - Client confirms initialization (no response)
+3. **tools/list** - Returns available tools
+4. **tools/call** - Executes a specific tool
 
 ## Available Tools
 
-### 1. health
+### health
 - **Description**: Check server health and status
 - **Authentication**: Master key or bot token
-- **Parameters**: None (uses authentication context)
-- **Returns**: Server health information
+- **Parameters**: None
+- **Returns**: 
+  - Master key: Global system health (total_servers, connected_servers, disconnected_servers)
+  - Bot token: Specific server health (status, connected, timestamp, server_info)
 
-## Implementation Guidelines
-- Follow MCP protocol specification
-- Implement proper authentication middleware
-- Return structured responses
-- Log all MCP operations
-- Handle errors gracefully
+## Implementation Status
+
+### ✅ Completed
+- [x] SSE endpoint (GET /mcp)
+- [x] JSON-RPC endpoint (POST /mcp)
+- [x] Bearer token authentication
+- [x] Master key vs Bot token differentiation
+- [x] Initialize method with protocol version negotiation
+- [x] Tools/list method
+- [x] Tools/call method
+- [x] Health tool with dual behavior (master/bot)
+- [x] JSON-RPC 2.0 compliant responses
+- [x] Environment variables configuration
+
+### 🚧 In Progress
+- [ ] Additional MCP tools (send, receive, contacts, groups)
+- [ ] Error handling improvements
+- [ ] Logging optimization
+
+### 📋 Pending
+- [ ] Resource support (files, attachments)
+- [ ] Prompt templates
+- [ ] Session management
+- [ ] Rate limiting
+- [ ] Metrics and monitoring
 
 ## Testing
-- Test with both authentication methods
-- Verify tool responses
-- Check error handling
-- Validate MCP protocol compliance
 
-## Notes / Known issues
+### Test SSE Connection
+```bash
+curl -N -H "Authorization: Bearer quepasa-master-key-dev" \
+  http://localhost:31000/mcp
+```
 
-- 2025-11-08: Couldn't run MCP request due to SSE error: Non-200 status code (405). Reproduction: invoke the MCP tools endpoint (/mcp) using SSE/long-poll and observe 405 response when attempting to open the SSE stream. Likely causes: wrong HTTP method for SSE endpoint or route mismatch (server expects POST on /mcp/tools/call while SSE client used GET). Next step: investigate server route handling for SSE and add dedicated SSE handler or correct client method. Continue debugging tomorrow.
+### Test Initialize
+```bash
+curl -X POST http://localhost:31000/mcp \
+  -H "Authorization: Bearer quepasa-master-key-dev" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {"name": "test", "version": "1.0"}
+    }
+  }'
+```
 
+### Test Tools List
+```bash
+curl -X POST http://localhost:31000/mcp \
+  -H "Authorization: Bearer quepasa-master-key-dev" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list"
+  }'
+```
+
+### Test Health Tool
+```bash
+curl -X POST http://localhost:31000/mcp \
+  -H "Authorization: Bearer quepasa-master-key-dev" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "health",
+      "arguments": {}
+    }
+  }'
+```
+
+## Next Steps
+
+### Priority 1: Core Tools
+- [ ] **send_message** - Send text/media messages
+- [ ] **receive_messages** - Get messages from webhook cache
+- [ ] **get_contacts** - List contacts
+- [ ] **get_groups** - List groups
+
+### Priority 2: Advanced Tools
+- [ ] **send_location** - Send location messages
+- [ ] **send_contact** - Send contact cards
+- [ ] **create_group** - Create new groups
+- [ ] **manage_group** - Add/remove participants
+
+### Priority 3: System Tools
+- [ ] **get_qrcode** - Get QR code for pairing
+- [ ] **disconnect** - Disconnect server
+- [ ] **restart** - Restart connection
+
+## Notes / Known Issues
+
+### 2025-11-10: MCP Server Functional ✅
+- SSE connection working correctly
+- Bearer token authentication implemented
+- Initialize method returns proper capabilities
+- Health tool returns JSON (master: global stats, bot: server-specific)
+- JSON-RPC 2.0 format compliant
+- Multiple protocol versions supported (2024-11-05, 2025-03-26, 2025-06-18)
+
+### Authentication Flow
+1. Client sends Bearer token via Authorization header
+2. Server checks if token matches MASTERKEY (super user)
+3. If not, checks if token is a valid bot token (server-specific)
+4. Registers tools with appropriate context (nil for master, server for bot)
+5. Tools adapt behavior based on context
+
+## Development Guidelines
+- Follow MCP protocol specification
+- Implement proper authentication middleware
+- Return structured JSON responses
+- Log all MCP operations with appropriate levels
+- Handle errors gracefully with JSON-RPC error format
+- Use Bearer token authentication (standard HTTP)
+- Support multiple protocol versions
+- Tools should handle both master and bot contexts

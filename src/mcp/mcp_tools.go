@@ -2,11 +2,19 @@ package mcp
 
 import (
 	"encoding/json"
+
+	models "github.com/nocodeleaks/quepasa/models"
 )
 
-// MCPTool represents a generic MCP tool interface
+// MCPToolContext holds the authentication context for tool execution
+type MCPToolContext struct {
+	Server   *models.QpWhatsappServer // nil for master key, specific server for bot token
+	IsMaster bool                     // true if authenticated with master key
+}
+
+// MCPTool represents a tool that requires authentication context
 type MCPTool interface {
-	Execute(params json.RawMessage) (interface{}, error)
+	ExecuteWithContext(ctx *MCPToolContext, params json.RawMessage) (interface{}, error)
 	Name() string
 	Description() string
 	InputSchema() map[string]interface{}

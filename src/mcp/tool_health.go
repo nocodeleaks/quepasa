@@ -7,9 +7,7 @@ import (
 )
 
 // HealthTool implements the health check tool for MCP
-type HealthTool struct {
-	server *models.QpWhatsappServer
-}
+type HealthTool struct{}
 
 // HealthRequest represents the request for health check
 type HealthRequest struct {
@@ -24,9 +22,9 @@ type HealthResponse struct {
 	ServerInfo *models.QpWhatsappServer `json:"server_info,omitempty"`
 }
 
-// Execute runs the health check tool
-func (h *HealthTool) Execute(params json.RawMessage) (interface{}, error) {
-	if h.server == nil {
+// ExecuteWithContext runs the health check with authentication context
+func (h *HealthTool) ExecuteWithContext(ctx *MCPToolContext, params json.RawMessage) (interface{}, error) {
+	if ctx.IsMaster {
 		// Master key access - return global system health
 		totalServers := len(models.WhatsappService.Servers)
 		connectedServers := 0
@@ -46,13 +44,21 @@ func (h *HealthTool) Execute(params json.RawMessage) (interface{}, error) {
 		}, nil
 	}
 
-	status := h.server.GetStatus()
+	// Bot token access - return server-specific health
+	if ctx.Server == nil {
+		return map[string]interface{}{
+			"status": "error",
+			"error":  "No server context available",
+		}, nil
+	}
+
+	status := ctx.Server.GetStatus()
 
 	return &HealthResponse{
 		Status:     status.String(),
-		Connected:  h.server.GetConnection() != nil,
-		Timestamp:  h.server.Timestamp.String(),
-		ServerInfo: h.server,
+		Connected:  ctx.Server.GetConnection() != nil,
+		Timestamp:  ctx.Server.Timestamp.String(),
+		ServerInfo: ctx.Server,
 	}, nil
 }
 

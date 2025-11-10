@@ -12,6 +12,11 @@ func init() {
 	// Initialize MCP server
 	mcpServerInstance = NewMCPServer()
 
+	// Register all tools once at startup
+	if mcpServerInstance.IsEnabled() {
+		mcpServerInstance.RegisterTools()
+	}
+
 	// Register MCP routes with the web server
 	webserver.RegisterRouterConfigurator(func(r chi.Router) {
 		if mcpServerInstance.IsEnabled() {

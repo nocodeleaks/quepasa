@@ -46,13 +46,23 @@ func (s *MCPServer) GetPath() string {
 	return s.path
 }
 
-// RegisterTools registers all available MCP tools
-func (s *MCPServer) RegisterTools(server *models.QpWhatsappServer) {
-	// Register health tool
-	healthTool := &HealthTool{server: server}
-	s.registry.Register(healthTool)
+// GetRegistry returns the tool registry
+func (s *MCPServer) GetRegistry() *MCPToolRegistry {
+	return s.registry
+}
 
-	log.Debugf("Registered MCP tools: %d", len(s.registry.List()))
+// RegisterTools registers all available MCP tools (called once at startup)
+func (s *MCPServer) RegisterTools() {
+	// Register health tool
+	s.registry.Register(&HealthTool{})
+
+	// Register list servers tool
+	s.registry.Register(&ListServersTool{})
+
+	// Register API endpoint tools
+	s.RegisterAPITools()
+
+	log.Infof("MCP: Registered %d tools at startup", len(s.registry.List()))
 }
 
 // MCPRequest represents an incoming MCP request
@@ -93,10 +103,11 @@ func (s *MCPServer) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("MCP request authenticated: level=%s", authLevel)
 
-	// Register tools with the authenticated server context
-	// If authLevel="master", server=nil (full access to all servers)
-	// If authLevel="bot", server=specific server (limited access)
-	s.RegisterTools(server)
+	// Create authentication context for tool execution
+	ctx := &MCPToolContext{
+		Server:   server,
+		IsMaster: (authLevel == "master"),
+	}
 
 	// Parse request
 	var req MCPRequest
@@ -112,7 +123,7 @@ func (s *MCPServer) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	case "tools/list":
 		s.handleToolsList(w, req.ID)
 	case "tools/call":
-		s.handleToolCall(w, req.ID, req.Params)
+		s.handleToolCall(w, req.ID, req.Params, ctx)
 	case "notifications/initialized":
 		// Client confirms initialization - no response needed
 		return
@@ -130,7 +141,7 @@ func (s *MCPServer) HandleSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Authenticate request
-	server, authLevel, err := s.authenticate(r)
+	_, authLevel, err := s.authenticate(r)
 	if err != nil {
 		log.Warnf("MCP SSE authentication failed: %v", err)
 		http.Error(w, fmt.Sprintf("Authentication failed: %v", err), http.StatusUnauthorized)
@@ -138,11 +149,6 @@ func (s *MCPServer) HandleSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infof("MCP SSE connection established: level=%s", authLevel)
-
-	// Register tools with the authenticated server context
-	// If authLevel="master", server=nil (full access to all servers)
-	// If authLevel="bot", server=specific server (limited access)
-	s.RegisterTools(server)
 
 	// Set SSE headers
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -303,7 +309,7 @@ func (s *MCPServer) handleToolsListOld(w http.ResponseWriter) {
 }
 
 // handleToolCall executes a tool call
-func (s *MCPServer) handleToolCall(w http.ResponseWriter, id *int, params json.RawMessage) {
+func (s *MCPServer) handleToolCall(w http.ResponseWriter, id *int, params json.RawMessage, ctx *MCPToolContext) {
 	var callParams struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
@@ -321,8 +327,8 @@ func (s *MCPServer) handleToolCall(w http.ResponseWriter, id *int, params json.R
 		return
 	}
 
-	// Execute tool
-	result, err := tool.Execute(callParams.Arguments)
+	// Execute tool with context
+	result, err := tool.ExecuteWithContext(ctx, callParams.Arguments)
 	if err != nil {
 		s.sendError(w, id, 500, fmt.Sprintf("Tool execution failed: %v", err))
 		return

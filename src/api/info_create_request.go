@@ -1,10 +1,10 @@
-package models
+package api
 
 import whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 
-// QpInfoCreateRequest represents the request body for creating a new bot/server
+// InfoCreateRequest represents the request body for creating a new bot/server
 // Used for pre-configuring a server before QR code scanning
-type QpInfoCreateRequest struct {
+type InfoCreateRequest struct {
 	Groups       *whatsapp.WhatsappBoolean `json:"groups,omitempty"`       // should handle groups messages
 	Broadcasts   *whatsapp.WhatsappBoolean `json:"broadcasts,omitempty"`   // should handle broadcast messages
 	ReadReceipts *whatsapp.WhatsappBoolean `json:"readreceipts,omitempty"` // should emit read receipts

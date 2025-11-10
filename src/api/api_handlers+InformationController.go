@@ -19,7 +19,7 @@ import (
 //	@Tags			Information
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		models.QpInfoCreateRequest	true	"Server creation request"
+//	@Param			request	body		InfoCreateRequest	true	"Server creation request"
 //	@Success		200		{object}	models.QpInfoResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -98,58 +98,124 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read and validate request body
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		response.ParseError(err)
+	body, ioErr := io.ReadAll(r.Body)
+	if ioErr != nil {
+		response.ParseError(ioErr)
 		RespondInterface(w, response)
 		return
 	}
 
-	var request *models.QpInfoCreateRequest
+	var request *InfoCreateRequest
 	if len(body) > 0 {
-		err = json.Unmarshal(body, &request)
-		if err != nil {
-			jsonError := fmt.Errorf("error converting body to json: %v", err.Error())
+		jsonErr := json.Unmarshal(body, &request)
+		if jsonErr != nil {
+			jsonError := fmt.Errorf("error converting body to json: %v", jsonErr.Error())
 			response.ParseError(jsonError)
 			RespondInterface(w, response)
 			return
 		}
 	}
 
-	// Create server info with provided configuration or defaults
-	info := &models.QpServer{
-		Token: token,
-		User:  username,
+	// Check if server already exists (AddOrUpdate pattern)
+	server, exists := models.WhatsappService.Servers[token]
+
+	if exists {
+		// UPDATE: Server exists, update configuration
+		update := ""
+
+		// Update user if provided and different
+		if len(username) > 0 && server.User != username {
+			server.User = username
+			update += fmt.Sprintf("user to: {%s}; ", username)
+		}
+
+		// Apply configuration from request
+		if request != nil {
+			if request.Groups != nil && server.Groups != *request.Groups {
+				server.Groups = *request.Groups
+				update += fmt.Sprintf("groups to: {%s}; ", *request.Groups)
+			}
+			if request.Broadcasts != nil && server.Broadcasts != *request.Broadcasts {
+				server.Broadcasts = *request.Broadcasts
+				update += fmt.Sprintf("broadcasts to: {%s}; ", *request.Broadcasts)
+			}
+			if request.ReadReceipts != nil && server.ReadReceipts != *request.ReadReceipts {
+				server.ReadReceipts = *request.ReadReceipts
+				update += fmt.Sprintf("readreceipts to: {%s}; ", *request.ReadReceipts)
+			}
+			if request.Calls != nil && server.Calls != *request.Calls {
+				server.Calls = *request.Calls
+				update += fmt.Sprintf("calls to: {%s}; ", *request.Calls)
+			}
+			if request.Devel != nil && server.Devel != *request.Devel {
+				server.Devel = *request.Devel
+				update += fmt.Sprintf("devel to: {%t}; ", *request.Devel)
+			}
+		}
+
+		// Save if there were changes
+		if len(update) > 0 {
+			err := server.Save("server configuration updated via POST")
+			if err != nil {
+				response.ParseError(err)
+				RespondInterface(w, response)
+				return
+			}
+
+			logentry := server.GetLogger()
+			logentry.Infof("server configuration updated: %s", update)
+			response.PatchSuccess(server, "server configuration updated")
+		} else {
+			response.ParseSuccess(server)
+		}
+
+	} else {
+		// CREATE: Server doesn't exist, create new one
+		info := &models.QpServer{
+			Token: token,
+			User:  username,
+		}
+
+		// Apply configuration from request
+		if request != nil {
+			if request.Groups != nil {
+				info.Groups = *request.Groups
+			}
+			if request.Broadcasts != nil {
+				info.Broadcasts = *request.Broadcasts
+			}
+			if request.ReadReceipts != nil {
+				info.ReadReceipts = *request.ReadReceipts
+			}
+			if request.Calls != nil {
+				info.Calls = *request.Calls
+			}
+			if request.Devel != nil {
+				info.Devel = *request.Devel
+			}
+		}
+
+		// Create server using existing service method
+		server, err := models.WhatsappService.AppendNewServer(info)
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+
+		// Save to database
+		err = server.Save("server created without connection via POST")
+		if err != nil {
+			// Remove from cache if save fails
+			delete(models.WhatsappService.Servers, token)
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+
+		response.ParseSuccess(server)
 	}
 
-	if request != nil {
-		// Apply provided configuration
-		if request.Groups != nil {
-			info.Groups = *request.Groups
-		}
-		if request.Broadcasts != nil {
-			info.Broadcasts = *request.Broadcasts
-		}
-		if request.ReadReceipts != nil {
-			info.ReadReceipts = *request.ReadReceipts
-		}
-		if request.Calls != nil {
-			info.Calls = *request.Calls
-		}
-		if request.Devel != nil {
-			info.Devel = *request.Devel
-		}
-	}
-
-	// Create or update server without connection (pre-configuration)
-	server, err := models.WhatsappService.CreateOrUpdateServerWithoutConnection(info)
-	if err != nil {
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	response.ParseSuccess(server)
 	RespondSuccess(w, response)
 }
 

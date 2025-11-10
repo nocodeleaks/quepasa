@@ -66,10 +66,14 @@
 ## Git and Commit Guidelines
 * **🚨 CRITICAL: NEVER make commits automatically**
 * **🚨 CRITICAL: NEVER push to repository automatically**
+* **🚨 CRITICAL: DO NOT commit code that hasn't been tested by the user**
+* **🚨 CRITICAL: DO NOT commit immediately after implementing a feature**
 * **✅ ONLY make commits when explicitly requested by the user**
 * **✅ ALWAYS wait for user approval before any git operations**
 * **✅ ONLY execute `git commit`, `git push`, or `git merge` when the user gives explicit permission**
 * **✅ Show changes to user first, then wait for approval before committing**
+* **✅ After implementing features, STOP and let user test before committing**
+* **✅ User must explicitly say "commit", "save to git", "push" or similar commands**
 
 ## Version Conflict Resolution Guidelines
 * **🚨 CRITICAL: ALWAYS handle version conflicts automatically**

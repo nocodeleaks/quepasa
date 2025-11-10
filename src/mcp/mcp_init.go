@@ -9,12 +9,20 @@ import (
 var mcpServerInstance *MCPServer
 
 func init() {
+	log.Info(">>> MCP PACKAGE LOADED <<<")
+
 	// Initialize MCP server
 	mcpServerInstance = NewMCPServer()
 
+	log.Infof("MCP server created, enabled=%v", mcpServerInstance.IsEnabled())
+
 	// Register all tools once at startup
 	if mcpServerInstance.IsEnabled() {
+		log.Info("=== MCP SERVER INITIALIZATION ===")
 		mcpServerInstance.RegisterTools()
+		log.Info("=== MCP SERVER READY ===")
+	} else {
+		log.Warn("MCP server is DISABLED (set MCP_ENABLED=true to enable)")
 	}
 
 	// Register MCP routes with the web server

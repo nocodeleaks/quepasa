@@ -1,230 +1,89 @@
 package mcp
 
 import (
-	api "github.com/nocodeleaks/quepasa/api"
 	log "github.com/sirupsen/logrus"
 )
 
-// RegisterAPITools registers all API endpoints as MCP tools
+// RegisterAPITools registers all API endpoints as MCP tools using auto-discovery
 func (s *MCPServer) RegisterAPITools() {
-	log.Info("MCP: Registering API endpoints as tools...")
+	log.Info("MCP: Starting auto-discovery of API endpoints...")
 
-	// Send Message
-	s.registry.Register(&APIHandlerTool{
-		name:        "send_message",
-		description: "Send a WhatsApp message (text, image, document, audio, video)",
-		method:      "POST",
-		path:        "/send",
-		handler:     api.SendAny,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-				"chatId": map[string]interface{}{
-					"type":        "string",
-					"description": "Chat ID (phone number with country code, e.g., 5521999999999)",
-				},
-				"text": map[string]interface{}{
-					"type":        "string",
-					"description": "Message text",
-				},
-				"attachment": map[string]interface{}{
-					"type":        "object",
-					"description": "Media attachment",
-					"properties": map[string]interface{}{
-						"url": map[string]interface{}{
-							"type":        "string",
-							"description": "Media URL",
-						},
-						"mimetype": map[string]interface{}{
-							"type":        "string",
-							"description": "MIME type (e.g., image/jpeg, audio/ogg)",
-						},
-						"filename": map[string]interface{}{
-							"type":        "string",
-							"description": "File name",
-						},
-					},
-				},
-			},
-			"required": []string{"chatId"},
-		},
-	})
+	// Get path to API controllers directory - try multiple possible paths
+	apiDir := "api"
+	log.Infof("MCP: Scanning directory: %s", apiDir)
 
-	// Receive Messages
-	s.registry.Register(&APIHandlerTool{
-		name:        "receive_messages",
-		description: "Get received messages from webhook cache",
-		method:      "GET",
-		path:        "/receive",
-		handler:     api.ReceiveAPIHandler,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-				"timestamp": map[string]interface{}{
-					"type":        "string",
-					"description": "Get messages after this timestamp (optional)",
-				},
-			},
-			"required": []string{},
-		},
-	})
+	// Parse Swagger annotations from all API controllers
+	endpoints, err := ParseSwaggerAnnotations(apiDir)
+	if err != nil {
+		log.Errorf("MCP: Failed to parse Swagger annotations: %v", err)
 
-	// Get QR Code
-	s.registry.Register(&APIHandlerTool{
-		name:        "get_qrcode",
-		description: "Get QR code for WhatsApp pairing",
-		method:      "GET",
-		path:        "/scan",
-		handler:     api.ScannerController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-			},
-			"required": []string{},
-		},
-	})
+		// Try alternative path
+		apiDir = "./api"
+		log.Infof("MCP: Retrying with path: %s", apiDir)
+		endpoints, err = ParseSwaggerAnnotations(apiDir)
+		if err != nil {
+			log.Errorf("MCP: Failed again with alternative path: %v", err)
+			return
+		}
+	}
 
-	// Download Media
-	s.registry.Register(&APIHandlerTool{
-		name:        "download_media",
-		description: "Download media from message",
-		method:      "GET",
-		path:        "/download/{messageId}",
-		handler:     api.DownloadController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-				"messageId": map[string]interface{}{
-					"type":        "string",
-					"description": "Message ID to download media from",
-				},
-			},
-			"required": []string{"messageId"},
-		},
-	})
+	log.Infof("MCP: Found %d endpoints with Swagger annotations", len(endpoints))
 
-	// Get Contacts
-	s.registry.Register(&APIHandlerTool{
-		name:        "get_contacts",
-		description: "Get WhatsApp contacts list",
-		method:      "GET",
-		path:        "/contacts",
-		handler:     api.ContactsController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-			},
-			"required": []string{},
-		},
-	})
+	// Register each discovered endpoint as an MCP tool
+	registered := 0
+	skipped := 0
 
-	// Get Groups
-	s.registry.Register(&APIHandlerTool{
-		name:        "get_groups",
-		description: "Get WhatsApp groups list",
-		method:      "GET",
-		path:        "/groups/getall",
-		handler:     api.FetchAllGroupsController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-			},
-			"required": []string{},
-		},
-	})
+	for _, endpoint := range endpoints {
+		// Skip if marked with @MCPHidden
+		if endpoint.MCPHidden {
+			log.Debugf("MCP: Skipping hidden endpoint: %s (%s)", endpoint.FuncName, endpoint.Path)
+			skipped++
+			continue
+		}
 
-	// Check if number is on WhatsApp
-	s.registry.Register(&APIHandlerTool{
-		name:        "is_on_whatsapp",
-		description: "Check if a phone number is registered on WhatsApp",
-		method:      "GET",
-		path:        "/isonwhatsapp/{phone}",
-		handler:     api.IsOnWhatsappController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-				"phone": map[string]interface{}{
-					"type":        "string",
-					"description": "Phone number with country code (e.g., 5521999999999)",
-				},
-			},
-			"required": []string{"phone"},
-		},
-	})
+		// Skip if no valid route
+		if endpoint.Path == "" || endpoint.Method == "" {
+			log.Debugf("MCP: Skipping endpoint without route: %s", endpoint.FuncName)
+			skipped++
+			continue
+		}
 
-	// Get Profile Picture
-	s.registry.Register(&APIHandlerTool{
-		name:        "get_picture",
-		description: "Get profile picture URL for a contact or group",
-		method:      "GET",
-		path:        "/picinfo/{chatId}",
-		handler:     api.PictureController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-				"chatId": map[string]interface{}{
-					"type":        "string",
-					"description": "Chat ID (phone number or group ID)",
-				},
-			},
-			"required": []string{"chatId"},
-		},
-	})
+		// Get handler function by name
+		handler, err := GetHandlerByName(endpoint.FuncName)
+		if err != nil {
+			log.Warnf("MCP: Handler not found for %s: %v", endpoint.FuncName, err)
+			skipped++
+			continue
+		}
 
-	// Mark chat as read
-	s.registry.Register(&APIHandlerTool{
-		name:        "mark_as_read",
-		description: "Mark chat messages as read",
-		method:      "POST",
-		path:        "/chat/markread",
-		handler:     api.MarkChatAsReadController,
-		inputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"token": map[string]interface{}{
-					"type":        "string",
-					"description": "Bot token (required when using master key authentication)",
-				},
-				"chatId": map[string]interface{}{
-					"type":        "string",
-					"description": "Chat ID to mark as read",
-				},
-			},
-			"required": []string{"chatId"},
-		},
-	})
+		// Generate tool name
+		toolName := GenerateToolName(endpoint)
+		if toolName == "" {
+			log.Warnf("MCP: Could not generate tool name for %s", endpoint.FuncName)
+			skipped++
+			continue
+		}
 
-	log.Infof("MCP: Registered %d API endpoint tools", len(s.registry.List()))
+		// Generate input schema from parameters
+		inputSchema := GenerateInputSchema(endpoint)
+
+		// Create and register the tool
+		tool := &APIHandlerTool{
+			name:        toolName,
+			description: endpoint.Description,
+			method:      endpoint.Method,
+			path:        endpoint.Path,
+			handler:     handler,
+			inputSchema: inputSchema,
+		}
+
+		s.registry.Register(tool)
+		registered++
+
+		log.Debugf("MCP: Registered tool '%s' -> %s %s (%s)",
+			toolName, endpoint.Method, endpoint.Path, endpoint.FuncName)
+	}
+
+	log.Infof("MCP: Auto-discovery complete. Registered: %d tools, Skipped: %d endpoints",
+		registered, skipped)
 }

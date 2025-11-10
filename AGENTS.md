@@ -157,10 +157,14 @@ All API tools support dual authentication mode:
 - [x] Environment variables configuration
 - [x] Health tool (dual behavior: master/bot)
 - [x] List servers tool
-- [x] 9 API tools (send, receive, scan, download, contacts, groups, isonwhatsapp, picture, markread)
+- [x] **Auto-discovery system** - 38 API tools auto-registered from Swagger annotations
+- [x] **Swagger annotation parser** - Extracts @Summary, @Router, @Param, @MCPHidden, @MCPTool
+- [x] **Handler registry** - Maps 38+ controller names to functions
+- [x] 40 total tools (2 system + 38 API)
 - [x] Header-only authentication (no tokens in URL paths)
 - [x] Master key + token parameter support
 - [x] Current API version endpoints (no /v3/ prefix)
+- [x] JSON schema generation from Swagger params
 
 ### 📋 Future Enhancements
 - [ ] Resource support (files, attachments via MCP resources)

@@ -38,7 +38,7 @@ func IsValidForDispatch(payload *whatsapp.WhatsappMessage) string {
 		// reaction removal sends empty text but still needs to be dispatched
 		isTextMessage := payload.Type == whatsapp.TextMessageType
 		isEmptyText := len(strings.TrimSpace(payload.Text)) <= 0
-		
+
 		if isTextMessage && isEmptyText {
 			// InReaction=true with empty text indicates a reaction removal
 			if !payload.InReaction {

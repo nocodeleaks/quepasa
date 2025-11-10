@@ -85,6 +85,76 @@ func (source *QPWhatsappService) AppendNewServer(info *QpServer) (server *QpWhat
 	return
 }
 
+// CreateOrUpdateServerWithoutConnection creates or updates a server with configuration but without WhatsApp connection
+// This allows pre-configuring webhooks and preferences before QR code scanning
+// Uses token from header to identify the server (AddOrUpdate pattern)
+func (source *QPWhatsappService) CreateOrUpdateServerWithoutConnection(info *QpServer) (server *QpWhatsappServer, err error) {
+	logentry := source.GetLogger()
+	logentry.Debugf("create or update server without connection: token=%s, user=%s", info.Token, info.User)
+
+	if info == nil || len(info.Token) == 0 {
+		err = fmt.Errorf("missing server information or token")
+		return
+	}
+
+	// Check if server already exists
+	server, exists := source.Servers[info.Token]
+	
+	if exists {
+		// Update existing server configuration
+		logentry.Infof("updating existing server configuration: token=%s", info.Token)
+		
+		// Update only provided fields
+		if len(info.User) > 0 {
+			server.User = info.User
+		}
+		if info.Groups != 0 {
+			server.Groups = info.Groups
+		}
+		if info.Broadcasts != 0 {
+			server.Broadcasts = info.Broadcasts
+		}
+		if info.ReadReceipts != 0 {
+			server.ReadReceipts = info.ReadReceipts
+		}
+		if info.Calls != 0 {
+			server.Calls = info.Calls
+		}
+		server.Devel = info.Devel
+		
+		// Save to database
+		err = server.Save("server configuration updated")
+		if err != nil {
+			return
+		}
+		
+		logentry.Infof("server configuration updated: token=%s", info.Token)
+	} else {
+		// Create new server instance
+		logentry.Infof("creating new server without connection: token=%s", info.Token)
+		
+		server, err = source.NewQpWhatsappServer(info)
+		if err != nil {
+			return
+		}
+
+		// Add to cache
+		source.Servers[info.Token] = server
+
+		// Save to database
+		err = server.Save("server created without connection")
+		if err != nil {
+			// Remove from cache if save fails
+			delete(source.Servers, info.Token)
+			return
+		}
+
+		logentry.Infof("server created without connection: token=%s, user=%s", info.Token, info.User)
+	}
+	
+	return
+}
+
 func (source *QPWhatsappService) AppendPaired(paired *QpWhatsappPairing) (server *QpWhatsappServer, err error) {
 	logger := source.GetLogger()
 

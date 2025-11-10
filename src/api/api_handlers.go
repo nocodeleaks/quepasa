@@ -27,6 +27,7 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// CONTROL METHODS ************************
 		// ----------------------------------------
+		r.Post(endpoint+"/info", CreateInformationController)
 		r.Get(endpoint+"/info", GetInformationController)
 		r.Patch(endpoint+"/info", UpdateInformationController)
 		r.Delete(endpoint+"/info", DeleteInformationController)

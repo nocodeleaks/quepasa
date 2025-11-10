@@ -57,14 +57,18 @@ func (s *MCPServer) RegisterTools(server *models.QpWhatsappServer) {
 
 // MCPRequest represents an incoming MCP request
 type MCPRequest struct {
-	Method string          `json:"method"`
-	Params json.RawMessage `json:"params,omitempty"`
+	JSONRPC string          `json:"jsonrpc"`
+	ID      *int            `json:"id,omitempty"`
+	Method  string          `json:"method"`
+	Params  json.RawMessage `json:"params,omitempty"`
 }
 
 // MCPResponse represents an MCP response
 type MCPResponse struct {
-	Result interface{} `json:"result,omitempty"`
-	Error  *MCPError   `json:"error,omitempty"`
+	JSONRPC string      `json:"jsonrpc"`
+	ID      *int        `json:"id,omitempty"`
+	Result  interface{} `json:"result,omitempty"`
+	Error   *MCPError   `json:"error,omitempty"`
 }
 
 // MCPError represents an MCP error response
@@ -73,7 +77,7 @@ type MCPError struct {
 	Message string `json:"message"`
 }
 
-// HandleRequest handles MCP protocol requests
+// HandleRequest handles MCP protocol requests (JSON-RPC over POST)
 func (s *MCPServer) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	if !s.enabled {
 		http.Error(w, "MCP server is disabled", http.StatusServiceUnavailable)
@@ -83,60 +87,135 @@ func (s *MCPServer) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	// Authenticate request
 	server, authLevel, err := s.authenticate(r)
 	if err != nil {
-		s.sendError(w, 401, fmt.Sprintf("Authentication failed: %v", err))
+		s.sendError(w, nil, 401, fmt.Sprintf("Authentication failed: %v", err))
 		return
 	}
 
-	log.Debugf("MCP request authenticated: level=%s", authLevel)
+	log.Infof("MCP request authenticated: level=%s", authLevel)
 
-	// Register tools for the authenticated server
-	if server != nil {
-		s.RegisterTools(server)
-	}
+	// Register tools with the authenticated server context
+	// If authLevel="master", server=nil (full access to all servers)
+	// If authLevel="bot", server=specific server (limited access)
+	s.RegisterTools(server)
 
 	// Parse request
 	var req MCPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.sendError(w, 400, fmt.Sprintf("Invalid request: %v", err))
+		s.sendError(w, nil, 400, fmt.Sprintf("Invalid request: %v", err))
 		return
 	}
 
 	// Handle method
 	switch req.Method {
+	case "initialize":
+		s.handleInitialize(w, req.ID, req.Params)
 	case "tools/list":
-		s.handleToolsList(w)
+		s.handleToolsList(w, req.ID)
 	case "tools/call":
-		s.handleToolCall(w, req.Params)
+		s.handleToolCall(w, req.ID, req.Params)
+	case "notifications/initialized":
+		// Client confirms initialization - no response needed
+		return
 	default:
-		s.sendError(w, 404, fmt.Sprintf("Unknown method: %s", req.Method))
+		s.sendError(w, req.ID, 404, fmt.Sprintf("Unknown method: %s", req.Method))
 	}
+}
+
+// HandleSSE handles MCP protocol over Server-Sent Events (SSE)
+func (s *MCPServer) HandleSSE(w http.ResponseWriter, r *http.Request) {
+	if !s.enabled {
+		log.Warn("MCP SSE rejected: server is disabled")
+		http.Error(w, "MCP server is disabled", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Authenticate request
+	server, authLevel, err := s.authenticate(r)
+	if err != nil {
+		log.Warnf("MCP SSE authentication failed: %v", err)
+		http.Error(w, fmt.Sprintf("Authentication failed: %v", err), http.StatusUnauthorized)
+		return
+	}
+
+	log.Infof("MCP SSE connection established: level=%s", authLevel)
+
+	// Register tools with the authenticated server context
+	// If authLevel="master", server=nil (full access to all servers)
+	// If authLevel="bot", server=specific server (limited access)
+	s.RegisterTools(server)
+
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache, no-transform")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
+	flusher.Flush()
+
+	log.Debug("MCP SSE: Connection ready, waiting for messages...")
+
+	// Keep connection alive - messages will come via POST
+	<-r.Context().Done()
+	log.Debug("MCP SSE connection closed")
 }
 
 // authenticate authenticates the request and returns the server and auth level
 func (s *MCPServer) authenticate(r *http.Request) (*models.QpWhatsappServer, string, error) {
-	// Check for master key
-	masterKey := r.Header.Get("X-QUEPASA-MASTERKEY")
-	if masterKey != "" && masterKey == environment.Settings.API.MasterKey {
+	// Check Authorization header (Bearer token)
+	authHeader := r.Header.Get("Authorization")
+	log.Debugf("MCP auth: Authorization header present=%v", authHeader != "")
+
+	if authHeader == "" {
+		log.Warn("MCP auth: no Authorization header provided")
+		return nil, "", fmt.Errorf("no authentication provided, expected: Authorization: Bearer <token>")
+	}
+
+	// Extract Bearer token
+	const bearerPrefix = "Bearer "
+	if !strings.HasPrefix(authHeader, bearerPrefix) {
+		log.Warn("MCP auth: Authorization header without Bearer prefix")
+		return nil, "", fmt.Errorf("invalid authorization format, expected: Bearer <token>")
+	}
+
+	token := strings.TrimPrefix(authHeader, bearerPrefix)
+	token = strings.TrimSpace(token)
+
+	// PRIORITY 1: Check if token matches MASTERKEY (super user - full access)
+	expectedMasterKey := environment.Settings.API.MasterKey
+
+	if token == expectedMasterKey && expectedMasterKey != "" {
+		log.Info("MCP auth: MASTER KEY authenticated - SUPER USER with full access to all servers")
 		return nil, "master", nil
 	}
 
-	// Check for bot token
-	token := r.Header.Get("X-QUEPASA-TOKEN")
-	if token == "" {
-		return nil, "", fmt.Errorf("no authentication provided")
-	}
-
-	// Get server by token
+	// PRIORITY 2: Check if token matches a specific server token (limited access)
+	log.Debugf("MCP auth: checking if token is a server identifier (total_servers=%d)", len(models.WhatsappService.Servers))
 	server, ok := models.WhatsappService.Servers[token]
-	if !ok {
-		return nil, "", fmt.Errorf("invalid token")
+	if ok {
+		log.Infof("MCP auth: SERVER TOKEN authenticated - limited access to server: %s", server.Token)
+		return server, "bot", nil
 	}
 
-	return server, "bot", nil
+	// No match found
+	log.Warnf("MCP auth: token not recognized as master key or server identifier (token_prefix=%s...)", token[:min(len(token), 10)])
+	return nil, "", fmt.Errorf("invalid token - must be either MASTERKEY or a valid server token")
 }
 
-// handleToolsList returns the list of available tools
-func (s *MCPServer) handleToolsList(w http.ResponseWriter) {
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// handleInitialize returns the list of available tools
+func (s *MCPServer) handleToolsList(w http.ResponseWriter, id *int) {
 	tools := s.registry.List()
 	toolInfos := make([]map[string]interface{}, 0, len(tools))
 
@@ -148,60 +227,141 @@ func (s *MCPServer) handleToolsList(w http.ResponseWriter) {
 		})
 	}
 
-	s.sendResponse(w, map[string]interface{}{
+	s.sendResponse(w, id, map[string]interface{}{
+		"tools": toolInfos,
+	})
+}
+
+// handleInitialize handles the initialize method
+func (s *MCPServer) handleInitialize(w http.ResponseWriter, id *int, params json.RawMessage) {
+	// Parse client protocol version if provided
+	var initParams struct {
+		ProtocolVersion string `json:"protocolVersion"`
+		ClientInfo      struct {
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"clientInfo"`
+	}
+
+	_ = json.Unmarshal(params, &initParams)
+
+	// Support multiple protocol versions
+	supportedVersions := []string{"2024-11-05", "2025-03-26", "2025-06-18"}
+	negotiatedVersion := "2024-11-05" // Default
+
+	// If client specified version, use it if supported
+	if initParams.ProtocolVersion != "" {
+		for _, v := range supportedVersions {
+			if v == initParams.ProtocolVersion {
+				negotiatedVersion = v
+				break
+			}
+		}
+	}
+
+	log.Infof("MCP initialize: client=%s/%s, protocol=%s",
+		initParams.ClientInfo.Name, initParams.ClientInfo.Version, negotiatedVersion)
+
+	s.sendResponse(w, id, map[string]interface{}{
+		"protocolVersion": negotiatedVersion,
+		"capabilities": map[string]interface{}{
+			"tools": map[string]interface{}{
+				"listChanged": false,
+			},
+			"resources": map[string]interface{}{
+				"subscribe":   false,
+				"listChanged": false,
+			},
+			"prompts": map[string]interface{}{
+				"listChanged": false,
+			},
+			"logging": map[string]interface{}{},
+		},
+		"serverInfo": map[string]interface{}{
+			"name":    "QuePasa MCP Server",
+			"version": "1.0.0",
+		},
+	})
+}
+
+// handleToolsList returns the list of available tools
+func (s *MCPServer) handleToolsListOld(w http.ResponseWriter) {
+	tools := s.registry.List()
+	toolInfos := make([]map[string]interface{}, 0, len(tools))
+
+	for _, tool := range tools {
+		toolInfos = append(toolInfos, map[string]interface{}{
+			"name":        tool.Name(),
+			"description": tool.Description(),
+			"inputSchema": tool.InputSchema(),
+		})
+	}
+
+	s.sendResponse(w, nil, map[string]interface{}{
 		"tools": toolInfos,
 	})
 }
 
 // handleToolCall executes a tool call
-func (s *MCPServer) handleToolCall(w http.ResponseWriter, params json.RawMessage) {
+func (s *MCPServer) handleToolCall(w http.ResponseWriter, id *int, params json.RawMessage) {
 	var callParams struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
 	}
 
 	if err := json.Unmarshal(params, &callParams); err != nil {
-		s.sendError(w, 400, fmt.Sprintf("Invalid parameters: %v", err))
+		s.sendError(w, id, 400, fmt.Sprintf("Invalid parameters: %v", err))
 		return
 	}
 
 	// Get tool
 	tool, exists := s.registry.Get(callParams.Name)
 	if !exists {
-		s.sendError(w, 404, fmt.Sprintf("Tool not found: %s", callParams.Name))
+		s.sendError(w, id, 404, fmt.Sprintf("Tool not found: %s", callParams.Name))
 		return
 	}
 
 	// Execute tool
 	result, err := tool.Execute(callParams.Arguments)
 	if err != nil {
-		s.sendError(w, 500, fmt.Sprintf("Tool execution failed: %v", err))
+		s.sendError(w, id, 500, fmt.Sprintf("Tool execution failed: %v", err))
 		return
 	}
 
-	s.sendResponse(w, map[string]interface{}{
+	// Serialize result to JSON string
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		s.sendError(w, id, 500, fmt.Sprintf("Failed to serialize result: %v", err))
+		return
+	}
+
+	s.sendResponse(w, id, map[string]interface{}{
 		"content": []map[string]interface{}{
 			{
 				"type": "text",
-				"text": fmt.Sprintf("%v", result),
+				"text": string(resultJSON),
 			},
 		},
 	})
 }
 
 // sendResponse sends a successful MCP response
-func (s *MCPServer) sendResponse(w http.ResponseWriter, result interface{}) {
+func (s *MCPServer) sendResponse(w http.ResponseWriter, id *int, result interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&MCPResponse{
-		Result: result,
+		JSONRPC: "2.0",
+		ID:      id,
+		Result:  result,
 	})
 }
 
 // sendError sends an MCP error response
-func (s *MCPServer) sendError(w http.ResponseWriter, code int, message string) {
+func (s *MCPServer) sendError(w http.ResponseWriter, id *int, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // MCP uses 200 with error object
 	json.NewEncoder(w).Encode(&MCPResponse{
+		JSONRPC: "2.0",
+		ID:      id,
 		Error: &MCPError{
 			Code:    code,
 			Message: message,

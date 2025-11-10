@@ -27,10 +27,22 @@ type HealthResponse struct {
 // Execute runs the health check tool
 func (h *HealthTool) Execute(params json.RawMessage) (interface{}, error) {
 	if h.server == nil {
-		return &HealthResponse{
-			Status:    "error",
-			Connected: false,
-			Timestamp: "",
+		// Master key access - return global system health
+		totalServers := len(models.WhatsappService.Servers)
+		connectedServers := 0
+
+		for _, srv := range models.WhatsappService.Servers {
+			if srv.GetConnection() != nil {
+				connectedServers++
+			}
+		}
+
+		return map[string]interface{}{
+			"status":               "ok",
+			"access_level":         "master",
+			"total_servers":        totalServers,
+			"connected_servers":    connectedServers,
+			"disconnected_servers": totalServers - connectedServers,
 		}, nil
 	}
 

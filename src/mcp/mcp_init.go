@@ -19,8 +19,11 @@ func init() {
 
 			log.Infof("Registering MCP routes at: %s", path)
 
+			// Support both POST (JSON-RPC) and GET (SSE) methods
 			r.Post(path, mcpServerInstance.HandleRequest)
 			r.Post(path+"/", mcpServerInstance.HandleRequest)
+			r.Get(path, mcpServerInstance.HandleSSE)
+			r.Get(path+"/", mcpServerInstance.HandleSSE)
 		} else {
 			log.Info("MCP server is disabled, skipping route registration")
 		}

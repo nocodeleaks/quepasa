@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 //region CONTROLLER - Information
@@ -76,6 +76,76 @@ func DeleteInformationController(w http.ResponseWriter, r *http.Request) {
 
 //endregion
 
+// updateServerConfiguration applies configuration changes to an existing server
+// Returns update summary string and error if any
+func updateServerConfiguration(server *models.QpWhatsappServer, username string, request interface{}) (string, error) {
+	update := ""
+
+	// Update user if provided and different
+	if len(username) > 0 && server.User != username {
+		// Validate user exists in database
+		_, err := models.WhatsappService.DB.Users.Find(username)
+		if err != nil {
+			return "", fmt.Errorf("user not found: %v", err.Error())
+		}
+
+		server.User = username
+		update += fmt.Sprintf("user to: {%s}; ", username)
+	}
+
+	// Apply configuration from request
+	// Handle both InfoCreateRequest and QpInfoPatchRequest
+	var groups, broadcasts, readReceipts, calls *whatsapp.WhatsappBoolean
+	var devel *bool
+
+	switch req := request.(type) {
+	case *InfoCreateRequest:
+		if req != nil {
+			groups = req.Groups
+			broadcasts = req.Broadcasts
+			readReceipts = req.ReadReceipts
+			calls = req.Calls
+			devel = req.Devel
+		}
+	case *models.QpInfoPatchRequest:
+		if req != nil {
+			// QpInfoPatchRequest may have Username field, handle groups/broadcasts/etc
+			groups = req.Groups
+			broadcasts = req.Broadcasts
+			readReceipts = req.ReadReceipts
+			calls = req.Calls
+			devel = req.Devel
+		}
+	}
+
+	if groups != nil && server.Groups != *groups {
+		server.Groups = *groups
+		update += fmt.Sprintf("groups to: {%s}; ", *groups)
+	}
+
+	if broadcasts != nil && server.Broadcasts != *broadcasts {
+		server.Broadcasts = *broadcasts
+		update += fmt.Sprintf("broadcasts to: {%s}; ", *broadcasts)
+	}
+
+	if readReceipts != nil && server.ReadReceipts != *readReceipts {
+		server.ReadReceipts = *readReceipts
+		update += fmt.Sprintf("readreceipts to: {%s}; ", *readReceipts)
+	}
+
+	if calls != nil && server.Calls != *calls {
+		server.Calls = *calls
+		update += fmt.Sprintf("calls to: {%s}; ", *calls)
+	}
+
+	if devel != nil && server.Devel != *devel {
+		server.Devel = *devel
+		update += fmt.Sprintf("devel to: {%t}; ", *devel)
+	}
+
+	return update, nil
+}
+
 func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpInfoResponse{}
 
@@ -120,37 +190,12 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 	server, exists := models.WhatsappService.Servers[token]
 
 	if exists {
-		// UPDATE: Server exists, update configuration
-		update := ""
-
-		// Update user if provided and different
-		if len(username) > 0 && server.User != username {
-			server.User = username
-			update += fmt.Sprintf("user to: {%s}; ", username)
-		}
-
-		// Apply configuration from request
-		if request != nil {
-			if request.Groups != nil && server.Groups != *request.Groups {
-				server.Groups = *request.Groups
-				update += fmt.Sprintf("groups to: {%s}; ", *request.Groups)
-			}
-			if request.Broadcasts != nil && server.Broadcasts != *request.Broadcasts {
-				server.Broadcasts = *request.Broadcasts
-				update += fmt.Sprintf("broadcasts to: {%s}; ", *request.Broadcasts)
-			}
-			if request.ReadReceipts != nil && server.ReadReceipts != *request.ReadReceipts {
-				server.ReadReceipts = *request.ReadReceipts
-				update += fmt.Sprintf("readreceipts to: {%s}; ", *request.ReadReceipts)
-			}
-			if request.Calls != nil && server.Calls != *request.Calls {
-				server.Calls = *request.Calls
-				update += fmt.Sprintf("calls to: {%s}; ", *request.Calls)
-			}
-			if request.Devel != nil && server.Devel != *request.Devel {
-				server.Devel = *request.Devel
-				update += fmt.Sprintf("devel to: {%t}; ", *request.Devel)
-			}
+		// UPDATE: Server exists, use shared update logic
+		update, err := updateServerConfiguration(server, username, request)
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
 		}
 
 		// Save if there were changes
@@ -277,75 +322,19 @@ func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	update := ""
+	// Get username from request (PATCH allows changing username)
+	username := ""
 	if request.Username != nil {
-		jsonUsername := *request.Username
-		if len(jsonUsername) > 0 {
-
-			// searching user
-			_, err := models.WhatsappService.DB.Users.Find(jsonUsername)
-			if err != nil {
-				jsonError := fmt.Errorf("user not found: %v", err.Error())
-				response.ParseError(jsonError)
-				RespondInterface(w, response)
-				return
-			}
-		}
-
-		if !strings.EqualFold(server.User, jsonUsername) {
-			server.User = jsonUsername
-			update += fmt.Sprintf("username to: {%s}; ", jsonUsername)
-		}
+		username = *request.Username
 	}
 
-	//#region WHATSAPP OPTIONS
-
-	if request.Groups != nil {
-		option := *request.Groups
-
-		if server.Groups != option {
-			server.Groups = option
-			update += fmt.Sprintf("groups to: {%s}; ", option)
-		}
+	// Use shared update logic
+	update, err := updateServerConfiguration(server, username, request)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
 	}
-
-	if request.Broadcasts != nil {
-		option := *request.Broadcasts
-
-		if server.Broadcasts != option {
-			server.Broadcasts = option
-			update += fmt.Sprintf("broadcasts to: {%s}; ", option)
-		}
-	}
-
-	if request.ReadReceipts != nil {
-		option := *request.ReadReceipts
-
-		if server.ReadReceipts != option {
-			server.ReadReceipts = option
-			update += fmt.Sprintf("readreceipts to: {%s}; ", option)
-		}
-	}
-
-	if request.Calls != nil {
-		option := *request.Calls
-
-		if server.Calls != option {
-			server.Calls = option
-			update += fmt.Sprintf("calls to: {%s}; ", option)
-		}
-	}
-
-	if request.Devel != nil {
-		develValue := *request.Devel
-
-		if server.Devel != develValue {
-			server.Devel = develValue
-			update += fmt.Sprintf("devel to: {%t}; ", develValue)
-		}
-	}
-
-	//#endregion
 
 	if len(update) > 0 {
 		err = server.Save("patching info")

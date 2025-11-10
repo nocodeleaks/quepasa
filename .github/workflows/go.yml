@@ -62,3 +62,9 @@ jobs:
           git commit -m "docs: Update README with current version"
           git push
         fi
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./src/${{env.BINARYNAME}}
+        tag_name: latest

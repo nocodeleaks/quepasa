@@ -6,6 +6,7 @@ use (
 	./environment
 	./form
 	./library
+	./mcp
 	./media
 	./metrics
 	./models

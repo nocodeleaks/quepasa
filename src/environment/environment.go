@@ -25,6 +25,7 @@ type EnvironmentSettings struct {
 	SIPProxy  SIPProxySettings
 	General   GeneralSettings
 	RabbitMQ  RabbitMQSettings
+	MCP       MCPSettings
 }
 
 // Settings is the global singleton instance for accessing all environment configurations.
@@ -55,6 +56,7 @@ func init() {
 		SIPProxy:  NewSIPProxySettings(),
 		General:   NewGeneralSettings(),
 		RabbitMQ:  NewRabbitMQSettings(),
+		MCP:       NewMCPSettings(),
 	}
 
 	logentry.Println("Environment Manager ready - All configurations loaded!")

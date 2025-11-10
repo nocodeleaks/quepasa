@@ -29,10 +29,22 @@ func IsValidForDispatch(payload *whatsapp.WhatsappMessage) string {
 			return fmt.Sprintf("ignoring unhandled message type on webhook request: %v", reflect.TypeOf(&payload))
 		}
 
+		// Empty message validation
+		// -----------------------
 		// Ignores text messages that are empty or contain only whitespace.
 		// Such messages generally don't carry meaningful information for the application.
-		if payload.Type == whatsapp.TextMessageType && len(strings.TrimSpace(payload.Text)) <= 0 {
-			return fmt.Sprintf("ignoring empty text message on webhook request: %s", payload.Id)
+		//
+		// EXCEPTION: Allow empty text when it's a reaction (InReaction=true) because
+		// reaction removal sends empty text but still needs to be dispatched
+		isTextMessage := payload.Type == whatsapp.TextMessageType
+		isEmptyText := len(strings.TrimSpace(payload.Text)) <= 0
+		
+		if isTextMessage && isEmptyText {
+			// InReaction=true with empty text indicates a reaction removal
+			if !payload.InReaction {
+				return fmt.Sprintf("ignoring empty text message on webhook request: %s", payload.Id)
+			}
+			// Empty text with InReaction=true is valid (reaction removal)
 		}
 	}
 

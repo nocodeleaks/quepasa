@@ -47,6 +47,8 @@ definitions:
         type: boolean
       timestamp:
         type: string
+      version:
+        type: string
     type: object
   api.HealthStats:
     properties:
@@ -58,6 +60,28 @@ definitions:
         type: integer
       unhealthy:
         type: integer
+    type: object
+  api.InfoCreateRequest:
+    properties:
+      broadcasts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle broadcast messages
+      calls:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle calls
+      devel:
+        description: enable debug mode (devel)
+        type: boolean
+      groups:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle groups messages
+      readreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit read receipts
     type: object
   api.LIDResponse:
     properties:
@@ -753,7 +777,9 @@ definitions:
       info:
         description: Extra information for custom messages
       inreaction:
-        description: Is this message a reaction to another message ?
+        description: |-
+          Is this message a reaction to another message?
+          When true with empty Text, indicates a reaction removal
         type: boolean
       inreply:
         description: Msg in reply of another ? Message ID
@@ -1625,6 +1651,33 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update bot information
+      tags:
+      - Information
+    post:
+      consumes:
+      - application/json
+      description: Create a new bot/server with configuration before QR code scanning
+      parameters:
+      - description: Server creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.InfoCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create bot configuration
       tags:
       - Information
   /invite:

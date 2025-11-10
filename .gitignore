@@ -52,3 +52,4 @@ docker/chatwoot/data
 src/.vs/
 main.exe
 .dist/win-quepasa-service.exe
+**/.token

@@ -50,22 +50,11 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 		Dispatching []*QpDispatching `json:"dispatching,omitempty"`
 	}
 
-	// Get dispatching data from the new system
+	// Get dispatching data from memory (includes real-time failure/success updates)
 	var dispatchingData []*QpDispatching
-	if source.QpServer != nil {
-		// Get dispatching from database using the global database
-		db := GetDatabase()
-		if db != nil && db.Dispatching != nil {
-			dispatchings, err := db.Dispatching.FindAll(source.Token)
-			if err == nil {
-				// Convert QpServerDispatching to QpDispatching
-				for _, serverDispatching := range dispatchings {
-					if serverDispatching.QpDispatching != nil {
-						dispatchingData = append(dispatchingData, serverDispatching.QpDispatching)
-					}
-				}
-			}
-		}
+	if source.QpDataDispatching.Dispatching != nil {
+		// Use in-memory dispatching data with real-time status
+		dispatchingData = source.QpDataDispatching.Dispatching
 	}
 
 	// Prepare timestamps for serialization

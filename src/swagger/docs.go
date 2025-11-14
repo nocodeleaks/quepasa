@@ -1061,6 +1061,49 @@ const docTemplate = `{
                     }
                 }
             },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new bot/server with configuration before QR code scanning",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Information"
+                ],
+                "summary": "Create bot configuration",
+                "parameters": [
+                    {
+                        "description": "Server creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.InfoCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -2295,6 +2338,9 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
@@ -2312,6 +2358,47 @@ const docTemplate = `{
                 },
                 "unhealthy": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.InfoCreateRequest": {
+            "type": "object",
+            "properties": {
+                "broadcasts": {
+                    "description": "should handle broadcast messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "calls": {
+                    "description": "should handle calls",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "devel": {
+                    "description": "enable debug mode (devel)",
+                    "type": "boolean"
+                },
+                "groups": {
+                    "description": "should handle groups messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "readreceipts": {
+                    "description": "should emit read receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 }
             }
         },
@@ -3350,7 +3437,7 @@ const docTemplate = `{
                     "description": "Extra information for custom messages"
                 },
                 "inreaction": {
-                    "description": "Is this message a reaction to another message ?",
+                    "description": "Is this message a reaction to another message?\nWhen true with empty Text, indicates a reaction removal",
                     "type": "boolean"
                 },
                 "inreply": {

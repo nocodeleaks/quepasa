@@ -94,11 +94,11 @@
             </td>
             <td>
               {{ if .IsSetExtra }}
-                <button class="button is-info" onclick="showExtraModal('{{ .Url }}', 'webhook', `{{ .Extra }}`)" title="Extra Data Available">
+                <button class="button is-info" onclick="showExtraModal('{{ .Url }}', 'webhook', `{{ .Extra }}`, '{{ .TrackId }}')" title="Extra Data Available">
                   <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
                 </button>
               {{ else }}
-                <button class="button is-light" onclick="showExtraModal('{{ .Url }}', 'webhook', null)" title="Add Extra Data">
+                <button class="button is-light" onclick="showExtraModal('{{ .Url }}', 'webhook', null, '{{ .TrackId }}')" title="Add Extra Data">
                   <span class="icon is-small is-inline"><i class="fa fa-plus"></i></span>
                 </button>
               {{ end }}
@@ -198,7 +198,7 @@
     <div class="modal-background"></div>
     <div class="modal-card">
       <header class="modal-card-head">
-        <p class="modal-card-title">Extra Field</p>
+        <p class="modal-card-title">Webhook Configuration</p>
         <button class="delete" aria-label="close" onclick="closeExtraModal()"></button>
       </header>
       <section class="modal-card-body">
@@ -207,6 +207,13 @@
           <p class="control">
             <input class="input" type="text" id="extraWebhookUrl" readonly>
           </p>
+        </div>
+        <div class="field">
+          <label class="label">Track ID:</label>
+          <p class="control">
+            <input class="input" type="text" id="extraTrackId" placeholder="Optional tracking identifier">
+          </p>
+          <p class="help">Optional identifier for tracking this webhook</p>
         </div>
         <div class="field">
           <label class="label">Extra Data (JSON):</label>
@@ -226,8 +233,9 @@
   <script>
     const serverToken = "{{ .Server.Token }}";
     
-    function showExtraModal(url, type, currentExtra) {
+    function showExtraModal(url, type, currentExtra, currentTrackId) {
       document.getElementById('extraWebhookUrl').value = url;
+      document.getElementById('extraTrackId').value = currentTrackId || '';
       
       // Format the extra data for display
       let extraText = '';
@@ -297,6 +305,7 @@
 
     function saveExtra() {
       const url = document.getElementById('extraWebhookUrl').value;
+      const trackId = document.getElementById('extraTrackId').value.trim();
       const extraText = document.getElementById('extraData').value.trim();
       
       let extraData = null;
@@ -312,6 +321,7 @@
       // Send request to update webhook
       const requestData = {
         url: url,
+        trackId: trackId || undefined,
         extra: extraData
       };
 
@@ -325,16 +335,16 @@
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          alert('Extra field updated successfully!');
+          alert('Webhook configuration updated successfully!');
           closeExtraModal();
           location.reload(); // Refresh to show changes
         } else {
-          alert('Error updating extra field: ' + (data.status || 'Unknown error'));
+          alert('Error updating webhook: ' + (data.status || 'Unknown error'));
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('Network error occurred while updating extra field');
+        alert('Network error occurred while updating webhook');
       });
     }
 

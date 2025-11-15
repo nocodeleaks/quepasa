@@ -27,7 +27,7 @@ func Exec(ctx context.Context, request *ChatPresenceRequest, server *models.QpWh
 	endTime := time.Now().UTC().Add(duration)
 
 	// Use shorter sleep intervals to check for cancellation more frequently
-	const checkInterval = 4000 * time.Millisecond // 4 seconds for presence refresh
+	const checkInterval = 500 * time.Millisecond // 500 milliseconds for presence refresh
 
 	logentry.Debugf("background chat presence update, with presence type: %s...", request.Type)
 

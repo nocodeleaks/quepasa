@@ -171,7 +171,17 @@ func (source QpDataServerDispatchingSql) DispatchingAddOrUpdate(context string, 
 	}
 
 	if existing != nil {
-		// Atualizar existente
+		// Atualizar existente, preservando campos vazios
+		// Se o novo dispatching não tem trackId mas o existente tem, preservar
+		if serverDispatching.TrackId == "" && existing.TrackId != "" {
+			serverDispatching.TrackId = existing.TrackId
+		}
+		
+		// Se o novo dispatching não tem type mas o existente tem, preservar
+		if serverDispatching.Type == "" && existing.Type != "" {
+			serverDispatching.Type = existing.Type
+		}
+		
 		err = source.Update(serverDispatching)
 		if err == nil {
 			affected = 1

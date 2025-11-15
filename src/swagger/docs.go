@@ -1142,7 +1142,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update bot/server information and settings",
+                "description": "Update bot/server information and settings. Username can be provided via X-QUEPASA-USER header (priority) or in request body",
                 "consumes": [
                     "application/json"
                 ],
@@ -1155,16 +1155,17 @@ const docTemplate = `{
                 "summary": "Update bot information",
                 "parameters": [
                     {
-                        "description": "Settings update",
+                        "type": "string",
+                        "description": "New username (validated and updated if different from current)",
+                        "name": "X-QUEPASA-USER",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Settings and username update",
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "settings": {
-                                    "type": "object"
-                                }
-                            }
+                            "$ref": "#/definitions/models.QpInfoPatchRequest"
                         }
                     }
                 ],
@@ -2594,6 +2595,51 @@ const docTemplate = `{
                 "wid": {
                     "description": "Whatsapp session id",
                     "type": "string"
+                }
+            }
+        },
+        "models.QpInfoPatchRequest": {
+            "type": "object",
+            "properties": {
+                "broadcasts": {
+                    "description": "should handle broadcast messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "calls": {
+                    "description": "should handle calls",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "devel": {
+                    "description": "enable debug mode (devel)",
+                    "type": "boolean"
+                },
+                "groups": {
+                    "description": "should handle groups messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "readreceipts": {
+                    "description": "should emit read receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },

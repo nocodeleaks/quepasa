@@ -70,6 +70,7 @@ var HandlerRegistry = map[string]http.HandlerFunc{
 	// Other
 	"WebhookController":  api.WebhookController,
 	"RabbitMQController": api.RabbitMQController,
+	"Spam":               api.Spam,
 }
 
 // GetHandlerByName retrieves handler function by controller name

@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	_ "github.com/nocodeleaks/quepasa/form"
 	library "github.com/nocodeleaks/quepasa/library"

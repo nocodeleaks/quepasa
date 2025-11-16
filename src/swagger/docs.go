@@ -1142,7 +1142,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update bot/server information and settings. Username can be provided via X-QUEPASA-USER header (priority) or in request body",
+                "description": "Update bot/server information and settings",
                 "consumes": [
                     "application/json"
                 ],
@@ -1155,17 +1155,16 @@ const docTemplate = `{
                 "summary": "Update bot information",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "New username (validated and updated if different from current)",
-                        "name": "X-QUEPASA-USER",
-                        "in": "header"
-                    },
-                    {
-                        "description": "Settings and username update",
+                        "description": "Settings update",
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInfoPatchRequest"
+                            "type": "object",
+                            "properties": {
+                                "settings": {
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 ],
@@ -2328,11 +2327,20 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.QpHealthResponseItem"
                     }
                 },
+                "state": {
+                    "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
+                },
+                "state_code": {
+                    "type": "integer"
+                },
                 "stats": {
                     "$ref": "#/definitions/api.HealthStats"
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
                 },
                 "success": {
                     "type": "boolean"
@@ -2595,51 +2603,6 @@ const docTemplate = `{
                 "wid": {
                     "description": "Whatsapp session id",
                     "type": "string"
-                }
-            }
-        },
-        "models.QpInfoPatchRequest": {
-            "type": "object",
-            "properties": {
-                "broadcasts": {
-                    "description": "should handle broadcast messages",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "calls": {
-                    "description": "should handle calls",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "devel": {
-                    "description": "enable debug mode (devel)",
-                    "type": "boolean"
-                },
-                "groups": {
-                    "description": "should handle groups messages",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "readreceipts": {
-                    "description": "should emit read receipts",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 255
                 }
             }
         },

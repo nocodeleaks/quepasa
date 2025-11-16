@@ -33,7 +33,10 @@ func GetViewPath(viewPath string) string {
 func Configure(r chi.Router) {
 	if environment.Settings.Form.Enabled {
 
-		viewsBasePath = "views"
+		// Set views base path relative to the current working directory
+		// This ensures templates are found regardless of where the executable is run from
+		workDir, _ := os.Getwd()
+		viewsBasePath = filepath.Join(workDir, "views")
 
 		// Form routes, extra content
 		ServeForms(r)

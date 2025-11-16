@@ -109,17 +109,11 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		status := server.GetStatus()
-		response.Success = status.IsHealthy()
-		response.Status = fmt.Sprintf("server status is %s", status.String())
-
-		// Single server stats
-		response.Stats = &api.HealthStats{
-			Total:      1,
-			Healthy:    boolToInt(status.IsHealthy()),
-			Unhealthy:  boolToInt(!status.IsHealthy()),
-			Percentage: boolToFloat(status.IsHealthy()) * 100,
-		}
+		state := server.GetStatus()
+		response.Success = state.IsHealthy()
+		response.Status = fmt.Sprintf("server state is %s", state.String())
+		response.State = state
+		response.StateCode = state.EnumIndex()
 
 		RespondInterface(w, response)
 		return

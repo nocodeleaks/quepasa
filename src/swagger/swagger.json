@@ -2324,11 +2324,20 @@
                         "$ref": "#/definitions/models.QpHealthResponseItem"
                     }
                 },
+                "state": {
+                    "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
+                },
+                "state_code": {
+                    "type": "integer"
+                },
                 "stats": {
                     "$ref": "#/definitions/api.HealthStats"
                 },
                 "status": {
                     "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
                 },
                 "success": {
                     "type": "boolean"

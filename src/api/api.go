@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
+	log "github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -12,6 +13,14 @@ func init() {
 	// This allows Swagger to be configured without the webserver module
 	// needing to know specifically about Swagger
 	webserver.RegisterRouterConfigurator(Configure)
+
+	// Log API prefix configuration
+	apiPrefix := environment.Settings.API.Prefix
+	if apiPrefix == "" {
+		log.Info("API routes initialized: prefix=/ (root)")
+	} else {
+		log.Infof("API routes initialized: prefix=/%s", apiPrefix)
+	}
 }
 
 // Configure automatically configures API routes in the router

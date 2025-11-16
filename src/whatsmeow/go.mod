@@ -33,6 +33,7 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
+	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
@@ -48,7 +49,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20250904145737-900bdf8bb490 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
@@ -72,7 +72,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.2
-	go.mau.fi/whatsmeow v0.0.0-20251106163046-720bd0b4a715
+	go.mau.fi/whatsmeow v0.0.0-20251115195115-7159d9053646
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 type ChatPresenceRequestExtended struct {
@@ -19,7 +20,7 @@ func Exec(ctx context.Context, request *ChatPresenceRequest, server *models.QpWh
 	logentry := server.GetLogger()
 	logentry = logentry.WithField(LogFields.ChatId, request.ChatId)
 
-	logentry.Tracef("background chat presence update, duration: %d\n", request.Duration)
+	logentry.Tracef("background chat presence update, duration: %d ms\n", request.Duration)
 	defer logentry.Trace("background chat presence update finished")
 
 	// Calculate total duration and end time
@@ -27,26 +28,29 @@ func Exec(ctx context.Context, request *ChatPresenceRequest, server *models.QpWh
 	endTime := time.Now().UTC().Add(duration)
 
 	// Use shorter sleep intervals to check for cancellation more frequently
-	const checkInterval = 4000 * time.Millisecond // 4 seconds for presence refresh
+	const checkInterval = 500 * time.Millisecond // 500 milliseconds for cancellation check
 
 	logentry.Debugf("background chat presence update, with presence type: %s...", request.Type)
 
 	for time.Now().UTC().Before(endTime) {
 		select {
 		case <-ctx.Done():
-			logentry.Debug("background chat presence update received cancellation signal")
-			return
+			logentry.Debug("background chat presence update received cancellation signal (replaced by new request)")
+			return // Don't send paused - new request will handle it
 		case <-time.After(checkInterval):
-			// Refresh presence indicator every interval
-			err := server.SendChatPresence(request.ChatId, request.Type)
-			if err != nil {
-				logentry.Errorf("background chat presence update refreshing error: %v", err)
-				return
-			}
+			// Just wait - presence indicator was already sent by the controller
+			// We only refresh to check for cancellation
 		}
 	}
 
-	logentry.Trace("background chat presence update is done by timeout")
+	// Only send paused indicator if we reached timeout (not cancelled)
+	logentry.Trace("background chat presence timeout reached, sending paused indicator")
+	err := server.SendChatPresence(request.ChatId, whatsapp.WhatsappChatPresenceTypePaused)
+	if err != nil {
+		logentry.Errorf("failed to send paused indicator: %v", err)
+	} else {
+		logentry.Debug("sent paused indicator after presence timeout")
+	}
 }
 
 type ChatPresenceRequests struct {

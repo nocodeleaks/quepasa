@@ -40,6 +40,7 @@ src/service
 # production or testing directory
 src/.dist/
 .dist/
+dist/
 
 # symbolic link to src folder under linux
 quepasa/

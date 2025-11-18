@@ -46,9 +46,8 @@ func BasicHealthController(w http.ResponseWriter, r *http.Request) {
 func HealthController(w http.ResponseWriter, r *http.Request) {
 
 	response := &api.HealthResponse{
-		Timestamp:   time.Now(),
-		Version:     models.QpVersion,
-		Environment: api.NewEnvironmentSettings(),
+		Timestamp: time.Now(),
+		Version:   models.QpVersion,
 	}
 
 	master := IsMatchForMaster(r)

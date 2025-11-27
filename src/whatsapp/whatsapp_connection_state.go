@@ -88,3 +88,37 @@ func (s WhatsappConnectionState) IsHealthy() bool {
 func (s WhatsappConnectionState) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
+
+func (s *WhatsappConnectionState) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
+	states := map[string]WhatsappConnectionState{
+		"Unknown":      Unknown,
+		"UnPrepared":   UnPrepared,
+		"UnVerified":   UnVerified,
+		"Starting":     Starting,
+		"Connecting":   Connecting,
+		"Stopping":     Stopping,
+		"Stopped":      Stopped,
+		"Restarting":   Restarting,
+		"Reconnecting": Reconnecting,
+		"Connected":    Connected,
+		"Fetching":     Fetching,
+		"Ready":        Ready,
+		"Halting":      Halting,
+		"Disconnected": Disconnected,
+		"Failed":       Failed,
+	}
+
+	if state, ok := states[str]; ok {
+		*s = state
+		return nil
+	}
+
+	// Default to Unknown if not found
+	*s = Unknown
+	return nil
+}

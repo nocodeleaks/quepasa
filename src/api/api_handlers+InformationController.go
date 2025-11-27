@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	api "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -20,7 +21,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		InfoCreateRequest	true	"Server creation request"
-//	@Success		200		{object}	models.QpInfoResponse
+//	@Success		200		{object}	api.InformationResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [post]
@@ -35,7 +36,7 @@ func CreateInformationController(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Information
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	models.QpInfoResponse
+//	@Success		200	{object}	api.InformationResponse
 //	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [get]
@@ -51,7 +52,7 @@ func GetInformationController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{settings=object}	false	"Settings update"
-//	@Success		200		{object}	models.QpInfoResponse
+//	@Success		200		{object}	api.InformationResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [patch]
@@ -66,7 +67,7 @@ func UpdateInformationController(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Information
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	models.QpInfoResponse
+//	@Success		200	{object}	api.InformationResponse
 //	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [delete]
@@ -147,7 +148,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 }
 
 func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpInfoResponse{}
+	response := &api.InformationResponse{}
 
 	// Get token from header (authentication)
 	token := GetToken(r)
@@ -265,8 +266,22 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func InformationGetRequest(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpInfoResponse{}
+	response := &api.InformationResponse{}
 
+	// Check authentication
+	token := GetToken(r)
+	isMaster := IsMatchForMaster(r)
+
+	// Case 1: No authentication - Return basic server (application) info
+	if token == "" && !isMaster {
+		response.Success = true
+		response.Status = "application information"
+		response.Version = models.QpVersion
+		RespondSuccess(w, response)
+		return
+	}
+
+	// Case 2 & 3: With authentication - Get specific server
 	server, err := GetServer(r)
 	if err != nil {
 		response.ParseError(err)
@@ -274,12 +289,16 @@ func InformationGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Populate response with server information
 	response.ParseSuccess(server)
+	response.Version = models.QpVersion
+	// Server uptime is in response.Server.Uptime (via MarshalJSON)
+
 	RespondSuccess(w, response)
 }
 
 func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpInfoResponse{}
+	response := &api.InformationResponse{}
 
 	// reading body to avoid converting to json if empty
 	body, err := io.ReadAll(r.Body)

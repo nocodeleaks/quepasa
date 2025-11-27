@@ -28,30 +28,19 @@ definitions:
         description: 'Required: Chat to mark as read/unread'
         type: string
     type: object
-  api.EnvironmentSettings:
+  api.EnvironmentResponse:
     properties:
-      broadcasts:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      settings:
+        $ref: '#/definitions/environment.EnvironmentSettings'
+      status:
         type: string
-      calls:
-        type: string
-      db_log_level:
-        type: string
-      groups:
-        type: string
-      history_sync:
-        type: string
-      log_level:
-        type: string
-      presence:
-        type: string
-      read_receipts:
-        type: string
-      read_update:
-        type: string
-      wakeup_duration:
-        type: string
-      wakeup_hour:
-        type: string
+      success:
+        type: boolean
     type: object
   api.HealthResponse:
     properties:
@@ -60,16 +49,13 @@ definitions:
         items:
           type: string
         type: array
-      environment:
-        $ref: '#/definitions/api.EnvironmentSettings'
       items:
+        description: -- multiple items fields
         items:
           $ref: '#/definitions/models.QpHealthResponseItem'
         type: array
       state:
         $ref: '#/definitions/whatsapp.WhatsappConnectionState'
-      state_code:
-        type: integer
       stats:
         $ref: '#/definitions/api.HealthStats'
       status:
@@ -77,8 +63,12 @@ definitions:
       success:
         type: boolean
       timestamp:
+        description: -- general fields
         type: string
-      version:
+      uptime:
+        type: object
+      wid:
+        description: -- single item fields
         type: string
     type: object
   api.HealthStats:
@@ -113,6 +103,22 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+    type: object
+  api.InformationResponse:
+    properties:
+      debug:
+        description: Extra interface{} `json:"extra,omitempty"`
+        items:
+          type: string
+        type: array
+      server:
+        $ref: '#/definitions/models.QpWhatsappServer'
+      status:
+        type: string
+      success:
+        type: boolean
+      version:
+        type: string
     type: object
   api.LIDResponse:
     properties:
@@ -153,6 +159,218 @@ definitions:
       userinfos:
         items: {}
         type: array
+    type: object
+  environment.APISettings:
+    properties:
+      master_key:
+        type: string
+      prefix:
+        type: string
+      signing_secret:
+        type: string
+      timeout:
+        description: API request timeout in milliseconds
+        type: integer
+      use_ssl_websocket:
+        type: boolean
+      webhook_timeout:
+        description: webhook timeout in milliseconds
+        type: integer
+    type: object
+  environment.DashboardSettings:
+    properties:
+      enabled:
+        type: boolean
+      prefix:
+        type: string
+    type: object
+  environment.DatabaseSettings:
+    properties:
+      database:
+        type: string
+      driver:
+        type: string
+      host:
+        type: string
+      password:
+        type: string
+      port:
+        type: string
+      ssl_mode:
+        type: string
+      user:
+        type: string
+    type: object
+  environment.EnvironmentSettings:
+    properties:
+      api:
+        $ref: '#/definitions/environment.APISettings'
+      database:
+        allOf:
+        - $ref: '#/definitions/environment.DatabaseSettings'
+        description: Embedded structs for organized access to different environment
+          categories
+      form:
+        $ref: '#/definitions/environment.FormSettings'
+      general:
+        $ref: '#/definitions/environment.GeneralSettings'
+      mcp:
+        $ref: '#/definitions/environment.MCPSettings'
+      metrics:
+        $ref: '#/definitions/environment.MetricsSettings'
+      rabbitMQ:
+        $ref: '#/definitions/environment.RabbitMQSettings'
+      sipproxy:
+        $ref: '#/definitions/environment.SIPProxySettings'
+      swagger:
+        $ref: '#/definitions/environment.SwaggerSettings'
+      webServer:
+        $ref: '#/definitions/environment.WebServerSettings'
+      whatsApp:
+        $ref: '#/definitions/environment.WhatsAppSettings'
+      whatsmeow:
+        $ref: '#/definitions/environment.WhatsmeowSettings'
+    type: object
+  environment.FormSettings:
+    properties:
+      enabled:
+        type: boolean
+      prefix:
+        type: string
+    type: object
+  environment.GeneralSettings:
+    properties:
+      account_setup:
+        type: boolean
+      app_title:
+        type: string
+      cache_days:
+        type: integer
+      cache_length:
+        type: integer
+      compatible_mime_as_audio:
+        type: boolean
+      convert_png_to_jpg:
+        type: boolean
+      convert_wave_to_ogg:
+        type: boolean
+      log_level:
+        type: string
+      migrations:
+        type: string
+      remove_digit_9:
+        type: boolean
+      synopsis_length:
+        type: integer
+      testing:
+        type: boolean
+    type: object
+  environment.MCPSettings:
+    properties:
+      enabled:
+        type: boolean
+      path:
+        type: string
+    type: object
+  environment.MetricsSettings:
+    properties:
+      dashboard:
+        $ref: '#/definitions/environment.DashboardSettings'
+      enabled:
+        type: boolean
+      prefix:
+        type: string
+    type: object
+  environment.RabbitMQSettings:
+    properties:
+      cache_length:
+        type: integer
+      connection_string:
+        type: string
+      queue:
+        type: string
+    type: object
+  environment.SIPProxySettings:
+    properties:
+      codecs:
+        type: string
+      enabled:
+        type: boolean
+      host:
+        type: string
+      local_port:
+        type: integer
+      log_level:
+        type: string
+      media_ports:
+        type: string
+      port:
+        type: integer
+      protocol:
+        type: string
+      public_ip:
+        type: string
+      retries:
+        type: integer
+      sdp_session_name:
+        description: Optional SDP session name for media
+        type: string
+      stun_server:
+        type: string
+      timeout:
+        type: integer
+      use_upnp:
+        type: boolean
+      user_agent:
+        type: string
+    type: object
+  environment.SwaggerSettings:
+    properties:
+      enabled:
+        type: boolean
+      prefix:
+        type: string
+    type: object
+  environment.WebServerSettings:
+    properties:
+      host:
+        type: string
+      logs:
+        type: boolean
+      port:
+        type: integer
+    type: object
+  environment.WhatsAppSettings:
+    properties:
+      broadcasts:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      calls:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      groups:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      history_sync_days:
+        type: integer
+      presence:
+        type: string
+      read_receipts:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      read_update:
+        type: boolean
+      wakeup_duration:
+        description: duration in seconds
+        type: integer
+      wakeup_hour:
+        description: 'Hour(s) as integers: 0-23 or 0,8,16 for multiple hours'
+        type: string
+    type: object
+  environment.WhatsmeowSettings:
+    properties:
+      dispatch_unhandled:
+        type: boolean
+      whatsmeow_db_log_level:
+        type: string
+      whatsmeow_log_level:
+        type: string
     type: object
   models.QpContactsResponse:
     properties:
@@ -232,28 +450,19 @@ definitions:
     type: object
   models.QpHealthResponseItem:
     properties:
-      status:
-        $ref: '#/definitions/whatsapp.WhatsappConnectionState'
+      state:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappConnectionState'
+        description: Calculated current State of the connection
+      state_code:
+        description: State code as integer
+        type: integer
       token:
         description: Public token
         type: string
       wid:
         description: Whatsapp session id
         type: string
-    type: object
-  models.QpInfoResponse:
-    properties:
-      debug:
-        description: Extra interface{} `json:"extra,omitempty"`
-        items:
-          type: string
-        type: array
-      server:
-        $ref: '#/definitions/models.QpWhatsappServer'
-      status:
-        type: string
-      success:
-        type: boolean
     type: object
   models.QpInviteResponse:
     properties:
@@ -677,6 +886,14 @@ definitions:
     - FalseBooleanType
     - UnSetBooleanType
     - TrueBooleanType
+  whatsapp.WhatsappBooleanExtended:
+    enum:
+    - -2
+    - 2
+    type: integer
+    x-enum-varnames:
+    - ForcedFalseBooleanType
+    - ForcedTrueBooleanType
   whatsapp.WhatsappChat:
     properties:
       id:
@@ -1141,15 +1358,13 @@ paths:
     get:
       consumes:
       - application/json
-      description: Execute control commands for the bot server (start, stop, restart,
-        status)
+      description: Execute control commands for the bot server (start, stop, restart)
       parameters:
       - description: Command action
         enum:
         - start
         - stop
         - restart
-        - status
         in: query
         name: action
         required: true
@@ -1253,6 +1468,32 @@ paths:
       summary: Edit message
       tags:
       - Message
+  /environment:
+    get:
+      consumes:
+      - application/json
+      description: Get all environment variables and configurations (master key required
+        for full access, preview available without auth)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.EnvironmentResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.EnvironmentResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/api.EnvironmentResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get environment settings
+      tags:
+      - Environment
   /groups/create:
     post:
       consumes:
@@ -1587,7 +1828,17 @@ paths:
       - Groups
   /health:
     get:
-      description: Basic health check endpoint to verify if the application is running
+      description: Provides basic health check without auth, detailed server info
+        with token/master key, or user's servers with username/password
+      parameters:
+      - description: Username for user authentication
+        in: header
+        name: X-QUEPASA-USER
+        type: string
+      - description: Password for user authentication
+        in: header
+        name: X-QUEPASA-PASSWORD
+        type: string
       produces:
       - application/json
       responses:
@@ -1595,23 +1846,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.HealthResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Health check
-      tags:
-      - Health
-  /healthapi:
-    get:
-      description: Provides detailed health information for WhatsApp servers with
-        authentication support
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.HealthResponse'
-      summary: Detailed health check
+      summary: Health check with optional authentication
       tags:
       - Health
   /info:
@@ -1625,7 +1860,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.QpInfoResponse'
+            $ref: '#/definitions/api.InformationResponse'
         "400":
           description: Bad Request
           schema:
@@ -1645,7 +1880,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.QpInfoResponse'
+            $ref: '#/definitions/api.InformationResponse'
         "400":
           description: Bad Request
           schema:
@@ -1674,7 +1909,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.QpInfoResponse'
+            $ref: '#/definitions/api.InformationResponse'
         "400":
           description: Bad Request
           schema:
@@ -1701,7 +1936,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.QpInfoResponse'
+            $ref: '#/definitions/api.InformationResponse'
         "400":
           description: Bad Request
           schema:

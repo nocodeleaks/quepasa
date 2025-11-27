@@ -48,6 +48,7 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 		StartTime   time.Time        `json:"starttime,omitempty"`
 		Timestamps  QpTimestamps     `json:"timestamps"`
 		Dispatching []*QpDispatching `json:"dispatching,omitempty"`
+		Uptime      library.Duration `json:"uptime"`
 	}
 
 	// Get dispatching data from memory (includes real-time failure/success updates)
@@ -61,12 +62,19 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 	timestamps := source.Timestamps
 	timestamps.Update = source.Timestamp
 
+	// Calculate uptime
+	uptime := time.Duration(0)
+	if !timestamps.Start.IsZero() {
+		uptime = time.Since(timestamps.Start)
+	}
+
 	custom := CustomServer{
 		QpServer:    source.QpServer,
 		Reconnect:   source.Reconnect,
 		StartTime:   timestamps.Start,
 		Timestamps:  timestamps,
 		Dispatching: dispatchingData,
+		Uptime:      library.Duration(uptime),
 	}
 
 	return json.Marshal(custom)

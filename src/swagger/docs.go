@@ -280,7 +280,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart, status)",
+                "description": "Execute control commands for the bot server (start, stop, restart)",
                 "consumes": [
                     "application/json"
                 ],
@@ -296,8 +296,7 @@ const docTemplate = `{
                         "enum": [
                             "start",
                             "stop",
-                            "restart",
-                            "status"
+                            "restart"
                         ],
                         "type": "string",
                         "description": "Command action",
@@ -449,6 +448,46 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/environment": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get all environment variables and configurations (master key required for full access, preview available without auth)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Environment"
+                ],
+                "summary": "Get environment settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.EnvironmentResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.EnvironmentResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/api.EnvironmentResponse"
                         }
                     }
                 }
@@ -985,39 +1024,28 @@ const docTemplate = `{
         },
         "/health": {
             "get": {
-                "security": [
+                "description": "Provides basic health check without auth, detailed server info with token/master key, or user's servers with username/password",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check with optional authentication",
+                "parameters": [
                     {
-                        "ApiKeyAuth": []
+                        "type": "string",
+                        "description": "Username for user authentication",
+                        "name": "X-QUEPASA-USER",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password for user authentication",
+                        "name": "X-QUEPASA-PASSWORD",
+                        "in": "header"
                     }
                 ],
-                "description": "Basic health check endpoint to verify if the application is running",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Health"
-                ],
-                "summary": "Health check",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.HealthResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/healthapi": {
-            "get": {
-                "description": "Provides detailed health information for WhatsApp servers with authentication support",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Health"
-                ],
-                "summary": "Detailed health check",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1050,7 +1078,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInfoResponse"
+                            "$ref": "#/definitions/api.InformationResponse"
                         }
                     },
                     "400": {
@@ -1093,7 +1121,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInfoResponse"
+                            "$ref": "#/definitions/api.InformationResponse"
                         }
                     },
                     "400": {
@@ -1125,7 +1153,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInfoResponse"
+                            "$ref": "#/definitions/api.InformationResponse"
                         }
                     },
                     "400": {
@@ -1172,7 +1200,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInfoResponse"
+                            "$ref": "#/definitions/api.InformationResponse"
                         }
                     },
                     "400": {
@@ -2311,41 +2339,24 @@ const docTemplate = `{
                 }
             }
         },
-        "api.EnvironmentSettings": {
+        "api.EnvironmentResponse": {
             "type": "object",
             "properties": {
-                "broadcasts": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "settings": {
+                    "$ref": "#/definitions/environment.EnvironmentSettings"
+                },
+                "status": {
                     "type": "string"
                 },
-                "calls": {
-                    "type": "string"
-                },
-                "db_log_level": {
-                    "type": "string"
-                },
-                "groups": {
-                    "type": "string"
-                },
-                "history_sync": {
-                    "type": "string"
-                },
-                "log_level": {
-                    "type": "string"
-                },
-                "presence": {
-                    "type": "string"
-                },
-                "read_receipts": {
-                    "type": "string"
-                },
-                "read_update": {
-                    "type": "string"
-                },
-                "wakeup_duration": {
-                    "type": "string"
-                },
-                "wakeup_hour": {
-                    "type": "string"
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2359,10 +2370,8 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "environment": {
-                    "$ref": "#/definitions/api.EnvironmentSettings"
-                },
                 "items": {
+                    "description": "-- multiple items fields",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.QpHealthResponseItem"
@@ -2370,9 +2379,6 @@ const docTemplate = `{
                 },
                 "state": {
                     "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
-                },
-                "state_code": {
-                    "type": "integer"
                 },
                 "stats": {
                     "$ref": "#/definitions/api.HealthStats"
@@ -2384,9 +2390,14 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "timestamp": {
+                    "description": "-- general fields",
                     "type": "string"
                 },
-                "version": {
+                "uptime": {
+                    "type": "object"
+                },
+                "wid": {
+                    "description": "-- single item fields",
                     "type": "string"
                 }
             }
@@ -2449,6 +2460,30 @@ const docTemplate = `{
                 }
             }
         },
+        "api.InformationResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "server": {
+                    "$ref": "#/definitions/models.QpWhatsappServer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "api.LIDResponse": {
             "type": "object",
             "properties": {
@@ -2506,6 +2541,329 @@ const docTemplate = `{
                 "userinfos": {
                     "type": "array",
                     "items": {}
+                }
+            }
+        },
+        "environment.APISettings": {
+            "type": "object",
+            "properties": {
+                "master_key": {
+                    "type": "string"
+                },
+                "prefix": {
+                    "type": "string"
+                },
+                "signing_secret": {
+                    "type": "string"
+                },
+                "timeout": {
+                    "description": "API request timeout in milliseconds",
+                    "type": "integer"
+                },
+                "use_ssl_websocket": {
+                    "type": "boolean"
+                },
+                "webhook_timeout": {
+                    "description": "webhook timeout in milliseconds",
+                    "type": "integer"
+                }
+            }
+        },
+        "environment.DashboardSettings": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "prefix": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.DatabaseSettings": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "type": "string"
+                },
+                "driver": {
+                    "type": "string"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "string"
+                },
+                "ssl_mode": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.EnvironmentSettings": {
+            "type": "object",
+            "properties": {
+                "api": {
+                    "$ref": "#/definitions/environment.APISettings"
+                },
+                "database": {
+                    "description": "Embedded structs for organized access to different environment categories",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/environment.DatabaseSettings"
+                        }
+                    ]
+                },
+                "form": {
+                    "$ref": "#/definitions/environment.FormSettings"
+                },
+                "general": {
+                    "$ref": "#/definitions/environment.GeneralSettings"
+                },
+                "mcp": {
+                    "$ref": "#/definitions/environment.MCPSettings"
+                },
+                "metrics": {
+                    "$ref": "#/definitions/environment.MetricsSettings"
+                },
+                "rabbitMQ": {
+                    "$ref": "#/definitions/environment.RabbitMQSettings"
+                },
+                "sipproxy": {
+                    "$ref": "#/definitions/environment.SIPProxySettings"
+                },
+                "swagger": {
+                    "$ref": "#/definitions/environment.SwaggerSettings"
+                },
+                "webServer": {
+                    "$ref": "#/definitions/environment.WebServerSettings"
+                },
+                "whatsApp": {
+                    "$ref": "#/definitions/environment.WhatsAppSettings"
+                },
+                "whatsmeow": {
+                    "$ref": "#/definitions/environment.WhatsmeowSettings"
+                }
+            }
+        },
+        "environment.FormSettings": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "prefix": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.GeneralSettings": {
+            "type": "object",
+            "properties": {
+                "account_setup": {
+                    "type": "boolean"
+                },
+                "app_title": {
+                    "type": "string"
+                },
+                "cache_days": {
+                    "type": "integer"
+                },
+                "cache_length": {
+                    "type": "integer"
+                },
+                "compatible_mime_as_audio": {
+                    "type": "boolean"
+                },
+                "convert_png_to_jpg": {
+                    "type": "boolean"
+                },
+                "convert_wave_to_ogg": {
+                    "type": "boolean"
+                },
+                "log_level": {
+                    "type": "string"
+                },
+                "migrations": {
+                    "type": "string"
+                },
+                "remove_digit_9": {
+                    "type": "boolean"
+                },
+                "synopsis_length": {
+                    "type": "integer"
+                },
+                "testing": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "environment.MCPSettings": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.MetricsSettings": {
+            "type": "object",
+            "properties": {
+                "dashboard": {
+                    "$ref": "#/definitions/environment.DashboardSettings"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "prefix": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.RabbitMQSettings": {
+            "type": "object",
+            "properties": {
+                "cache_length": {
+                    "type": "integer"
+                },
+                "connection_string": {
+                    "type": "string"
+                },
+                "queue": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.SIPProxySettings": {
+            "type": "object",
+            "properties": {
+                "codecs": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "local_port": {
+                    "type": "integer"
+                },
+                "log_level": {
+                    "type": "string"
+                },
+                "media_ports": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "retries": {
+                    "type": "integer"
+                },
+                "sdp_session_name": {
+                    "description": "Optional SDP session name for media",
+                    "type": "string"
+                },
+                "stun_server": {
+                    "type": "string"
+                },
+                "timeout": {
+                    "type": "integer"
+                },
+                "use_upnp": {
+                    "type": "boolean"
+                },
+                "user_agent": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.SwaggerSettings": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "prefix": {
+                    "type": "string"
+                }
+            }
+        },
+        "environment.WebServerSettings": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "logs": {
+                    "type": "boolean"
+                },
+                "port": {
+                    "type": "integer"
+                }
+            }
+        },
+        "environment.WhatsAppSettings": {
+            "type": "object",
+            "properties": {
+                "broadcasts": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
+                "calls": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
+                "groups": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
+                "history_sync_days": {
+                    "type": "integer"
+                },
+                "presence": {
+                    "type": "string"
+                },
+                "read_receipts": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
+                "read_update": {
+                    "type": "boolean"
+                },
+                "wakeup_duration": {
+                    "description": "duration in seconds",
+                    "type": "integer"
+                },
+                "wakeup_hour": {
+                    "description": "Hour(s) as integers: 0-23 or 0,8,16 for multiple hours",
+                    "type": "string"
+                }
+            }
+        },
+        "environment.WhatsmeowSettings": {
+            "type": "object",
+            "properties": {
+                "dispatch_unhandled": {
+                    "type": "boolean"
+                },
+                "whatsmeow_db_log_level": {
+                    "type": "string"
+                },
+                "whatsmeow_log_level": {
+                    "type": "string"
                 }
             }
         },
@@ -2631,8 +2989,17 @@ const docTemplate = `{
         "models.QpHealthResponseItem": {
             "type": "object",
             "properties": {
-                "status": {
-                    "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
+                "state": {
+                    "description": "Calculated current State of the connection",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
+                        }
+                    ]
+                },
+                "state_code": {
+                    "description": "State code as integer",
+                    "type": "integer"
                 },
                 "token": {
                     "description": "Public token",
@@ -2641,27 +3008,6 @@ const docTemplate = `{
                 "wid": {
                     "description": "Whatsapp session id",
                     "type": "string"
-                }
-            }
-        },
-        "models.QpInfoResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "server": {
-                    "$ref": "#/definitions/models.QpWhatsappServer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
                 }
             }
         },
@@ -3307,6 +3653,17 @@ const docTemplate = `{
                 "FalseBooleanType",
                 "UnSetBooleanType",
                 "TrueBooleanType"
+            ]
+        },
+        "whatsapp.WhatsappBooleanExtended": {
+            "type": "integer",
+            "enum": [
+                -2,
+                2
+            ],
+            "x-enum-varnames": [
+                "ForcedFalseBooleanType",
+                "ForcedTrueBooleanType"
             ]
         },
         "whatsapp.WhatsappChat": {

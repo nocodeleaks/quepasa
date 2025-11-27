@@ -344,16 +344,11 @@ func (source *QPWhatsappService) GetHealth() (items []QpHealthResponseItem) {
 
 func ToHealthReponseItem(server *QpWhatsappServer) QpHealthResponseItem {
 	state := server.GetState()
-	uptime := time.Duration(0)
-	if !server.Timestamps.Start.IsZero() {
-		uptime = time.Since(server.Timestamps.Start)
-	}
 	return QpHealthResponseItem{
 		Token:     server.Token,
 		Wid:       server.Wid,
 		State:     state,
 		StateCode: int(state),
-		Uptime:    uptime,
 	}
 }
 

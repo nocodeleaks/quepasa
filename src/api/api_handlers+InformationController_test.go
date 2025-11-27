@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	api "github.com/nocodeleaks/quepasa/api/models"
 )
 
 // TestInfoEndpoint_NoAuthentication tests /info endpoint without authentication
@@ -26,12 +26,33 @@ func TestInfoEndpoint_NoAuthentication(t *testing.T) {
 	resp := rec.Result()
 	defer resp.Body.Close()
 
-	// Should return 204 No Content (no server found)
-	if resp.StatusCode != http.StatusNoContent {
-		t.Errorf("Expected status 204 without authentication, got %d", resp.StatusCode)
+	// Should return 200 OK with basic application information
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200 without authentication, got %d", resp.StatusCode)
 	}
 
-	t.Log("Response: 204 No Content (expected for missing token)")
+	// Parse response
+	var response api.InformationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	// Should be successful
+	if !response.Success {
+		t.Errorf("Expected success=true, got: %+v", response)
+	}
+
+	// Should have version
+	if response.Version == "" {
+		t.Error("Expected version field")
+	}
+
+	// Should NOT have server info
+	if response.Server != nil {
+		t.Error("Expected no server field without authentication")
+	}
+
+	t.Logf("No auth response: Version=%s", response.Version)
 }
 
 // TestInfoEndpoint_WithBotToken tests /info endpoint with X-QUEPASA-TOKEN
@@ -65,7 +86,7 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 	}
 
 	// Parse response
-	var response models.QpInfoResponse
+	var response api.InformationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -73,6 +94,11 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 	// Should be successful
 	if !response.Success {
 		t.Errorf("Expected success=true with bot token, got: %+v", response)
+	}
+
+	// Should have version
+	if response.Version == "" {
+		t.Error("Expected version field")
 	}
 
 	// Should have server info
@@ -85,6 +111,8 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 		t.Logf("Server info: Token=%s, User=%s, Connected=%v",
 			response.Server.Token, response.Server.User, response.Server.GetStatus())
 	}
+
+	t.Log("Bot token correctly returns base information")
 
 	// Verify server object is returned
 	if server == nil {
@@ -127,13 +155,18 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 			t.Errorf("Expected status 200 with master key, got %d", resp.StatusCode)
 		}
 
-		var response models.QpInfoResponse
+		var response api.InformationResponse
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
 
 		if !response.Success {
 			t.Errorf("Expected success=true with master key, got: %+v", response)
+		}
+
+		// Should have version
+		if response.Version == "" {
+			t.Error("Expected version field")
 		}
 
 		if response.Server == nil {
@@ -158,7 +191,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 			t.Errorf("Expected status 200 with master key in query, got %d", resp.StatusCode)
 		}
 
-		var response models.QpInfoResponse
+		var response api.InformationResponse
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
@@ -233,7 +266,7 @@ func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 		t.Errorf("Expected status 200 with both credentials, got %d", resp.StatusCode)
 	}
 
-	var response models.QpInfoResponse
+	var response api.InformationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}

@@ -23,6 +23,9 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Get(endpoint+"/health", HealthController)
 		r.Head(endpoint+"/health", HealthController)
 
+		// Environment settings (master key only)
+		r.Get(endpoint+"/environment", EnvironmentController)
+
 		r.Post(endpoint+"/account", AccountController)
 
 		// CONTROL METHODS ************************

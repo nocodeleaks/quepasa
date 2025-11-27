@@ -33,6 +33,7 @@
 ## Development Tools and Usage Documentation
 
 * **Testing**: Read docs/USAGE-Testing.md for guidelines on setting up tests, creating test users/servers, and using temporary master keys.
+* **Build**: All builds should be "go build -o ../.dist/quepasa.exe", overriding any existing file.
 * **Message Flow**: Read docs/USAGE-Message-Flow.md for detailed message processing flow from Whatsmeow to final dispatch.
 * **WebHooks**: Read docs/USAGE-WebHooks.md for webhook setup and configuration.
 

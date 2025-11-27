@@ -10,7 +10,7 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 )
 
-func OnEventContact(source *WhatsmeowEventHandler, evt events.Contact) {
+func OnEventContact(source *WhatsmeowHandlers, evt events.Contact) {
 	if source == nil {
 		return
 	}

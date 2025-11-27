@@ -286,7 +286,7 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	// (optional) another devices will process anyway, but our devices will show quoted only if it exists on cache
 	var quoted *waE2E.Message
 
-	cached, _ := source.GetHandlers().Dispatcher.GetById(msg.InReply)
+	cached, _ := source.GetHandlers().WAHandlers.GetById(msg.InReply)
 	if cached != nil {
 
 		// update cached info
@@ -510,7 +510,7 @@ func (conn *WhatsmeowConnection) Disconnect() (err error) {
 // dispatchPairRequestEvent dispatches a system event when pairing is requested
 func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
 	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.Dispatcher == nil || handlers.Dispatcher.IsInterfaceNil() {
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
 		return
 	}
 
@@ -538,13 +538,13 @@ func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
 	}
 
 	// Send through dispatcher
-	go handlers.Dispatcher.Message(message, "pair_request")
+	go handlers.WAHandlers.Message(message, "pair_request")
 }
 
 // dispatchPairTimeoutEvent dispatches a system event when pairing expires/fails
 func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg string) {
 	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.Dispatcher == nil || handlers.Dispatcher.IsInterfaceNil() {
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
 		return
 	}
 
@@ -584,13 +584,13 @@ func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg
 	}
 
 	// Send through dispatcher
-	go handlers.Dispatcher.Message(systemMessage, "pair_timeout")
+	go handlers.WAHandlers.Message(systemMessage, "pair_timeout")
 }
 
 // dispatchQRRequestEvent dispatches a system event when QR code is requested
 func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
 	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.Dispatcher == nil || handlers.Dispatcher.IsInterfaceNil() {
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
 		return
 	}
 
@@ -627,13 +627,13 @@ func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
 	}
 
 	// Send through dispatcher
-	go handlers.Dispatcher.Message(message, "qr_request")
+	go handlers.WAHandlers.Message(message, "qr_request")
 }
 
 // dispatchQRTimeoutEvent dispatches a system event when QR code expires/times out
 func (conn *WhatsmeowConnection) dispatchQRTimeoutEvent() {
 	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.Dispatcher == nil || handlers.Dispatcher.IsInterfaceNil() {
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
 		return
 	}
 
@@ -670,7 +670,7 @@ func (conn *WhatsmeowConnection) dispatchQRTimeoutEvent() {
 	}
 
 	// Send through dispatcher
-	go handlers.Dispatcher.Message(message, "qr_timeout")
+	go handlers.WAHandlers.Message(message, "qr_timeout")
 }
 
 func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
@@ -798,7 +798,7 @@ func (source *WhatsmeowConnection) GetWhatsAppQRChannel(ctx context.Context, out
 func (source *WhatsmeowConnection) HistorySync(timestamp time.Time) (err error) {
 	logentry := source.GetLogger()
 
-	leading := source.GetHandlers().Dispatcher.GetLeading()
+	leading := source.GetHandlers().WAHandlers.GetLeading()
 	if leading == nil {
 		err = fmt.Errorf("no valid msg in cache for retrieve parents")
 		return err
@@ -825,7 +825,9 @@ func (source *WhatsmeowConnection) HistorySync(timestamp time.Time) (err error) 
 }
 
 func (conn *WhatsmeowConnection) UpdateHandler(handlers whatsapp.IWhatsappHandlers) {
-	conn.GetHandlers().Dispatcher = handlers
+	if conn.Handlers != nil {
+		conn.Handlers.WAHandlers = handlers
+	}
 }
 
 func (conn *WhatsmeowConnection) UpdatePairedCallBack(callback func(string)) {
@@ -1058,7 +1060,7 @@ func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus 
 
 // GetHandlers returns the handlers instance
 // Handlers are always created during connection creation via CreateConnection()
-func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowEventHandler {
+func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
 	return conn.Handlers
 }
 
@@ -1142,3 +1144,13 @@ func ArchiveChat(conn *WhatsmeowConnection, chatId string, archive bool) error {
 	patch := appstate.BuildArchive(jid, archive, time.Time{}, nil)
 	return sendAppState(conn, patch)
 }
+
+//#region HANDLER MANAGEMENT
+
+// initializeHandlers creates and configures handlers with proper options
+func (conn *WhatsmeowConnection) initializeHandlers(waOptions *whatsapp.WhatsappOptions, wmOptions WhatsmeowOptions) error {
+	conn.Handlers = NewWhatsmeowHandlers(conn, wmOptions, waOptions)
+	return conn.Handlers.Register()
+}
+
+//#endregion

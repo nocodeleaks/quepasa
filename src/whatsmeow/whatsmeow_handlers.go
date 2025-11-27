@@ -19,12 +19,12 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 )
 
-type WhatsmeowEventHandler struct {
+type WhatsmeowHandlers struct {
 	WhatsmeowOptions          // default whatsmeow service global options
 	*WhatsmeowConnection      // Connection reference for accessing embedded managers
 	*whatsapp.WhatsappOptions // particular whatsapp options for this handler
 
-	Dispatcher whatsapp.IWhatsappHandlers
+	WAHandlers whatsapp.IWhatsappHandlers
 
 	eventHandlerID           uint32
 	unregisterRequestedToken bool
@@ -40,8 +40,8 @@ type WhatsmeowEventHandler struct {
 	eventSequence uint64
 }
 
-func NewWhatsmeowEventHandler(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowEventHandler {
-	return &WhatsmeowEventHandler{
+func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowHandlers {
+	return &WhatsmeowHandlers{
 		WhatsmeowConnection: conn,
 		WhatsmeowOptions:    wmOptions,
 		WhatsappOptions:     waOptions,
@@ -49,7 +49,7 @@ func NewWhatsmeowEventHandler(conn *WhatsmeowConnection, wmOptions WhatsmeowOpti
 }
 
 // getTimestamp returns a timestamp with high precision using sequential counter
-func (handler *WhatsmeowEventHandler) getTimestamp() time.Time {
+func (handler *WhatsmeowHandlers) getTimestamp() time.Time {
 	if handler == nil {
 		return time.Now().UTC()
 	}
@@ -65,7 +65,7 @@ func (handler *WhatsmeowEventHandler) getTimestamp() time.Time {
 	return now.Add(time.Duration(sequence%1000000) * time.Nanosecond)
 }
 
-func (source *WhatsmeowEventHandler) GetServiceOptions() (options whatsapp.WhatsappOptionsExtended) {
+func (source *WhatsmeowHandlers) GetServiceOptions() (options whatsapp.WhatsappOptionsExtended) {
 	if source != nil {
 		return source.WhatsappOptionsExtended
 	}
@@ -86,7 +86,7 @@ func (source WhatsmeowOptions) GetPresence() types.Presence {
 	}
 }
 
-func (source *WhatsmeowEventHandler) HandleBroadcasts() bool {
+func (source *WhatsmeowHandlers) HandleBroadcasts() bool {
 	if source == nil {
 		return false
 	}
@@ -100,7 +100,7 @@ func (source *WhatsmeowEventHandler) HandleBroadcasts() bool {
 	return serviceOptions.HandleBroadcasts(defaultValue)
 }
 
-func (source *WhatsmeowEventHandler) HandleGroups() bool {
+func (source *WhatsmeowHandlers) HandleGroups() bool {
 	if source == nil {
 		return false
 	}
@@ -114,7 +114,7 @@ func (source *WhatsmeowEventHandler) HandleGroups() bool {
 	return serviceOptions.HandleGroups(defaultValue)
 }
 
-func (source *WhatsmeowEventHandler) HandleReadReceipts() bool {
+func (source *WhatsmeowHandlers) HandleReadReceipts() bool {
 	if source == nil {
 		return false
 	}
@@ -128,7 +128,7 @@ func (source *WhatsmeowEventHandler) HandleReadReceipts() bool {
 	return serviceOptions.HandleReadReceipts(defaultValue)
 }
 
-func (source *WhatsmeowEventHandler) HandleCalls() bool {
+func (source *WhatsmeowHandlers) HandleCalls() bool {
 	if source == nil {
 		return false
 	}
@@ -144,12 +144,12 @@ func (source *WhatsmeowEventHandler) HandleCalls() bool {
 
 //#endregion
 
-func (source WhatsmeowEventHandler) ShouldDispatchUnhandled() bool {
+func (source WhatsmeowHandlers) ShouldDispatchUnhandled() bool {
 	options := source.GetServiceOptions()
 	return options.DispatchUnhandled
 }
 
-func (source WhatsmeowEventHandler) HandleHistorySync() bool {
+func (source WhatsmeowHandlers) HandleHistorySync() bool {
 	options := source.GetServiceOptions()
 	if options.HistorySync != nil {
 		return true
@@ -159,7 +159,7 @@ func (source WhatsmeowEventHandler) HandleHistorySync() bool {
 }
 
 // only affects whatsmeow
-func (handler *WhatsmeowEventHandler) UnRegister(reason string) {
+func (handler *WhatsmeowHandlers) UnRegister(reason string) {
 	if handler == nil {
 		return
 	}
@@ -186,7 +186,7 @@ func (handler *WhatsmeowEventHandler) UnRegister(reason string) {
 	}
 }
 
-func (source *WhatsmeowEventHandler) Register() (err error) {
+func (source *WhatsmeowHandlers) Register() (err error) {
 	if source.Client.Store == nil {
 		err = fmt.Errorf("this client lost the store, probably a logout from whatsapp phone")
 		return
@@ -202,14 +202,14 @@ func (source *WhatsmeowEventHandler) Register() (err error) {
 }
 
 // GetContactManager delegates contact manager retrieval to the underlying connection
-func (h *WhatsmeowEventHandler) GetContactManager() whatsapp.WhatsappContactManagerInterface {
+func (h *WhatsmeowHandlers) GetContactManager() whatsapp.WhatsappContactManagerInterface {
 	if h == nil || h.WhatsmeowConnection == nil {
 		return nil
 	}
 	return h.WhatsmeowConnection.GetContactManager()
 }
 
-func (source *WhatsmeowEventHandler) SendPresence(presence types.Presence, from string) {
+func (source *WhatsmeowHandlers) SendPresence(presence types.Presence, from string) {
 	logentry := source.GetLogger()
 	client := source.Client
 	SendPresence(client, presence, from, logentry)
@@ -220,7 +220,7 @@ var startupTime = time.Now().Unix()
 
 // Define os diferentes tipos de eventos a serem reconhecidos
 // Aqui se define se vamos processar mensagens | confirmações de leitura | etc
-func (source *WhatsmeowEventHandler) EventsHandler(rawEvt interface{}) {
+func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 	if source == nil {
 		return
 	}
@@ -286,8 +286,8 @@ func (source *WhatsmeowEventHandler) EventsHandler(rawEvt interface{}) {
 		// Send connection dispatching event
 		go source.sendConnectionDispatching("connected")
 
-		if source.Dispatcher != nil && !source.Dispatcher.IsInterfaceNil() {
-			go source.Dispatcher.OnConnected()
+		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
+			go source.WAHandlers.OnConnected()
 		}
 		return
 
@@ -305,8 +305,8 @@ func (source *WhatsmeowEventHandler) EventsHandler(rawEvt interface{}) {
 			logentry.Warn(msgDisconnected)
 		}
 
-		if source.Dispatcher != nil && !source.Dispatcher.IsInterfaceNil() {
-			go source.Dispatcher.OnDisconnected()
+		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
+			go source.WAHandlers.OnDisconnected()
 		}
 		return
 
@@ -390,7 +390,7 @@ func (source *WhatsmeowEventHandler) EventsHandler(rawEvt interface{}) {
 }
 
 // DispatchUnhandledEvent creates a debug message for unhandled events and dispatches it
-func (source *WhatsmeowEventHandler) DispatchUnhandledEvent(evt interface{}, eventType string) {
+func (source *WhatsmeowHandlers) DispatchUnhandledEvent(evt interface{}, eventType string) {
 	logentry := source.GetLogger()
 	logentry.Debugf("dispatching debug event: %s", eventType)
 
@@ -442,7 +442,7 @@ func (source *WhatsmeowEventHandler) DispatchUnhandledEvent(evt interface{}, eve
 // info when available.
 // Otherwise, dispatch as an unhandled debug event if configured to do so.
 
-func (source *WhatsmeowEventHandler) UndecryptableMessage(evt events.UndecryptableMessage) {
+func (source *WhatsmeowHandlers) UndecryptableMessage(evt events.UndecryptableMessage) {
 	logentry := source.GetLogger()
 	logentry = logentry.WithField(LogFields.MessageId, evt.Info.ID)
 	logentry.Tracef("undecryptable message received: %v", evt)
@@ -497,7 +497,7 @@ func HistorySyncSaveJSON(evt events.HistorySync) {
 	_ = file.Close()
 }
 
-func (source *WhatsmeowEventHandler) OnHistorySyncEvent(evt events.HistorySync) {
+func (source *WhatsmeowHandlers) OnHistorySyncEvent(evt events.HistorySync) {
 	logentry := source.GetLogger()
 	logentry.Infof("history sync: %s", evt.Data.SyncType)
 	// HistorySyncSaveJSON(evt)
@@ -538,7 +538,7 @@ func (source *WhatsmeowEventHandler) OnHistorySyncEvent(evt events.HistorySync) 
 
 //#region EVENT MESSAGE
 
-func (handler *WhatsmeowEventHandler) PopulateChatAndParticipant(message *whatsapp.WhatsappMessage, info types.MessageInfo) {
+func (handler *WhatsmeowHandlers) PopulateChatAndParticipant(message *whatsapp.WhatsappMessage, info types.MessageInfo) {
 	message.Chat = *NewWhatsappChat(handler, info.Chat)
 
 	if info.IsGroup {
@@ -558,7 +558,7 @@ func (handler *WhatsmeowEventHandler) PopulateChatAndParticipant(message *whatsa
 }
 
 // Aqui se processar um evento de recebimento de uma mensagem genérica
-func (handler *WhatsmeowEventHandler) Message(evt events.Message, from string) {
+func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 	logentry := handler.GetLogger()
 	logentry.Trace("event message received")
 
@@ -656,7 +656,7 @@ func (handler *WhatsmeowEventHandler) Message(evt events.Message, from string) {
 */
 
 // Append to cache handlers if exists, and then dispatch
-func (handler *WhatsmeowEventHandler) Follow(message *whatsapp.WhatsappMessage, from string) {
+func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from string) {
 	// Increment received messages counter for all incoming messages
 	// Only count messages that are not from us (FromMe = false)
 	if !message.FromMe {
@@ -674,10 +674,10 @@ func (handler *WhatsmeowEventHandler) Follow(message *whatsapp.WhatsappMessage, 
 			message.Type, from, message.Chat.Id)
 	}
 
-	if handler.Dispatcher != nil {
+	if handler.WAHandlers != nil {
 
 		// following to internal handlers
-		go handler.Dispatcher.Message(message, from)
+		go handler.WAHandlers.Message(message, from)
 
 	} else {
 		logentry := handler.GetLogger()
@@ -690,7 +690,7 @@ func (handler *WhatsmeowEventHandler) Follow(message *whatsapp.WhatsappMessage, 
 	}
 }
 
-func (handler *WhatsmeowEventHandler) MarkRead(message *whatsapp.WhatsappMessage, receipt types.ReceiptType) (err error) {
+func (handler *WhatsmeowHandlers) MarkRead(message *whatsapp.WhatsappMessage, receipt types.ReceiptType) (err error) {
 	logentry := handler.GetLogger()
 
 	client := handler.Client
@@ -727,7 +727,7 @@ func (handler *WhatsmeowEventHandler) MarkRead(message *whatsapp.WhatsappMessage
 
 //#region EVENT CALL
 
-func (source *WhatsmeowEventHandler) CallMessage(evt types.BasicCallMeta) {
+func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	logentry := source.GetLogger()
 	logentry.Trace("event CallMessage !")
 
@@ -744,10 +744,10 @@ func (source *WhatsmeowEventHandler) CallMessage(evt types.BasicCallMeta) {
 	message.Chat = *NewWhatsappChat(source, evt.From)
 	message.Type = whatsapp.CallMessageType
 
-	if source.Dispatcher != nil {
+	if source.WAHandlers != nil {
 
 		// following to internal handlers
-		go source.Dispatcher.Message(message, "call")
+		go source.WAHandlers.Message(message, "call")
 	}
 
 	// should reject this call
@@ -762,7 +762,7 @@ func (source *WhatsmeowEventHandler) CallMessage(evt types.BasicCallMeta) {
 }
 
 /*
-func (source *WhatsmeowEventHandler) AcceptCall(from types.JID) error {
+func (source *WhatsmeowHandlers) AcceptCall(from types.JID) error {
 	if source == nil {
 		return fmt.Errorf("nil source handler")
 	}
@@ -787,7 +787,7 @@ func (source *WhatsmeowEventHandler) AcceptCall(from types.JID) error {
 
 // #region EVENT READ RECEIPT
 
-func (source *WhatsmeowEventHandler) Receipt(evt events.Receipt) {
+func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 	eventid := atomic.AddUint64(&source.Counter, 1)
 	logentry := source.GetLogger()
 	logentry = logentry.WithField(LogFields.EventId, eventid)
@@ -814,12 +814,12 @@ func (source *WhatsmeowEventHandler) Receipt(evt events.Receipt) {
 		}
 	}
 
-	if source.Dispatcher == nil {
+	if source.WAHandlers == nil {
 		return
 	}
 
 	for id, status := range statuses {
-		updated := source.Dispatcher.MessageStatusUpdate(id, status)
+		updated := source.WAHandlers.MessageStatusUpdate(id, status)
 		if !updated {
 			continue
 		}
@@ -849,7 +849,7 @@ func (source *WhatsmeowEventHandler) Receipt(evt events.Receipt) {
 		message.Text = id
 
 		// following to internal handlers
-		go source.Dispatcher.Receipt(message)
+		go source.WAHandlers.Receipt(message)
 	}
 }
 
@@ -857,14 +857,14 @@ func (source *WhatsmeowEventHandler) Receipt(evt events.Receipt) {
 
 //#region HANDLE LOGGED OUT EVENT
 
-func (handler *WhatsmeowEventHandler) OnLoggedOutEvent(evt events.LoggedOut) {
+func (handler *WhatsmeowHandlers) OnLoggedOutEvent(evt events.LoggedOut) {
 	reason := evt.Reason.String()
 
 	logentry := handler.GetLogger()
 	logentry.Tracef("logged out %s", reason)
 
-	if handler.Dispatcher != nil {
-		handler.Dispatcher.LoggedOut(reason)
+	if handler.WAHandlers != nil {
+		handler.WAHandlers.LoggedOut(reason)
 	}
 
 	message := &whatsapp.WhatsappMessage{
@@ -883,7 +883,7 @@ func (handler *WhatsmeowEventHandler) OnLoggedOutEvent(evt events.LoggedOut) {
 
 //#region HANDLE GROUP JOIN OUT EVENT
 
-func (handler *WhatsmeowEventHandler) JoinedGroup(evt events.JoinedGroup) {
+func (handler *WhatsmeowHandlers) JoinedGroup(evt events.JoinedGroup) {
 
 	id := evt.CreateKey
 	if len(id) == 0 {
@@ -916,7 +916,7 @@ func (handler *WhatsmeowEventHandler) JoinedGroup(evt events.JoinedGroup) {
 //#region CONNECTION DISPATCHING AND HISTORY CONTROL
 
 // isHistoryMessage determines if a message should be classified as history
-func (handler *WhatsmeowEventHandler) isHistoryMessage(from string) bool {
+func (handler *WhatsmeowHandlers) isHistoryMessage(from string) bool {
 	// If explicitly marked as history, return true
 	if from == "history" {
 		return true
@@ -933,8 +933,8 @@ func (handler *WhatsmeowEventHandler) isHistoryMessage(from string) bool {
 }
 
 // sendConnectionDispatching sends connection status events to configured dispatching systems
-func (handler *WhatsmeowEventHandler) sendConnectionDispatching(event string) {
-	if handler.Dispatcher == nil {
+func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
+	if handler.WAHandlers == nil {
 		return
 	}
 
@@ -969,11 +969,11 @@ func (handler *WhatsmeowEventHandler) sendConnectionDispatching(event string) {
 	}
 
 	// Send through internal handlers
-	go handler.Dispatcher.Message(message, "connection")
+	go handler.WAHandlers.Message(message, "connection")
 }
 
 // OnOfflineSyncPreview handles the start of offline synchronization
-func (handler *WhatsmeowEventHandler) OnOfflineSyncPreview(evt events.OfflineSyncPreview) {
+func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPreview) {
 	logentry := handler.GetLogger()
 	logentry.Infof("offline sync preview started - Total: %d, Messages: %d, Notifications: %d, Receipts: %d",
 		evt.Total, evt.Messages, evt.Notifications, evt.Receipts)
@@ -994,7 +994,7 @@ func (handler *WhatsmeowEventHandler) OnOfflineSyncPreview(evt events.OfflineSyn
 }
 
 // OnOfflineSyncCompleted handles the completion of offline synchronization
-func (handler *WhatsmeowEventHandler) OnOfflineSyncCompleted(evt events.OfflineSyncCompleted) {
+func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncCompleted) {
 	logentry := handler.GetLogger()
 	logentry.Infof("offline sync completed - Count: %d", evt.Count)
 
@@ -1012,8 +1012,8 @@ func (handler *WhatsmeowEventHandler) OnOfflineSyncCompleted(evt events.OfflineS
 }
 
 // sendSyncDispatching sends synchronization events to configured dispatching systems
-func (handler *WhatsmeowEventHandler) sendSyncDispatching(event string, data map[string]interface{}) {
-	if handler.Dispatcher == nil {
+func (handler *WhatsmeowHandlers) sendSyncDispatching(event string, data map[string]interface{}) {
+	if handler.WAHandlers == nil {
 		return
 	}
 
@@ -1052,11 +1052,11 @@ func (handler *WhatsmeowEventHandler) sendSyncDispatching(event string, data map
 	}
 
 	// Send through internal handlers
-	go handler.Dispatcher.Message(message, "sync")
+	go handler.WAHandlers.Message(message, "sync")
 }
 
 // enrichParticipantName enriches participant name for group messages using cached contact information
-func (handler *WhatsmeowEventHandler) enrichParticipantName(participant *whatsapp.WhatsappChat, senderJID types.JID) {
+func (handler *WhatsmeowHandlers) enrichParticipantName(participant *whatsapp.WhatsappChat, senderJID types.JID) {
 	// Use the centralized GetContactName function for consistency and null checks
 	name := GetContactName(handler.Client, senderJID)
 
@@ -1076,7 +1076,7 @@ func (handler *WhatsmeowEventHandler) enrichParticipantName(participant *whatsap
 }
 
 // ProcessMentions processes mentions in message text and converts them to readable format
-func (handler *WhatsmeowEventHandler) ProcessMentions(message *whatsapp.WhatsappMessage, contextInfo *waE2E.ContextInfo) {
+func (handler *WhatsmeowHandlers) ProcessMentions(message *whatsapp.WhatsappMessage, contextInfo *waE2E.ContextInfo) {
 	if contextInfo == nil || len(contextInfo.GetMentionedJID()) == 0 {
 		return
 	}
@@ -1135,7 +1135,7 @@ func (handler *WhatsmeowEventHandler) ProcessMentions(message *whatsapp.Whatsapp
 //#region QR CODE SCAN EVENTS
 
 // OnQREvent handles QR code scan events and dispatches them as system messages
-func (handler *WhatsmeowEventHandler) OnQREvent(evt *events.QR) {
+func (handler *WhatsmeowHandlers) OnQREvent(evt *events.QR) {
 	logentry := handler.GetLogger()
 	// Debug: print all available fields using reflection
 	evtValue := reflect.ValueOf(evt).Elem()
@@ -1201,7 +1201,7 @@ func (handler *WhatsmeowEventHandler) OnQREvent(evt *events.QR) {
 			case "timeout":
 				// QR code timed out - use dedicated timeout event
 				logentry.Warn("QR code scan timed out")
-				// Call the connection's timeout dispatcher for consistency
+				// Call the connection's timeout WAHandlers for consistency
 				if handler.WhatsmeowConnection != nil {
 					handler.WhatsmeowConnection.dispatchQRTimeoutEvent()
 				}
@@ -1237,7 +1237,7 @@ func (handler *WhatsmeowEventHandler) OnQREvent(evt *events.QR) {
 }
 
 // OnPairSuccessEvent handles successful device pairing events
-func (handler *WhatsmeowEventHandler) OnPairSuccessEvent(evt *events.PairSuccess) {
+func (handler *WhatsmeowHandlers) OnPairSuccessEvent(evt *events.PairSuccess) {
 	logentry := handler.GetLogger()
 
 	// Debug: print all available fields using reflection

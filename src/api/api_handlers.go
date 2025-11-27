@@ -219,11 +219,11 @@ func RegisterAPIControllers(r chi.Router) {
 // CommandController manages bot server commands
 //
 //	@Summary		Execute bot commands
-//	@Description	Execute control commands for the bot server (start, stop, restart, status)
+//	@Description	Execute control commands for the bot server (start, stop, restart)
 //	@Tags			Bot
 //	@Accept			json
 //	@Produce		json
-//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, status)
+//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart)
 //	@Success		200		{object}	models.QpResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -259,8 +259,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess("restarted")
 		}
 	case "status":
-		status := server.GetStatus()
-		response.ParseSuccess(status.String())
+		err = fmt.Errorf("status command has been removed, please use /health endpoint instead")
 	case "groups":
 		err := models.ToggleGroups(server)
 		if err == nil {
@@ -292,7 +291,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess(message)
 		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,status,groups,broadcasts,readreceipts,calls,debug}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,broadcasts,readreceipts,calls,debug}", action)
 	}
 
 	if err != nil {

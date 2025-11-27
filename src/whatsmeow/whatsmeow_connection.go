@@ -24,7 +24,7 @@ import (
 // Must Implement IWhatsappConnection
 type WhatsmeowConnection struct {
 	library.LogStruct // logging
-	Client *whatsmeow.Client
+	Client            *whatsmeow.Client
 
 	Handlers        *WhatsmeowHandlers       // composition for handlers
 	GroupManager    *WhatsmeowGroupManager   // composition for group operations

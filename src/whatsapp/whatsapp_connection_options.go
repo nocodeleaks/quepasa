@@ -14,6 +14,10 @@ type WhatsappConnectionOptions struct {
 
 	Wid       string
 	Reconnect bool
+
+	// ExternalHandler allows passing a pre-configured handler to the connection
+	// This decouples handler lifecycle from connection lifecycle
+	ExternalHandler IWhatsappHandlers
 }
 
 func (source *WhatsappConnectionOptions) GetWid() string {

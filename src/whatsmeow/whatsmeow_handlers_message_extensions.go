@@ -11,7 +11,7 @@ import (
 	"go.mau.fi/whatsmeow/proto/waE2E"
 )
 
-func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMessage, in *waE2E.Message) {
+func HandleKnowingMessages(handler *WhatsmeowEventHandler, out *whatsapp.WhatsappMessage, in *waE2E.Message) {
 	logentry := handler.GetLogger()
 	logentry = logentry.WithField(LogFields.ChatId, out.Chat.Id)
 	logentry = logentry.WithField(LogFields.MessageId, out.Id)
@@ -477,7 +477,7 @@ func HandleContactMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *waE
 // continue to use it. Additional contacts are cloned from `out`, given a
 // suffix on the message Id ("-2", "-3", ...) and dispatched through the
 // handler by calling handler.Follow(...).
-func HandleContactsArrayMessage(handler *WhatsmeowHandlers, logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.ContactsArrayMessage) {
+func HandleContactsArrayMessage(handler *WhatsmeowEventHandler, logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.ContactsArrayMessage) {
 	logentry.Debug("received a contacts array message !")
 	out.Type = whatsapp.ContactMessageType
 	if len(in.Contacts) == 0 {

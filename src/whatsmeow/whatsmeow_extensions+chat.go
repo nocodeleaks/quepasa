@@ -118,7 +118,7 @@ found:
 	return library.NormalizeForTitle(title)
 }
 
-func NewWhatsappChat(handler *WhatsmeowHandlers, jid types.JID) *whatsapp.WhatsappChat {
+func NewWhatsappChat(handler *WhatsmeowEventHandler, jid types.JID) *whatsapp.WhatsappChat {
 	contactManager := handler.GetContactManager()
 	return NewWhatsappChatRaw(handler.Client, contactManager, jid)
 }

@@ -74,6 +74,19 @@ func (source *QpWhatsappPairing) GetConnection() (whatsapp.IWhatsappConnection, 
 		if err != nil {
 			return nil, err
 		}
+
+		// Create temporary DispatchingHandler for QR/Pair events
+		// This allows events to be dispatched even before server is fully created
+		if len(source.Token) > 0 {
+			server, err := GetServerFromToken(source.Token)
+			if err == nil && server != nil {
+				// Server exists - use its handler
+				logentry := source.GetLogger()
+				logentry.Info("configuring existing server handler for pairing events")
+				conn.UpdateHandler(server.Handler)
+			}
+		}
+
 		source.conn = conn
 	}
 

@@ -13,7 +13,7 @@ import (
 )
 
 // Serviço que controla os servidores / bots individuais do whatsapp
-type QPWhatsappHandlers struct {
+type DispatchingHandler struct {
 	QpWhatsappMessages
 	library.LogStruct // logging
 
@@ -27,7 +27,7 @@ type QPWhatsappHandlers struct {
 
 // Returns whatsapp controller id on E164
 // Ex: 5521967609095
-func (source *QPWhatsappHandlers) GetWId() string {
+func (source *DispatchingHandler) GetWId() string {
 	if source == nil || source.server == nil {
 		return ""
 	}
@@ -35,7 +35,7 @@ func (source *QPWhatsappHandlers) GetWId() string {
 	return source.server.GetWId()
 }
 
-func (source *QPWhatsappHandlers) HandleGroups() bool {
+func (source *DispatchingHandler) HandleGroups() bool {
 	global := whatsapp.Options
 
 	var local whatsapp.WhatsappBoolean
@@ -45,7 +45,7 @@ func (source *QPWhatsappHandlers) HandleGroups() bool {
 	return global.HandleGroups(local)
 }
 
-func (source *QPWhatsappHandlers) HandleBroadcasts() bool {
+func (source *DispatchingHandler) HandleBroadcasts() bool {
 	global := whatsapp.Options
 
 	var local whatsapp.WhatsappBoolean
@@ -58,7 +58,7 @@ func (source *QPWhatsappHandlers) HandleBroadcasts() bool {
 //#region EVENTS FROM WHATSAPP SERVICE
 
 // Process messages received from whatsapp service
-func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from string) {
+func (source *DispatchingHandler) Message(msg *whatsapp.WhatsappMessage, from string) {
 
 	// should skip groups ?
 	if !source.HandleGroups() && msg.FromGroup() {
@@ -105,7 +105,7 @@ func (source *QPWhatsappHandlers) Message(msg *whatsapp.WhatsappMessage, from st
 // region STATUS AND RECEIPTS
 
 // does not cache msg, only update status and webhook dispatch
-func (source *QPWhatsappHandlers) Receipt(msg *whatsapp.WhatsappMessage) {
+func (source *DispatchingHandler) Receipt(msg *whatsapp.WhatsappMessage) {
 	// should implement a better method for that !!!!
 	// should implement a better method for that !!!!
 	// should implement a better method for that !!!!
@@ -129,7 +129,7 @@ func (source *QPWhatsappHandlers) Receipt(msg *whatsapp.WhatsappMessage) {
 
 </summary>
 */
-func (source *QPWhatsappHandlers) LoggedOut(reason string) {
+func (source *DispatchingHandler) LoggedOut(reason string) {
 
 	// one step at a time
 	if source.server != nil {
@@ -155,7 +155,7 @@ func (source *QPWhatsappHandlers) LoggedOut(reason string) {
 
 </summary>
 */
-func (source *QPWhatsappHandlers) OnConnected() {
+func (source *DispatchingHandler) OnConnected() {
 
 	// one step at a time
 	if source.server != nil {
@@ -177,7 +177,7 @@ func (source *QPWhatsappHandlers) OnConnected() {
 
 </summary>
 */
-func (source *QPWhatsappHandlers) OnDisconnected() {
+func (source *DispatchingHandler) OnDisconnected() {
 
 }
 
@@ -185,7 +185,7 @@ func (source *QPWhatsappHandlers) OnDisconnected() {
 //region MESSAGE CONTROL REGION HANDLE A LOCK
 
 // caches and triggers async hooks
-func (source *QPWhatsappHandlers) appendMsgToCache(msg *whatsapp.WhatsappMessage, from string) {
+func (source *DispatchingHandler) appendMsgToCache(msg *whatsapp.WhatsappMessage, from string) {
 
 	// saving on local normalized cache, do not affect remote msgs
 	valid := source.QpWhatsappMessages.Append(msg, from)
@@ -201,7 +201,7 @@ func (source *QPWhatsappHandlers) appendMsgToCache(msg *whatsapp.WhatsappMessage
 	}
 }
 
-func (source *QPWhatsappHandlers) GetById(id string) (*whatsapp.WhatsappMessage, error) {
+func (source *DispatchingHandler) GetById(id string) (*whatsapp.WhatsappMessage, error) {
 	return source.QpWhatsappMessages.GetById(id)
 }
 
@@ -209,7 +209,7 @@ func (source *QPWhatsappHandlers) GetById(id string) (*whatsapp.WhatsappMessage,
 // region EVENT HANDLER TO INTERNAL USE, GENERALLY TO WEBHOOK
 
 // sends the message throw external publishers
-func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
+func (source *DispatchingHandler) Trigger(payload *whatsapp.WhatsappMessage) {
 	// If the source is nil, we cannot proceed with dispatching the message.
 	// This is a safeguard to prevent nil pointer dereference errors.
 	if source == nil {
@@ -259,7 +259,7 @@ func (source *QPWhatsappHandlers) Trigger(payload *whatsapp.WhatsappMessage) {
 }
 
 // Register an event handler that triggers on a new message received on cache
-func (handler *QPWhatsappHandlers) Register(evt QpDispatchingHandlerInterface) {
+func (handler *DispatchingHandler) Register(evt QpDispatchingHandlerInterface) {
 	handler.syncRegister.Lock() // await for avoid simultaneous calls
 
 	if !handler.IsRegistered(evt) {
@@ -270,7 +270,7 @@ func (handler *QPWhatsappHandlers) Register(evt QpDispatchingHandlerInterface) {
 }
 
 // Removes an specific event handler
-func (handler *QPWhatsappHandlers) UnRegister(evt QpDispatchingHandlerInterface) {
+func (handler *DispatchingHandler) UnRegister(evt QpDispatchingHandlerInterface) {
 	handler.syncRegister.Lock() // await for avoid simultaneous calls
 
 	newHandlers := []QpDispatchingHandlerInterface{}
@@ -287,7 +287,7 @@ func (handler *QPWhatsappHandlers) UnRegister(evt QpDispatchingHandlerInterface)
 }
 
 // Removes an specific event handler
-func (handler *QPWhatsappHandlers) Clear() {
+func (handler *DispatchingHandler) Clear() {
 	handler.syncRegister.Lock() // await for avoid simultaneous calls
 
 	// updating
@@ -297,12 +297,12 @@ func (handler *QPWhatsappHandlers) Clear() {
 }
 
 // Indicates that has any event handler registered
-func (handler *QPWhatsappHandlers) IsAttached() bool {
+func (handler *DispatchingHandler) IsAttached() bool {
 	return len(handler.aeh) > 0
 }
 
 // Indicates that if an specific handler is registered
-func (handler *QPWhatsappHandlers) IsRegistered(evt interface{}) bool {
+func (handler *DispatchingHandler) IsRegistered(evt interface{}) bool {
 	for _, v := range handler.aeh {
 		if v == evt {
 			return true
@@ -316,7 +316,7 @@ func (handler *QPWhatsappHandlers) IsRegistered(evt interface{}) bool {
 
 // processUnhandledMessage handles debugging for unhandled message types
 // This method can be easily removed when debugging is no longer needed
-func (source *QPWhatsappHandlers) processUnhandledMessage(msg *whatsapp.WhatsappMessage) {
+func (source *DispatchingHandler) processUnhandledMessage(msg *whatsapp.WhatsappMessage) {
 	// Generate a unique UUID to prevent duplicate message IDs
 	uniqueID := uuid.New().String()
 	msg.Id = msg.Id + "-unhandled-" + uniqueID
@@ -346,6 +346,6 @@ func (source *QPWhatsappHandlers) processUnhandledMessage(msg *whatsapp.Whatsapp
 	}
 }
 
-func (source *QPWhatsappHandlers) IsInterfaceNil() bool {
+func (source *DispatchingHandler) IsInterfaceNil() bool {
 	return nil == source
 }

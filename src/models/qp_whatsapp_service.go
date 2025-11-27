@@ -343,10 +343,12 @@ func (source *QPWhatsappService) GetHealth() (items []QpHealthResponseItem) {
 }
 
 func ToHealthReponseItem(server *QpWhatsappServer) QpHealthResponseItem {
+	state := server.GetState()
 	return QpHealthResponseItem{
-		Token:  server.Token,
-		Wid:    server.Wid,
-		Status: server.GetStatus(),
+		Token:     server.Token,
+		Wid:       server.Wid,
+		State:     state,
+		StateCode: int(state),
 	}
 }
 

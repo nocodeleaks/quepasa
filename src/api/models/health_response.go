@@ -9,10 +9,17 @@ import (
 
 type HealthResponse struct {
 	models.QpResponse
+
+	// -- single item fields
+	Wid       string                           `json:"wid,omitempty"`
 	State     whatsapp.WhatsappConnectionState `json:"state,omitempty"`
 	StateCode int                              `json:"state_code,omitempty"`
-	Items     []models.QpHealthResponseItem    `json:"items,omitempty"`
-	Stats     *HealthStats                     `json:"stats,omitempty"`
-	Timestamp time.Time                        `json:"timestamp"`
-	Version   string                           `json:"version"`
+
+	// -- multiple items fields
+	Items []models.QpHealthResponseItem `json:"items,omitempty"`
+	Stats *HealthStats                  `json:"stats,omitempty"`
+
+	// -- general fields
+	Timestamp time.Time `json:"timestamp"`
+	Version   string    `json:"version"`
 }

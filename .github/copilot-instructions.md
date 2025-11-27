@@ -30,8 +30,11 @@
 - USAGE-*.md: Usage instructions for scripts/specific code
 - copilot-instructions.md: Global AI agent guidelines (this file)
 
-### Documentation Files (Usage Instructions)
-- USAGE-Message-Flow.md: Message processing flow through the system
+## Development Tools and Usage Documentation
+
+* **Testing**: Read docs/USAGE-Testing.md for guidelines on setting up tests, creating test users/servers, and using temporary master keys.
+* **Message Flow**: Read docs/USAGE-Message-Flow.md for detailed message processing flow from Whatsmeow to final dispatch.
+* **WebHooks**: Read docs/USAGE-WebHooks.md for webhook setup and configuration.
 
 ## Key Files
 - src/main.go: System initialization

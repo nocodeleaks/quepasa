@@ -136,6 +136,8 @@ func (source *WhatsmeowServiceModel) CreateEmptyConnection() (conn *WhatsmeowCon
 	options := &whatsapp.WhatsappConnectionOptions{
 		Reconnect: false,
 		LogStruct: library.LogStruct{LogEntry: logentry},
+		// Note: No ExternalHandler for empty connections (QR scan)
+		// QR events will be handled by internal handlers only
 	}
 	return source.CreateConnection(options)
 }
@@ -155,16 +157,25 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 
 	logentry.Infof("creating whatsmeow connection with log level: %s", logentry.Level)
 
-	// Create connection first (will create handlers internally)
+	// Create connection WITHOUT internal handlers (fully decoupled)
 	conn = &WhatsmeowConnection{
 		Client:    client,
 		LogStruct: library.LogStruct{LogEntry: logentry},
 	}
 
-	// Initialize handlers with proper options after connection is created
-	err = conn.initializeHandlers(options.WhatsappOptions, source.Options)
+	// Create and configure handlers with proper options
+	conn.Handlers = NewWhatsmeowEventHandler(conn, source.Options, options.WhatsappOptions)
+	err = conn.Handlers.Register()
 	if err != nil {
 		return
+	}
+
+	// If an external handler was provided, configure it immediately
+	if options.ExternalHandler != nil {
+		logentry.Info("configuring external handler on connection creation")
+		conn.UpdateHandler(options.ExternalHandler)
+	} else {
+		logentry.Info("no external handler provided - events will only be logged internally")
 	}
 
 	client.PrePairCallback = conn.PairedCallBack

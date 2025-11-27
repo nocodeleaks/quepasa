@@ -28,7 +28,7 @@ type QpWhatsappServer struct {
 
 	Timestamps QpTimestamps `json:"timestamps"`
 
-	Handler            *QPWhatsappHandlers   `json:"-"`
+	Handler            *DispatchingHandler   `json:"-"`
 	DispatchingHandler *QPDispatchingHandler `json:"-"`
 	GroupManager       *QpGroupManager       `json:"-"` // composition for group operations
 	StatusManager      *QpStatusManager      `json:"-"` // composition for status operations
@@ -106,7 +106,7 @@ func (server *QpWhatsappServer) HandlerEnsure() {
 	}
 
 	if server.Handler == nil {
-		handler := &QPWhatsappHandlers{
+		handler := &DispatchingHandler{
 			server:       server,
 			syncRegister: &sync.Mutex{},
 		}
@@ -133,6 +133,11 @@ func (server *QpWhatsappServer) HasSignalRActiveConnections() bool {
 //region IMPLEMENT OF INTERFACE STATE RECOVERY
 
 func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
+	return server.GetState()
+}
+
+// GetState retrieves the current calculated connection state of the WhatsApp server
+func (server *QpWhatsappServer) GetState() whatsapp.WhatsappConnectionState {
 	if server == nil {
 		return whatsapp.Unknown // invalid state
 	}
@@ -301,9 +306,10 @@ func (source *QpWhatsappServer) UpdateConnection(connection whatsapp.IWhatsappCo
 	if source.Handler == nil {
 		logentry := source.GetLogger()
 		logentry.Warn("creating handlers ?! not implemented yet")
+	} else {
+		// Update handler on the new connection
+		source.connection.UpdateHandler(source.Handler)
 	}
-
-	source.connection.UpdateHandler(source.Handler)
 
 	// Registrando webhook
 	dispatchingHandler := &QPDispatchingHandler{server: source}
@@ -331,6 +337,7 @@ func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 			Wid:             source.Wid,
 			Reconnect:       true,
 			LogStruct:       library.LogStruct{LogEntry: logentry},
+			ExternalHandler: source.Handler, // Pass handler to connection
 		}
 
 		logentry.Infof("trying to create new whatsapp connection, auto reconnect: %v, log level: %s", options.Reconnect, logentry.Level)
@@ -346,6 +353,7 @@ func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 			return err
 		} else {
 			source.connection = connection
+			// Handler is already configured via ExternalHandler in options
 		}
 	}
 
@@ -380,8 +388,8 @@ func (source *QpWhatsappServer) Start() (err error) {
 		source.Handler.Register(source.DispatchingHandler)
 	}
 
-	// Atualizando manipuladores de eventos
-	source.connection.UpdateHandler(source.Handler)
+	// Handler already configured during connection creation via ExternalHandler
+	// No need to call UpdateHandler here
 
 	// Initialize RabbitMQ connections for this server
 	source.InitializeRabbitMQConnections()
@@ -432,8 +440,8 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 		logger.Debug("handlers already attached")
 	}
 
-	// Atualizando manipuladores de eventos
-	source.connection.UpdateHandler(source.Handler)
+	// Handler already configured during connection creation via ExternalHandler
+	// No need to call UpdateHandler here
 
 	statusManager := source.GetStatusManager()
 	if !statusManager.IsConnected() {

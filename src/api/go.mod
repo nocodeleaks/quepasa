@@ -34,6 +34,8 @@ toolchain go1.24.2
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
@@ -66,14 +68,12 @@ require (
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
-	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/joncalhoun/migrate v0.0.2 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattetti/audio v0.0.0-20240411020228-c5379f9b5b61 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000 // indirect
@@ -92,13 +92,13 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
-	go.mau.fi/util v0.9.2 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20251106163046-720bd0b4a715 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b // indirect
-	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	go.mau.fi/util v0.9.3 // indirect
+	go.mau.fi/whatsmeow v0.0.0-20251127132918-b9ac3d51d746 // indirect
+	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )

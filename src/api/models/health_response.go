@@ -20,6 +20,7 @@ type HealthResponse struct {
 	Stats *HealthStats                  `json:"stats,omitempty"`
 
 	// -- general fields
-	Timestamp time.Time `json:"timestamp"`
-	Version   string    `json:"version"`
+	Timestamp time.Time     `json:"timestamp"`
+	Version   string        `json:"version"`
+	Uptime    time.Duration `json:"uptime"`
 }

@@ -42,5 +42,5 @@ require (
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000 // indirect
-	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 )

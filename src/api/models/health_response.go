@@ -9,10 +9,11 @@ import (
 
 type HealthResponse struct {
 	models.QpResponse
-	State     whatsapp.WhatsappConnectionState `json:"state,omitempty"`
-	StateCode int                              `json:"state_code,omitempty"`
-	Items     []models.QpHealthResponseItem    `json:"items,omitempty"`
-	Stats     *HealthStats                     `json:"stats,omitempty"`
-	Timestamp time.Time                        `json:"timestamp"`
-	Version   string                           `json:"version"`
+	State       whatsapp.WhatsappConnectionState `json:"state,omitempty"`
+	StateCode   int                              `json:"state_code,omitempty"`
+	Items       []models.QpHealthResponseItem    `json:"items,omitempty"`
+	Stats       *HealthStats                     `json:"stats,omitempty"`
+	Timestamp   time.Time                        `json:"timestamp"`
+	Version     string                           `json:"version"`
+	Environment *EnvironmentSettings             `json:"environment,omitempty"`
 }

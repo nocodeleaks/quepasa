@@ -314,9 +314,12 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 		return
 	}
 
-	// Handle LID to phone mapping for sending
+	// Always try to convert to @s.whatsapp.net format for sending
+	// WhatsApp messages should preferably be sent to phone-based JIDs (@s.whatsapp.net)
+	// But fallback to @lid if phone conversion fails
 	originalChatId := waMsg.Chat.Id
-	if strings.Contains(waMsg.Chat.Id, "@lid") {
+
+	if strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 		logentry.Debugf("LID detected in chat ID: %s, attempting to get phone number", waMsg.Chat.Id)
 
 		phone, err := server.GetPhoneFromLID(waMsg.Chat.Id)
@@ -331,6 +334,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 			sendResponse, err := server.SendMessage(waMsg)
 			if err == nil {
 				// Success sending to LID directly
+				logentry.Infof("successfully sent message directly to LID: %s", originalChatId)
 				MessagesSent.Inc()
 
 				result := &models.QpSendResponseMessage{}
@@ -352,8 +356,13 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 			return
 		}
 
+		// Successfully converted to phone - use @s.whatsapp.net format
 		waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
 		logentry.Debugf("converted LID %s to phone-based chat ID: %s (from phone %s)", originalChatId, waMsg.Chat.Id, phone)
+	} else if !strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
+		// If it's just a phone number without suffix, ensure it has @s.whatsapp.net
+		waMsg.Chat.Id = whatsapp.PhoneToWid(waMsg.Chat.Id)
+	} else {
 	}
 
 	sendResponse, err := server.SendMessage(waMsg)

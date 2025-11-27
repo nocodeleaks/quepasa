@@ -27,12 +27,11 @@ func BasicHealthController(w http.ResponseWriter, r *http.Request) {
 			Success: true,
 			Status:  "application is running",
 		},
-		Timestamp: time.Now(),
-		Version:   models.QpVersion,
+		Timestamp:   time.Now(),
+		Version:     models.QpVersion,
+		Environment: api.NewEnvironmentSettings(),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	RespondInterface(w, response)
 }
 

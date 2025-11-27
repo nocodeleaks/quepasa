@@ -21,9 +21,9 @@ type SwaggerEndpoint struct {
 	Path        string         // API path (e.g., /contacts)
 	Params      []SwaggerParam // Parameters from @Param
 	Security    bool           // Whether @Security is present
-	MCPHidden   bool           // @MCPHidden - exclude from MCP
-	MCPCategory string         // @MCPCategory - tool category
-	MCPAuth     string         // @MCPAuth - authentication mode
+	MCPHidden   bool           //	@MCPHidden	- exclude from MCP
+	MCPCategory string         //	@MCPCategory	- tool category
+	MCPAuth     string         //	@MCPAuth	- authentication mode
 }
 
 // SwaggerParam represents a parameter from @Param annotation

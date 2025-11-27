@@ -115,7 +115,7 @@ IMPORTANT: Whenever you are going to merge/push to the main branch, you MUST:
 
 Version Location:
 File: models/qp_defaults.go
-const QpVersion = "3.25.2207.0127" // ALWAYS UPDATE BEFORE MERGE TO MAIN
+const QpVersion = "3.25.1114.2100" // ALWAYS UPDATE BEFORE MERGE TO MAIN
 
 Mandatory Process before Push/Merge to Main:
 1. Verify that all changes are working properly
@@ -125,8 +125,8 @@ Mandatory Process before Push/Merge to Main:
 5. Then merge/push to main
 
 Version Increment Example:
-- Current version: 3.25.2207.0127
-- Next version: 3.25.2207.0128 (simple increment)
+- Current version: 3.25.1114.2100
+- Next version: 3.25.1114.2101 (simple increment)
 - Or new version: 3.25.MMDD.HHMM (based on current date/time)
 
 CRITICAL REMINDER: NEVER merge to main without updating QpVersion

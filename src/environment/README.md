@@ -1,6 +1,6 @@
 # QuePasa Environment Variables Documentation
 
-This document describes all environment variables used by the QuePasa application, organized by category. **Total: 63 variables across 12 categories**.
+This document describes all environment variables used by the QuePasa application, organized by category. **Total: 65 variables across 12 categories**.
 
 ## 📡 SIP Proxy Configuration
 
@@ -62,6 +62,8 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`BROADCASTS`** - Handle broadcast messages (default: `false`)
 - **`HISTORYSYNCDAYS`** - History sync days
 - **`PRESENCE`** - Presence state (default: `unavailable`)
+- **`WAKEUP_HOUR`** - Single hour (0-23) to activate presence daily (e.g., `9` for 9 AM)
+- **`WAKEUP_DURATION`** - Duration in seconds to keep presence online during scheduled wake-up (default: `10`)
 
 ## 📋 Logging Configuration
 
@@ -236,5 +238,12 @@ dbParams := environment.Settings.Database.GetDBParameters()
 // Check WhatsApp call handling
 if environment.Settings.WhatsApp.Calls().ToBoolean(false) {
     // Handle calls
+}
+
+// Check wake-up timer settings
+if len(environment.Settings.WhatsApp.WakeUpHour) > 0 {
+    wakeUpHour := environment.Settings.WhatsApp.WakeUpHour
+    duration := environment.Settings.WhatsApp.WakeUpDuration
+    // Wake-up timer is configured (single hour)
 }
 ```

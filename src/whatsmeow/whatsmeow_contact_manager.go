@@ -248,7 +248,8 @@ func (cm *WhatsmeowContactManager) GetLIDFromPhone(phone string) (string, error)
 		return lid, nil
 	}
 
-	return "", fmt.Errorf("no LID found for phone %s", normalized)
+	logger.Debugf("No LID mapping found for phone %s", normalized)
+	return "", nil
 }
 
 // GetPhoneFromLID returns the phone number for a given @lid

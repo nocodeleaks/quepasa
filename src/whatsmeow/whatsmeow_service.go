@@ -163,9 +163,11 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 		LogStruct: library.LogStruct{LogEntry: logentry},
 	}
 
-	// Create and configure handlers with proper options
-	conn.Handlers = NewWhatsmeowEventHandler(conn, source.Options, options.WhatsappOptions)
-	err = conn.Handlers.Register()
+	// Initialize wake-up scheduler
+	conn.WakeUpScheduler = NewWakeUpScheduler(conn)
+
+	// Initialize handlers with proper options after connection is created
+	err = conn.initializeHandlers(options.WhatsappOptions, source.Options)
 	if err != nil {
 		return
 	}

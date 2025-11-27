@@ -382,6 +382,9 @@ func (source *QpWhatsappServer) Start() (err error) {
 	// reset stop requested token
 	source.StopRequested = false
 
+	// Update start timestamp
+	source.Timestamps.Start = time.Now().UTC()
+
 	if !source.Handler.IsAttached() {
 
 		// Registrando dispatching handler

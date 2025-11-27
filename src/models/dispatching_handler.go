@@ -160,6 +160,9 @@ func (source *DispatchingHandler) OnConnected() {
 	// one step at a time
 	if source.server != nil {
 
+		// Reset server start timestamp on connection (uptime starts from connection moment)
+		source.server.Timestamps.Start = time.Now().UTC()
+
 		// marking unverified and wait for more analyses
 		err := source.server.MarkVerified(true)
 		if err != nil {

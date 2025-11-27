@@ -49,6 +49,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 	response := &api.HealthResponse{
 		Timestamp: time.Now(),
 		Version:   models.QpVersion,
+		Uptime:    time.Since(models.ApplicationStartTime),
 	}
 
 	if models.WhatsappService == nil {

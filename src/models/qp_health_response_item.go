@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -16,6 +18,9 @@ type QpHealthResponseItem struct {
 
 	// State code as integer
 	StateCode int `json:"state_code,omitempty"`
+
+	// Server uptime since last start
+	Uptime time.Duration `json:"uptime"`
 }
 
 // Check if the state is ready or manually stopped

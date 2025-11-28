@@ -26,7 +26,7 @@ type DispatchingHandler struct {
 }
 
 // Returns whatsapp controller id on E164
-// Ex: 5521967609095
+// Ex: 5521967609494
 func (source *DispatchingHandler) GetWId() string {
 	if source == nil || source.server == nil {
 		return ""

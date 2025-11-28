@@ -72,11 +72,11 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 	if !hasAuth {
 		response.Success = true
 		response.Status = "application is running"
-		
+
 		// Add application uptime
 		uptime := library.Duration(time.Since(models.ApplicationStartTime))
 		response.Uptime = &uptime
-		
+
 		RespondSuccess(w, response)
 		return
 	}
@@ -159,7 +159,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 
 		response.State = &state
 		response.Wid = server.Wid
-		
+
 		// Add server uptime
 		if !server.Timestamps.Start.IsZero() {
 			uptime := library.Duration(time.Since(server.Timestamps.Start))

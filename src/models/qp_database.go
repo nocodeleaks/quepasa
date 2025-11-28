@@ -79,6 +79,21 @@ func GetDatabase() *QpDatabase {
 		idispatching}
 }
 
+// NewQpDataUserSql creates a new QpDataUserSql instance with the given database connection
+func NewQpDataUserSql(db *sqlx.DB) QpDataUsersInterface {
+	return QpDataUserSql{db}
+}
+
+// NewQpDataServerDispatchingSql creates a new QpDataServerDispatchingSql instance with the given database connection
+func NewQpDataServerDispatchingSql(db *sqlx.DB) QpDataDispatchingInterface {
+	return QpDataServerDispatchingSql{db}
+}
+
+// NewQpDataServerSql creates a new QpDataServerSql instance with the given database connection
+func NewQpDataServerSql(db *sqlx.DB) QpDataServersInterface {
+	return QpDataServerSql{db}
+}
+
 // MigrateToLatest updates the database to the latest schema
 func MigrateToLatest(logentry *log.Entry) (err error) {
 	if !ENV.Migrate() {

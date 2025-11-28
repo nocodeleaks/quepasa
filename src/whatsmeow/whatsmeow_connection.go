@@ -507,7 +507,178 @@ func (conn *WhatsmeowConnection) Disconnect() (err error) {
 
 //region PAIRING
 
+// dispatchPairRequestEvent dispatches a system event when pairing is requested
+func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
+	handlers := conn.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+		return
+	}
+
+	logger := conn.GetLogger()
+	logger.Debug("dispatching pair_request event")
+
+	// Create pairing request event message with JSON details
+	eventData := map[string]interface{}{
+		"event":       "pair_request",
+		"status":      "requested",
+		"message":     "Pairing code requested",
+		"phone":       phone,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": "User requested pairing code generation for phone number",
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        conn.Client.GenerateMessageID(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      library.ToJson(eventData),
+		Info:      eventData,
+	}
+
+	// Send through dispatcher
+	go handlers.WAHandlers.Message(message, "pair_request")
+}
+
+// dispatchPairTimeoutEvent dispatches a system event when pairing expires/fails
+func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg string) {
+	handlers := conn.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+		return
+	}
+
+	logger := conn.GetLogger()
+	logger.Debug("dispatching pair_timeout event")
+
+	// Determine if it's a timeout or other error
+	status := "error"
+	message := "Pairing code failed"
+	description := "Pairing process failed with error"
+
+	if strings.Contains(strings.ToLower(errorMsg), "timeout") || strings.Contains(strings.ToLower(errorMsg), "expired") {
+		status = "expired"
+		message = "Pairing code expired without being used"
+		description = "Pairing code was not used within the allowed time period and has expired"
+	}
+
+	// Create pairing timeout event message with JSON details
+	eventData := map[string]interface{}{
+		"event":       "pair_timeout",
+		"status":      status,
+		"message":     message,
+		"phone":       phone,
+		"error":       errorMsg,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": description,
+	}
+
+	systemMessage := &whatsapp.WhatsappMessage{
+		Id:        conn.Client.GenerateMessageID(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      library.ToJson(eventData),
+		Info:      eventData,
+	}
+
+	// Send through dispatcher
+	go handlers.WAHandlers.Message(systemMessage, "pair_timeout")
+}
+
+// dispatchQRRequestEvent dispatches a system event when QR code is requested
+func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
+	handlers := conn.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+		return
+	}
+
+	logger := conn.GetLogger()
+	logger.Debug("dispatching qr_request event")
+
+	// Get phone number from connection
+	phone := ""
+	if conn.Client != nil && conn.Client.Store != nil {
+		jid := conn.Client.Store.ID
+		if jid != nil {
+			phone = jid.User
+		}
+	}
+
+	// Create QR request event message with JSON details
+	eventData := map[string]interface{}{
+		"event":       "qr_request",
+		"status":      "requested",
+		"message":     "QR code scan requested",
+		"phone":       phone,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": "User requested QR code generation for WhatsApp pairing",
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        conn.Client.GenerateMessageID(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      library.ToJson(eventData),
+		Info:      eventData,
+	}
+
+	// Send through dispatcher
+	go handlers.WAHandlers.Message(message, "qr_request")
+}
+
+// dispatchQRTimeoutEvent dispatches a system event when QR code expires/times out
+func (conn *WhatsmeowConnection) dispatchQRTimeoutEvent() {
+	handlers := conn.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+		return
+	}
+
+	logger := conn.GetLogger()
+	logger.Debug("dispatching qr_timeout event")
+
+	// Get phone number from connection
+	phone := ""
+	if conn.Client != nil && conn.Client.Store != nil {
+		jid := conn.Client.Store.ID
+		if jid != nil {
+			phone = jid.User
+		}
+	}
+
+	// Create QR timeout event message with JSON details
+	eventData := map[string]interface{}{
+		"event":       "qr_timeout",
+		"status":      "expired",
+		"message":     "QR code expired without being scanned",
+		"phone":       phone,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": "QR code was not scanned within the allowed time period and has expired",
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        conn.Client.GenerateMessageID(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      library.ToJson(eventData),
+		Info:      eventData,
+	}
+
+	// Send through dispatcher
+	go handlers.WAHandlers.Message(message, "qr_timeout")
+}
+
 func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
+	logger := source.GetLogger()
+	logger.Infof("Pairing requested for phone: %s", phone)
+
+	// Dispatch pair_request event before starting pairing process
+	source.dispatchPairRequestEvent(phone)
 
 	if !source.Client.IsConnected() {
 		err := source.Client.Connect()
@@ -517,12 +688,26 @@ func (source *WhatsmeowConnection) PairPhone(phone string) (string, error) {
 		}
 	}
 
-	return source.Client.PairPhone(context.TODO(), phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
+	code, err := source.Client.PairPhone(context.TODO(), phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
+
+	// Check if pairing failed due to timeout or error
+	if err != nil {
+		// Dispatch pair timeout/error event
+		source.dispatchPairTimeoutEvent(phone, err.Error())
+	}
+
+	return code, err
 }
 
 func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 
 	var result string
+
+	logger := conn.GetLogger()
+	logger.Info("QR code requested")
+
+	// Dispatch qr_request event before starting QR process
+	conn.dispatchQRRequestEvent()
 
 	// No ID stored, new login
 	qrChan, err := conn.Client.GetQRChannel(context.Background())
@@ -540,8 +725,14 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 	}
 
 	evt, ok := <-qrChan
-	if ok && evt.Event == "code" {
-		result = evt.Code
+	if ok {
+		if evt.Event == "code" {
+			result = evt.Code
+		} else if evt.Event == "timeout" {
+			// QR code timed out - dispatch event
+			logger.Warn("QR code timed out")
+			conn.dispatchQRTimeoutEvent()
+		}
 	}
 	return result
 }
@@ -591,6 +782,8 @@ func (source *WhatsmeowConnection) GetWhatsAppQRChannel(ctx context.Context, out
 			}
 		} else {
 			if evt.Event == "timeout" {
+				// Dispatch timeout event before returning error
+				source.dispatchQRTimeoutEvent()
 				return errors.New("timeout")
 			}
 			wg.Done()
@@ -632,7 +825,9 @@ func (source *WhatsmeowConnection) HistorySync(timestamp time.Time) (err error) 
 }
 
 func (conn *WhatsmeowConnection) UpdateHandler(handlers whatsapp.IWhatsappHandlers) {
-	conn.GetHandlers().WAHandlers = handlers
+	if conn.Handlers != nil {
+		conn.Handlers.WAHandlers = handlers
+	}
 }
 
 func (conn *WhatsmeowConnection) UpdatePairedCallBack(callback func(string)) {
@@ -863,22 +1058,10 @@ func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus 
 
 // Call managers are omitted in this build per team decision.
 
-// GetHandlers returns the handlers instance with lazy initialization
+// GetHandlers returns the handlers instance
+// Handlers are always created during connection creation via CreateConnection()
 func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
-	if conn.Handlers == nil {
-		conn.initializeHandlers(nil, WhatsmeowOptions{})
-	}
 	return conn.Handlers
-}
-
-// initializeHandlers creates and configures the handlers with proper options
-func (conn *WhatsmeowConnection) initializeHandlers(whatsappOptions *whatsapp.WhatsappOptions, whatsmeowOptions WhatsmeowOptions) error {
-	if conn.Handlers != nil {
-		return nil // already initialized
-	}
-
-	conn.Handlers = NewWhatsmeowHandlers(conn, whatsmeowOptions, whatsappOptions)
-	return conn.Handlers.Register()
 }
 
 // SendChatPresence updates typing status in a chat
@@ -961,3 +1144,13 @@ func ArchiveChat(conn *WhatsmeowConnection, chatId string, archive bool) error {
 	patch := appstate.BuildArchive(jid, archive, time.Time{}, nil)
 	return sendAppState(conn, patch)
 }
+
+//#region HANDLER MANAGEMENT
+
+// initializeHandlers creates and configures handlers with proper options
+func (conn *WhatsmeowConnection) initializeHandlers(waOptions *whatsapp.WhatsappOptions, wmOptions WhatsmeowOptions) error {
+	conn.Handlers = NewWhatsmeowHandlers(conn, wmOptions, waOptions)
+	return conn.Handlers.Register()
+}
+
+//#endregion

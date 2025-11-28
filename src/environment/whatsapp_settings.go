@@ -27,7 +27,7 @@ type WhatsAppSettings struct {
 	Calls           whatsapp.WhatsappBooleanExtended `json:"calls"`
 	Groups          whatsapp.WhatsappBooleanExtended `json:"groups"`
 	Broadcasts      whatsapp.WhatsappBooleanExtended `json:"broadcasts"`
-	HistorySyncDays *uint32                          `json:"history_sync_days,omitempty"`
+	HistorySyncDays *uint32                          `json:"history_sync_days"`
 	Presence        string                           `json:"presence"`
 	WakeUpHour      string                           `json:"wakeup_hour"`     // Hour(s) as integers: 0-23 or 0,8,16 for multiple hours
 	WakeUpDuration  int                              `json:"wakeup_duration"` // duration in seconds

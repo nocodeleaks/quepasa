@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	api "github.com/nocodeleaks/quepasa/api/models"
 )
 
 const APIVersion3 string = "v3"
@@ -86,7 +86,7 @@ func InformationControllerV3(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpInfoResponse{}
+	response := &api.InformationResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

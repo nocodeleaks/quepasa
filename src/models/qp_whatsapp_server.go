@@ -28,7 +28,7 @@ type QpWhatsappServer struct {
 
 	Timestamps QpTimestamps `json:"timestamps"`
 
-	Handler            *QPWhatsappHandlers   `json:"-"`
+	Handler            *DispatchingHandler   `json:"-"`
 	DispatchingHandler *QPDispatchingHandler `json:"-"`
 	GroupManager       *QpGroupManager       `json:"-"` // composition for group operations
 	StatusManager      *QpStatusManager      `json:"-"` // composition for status operations
@@ -48,6 +48,7 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 		StartTime   time.Time        `json:"starttime,omitempty"`
 		Timestamps  QpTimestamps     `json:"timestamps"`
 		Dispatching []*QpDispatching `json:"dispatching,omitempty"`
+		Uptime      library.Duration `json:"uptime"`
 	}
 
 	// Get dispatching data from memory (includes real-time failure/success updates)
@@ -61,12 +62,19 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 	timestamps := source.Timestamps
 	timestamps.Update = source.Timestamp
 
+	// Calculate uptime
+	uptime := time.Duration(0)
+	if !timestamps.Start.IsZero() {
+		uptime = time.Since(timestamps.Start)
+	}
+
 	custom := CustomServer{
 		QpServer:    source.QpServer,
 		Reconnect:   source.Reconnect,
 		StartTime:   timestamps.Start,
 		Timestamps:  timestamps,
 		Dispatching: dispatchingData,
+		Uptime:      library.Duration(uptime),
 	}
 
 	return json.Marshal(custom)
@@ -106,7 +114,7 @@ func (server *QpWhatsappServer) HandlerEnsure() {
 	}
 
 	if server.Handler == nil {
-		handler := &QPWhatsappHandlers{
+		handler := &DispatchingHandler{
 			server:       server,
 			syncRegister: &sync.Mutex{},
 		}
@@ -133,6 +141,11 @@ func (server *QpWhatsappServer) HasSignalRActiveConnections() bool {
 //region IMPLEMENT OF INTERFACE STATE RECOVERY
 
 func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
+	return server.GetState()
+}
+
+// GetState retrieves the current calculated connection state of the WhatsApp server
+func (server *QpWhatsappServer) GetState() whatsapp.WhatsappConnectionState {
 	if server == nil {
 		return whatsapp.Unknown // invalid state
 	}
@@ -301,9 +314,10 @@ func (source *QpWhatsappServer) UpdateConnection(connection whatsapp.IWhatsappCo
 	if source.Handler == nil {
 		logentry := source.GetLogger()
 		logentry.Warn("creating handlers ?! not implemented yet")
+	} else {
+		// Update handler on the new connection
+		source.connection.UpdateHandler(source.Handler)
 	}
-
-	source.connection.UpdateHandler(source.Handler)
 
 	// Registrando webhook
 	dispatchingHandler := &QPDispatchingHandler{server: source}
@@ -331,6 +345,7 @@ func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 			Wid:             source.Wid,
 			Reconnect:       true,
 			LogStruct:       library.LogStruct{LogEntry: logentry},
+			ExternalHandler: source.Handler, // Pass handler to connection
 		}
 
 		logentry.Infof("trying to create new whatsapp connection, auto reconnect: %v, log level: %s", options.Reconnect, logentry.Level)
@@ -346,6 +361,7 @@ func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 			return err
 		} else {
 			source.connection = connection
+			// Handler is already configured via ExternalHandler in options
 		}
 	}
 
@@ -374,14 +390,17 @@ func (source *QpWhatsappServer) Start() (err error) {
 	// reset stop requested token
 	source.StopRequested = false
 
+	// Update start timestamp
+	source.Timestamps.Start = time.Now().UTC()
+
 	if !source.Handler.IsAttached() {
 
 		// Registrando dispatching handler
 		source.Handler.Register(source.DispatchingHandler)
 	}
 
-	// Atualizando manipuladores de eventos
-	source.connection.UpdateHandler(source.Handler)
+	// Handler already configured during connection creation via ExternalHandler
+	// No need to call UpdateHandler here
 
 	// Initialize RabbitMQ connections for this server
 	source.InitializeRabbitMQConnections()
@@ -432,8 +451,8 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 		logger.Debug("handlers already attached")
 	}
 
-	// Atualizando manipuladores de eventos
-	source.connection.UpdateHandler(source.Handler)
+	// Handler already configured during connection creation via ExternalHandler
+	// No need to call UpdateHandler here
 
 	statusManager := source.GetStatusManager()
 	if !statusManager.IsConnected() {

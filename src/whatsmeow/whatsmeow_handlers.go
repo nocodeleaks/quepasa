@@ -360,16 +360,22 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		*events.DeleteForMe,
 		*events.MarkChatAsRead,
 		*events.Mute,
-		*events.PairSuccess,
 		*events.Pin,
 		*events.PushName,
-		*events.GroupInfo,
-		*events.QR:
+		*events.GroupInfo:
 		logentry.Tracef("event not implemented yet: %v", reflect.TypeOf(evt))
 		if source.ShouldDispatchUnhandled() {
 			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
 		}
 		return // ignoring not implemented yet
+
+	case *events.QR:
+		source.OnQREvent(evt)
+		return
+
+	case *events.PairSuccess:
+		source.OnPairSuccessEvent(evt)
+		return
 
 	default:
 		logentry.Debugf("event not handled: %v", reflect.TypeOf(evt))
@@ -675,7 +681,7 @@ func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from
 
 	} else {
 		logentry := handler.GetLogger()
-		logentry.Warn("no internal handler registered")
+		logentry.Info("no internal handler registered - event logged but not dispatched to webhooks")
 	}
 
 	// testing, mark read function
@@ -730,27 +736,21 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 	message := &whatsapp.WhatsappMessage{Content: evt}
 
-	// Basic information
+	// basic information
 	message.Id = evt.CallID
 	message.Timestamp = evt.Timestamp
 	message.FromMe = false
+
+	message.Chat = *NewWhatsappChat(source, evt.From)
 	message.Type = whatsapp.CallMessageType
 
-	// Resolve call identifiers (determines best JID to use)
-	identifiers := ResolveCallIdentifiers(evt, logentry)
-
-	// Create chat object with resolved JID
-	message.Chat = *NewWhatsappChat(source, identifiers.ChatJID)
-
-	// Enrich chat with LID information and resolve phone/title if needed
-	EnrichCallChat(source, &message.Chat, identifiers, identifiers.ChatJID, logentry)
-
 	if source.WAHandlers != nil {
-		// Following to internal handlers
+
+		// following to internal handlers
 		go source.WAHandlers.Message(message, "call")
 	}
 
-	// Should reject this call
+	// should reject this call
 	if !source.HandleCalls() {
 		err := source.Client.RejectCall(context.Background(), evt.From, evt.CallID)
 		if err != nil {
@@ -950,19 +950,22 @@ func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
 		}
 	}
 
-	// Create connection event message
+	// Create connection event message with JSON details
+	eventData := map[string]interface{}{
+		"event":       event,
+		"phone":       phone,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": fmt.Sprintf("WhatsApp connection state changed to: %s", event),
+	}
+
 	message := &whatsapp.WhatsappMessage{
 		Id:        handler.Client.GenerateMessageID(),
 		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		FromMe:    false,
 		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      event,
-		Info: map[string]interface{}{
-			"event":     event,
-			"phone":     phone,
-			"timestamp": time.Now(),
-		},
+		Text:      library.ToJson(eventData),
+		Info:      eventData,
 	}
 
 	// Send through internal handlers
@@ -1028,22 +1031,23 @@ func (handler *WhatsmeowHandlers) sendSyncDispatching(event string, data map[str
 
 	// Merge data with common fields
 	info := map[string]interface{}{
-		"event":     event,
-		"phone":     phone,
-		"timestamp": time.Now(),
+		"event":       event,
+		"phone":       phone,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": fmt.Sprintf("History synchronization event: %s", event),
 	}
 	for k, v := range data {
 		info[k] = v
 	}
 
-	// Create sync event message
+	// Create sync event message with JSON text
 	message := &whatsapp.WhatsappMessage{
 		Id:        handler.Client.GenerateMessageID(),
 		Timestamp: handler.getTimestamp(),
 		Type:      whatsapp.SystemMessageType,
 		FromMe:    false,
 		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      event,
+		Text:      library.ToJson(info),
 		Info:      info,
 	}
 
@@ -1127,3 +1131,188 @@ func (handler *WhatsmeowHandlers) ProcessMentions(message *whatsapp.WhatsappMess
 		logentry.Infof("Mention converted: %s -> %s", originalText, formattedText)
 	}
 }
+
+//#region QR CODE SCAN EVENTS
+
+// OnQREvent handles QR code scan events and dispatches them as system messages
+func (handler *WhatsmeowHandlers) OnQREvent(evt *events.QR) {
+	logentry := handler.GetLogger()
+	// Debug: print all available fields using reflection
+	evtValue := reflect.ValueOf(evt).Elem()
+	evtType := evtValue.Type()
+	logentry.Debugf("QR Event type: %s, fields:", evtType.Name())
+	for i := 0; i < evtType.NumField(); i++ {
+		field := evtType.Field(i)
+		value := evtValue.Field(i)
+		logentry.Debugf("  %s (%s): %v", field.Name, field.Type, value.Interface())
+	}
+
+	logentry.Infof("QR code event received")
+
+	// Get phone number from connection
+	phone := ""
+	if handler.Client != nil && handler.Client.Store != nil {
+		jid := handler.Client.Store.ID
+		if jid != nil {
+			phone = jid.User
+		}
+	}
+
+	// Create QR scan event message with JSON details
+	eventData := map[string]interface{}{
+		"event":     "qr_scan",
+		"phone":     phone,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        handler.Client.GenerateMessageID(),
+		Timestamp: handler.getTimestamp(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      "",
+		Info:      eventData,
+	}
+
+	// Try to access common fields that might exist
+	// We'll use reflection to safely access fields
+	if evtValue.IsValid() {
+		// Try to get Event field
+		if eventField := evtValue.FieldByName("Event"); eventField.IsValid() {
+			eventType := eventField.String()
+			message.Info.(map[string]interface{})["qr_event"] = eventType
+
+			// Add additional data based on QR event type
+			switch eventType {
+			case "code":
+				// QR code generated successfully
+				message.Info.(map[string]interface{})["status"] = "success"
+				message.Info.(map[string]interface{})["message"] = "QR code generated successfully"
+
+				// Try to get Code field
+				if codeField := evtValue.FieldByName("Code"); codeField.IsValid() {
+					if code := codeField.String(); code != "" {
+						message.Info.(map[string]interface{})["qr_code"] = code
+					}
+				}
+				logentry.Info("QR code generated successfully")
+
+			case "timeout":
+				// QR code timed out - use dedicated timeout event
+				logentry.Warn("QR code scan timed out")
+				// Call the connection's timeout WAHandlers for consistency
+				if handler.WhatsmeowConnection != nil {
+					handler.WhatsmeowConnection.dispatchQRTimeoutEvent()
+				}
+				// Don't send the regular qr_scan event for timeout
+				return
+
+			case "cancel":
+				// QR code scan was cancelled
+				message.Info.(map[string]interface{})["status"] = "cancelled"
+				message.Info.(map[string]interface{})["message"] = "QR code scan was cancelled"
+				logentry.Warn("QR code scan was cancelled")
+
+			default:
+				// Unknown QR event
+				message.Info.(map[string]interface{})["status"] = "unknown"
+				message.Info.(map[string]interface{})["message"] = fmt.Sprintf("Unknown QR event: %s", eventType)
+				logentry.Warnf("Unknown QR event: %s", eventType)
+			}
+		} else {
+			// Fallback if Event field doesn't exist
+			message.Info.(map[string]interface{})["status"] = "unknown"
+			message.Info.(map[string]interface{})["message"] = "QR event received (structure unknown)"
+			message.Info.(map[string]interface{})["description"] = "QR event was received but its structure could not be parsed"
+			logentry.Info("QR event received with unknown structure")
+
+			// Set JSON text
+			message.Text = library.ToJson(message.Info)
+		}
+	}
+
+	// Send through internal handlers
+	handler.Follow(message, "qr")
+}
+
+// OnPairSuccessEvent handles successful device pairing events
+func (handler *WhatsmeowHandlers) OnPairSuccessEvent(evt *events.PairSuccess) {
+	logentry := handler.GetLogger()
+
+	// Debug: print all available fields using reflection
+	evtValue := reflect.ValueOf(evt).Elem()
+	evtType := evtValue.Type()
+	logentry.Debugf("PairSuccess Event type: %s, fields:", evtType.Name())
+	for i := 0; i < evtType.NumField(); i++ {
+		field := evtType.Field(i)
+		value := evtValue.Field(i)
+		logentry.Debugf("  %s (%s): %v", field.Name, field.Type, value.Interface())
+	}
+
+	logentry.Infof("Device pairing successful")
+
+	// Get phone number - try to extract from JID field if it exists
+	phone := ""
+	if jidField := evtValue.FieldByName("JID"); jidField.IsValid() {
+		if jid, ok := jidField.Interface().(types.JID); ok {
+			phone = jid.User
+		}
+	}
+
+	// Create pairing success event message with JSON details
+	eventData := map[string]interface{}{
+		"event":       "pair_success",
+		"status":      "success",
+		"message":     "Device pairing completed successfully",
+		"phone":       phone,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"description": "WhatsApp device was successfully paired and authenticated",
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        handler.Client.GenerateMessageID(),
+		Timestamp: handler.getTimestamp(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      "",
+		Info:      eventData,
+	}
+
+	// Try to add additional fields if they exist
+	if jidField := evtValue.FieldByName("JID"); jidField.IsValid() {
+		if jid, ok := jidField.Interface().(types.JID); ok {
+			message.Info.(map[string]interface{})["jid"] = jid.String()
+			message.Info.(map[string]interface{})["user"] = jid.User
+			message.Info.(map[string]interface{})["server"] = jid.Server
+		}
+	}
+
+	if platformField := evtValue.FieldByName("Platform"); platformField.IsValid() {
+		platform := platformField.String()
+		if platform != "" {
+			message.Info.(map[string]interface{})["platform"] = platform
+		}
+	}
+
+	if businessNameField := evtValue.FieldByName("BusinessName"); businessNameField.IsValid() {
+		businessName := businessNameField.String()
+		if businessName != "" {
+			message.Info.(map[string]interface{})["business_name"] = businessName
+			message.Info.(map[string]interface{})["is_business"] = true
+		} else {
+			message.Info.(map[string]interface{})["is_business"] = false
+		}
+	}
+
+	// Set JSON text
+	message.Text = library.ToJson(message.Info)
+
+	logentry.Info("Device pairing completed successfully")
+
+	// Send through internal handlers
+	handler.Follow(message, "pair")
+}
+
+//#endregion

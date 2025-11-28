@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	api "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -16,7 +17,7 @@ func UserController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpInfoResponse{}
+	response := &api.InformationResponse{}
 
 	// reading body to avoid converting to json if empty
 	body, err := io.ReadAll(r.Body)

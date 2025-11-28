@@ -1,14 +1,14 @@
-package api
+package environment
 
 import (
 	"fmt"
 
-	environment "github.com/nocodeleaks/quepasa/environment"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-// EnvironmentSettings represents WhatsApp service environment configuration
-type EnvironmentSettings struct {
+// EnvironmentSettingsPreview provides a read-only preview of environment settings
+// Used for public endpoints without authentication
+type EnvironmentSettingsPreview struct {
 	Groups         string `json:"groups"`
 	Broadcasts     string `json:"broadcasts"`
 	ReadReceipts   string `json:"read_receipts"`
@@ -22,29 +22,29 @@ type EnvironmentSettings struct {
 	WakeUpDuration string `json:"wakeup_duration,omitempty"`
 }
 
-// NewEnvironmentSettings creates environment settings from global configuration
-func NewEnvironmentSettings() *EnvironmentSettings {
-	settings := &EnvironmentSettings{
-		Groups:       formatBooleanExtended(environment.Settings.WhatsApp.Groups),
-		Broadcasts:   formatBooleanExtended(environment.Settings.WhatsApp.Broadcasts),
-		ReadReceipts: formatBooleanExtended(environment.Settings.WhatsApp.ReadReceipts),
-		Calls:        formatBooleanExtended(environment.Settings.WhatsApp.Calls),
-		HistorySync:  formatHistorySync(environment.Settings.WhatsApp.HistorySyncDays),
-		LogLevel:     formatLogLevel(environment.Settings.Whatsmeow.LogLevel),
-		DBLogLevel:   formatLogLevel(environment.Settings.Whatsmeow.DBLogLevel),
-		Presence:     environment.Settings.WhatsApp.Presence,
-		ReadUpdate:   formatBool(environment.Settings.WhatsApp.ReadUpdate),
+// GetPreview returns a read-only preview of current environment settings
+func GetPreview() *EnvironmentSettingsPreview {
+	preview := &EnvironmentSettingsPreview{
+		Groups:       formatBooleanExtended(Settings.WhatsApp.Groups),
+		Broadcasts:   formatBooleanExtended(Settings.WhatsApp.Broadcasts),
+		ReadReceipts: formatBooleanExtended(Settings.WhatsApp.ReadReceipts),
+		Calls:        formatBooleanExtended(Settings.WhatsApp.Calls),
+		HistorySync:  formatHistorySync(Settings.WhatsApp.HistorySyncDays),
+		LogLevel:     formatLogLevel(Settings.Whatsmeow.LogLevel),
+		DBLogLevel:   formatLogLevel(Settings.Whatsmeow.DBLogLevel),
+		Presence:     Settings.WhatsApp.Presence,
+		ReadUpdate:   formatBool(Settings.WhatsApp.ReadUpdate),
 	}
 
 	// Optional fields
-	if environment.Settings.WhatsApp.WakeUpHour != "" {
-		settings.WakeUpHour = environment.Settings.WhatsApp.WakeUpHour
+	if Settings.WhatsApp.WakeUpHour != "" {
+		preview.WakeUpHour = Settings.WhatsApp.WakeUpHour
 	}
-	if environment.Settings.WhatsApp.WakeUpDuration > 0 {
-		settings.WakeUpDuration = fmt.Sprintf("%d seconds", environment.Settings.WhatsApp.WakeUpDuration)
+	if Settings.WhatsApp.WakeUpDuration > 0 {
+		preview.WakeUpDuration = fmt.Sprintf("%d seconds", Settings.WhatsApp.WakeUpDuration)
 	}
 
-	return settings
+	return preview
 }
 
 // formatBooleanExtended converts WhatsappBooleanExtended to human-readable string

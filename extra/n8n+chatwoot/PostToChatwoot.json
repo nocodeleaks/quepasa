@@ -402,7 +402,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2528,
+        2736,
         864
       ],
       "id": "2f0a55d2-bc66-432d-b63b-55e10b63e78e",
@@ -1187,6 +1187,56 @@
         2464,
         1808
       ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "831355ad-4998-425b-b443-9cd7cd41aac5",
+              "name": "payload.external_created_at",
+              "value": "={{ null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        880
+      ],
+      "id": "21a14eff-f28d-4fc6-a068-1da44fe9b114",
+      "name": "Edit Fields",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "831355ad-4998-425b-b443-9cd7cd41aac5",
+              "name": "payload.external_created_at",
+              "value": "={{ null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2880,
+        1520
+      ],
+      "id": "3cdc5ae9-b30a-4293-baeb-dc1ad75e6279",
+      "name": "Edit Fields1",
+      "disabled": true
     }
   ],
   "pinData": {},
@@ -1605,7 +1655,7 @@
       "main": [
         [
           {
-            "node": "Post Incoming Message Without Attachment",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
@@ -1760,7 +1810,7 @@
       "main": [
         [
           {
-            "node": "Post Incoming Message Attachment",
+            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
@@ -1771,7 +1821,7 @@
       "main": [
         [
           {
-            "node": "Post Incoming Message Attachment",
+            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
@@ -1912,6 +1962,28 @@
       "main": [
         [
           {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message Without Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
             "node": "Post Incoming Message Attachment",
             "type": "main",
             "index": 0
@@ -1927,7 +1999,7 @@
     "executionTimeout": 10,
     "executionOrder": "v1"
   },
-  "versionId": "00c7c777-ddd2-48eb-a0e1-d5b802af51c8",
+  "versionId": "6a687920-4408-4d3d-b592-145bf230515f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

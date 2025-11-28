@@ -37,7 +37,7 @@ func (cam *SIPProxyCallAnswerManager) AnswerCall(fromPhone, callID string) error
 
 // AnswerCallWithReceiver answers an incoming WhatsApp call with explicit receiver number
 // fromPhone = quem está ligando (ex: 557138388109)
-// toPhone = número do WhatsApp que está recebendo (ex: 5521967609095)
+// toPhone = número do WhatsApp que está recebendo (ex: 5521967609494)
 // callID = identificador único da chamada (ex: BE88BDBDA5C0C1E75D7BD0F8E0E10EBF)
 func (cam *SIPProxyCallAnswerManager) AnswerCallWithReceiver(fromPhone, toPhone, callID string) error {
 	cam.logger.Infof("📞 Answering call from %s to %s (CallID: %s)", fromPhone, toPhone, callID)

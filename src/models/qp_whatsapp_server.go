@@ -182,7 +182,7 @@ func (server *QpWhatsappServer) GetState() whatsapp.WhatsappConnectionState {
 //region IMPLEMENT OF INTERFACE QUEPASA SERVER
 
 // Returns whatsapp controller id on E164
-// Ex: 5521967609095
+// Ex: 5521967609494
 func (server QpWhatsappServer) GetWId() string {
 	return server.QpServer.Wid
 }

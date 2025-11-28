@@ -176,7 +176,7 @@ func (source *QpToWhatsappAttachment) AttachImageTreatment() {
 
 	// Check if PNG to JPG conversion is enabled
 	if !environment.Settings.General.ConvertPNGToJPG {
-		source.Debug = append(source.Debug, "[trace][AttachImageTreatment] PNG to JPG conversion is disabled in settings")
+		source.Debug = append(source.Debug, "[trace][AttachImageTreatment] PNG to JPG conversion is disabled in settings, returning without image validation")
 		return
 	}
 

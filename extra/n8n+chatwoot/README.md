@@ -1,7 +1,7 @@
 ### Workflows links
 
 * [(1.0.1) Chatwoot Profile Update](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/ChatwootProfileUpdate.json)
-* [(1.0.43) Chatwoot To Quepasa](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/ChatwootToQuepasa.json)
+* [(1.0.45) Chatwoot To Quepasa](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/ChatwootToQuepasa.json)
 * [(1.0.25) Post To Chatwoot](https://raw.githubusercontent.com/nocodeleaks/quepasa/main/extra/n8n%2Bchatwoot/PostToChatwoot.json)
 
 * [(1.0.0) Quepasa Contacts Import](https://raw.githubusercontent.com/nocodeleaks/quepasa/refs/heads/main/extra/n8n%2Bchatwoot/QuepasaContactsImport.json)

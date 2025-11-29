@@ -21,7 +21,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		InfoCreateRequest	true	"Server creation request"
-//	@Success		200		{object}	api.InformationResponse
+//	@Success		200		{object}	api.InformationResponse	"Server updated"
+//	@Success		201		{object}	api.InformationResponse	"Server created"
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/info [post]
@@ -215,6 +216,10 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess(server)
 		}
 
+		// Return 200 for updates
+		RespondSuccess(w, response)
+		return
+
 	} else {
 		// CREATE: Server doesn't exist, create new one
 		info := &models.QpServer{
@@ -260,9 +265,11 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response.ParseSuccess(server)
-	}
 
-	RespondSuccess(w, response)
+		// Return 201 for creation
+		RespondInterfaceCode(w, response, http.StatusCreated)
+		return
+	}
 }
 
 func InformationGetRequest(w http.ResponseWriter, r *http.Request) {

@@ -112,7 +112,7 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.3 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20251127132918-b9ac3d51d746 // indirect
+	go.mau.fi/whatsmeow v0.0.0-20251201133539-d5bb5361b3d7 // indirect
 	golang.org/x/crypto v0.44.0 // indirect
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6 // indirect
 	golang.org/x/net v0.47.0 // indirect

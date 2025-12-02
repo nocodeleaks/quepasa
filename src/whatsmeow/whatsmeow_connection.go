@@ -869,6 +869,42 @@ func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool
 	return true
 }
 
+// getMessageForRetry retrieves a sent message from QuePasa's cache for retry handling
+// This is called by whatsmeow when a recipient fails to decrypt a message and requests a retry
+// The message is looked up by ID in the cache and the original waE2E.Message content is returned
+func (source *WhatsmeowConnection) getMessageForRetry(requester, to types.JID, id types.MessageID) *waE2E.Message {
+	logentry := source.GetLogger()
+
+	handlers := source.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+		logentry.Warnf("GetMessageForRetry: no handlers available for message %s", id)
+		return nil
+	}
+
+	// Try to get message from QuePasa's cache
+	cached, err := handlers.WAHandlers.GetById(string(id))
+	if err != nil || cached == nil {
+		logentry.Debugf("GetMessageForRetry: message %s not found in cache: %v", id, err)
+		return nil
+	}
+
+	// Check if the cached message has the original waE2E.Message content
+	if cached.Content == nil {
+		logentry.Warnf("GetMessageForRetry: message %s found but has no content", id)
+		return nil
+	}
+
+	// Try to cast Content to *waE2E.Message
+	waMsg, ok := cached.Content.(*waE2E.Message)
+	if !ok {
+		logentry.Warnf("GetMessageForRetry: message %s content is not *waE2E.Message (type: %T)", id, cached.Content)
+		return nil
+	}
+
+	logentry.Infof("GetMessageForRetry: found message %s in cache for retry to %s (requester: %s)", id, to, requester)
+	return waMsg
+}
+
 // generateVCardForContact creates a vCard string with WhatsApp status detection
 // Returns different vCard formats based on whether contact is:
 // - Business WhatsApp account (has businessName)

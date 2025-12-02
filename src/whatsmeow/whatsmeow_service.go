@@ -13,6 +13,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waCompanionReg"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	types "go.mau.fi/whatsmeow/types"
@@ -184,6 +185,13 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 
 	// Configure AutoReconnectHook
 	client.AutoReconnectHook = conn.AutoReconnectHook
+
+	// Configure GetMessageForRetry callback to handle retry receipts
+	// This allows WhatsApp to resend messages when the recipient fails to decrypt
+	// Messages are retrieved from QuePasa's internal cache (configured via CACHELENGTH env var)
+	client.GetMessageForRetry = func(requester, to types.JID, id types.MessageID) *waE2E.Message {
+		return conn.getMessageForRetry(requester, to, id)
+	}
 
 	return
 }

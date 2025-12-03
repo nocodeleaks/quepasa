@@ -8,13 +8,13 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        740,
+        752,
         480
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.3) \n* update quepasa node\n\n## Recommendations \n* Remember set timeout to 15 seconds ",
+        "content": "## (1.0.4) \n* prioritize phone instead chat id\n\n## Recommendations \n* Remember set timeout to 15 seconds ",
         "width": 395
       },
       "id": "307f281c-cc6c-44ef-aec1-9eca91b677b1",
@@ -22,8 +22,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        660,
-        300
+        672,
+        304
       ]
     },
     {
@@ -65,7 +65,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1880,
+        1888,
         560
       ],
       "id": "bf012488-d27a-4f25-abfe-89805133563f"
@@ -117,7 +117,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1500,
+        1504,
         480
       ]
     },
@@ -128,7 +128,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        940,
+        944,
         480
       ]
     },
@@ -146,8 +146,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1300,
-        380
+        1312,
+        384
       ],
       "alwaysOutputData": false,
       "continueOnFail": true
@@ -159,7 +159,7 @@
           "string": [
             {
               "name": "destination",
-              "value": "={{ $json.chat.id }}"
+              "value": "={{ $json.chat.phone ?? $json.chat.id }}"
             },
             {
               "name": "externalid",
@@ -185,7 +185,7 @@
       "typeVersion": 1,
       "position": [
         1120,
-        380
+        384
       ]
     },
     {
@@ -209,7 +209,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        1880,
+        1888,
         400
       ],
       "id": "873900a3-5409-4151-b348-f4f34a2d0597"
@@ -343,7 +343,7 @@
     "executionTimeout": 15,
     "executionOrder": "v1"
   },
-  "versionId": "9c0f636a-9209-49a2-88d9-b6865034f848",
+  "versionId": "f742ea25-38ab-435d-9ef5-ee8b83822ede",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"

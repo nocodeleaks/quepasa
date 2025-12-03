@@ -72,7 +72,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.3
-	go.mau.fi/whatsmeow v0.0.0-20251127132918-b9ac3d51d746
+	go.mau.fi/whatsmeow v0.0.0-20251201133539-d5bb5361b3d7
 	golang.org/x/crypto v0.44.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect

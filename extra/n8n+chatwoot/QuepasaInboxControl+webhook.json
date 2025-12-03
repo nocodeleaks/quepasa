@@ -1,0 +1,676 @@
+{
+  "name": "QuepasaInboxControl+webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{$json.extra.qptoken}}",
+        "resource": "webhook",
+        "operation": "remove",
+        "url": "=https://{{$json[\"headers\"][\"host\"]}}/webhook/to-chatwoot"
+      },
+      "id": "d54a08c6-7b22-492a-8e88-d98fd90b1ac9",
+      "name": "QP - Webhook Remove",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        640
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.content?.toLowerCase() ?? \"\"}}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/webhook update"
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/webhook remove",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/webhook clear",
+              "output": 2
+            }
+          ]
+        }
+      },
+      "id": "8fba3e09-c3e9-47be-bbfc-29b71bcf1f48",
+      "name": "Webhook Methods",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=({{$json[\"success\"]}}): {{$json[\"status\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f86bec5e-580d-4b3b-a372-ecda366df2ed",
+      "name": "Set Response From Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.success}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "4f5e37cb-8300-4438-9312-36c9e9addf66",
+      "name": "IF Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "=! {{ $json.status ?? $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bbea8257-ba25-4c17-92ec-543533e34eda",
+      "name": "Set Error Response From Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{$json.extra.qptoken}}",
+        "resource": "webhook",
+        "operation": "clear"
+      },
+      "id": "1267d572-520f-4f9f-846b-2f03edc0dc30",
+      "name": "QP - Webhook Clear",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        800
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c97905c3-cd8f-4b86-b1d4-42e51815fe99",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2864,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{$json.extra.qptoken}}",
+        "resource": "webhook",
+        "operation": "setup",
+        "url": "={{ $json.extra.n8nhost?.replace(/\\/+$/, '') ?? \"https://\" + $json.headers.host }}/webhook/to-chatwoot",
+        "trackid": "chatwoot",
+        "extraAttributes": {
+          "attribute": [
+            {
+              "key": "identifier",
+              "value": "={{$json.extra.identifier}}"
+            },
+            {
+              "key": "cwhost",
+              "value": "={{$json.extra.cwhost}}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{$json.extra.inbox}}"
+            },
+            {
+              "key": "atoken",
+              "value": "={{$json.extra.atoken}}"
+            },
+            {
+              "key": "account",
+              "value": "={{$json.extra.account}}"
+            },
+            {
+              "key": "qphost",
+              "value": "={{$json.extra.qphost}}"
+            },
+            {
+              "key": "qptoken",
+              "value": "={{$json.extra.qptoken}}"
+            },
+            {
+              "key": "singlethread",
+              "value": "={{ ($json.query.st ?? $json.query.singlethread) ? true : undefined }}"
+            },
+            {
+              "key": "soc",
+              "value": "={{ $json.query.hasOwnProperty('soc') ? ![\"false\", \"0\"].includes($json.query.soc.toString().trim().toLowerCase()) : undefined }}"
+            },
+            {
+              "key": "typebot",
+              "value": "={{$json.query.typebot}}"
+            }
+          ]
+        }
+      },
+      "id": "1ed070b8-c19b-48ee-884a-c1b72528254a",
+      "name": "QP - Webhook Update",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        240
+      ],
+      "disabled": true,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \"channel_api\".\"identifier\", \"channel_api\".\"additional_attributes\" FROM \"public\".\"channel_api\" INNER JOIN \"public\".\"inboxes\" ON \"public\".\"channel_api\".\"id\" = \"public\".\"inboxes\".\"channel_id\" WHERE \"public\".\"channel_api\".\"account_id\"='{{ $('EXTRA').item.json.account }}' AND \"public\".\"inboxes\".\"id\" = '{{ $('EXTRA').item.json.inbox }}';",
+        "additionalFields": {}
+      },
+      "id": "2d4d6cfc-8da7-4aec-84bc-2c9c3edcb656",
+      "name": "Get Identifier & Additional Attributes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -1920,
+        640
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $('When Called By Another Workflow').item.json }}",
+        "options": {}
+      },
+      "id": "fae7d393-4209-4c46-9126-d60a98d38345",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1552,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.extra }}",
+        "options": {}
+      },
+      "id": "dbd694e5-a94f-4479-b696-3823b580adcf",
+      "name": "EXTRA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2400,
+        592
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json }}\n",
+        "options": {}
+      },
+      "id": "c4b20ae8-27cb-48df-a1bd-994d401c935f",
+      "name": "INBOX",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1744,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('EXTRA').item.json.qphost }}/webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-QUEPASA-TOKEN",
+              "value": "={{ $('EXTRA').item.json.qptoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "1e0ad672-3461-43db-b68a-b50ca0675a3d",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -832,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "694f4994-56f3-458b-9e48-694c41300964",
+              "name": "extra.n8nhost",
+              "value": "={{ ($json.extra.n8nhost ?? \"https://\" + $json.headers.host).replace(/\\/+$/, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "fbce7c1f-2347-4b15-958e-d74680183805",
+      "name": "N8N Host",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2592,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "empty"
+      },
+      "id": "00e93c4b-c289-4a2a-92d1-40a98df603fb",
+      "name": "Merge Fixed Paramaters",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -2144,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.query }}",
+        "options": {}
+      },
+      "id": "331d9bb5-d174-40d1-a913-0589a6f1d921",
+      "name": "QUERY",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2400,
+        784
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d11cfbeb-9f3d-44eb-8cf1-f9adc1976b67",
+              "name": "extra",
+              "value": "={{ $('INBOX').item.json.additional_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "349aab22-a28d-483f-8dab-b6f66c5a559e",
+              "name": "extra.identifier",
+              "value": "={{ $('INBOX').item.json.identifier }}",
+              "type": "string"
+            },
+            {
+              "id": "60bd1257-d330-4e23-bf74-3a7248631e06",
+              "name": "url",
+              "value": "={{ $('EXTRA').item.json.n8nhost }}/webhook/to-chatwoot",
+              "type": "string"
+            },
+            {
+              "id": "ba1b71ce-b90c-4453-9c7d-ff42dfa3c14f",
+              "name": "extra.qptoken",
+              "value": "={{ $('EXTRA').item.json.qptoken ?? $('INBOX').item.json.identifier }}",
+              "type": "string"
+            },
+            {
+              "id": "efe406ad-8344-4524-8e60-0066499056b2",
+              "name": "extra.cwhost",
+              "value": "={{ $('EXTRA').item.json.cwhost }}",
+              "type": "string"
+            },
+            {
+              "id": "94279a07-aebb-44e6-93ab-f94301192099",
+              "name": "extra.inbox",
+              "value": "={{ $('EXTRA').item.json.inbox }}",
+              "type": "string"
+            },
+            {
+              "id": "8f7cc545-52fb-4256-9093-6214c6d352dd",
+              "name": "extra.account",
+              "value": "={{ $('EXTRA').item.json.account }}",
+              "type": "string"
+            },
+            {
+              "id": "2b4fa2f8-c5cd-420e-a47d-23d3a1e75aba",
+              "name": "extra.atoken",
+              "value": "={{ $('EXTRA').item.json.atoken }}",
+              "type": "string"
+            },
+            {
+              "id": "b8d46e12-d087-4907-a6e0-32d822ccb266",
+              "name": "extra.qphost",
+              "value": "={{ $('EXTRA').item.json.qphost }}",
+              "type": "string"
+            },
+            {
+              "id": "283d3ce5-610b-4cac-a3aa-7d4bdcf7baa7",
+              "name": "extra.qptoken",
+              "value": "={{ $('EXTRA').item.json.qptoken }}",
+              "type": "string"
+            },
+            {
+              "id": "218b1ecb-ad20-4101-99b2-8ee7d30705b0",
+              "name": "extra.singlethread",
+              "value": "={{ ($('QUERY').item.json.st ?? $('QUERY').item.json.singlethread) ? true : undefined }}",
+              "type": "string"
+            },
+            {
+              "id": "9b5e268f-35f7-4027-8555-43ebd0a42383",
+              "name": "trackid",
+              "value": "chatwoot",
+              "type": "string"
+            },
+            {
+              "id": "7f236b17-0a47-44a4-9f61-93a1e5b9020f",
+              "name": "forwardinternal",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "81902acc-11f5-4f03-b79b-ff99df503bf3",
+              "name": "extra.typebot",
+              "value": "={{ $('QUERY').item.json.typebot ?? undefined }}",
+              "type": "string"
+            },
+            {
+              "id": "9aa7a9a4-394d-4433-ac28-fb2b63e3d407",
+              "name": "extra.soc",
+              "value": "={{ $('QUERY').item.json.soc ?? undefined }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f571089f-26fa-4e72-b2e5-2a37643ae986",
+      "name": "Webhook Update Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -992,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Removed utoken from webhook parameters\n* Webhooks now use only atoken (AgentBot token)\n* Reduced token exposure in webhook URLs\n\n### Previous Updates (1.0.2)\n* typebot\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "height": 380,
+        "width": 602
+      },
+      "id": "ad0ddf4e-9930-4743-81d2-23032301112f",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3312,
+        272
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "QP - Webhook Remove": {
+      "main": [
+        [
+          {
+            "node": "IF Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Methods": {
+      "main": [
+        [
+          {
+            "node": "Webhook Update Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QP - Webhook Remove",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "QP - Webhook Clear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Success": {
+      "main": [
+        [
+          {
+            "node": "Set Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QP - Webhook Clear": {
+      "main": [
+        [
+          {
+            "node": "IF Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRA": {
+      "main": [
+        [
+          {
+            "node": "Merge Fixed Paramaters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "N8N Host",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QUERY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Identifier & Additional Attributes": {
+      "main": [
+        [
+          {
+            "node": "INBOX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INBOX": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Webhook Methods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "N8N Host": {
+      "main": [
+        [
+          {
+            "node": "EXTRA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Fixed Paramaters": {
+      "main": [
+        [
+          {
+            "node": "Get Identifier & Additional Attributes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QUERY": {
+      "main": [
+        [
+          {
+            "node": "Merge Fixed Paramaters",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Webhook Update Payload": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Set Response From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "any"
+  },
+  "versionId": "43c75524-bc32-4dcb-b64f-b3fd36d97aa6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
+  },
+  "id": "Zj197aISsaIkZP2Z",
+  "tags": []
+}

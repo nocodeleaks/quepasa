@@ -12,11 +12,11 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -3552,
-        -1504
+        -3264,
+        1056
       ],
       "webhookId": "ae8993fc-1ab0-4de5-90ce-0eb59a2b5c7d",
-      "id": "dcefe6b2-23fc-4076-988c-e65a5ac2dd8a"
+      "id": "4c534525-7c2e-48b2-8ad7-346b5b1da09e"
     },
     {
       "parameters": {},
@@ -24,10 +24,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1776,
-        -1856
+        -1488,
+        704
       ],
-      "id": "3336a694-2210-474a-8dc8-ed77c5a9ed78"
+      "id": "722a6ed0-84e0-497c-9e8c-b034a3b89759"
     },
     {
       "parameters": {
@@ -40,13 +40,13 @@
           ]
         }
       },
-      "id": "17898362-92d8-40f7-9b53-cd88fbddda18",
+      "id": "8fe35d8e-94a7-440b-95df-f08cb26fcd36",
       "name": "Text Message ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        80,
-        -1904
+        368,
+        656
       ]
     },
     {
@@ -55,10 +55,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2032,
-        -432
+        -1744,
+        2128
       ],
-      "id": "4b57177c-6b1a-431e-9fd1-7bff4435a693"
+      "id": "c5cf2838-9c21-4125-9cff-5b2f6430e72d"
     },
     {
       "parameters": {
@@ -87,23 +87,23 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1552,
-        -1856
+        -1264,
+        704
       ],
-      "id": "adf2f24f-d0c2-4cc6-8eab-e33b532832c3"
+      "id": "dba4136b-3c6c-4f7e-97d7-a68d4c149515"
     },
     {
       "parameters": {
         "respondWith": "noData",
         "options": {}
       },
-      "id": "5e298202-5e0a-4612-87d9-d99212c5cc97",
+      "id": "94f0b547-9fd4-4e8c-b8fd-c03fb0711b8d",
       "name": "Normal Exit (GNE)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1360,
-        -416
+        -1072,
+        2144
       ]
     },
     {
@@ -120,10 +120,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -992,
-        -1872
+        -704,
+        688
       ],
-      "id": "5293eb79-eae1-4b06-a730-62f5be8c3db3"
+      "id": "f5c4715e-210e-437e-ae84-44f986a80549"
     },
     {
       "parameters": {
@@ -146,10 +146,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -736,
-        -1904
+        -448,
+        656
       ],
-      "id": "1522f597-e3de-4c2d-9d0d-0303debd3773"
+      "id": "a6cee4c1-a325-49bc-b53f-2dc1a12d6aa1"
     },
     {
       "parameters": {
@@ -163,13 +163,13 @@
           ]
         }
       },
-      "id": "a6fce605-2e46-4a23-9506-a590d2acbe24",
+      "id": "51b967bf-bda9-410f-8808-8c5353f300fc",
       "name": "If Control Message",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        384,
-        -2032
+        672,
+        528
       ]
     },
     {
@@ -177,13 +177,13 @@
         "workflowId": "={{ $env['C8Q_QUEPASACHATCONTROL'] ?? 1003 }}",
         "options": {}
       },
-      "id": "f04bb338-9dda-4ad6-9198-80324eca124d",
+      "id": "f0af6f76-c584-4328-b716-8cfa89dc1cf2",
       "name": "Quepasa Chat Control Workflow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        928,
-        -2400
+        1216,
+        160
       ],
       "continueOnFail": true
     },
@@ -198,13 +198,13 @@
           ]
         }
       },
-      "id": "40dcc84c-066a-48c6-80aa-4764a50df9e9",
+      "id": "c249f351-2980-4d70-816a-1ba07918b34d",
       "name": "Sent by agent ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1760,
-        -432
+        -1472,
+        2128
       ],
       "notesInFlow": true,
       "notes": "Quando vem vazio é porque a conversa foi criada sem mensagem, no caso criado pelo fluxo. ou seja, criada pelo cliente."
@@ -236,10 +236,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        -1552,
-        -512
+        -1264,
+        2048
       ],
-      "id": "9cf4edfe-1a0a-46d6-b9f3-d10d21f33746",
+      "id": "5e2e010d-6992-4ac1-bbe2-4f7645035d4f",
       "continueOnFail": true,
       "notes": "Important to use \"source_id\" to respond messages"
     },
@@ -249,26 +249,26 @@
         "mode": "each",
         "options": {}
       },
-      "id": "077f9730-8e59-400f-b8d2-c204bb5db35f",
+      "id": "b7b60d5e-39e6-45ea-b93e-4659ad97c234",
       "name": "Throw To Quepasa Inbox Control Workflow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -160,
-        -2144
+        128,
+        416
       ],
       "alwaysOutputData": true,
       "continueOnFail": true
     },
     {
       "parameters": {},
-      "id": "cd91d9f4-4544-45e2-9b3f-e0f0fc46953c",
+      "id": "f260289e-4c4b-4269-b66a-eab52faabf17",
       "name": "Message Update Event",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1856,
-        128
+        -1568,
+        2688
       ]
     },
     {
@@ -282,35 +282,35 @@
           ]
         }
       },
-      "id": "d0c0a269-976d-46df-8fb8-249d0d77f8e7",
+      "id": "c9bad5a4-3dee-46c2-9472-a426452ef424",
       "name": "If Deleted ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1632,
-        128
+        -1344,
+        2688
       ]
     },
     {
       "parameters": {},
-      "id": "da26f6c4-6fd8-45b3-85ef-0310da13116d",
+      "id": "26637357-5d7a-40e5-810d-187cbed3d330",
       "name": "No Operation, do nothing",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1488,
-        -1616
+        1776,
+        944
       ]
     },
     {
       "parameters": {},
-      "id": "86d606ce-1a67-4498-8d3c-1bc2ba0d5f8a",
+      "id": "9a734a24-2be8-4e13-8887-16ba61ffbdf8",
       "name": "No Operation, do nothing1",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1232,
-        -1872
+        1520,
+        688
       ]
     },
     {
@@ -319,13 +319,13 @@
         "height": 660.7751562097109,
         "width": 1150.6588837494833
       },
-      "id": "36134b2a-7648-4837-9dfa-688250006454",
+      "id": "9d4d22d4-d5e3-4134-b012-fd6a5a3f6c11",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1456,
-        -1680
+        1744,
+        880
       ]
     },
     {
@@ -361,8 +361,8 @@
               "value": "={{ $json.query.identifier }}"
             },
             {
-              "name": "extra.utoken",
-              "value": "={{ $json.query.utoken ?? $env['C8Q_SUPERUSER_TOKEN'] }}"
+              "name": "extra.atoken",
+              "value": "={{ $json.query.atoken ?? $env['C8Q_SUPERUSER_TOKEN'] }}"
             },
             {
               "name": "extra.atoken",
@@ -376,13 +376,13 @@
         },
         "options": {}
       },
-      "id": "9ebcf1b3-7cff-4a4b-91af-d1f3a0fbba50",
+      "id": "fcdfaec5-56d9-4280-a079-b1195b467131",
       "name": "Defaults",
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -3376,
-        -1504
+        -3088,
+        1056
       ]
     },
     {
@@ -390,13 +390,13 @@
         "respondWith": "noData",
         "options": {}
       },
-      "id": "329b6fdf-3e4a-40b6-9964-ef228bc43fcf",
+      "id": "76098fc5-6e3a-4d8e-9583-36393fffb7aa",
       "name": "Normal Exit (CUP)",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1424,
-        -720
+        -1136,
+        1840
       ]
     },
     {
@@ -404,13 +404,13 @@
         "workflowId": "={{ $env['C8Q_CHATWOOTPROFILEUPDATE'] ?? 1004 }}",
         "options": {}
       },
-      "id": "8d99f96b-fd87-4bc8-8be9-1b144066907d",
+      "id": "a0088766-1cf2-4837-9207-16d122ff062c",
       "name": "Throw To Profile Update Workflow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        -1632,
-        -720
+        -1344,
+        1840
       ],
       "continueOnFail": true
     },
@@ -420,17 +420,17 @@
         "query": "=SELECT csat_survey_enabled FROM inboxes WHERE id = {{ $json.extra.inbox }}; ",
         "additionalFields": {}
       },
-      "id": "969d97e7-5d63-4fcb-8c5f-d694bd5ad9f0",
+      "id": "3d22f0d8-b69e-4c81-b1da-06899084b4bd",
       "name": "Enabled CSAT ?",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -80,
-        -1104
+        208,
+        1456
       ],
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
@@ -441,13 +441,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "beb04b10-cf95-4453-a7e1-5fbfcd8098d6",
+      "id": "4e346464-2026-4472-a5ff-fbc3a33ffc31",
       "name": "Merge1",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        96,
-        -1152
+        384,
+        1408
       ]
     },
     {
@@ -461,13 +461,13 @@
           ]
         }
       },
-      "id": "1a203a0a-a36e-4580-918a-996f85c3cfe8",
+      "id": "c60a2848-e697-4a73-84f4-9546e1b645e0",
       "name": "If Conversation Resolved",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1664,
-        -1152
+        -1376,
+        1408
       ]
     },
     {
@@ -488,8 +488,8 @@
               "value": "={{$json.extra?.cwhost}}"
             },
             {
-              "name": "utoken",
-              "value": "={{$json.extra?.utoken}}"
+              "name": "atoken",
+              "value": "={{$json.extra?.atoken}}"
             },
             {
               "name": "account",
@@ -507,13 +507,13 @@
         },
         "options": {}
       },
-      "id": "adbca280-8f86-4ac3-8703-ac18df7cb9ad",
+      "id": "8f917559-19f6-4efe-a887-b9a722cd5a95",
       "name": "Set Update Contact Payload",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1856,
-        -720
+        -1568,
+        1840
       ]
     },
     {
@@ -522,35 +522,35 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -2336,
-        -912
+        -2048,
+        1648
       ],
-      "id": "9524663b-348f-4ced-8716-f80bd73a97db"
+      "id": "ec8fd6ef-5a4b-4cf4-a137-18cd3e4b8e8f"
     },
     {
       "parameters": {
         "content": "## POST RESOLVED MESSAGE\n* to disable, remove that link",
-        "height": 461.0344273293615,
-        "width": 2847.0653208940353
+        "height": 573,
+        "width": 2847
       },
-      "id": "c08a92b5-dd6e-4355-9252-9c681ea861d0",
+      "id": "4cadb02f-6fea-47c5-be09-81b0c2e13a8a",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1920,
-        -1344
+        -1632,
+        1136
       ]
     },
     {
       "parameters": {},
-      "id": "5fbddd95-074f-4925-a98b-c9700dc0afbf",
+      "id": "50e0b38f-39ee-4b7d-85ee-46a27af433d8",
       "name": "No Operation, do nothing3",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -256,
-        -1184
+        32,
+        1376
       ]
     },
     {
@@ -568,24 +568,24 @@
           ]
         }
       },
-      "id": "1b012e3d-d85b-4528-afaa-fa1c9877ba09",
+      "id": "ac88b12a-7c27-44f9-a290-b99b11aed9eb",
       "name": "Skip Evaluation By Contact",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -432,
-        -1200
+        -144,
+        1360
       ]
     },
     {
       "parameters": {},
-      "id": "a97943a0-7b71-4a45-ab17-1c5957d9d1d9",
+      "id": "935a005a-64ff-48f6-a86f-c82d67bb4a4c",
       "name": "Evaluation Message Payload Ready To Quepasa",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        688,
-        -1184
+        976,
+        1376
       ]
     },
     {
@@ -594,22 +594,22 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1840,
-        -1072
+        -1552,
+        1488
       ],
-      "id": "599b6b3b-2994-4cf1-bacc-a59c2bb38c51"
+      "id": "c2bcfa27-4778-46a2-b5da-6611da00203f"
     },
     {
       "parameters": {
         "jsCode": "const IsValidForWhatsapp = function (id){\n  if (typeof(id) === \"undefined\" || id === null) return false;\n  if (id.endsWith('@s.whatsapp.net')) return true;\n  if (id.endsWith('@g.us')) return true;\n  if (id.endsWith('@lid')) return true;\n  return false;\n}\n\nconst response = [];\nfor (const item of $input.all()) {\n  const body = item.json.body;\n  if (body) {     \n    \n    // obsolete, marked for remove, 2024/04/25\n    const token = item.json.extra.token;\n\n    // default extra content\n    const extra = item.json.extra;\n\n    let chatId = body.conversation.meta?.sender?.identifier;    \n    if (!IsValidForWhatsapp(chatId))\n    {\n      chatId = body.conversation.meta?.sender?.custom_attributes?.quepasa;\n      if (!chatId) {\n        chatId = body.conversation.meta?.sender?.phone_number;\n      }\n    }\n\n    // new aproach\n    if (body.content && body.id) {\n      const payload = {};\n      payload.chatid = chatId;\n      payload.conversationid = body.conversation.id;\n      payload.inreply = body.content_attributes?.in_reply_to_external_id;\n      \n      if (!payload.inreply && body.content_attributes?.in_reply_to)\n        payload.inreply = `${extra.account}-${extra.inbox}-${body.content_attributes.in_reply_to}`;\n\n      if (body.content_type === 'integrations' && body.content_attributes?.type === 'dyte')      \n        body.content += '\\r\\n *** https://app.dyte.in/meeting/stage/' + body.content_attributes?.data.room_name;      \n\n      // leading with \\ at SHIFT+ENTER\n      if (body.content)       \n      {\n        body.content = body.content.replace(/\\n\\\\/g,\"\\n\").replace(/ \\\\/g,\"\");\n        payload.content = body.content; \n      }\n      \n      // should create an extra message for caption ?\n      const textmsg = (!body.attachments) || (body.attachments.length > 1);\n            \n      if (body.content && textmsg) {                \n        payload.messageid = `${body.id}`; // ensure as string \n                \n        const sender = body.sender?.available_name || body.sender?.name || $env['C8Q_UNKNOWN_SENDER'] || 'Auto Atendimento';\n        \n        const customs = body.conversation.meta?.sender?.custom_attributes;\n        const pat = !((customs?.hasOwnProperty('skipagenttitle') ?? false) && (customs?.skipagenttitle ?? false));\n\n        if (pat) payload.sender = sender;\n\n        // appending to response as new item\n        response.push({ payload: { ...payload }, extra: extra });\n        payload.content = undefined;\n      }\n\n      if (body.attachments) {\n        let counter = 0;\n        for (const attach of body.attachments) \n        {\n          // fixed payload counter for multiples attachs, 2024/05/06\n          const attachmentPayload = { ...payload }; // Criando uma nova instância de payload\n          attachmentPayload.messageid = `${body.id}-A${counter++}`; // ensure as string, adding an attach counter          \n          attachmentPayload.attachment = attach.data_url;\n          \n          // appending to response as new item\n          response.push({ payload: attachmentPayload, extra: extra });                   \n        }\n      }  \n      \n      continue;\n    }    \n    \n    // for each message, *not common to be more than one\n    for (const message of body.conversation.messages) \n    {  \n      const payload = {};\n      payload.chatid = chatId;\n      payload.conversationid = body.conversation.id ?? message.conversation_id;\n      payload.inreply = message.content_attributes?.in_reply_to_external_id;\n\n      if (!payload.inreply && message.content_attributes?.in_reply_to)\n        payload.inreply = `${extra.account}-${extra.inbox}-${message.content_attributes.in_reply_to}`;\n      \n      // obsolete, marked for remove, 2024/04/25\n      payload.token = token;\n\n      // -------------------------------------\n      \n      if (message.content_type === 'integrations' && message.content_attributes?.type === 'dyte')      \n        message.content += '\\r\\n *** https://app.dyte.in/meeting/stage/' + message.content_attributes?.data.room_name;      \n\n      // leading with \\ at SHIFT+ENTER\n      if (message.content)       \n      {\n        message.content = message.content.replace(/\\n\\\\/g,\"\\n\").replace(/ \\\\/g,\"\");\n        payload.content = message.content; \n      }\n      \n      // should create an extra message for caption ?\n      const textmsg = (!message.attachments) || (message.attachments.length > 1);\n            \n      if (message.content && textmsg) {                \n        payload.messageid = `${message.id}`; // ensure as string \n                \n        const sender = message.sender?.available_name || message.sender?.name || $env['C8Q_UNKNOWN_SENDER'] || 'Auto Atendimento';\n        \n        const customs = body.conversation.meta?.sender?.custom_attributes;\n        const pat = !((customs?.hasOwnProperty('skipagenttitle') ?? false) && (customs?.skipagenttitle ?? false));\n\n        if (pat) payload.sender = sender;\n\n        // appending to response as new item\n        response.push({ payload: { ...payload }, extra: extra });\n        payload.content = undefined;\n      }\n\n      if (message.attachments) {\n        let counter = 0;\n        for (const attach of message.attachments) \n        {\n          // fixed payload counter for multiples attachs, 2024/05/06\n          const attachmentPayload = { ...payload }; // Criando uma nova instância de payload\n          attachmentPayload.messageid = `${message.id}-A${counter++}`; // ensure as string, adding an attach counter          \n          attachmentPayload.attachment = attach.data_url;\n          \n          // appending to response as new item\n          response.push({ payload: attachmentPayload, extra: extra });                   \n        }\n      }  \n    }\n  }\n}\n\nreturn response;"
       },
-      "id": "750c3387-ecbf-434e-9661-4a8be28b2377",
+      "id": "6dabe297-67d1-4223-abf7-85eec5b95921",
       "name": "Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        -160,
-        -1904
+        128,
+        656
       ]
     },
     {
@@ -619,13 +619,13 @@
         "operation": "revoke",
         "messageid": "={{ $json.revoke.id }}"
       },
-      "id": "6dc37b51-53c4-46e5-8179-7fbb0d55b101",
+      "id": "55ee4761-fb40-4c0c-9d70-9bee87b635b9",
       "name": "Quepasa Revoke",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        -752,
-        64
+        -464,
+        2624
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -635,13 +635,13 @@
       "parameters": {
         "jsCode": "// Process Revoke Result - Handle both success and error cases\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const result = {\n    messageId: null,\n    error: null,\n    success: false\n  };\n\n  // Try to get message ID from various sources\n  result.messageId = \n    item.json?.revoke?.id ||\n    item.json?.body?.source_id ||\n    item.json?.body?.id ||\n    item.json?.id ||\n    'unknown';\n\n  // Check if there was an error\n  if (item.error) {\n    result.error = {\n      message: item.error.message || 'Unknown error',\n      code: item.error.code || 'UNKNOWN_ERROR',\n      details: item.error\n    };\n    \n    // Categorize common WhatsApp/Quepasa errors\n    if (item.error.message?.includes('24') || item.error.message?.includes('hour') || item.error.message?.includes('time')) {\n      result.error.code = 'MESSAGE_TOO_OLD';\n      result.error.message = 'WhatsApp Limitation: Message too old (>24h) - MessageId: ' + result.messageId;\n    } else if (item.error.message?.includes('not found') || item.error.message?.includes('404')) {\n      result.error.code = 'MESSAGE_NOT_FOUND';\n      result.error.message = 'WhatsApp Error: Message not found - MessageId: ' + result.messageId;\n    } else if (item.error.message?.includes('unauthorized') || item.error.message?.includes('401')) {\n      result.error.code = 'UNAUTHORIZED';\n      result.error.message = 'Quepasa Auth Error: Unauthorized - MessageId: ' + result.messageId;\n    }\n  } else {\n    // Success case\n    result.success = true;\n  }\n\n  results.push(result);\n}\n\nreturn results.map(result => ({ json: result }));"
       },
-      "id": "e39888f2-59b7-418c-ad77-2d28fc26d22c",
+      "id": "4cdea374-5fad-464f-8a44-4c4e737f8df0",
       "name": "Process Revoke Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -544,
-        64
+        -256,
+        2624
       ],
       "executeOnce": false,
       "alwaysOutputData": true,
@@ -684,13 +684,13 @@
         },
         "options": {}
       },
-      "id": "806d4ae3-3c7c-404a-8d3f-c10a89194986",
+      "id": "91084c71-00df-4278-8278-7c08bee0c298",
       "name": "Payload Without CSAT",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        288,
-        -1152
+        576,
+        1408
       ]
     },
     {
@@ -704,13 +704,13 @@
           ]
         }
       },
-      "id": "f2a15240-9b1c-4a02-bc84-3902257e5644",
+      "id": "4ba47e72-79b1-4a96-8944-f2f865e2c33a",
       "name": "Account Found ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1296,
-        -1200
+        -1008,
+        1360
       ]
     },
     {
@@ -725,13 +725,13 @@
         },
         "options": {}
       },
-      "id": "36e62873-d263-4ee3-aa24-ad70ae5b1ad0",
+      "id": "23426dea-5ba0-4ec0-b364-e1908ce6de15",
       "name": "Set Account in Query",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -944,
-        -1072
+        -656,
+        1488
       ]
     },
     {
@@ -740,13 +740,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "cfaa2dbe-08b9-4031-b687-c95d694f42c2",
+      "id": "310da9f0-cb3a-4ae2-9cd4-6a4657829910",
       "name": "Merge Account Id",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        -784,
-        -1152
+        -496,
+        1408
       ]
     },
     {
@@ -771,28 +771,28 @@
         },
         "combineOperation": "any"
       },
-      "id": "8a71ae00-9114-400d-b18a-aff55dcd368e",
+      "id": "3575f54f-7d32-48b4-ae1a-ecc15cd102f2",
       "name": "From Quepasa Control ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -432,
-        -1920
+        -144,
+        640
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.45) Updates\n* Returning Quepasa Error Messages to User\n\n## Recommendations \n* Remember set timeout to 30 seconds",
-        "height": 184.30667672289223,
-        "width": 591.0097010851398
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for confirmation messages\n* Message delivery confirmations now use limited scope tokens\n\n### Previous Updates (1.0.45)\n* Returning Quepasa Error Messages to User\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "height": 360,
+        "width": 591
       },
-      "id": "1c060ac7-5173-49d3-ab8e-629bbd7a743f",
+      "id": "5dd05abc-4b13-48b6-b9b1-4984c1267c4c",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -3904,
-        -1840
+        -3600,
+        640
       ]
     },
     {
@@ -812,13 +812,13 @@
           ]
         }
       },
-      "id": "d417a01e-8a42-4093-9dda-bb75d3c11b92",
+      "id": "c3977a0e-353e-4d07-ab88-2dc5595fe6e0",
       "name": "If Not Control & Not Broadcast",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1472,
-        -1184
+        -1184,
+        1376
       ]
     },
     {
@@ -838,13 +838,13 @@
           ]
         }
       },
-      "id": "d7e1440f-00ee-4859-8506-ff2bba600b9b",
+      "id": "2159790d-b99d-47e6-b7d4-9301716a8401",
       "name": "Should Prepend Agent Title ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        608,
-        -2016
+        896,
+        544
       ]
     },
     {
@@ -863,20 +863,20 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        816,
-        -2096
+        1104,
+        464
       ],
-      "id": "2f466d6e-e716-43c2-9cab-9c9041ec9c63"
+      "id": "164719ed-7c48-458a-9305-f796ab15fc42"
     },
     {
       "parameters": {},
-      "id": "7e12e8cd-e53b-47a0-98d3-49b455c56520",
+      "id": "1a8e29a4-6a42-452e-800c-c4de54dc77c0",
       "name": "Follow after prepend",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1008,
-        -2000
+        1296,
+        560
       ]
     },
     {
@@ -894,13 +894,13 @@
           ]
         }
       },
-      "id": "cfa5678d-6b05-485a-9688-f5107e5ca00f",
+      "id": "b80db6d8-89cf-4c5b-86c3-cf9aa736aa00",
       "name": "Skip Evaluate By Conversation",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -624,
-        -1216
+        -336,
+        1344
       ]
     },
     {
@@ -914,13 +914,13 @@
         "trackid": "chatwoot",
         "inreply": "={{$json.payload.inreply }}"
       },
-      "id": "8a67512c-6a5c-4b34-9673-cbc3748e1433",
+      "id": "7b2929b1-5d52-4305-aa68-c23695ad6382",
       "name": "Quepasa Send Text",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        2096,
-        -1296
+        2384,
+        1264
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -935,13 +935,13 @@
         "token": "={{ $json.extra.qptoken ?? $json.extra.identifier }}",
         "resource": "information"
       },
-      "id": "17c01f8e-eb90-47e3-a818-4eabbf6c3d17",
+      "id": "c1a644e7-9ceb-4a21-a72e-6239e6bd1cfd",
       "name": "Get Info",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        3408,
-        -1328
+        3696,
+        1232
       ]
     },
     {
@@ -955,10 +955,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        4080,
-        -1408
+        4368,
+        1152
       ],
-      "id": "a7668525-fe18-428a-828f-7eade1d5529d"
+      "id": "ad2be91e-a350-48e8-be2f-f045830b89d5"
     },
     {
       "parameters": {
@@ -974,10 +974,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1200,
-        96
+        -912,
+        2656
       ],
-      "id": "207517ed-c57d-4159-b5e3-78c9cff045d3"
+      "id": "00245c64-ebdf-445c-a0cb-3a9eff835a55"
     },
     {
       "parameters": {
@@ -1006,10 +1006,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -1424,
-        112
+        -1136,
+        2672
       ],
-      "id": "640ad6d1-65e6-4d2e-8ebb-060e7d592dfb"
+      "id": "d3fe8ad8-f8fb-49e7-9bb6-68c02b99fecc"
     },
     {
       "parameters": {
@@ -1017,26 +1017,26 @@
         "height": 290.45603652476376,
         "width": 3095.2003130765215
       },
-      "id": "139710ae-f6a5-43e3-9ef9-c12946baeff8",
+      "id": "06326265-2e35-4b94-8365-7dac4ce16217",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1920,
-        -832
+        -1632,
+        1728
       ]
     },
     {
       "parameters": {
         "jsCode": "function hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor(let index in items) \n{ \n    if(items[index].json?.chatid){\n        continue;\n    }\n\n    let body = items[index].json[\"body\"];\n    if(body) \n    {\n        // trying to get from external identifier\n        let chatid = body.meta?.sender?.identifier;\n        if(!chatid)\n        {\n            // trying to get from quepasa custom property\n            chatid = body.meta?.sender?.custom_attributes?.quepasa;            \n            if(!chatid)\n            {\n                // trying to get from e-mail\n                chatid = body.meta?.sender?.email;            \n                if(!chatid)\n                {\n                    // trying to unhex from source_id\n                    if(body.contact_inbox?.source_id && body.contact_inbox.source_id.includes(\"@\")){\n                        chatid = hex2a(body.contact_inbox.source_id)\n                    }\n                    \n                    if(!chatid)\n                    {                    \n                        // trying to get from phone number \n                        chatid = body.meta?.sender?.phone_number;\n                        if (chatid) { \n                          chatid += '@s.whatsapp.net';\n                          if (chatid.startsWith('+')) chatid = chatid.substring(1);\n                        }\n                    }\n                }\n            }\n        }\n        items[index].json.chatid = chatid;\n    }\n}\n\nreturn items;"
       },
-      "id": "fee8195c-b92c-449b-a8c2-e18e3875ab40",
+      "id": "f92db2ca-1cf1-4f9b-80ee-0e9a4ec11566",
       "name": "Ensure ChatId From Custom|Email|Source|Phone",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        -2144,
-        -912
+        -1856,
+        1648
       ]
     },
     {
@@ -1045,17 +1045,17 @@
         "query": "=SELECT account_id FROM inboxes WHERE id = '{{ $json.extra.inbox }}'",
         "additionalFields": {}
       },
-      "id": "0ad82c24-94be-4e09-9c1e-c950b99a043f",
+      "id": "5a1deaf6-a1a9-470f-8f54-20022cf8b50e",
       "name": "Get Account From Inbox",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -1104,
-        -1072
+        -816,
+        1488
       ],
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
@@ -1075,10 +1075,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1888,
-        -1376
+        2176,
+        1184
       ],
-      "id": "0dc7ed00-4fa3-4af0-9512-8252bb504c8b"
+      "id": "23e55cc7-4f6c-4535-b17f-1b322a73eea6"
     },
     {
       "parameters": {
@@ -1086,13 +1086,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "a871ccec-a0a2-41e8-ace9-2001ad58b945",
+      "id": "d26a87ce-1617-4b56-b361-5649a33871d0",
       "name": "Merge2",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        2896,
-        -1584
+        3184,
+        976
       ]
     },
     {
@@ -1112,13 +1112,13 @@
         },
         "combineOperation": "any"
       },
-      "id": "3e2090dc-98f8-471a-9a51-b74f55e69ead",
+      "id": "9db6ff61-81be-47e5-8583-78db5aec22ee",
       "name": "Has Errors ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2688,
-        -1296
+        2976,
+        1264
       ]
     },
     {
@@ -1131,13 +1131,13 @@
           ]
         }
       },
-      "id": "640bb47f-a7a1-42aa-bdb1-f881140ac32d",
+      "id": "ed7aa526-0aec-423e-a080-8d1e2619325a",
       "name": "Isn't Verified ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        3760,
-        -1376
+        4048,
+        1184
       ]
     },
     {
@@ -1149,7 +1149,7 @@
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{ $json.extra.utoken }}"
+              "value": "={{ $json.extra.atoken }}"
             }
           ]
         },
@@ -1158,13 +1158,13 @@
         "jsonBody": "={\"private\": true, \"content\": \"❌ O WhatsApp não está verificado.\\n Por favor, reabra o aplicativo e faça a leitura do código QR novamente.\\n{{$json.message}}\", \"message_type\": 2, \"content_type\": \"text\"}",
         "options": {}
       },
-      "id": "efd791a0-4013-4007-ad54-90bea85e693e",
+      "id": "f6e724aa-8eb5-41d2-8ad9-22e5f878f623",
       "name": "Success ?",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        3920,
-        -1408
+        4208,
+        1152
       ]
     },
     {
@@ -1173,13 +1173,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "689fc633-8f91-4140-afec-18c529c7f8e3",
+      "id": "bfc739b4-33e5-4c9b-9030-7cc810835e65",
       "name": "Merge3",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        3600,
-        -1376
+        3888,
+        1184
       ]
     },
     {
@@ -1188,13 +1188,13 @@
         "height": 661,
         "width": 2026
       },
-      "id": "892392a4-6f17-4d6c-9d8e-060765940068",
+      "id": "98b8b837-15d3-442e-8917-04c073d2c991",
       "name": "Sticky Note4",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2640,
-        -1680
+        2928,
+        880
       ]
     },
     {
@@ -1211,13 +1211,13 @@
         "trackid": "chatwoot",
         "inreply": "={{$json.payload.inreply}}"
       },
-      "id": "c3952253-ed4d-4c7a-a301-3c84891b80c5",
+      "id": "02cc1cc6-05ee-4277-8206-ebfaddba63ca",
       "name": "Quepasa Send Attach",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        2448,
-        -1440
+        2736,
+        1120
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -1231,30 +1231,30 @@
         "query": "=UPDATE messages SET status = 3 WHERE id = {{ +$json.payload.messageid.toString().split('-').shift() }}; ",
         "additionalFields": {}
       },
-      "id": "204a10e7-84ca-47bc-a32c-1c37d724bc2c",
+      "id": "0f2bfe5c-b804-40cd-a0f5-db1c6667edf8",
       "name": "Update Message Status",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        3200,
-        -1584
+        3488,
+        976
       ],
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
     },
     {
       "parameters": {},
-      "id": "bf7c7c4e-0126-4dc0-bbcd-2d02fcb55384",
+      "id": "42358489-b13c-46ee-9107-75056051aa2e",
       "name": "No Operation, do nothing2",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3200,
-        -1392
+        3488,
+        1168
       ]
     },
     {
@@ -1280,26 +1280,26 @@
         },
         "options": {}
       },
-      "id": "55b41680-4e07-46ff-ae8e-866adea3288e",
+      "id": "7d17a166-196e-46a7-8a56-d412638b5999",
       "name": "If Remote Storage",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2096,
-        -1456
+        2384,
+        1104
       ]
     },
     {
       "parameters": {
         "amount": 2
       },
-      "id": "3a887f98-ab73-4f88-8cc5-38bac6ef7aba",
+      "id": "d250839e-4c91-446e-820c-abd22ba25420",
       "name": "Wait For Uploading",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2272,
-        -1536
+        2560,
+        1024
       ],
       "webhookId": "4be09e3c-13a7-48f9-b649-d5942ef6e1e7"
     },
@@ -1326,13 +1326,13 @@
         },
         "options": {}
       },
-      "id": "ab855349-a71e-4fec-aa17-3de87afbf85c",
+      "id": "932e441e-b894-4d12-a6b8-f40a21ebe2aa",
       "name": "If Template",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -1360,
-        -1936
+        -1072,
+        624
       ]
     },
     {
@@ -1369,13 +1369,13 @@
         },
         "options": {}
       },
-      "id": "d08a8d22-9582-4d43-8586-c62935fae1ca",
+      "id": "7188b989-6f14-4943-a547-0912edb37553",
       "name": "Skip Evaluation",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -896,
-        -2704
+        -608,
+        -144
       ]
     },
     {
@@ -1402,24 +1402,24 @@
         },
         "options": {}
       },
-      "id": "6c49199c-5208-400e-9222-35ecddb475a2",
+      "id": "b70d24ba-4fdc-45a8-81f7-44601f8b6d72",
       "name": "Skip Greetings",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -1024,
-        -2240
+        -736,
+        320
       ]
     },
     {
       "parameters": {},
-      "id": "c1c40273-5753-4563-a38a-6554bad15cc6",
+      "id": "86e734b7-51b7-43b2-b8fe-4b68b48e1c76",
       "name": "No Operation, do nothing4",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -400,
-        -2224
+        -112,
+        336
       ]
     },
     {
@@ -1437,13 +1437,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "a6c35100-bb62-4ba0-988c-31de846e9399",
+      "id": "ad644b3e-89a2-44a4-ae8b-e45d72e7991e",
       "name": "Custom Evaluation Content",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
       "position": [
-        -720,
-        -2512
+        -432,
+        48
       ]
     },
     {
@@ -1458,10 +1458,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -480,
-        -1616
+        -192,
+        944
       ],
-      "id": "032cfa8f-61b3-4d25-8879-73b8e8be60c2"
+      "id": "c5d522bc-c34f-42ba-b9f6-ef11f79de1ee"
     },
     {
       "parameters": {
@@ -1475,10 +1475,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -736,
-        -1616
+        -448,
+        944
       ],
-      "id": "fadc91a2-3278-447b-a9bf-a5038ba583ac"
+      "id": "6c9f292d-3239-4b97-b43a-cd8de5ff6859"
     },
     {
       "parameters": {
@@ -1492,10 +1492,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1360,
-        -1776
+        -1072,
+        784
       ],
-      "id": "adf82866-95ab-4039-8c74-bf7a5e321214"
+      "id": "57a203bb-5daa-44d4-8ee8-4e39dd078dbd"
     },
     {
       "parameters": {
@@ -1509,23 +1509,23 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -544,
-        -2784
+        -256,
+        -224
       ],
-      "id": "b39356d9-90f8-4c6d-8866-13d557a46f9e"
+      "id": "a5a7f92d-98bf-4fb9-a82b-683f5f3953ce"
     },
     {
       "parameters": {
         "respondWith": "noData",
         "options": {}
       },
-      "id": "542d7d71-e097-4795-ae6a-bd7701982809",
+      "id": "828f4004-639d-42a7-b223-3c27614362fb",
       "name": "Respond From Chat Control Workflow",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1184,
-        -2400
+        1472,
+        160
       ]
     },
     {
@@ -1539,10 +1539,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        48,
-        -2144
+        336,
+        416
       ],
-      "id": "f389ab75-b8e1-4301-b17d-48e73234aee0"
+      "id": "8eedec5a-5ec4-4042-b06d-2cabae23aaba"
     },
     {
       "parameters": {
@@ -1556,10 +1556,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2896,
-        -1392
+        3184,
+        1168
       ],
-      "id": "0adca0b5-20eb-4d5f-b975-29041252ec97"
+      "id": "9897fcfc-bda5-4c40-b361-86670a5d29fb"
     },
     {
       "parameters": {
@@ -1573,10 +1573,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2896,
-        -1200
+        3184,
+        1360
       ],
-      "id": "c60aee2f-6db5-415a-9ff7-b927a2e483d7"
+      "id": "e8cf2a96-e69d-47ab-8acd-8db8a2e779f8"
     },
     {
       "parameters": {
@@ -1635,13 +1635,13 @@
           "looseTypeValidation": true
         }
       },
-      "id": "a4dc900c-6884-41bb-8e03-96529755d8ee",
+      "id": "7e1c48e5-7a24-44e7-9a87-2c3ea90863c3",
       "name": "Switch Template",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        -1296,
-        -2480
+        -1008,
+        80
       ]
     },
     {
@@ -1660,13 +1660,13 @@
           ]
         }
       },
-      "id": "4e344fa7-65a1-44d7-8472-ae705b1d777f",
+      "id": "5c35b3f8-5703-4a7d-9caa-4f46fe8692b0",
       "name": "Use MSG For Resolved Conversations Without CSAT ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        464,
-        -1152
+        752,
+        1408
       ]
     },
     {
@@ -1676,13 +1676,13 @@
           "responseCode": 200
         }
       },
-      "id": "7343568b-ca7a-4bed-8997-4d3ba0759c19",
+      "id": "adc2b2d4-6359-4568-b229-13f861b7ee1d",
       "name": "Any Other Update",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1424,
-        272
+        -1136,
+        2832
       ]
     },
     {
@@ -1692,13 +1692,13 @@
           "responseCode": 200
         }
       },
-      "id": "9cb8b29b-c6b4-40fe-9566-1191f1074f97",
+      "id": "fe7bf5fc-7779-47be-9fa4-6cada09bf38b",
       "name": "Not Outgoing",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1200,
-        272
+        -912,
+        2832
       ]
     },
     {
@@ -1708,13 +1708,13 @@
           "responseCode": 200
         }
       },
-      "id": "b66926c4-ee9d-45b0-bc7f-9874b74c47a0",
+      "id": "ad271a9a-5bfd-436d-9ca8-b22034834e04",
       "name": "Not Public",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -976,
-        272
+        -688,
+        2832
       ]
     },
     {
@@ -1725,13 +1725,13 @@
           "responseCode": "={{ $json.success ? 200 : 422 }}"
         }
       },
-      "id": "e11e7b2b-3fc9-4236-bb52-8bf203c2f82c",
+      "id": "23f63f33-6e9b-42ac-8be7-1493590ae473",
       "name": "Revoked",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -336,
-        64
+        -48,
+        2624
       ]
     },
     {
@@ -1741,13 +1741,13 @@
           "responseCode": 200
         }
       },
-      "id": "dccba87a-80a5-42b9-9085-30ad37359f05",
+      "id": "66dcef39-8eb0-4658-991b-b4093f1f3d9c",
       "name": "Normal Exit C",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1472,
-        -1024
+        -1184,
+        1536
       ]
     },
     {
@@ -1757,13 +1757,13 @@
           "responseCode": 200
         }
       },
-      "id": "b114cc81-7c1e-4412-ba7f-ed70ede610cd",
+      "id": "22af0033-33fc-44f5-abad-7560d8be9c1a",
       "name": "Normal Exit C1",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1296,
-        -1024
+        -1008,
+        1536
       ]
     },
     {
@@ -1773,13 +1773,13 @@
           "responseCode": 200
         }
       },
-      "id": "e7d25bff-7871-4b36-b39f-e73143aa30a8",
+      "id": "c20d987d-44bb-4a13-819b-895fb1556f6e",
       "name": "Normal Exit C2",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -432,
-        -1360
+        -144,
+        1200
       ]
     },
     {
@@ -1789,13 +1789,13 @@
           "responseCode": 200
         }
       },
-      "id": "0efd3a80-efd5-44a7-a22e-71eb5f43704e",
+      "id": "07ee2229-a009-4745-a1c9-4be098c01f52",
       "name": "Normal Exit C3",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -192,
-        -1360
+        96,
+        1200
       ]
     },
     {
@@ -1805,13 +1805,13 @@
           "responseCode": 200
         }
       },
-      "id": "2eeb44a0-cfc2-47cb-9de4-1d154f2aff87",
+      "id": "2759f45d-469c-40dc-8bf0-1b33ebfcb006",
       "name": "Normal Exit C4",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        688,
-        -992
+        976,
+        1568
       ]
     },
     {
@@ -1821,13 +1821,13 @@
           "responseCode": 200
         }
       },
-      "id": "c0d99960-92b2-4fdc-9400-97da36336acd",
+      "id": "390f56bb-9eea-4a60-ac92-fc402829f282",
       "name": "Normal Exit C5",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        3408,
-        -1584
+        3696,
+        976
       ]
     },
     {
@@ -1837,13 +1837,13 @@
           "responseCode": 200
         }
       },
-      "id": "a55e94c4-cc8e-41f1-a91f-5a393690e682",
+      "id": "57fe46f8-7dd3-44da-ae01-cdcc2a70e946",
       "name": "Normal Exit C6",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        4080,
-        -1264
+        4368,
+        1296
       ]
     },
     {
@@ -1858,10 +1858,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -656,
-        -2336
+        -368,
+        224
       ],
-      "id": "7521908a-d5e3-4b8a-aca1-209fa63f6290"
+      "id": "ead168e7-7e28-4df8-8ff1-e8b545886394"
     },
     {
       "parameters": {
@@ -1869,18 +1869,18 @@
         "query": "=UPDATE messages SET content = NULL WHERE id = {{ +$json.body.id }}",
         "additionalFields": {}
       },
-      "id": "d9c07b9e-6d27-4075-8e22-350a2792c4fb",
+      "id": "1b80468f-5442-4598-b77f-13bbf2b18532",
       "name": "Clear Evaluation Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -720,
-        -2784
+        -432,
+        -224
       ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
@@ -1891,18 +1891,18 @@
         "query": "=UPDATE messages SET content = NULL WHERE id = {{ +$json.body.id }}",
         "additionalFields": {}
       },
-      "id": "ddc999bf-803a-4661-bd59-847cf6eaaf5e",
+      "id": "b45ebf58-e758-4ee9-a2a3-584a1585e78b",
       "name": "Clear Greetings Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
       "position": [
-        -816,
-        -2336
+        -528,
+        224
       ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
@@ -1913,17 +1913,17 @@
         "query": "=SELECT uuid FROM conversations WHERE account_id = {{ $json.extra.account }} and display_id = {{ $json.body.conversation.id }};",
         "options": {}
       },
-      "id": "cc60ac28-2fad-4283-bc4d-8f54d0e4ff30",
+      "id": "995dd296-c8c2-4291-9f62-a815b8c1a5d0",
       "name": "Get Evaluation UUID",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -240,
-        -2640
+        32,
+        -128
       ],
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
@@ -1934,20 +1934,14 @@
         "query": "=UPDATE messages SET \"content_type\" = 0, \"content\" = '{{ $json.body.content }}' WHERE id = {{ +$json.body.id }}",
         "options": {}
       },
-      "id": "623ded96-bd2f-4910-b596-4e1e2dad7b67",
+      "id": "8a896090-566c-4cfc-8842-88cd0aa9a5e7",
       "name": "Update Evaluation Message With Custom Content",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -464,
-        -2512
+        -176,
+        48
       ],
-      "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "Postgres account"
-        }
-      },
       "disabled": true
     },
     {
@@ -1981,13 +1975,13 @@
           ]
         }
       },
-      "id": "e56ba044-f2bd-4381-bf30-27cddb1ef224",
+      "id": "8ff23b80-a660-4aaa-b1d6-ebc09759e2c4",
       "name": "Execution Data",
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        -3120,
-        -1760
+        -2832,
+        800
       ],
       "alwaysOutputData": false,
       "onError": "continueRegularOutput"
@@ -1998,13 +1992,13 @@
         "height": 278.9574374256098,
         "width": 394.6908294938413
       },
-      "id": "d019b66f-ec77-4a8e-9e45-3837c2729e36",
+      "id": "4d1b20b0-c26a-4568-9b85-36696902c848",
       "name": "Sticky Note5",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -3264,
-        -1840
+        -2976,
+        720
       ]
     },
     {
@@ -2022,13 +2016,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "5b9bdccf-3ff3-4dc3-b0ed-d71e59f93f60",
+      "id": "812feda7-6246-490c-a7a1-e7a8af9955db",
       "name": "Set Revoke Id",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -960,
-        64
+        -672,
+        2624
       ]
     },
     {
@@ -2143,10 +2137,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -3120,
-        -1552
+        -2832,
+        1008
       ],
-      "id": "72d6d7cd-105d-457d-b3d1-743a445c3437",
+      "id": "c0e9da60-bbe0-4e0f-a2a9-4d27b661f025",
       "name": "Switch1"
     },
     {
@@ -2159,10 +2153,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -3120,
-        -1184
+        -2832,
+        1376
       ],
-      "id": "21438297-c0df-49fa-9f3b-2d87da178e40",
+      "id": "b215bd38-aaae-4f86-9f3a-1f5326ab5715",
       "name": "Respond to Webhook"
     },
     {
@@ -2183,13 +2177,13 @@
         "jsonBody": "={\n  \"private\": true,\n  \"edited\": false,\n  \"content\": \"! Quepasa Error\\nCode: {{$json.httpCode}}\\nMessages: {{ $json.messages }}\",\n  \"message_type\": \"outgoing\",\n  \"content_attributes\": {\n    \"in_reply_to\": {{ +$json.payload.messageid.split('-')[0] }}\n  },\n  \"content_type\": \"text\"\n}",
         "options": {}
       },
-      "id": "d0cfd0d9-c5e8-4b25-a972-4a32477449ea",
+      "id": "32446ae0-2b4e-475a-905f-73664e31ef7a",
       "name": "Informing Error Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        3200,
-        -1168
+        3488,
+        1392
       ],
       "onError": "continueRegularOutput"
     }
@@ -3212,34 +3206,13 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "any",
-    "executionTimeout": -1,
-    "timeSavedPerExecution": 0
+    "callerPolicy": "any"
   },
-  "versionId": "2624e9ff-79bc-41c8-bfe1-a11b97e3d0ed",
+  "versionId": "8791a321-16ae-4769-93ba-fd12c19b98fb",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
   },
   "id": "1008",
-  "tags": [
-    {
-      "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2023-08-25T18:50:53.269Z",
-      "id": "5",
-      "name": "quepasa"
-    },
-    {
-      "createdAt": "2022-10-13T15:26:19.857Z",
-      "updatedAt": "2023-08-24T21:01:00.296Z",
-      "id": "6",
-      "name": "chatwoot"
-    },
-    {
-      "createdAt": "2023-05-19T22:54:38.266Z",
-      "updatedAt": "2023-05-19T22:54:38.266Z",
-      "id": "13",
-      "name": "github.com/nocodeleaks"
-    }
-  ]
+  "tags": []
 }

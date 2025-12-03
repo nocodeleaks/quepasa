@@ -36,6 +36,7 @@
 * **Build**: All builds should be "go build -o ../.dist/quepasa.exe", overriding any existing file.
 * **Message Flow**: Read docs/USAGE-Message-Flow.md for detailed message processing flow from Whatsmeow to final dispatch.
 * **WebHooks**: Read docs/USAGE-WebHooks.md for webhook setup and configuration.
+* **Whatsmeow Update**: `update-whatsmeow.ps1`.
 
 ## Key Files
 - src/main.go: System initialization

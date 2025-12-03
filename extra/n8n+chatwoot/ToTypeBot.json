@@ -3,17 +3,17 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## (1.0.7) Updates\n* /private for internal messages\n",
-        "height": 175.906164153499,
-        "width": 398.976541038375
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for bot status operations\n* Conversation toggle status now uses scoped AgentBot tokens\n\n### Previous Updates (1.0.7)\n* /private for internal messages\n\n## Recommendations\n* Remember set timeout to 15 seconds\n",
+        "height": 384,
+        "width": 655
       },
-      "id": "b696187b-ed4a-44ab-a5dc-475924006411",
+      "id": "61fd38d0-d4cf-40c0-9352-97c541b9f2e8",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1040,
-        740
+        -6000,
+        192
       ]
     },
     {
@@ -27,37 +27,37 @@
         },
         "options": {}
       },
-      "id": "3c4857bc-7437-4e99-9d3f-467fde1c1b74",
+      "id": "1ccd67fc-f765-42a8-ae6e-bd9f6b5d1665",
       "name": "Ordering Counter",
       "type": "n8n-nodes-base.sort",
       "typeVersion": 1,
       "position": [
-        4180,
-        700
+        -512,
+        256
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "51e0f85d-757f-440e-bd00-ddba91ceac5f",
+      "id": "6ae4e662-f6b2-40bc-b6e3-368b3a713795",
       "name": "Loop",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        4727,
-        620
+        48,
+        176
       ]
     },
     {
       "parameters": {},
-      "id": "e42e0ba0-58fe-401a-a944-6072c8924736",
+      "id": "cdf7754c-dbda-4078-8da5-dd9bcff196dd",
       "name": "Wait1",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        600,
-        920
+        -4080,
+        480
       ],
       "webhookId": "9061e7cf-a643-47a3-a036-15a7fc8cfc3c"
     },
@@ -67,13 +67,13 @@
         "height": 432.6956237665846,
         "width": 1421.0604683933998
       },
-      "id": "c023410b-1059-44ed-b09f-d7a4b666635f",
+      "id": "23462d81-d498-47ff-8b4e-d25a09d897fd",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1480,
-        1140
+        -3200,
+        704
       ]
     },
     {
@@ -82,24 +82,24 @@
         "height": 575.8548488363981,
         "width": 1417.4486604344295
       },
-      "id": "4c023984-a251-4f1f-b42a-e39d7d78c8dc",
+      "id": "6756ac06-52ec-433f-8c7a-44d036bacf0a",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1480,
-        555.0767332761415
+        -3200,
+        112
       ]
     },
     {
       "parameters": {},
-      "id": "79ee3a04-3fd4-416f-9320-8c0ac594a0ba",
+      "id": "962207c7-12da-47d3-ae7d-d56b759333f7",
       "name": "When Called By Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -1440,
-        1080
+        -6128,
+        640
       ]
     },
     {
@@ -137,13 +137,13 @@
         },
         "options": {}
       },
-      "id": "48df5424-a5e8-4a43-807b-22bc49940f53",
+      "id": "357aa8f8-d3ff-4b79-83ab-2091b00623fa",
       "name": "Is Valid Parameters ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -540,
-        1080
+        -5232,
+        640
       ]
     },
     {
@@ -152,13 +152,13 @@
         "height": 278.9574374256098,
         "width": 388.46252278582097
       },
-      "id": "dc0c4fd7-b258-4db4-a06e-9e03437e365b",
+      "id": "8cd8aaae-30d9-4e5e-9488-c14c4c8bb7dd",
       "name": "Sticky Note3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -620,
-        740
+        -5312,
+        304
       ]
     },
     {
@@ -200,13 +200,13 @@
           ]
         }
       },
-      "id": "21e3c927-1724-4688-afe3-4dac73900ef7",
+      "id": "294ccaf2-68f8-4cb2-a609-7e58727db04b",
       "name": "Execution Data",
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        -480,
-        820
+        -5168,
+        384
       ],
       "alwaysOutputData": false,
       "onError": "continueRegularOutput"
@@ -217,13 +217,13 @@
         "jsonOutput": "={{ $json.extra }}",
         "options": {}
       },
-      "id": "73669e8f-c6cc-40fe-8d89-2cdfa3684d90",
+      "id": "51d014b2-e251-4ac9-a87c-2f09fc1044ef",
       "name": "EXTRA",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1080,
-        1080
+        -5760,
+        640
       ]
     },
     {
@@ -232,13 +232,13 @@
         "jsonOutput": "={{ $('When Called By Another Workflow').item.json.removeField('extra') }}",
         "options": {}
       },
-      "id": "cc2db0e2-d39d-4e14-9868-8e3d2f196c82",
+      "id": "16b889c0-0b81-45db-ab49-cd2c80b28ccf",
       "name": "PAYLOAD",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -720,
-        1080
+        -5408,
+        640
       ]
     },
     {
@@ -267,13 +267,13 @@
         },
         "options": {}
       },
-      "id": "1281b516-2d10-4c8b-b553-0af5fbd993f8",
+      "id": "a1c027f8-6186-4978-85bf-fd72e9a7a6bf",
       "name": "TYPEBOT",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -900,
-        1080
+        -5584,
+        640
       ]
     },
     {
@@ -282,8 +282,8 @@
           "assignments": [
             {
               "id": "10ed9f6f-20ab-447c-8e65-3bd72b78342e",
-              "name": "extra.utoken",
-              "value": "={{ $json.extra.utoken ?? $env[\"C8Q_SUPERUSER_TOKEN\"] }}",
+              "name": "extra.atoken",
+              "value": "={{ $json.extra.atoken ?? $env[\"C8Q_SUPERUSER_TOKEN\"] }}",
               "type": "string"
             },
             {
@@ -297,13 +297,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "07ccd281-787e-41d8-9fc0-6a9c64c7fe5e",
+      "id": "d61861d8-1465-4608-9e8b-9fda7ef1eb97",
       "name": "SuperUser & Agent",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1260,
-        1080
+        -5952,
+        640
       ]
     },
     {
@@ -331,13 +331,13 @@
         },
         "options": {}
       },
-      "id": "f305e9d6-5817-4293-9c78-261c59e1e893",
+      "id": "ac6a16de-8182-4956-b29d-aff402be4e7a",
       "name": "Is Key Empty?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.1,
       "position": [
-        -160,
-        1060
+        -4848,
+        624
       ]
     },
     {
@@ -347,17 +347,17 @@
         "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
         "options": {}
       },
-      "id": "dca3e911-d9f8-4dc9-bd02-1cfd32e55416",
+      "id": "88b1e056-3eb7-4426-9df6-7c299df9fd47",
       "name": "Get Debouce on Redis",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        40,
-        980
+        -4640,
+        544
       ],
       "credentials": {
         "redis": {
-          "id": "HfPZbIWdUGUkegSm",
+          "id": "90kNY1xmZzbhk7li",
           "name": "Redis account"
         }
       }
@@ -369,17 +369,17 @@
         "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
         "options": {}
       },
-      "id": "d9c8f2f4-13b9-489a-9ff3-8e00eddc003b",
+      "id": "bfde31fd-21f4-4114-83cb-94ba79c808c8",
       "name": "Get Typebot Session",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        -340,
-        1060
+        -5024,
+        624
       ],
       "credentials": {
         "redis": {
-          "id": "HfPZbIWdUGUkegSm",
+          "id": "90kNY1xmZzbhk7li",
           "name": "Redis account"
         }
       }
@@ -409,13 +409,13 @@
         },
         "options": {}
       },
-      "id": "b162ad21-41ff-4060-b97b-e240e9afac7e",
+      "id": "1b31feb6-8509-4f35-8bb2-b29c97377faa",
       "name": "Existe Key?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.1,
       "position": [
-        220,
-        980
+        -4464,
+        544
       ]
     },
     {
@@ -427,17 +427,17 @@
         "expire": true,
         "ttl": 5
       },
-      "id": "899335bb-46d8-4214-af91-923f4b1dc9ce",
+      "id": "d734c8ea-cfcb-49e5-8dc9-e3d254b73ed9",
       "name": "Set Debounce Time Key",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        420,
-        920
+        -4272,
+        480
       ],
       "credentials": {
         "redis": {
-          "id": "HfPZbIWdUGUkegSm",
+          "id": "90kNY1xmZzbhk7li",
           "name": "Redis account"
         }
       }
@@ -449,17 +449,17 @@
         "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
         "options": {}
       },
-      "id": "83250871-e63c-4ef4-877a-27f885da163c",
+      "id": "1493b022-b257-4910-bab2-15a6c23694f5",
       "name": "Redis2",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        780,
-        920
+        -3904,
+        480
       ],
       "credentials": {
         "redis": {
-          "id": "HfPZbIWdUGUkegSm",
+          "id": "90kNY1xmZzbhk7li",
           "name": "Redis account"
         }
       }
@@ -489,13 +489,13 @@
         },
         "options": {}
       },
-      "id": "01087485-7e66-4c4b-a10e-e7118a278e36",
+      "id": "0d31f843-5c84-499b-af42-0817cd535869",
       "name": "If4",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.1,
       "position": [
-        960,
-        920
+        -3728,
+        480
       ]
     },
     {
@@ -504,13 +504,13 @@
         "include": "allOtherFields",
         "options": {}
       },
-      "id": "0e39eb08-c1ad-4f4a-a9f2-357ecdad27ef",
+      "id": "713bb737-ae55-4025-810e-e0d73bdd1e08",
       "name": "Split Itens to Send",
       "type": "n8n-nodes-base.itemLists",
       "typeVersion": 1,
       "position": [
-        3980,
-        700
+        -704,
+        256
       ],
       "alwaysOutputData": true
     },
@@ -539,13 +539,13 @@
         },
         "options": {}
       },
-      "id": "17842af7-4a25-40f2-9615-82da4ae5a6d3",
+      "id": "fb7da9ee-05cb-4429-827a-0f5e8b8e32aa",
       "name": "If",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        3780,
-        640
+        -912,
+        208
       ]
     },
     {
@@ -559,13 +559,13 @@
         "filename": "={{ $json.payload.content.split('/').pop() }}",
         "filelength": 0
       },
-      "id": "90520717-e59e-470e-b902-43686b67575d",
+      "id": "3232a728-ec4a-4a68-acfc-4c70fe85ad88",
       "name": "Quepasa Send Attach",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5760,
-        1120
+        1088,
+        688
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -615,13 +615,13 @@
         },
         "options": {}
       },
-      "id": "956b01d5-575f-4d9d-8a19-bb3a58980861",
+      "id": "901159d1-d8bf-4ff6-ac15-12a01630b63e",
       "name": "If Not Has Session Id ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1200,
-        1080
+        -3488,
+        640
       ]
     },
     {
@@ -648,13 +648,13 @@
         },
         "options": {}
       },
-      "id": "5dafdd4f-8593-4a07-8716-299375f22a00",
+      "id": "cc4edd1f-1d26-45be-8fe5-e1d3bc105ccb",
       "name": "If Need To Update Status ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1820,
-        1340
+        -2864,
+        896
       ]
     },
     {
@@ -681,13 +681,13 @@
         },
         "options": {}
       },
-      "id": "7497650d-0460-4fe6-9eea-72e5159978af",
+      "id": "0ff5a4fe-6bdc-436c-9e72-d578a4e988b6",
       "name": "If Conversation Is Not Openned",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        7380,
-        1180
+        2704,
+        736
       ]
     },
     {
@@ -695,17 +695,17 @@
         "operation": "delete",
         "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}"
       },
-      "id": "39ae2b94-9230-4dee-8677-7e12b146a1d6",
+      "id": "f484e11a-14af-49a6-8b77-d44ef483e38f",
       "name": "Delete Typebot Session",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        7520,
-        700
+        2848,
+        256
       ],
       "credentials": {
         "redis": {
-          "id": "HfPZbIWdUGUkegSm",
+          "id": "90kNY1xmZzbhk7li",
           "name": "Redis account"
         }
       },
@@ -726,10 +726,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2300,
-        800
+        -2384,
+        368
       ],
-      "id": "1e15cf4a-f49f-4556-8de5-c824016bc570",
+      "id": "bd051cef-db2f-4530-83ae-64b2247db96a",
       "retryOnFail": true,
       "maxTries": 2
     },
@@ -741,17 +741,17 @@
         "jsonParameters": true,
         "options": {},
         "bodyParametersJson": "={{ $json }}",
-        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.utoken}}\"} ",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"} ",
         "queryParametersJson": "{}"
       },
       "name": "Update Status For Conversation - continue",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        2200,
-        1240
+        -2480,
+        800
       ],
-      "id": "7746bbc7-5095-4648-9b8a-09535011705f",
+      "id": "728e508a-7a2f-49ba-93cc-fcc299692cd4",
       "retryOnFail": false,
       "maxTries": 2,
       "onError": "continueRegularOutput"
@@ -776,13 +776,13 @@
         },
         "options": {}
       },
-      "id": "63a1d5a3-5602-476b-ae4c-59b8e966ad48",
+      "id": "247b73e7-5016-4949-8082-beb37cb7faef",
       "name": "Set Continue Status Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2020,
-        1240
+        -2672,
+        800
       ]
     },
     {
@@ -805,13 +805,13 @@
         },
         "options": {}
       },
-      "id": "e6230d9d-1faa-4878-a15f-159791cf4c31",
+      "id": "a232b610-5c4d-4b6c-8cbd-9012ce1cb121",
       "name": "Set End Status Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6680,
-        320
+        2000,
+        -128
       ]
     },
     {
@@ -850,13 +850,13 @@
         "looseTypeValidation": true,
         "options": {}
       },
-      "id": "009522ce-e2ba-42bb-8c13-16063a3139f1",
+      "id": "f6fe4e9c-15c8-4d6b-826c-3fabd7aaee12",
       "name": "If Empty Payload Item",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        5760,
-        1600
+        1088,
+        1168
       ]
     },
     {
@@ -874,13 +874,13 @@
           ]
         }
       },
-      "id": "6630b4bd-a6d3-4399-bb41-24a82fb23c5a",
+      "id": "d5d59ea8-1037-461e-a1b6-b4732e8408c7",
       "name": "Execution Data New Session",
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        1720,
-        920
+        -2960,
+        480
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
@@ -905,13 +905,13 @@
         },
         "options": {}
       },
-      "id": "04fc2508-a7b6-4c52-9da9-98b5bb7acbfe",
+      "id": "7125314e-beab-4c8f-85d2-ae7b768f2367",
       "name": "Set Start Error Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6160,
-        2360
+        1488,
+        1920
       ]
     },
     {
@@ -934,13 +934,13 @@
         },
         "options": {}
       },
-      "id": "a0135d97-3e91-4095-a26b-caad4921d09d",
+      "id": "28b81d36-4f22-42d8-b0b8-ebaba7210392",
       "name": "Set Continue Error Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6160,
-        2560
+        1488,
+        2128
       ]
     },
     {
@@ -963,69 +963,69 @@
         },
         "options": {}
       },
-      "id": "157438f3-9972-468b-b7e6-5f779d982e00",
+      "id": "d42df9a9-8eed-451f-bc50-ad00a38e8b3d",
       "name": "Set Empty Error Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6380,
-        2780
+        1696,
+        2336
       ]
     },
     {
       "parameters": {},
-      "id": "9c11489d-e148-4f9e-85e0-1ce1488eec01",
+      "id": "423c7a99-a0b5-46da-8e7b-7226da0b860b",
       "name": "Process Errors",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6720,
-        2560
+        2048,
+        2128
       ]
     },
     {
       "parameters": {},
-      "id": "9c709b20-67ff-4892-833d-d7ab9e928eb3",
+      "id": "16259246-a342-40dd-82dd-5b6505527282",
       "name": "Start Session - IN",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1540,
-        920
+        -3152,
+        480
       ]
     },
     {
       "parameters": {},
-      "id": "7854e59c-7fe9-4685-8df0-43e2608d4758",
+      "id": "6ac73ee9-5a42-43eb-a2e7-f84574e59b86",
       "name": "Start Session - OUT",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2700,
-        640
+        -1984,
+        208
       ],
       "notesInFlow": false
     },
     {
       "parameters": {},
-      "id": "63f043f5-75a4-4ffb-a3f2-3d9225363d43",
+      "id": "69faf1e6-eb06-4fed-ae68-b6aea1e98149",
       "name": "Continue Session - IN",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1600,
-        1340
+        -3088,
+        896
       ]
     },
     {
       "parameters": {},
-      "id": "3107312c-e355-4a1b-90ad-2e58bc7bb996",
+      "id": "d154f560-6fa6-4ad0-83b6-a106fafa4daa",
       "name": "Continue Session - OUT",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2720,
-        1220
+        -1968,
+        784
       ]
     },
     {
@@ -1035,17 +1035,17 @@
         "value": "={{ $json.sessionId }}",
         "keyType": "string"
       },
-      "id": "4a6b220a-ed30-4245-b3ff-63f45ad99587",
+      "id": "11fdc1a1-4c7f-44d7-a888-797dcb8923bb",
       "name": "Set Debouce Started Key",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
-        2120,
-        620
+        -2560,
+        176
       ],
       "credentials": {
         "redis": {
-          "id": "HfPZbIWdUGUkegSm",
+          "id": "90kNY1xmZzbhk7li",
           "name": "Redis account"
         }
       },
@@ -1077,24 +1077,24 @@
         },
         "options": {}
       },
-      "id": "554132fe-fbc1-4ec4-9b78-26d8261f6624",
+      "id": "3b412878-b0a4-43ad-824f-4be226a5b28f",
       "name": "Set Start Status Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2120,
-        800
+        -2560,
+        368
       ]
     },
     {
       "parameters": {},
-      "id": "7d468070-b0cb-4dec-b7ed-dfb4ad1598be",
+      "id": "386cd7cc-4d78-4c75-9255-73aef2af2b8b",
       "name": "Process Payloads",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3140,
-        1020
+        -1552,
+        576
       ]
     },
     {
@@ -1102,13 +1102,13 @@
         "mode": "runOnceForEachItem",
         "jsCode": "const itemJson = $input.item.json;\nconst messages = itemJson.messages;\nlet idCounter = 1; // Variável para controlar o id\n\n// Função auxiliar para aplicar formatação\nfunction formatText(text, node) {\n  let formatted = text;  \n  if (node.bold) formatted = `*${formatted}*`;\n  if (node.italic) formatted = `_${formatted}_`;  \n  return formatted;\n}\n\n// Mapeia as mensagens e guarda o id original para futura correspondência\nconst msgItem = messages.map((message) => {\n  let contentText = '';\n\n  // Se for imagem, áudio ou vídeo, usa a URL\n  if ([\"image\", \"audio\", \"video\"].includes(message.type)) {\n    contentText = message.content.url;\n  } else if (Array.isArray(message.content?.richText)) {\n    for (const richTextItem of message.content.richText) {\n      if (Array.isArray(richTextItem.children)) {\n        for (const child of richTextItem.children) {\n          if (child.type === \"inline-variable\") {\n            if (child.children && Array.isArray(child.children)) {\n              for (const inlineChild of child.children) {\n                if (inlineChild.text) {\n                  contentText += formatText(inlineChild.text, inlineChild);\n                }\n              }\n            }\n          } else {\n            if (child.text) {\n              contentText += `${formatText(child.text, child)}`;\n            }\n          }\n          if (child.children && Array.isArray(child.children)) {\n            for (const nestedChild of child.children) {\n              if (nestedChild.text) {\n                contentText += `${formatText(nestedChild.text, nestedChild)}`;\n              }\n              if (nestedChild.children && Array.isArray(nestedChild.children)) {\n                for (const nestedNestedChild of nestedChild.children) {\n                  if (nestedNestedChild.text) {\n                    contentText += `${formatText(nestedNestedChild.text, nestedNestedChild)}`;\n                  }\n                  if (nestedNestedChild.children && Array.isArray(nestedNestedChild.children)) {\n                    for (const nestedNestedNestedChild of nestedNestedChild.children) {\n                      if (nestedNestedNestedChild.text) {\n                        contentText += `${formatText(nestedNestedNestedChild.text, nestedNestedNestedChild)}`;\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      // Adiciona uma quebra de linha após cada parágrafo\n      contentText += \"\\n\";\n    }\n  }\n\n  // Substitui \"Invalid message. Please, try again.\" por \"Tipo de mensagem inválida!\"\n  if (contentText.trim() === \"Invalid message. Please, try again.\") {\n    contentText = \"Tipo de mensagem inválida!\";\n  }\n\n  const newItem = {\n    id: idCounter++, // ID temporário, que será reatribuído no final\n    originalId: message.id, // Guarda o id original para correspondência com clientSideActions\n    type: message.type,\n    content: contentText.trim(),\n    openchatwoot: itemJson.clientSideActions?.some(objeto => objeto.hasOwnProperty('chatwoot'))\n  };\n\n  return newItem;\n});\n\n// Processa as ações clientSideActions do tipo 'wait'\nif (itemJson.clientSideActions && Array.isArray(itemJson.clientSideActions)) {\n  itemJson.clientSideActions.forEach((action) => {\n    // Verifica se a ação contém o objeto wait com secondsToWaitFor e se lastBubbleBlockId está definido\n    if (action.wait && typeof action.wait.secondsToWaitFor === 'number' && action.lastBubbleBlockId) {\n      // Encontra o índice do item cujo originalId corresponde a lastBubbleBlockId\n      const index = msgItem.findIndex(item => item.originalId === action.lastBubbleBlockId);\n      if (index !== -1) {\n        // Cria um novo item para o wait action\n        const waitItem = {\n          id: idCounter++, // ID temporário\n          type: 'wait',\n          content: '', // Pode ser deixado em branco ou conter uma descrição, se necessário\n          secondsToWaitFor: action.wait.secondsToWaitFor\n        };\n        // Insere o waitItem logo após o item encontrado\n        msgItem.splice(index + 1, 0, waitItem);\n      }\n    }\n  });\n}\n\n// Reatribui os IDs de forma sequencial com base na ordem do array\nmsgItem.forEach((item, index) => {\n  item.id = index + 1;\n  delete item.originalId; // Remove a propriedade auxiliar\n});\n\nreturn { \"payload\": msgItem };\n"
       },
-      "id": "7e25324f-c712-4cd4-ad07-bf08a27c0e94",
+      "id": "39149948-57ad-4e27-a563-87261121ee4c",
       "name": "Make Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        3580,
-        640
+        -1104,
+        208
       ]
     },
     {
@@ -1118,26 +1118,26 @@
         "width": 780.623269857243,
         "color": 3
       },
-      "id": "aaced414-1b3d-40ed-b26a-8bf7da058e23",
+      "id": "7dc9ed1a-55ad-4476-8d50-7160098ba30f",
       "name": "Sticky Note4",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        6080,
-        2240
+        1408,
+        1808
       ]
     },
     {
       "parameters": {
         "unit": "seconds"
       },
-      "id": "c9bf9329-f7b6-4810-9874-ae8345106536",
+      "id": "7f700834-6f73-4cad-b9ff-df2ddb0b9ca6",
       "name": "Wait",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
       "position": [
-        6000,
-        1020
+        1328,
+        576
       ],
       "webhookId": "fcd2e4ee-0d8b-43cd-bb26-cc9e1a3e9c13"
     },
@@ -1149,13 +1149,13 @@
         "chatid": "={{ $('PAYLOAD').item.json.chat.id }}",
         "filelength": 0
       },
-      "id": "d182e7e4-cdaf-4968-b362-ebfb6f225a4d",
+      "id": "0d94b425-c3f5-4d34-b341-26380c7a2341",
       "name": "Quepasa Send Text",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        5760,
-        940
+        1088,
+        496
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -1173,13 +1173,13 @@
         },
         "combineOperation": "any"
       },
-      "id": "3f83d178-1d14-4ffb-8214-a2b7f7dcba27",
+      "id": "d8d91a55-a6b7-495d-90d9-3e957411740b",
       "name": "Reach A ChatWoot Node ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        6340,
-        340
+        1664,
+        -112
       ]
     },
     {
@@ -1188,13 +1188,13 @@
         "height": 358.7496340085681,
         "width": 752.0364364356966
       },
-      "id": "194ef2c1-f9af-44e2-a977-672fd14b48c5",
+      "id": "74bf29c6-e8e1-4fe2-83da-e053ded33fd1",
       "name": "Sticky Note5",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        7140,
-        1040
+        2464,
+        608
       ]
     },
     {
@@ -1203,24 +1203,24 @@
         "height": 1859.2074837131158,
         "width": 2323.2885620467914
       },
-      "id": "0d6ea017-6970-4a1e-ae97-5da81cc8c9d7",
+      "id": "363477bd-01be-4950-8e4d-11332380f36b",
       "name": "Sticky Note6",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        4540,
-        254.98616775765322
+        -144,
+        -192
       ]
     },
     {
       "parameters": {},
-      "id": "ae361a32-64e2-4090-a78d-9f76940f65f7",
+      "id": "5b188143-68c3-4c0e-9d8f-b907012d3a4d",
       "name": "Go Loop",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4380,
-        620
+        -304,
+        176
       ]
     },
     {
@@ -1238,10 +1238,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        7320,
-        700
+        2640,
+        256
       ],
-      "id": "1e3ef7e9-be2b-4cb5-8364-1656712fa9e9",
+      "id": "00660678-b22b-4ef2-a95e-8d622f89ad8e",
       "retryOnFail": true,
       "maxTries": 2,
       "onError": "continueRegularOutput"
@@ -1261,22 +1261,22 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        7640,
-        1160
+        2960,
+        720
       ],
-      "id": "7d191570-4ba7-4d46-852c-7b48693a9b05"
+      "id": "5a658aa6-4b7d-4f73-a5d3-f107c34c89cf"
     },
     {
       "parameters": {
         "mode": "chooseBranch"
       },
-      "id": "b5d93733-9fd0-4cb3-bd0f-594202553daa",
+      "id": "aede992e-424c-4785-b493-ad551740d2a2",
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        2520,
-        640
+        -2160,
+        208
       ]
     },
     {
@@ -1300,13 +1300,13 @@
           "allowUnauthorizedCerts": true
         }
       },
-      "id": "784daa86-76de-429d-b85c-a0a9e2570701",
+      "id": "0d8f8133-c84a-4263-a641-1bf4de262d22",
       "name": "TB-START",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
       "position": [
-        1900,
-        920
+        -2784,
+        480
       ],
       "retryOnFail": true,
       "maxTries": 2,
@@ -1341,13 +1341,13 @@
         },
         "options": {}
       },
-      "id": "f745acbb-4c47-4093-9004-333600a19a4e",
+      "id": "a1b11b18-857e-41e3-b08b-cd615d26a9f5",
       "name": "TB-CONTINUE",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2420,
-        1360
+        -2272,
+        928
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -1367,10 +1367,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        6340,
-        520
+        1664,
+        80
       ],
-      "id": "49633b10-d898-4600-a062-9ac11c45370a"
+      "id": "7988883d-49df-4c33-8c05-c98f40a6e37f"
     },
     {
       "parameters": {
@@ -1392,26 +1392,26 @@
         },
         "options": {}
       },
-      "id": "e4916591-db5e-46c4-bfd7-473df504fbbf",
+      "id": "6e6c5b6a-4177-487d-82d8-0378eb2f0f67",
       "name": "Set Terminate Status Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        6680,
-        520
+        2000,
+        80
       ]
     },
     {
       "parameters": {
         "amount": "={{ $json.payload.secondsToWaitFor }}"
       },
-      "id": "fec2ade0-56f4-4bcb-8c80-ef67119f1bf0",
+      "id": "0dd415e7-6c32-4220-836e-1e8f9179cb31",
       "name": "Wait Block",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        5760,
-        1280
+        1088,
+        848
       ],
       "webhookId": "a5094ecc-3fa9-4468-b5d0-c0d17d7c604c"
     },
@@ -1522,46 +1522,46 @@
           "fallbackOutput": "extra"
         }
       },
-      "id": "d3f022ac-30f0-4861-9942-60a9154f485f",
+      "id": "3ecb45ce-bf70-4a02-93d1-cd578d41b782",
       "name": "Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        5000,
-        860
+        320,
+        416
       ]
     },
     {
       "parameters": {},
-      "id": "f9519dd1-c2ac-4685-a7c6-75fce20d03bc",
+      "id": "13af93e6-0dc6-48d3-bd63-a72b10a4b34e",
       "name": "Next Message",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6680,
-        1780
+        2000,
+        1344
       ]
     },
     {
       "parameters": {},
-      "id": "4ad24980-ce99-42d9-9303-e1ed81755fc8",
+      "id": "2b03e75e-a696-4827-8617-6028f11d3d4e",
       "name": "Ignore Embed",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        5760,
-        1440
+        1088,
+        1008
       ]
     },
     {
       "parameters": {},
-      "id": "79815bd6-7772-4094-8c3f-09b8f7361f4e",
+      "id": "320c38b5-69b4-4ce4-88ce-f37c9ed05722",
       "name": "Open Conversation",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6680,
-        700
+        2000,
+        256
       ]
     },
     {
@@ -1646,13 +1646,13 @@
           "fallbackOutput": "extra"
         }
       },
-      "id": "cf563f26-64d4-4756-a000-a3754dddec11",
+      "id": "e9361bdb-2d9c-487e-885d-c0d65e07b6ce",
       "name": "Switch Text Answer",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        5480,
-        700
+        800,
+        256
       ]
     },
     {
@@ -1686,10 +1686,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 2,
       "position": [
-        5760,
-        760
+        1088,
+        320
       ],
-      "id": "0088163c-b951-4bda-8ff1-2b62c2c87422",
+      "id": "f31cc858-844f-449d-a3fb-ece88803f2ad",
       "retryOnFail": true,
       "waitBetweenTries": 2000
     }
@@ -2460,24 +2460,11 @@
     "callerPolicy": "any",
     "executionTimeout": 30
   },
-  "versionId": "11486d51-15c3-444c-bd86-6c7f4ef7bc04",
+  "versionId": "8778c3f5-39ce-4525-bf9a-f54b0e372467",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
   },
   "id": "JSpCXQiF7TT1zUgp",
-  "tags": [
-    {
-      "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2023-08-25T18:50:53.269Z",
-      "id": "5",
-      "name": "quepasa"
-    },
-    {
-      "createdAt": "2025-01-17T03:34:07.062Z",
-      "updatedAt": "2025-01-17T03:34:07.062Z",
-      "id": "0AOHbkAjtWhlWtBH",
-      "name": "TypeBot"
-    }
-  ]
+  "tags": []
 }

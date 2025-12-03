@@ -3,13 +3,13 @@
   "nodes": [
     {
       "parameters": {},
-      "id": "94babc64-5b72-4e39-be0a-6d7aeecaf6ba",
+      "id": "9c0be58d-7a0f-4c83-8632-539bad96f606",
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        340,
-        340
+        -16,
+        -32
       ]
     },
     {
@@ -26,13 +26,13 @@
         },
         "options": {}
       },
-      "id": "f9da6ecb-da92-4095-89ab-5f6b1dabb213",
+      "id": "14964617-6326-48bd-b143-184fe9a6071f",
       "name": "Get Contacts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        720,
-        240
+        368,
+        -144
       ]
     },
     {
@@ -59,8 +59,8 @@
             },
             {
               "id": "29628359-6ed9-455e-9c7e-912f5239dc0b",
-              "name": "=server.extra.utoken",
-              "value": "={{ $json.extra.utoken }}",
+              "name": "=server.extra.atoken",
+              "value": "={{ $json.extra.atoken }}",
               "type": "string"
             },
             {
@@ -97,13 +97,13 @@
         },
         "options": {}
       },
-      "id": "d85cc3d3-04db-4215-a2cc-590d1c066c86",
+      "id": "ff54a2f6-9f23-4f83-898b-9982dc40eedb",
       "name": "Get Extra",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
       "position": [
-        540,
-        340
+        192,
+        -32
       ],
       "notesInFlow": true
     },
@@ -112,13 +112,13 @@
         "fieldToSplitOut": "contacts",
         "options": {}
       },
-      "id": "fe6a23a4-9e8c-4ca2-9ca2-2d185bd7eefd",
+      "id": "c03ea729-589f-4447-90de-bbbb88a00ea0",
       "name": "Split Contacts",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        960,
-        240
+        608,
+        -144
       ]
     },
     {
@@ -136,25 +136,25 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "f227e62f-8fbf-4628-8443-3ef9eed751d8",
+      "id": "b44500dc-0ca3-414b-9708-0134499bdc8f",
       "name": "Numbers Sent",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1200,
-        240
+        848,
+        -144
       ],
       "notesInFlow": true
     },
     {
       "parameters": {},
-      "id": "bc01799c-ee1b-4460-bb7c-214c2d81efa2",
+      "id": "817d99d0-ffa6-445c-8358-14d2b727a266",
       "name": "No Operation",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1620,
-        400
+        1264,
+        32
       ]
     },
     {
@@ -163,13 +163,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "e670521a-d054-4c37-a115-9b90618eedc1",
+      "id": "175c5754-b4a3-4e1c-8893-7a87908a61e7",
       "name": "Merge Extra",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        1420,
-        320
+        1072,
+        -48
       ],
       "notesInFlow": true
     },
@@ -177,13 +177,13 @@
       "parameters": {
         "mode": "chooseBranch"
       },
-      "id": "9f9f1b36-9ed3-414c-9068-705fcc0c9c64",
+      "id": "8ca1e4c1-5321-47ee-80e0-8460a3385736",
       "name": "Merge Register",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        2040,
-        340
+        1680,
+        -32
       ],
       "notesInFlow": true
     },
@@ -196,7 +196,7 @@
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{ $json.server.extra.utoken }}"
+              "value": "={{ $json.server.extra.atoken }}"
             }
           ]
         },
@@ -205,13 +205,13 @@
         "jsonBody": "={\n \"private\": false,\n  \"content\": \"💬 Importando Contatos. Mais um momento... \\nTotal a ser importado: **{{ $json.total }}** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
         "options": {}
       },
-      "id": "f3468a6a-dcb2-427d-8137-8f4f745d655b",
+      "id": "16c83083-9960-4d10-967a-33feabd1bf10",
       "name": "Message Register Contact",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1840,
-        400
+        1488,
+        32
       ],
       "executeOnce": true
     },
@@ -223,18 +223,18 @@
           "queryBatching": "transaction"
         }
       },
-      "id": "8522ee4f-e3e8-4d06-91f5-74f0ab9623c7",
+      "id": "b58d3c33-00f5-48ed-81f2-157e3c6868f4",
       "name": "Register Contact",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        2260,
-        180
+        1920,
+        -160
       ],
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "1",
+          "id": "YFd6cwaRD0Dn4rgS",
           "name": "Postgres account"
         }
       }
@@ -263,13 +263,13 @@
         },
         "options": {}
       },
-      "id": "f5acb294-7496-4056-9fa1-249b8a324937",
+      "id": "2c576c1d-5695-4b06-834d-03a30a725997",
       "name": "Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2480,
-        180
+        2144,
+        -160
       ]
     },
     {
@@ -286,13 +286,13 @@
         },
         "options": {}
       },
-      "id": "b67af304-6984-4120-91e5-9170468f7553",
+      "id": "44cc8e2d-8931-4fa1-aefa-367ab2ffb2a1",
       "name": "Item Import",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2720,
-        160
+        2384,
+        -192
       ],
       "executeOnce": true,
       "notesInFlow": true
@@ -306,7 +306,7 @@
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{ $json.server.extra.utoken }}"
+              "value": "={{ $json.server.extra.atoken }}"
             }
           ]
         },
@@ -315,13 +315,13 @@
         "jsonBody": "={\n \"private\": false,\n  \"content\": \"💬 Contatos Importados com sucesso! \\n Total: **{{ $json.total}}** \\nImportados:**{{ $json[\"importeds\"] }}** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
         "options": {}
       },
-      "id": "3dfcf582-890d-414f-b9f9-d2d960e22255",
+      "id": "2525f639-3673-4531-859f-08f0a83b228c",
       "name": "Message Ends",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3220,
-        320
+        2864,
+        -48
       ]
     },
     {
@@ -330,29 +330,29 @@
         "combineBy": "combineByPosition",
         "options": {}
       },
-      "id": "3154fa3a-49b9-46b0-a6f9-62b4854c28e6",
+      "id": "fa79f56f-e358-47a1-be01-ad5136078a84",
       "name": "Merge Import",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        3020,
-        320
+        2672,
+        -48
       ],
       "notesInFlow": true
     },
     {
       "parameters": {
-        "content": "## (1.0.0) Updates\n* \n",
-        "height": 146.16388807965458,
-        "width": 467.54452018877896
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for contact import messages\n* All message operations now use scoped AgentBot tokens\n\n### Previous Updates (1.0.0)\n* Initial version\n\n## Recommendations\n* Remember set timeout to 20 seconds",
+        "height": 354,
+        "width": 532
       },
-      "id": "34fb2438-5c70-4bad-a0d8-7bd9bc80150b",
+      "id": "789d1db8-4aaf-4cc0-9b40-f9055701e02f",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        200,
-        155.29012345679016
+        -224,
+        -432
       ]
     }
   ],
@@ -521,18 +521,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "8ca9ac71-19a4-412b-843c-6be30cda5f11",
+  "versionId": "c54d9b59-236a-46da-9f8e-95312a98ec63",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
   },
   "id": "PkjmWuUN1y6sCX11",
-  "tags": [
-    {
-      "createdAt": "2025-01-29T14:10:20.952Z",
-      "updatedAt": "2025-01-29T14:10:20.952Z",
-      "id": "WKLrBsRZXidylR4T",
-      "name": "ApproachTI"
-    }
-  ]
+  "tags": []
 }

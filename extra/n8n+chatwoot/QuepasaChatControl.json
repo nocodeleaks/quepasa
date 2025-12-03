@@ -13,13 +13,13 @@
         },
         "options": {}
       },
-      "id": "10bfba9f-593e-4a5c-aab9-a793d457e13c",
+      "id": "05d2d4cc-f35b-4598-ae3c-5699b7fc2af4",
       "name": "Set Invite Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        7300,
-        220
+        2784,
+        -160
       ]
     },
     {
@@ -34,13 +34,13 @@
           ]
         }
       },
-      "id": "db7eac92-987c-48ec-ad2a-65c56ab47348",
+      "id": "b0e6d6a6-3da4-4f77-b752-b56c9c12b543",
       "name": "If Is From Group",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        6540,
-        300
+        2016,
+        -80
       ]
     },
     {
@@ -51,13 +51,13 @@
         "text": "={{$json[\"response\"]}}",
         "chatid": "={{$json.chatid}}"
       },
-      "id": "5c4c943b-5768-453f-87ec-3ed7fcbb85a9",
+      "id": "7dd22477-151e-4199-8ba0-e65523fb7a93",
       "name": "Quepasa",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        7700,
-        280
+        3184,
+        -96
       ]
     },
     {
@@ -81,13 +81,13 @@
         },
         "options": {}
       },
-      "id": "d8f48f1b-6c47-4c41-8cc6-1393f25c6f0a",
+      "id": "505a393f-a011-4ad6-b064-94eb92d09e8f",
       "name": "Set Parameters From Control Chat",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        6360,
-        300
+        1840,
+        -80
       ]
     },
     {
@@ -98,13 +98,13 @@
         "operation": "invite",
         "chatid": "={{$json.chatid}}"
       },
-      "id": "02257e61-262a-4ac6-a34f-871ca633c2dd",
+      "id": "7a4030cb-a9e8-4bca-a514-2e47ecfc4828",
       "name": "Quepasa Get Invite Link",
       "type": "n8n-nodes-quepasa.quepasa",
       "typeVersion": 1,
       "position": [
-        6740,
-        380
+        2224,
+        0
       ],
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -116,13 +116,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "fee6c41b-f84c-40ea-9fbb-c5269f873417",
+      "id": "e4610127-86d2-476c-9ea1-c2144f61221e",
       "name": "Merge",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2,
       "position": [
-        6940,
-        300
+        2416,
+        -80
       ]
     },
     {
@@ -137,57 +137,57 @@
         },
         "options": {}
       },
-      "id": "98de16bd-4bd5-4adb-943e-166f5ceb496d",
+      "id": "8758fba6-3cf7-47a9-828c-f88f059acc34",
       "name": "Set Error Response From Quepasa",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        7300,
-        380
+        2784,
+        0
       ]
     },
     {
       "parameters": {
-        "content": "## (1.0.9)\n* trim command text for trick the chatwoot message textbox\n\n## Recommendations \n* Remember set timeout to 15 seconds ",
-        "height": 205.7265251035022,
-        "width": 561.5346630524019
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for message and conversation operations\n* Improved security with limited scope tokens\n\n### Previous Updates (1.0.9)\n* trim command text for trick the chatwoot message textbox\n\n## Recommendations \n* Remember set timeout to 15 seconds ",
+        "height": 366,
+        "width": 562
       },
-      "id": "55587ed4-532f-4e57-a40a-af024e5e18fb",
+      "id": "d8e15380-4639-430b-bde7-41cc3445daef",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        4380,
-        140
+        -144,
+        -336
       ]
     },
     {
       "parameters": {},
-      "id": "6998ce15-51a5-4633-a4a8-665725f7055e",
+      "id": "e7b9b1f1-0521-4e45-a977-df4cd31fc504",
       "name": "When Called By Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        4880,
-        480
+        368,
+        112
       ]
     },
     {
       "parameters": {
         "baseUrl": "={{ $json.extra.cwhost }}",
-        "accessToken": "={{ $json.extra.utoken }}",
+        "accessToken": "={{ $json.extra.atoken }}",
         "resource": "contact",
         "accountId": "={{ $json.extra.account }}",
         "operation": "contactSearch",
         "contactSearchQuery": "={{ $env['C8Q_QP_CONTACT'] ?? 'control@quepasa.io' }}"
       },
-      "id": "f24ab3f4-46f0-49ce-ac0f-0679a16d2250",
+      "id": "a4e86c36-d5e0-4048-a14d-3c892e7e410a",
       "name": "Busca Contato",
       "type": "n8n-nodes-chatwoot.chatwoot",
       "typeVersion": 1,
       "position": [
-        6300,
-        780
+        1776,
+        400
       ]
     },
     {
@@ -199,7 +199,7 @@
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{ $json.extra.utoken }}"
+              "value": "={{ $json.extra.atoken }}"
             }
           ]
         },
@@ -224,13 +224,13 @@
           "allowUnauthorizedCerts": true
         }
       },
-      "id": "402a2eb7-4d67-4677-a219-b27e2a4a1bb0",
+      "id": "09a61e82-da58-45e0-85a3-cf22df521eb9",
       "name": "New Conversation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        6640,
-        820
+        2128,
+        448
       ]
     },
     {
@@ -242,7 +242,7 @@
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{ $json.extra.utoken }}"
+              "value": "={{ $json.extra.atoken }}"
             }
           ]
         },
@@ -251,13 +251,13 @@
         "jsonBody": "={\n    \"status\": \"open\",\n    \"snoozed_until\": null\n}",
         "options": {}
       },
-      "id": "6dd6f3a9-cae1-4773-92e9-7570342c2436",
+      "id": "db28ad9f-980d-4935-8e6a-d500c5836624",
       "name": "Open Conversation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        6960,
-        840
+        2448,
+        464
       ]
     },
     {
@@ -269,7 +269,7 @@
           "parameters": [
             {
               "name": "api_access_token",
-              "value": "={{ $json.extra.utoken }}"
+              "value": "={{ $json.extra.atoken }}"
             }
           ]
         },
@@ -278,13 +278,13 @@
         "jsonBody": "={\n \"private\": false,\n  \"content\": \"❌ Este número está desconectado do whatsapp e não pode mais receber nem enviar mensagens!\\n Digite /qrcode para conectar\\n{{ $json.body.text }}\",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
         "options": {}
       },
-      "id": "8a21a225-e2fb-470a-be6e-4c11c42893ad",
+      "id": "bccc7eee-a6c8-4d7a-9bdb-e9dad72ed88f",
       "name": "Send Disconnect Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        7300,
-        760
+        2784,
+        384
       ]
     },
     {
@@ -292,13 +292,13 @@
         "workflowId": "waRNOrsXSutLuYvW",
         "options": {}
       },
-      "id": "2c666574-834d-40cf-a1da-f7ffb94cfec7",
+      "id": "d762989e-b05a-433e-922d-b094f1ca0c62",
       "name": "Execute Workflow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        5640,
-        960
+        1120,
+        592
       ],
       "continueOnFail": true
     },
@@ -313,13 +313,13 @@
           ]
         }
       },
-      "id": "910e8a21-0ab0-49c8-846d-33c083494c3d",
+      "id": "6fe195de-dc9d-42c2-bb0e-6a91a105c785",
       "name": "If Reponse Not Empty ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        7500,
-        300
+        2976,
+        -80
       ]
     },
     {
@@ -333,13 +333,13 @@
           ]
         }
       },
-      "id": "57231b05-2cba-46b8-90f9-3181390001fd",
+      "id": "80ae4a09-1b1f-40f5-8ce8-47d2815bfc12",
       "name": "If Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        7100,
-        300
+        2576,
+        -80
       ]
     },
     {
@@ -348,24 +348,24 @@
         "height": 268.8339206426964,
         "width": 495.19677943804624
       },
-      "id": "4fecd0db-8dc4-45ca-b0b2-091211848991",
+      "id": "e4068022-cbc1-4965-ad37-6571cff3f0a4",
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        5460,
-        860
+        944,
+        480
       ]
     },
     {
       "parameters": {},
-      "id": "a16842b5-176a-497f-97de-81da511511fc",
+      "id": "14fc2668-f4a6-428a-a551-c75af5bf12b9",
       "name": "No Operation, do nothing",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6140,
-        300
+        1616,
+        -80
       ]
     },
     {
@@ -374,13 +374,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "d447dd9b-2937-4dce-a90c-6e5a144dc9c0",
+      "id": "0b98a34d-ae16-4e74-b2f3-e7b9fb018083",
       "name": "Merge1",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        6480,
-        720
+        1968,
+        352
       ]
     },
     {
@@ -389,13 +389,13 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "08615345-f58e-443d-ac44-7f68837df894",
+      "id": "269f357b-9c45-4c39-8e0b-ff5cd424b3cb",
       "name": "Merge2",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        6800,
-        740
+        2288,
+        368
       ]
     },
     {
@@ -404,24 +404,24 @@
         "combinationMode": "multiplex",
         "options": {}
       },
-      "id": "b9eb416e-53e4-46e0-901e-7bb92abb1321",
+      "id": "e7cc3e73-7205-4895-9fa2-b3631dc4613d",
       "name": "Merge3",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
       "position": [
-        7100,
-        760
+        2576,
+        384
       ]
     },
     {
       "parameters": {},
-      "id": "2ab2d887-6fa2-4fce-9813-87d8e77dfb59",
+      "id": "743fd3cc-7fab-46a4-9e2d-2c8578ff2134",
       "name": "Is Logged Out",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        6140,
-        700
+        1616,
+        320
       ]
     },
     {
@@ -439,13 +439,13 @@
         "includeOtherFields": true,
         "options": {}
       },
-      "id": "bca6ea5a-fdb1-4446-944b-713337abd1fa",
+      "id": "7dfa313b-5371-4291-a6d8-4ae8f483687d",
       "name": "Prepare Command",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5100,
-        480
+        576,
+        112
       ]
     },
     {
@@ -506,13 +506,13 @@
           "ignoreCase": true
         }
       },
-      "id": "8d40a0aa-ca74-4246-a10c-90f6e60741e1",
+      "id": "aa9e26c2-a09c-4f4e-8f40-9a88144c3cec",
       "name": "Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        5300,
-        480
+        784,
+        112
       ]
     },
     {
@@ -521,13 +521,13 @@
         "height": 278.9574374256098,
         "width": 394.6908294938413
       },
-      "id": "d72dfd21-933f-4e8c-a198-6c9fd28e9d07",
+      "id": "e1b62f74-b231-4ed0-877f-061f3cc00913",
       "name": "Sticky Note5",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        4960,
-        140
+        448,
+        -240
       ]
     },
     {
@@ -557,13 +557,13 @@
           ]
         }
       },
-      "id": "63697027-891d-4402-a57d-f2f9c7c65827",
+      "id": "927c9dfd-1cc4-4588-82bd-d1482de24414",
       "name": "Execution Data",
       "type": "n8n-nodes-base.executionData",
       "typeVersion": 1,
       "position": [
-        5100,
-        220
+        576,
+        -160
       ],
       "alwaysOutputData": false,
       "onError": "continueRegularOutput"
@@ -833,30 +833,11 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 15
   },
-  "versionId": "8be6329b-38e7-491c-843f-4b4981fdedad",
+  "versionId": "768be8ca-ad84-458c-9c4c-1a9341ec88f2",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
   },
   "id": "1003",
-  "tags": [
-    {
-      "createdAt": "2022-10-13T15:26:11.519Z",
-      "updatedAt": "2023-08-25T18:50:53.269Z",
-      "id": "5",
-      "name": "quepasa"
-    },
-    {
-      "createdAt": "2022-10-13T15:26:19.857Z",
-      "updatedAt": "2023-08-24T21:01:00.296Z",
-      "id": "6",
-      "name": "chatwoot"
-    },
-    {
-      "createdAt": "2023-05-19T22:54:38.266Z",
-      "updatedAt": "2023-05-19T22:54:38.266Z",
-      "id": "13",
-      "name": "github.com/nocodeleaks"
-    }
-  ]
+  "tags": []
 }

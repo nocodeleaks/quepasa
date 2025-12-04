@@ -31,7 +31,7 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
     env: 
-      BINARYNAME: quepasa-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
+      BINARYNAME: ${{github.repository}}-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
       
     steps:
     - uses: actions/checkout@v4
@@ -76,15 +76,22 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
+    - uses: actions/checkout@v4
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: ./artifacts
         merge-multiple: true
 
-    - name: Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: ./artifacts/*
-        tag_name: latest
+    - name: Update Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Delete existing release if it exists
+        gh release delete latest --yes || true
+        # Delete the tag
+        git push origin :refs/tags/latest || true
+        # Create new release with all artifacts
+        gh release create latest ./artifacts/* --title "Latest Build" --notes "Automated build from main branch" --latest
 

@@ -31,7 +31,7 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
     env: 
-      BINARYNAME: ${{github.repository}}-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
+      BINARYNAME: quepasa-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
       
     steps:
     - uses: actions/checkout@v4

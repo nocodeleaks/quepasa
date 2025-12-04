@@ -68,3 +68,5 @@ jobs:
       with:
         files: ./src/${{env.BINARYNAME}}
         tag_name: latest
+        overwrite: true
+

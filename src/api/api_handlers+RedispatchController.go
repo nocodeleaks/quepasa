@@ -11,7 +11,7 @@ import (
 // RedispatchAPIHandler forces re-dispatch of a cached message by ID
 //
 //	@Summary		Re-dispatch message
-//	@Description	Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID
+//	@Description	Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).
 //	@Tags			Message
 //	@Accept			json
 //	@Produce		json
@@ -55,8 +55,16 @@ func RedispatchAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Force re-dispatch using the Trigger method
-	server.Handler.Trigger(message)
+	// Force re-dispatch using PostToDispatchingFromServer which applies all original validations:
+	// - TrackId validation (avoids loops when ForwardInternal is true)
+	// - Message type filters (groups, broadcasts, calls, read receipts)
+	// - Internal message handling
+	err = models.PostToDispatchingFromServer(server, message)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
 
 	response.ParseSuccess(fmt.Sprintf("message %s re-dispatched successfully", messageId))
 	RespondSuccess(w, response)

@@ -1767,7 +1767,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID",
+                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).",
                 "consumes": [
                     "application/json"
                 ],

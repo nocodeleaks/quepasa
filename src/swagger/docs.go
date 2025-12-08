@@ -1119,7 +1119,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Server updated",
+                        "schema": {
+                            "$ref": "#/definitions/api.InformationResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Server created",
                         "schema": {
                             "$ref": "#/definitions/api.InformationResponse"
                         }
@@ -1754,6 +1760,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/redispatch/{messageid}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message"
+                ],
+                "summary": "Re-dispatch message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Message ID to re-dispatch",
+                        "name": "messageid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/scan": {
             "get": {
                 "security": [
@@ -2349,6 +2404,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "preview": {
+                    "$ref": "#/definitions/environment.EnvironmentSettingsPreview"
+                },
                 "settings": {
                     "$ref": "#/definitions/environment.EnvironmentSettings"
                 },
@@ -2649,6 +2707,44 @@ const docTemplate = `{
                 },
                 "whatsmeow": {
                     "$ref": "#/definitions/environment.WhatsmeowSettings"
+                }
+            }
+        },
+        "environment.EnvironmentSettingsPreview": {
+            "type": "object",
+            "properties": {
+                "broadcasts": {
+                    "type": "string"
+                },
+                "calls": {
+                    "type": "string"
+                },
+                "db_log_level": {
+                    "type": "string"
+                },
+                "groups": {
+                    "type": "string"
+                },
+                "history_sync": {
+                    "type": "string"
+                },
+                "log_level": {
+                    "type": "string"
+                },
+                "presence": {
+                    "type": "string"
+                },
+                "read_receipts": {
+                    "type": "string"
+                },
+                "read_update": {
+                    "type": "string"
+                },
+                "wakeup_duration": {
+                    "type": "string"
+                },
+                "wakeup_hour": {
+                    "type": "string"
                 }
             }
         },

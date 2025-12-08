@@ -82,6 +82,7 @@ func RegisterAPIControllers(r chi.Router) {
 		// SENDING MSG ----------------------------
 
 		r.Get(endpoint+"/receive", ReceiveAPIHandler)
+		r.Post(endpoint+"/redispatch/{messageid}", RedispatchAPIHandler)
 
 		r.Get(endpoint+"/download/{messageid}", DownloadController)
 		r.Get(endpoint+"/download", DownloadController)

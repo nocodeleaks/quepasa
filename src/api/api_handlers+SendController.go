@@ -359,10 +359,38 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 		// Successfully converted to phone - use @s.whatsapp.net format
 		waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
 		logentry.Debugf("converted LID %s to phone-based chat ID: %s (from phone %s)", originalChatId, waMsg.Chat.Id, phone)
-	} else if !strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
-		// If it's just a phone number without suffix, ensure it has @s.whatsapp.net
-		waMsg.Chat.Id = whatsapp.PhoneToWid(waMsg.Chat.Id)
 	} else {
+		// Phone number or @s.whatsapp.net format
+		// Try to find LID mapping and use the same conversion flow that works
+		// This fixes the PN→LID session migration bug in whatsmeow
+		phoneNumber := waMsg.Chat.Id
+
+		// Extract phone number from JID if it has suffix
+		if strings.Contains(phoneNumber, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
+			phoneNumber = strings.TrimSuffix(phoneNumber, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX)
+		}
+
+		// Remove + prefix if present
+		phoneNumber = strings.TrimPrefix(phoneNumber, "+")
+
+		// Try to find LID for this phone number
+		lid, lidErr := server.GetLIDFromPhone(phoneNumber)
+		if lidErr == nil && len(lid) > 0 {
+			// Found LID mapping, now get phone back from LID (this establishes correct session)
+			phone, phoneErr := server.GetPhoneFromLID(lid)
+			if phoneErr == nil && len(phone) > 0 {
+				waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
+				logentry.Debugf("phone %s has LID %s, converted via LID to: %s (fixes session migration)", originalChatId, lid, waMsg.Chat.Id)
+			} else {
+				// Fallback to original phone
+				waMsg.Chat.Id = whatsapp.PhoneToWid(phoneNumber)
+				logentry.Debugf("phone %s has LID %s but failed to get phone back, using original: %s", originalChatId, lid, waMsg.Chat.Id)
+			}
+		} else {
+			// No LID mapping found, use phone directly
+			waMsg.Chat.Id = whatsapp.PhoneToWid(phoneNumber)
+			logentry.Debugf("no LID mapping for phone %s, using directly: %s", originalChatId, waMsg.Chat.Id)
+		}
 	}
 
 	sendResponse, err := server.SendMessage(waMsg)

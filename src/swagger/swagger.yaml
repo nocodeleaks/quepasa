@@ -2326,7 +2326,8 @@ paths:
       consumes:
       - application/json
       description: Forces re-dispatch of a cached message to webhooks/RabbitMQ using
-        the message ID
+        the message ID. Applies all original dispatching validations including TrackId,
+        ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).
       parameters:
       - description: Message ID to re-dispatch
         in: path

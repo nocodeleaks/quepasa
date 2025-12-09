@@ -32,7 +32,7 @@ require (
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20251203212742-364369929a75
+	go.mau.fi/whatsmeow v0.0.0-20251205211405-fd6170ac96e5
 	golang.org/x/crypto v0.44.0
 	google.golang.org/protobuf v1.36.10
 )

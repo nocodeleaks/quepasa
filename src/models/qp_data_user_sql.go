@@ -45,7 +45,7 @@ func (source QpDataUserSql) Exists(username string) (bool, error) {
 
 func (source QpDataUserSql) Find(username string) (result *QpUser, err error) {
 	user := &QpUser{}
-	err = source.db.Get(user, "SELECT * FROM users WHERE username = ?", username)
+	err = source.db.Get(user, "SELECT username, password, timestamp FROM users WHERE username = ?", username)
 	if err != nil {
 		return
 	}
@@ -56,7 +56,7 @@ func (source QpDataUserSql) Find(username string) (result *QpUser, err error) {
 
 func (source QpDataUserSql) Check(username string, password string) (result *QpUser, err error) {
 	user := &QpUser{}
-	err = source.db.Get(user, "SELECT * FROM users WHERE username = ? LIMIT 1", username)
+	err = source.db.Get(user, "SELECT username, password, timestamp FROM users WHERE username = ? LIMIT 1", username)
 	if err != nil {
 		return
 	}

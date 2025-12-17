@@ -214,7 +214,7 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 // VerifyFormHandler renders route GET "/bot/verify" ?mode={sd|md}
 func VerifyFormHandler(w http.ResponseWriter, r *http.Request) {
 	data := models.QPFormVerifyData{
-		PageTitle:   "Verify To Add or Update",
+		PageTitle:   "Verify To Add or Update - Quepasa",
 		Protocol:    WebSocketProtocol(),
 		Host:        r.Host,
 		Destination: FormAccountEndpoint,

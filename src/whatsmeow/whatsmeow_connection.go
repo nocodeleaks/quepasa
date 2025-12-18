@@ -1079,11 +1079,36 @@ func (conn *WhatsmeowConnection) GetStatusManager() whatsapp.WhatsappStatusManag
 }
 
 // GetContactManager returns the contact manager instance with lazy initialization
+// If connection is active, returns the standard WhatsmeowContactManager
+// If connection is nil/stopped, tries to return a store-only contact manager for cached data access
 func (conn *WhatsmeowConnection) GetContactManager() whatsapp.WhatsappContactManagerInterface {
-	if conn.ContactManager == nil {
+	// Try to return existing contact manager first
+	if conn.ContactManager == nil && conn.Client != nil {
 		conn.ContactManager = NewWhatsmeowContactManager(conn)
 	}
-	return conn.ContactManager
+
+	// If we have an active contact manager, return it
+	if conn.ContactManager != nil {
+		return conn.ContactManager
+	}
+
+	// Connection not available - try to create store-only contact manager as fallback
+	// Extract wid from connection if available
+	var wid string
+	if conn.Client != nil && conn.Client.Store != nil && conn.Client.Store.ID != nil {
+		wid = conn.Client.Store.ID.String()
+	}
+
+	// Try to create store-only manager
+	if len(wid) > 0 {
+		storeManager, err := NewStoreContactManagerFromWid(wid)
+		if err == nil {
+			return storeManager
+		}
+	}
+
+	// If everything fails, return nil (caller will handle)
+	return nil
 }
 
 // GetResume returns detailed connection status information

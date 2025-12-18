@@ -127,6 +127,7 @@ func RegisterAPIControllers(r chi.Router) {
 		// INVITE METHODS ************************
 
 		r.Get(endpoint+"/contacts", ContactsController)
+		r.Post(endpoint+"/contact/search", ContactSearchController)
 		r.Post(endpoint+"/isonwhatsapp", IsOnWhatsappController)
 
 		// LID METHODS ****************************

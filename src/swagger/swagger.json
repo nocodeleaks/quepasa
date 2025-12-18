@@ -318,6 +318,51 @@
                 }
             }
         },
+        "/contact/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Search WhatsApp contacts by name, phone, and other filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Search contacts",
+                "parameters": [
+                    {
+                        "description": "Search criteria",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.QpContactsSearchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpContactsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/contacts": {
             "get": {
                 "security": [
@@ -2984,6 +3029,27 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.QpContactsSearchRequest": {
+            "type": "object",
+            "properties": {
+                "has_lid": {
+                    "description": "Filter contacts with/without LID (optional, pointer to distinguish null from false)",
+                    "type": "boolean"
+                },
+                "has_name": {
+                    "description": "Filter contacts with/without name (optional, pointer to distinguish null from false)",
+                    "type": "boolean"
+                },
+                "phone": {
+                    "description": "Search by specific phone (optional)",
+                    "type": "string"
+                },
+                "query": {
+                    "description": "Search in name and phone (optional)",
+                    "type": "string"
                 }
             }
         },

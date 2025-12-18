@@ -23,6 +23,19 @@
 - JId: types.JID from whatsmeow
 - WId: String format
 - LId: Local identifier (default, hides phone numbers)
+  - **IMPORTANT:** LID was created by WhatsApp specifically to hide phone numbers for privacy
+  - LIDs NEVER contain phone numbers - they are opaque identifiers
+  - Phone number mapping must be obtained from whatsmeow database (whatsmeow_lid_map table)
+  - Not all LIDs have phone number mappings available - this is expected behavior
+  - Format: `<opaque_id>@lid` (e.g., `121281638842371@lid`)
+  - Do NOT attempt to extract phone numbers from LID strings
+
+## Contact Name Priority
+ContactInfo fields priority (use `ExtractContactName()`):
+1. **FullName** - User's saved name for contact (highest priority - most personal)
+2. **BusinessName** - Business account name (WhatsApp Business)
+3. **PushName** - Contact's public name (self-chosen)
+4. **FirstName** - Generic first name (lowest priority)
 
 ## Documentation Structure
 - AGENTS.md: Task-specific AI agent instructions for issues/features (only in feature branches, not in main/develop)

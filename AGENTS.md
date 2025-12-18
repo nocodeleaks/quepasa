@@ -1,12 +1,203 @@
-# MCP Module - AI Agent Instructions
+# Contacts Endpoint Improvements - AI Agent Instructions
+
+## Branch: feature/improve-contacts-endpoint
 
 ## Module Scope
-Model Context Protocol (MCP) server implementation for QuePasa API integration.
+Improve the `/contacts` endpoint to provide better contact information and add search functionality.
+
+## Branch: feature/improve-contacts-endpoint
+
+## Module Scope
+Improve the `/contacts` endpoint to provide better contact information and add search functionality.
+
+## Current Implementation Analysis
+
+### Existing Endpoint: GET /contacts
+- **File:** `src/api/api_handlers+ContactsController.go`
+- **Method:** GET
+- **Returns:** All contacts with Id, LId, Title (name), Phone
+- **Data Source:** `whatsmeow.Client.Store.Contacts.GetAllContacts()` (uses local database cache, NOT direct WhatsApp queries)
+- **Issue:** Some contacts are returned without names (Title is empty)
+
+### Contact Data Flow
+1. `ContactsController` → `server.GetContacts()`
+2. `WhatsmeowContactManager.GetContacts()` → `Client.Store.Contacts.GetAllContacts()`
+3. Merges @lid and @s.whatsapp.net contacts by phone number
+4. Returns `[]WhatsappChat` with Id, LId, Title, Phone
+
+## Improvements to Implement
+
+### ✅ Priority 1: Fix Missing Contact Names
+
+**Problem:** Some contacts return without Title (name) even though they might have information available.
+
+**Investigation Tasks:**
+- [ ] Analyze why some contacts have empty Title field
+- [ ] Check if FullName, BusinessName, or PushName are being properly extracted from whatsmeow store
+- [ ] Verify contact merging logic (lines 80-150 in whatsmeow_contact_manager.go)
+- [ ] Test with real data to identify patterns of missing names
+
+**Possible Causes:**
+1. Contact info not synced from WhatsApp
+2. Priority order of name fields (FullName → BusinessName → PushName) missing fallbacks
+3. Contact merging losing name information
+4. Store database not properly populated
+
+**Solution Strategy:**
+1. Add better fallback logic for name extraction
+2. Consider using phone number as fallback if no name available
+3. Add logging to track why names are missing
+4. Potentially trigger contact sync if contact info is incomplete
+
+### ✅ Priority 2: Add Search Endpoint
+
+**Endpoint:** POST /search (or POST /contacts/search)
+
+**Why POST instead of GET:**
+- More appropriate for search operations with multiple criteria
+- Allows complex filter objects in request body
+- Better for future extensibility
+
+**Request Body:**
+```json
+{
+  "query": "string",        // Search in name and phone (optional)
+  "has_name": true|false,   // Filter contacts with/without name (optional)
+  "has_lid": true|false,    // Filter contacts with/without LID (optional)
+  "phone": "string"         // Search by specific phone (optional)
+}
+```
+
+**Response:**
+```json
+{
+  "result": "success",
+  "total": 10,
+  "contacts": [
+    {
+      "id": "5511999999999@s.whatsapp.net",
+      "lid": "ABC123@lid",
+      "title": "Contact Name",
+      "phone": "+5511999999999"
+    }
+  ]
+}
+```
+
+**Implementation Requirements:**
+- Create new controller: `api_handlers+ContactsSearchController.go`
+- Add route: `POST /search` or `POST /contacts/search`
+- Implement search logic in `WhatsmeowContactManager` or controller
+- Add Swagger annotations (@Summary, @Description, @Param, @Router)
+- Support case-insensitive search
+- Support partial matching in query field
+- Return empty array if no matches
+
+### ❌ NOT Implementing (Out of Scope)
+
+**Pagination:** Not needed - administrators expect full results and will handle large datasets.
+
+**Sorting:** Not needed - clients will sort results after receiving them based on their needs.
+
+**Profile Pictures:** No public API available for bulk retrieval. Individual picture endpoint already exists at `/picinfo/{chatId}`.
+
+**Status/Last Message:** Not relevant for contact listing purposes.
+
+**Cache Implementation:** Already uses whatsmeow database cache (`Client.Store.Contacts`), no additional caching needed.
+
+**Export Formats:** API returns JSON only - each application handles its own export format needs.
+
+**Type Filtering (groups vs personal):** Not needed - API consumers can identify type by ID format.
+
+## Technical Guidelines
+
+### File Naming Convention
+- Controllers: `api_handlers+<Name>Controller.go`
+- Search controller: `api_handlers+ContactsSearchController.go`
+
+### Swagger Documentation
+**CRITICAL:** Always regenerate Swagger after API changes:
+```bash
+cd src
+swag init --output ./swagger
+```
+
+### Testing Requirements
+- Test with contacts that have names
+- Test with contacts without names  
+- Test search with various criteria
+- Test search with no results
+- Test search with special characters
+- Test with LID and non-LID contacts
+
+### Error Handling
+- Return appropriate HTTP status codes
+- Use existing `QpResponse` error handling pattern
+- Log errors for debugging
+
+## Implementation Checklist
+
+### Phase 1: Contact Name Improvements
+- [ ] Analyze GetContacts() implementation thoroughly
+- [ ] Add logging to track name extraction process
+- [ ] Implement better fallback logic for missing names
+- [ ] Test with real WhatsApp data
+- [ ] Document findings
+
+### Phase 2: Search Endpoint
+- [ ] Create ContactsSearchController.go
+- [ ] Define search request/response models
+- [ ] Implement search logic
+- [ ] Add Swagger annotations
+- [ ] Register route in api_handlers.go
+- [ ] Regenerate Swagger documentation
+- [ ] Test all search scenarios
+
+### Phase 3: Testing & Documentation
+- [ ] Test with various contact scenarios
+- [ ] Update README if needed
+- [ ] Verify Swagger docs are correct
+- [ ] Test with Postman/curl
+- [ ] Get user approval before committing
+
+## Notes
+
+**Cache Verification (COMPLETED):**
+- ✅ Confirmed: `GetContacts()` uses `Client.Store.Contacts.GetAllContacts()`
+- ✅ This is the whatsmeow local database cache (SQLite/Postgres)
+- ✅ No direct WhatsApp queries for contact listing
+- ✅ No additional cache layer needed
+
+**Version Update:**
+- Remember to update `QpVersion` in `models/qp_defaults.go` before merging to main
+- Follow project versioning guidelines
+
+## Questions for User
+
+1. Preferred search endpoint path: `/search` or `/contacts/search`?
+2. Should search be case-sensitive or case-insensitive?
+3. Any specific test cases or contact scenarios to prioritize?
+4. Should we add search to MCP tools as well?
+
+## Related Files
+
+- `src/api/api_handlers+ContactsController.go` - Current contacts endpoint
+- `src/whatsmeow/whatsmeow_contact_manager.go` - Contact retrieval logic
+- `src/models/qp_contacts_response.go` - Response model
+- `src/whatsapp/whatsapp_chat.go` - Contact data structure
+- `src/api/api_handlers.go` - Route registration
+
+---
+
+# Previous Module Documentation (MCP)
+
+*Note: The content below is from the previous MCP module implementation. Keep for reference but focus on the Contacts Improvement task above.*
+
+---
+
+## MCP Module - AI Agent Instructions (ARCHIVED)
 
 ## Overview
-This module implements the MCP (Model Context Protocol) server for QuePasa, allowing AI assistants and other tools to interact with the WhatsApp API through a standardized protocol.
-
-## Architecture
 - MCP server endpoint: `/mcp`
 - Authentication: Bearer token (Master key or Bot token)
 - Protocol: JSON-RPC 2.0 with SSE support

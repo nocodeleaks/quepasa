@@ -417,6 +417,23 @@ definitions:
       total:
         type: integer
     type: object
+  models.QpContactsSearchRequest:
+    properties:
+      has_lid:
+        description: Filter contacts with/without LID (optional, pointer to distinguish
+          null from false)
+        type: boolean
+      has_name:
+        description: Filter contacts with/without name (optional, pointer to distinguish
+          null from false)
+        type: boolean
+      phone:
+        description: Search by specific phone (optional)
+        type: string
+      query:
+        description: Search in name and phone (optional)
+        type: string
+    type: object
   models.QpDispatching:
     properties:
       broadcasts:
@@ -1412,6 +1429,34 @@ paths:
       summary: Execute bot commands
       tags:
       - Bot
+  /contact/search:
+    post:
+      consumes:
+      - application/json
+      description: Search WhatsApp contacts by name, phone, and other filters
+      parameters:
+      - description: Search criteria
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.QpContactsSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpContactsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Search contacts
+      tags:
+      - Contacts
   /contacts:
     get:
       consumes:

@@ -74,21 +74,33 @@ func GetContactsFromDevice(device *store.Device) (chats []whatsapp.WhatsappChat,
 
 		if !exists {
 			// First contact with this phone number
+			// If we have a valid phone, prefer @s.whatsapp.net format for Id
+			contactId := jid.String()
+			if len(phoneE164) > 0 && strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
+				// Has phone and current is @lid, construct @s.whatsapp.net Id
+				contactId = phoneNumber + whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX
+			}
+
 			chat := whatsapp.WhatsappChat{
-				Id:    jid.String(),
+				Id:    contactId,
 				Title: title,
 				LId:   lid,
 				Phone: phoneE164,
 			}
 			contactMap[phoneNumber] = contactEntry{chat: chat, info: info}
 		} else {
-			// Merge information: prefer @lid for Id, use ExtractContactName priority for title
+			// Merge information: prefer @s.whatsapp.net for Id when phone available, accumulate LId
 			existingContact := existingEntry.chat
 
 			if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
-				// Current is @lid - keep phone from existing, update LId and Id
+				// Current is @lid - update LId
 				existingContact.LId = jid.String()
-				existingContact.Id = jid.String()
+				// If we have phone, ensure Id uses @s.whatsapp.net format
+				if len(phoneE164) > 0 {
+					existingContact.Id = phoneNumber + whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX
+				} else if len(existingContact.Id) == 0 {
+					existingContact.Id = jid.String()
+				}
 				// Use ExtractContactName priority: compare current info vs existing info
 				if len(title) > 0 && (len(existingContact.Title) == 0 || getContactNamePriority(info) < getContactNamePriority(existingEntry.info)) {
 					existingContact.Title = title
@@ -97,7 +109,8 @@ func GetContactsFromDevice(device *store.Device) (chats []whatsapp.WhatsappChat,
 				existingEntry.chat = existingContact
 				contactMap[phoneNumber] = existingEntry
 			} else {
-				// Current is @s.whatsapp.net - keep existing (which might be @lid)
+				// Current is @s.whatsapp.net - this is preferred for Id when phone is available
+				existingContact.Id = jid.String()
 				if len(existingContact.LId) == 0 {
 					existingContact.LId = lid
 				}

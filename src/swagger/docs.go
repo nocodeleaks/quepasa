@@ -3039,11 +3039,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "has_lid": {
-                    "description": "Filter contacts with/without LID (optional, pointer to distinguish null from false)",
+                    "description": "Filter contacts with/without LID: true=with LID, false=without LID, null=no filter",
                     "type": "boolean"
                 },
-                "has_name": {
-                    "description": "Filter contacts with/without name (optional, pointer to distinguish null from false)",
+                "has_title": {
+                    "description": "Filter contacts with/without title: true=with title, false=without title, null=no filter",
                     "type": "boolean"
                 },
                 "phone": {
@@ -3051,7 +3051,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "query": {
-                    "description": "Search in name and phone (optional)",
+                    "description": "Search in title and phone (optional)",
                     "type": "string"
                 }
             }

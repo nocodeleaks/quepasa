@@ -321,6 +321,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/contact/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Search WhatsApp contacts by name, phone, and other filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Search contacts",
+                "parameters": [
+                    {
+                        "description": "Search criteria",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.QpContactsSearchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpContactsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/contacts": {
             "get": {
                 "security": [
@@ -2987,6 +3032,27 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.QpContactsSearchRequest": {
+            "type": "object",
+            "properties": {
+                "has_lid": {
+                    "description": "Filter contacts with/without LID: true=with LID, false=without LID, null=no filter",
+                    "type": "boolean"
+                },
+                "has_title": {
+                    "description": "Filter contacts with/without title: true=with title, false=without title, null=no filter",
+                    "type": "boolean"
+                },
+                "phone": {
+                    "description": "Search by specific phone (optional)",
+                    "type": "string"
+                },
+                "query": {
+                    "description": "Search in title and phone (optional)",
+                    "type": "string"
                 }
             }
         },

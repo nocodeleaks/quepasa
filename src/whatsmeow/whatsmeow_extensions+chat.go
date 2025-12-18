@@ -38,11 +38,12 @@ func ExtractContactName(cInfo types.ContactInfo) string {
 	if !cInfo.Found {
 		return ""
 	}
-	if len(cInfo.BusinessName) > 0 {
-		return cInfo.BusinessName
-	}
+	// Priority: FullName (user's saved name) > BusinessName (business account) > PushName (public name) > FirstName
 	if len(cInfo.FullName) > 0 {
 		return cInfo.FullName
+	}
+	if len(cInfo.BusinessName) > 0 {
+		return cInfo.BusinessName
 	}
 	if len(cInfo.PushName) > 0 {
 		return cInfo.PushName
@@ -71,10 +72,6 @@ func GetContactName(client *whatsmeow.Client, jid types.JID) string {
 	cleanJID := CleanJID(jid)
 	cInfo, err := client.Store.Contacts.GetContact(context.Background(), cleanJID)
 	if err != nil {
-		return ""
-	}
-
-	if !cInfo.Found {
 		return ""
 	}
 

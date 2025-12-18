@@ -2,7 +2,6 @@ package whatsapp
 
 import (
 	"encoding/json"
-	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
 )
@@ -25,15 +24,6 @@ func (source *WhatsappChat) GetChatId() string {
 }
 
 var WASYSTEMCHAT = WhatsappChat{Id: "system", Title: "Internal System Message"}
-
-func (source *WhatsappChat) FormatContact() {
-	// removing session id
-	if strings.Contains(source.Id, ":") {
-		prefix := strings.Split(source.Id, ":")[0]
-		suffix := strings.Split(source.Id, "@")[1]
-		source.Id = prefix + "@" + suffix
-	}
-}
 
 // get phone number if exists
 func (source *WhatsappChat) GetPhone() string {

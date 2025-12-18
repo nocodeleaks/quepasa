@@ -805,12 +805,14 @@ func (source *QpWhatsappServer) GetProfilePicture(wid string, knowingId string) 
 //#endregion
 //#region GET ALL CONTACTS
 
+// GetContacts retrieves contacts from WhatsApp
+// Works with both active connection and stopped server (uses cached data automatically)
 func (source *QpWhatsappServer) GetContacts() (contacts []whatsapp.WhatsappChat, err error) {
 	contactManager := source.GetContactManager()
 	contacts, err = contactManager.GetContacts()
 	if err == nil {
 		for index, contact := range contacts {
-			contact.FormatContact()
+			contact.Id = library.TrimSessionIdFromWIdString(contact.Id)
 			contacts[index] = contact
 		}
 	}

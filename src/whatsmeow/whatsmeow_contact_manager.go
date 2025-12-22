@@ -130,7 +130,7 @@ func (cm *WhatsmeowContactManager) GetLIDFromPhone(phone string) (string, error)
 	// try to get the LID from local store
 	lidJID, err := cm.Client.Store.LIDs.GetLIDForPN(context.Background(), phoneJID)
 	if err == nil && !lidJID.IsEmpty() {
-		lid := lidJID.String()
+		lid := lidJID.ToNonAD().String()
 		logger.Debugf("LID found in database for phone %s: %s", phone, lid)
 
 		// Caching successful mapping for future use
@@ -258,7 +258,7 @@ func (cm *WhatsmeowContactManager) GetUserInfo(jids []string) ([]interface{}, er
 
 		if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 			// This is a LID, try to get corresponding phone
-			lid = jid.String()
+			lid = jid.ToNonAD().String()
 			pnJID, err := cm.Client.Store.LIDs.GetPNForLID(context.TODO(), jid)
 			if err == nil && !pnJID.IsEmpty() {
 				phoneNumber = pnJID.User
@@ -274,7 +274,7 @@ func (cm *WhatsmeowContactManager) GetUserInfo(jids []string) ([]interface{}, er
 			phoneNumber = jid.User
 			lidJID, err := cm.Client.Store.LIDs.GetLIDForPN(context.TODO(), jid)
 			if err == nil && !lidJID.IsEmpty() {
-				lid = lidJID.String()
+				lid = lidJID.ToNonAD().String()
 
 				// If we didn't get contact info from phone JID, try with LID
 				if contactErr != nil {

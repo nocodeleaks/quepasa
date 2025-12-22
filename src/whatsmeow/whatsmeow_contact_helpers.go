@@ -42,7 +42,7 @@ func GetContactsFromDevice(device *store.Device) (chats []whatsapp.WhatsappChat,
 			pnJID, err := device.LIDs.GetPNForLID(context.TODO(), jid)
 			if err == nil && !pnJID.IsEmpty() {
 				phoneNumber = pnJID.User
-				lid = jid.String()
+				lid = jid.ToNonAD().String()
 				// Format phone to E164
 				if phone, err := whatsapp.GetPhoneIfValid(phoneNumber); err == nil {
 					phoneE164 = phone
@@ -63,7 +63,7 @@ func GetContactsFromDevice(device *store.Device) (chats []whatsapp.WhatsappChat,
 			// Try to get corresponding LID
 			lidJID, err := device.LIDs.GetLIDForPN(context.TODO(), jid)
 			if err == nil && !lidJID.IsEmpty() {
-				lid = lidJID.String()
+				lid = lidJID.ToNonAD().String()
 			} else {
 				lid = ""
 			}
@@ -94,7 +94,7 @@ func GetContactsFromDevice(device *store.Device) (chats []whatsapp.WhatsappChat,
 
 			if strings.Contains(jid.String(), whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
 				// Current is @lid - update LId
-				existingContact.LId = jid.String()
+				existingContact.LId = jid.ToNonAD().String()
 				// If we have phone, ensure Id uses @s.whatsapp.net format
 				if len(phoneE164) > 0 {
 					existingContact.Id = phoneNumber + whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX

@@ -8,6 +8,7 @@ type QpInfoPatchRequest struct {
 	Broadcasts   *whatsapp.WhatsappBoolean `db:"broadcasts" json:"broadcasts,omitempty"`     // should handle broadcast messages
 	ReadReceipts *whatsapp.WhatsappBoolean `db:"readreceipts" json:"readreceipts,omitempty"` // should emit read receipts
 	Calls        *whatsapp.WhatsappBoolean `db:"calls" json:"calls,omitempty"`               // should handle calls
+	ReadUpdate   *whatsapp.WhatsappBoolean `db:"readupdate" json:"readupdate,omitempty"`     // should send markread requests when receiving messages
 	Username     *string                   `json:"username,omitempty" validate:"max=255"`
 	Devel        *bool                     `json:"devel,omitempty"` // enable debug mode (devel)
 }

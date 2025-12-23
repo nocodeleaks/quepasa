@@ -17,8 +17,8 @@ type WhatsappOptionsExtended struct {
 	// should handle calls
 	Calls WhatsappBooleanExtended `json:"calls,omitempty"`
 
-	// should send markread requests
-	ReadUpdate bool `json:"readupdate"`
+	// should send markread requests when receiving messages
+	ReadUpdate WhatsappBooleanExtended `json:"readupdate,omitempty"`
 
 	// nil for no sync, 0 for all, X for specific days
 	HistorySync *uint32 `json:"historysync,omitempty"`
@@ -38,7 +38,7 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 		source.Broadcasts.Equals(UnSetBooleanType) &&
 		source.ReadReceipts.Equals(UnSetBooleanType) &&
 		source.Calls.Equals(UnSetBooleanType) &&
-		!source.ReadUpdate &&
+		source.ReadUpdate.Equals(UnSetBooleanType) &&
 		source.HistorySync == nil &&
 		!source.DispatchUnhandled &&
 		len(source.LogLevel) == 0
@@ -111,6 +111,21 @@ func (source WhatsappOptionsExtended) HandleBroadcasts(local WhatsappBoolean) bo
 		}
 
 		return source.Broadcasts.ToBoolean(WhatsappBroadcasts)
+	}
+}
+
+func (source WhatsappOptionsExtended) HandleReadUpdate(local WhatsappBoolean) bool {
+	switch source.ReadUpdate {
+	case ForcedFalseBooleanType:
+		return false
+	case ForcedTrueBooleanType:
+		return true
+	default:
+		if local != UnSetBooleanType {
+			return local.Boolean()
+		}
+
+		return source.ReadUpdate.ToBoolean(false)
 	}
 }
 

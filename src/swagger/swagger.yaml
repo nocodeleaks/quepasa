@@ -105,6 +105,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+      readupdate:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should send markread requests when receiving messages
     type: object
   api.InformationResponse:
     properties:
@@ -382,7 +386,7 @@ definitions:
       read_receipts:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       read_update:
-        type: boolean
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       wakeup_duration:
         description: duration in seconds
         type: integer
@@ -463,6 +467,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+      readupdate:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should send markread requests when receiving messages
       success:
         description: last success timestamp
         type: string
@@ -607,6 +615,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+      readupdate:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should send markread requests when receiving messages
       routing_key:
         description: RabbitMQ routing key for exchange routing
         type: string
@@ -733,6 +745,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+      readupdate:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should send markread requests when receiving messages
       timestamp:
         type: string
       token:
@@ -805,6 +821,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+      readupdate:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should send markread requests when receiving messages
       success:
         description: last success timestamp
         type: string
@@ -861,6 +881,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should emit read receipts
+      readupdate:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should send markread requests when receiving messages
       reconnect:
         description: should auto reconnect, false for qrcode scanner
         type: boolean

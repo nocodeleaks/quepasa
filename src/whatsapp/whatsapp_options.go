@@ -14,4 +14,7 @@ type WhatsappOptions struct {
 
 	// should handle calls
 	Calls WhatsappBoolean `db:"calls" json:"calls,omitempty"`
+
+	// should send markread requests when receiving messages
+	ReadUpdate WhatsappBoolean `db:"readupdate" json:"readupdate,omitempty"`
 }

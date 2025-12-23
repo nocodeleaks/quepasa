@@ -2560,6 +2560,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
                         }
                     ]
+                },
+                "readupdate": {
+                    "description": "should send markread requests when receiving messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 }
             }
         },
@@ -2982,7 +2990,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
                 "read_update": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
                 "wakeup_duration": {
                     "description": "duration in seconds",
@@ -3100,6 +3108,14 @@ const docTemplate = `{
                 },
                 "readreceipts": {
                     "description": "should emit read receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "readupdate": {
+                    "description": "should send markread requests when receiving messages",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -3326,6 +3342,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "readupdate": {
+                    "description": "should send markread requests when receiving messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "routing_key": {
                     "description": "RabbitMQ routing key for exchange routing",
                     "type": "string"
@@ -3521,6 +3545,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "readupdate": {
+                    "description": "should send markread requests when receiving messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "timestamp": {
                     "type": "string"
                 },
@@ -3632,6 +3664,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "readupdate": {
+                    "description": "should send markread requests when receiving messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "success": {
                     "description": "last success timestamp",
                     "type": "string"
@@ -3716,6 +3756,14 @@ const docTemplate = `{
                 },
                 "readreceipts": {
                     "description": "should emit read receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "readupdate": {
+                    "description": "should send markread requests when receiving messages",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"

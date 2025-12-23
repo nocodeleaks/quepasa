@@ -97,7 +97,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 
 	// Apply configuration from request
 	// Handle both InfoCreateRequest and QpInfoPatchRequest
-	var groups, broadcasts, readReceipts, calls *whatsapp.WhatsappBoolean
+	var groups, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
 	var devel *bool
 
 	switch req := request.(type) {
@@ -107,6 +107,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
 			calls = req.Calls
+			readUpdate = req.ReadUpdate
 			devel = req.Devel
 		}
 	case *models.QpInfoPatchRequest:
@@ -116,6 +117,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
 			calls = req.Calls
+			readUpdate = req.ReadUpdate
 			devel = req.Devel
 		}
 	}
@@ -138,6 +140,11 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 	if calls != nil && server.Calls != *calls {
 		server.Calls = *calls
 		update += fmt.Sprintf("calls to: {%s}; ", *calls)
+	}
+
+	if readUpdate != nil && server.ReadUpdate != *readUpdate {
+		server.ReadUpdate = *readUpdate
+		update += fmt.Sprintf("readupdate to: {%s}; ", *readUpdate)
 	}
 
 	if devel != nil && server.Devel != *devel {
@@ -240,6 +247,9 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 			}
 			if request.Calls != nil {
 				info.Calls = *request.Calls
+			}
+			if request.ReadUpdate != nil {
+				info.ReadUpdate = *request.ReadUpdate
 			}
 			if request.Devel != nil {
 				info.Devel = *request.Devel

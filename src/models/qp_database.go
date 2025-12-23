@@ -218,6 +218,7 @@ func GetBase() migrate.SqlxMigration {
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
   		"readreceipts" INT(1) NOT NULL DEFAULT 0,
   		"calls" INT(1) NOT NULL DEFAULT 0,
+  		"readupdate" INT(1) NOT NULL DEFAULT 0,
 		"user" CHAR (255) DEFAULT NULL REFERENCES "users"("username"),
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 	  );
@@ -243,7 +244,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202402291556'),
 	  ('202403021242'),
 	  ('202403141920'),
-	  ('202512151400');
+	  ('202512151400'),
+	  ('202512231500');
 	  `, "")
 	return migration
 }
@@ -314,8 +316,8 @@ func MigrationHandler_202303011900(id string) {
 
 			log.Infof("wid updated with success: %s", server.Token)
 
-			// Removido bloco legado que usava db.Webhooks (deprecated)
-			// Todos os webhooks e RabbitMQ agora são tratados via Dispatching
+			// Removed legacy block that used db.Webhooks (deprecated)
+			// All webhooks and RabbitMQ are now handled via Dispatching
 		}
 	}
 }

@@ -452,7 +452,7 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	}
 
 	// testing, mark read function
-	if source.GetHandlers().ReadUpdate {
+	if source.GetHandlers().HandleReadUpdate() {
 		go source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
 	}
 

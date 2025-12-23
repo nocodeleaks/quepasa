@@ -55,7 +55,7 @@ This document describes all environment variables used by the QuePasa applicatio
 
 ## 📱 WhatsApp Configuration
 
-- **`READUPDATE`** - Mark chat read when sending messages (default: `false`)
+- **`READUPDATE`** - Global: Mark chat as read when receiving messages (default: `false`). Can be overridden per server.
 - **`READRECEIPTS`** - Handle read receipts (default: `false`)
 - **`CALLS`** - Handle calls (default: `false`)
 - **`GROUPS`** - Handle group messages (default: `false`)
@@ -64,6 +64,13 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`PRESENCE`** - Presence state (default: `unavailable`)
 - **`WAKEUP_HOUR`** - Single hour (0-23) to activate presence daily (e.g., `9` for 9 AM)
 - **`WAKEUP_DURATION`** - Duration in seconds to keep presence online during scheduled wake-up (default: `10`)
+
+### Individual Server Configuration
+
+Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `READRECEIPTS`, and `BROADCASTS`:
+- Set to `true` or `1` to enable for this specific server
+- Set to `false` or `-1` to disable for this specific server  
+- Leave unset to use global environment variable value
 
 ## 📋 Logging Configuration
 

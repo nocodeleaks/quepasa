@@ -142,6 +142,20 @@ func (source *WhatsmeowHandlers) HandleCalls() bool {
 	return serviceOptions.HandleCalls(defaultValue)
 }
 
+func (source *WhatsmeowHandlers) HandleReadUpdate() bool {
+	if source == nil {
+		return false
+	}
+
+	var defaultValue whatsapp.WhatsappBoolean
+	if source.WhatsappOptions != nil {
+		defaultValue = source.WhatsappOptions.ReadUpdate
+	}
+
+	serviceOptions := source.GetServiceOptions()
+	return serviceOptions.HandleReadUpdate(defaultValue)
+}
+
 //#endregion
 
 func (source WhatsmeowHandlers) ShouldDispatchUnhandled() bool {
@@ -685,7 +699,7 @@ func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from
 	}
 
 	// testing, mark read function
-	if handler.WhatsappOptionsExtended.ReadUpdate && !message.FromBroadcast() {
+	if handler.HandleReadUpdate() && !message.FromBroadcast() {
 		go handler.MarkRead(message, types.ReceiptTypeRead)
 	}
 }

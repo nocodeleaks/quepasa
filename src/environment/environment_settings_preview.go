@@ -33,7 +33,7 @@ func GetPreview() *EnvironmentSettingsPreview {
 		LogLevel:     formatLogLevel(Settings.Whatsmeow.LogLevel),
 		DBLogLevel:   formatLogLevel(Settings.Whatsmeow.DBLogLevel),
 		Presence:     Settings.WhatsApp.Presence,
-		ReadUpdate:   formatBool(Settings.WhatsApp.ReadUpdate),
+		ReadUpdate:   formatBooleanExtended(Settings.WhatsApp.ReadUpdate),
 	}
 
 	// Optional fields

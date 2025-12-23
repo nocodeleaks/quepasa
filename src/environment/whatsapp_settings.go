@@ -22,7 +22,7 @@ const (
 
 // WhatsAppSettings holds all WhatsApp configuration loaded from environment
 type WhatsAppSettings struct {
-	ReadUpdate      bool                             `json:"read_update"`
+	ReadUpdate      whatsapp.WhatsappBooleanExtended `json:"read_update"`
 	ReadReceipts    whatsapp.WhatsappBooleanExtended `json:"read_receipts"`
 	Calls           whatsapp.WhatsappBooleanExtended `json:"calls"`
 	Groups          whatsapp.WhatsappBooleanExtended `json:"groups"`
@@ -36,7 +36,7 @@ type WhatsAppSettings struct {
 // NewWhatsAppSettings creates a new WhatsApp settings by loading all values from environment
 func NewWhatsAppSettings() WhatsAppSettings {
 	return WhatsAppSettings{
-		ReadUpdate:      getEnvOrDefaultBool(ENV_READUPDATE, false),
+		ReadUpdate:      getWhatsappBooleanExtended(ENV_READUPDATE),
 		ReadReceipts:    getWhatsappBooleanExtended(ENV_READRECEIPTS),
 		Calls:           getWhatsappBooleanExtended(ENV_CALLS),
 		Groups:          getWhatsappBooleanExtended(ENV_GROUPS),

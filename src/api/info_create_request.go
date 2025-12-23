@@ -9,5 +9,6 @@ type InfoCreateRequest struct {
 	Broadcasts   *whatsapp.WhatsappBoolean `json:"broadcasts,omitempty"`   // should handle broadcast messages
 	ReadReceipts *whatsapp.WhatsappBoolean `json:"readreceipts,omitempty"` // should emit read receipts
 	Calls        *whatsapp.WhatsappBoolean `json:"calls,omitempty"`        // should handle calls
+	ReadUpdate   *whatsapp.WhatsappBoolean `json:"readupdate,omitempty"`   // should send markread requests when receiving messages
 	Devel        *bool                     `json:"devel,omitempty"`        // enable debug mode (devel)
 }

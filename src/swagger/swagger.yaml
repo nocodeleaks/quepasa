@@ -1427,12 +1427,19 @@ paths:
       consumes:
       - application/json
       description: Execute control commands for the bot server (start, stop, restart)
+        or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
       parameters:
       - description: Command action
         enum:
         - start
         - stop
         - restart
+        - groups
+        - broadcasts
+        - readreceipts
+        - readupdate
+        - calls
+        - debug
         in: query
         name: action
         required: true

@@ -42,13 +42,13 @@ func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err
 }
 
 func (source QpDataServerSql) Add(element *QpServer) error {
-	query := `INSERT INTO servers (token, wid, verified, devel, groups, broadcasts, readreceipts, calls, user) VALUES (:token, :wid, :verified, :devel, :groups, :broadcasts, :readreceipts, :calls, :user)`
+	query := `INSERT INTO servers (token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user) VALUES (:token, :wid, :verified, :devel, :groups, :broadcasts, :readreceipts, :calls, :readupdate, :user)`
 	_, err := source.db.NamedExec(query, element)
 	return err
 }
 
 func (source QpDataServerSql) Update(element *QpServer) error {
-	query := `UPDATE servers SET wid = :wid, verified = :verified, devel = :devel, groups = :groups, broadcasts = :broadcasts, readreceipts = :readreceipts, calls = :calls, user = :user WHERE token = :token`
+	query := `UPDATE servers SET wid = :wid, verified = :verified, devel = :devel, groups = :groups, broadcasts = :broadcasts, readreceipts = :readreceipts, calls = :calls, readupdate = :readupdate, user = :user WHERE token = :token`
 	_, err := source.db.NamedExec(query, element)
 	return err
 }

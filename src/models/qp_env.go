@@ -139,8 +139,14 @@ func (*Environment) UseSSLForWebSocket() bool {
 }
 
 // Migrate checks if database migrations should be enabled. Defaults to true.
+// The MIGRATIONS variable can be "true"/"false" for boolean control,
+// or a path string to specify custom migration directory.
 func (*Environment) Migrate() bool {
-	return getEnvOrDefaultBool(ENV_MIGRATIONS, true)
+	if valueStr, ok := os.LookupEnv(ENV_MIGRATIONS); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		return trimmedValueStr != "false"
+	}
+	return true // default value
 }
 
 // MigrationPath returns the custom path for database migrations.

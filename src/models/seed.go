@@ -30,7 +30,7 @@ func InitialSeed() (err error) {
 		if !exists {
 			// Validate password is not empty for security
 			if envPASSWORD == "" {
-				return fmt.Errorf("QUEPASA_BASIC_AUTH_PASSWORD not set; refusing to create user '%s' with empty password", envEMAIL)
+				return fmt.Errorf("PASSWORD not set; refusing to create user '%s' with empty password", envEMAIL)
 			}
 
 			log.Infof("Creating default user from environment: %s", envEMAIL)
@@ -44,7 +44,7 @@ func InitialSeed() (err error) {
 		}
 	} else {
 		// Fallback to default email with empty password (legacy behavior)
-		log.Warnf("QUEPASA_BASIC_AUTH_USER not set, using default: %s", DEFAULTEMAIL)
+		log.Warnf("USER not set, using default: %s", DEFAULTEMAIL)
 		exists, err := WhatsappService.DB.Users.Exists(DEFAULTEMAIL)
 		if err != nil {
 			return fmt.Errorf("failed to check if default user exists: %w", err)

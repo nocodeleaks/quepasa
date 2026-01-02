@@ -449,12 +449,6 @@ quepasa_webhook_retries_successful_total / quepasa_webhook_retry_attempts_total 
 quepasa_webhook_retry_attempts_total / quepasa_webhooks_sent_total * 100
 ```
 
-#### Utilização da Fila
-```promql
-# Porcentagem de utilização da fila
-quepasa_webhook_queue_size / WEBHOOK_QUEUE_SIZE * 100
-```
-
 #### Latência Média
 ```promql
 # Tempo médio de entrega de webhooks
@@ -520,65 +514,7 @@ rate(quepasa_webhook_duration_seconds_sum[5m]) / rate(quepasa_webhook_duration_s
     description: "{{ $value | humanizePercentage }} dos retries estão falhando"
 ```
 
-#### Fila Muito Cheia
-```yaml
-- alert: WebhookQueueFull
-  expr: quepasa_webhook_queue_size / WEBHOOK_QUEUE_SIZE > 0.8
-  for: 2m
-  labels:
-    severity: warning
-  annotations:
-    summary: "Fila de webhooks muito cheia"
-    description: "Fila está {{ $value | humanizePercentage }} cheia"
-```
-
 ---
-
-## 🏥 Health Endpoint
-
-### 📍 Endpoints Disponíveis
-- **GET /health**: Status completo com métricas de queue
-- **GET /health/basic**: Status básico
-- **GET /metrics**: Métricas detalhadas do Prometheus
-
-### 📊 Resposta do Health Endpoint
-
-```json
-{
-  "success": true,
-  "status": "application is running",
-  "timestamp": "2025-09-09T10:51:00Z",
-  "queue": {
-    "enabled": true,
-    "current_size": 5,
-    "max_size": 100,
-    "utilization_percentage": 5.0,
-    "processing_delay": "0s",
-    "workers": 2,
-    "processed_total": 150,
-    "discarded_total": 2,
-    "retries_total": 25,
-    "completed_total": 145,
-    "failed_total": 3
-  }
-}
-```
-
-### 📋 Campos da Queue no Health
-
-| Campo | Tipo | Descrição |
-|-------|------|-------------|
-| `enabled` | boolean | Sistema de queue habilitado |
-| `current_size` | integer | Tamanho atual da fila |
-| `max_size` | integer | Capacidade máxima da fila |
-| `utilization_percentage` | float | Utilização em porcentagem |
-| `processing_delay` | string | Delay entre processamentos |
-| `workers` | integer | Número de workers ativos |
-| `processed_total` | float | Total processado (tempo real) |
-| `discarded_total` | float | Total descartado (tempo real) |
-| `retries_total` | float | Total de retries (tempo real) |
-| `completed_total` | float | Total completado (tempo real) |
-| `failed_total` | float | Total falhado (tempo real) |
 
 ---
 
@@ -593,15 +529,6 @@ rate(quepasa_webhook_duration_seconds_sum[5m]) / rate(quepasa_webhook_duration_s
 | `WEBHOOK_RETRY_DELAY` | 1 | Segundos entre tentativas |
 | `WEBHOOK_TIMEOUT` | 10 | Timeout por requisição (segundos) |
 
-#### Sistema de Queue
-| Variável | Padrão | Descrição |
-|----------|---------|-------------|
-| `WEBHOOK_QUEUE_ENABLED` | false | Habilitar sistema de queue |
-| `WEBHOOK_QUEUE_SIZE` | 100 | Tamanho máximo da fila |
-| `WEBHOOK_QUEUE_TIMEOUT` | 30 | Timeout de processamento |
-| `WEBHOOK_QUEUE_DELAY` | 0 | Delay entre processamentos |
-| `WEBHOOK_WORKERS` | 1 | Número de workers simultâneos |
-
 ### 📝 Arquivo .env.example
 
 ```bash
@@ -609,13 +536,6 @@ rate(quepasa_webhook_duration_seconds_sum[5m]) / rate(quepasa_webhook_duration_s
 WEBHOOK_RETRY_COUNT=3
 WEBHOOK_RETRY_DELAY=1
 WEBHOOK_TIMEOUT=10
-
-# Sistema de Queue de Webhooks
-WEBHOOK_QUEUE_ENABLED=true
-WEBHOOK_QUEUE_SIZE=100
-WEBHOOK_QUEUE_TIMEOUT=30
-WEBHOOK_QUEUE_DELAY=0
-WEBHOOK_WORKERS=2
 ```
 
 ---
@@ -627,9 +547,6 @@ WEBHOOK_WORKERS=2
 WEBHOOK_RETRY_COUNT=5
 WEBHOOK_RETRY_DELAY=2
 WEBHOOK_TIMEOUT=15
-WEBHOOK_QUEUE_ENABLED=true
-WEBHOOK_QUEUE_SIZE=500
-WEBHOOK_WORKERS=4
 ```
 
 ### 🧪 Ambiente de Desenvolvimento
@@ -637,9 +554,6 @@ WEBHOOK_WORKERS=4
 WEBHOOK_RETRY_COUNT=1
 WEBHOOK_RETRY_DELAY=1
 WEBHOOK_TIMEOUT=5
-WEBHOOK_QUEUE_ENABLED=true
-WEBHOOK_QUEUE_SIZE=50
-WEBHOOK_WORKERS=1
 ```
 
 ### 🚀 Alta Performance
@@ -647,15 +561,11 @@ WEBHOOK_WORKERS=1
 WEBHOOK_RETRY_COUNT=3
 WEBHOOK_RETRY_DELAY=1
 WEBHOOK_TIMEOUT=10
-WEBHOOK_QUEUE_ENABLED=true
-WEBHOOK_QUEUE_SIZE=1000
-WEBHOOK_WORKERS=8
 ```
 
 ### 🔧 Debug/Testing
 ```bash
 WEBHOOK_RETRY_COUNT=0
-WEBHOOK_QUEUE_ENABLED=false
 ```
 
 ---
@@ -703,24 +613,6 @@ ERROR[2023-12-01 10:00:07] max retry attempts reached
 ERROR[2023-12-01 10:00:07] webhook failed after 4 attempts
 ```
 
-### 📋 Logs de Queue
-
-#### Mensagem Enfileirada
-```
-INFO[2023-12-01 10:00:00] Webhook enqueued for processing (Queue: 5/100)
-```
-
-#### Fila Cheia
-```
-WARN[2023-12-01 10:00:00] Webhook queue full, discarding message (Queue: 100/100)
-```
-
-#### Processamento
-```
-INFO[2023-12-01 10:00:01] Processing webhook from queue
-INFO[2023-12-01 10:00:02] Webhook processed successfully
-```
-
 ---
 
 ## 🔧 Troubleshooting
@@ -736,37 +628,13 @@ INFO[2023-12-01 10:00:02] Webhook processed successfully
 - Verificar se `WEBHOOK_RETRY_COUNT` está no .env
 - Checar se erro é realmente retryable
 
-#### 2. Fila Não Processa
-**Sintomas**: Mensagens ficam na fila
-**Causas Possíveis**:
-- `WEBHOOK_QUEUE_ENABLED=false`
-- Workers travados
-- Problemas de conectividade
-**Soluções**:
-- Verificar configuração da fila
-- Checar logs dos workers
-- Reiniciar aplicação
-
-#### 3. Alto Consumo de Memória
-**Sintomas**: Memória cresce continuamente
-**Causas Possíveis**:
-- `WEBHOOK_QUEUE_SIZE` muito grande
-- Muitas mensagens enfileiradas
-- Workers não processando
-**Soluções**:
-- Reduzir `WEBHOOK_QUEUE_SIZE`
-- Aumentar `WEBHOOK_WORKERS`
-- Monitorar métricas de fila
-
-#### 4. Latência Alta
+#### 2. Latência Alta
 **Sintomas**: Webhooks demoram muito para processar
 **Causas Possíveis**:
 - `WEBHOOK_TIMEOUT` muito alto
-- `WEBHOOK_QUEUE_DELAY` configurado
 - APIs externas lentas
 **Soluções**:
 - Ajustar timeouts
-- Otimizar configurações
 - Checar performance das APIs externas
 
 ### 🔍 Debugging
@@ -784,9 +652,6 @@ curl http://localhost:31000/health
 ```bash
 # Ver métricas do Prometheus
 curl http://localhost:31000/metrics | grep webhook
-
-# Monitorar fila em tempo real
-watch -n 1 'curl -s http://localhost:31000/health | jq .queue'
 ```
 
 #### Analisar Logs
@@ -818,34 +683,11 @@ tail -f logs/quepasa.log | grep -i error | grep webhook
 
 Não significativamente. As métricas do Prometheus são otimizadas e têm impacto mínimo na performance. Elas são coletadas de forma assíncrona e não bloqueiam o processamento dos webhooks.
 
-### 🏗️ Posso Usar Apenas a Fila Sem Retry?
-
-Sim! Você pode habilitar apenas o sistema de queue definindo:
-```bash
-WEBHOOK_QUEUE_ENABLED=true
-# WEBHOOK_RETRY_COUNT não definido = sem retry
-```
-
-### 👷 Quantos Workers Devo Usar?
-
-Depende da sua carga de trabalho:
-- **Desenvolvimento**: 1 worker
-- **Produção pequena**: 2-4 workers
-- **Produção média**: 4-8 workers
-- **Alta performance**: 8+ workers
-
-Monitore as métricas para encontrar o equilíbrio ideal.
-
-### 🚨 E se a Fila Ficar Cheia?
-
-O sistema usa **drop-tail policy**: quando a fila atinge o limite (`WEBHOOK_QUEUE_SIZE`), novas mensagens são descartadas automaticamente. Isso previne problemas de memória, mas você deve monitorar a métrica `quepasa_webhook_queue_discarded_total`.
-
 ### 🔧 Como Saber se Está Funcionando?
 
-1. **Logs**: Procure por mensagens de retry e queue
-2. **Health Endpoint**: Verifique o campo `queue` na resposta
-3. **Métricas**: Acesse `/metrics` para ver contadores
-4. **Teste**: Envie um webhook e veja os logs
+1. **Logs**: Procure por mensagens de retry
+2. **Métricas**: Acesse `/metrics` para ver contadores
+3. **Teste**: Envie um webhook e veja os logs
 
 ---
 
@@ -860,8 +702,7 @@ O sistema implementado está **tecnicamente sólido** e segue boas práticas de 
 #### 1. **Arquitetura Bem Projetada**
 - ✅ Uso correto de Go channels para thread-safety
 - ✅ Padrão singleton com `sync.Once` para instância global
-- ✅ Separação clara entre sistema de retry e queue
-- ✅ Worker pool configurável
+- ✅ Sistema de retry inteligente
 
 #### 2. **Sistema de Métricas Completo**
 - ✅ Métricas Prometheus abrangentes
@@ -875,46 +716,7 @@ O sistema implementado está **tecnicamente sólido** e segue boas práticas de 
 
 ### 🔧 Problemas Críticos Corrigidos
 
-#### 1. **CRÍTICO: Inicialização Desnecessária da Queue**
-**Problema:** Queue era inicializada sempre, mesmo quando `WEBHOOK_QUEUE_ENABLED=false`
-
-```go
-// ANTES (problemático)
-func init() {
-    InitializeWebhookQueue() // Sempre executava
-}
-
-// DEPOIS (corrigido)
-func init() {
-    if environment.Settings.API.WebhookQueueEnabled {
-        InitializeWebhookQueue()
-    }
-}
-```
-
-**Impacto:** Evita consumo desnecessário de recursos quando queue está desabilitada.
-
-#### 2. **PERFORMANCE: Otimização do Worker Pool**
-**Problema:** Loop desnecessário com timeout causava overhead de CPU
-
-```go
-// ANTES (ineficiente)
-case <-time.After(100 * time.Millisecond):
-    select {
-    case msg := <-w.messageCache:
-        // processa
-    default:
-        continue // CPU desperdiçada
-    }
-
-// DEPOIS (otimizado)
-case msg := <-w.messageCache:
-    w.processMessage(msg) // Bloqueia diretamente no channel
-```
-
-**Impacto:** Redução significativa do uso de CPU em idle, melhor performance geral.
-
-#### 3. **LÓGICA: Melhoria na Função shouldRetry**
+#### 1. **LÓGICA: Melhoria na Função shouldRetry**
 **Problema:** Ordem de verificação de status codes não era otimizada
 
 ```go
@@ -939,86 +741,7 @@ if statusCode >= 500 && statusCode < 600 {
 
 ### 🚀 Melhorias Implementadas
 
-#### 1. **Validação de Configuração com Limites Seguros**
-```go
-func (settings APISettings) GetWebhookQueueSize() int {
-    if settings.WebhookQueueSize > 0 {
-        if settings.WebhookQueueSize > 10000 {
-            return 10000 // Previne uso excessivo de memória
-        }
-        return settings.WebhookQueueSize
-    }
-    return 100
-}
-
-func (settings APISettings) GetWebhookWorkers() int {
-    if settings.WebhookWorkers > 0 {
-        if settings.WebhookWorkers > 20 {
-            return 20 // Previne criação excessiva de goroutines
-        }
-        return settings.WebhookWorkers
-    }
-    return 1
-}
-```
-
-**Benefícios:**
-- Previne configurações que podem consumir memória excessiva
-- Limita número de workers para evitar sobrecarga
-- Mantém valores padrão sensatos
-
-#### 2. **Graceful Shutdown com Timeout**
-```go
-func (w *WebhookQueueClient) Close() {
-    close(w.closed)
-    
-    done := make(chan struct{})
-    go func() {
-        w.wg.Wait()
-        close(done)
-    }()
-    
-    select {
-    case <-done:
-        log.Info("Workers finished gracefully")
-    case <-time.After(30 * time.Second):
-        log.Warn("Timeout waiting for workers")
-    }
-}
-```
-
-**Benefícios:**
-- Encerramento limpo dos workers
-- Evita travamento na shutdown da aplicação
-- Timeout configurável para casos extremos
-
-#### 3. **Funções de Gestão da Queue**
-Novas funções administrativas implementadas:
-
-```go
-// Limpa recursos da queue
-func CleanupWebhookQueue() {
-    if GlobalWebhookQueue != nil {
-        GlobalWebhookQueue.Close()
-        GlobalWebhookQueue = nil
-    }
-}
-
-// Reinicia queue sem restart da aplicação
-func RestartWebhookQueue() {
-    CleanupWebhookQueue()
-    if environment.Settings.API.WebhookQueueEnabled {
-        InitializeWebhookQueue()
-    }
-}
-```
-
-**Benefícios:**
-- Capacidade de reiniciar queue em runtime
-- Útil para mudanças de configuração sem downtime
-- Melhor manutenibilidade
-
-#### 4. **Logs Mais Informativos e Estruturados**
+#### 1. **Logs Mais Informativos e Estruturados**
 ```go
 if statusCode >= 400 && statusCode < 500 {
     logentry.Warnf("client error (4xx) detected - not retryable (status: %d)", statusCode)
@@ -1040,12 +763,9 @@ logentry.Debugf("received message counted: type=%s, from=%s, chat=%s",
 
 A implementação agora está **ainda mais robusta** e **pronta para produção**:
 
-- ✅ **Eficiente**: Correção do polling desnecessário
-- ✅ **Seguro**: Validação de limites de configuração
-- ✅ **Robusto**: Graceful shutdown implementado
-- ✅ **Administrável**: Funções de gestão disponíveis
+- ✅ **Eficiente**: Sistema de retry inteligente
+- ✅ **Seguro**: Validação de timeouts e configurações
 - ✅ **Observável**: Logs melhorados para debugging
-- ✅ **Escalável**: Worker pool otimizado
 
 ---
 
@@ -1264,10 +984,8 @@ O sistema agora oferece **visibilidade completa** do tráfego de mensagens no Qu
 ## 🏷️ Version History
 
 - **v3.25.0909.1130**: Implementação completa de contadores de mensagens recebidas
-- **v3.25.0909.0952**: Sistema completo com queue, retry, métricas e health endpoint
+- **v3.25.0909.0952**: Sistema de retry com métricas e health endpoint
 - **v3.25.0909.0951**: Health endpoint com métricas em tempo real
-- **v3.25.0909.0950**: Suporte a múltiplos workers
-- **v3.25.2207.0128**: Sistema de queue assíncrona
 - **v3.25.2207.0127**: Sistema de retry inteligente
 
 ### 🔧 Melhorias por Versão
@@ -1280,13 +998,9 @@ O sistema agora oferece **visibilidade completa** do tráfego de mensagens no Qu
 - ✅ Queries para análise de padrões de uso
 
 #### v3.25.0909.0952
-- ✅ Correção da inicialização condicional da queue
-- ✅ Otimização do worker pool (remoção de polling)
-- ✅ Validação de limites de configuração
-- ✅ Implementação de graceful shutdown
-- ✅ Funções de gestão da queue (cleanup/restart)
 - ✅ Melhoria na lógica shouldRetry
-- ✅ Logs mais informativos
+- ✅ Logs mais informativos e estruturados
+- ✅ Otimizações de performance
 
 ---
 

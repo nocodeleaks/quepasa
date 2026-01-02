@@ -26,7 +26,7 @@
    - **DOMAIN**: Set your domain (e.g., `quepasa.yourdomain.com`)
    - **EMAIL**: Set your administrator email
    - **MASTERKEY**: Change the default master key for security
-   - **QUEPASA_BASIC_AUTH_PASSWORD**: Set a strong password
+   - **PASSWORD**: Set a strong password
    - **DBPASSWORD**: Set a secure database password
    - **SIGNING_SECRET**: Change the default signing secret
    - **WEBSOCKETSSL**: Set to `true` if using HTTPS/SSL
@@ -109,7 +109,7 @@ The `.env` file contains all necessary configurations organized in sections:
    - **DOMAIN**: Configure seu domínio (ex: `quepasa.seudominio.com`)
    - **EMAIL**: Defina seu email de administrador
    - **MASTERKEY**: Altere a chave mestra padrão por segurança
-   - **QUEPASA_BASIC_AUTH_PASSWORD**: Defina uma senha forte
+   - **PASSWORD**: Defina uma senha forte
    - **DBPASSWORD**: Defina uma senha segura para o banco
    - **SIGNING_SECRET**: Altere o segredo de assinatura padrão
    - **WEBSOCKETSSL**: Defina como `true` se usar HTTPS/SSL

@@ -7,7 +7,7 @@ import (
 // InformationResponse represents bot/server information with optional environment settings
 type InformationResponse struct {
 	models.QpResponse
-	Version string                   `json:"version"`
+	Version string                   `json:"version,omitempty"`
 	Server  *models.QpWhatsappServer `json:"server,omitempty"`
 }
 

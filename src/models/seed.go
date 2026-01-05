@@ -19,6 +19,18 @@ func InitialSeed() (err error) {
 	envEMAIL := environment.Settings.API.User
 	envPASSWORD := environment.Settings.API.Password
 
+	// Log loaded values for debugging
+	log.Debugf("InitialSeed: Loaded USER='%s' PASSWORD='%s' (length: %d)",
+		envEMAIL,
+		func() string {
+			if envPASSWORD != "" {
+				return "***"
+			} else {
+				return ""
+			}
+		}(),
+		len(envPASSWORD))
+
 	// Use environment variable if set, otherwise fallback to DEFAULTEMAIL
 	if envEMAIL != "" {
 		// Check if user exists

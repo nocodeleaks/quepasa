@@ -475,7 +475,7 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 func (source *QpWhatsappServer) StartConnectionError(err error) error {
 	logger := source.GetLogger()
 
-	source.Disconnect("StartConnectionError")
+	source.DisposeConnection("StartConnectionError")
 	source.Handler.Clear()
 
 	if _, ok := err.(*whatsapp.UnAuthorizedError); ok {
@@ -502,7 +502,7 @@ func (source *QpWhatsappServer) Stop(cause string) (err error) {
 			source.Handler.OnStopped(cause)
 		}
 
-		source.Disconnect("stop: " + cause)
+		source.DisposeConnection("stop: " + cause)
 
 		if source.Handler != nil {
 			source.Handler.Clear()
@@ -528,7 +528,7 @@ func (source *QpWhatsappServer) Restart() (err error) {
 }
 
 // Somente usar em caso de não ser permitida a reconxão automática
-func (source *QpWhatsappServer) Disconnect(cause string) {
+func (source *QpWhatsappServer) DisposeConnection(cause string) {
 	conn, err := source.GetValidConnection()
 	if err == nil {
 		statusManager := source.GetStatusManager()

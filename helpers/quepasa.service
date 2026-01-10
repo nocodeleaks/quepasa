@@ -1,3 +1,5 @@
+# Last updated: 202601092245
+
 [Unit]  
 Description=Quepasa API Service 
 ConditionPathExists=/opt/quepasa
@@ -34,6 +36,7 @@ StandardOutput=journal
 StandardError=journal
 
 KillSignal=SIGINT
+KillMode=mixed
 
 [Install]  
 WantedBy=multi-user.target 

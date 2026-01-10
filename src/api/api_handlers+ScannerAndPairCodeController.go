@@ -126,7 +126,15 @@ func PairCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pairing := &models.QpWhatsappPairing{Token: token, Username: username}
+	HSDString := library.GetRequestParameter(r, "historysyncdays")
+	historysyncdays, _ := strconv.ParseUint(HSDString, 10, 32)
+
+	pairing := &models.QpWhatsappPairing{
+		Token:           token,
+		Username:        username,
+		HistorySyncDays: uint32(historysyncdays),
+	}
+	
 	con, err := pairing.GetConnection()
 	if err != nil {
 		err := fmt.Errorf("pair code controller, can't get connection: %s", err.Error())

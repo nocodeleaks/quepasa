@@ -14,6 +14,7 @@ ExecStartPre=+/bin/chmod 755 /var/log/quepasa
 ExecStart=/usr/local/go/bin/go run main.go  
 WorkingDirectory=/opt/quepasa/
 EnvironmentFile=-/opt/quepasa/.env
+UnsetEnvironment=USER
 Type=simple
 User=quepasa     
 Group=quepasa

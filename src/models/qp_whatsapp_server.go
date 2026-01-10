@@ -499,7 +499,7 @@ func (source *QpWhatsappServer) Stop(cause string) (err error) {
 
 		// Send stop event to dispatchers before disconnecting
 		if source.Handler != nil {
-			go source.Handler.OnStopped(cause)
+			source.Handler.OnStopped(cause)
 		}
 
 		source.Disconnect("stop: " + cause)
@@ -696,7 +696,7 @@ func (source *QpWhatsappServer) ToggleDevel() (handle bool, err error) {
 func (server *QpWhatsappServer) Delete(cause string) error {
 	// Send delete event to dispatchers before deletion
 	if server.Handler != nil {
-		go server.Handler.OnDeleted(cause)
+		server.Handler.OnDeleted(cause)
 	}
 
 	if server.connection != nil {

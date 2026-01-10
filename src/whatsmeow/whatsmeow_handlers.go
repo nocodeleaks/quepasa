@@ -320,7 +320,59 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		}
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected()
+			go source.WAHandlers.OnDisconnected("network", "Server closed connection")
+		}
+		return
+
+	case *events.ConnectFailure:
+		reasonStr := fmt.Sprintf("%v", evt.Reason)
+		details := fmt.Sprintf("Reason: %s", reasonStr)
+		if evt.Message != "" {
+			details = fmt.Sprintf("%s, Message: %s", details, evt.Message)
+		}
+		logentry.Warnf("connect failure: %s", details)
+
+		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
+			go source.WAHandlers.OnDisconnected("connect_failure", details)
+		}
+		return
+
+	case *events.StreamError:
+		details := fmt.Sprintf("Error code: %s", evt.Code)
+		logentry.Warnf("stream error: %s", details)
+
+		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
+			go source.WAHandlers.OnDisconnected("stream_error", details)
+		}
+		return
+
+	case *events.TemporaryBan:
+		banReason := "Unknown"
+		switch evt.Code {
+		case 101:
+			banReason = "Sent to too many people"
+		case 102:
+			banReason = "Blocked by users"
+		case 103:
+			banReason = "Created too many groups"
+		case 104:
+			banReason = "Sent too many same message"
+		case 106:
+			banReason = "Broadcast list"
+		}
+		details := fmt.Sprintf("Code: %d (%s), Expires: %v", evt.Code, banReason, evt.Expire)
+		logentry.Warnf("temporary ban: %s", details)
+
+		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
+			go source.WAHandlers.OnDisconnected("temporary_ban", details)
+		}
+		return
+
+	case *events.StreamReplaced:
+		logentry.Warn("stream replaced by another client")
+
+		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
+			go source.WAHandlers.OnDisconnected("stream_replaced", "Another client connected with same session")
 		}
 		return
 

@@ -497,6 +497,11 @@ func (source *QpWhatsappServer) Stop(cause string) (err error) {
 		logentry := source.GetLogger()
 		logentry.Infof("stopping server: %s", cause)
 
+		// Send stop event to dispatchers before disconnecting
+		if source.Handler != nil {
+			go source.Handler.OnStopped(cause)
+		}
+
 		source.Disconnect("stop: " + cause)
 
 		if source.Handler != nil {
@@ -688,7 +693,12 @@ func (source *QpWhatsappServer) ToggleDevel() (handle bool, err error) {
 //endregion
 
 // delete this whatsapp server and underlaying connection
-func (server *QpWhatsappServer) Delete() error {
+func (server *QpWhatsappServer) Delete(cause string) error {
+	// Send delete event to dispatchers before deletion
+	if server.Handler != nil {
+		go server.Handler.OnDeleted(cause)
+	}
+
 	if server.connection != nil {
 		err := server.connection.Delete()
 		if err != nil {

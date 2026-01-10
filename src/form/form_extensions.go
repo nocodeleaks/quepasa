@@ -291,7 +291,7 @@ func FormDeleteController(w http.ResponseWriter, r *http.Request) {
 			{
 				destination = FormAccountEndpoint
 				logentry.Warnf("delete requested by form !")
-				err = models.WhatsappService.Delete(server)
+				err = models.WhatsappService.Delete(server, "form")
 			}
 		case "webhook":
 			{

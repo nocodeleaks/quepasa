@@ -218,8 +218,8 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 		Info:      eventData,
 	}
 
-	// Send through dispatchers
-	source.Trigger(message)
+	// Add to cache and send through dispatchers
+	source.appendMsgToCache(message, "disconnected")
 }
 
 /*
@@ -264,8 +264,8 @@ func (source *DispatchingHandler) OnStopped(cause string) {
 		Info:      eventData,
 	}
 
-	// Send through dispatchers
-	source.Trigger(message)
+	// Add to cache and send through dispatchers
+	source.appendMsgToCache(message, "stopped")
 }
 
 /*
@@ -310,8 +310,8 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 		Info:      eventData,
 	}
 
-	// Send through dispatchers
-	source.Trigger(message)
+	// Add to cache and send through dispatchers
+	source.appendMsgToCache(message, "deleted")
 }
 
 //#endregion

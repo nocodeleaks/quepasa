@@ -21,7 +21,7 @@ type IWhatsappHandlers interface {
 
 	OnConnected()
 
-	OnDisconnected()
+	OnDisconnected(cause string, details string)
 
 	IsInterfaceNil() bool
 }

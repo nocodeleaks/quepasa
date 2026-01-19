@@ -176,12 +176,142 @@ func (source *DispatchingHandler) OnConnected() {
 <summary>
 
 	Event on:
-		* When connected to whatsapp servers and authenticated
+		* When disconnected from whatsapp servers with specific cause
 
 </summary>
 */
-func (source *DispatchingHandler) OnDisconnected() {
+func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
+	if source.server == nil {
+		return
+	}
 
+	logger := source.GetLogger()
+	logger.Infof("dispatching server disconnect event: %s - %s", cause, details)
+
+	// Get phone number and wid from server
+	phone := source.server.GetNumber()
+	wid := source.server.GetWId()
+
+	// Create description with cause and details in text
+	description := fmt.Sprintf("WhatsApp disconnected: %s", cause)
+	if details != "" {
+		description = fmt.Sprintf("%s - %s", description, details)
+	}
+
+	// Create disconnect event message with JSON details
+	eventData := map[string]interface{}{
+		"event":     "disconnected",
+		"cause":     cause,
+		"details":   details,
+		"wid":       wid,
+		"phone":     phone,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        uuid.New().String(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      description,
+		Info:      eventData,
+	}
+
+	// Add to cache and send through dispatchers
+	source.appendMsgToCache(message, "disconnected")
+}
+
+/*
+<summary>
+
+	Event on:
+		* When server is manually stopped
+
+</summary>
+*/
+func (source *DispatchingHandler) OnStopped(cause string) {
+	if source.server == nil {
+		return
+	}
+
+	logger := source.GetLogger()
+	logger.Infof("dispatching server stop event: %s", cause)
+
+	// Get phone number and wid from server
+	phone := source.server.GetNumber()
+	wid := source.server.GetWId()
+
+	// Create description
+	description := fmt.Sprintf("WhatsApp server manually stopped: %s", cause)
+
+	// Create stop event message with JSON details
+	eventData := map[string]interface{}{
+		"event":     "stopped",
+		"cause":     cause,
+		"wid":       wid,
+		"phone":     phone,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        uuid.New().String(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      description,
+		Info:      eventData,
+	}
+
+	// Add to cache and send through dispatchers
+	source.appendMsgToCache(message, "stopped")
+}
+
+/*
+<summary>
+
+	Event on:
+		* When server is deleted
+
+</summary>
+*/
+func (source *DispatchingHandler) OnDeleted(cause string) {
+	if source.server == nil {
+		return
+	}
+
+	logger := source.GetLogger()
+	logger.Infof("dispatching server delete event: %s", cause)
+
+	// Get phone number and wid from server
+	phone := source.server.GetNumber()
+	wid := source.server.GetWId()
+
+	// Create description
+	description := fmt.Sprintf("WhatsApp server was deleted: %s", cause)
+
+	// Create delete event message with JSON details
+	eventData := map[string]interface{}{
+		"event":     "deleted",
+		"cause":     cause,
+		"wid":       wid,
+		"phone":     phone,
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:        uuid.New().String(),
+		Timestamp: time.Now().UTC(),
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      description,
+		Info:      eventData,
+	}
+
+	// Add to cache and send through dispatchers
+	source.appendMsgToCache(message, "deleted")
 }
 
 //#endregion

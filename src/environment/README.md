@@ -43,6 +43,29 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`API_TIMEOUT`** - API request timeout in milliseconds (default: `30000` = 30 seconds, minimum: `1`)
 - **`API_PREFIX`** - API routes prefix
 
+### Database User Seeding (First Startup Only)
+
+**⚠️ Currently only used during initial database seeding** - These variables control the default user created when the database is empty on first startup:
+
+- **`USER`** - Default username/email for initial database seeding
+  - **Default behavior**: If not set, uses `"default@quepasa.io"` with **empty password** (INSECURE!)
+  - **Recommended**: Always set both `USER` and `PASSWORD` in production environments
+  - **Usage**: Only read during first application startup when no users exist in database
+  - **Example**: `USER=admin@yourdomain.com`
+
+- **`PASSWORD`** - Password for default user created during seeding
+  - **Default behavior**: If `USER` is set but `PASSWORD` is empty, user creation will **FAIL** (security requirement)
+  - **Security**: Must be a strong password (recommended: 12+ characters, mixed case, numbers, symbols)
+  - **Usage**: Only used during first startup to create the initial admin user
+  - **Example**: `PASSWORD=YourSecurePassword123!@#`
+  - **Important**: After first startup, password changes must be done through the API or database directly
+
+**Security Notes:**
+- These variables are **only read once** during initial database seeding
+- If database already has users, these variables are **ignored**
+- Empty password is only allowed for legacy `default@quepasa.io` user (NOT recommended)
+- For new users via `USER` variable, password validation is **mandatory**
+
 ## 💾 Database Configuration
 
 - **`DBDRIVER`** - Database driver (default: `sqlite3`)

@@ -231,7 +231,7 @@ func generateThumbnailWithFFmpeg(data []byte, mediaType string, config Thumbnail
 
 	// Build FFmpeg command based on media type
 	var cmd *exec.Cmd
-	scaleFilter := fmt.Sprintf("scale='min(%d,iw)':min'(%d,ih)':force_original_aspect_ratio=decrease",
+	scaleFilter := fmt.Sprintf("scale='min(%d,iw)':'min(%d,ih)':force_original_aspect_ratio=decrease",
 		config.MaxWidth, config.MaxHeight)
 
 	switch mediaType {

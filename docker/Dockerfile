@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:latest as builder
+FROM golang:latest AS builder
 
 WORKDIR /build
 
@@ -11,7 +11,7 @@ RUN sed -i 's/\r//' docker-entrypoint.sh
 RUN go build -o service main.go
 
 # Run stage
-FROM golang:latest as src
+FROM golang:latest AS src
 
 # Install ffmpeg (video thumbnails) and poppler-utils (PDF thumbnails)
 RUN apt-get update && \

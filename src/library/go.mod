@@ -3,6 +3,7 @@ module github.com/nocodeleaks/quepasa/library
 require (
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/net v0.41.0
 )
 
 require (

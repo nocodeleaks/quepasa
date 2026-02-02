@@ -411,6 +411,29 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			} else {
 				internal := &waE2E.ExtendedTextMessage{Text: &messageText}
 				internal.ContextInfo = source.GetContextInfo(*msg)
+
+				// Add link preview if available
+				if msg.Url != nil && len(msg.Url.Reference) > 0 {
+					// MatchedText MUST be a substring present in Text
+					if strings.Contains(messageText, msg.Url.Reference) {
+						internal.MatchedText = proto.String(msg.Url.Reference)
+
+						if len(msg.Url.Title) > 0 {
+							internal.Title = proto.String(msg.Url.Title)
+						}
+						if len(msg.Url.Description) > 0 {
+							internal.Description = proto.String(msg.Url.Description)
+						}
+						if msg.Url.Thumbnail != nil && len(msg.Url.Thumbnail.Data) > 0 {
+							// Thumbnail.Data is base64 encoded, need to decode to bytes
+							thumbBytes, decodeErr := library.DecodeBase64(msg.Url.Thumbnail.Data)
+							if decodeErr == nil && len(thumbBytes) > 0 {
+								internal.JPEGThumbnail = thumbBytes
+							}
+						}
+					}
+				}
+
 				newMessage = &waE2E.Message{ExtendedTextMessage: internal}
 			}
 		}

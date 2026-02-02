@@ -28,6 +28,19 @@ type QpSendAnyRequest struct {
 
 	// BASE64 embed content
 	Content string `json:"content,omitempty"`
+
+	// Link Preview Options
+	// Enable automatic link preview fetching from URL in text
+	Preview bool `json:"preview,omitempty"`
+
+	// Custom title for link preview (overrides fetched title)
+	PreviewTitle string `json:"preview_title,omitempty"`
+
+	// Custom description for link preview (overrides fetched description)
+	PreviewDesc string `json:"preview_desc,omitempty"`
+
+	// Custom thumbnail URL for link preview (overrides fetched image)
+	PreviewThumb string `json:"preview_thumb,omitempty"`
 }
 
 // From BASE64 content

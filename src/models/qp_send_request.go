@@ -48,6 +48,9 @@ type QpSendRequest struct {
 	Poll     *whatsapp.WhatsappPoll     `json:"poll,omitempty"`     // Poll if exists
 	Location *whatsapp.WhatsappLocation `json:"location,omitempty"` // Location if exists
 	Contact  *whatsapp.WhatsappContact  `json:"contact,omitempty"`  // Contact if exists
+
+	// Link preview data (populated by preview=true option)
+	LinkPreview *whatsapp.WhatsappMessageUrl `json:"-"` // Internal use only, not from JSON
 }
 
 // get default log entry, never nil
@@ -111,6 +114,11 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	}
 
 	msg.Poll = source.Poll
+
+	// Set link preview if available
+	if source.LinkPreview != nil {
+		msg.Url = source.LinkPreview
+	}
 
 	// Check if this is a contact message
 	if source.Contact != nil {

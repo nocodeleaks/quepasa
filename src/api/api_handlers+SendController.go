@@ -25,6 +25,7 @@ import (
 //	@Description	- Polls (field "poll") — send the poll JSON in the "poll" field
 //	@Description	- Location (field "location") — send location with latitude/longitude in the "location" object
 //	@Description	- Contact (field "contact") — send contact with phone/name in the "contact" object
+//	@Description	- Link preview (field "preview") — auto-fetch Open Graph metadata and send with preview
 //	@Description
 //	@Description	Main fields:
 //	@Description	- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -35,6 +36,10 @@ import (
 //	@Description	- poll: JSON object with the poll (question, options, selections)
 //	@Description	- location: JSON object with location data (latitude, longitude, name, address, url)
 //	@Description	- contact: JSON object with contact data (phone, name, vcard)
+//	@Description	- preview: boolean to enable auto link preview (fetches Open Graph metadata from URL in text)
+//	@Description	- preview_title: custom title for link preview (overrides fetched title)
+//	@Description	- preview_desc: custom description for link preview (overrides fetched description)
+//	@Description	- preview_thumb: custom thumbnail URL for link preview (overrides fetched image)
 //	@Description
 //	@Description	Location object fields:
 //	@Description	- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -54,6 +59,25 @@ import (
 //	@Description	{
 //	@Description	"chatId": "5511999999999@s.whatsapp.net",
 //	@Description	"text": "Hello, world!"
+//	@Description	}
+//	@Description	```
+//	@Description	Text with Link Preview:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"text": "Check this out: https://example.com/article",
+//	@Description	"preview": true
+//	@Description	}
+//	@Description	```
+//	@Description	Text with Custom Link Preview:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"text": "Check this out: https://example.com/article",
+//	@Description	"preview": true,
+//	@Description	"preview_title": "Custom Title",
+//	@Description	"preview_desc": "Custom description",
+//	@Description	"preview_thumb": "https://example.com/thumb.jpg"
 //	@Description	}
 //	@Description	```
 //	@Description	Poll:
@@ -105,7 +129,7 @@ import (
 //	@Tags			Send
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,preview=bool,preview_title=string,preview_desc=string,preview_thumb=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object, or 'preview' for link preview."
 //	@Success		200		{object}	models.QpSendResponse
 //	@Failure		400		{object}	models.QpSendResponse
 //	@Security		ApiKeyAuth
@@ -191,7 +215,71 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
+	// Handle link preview if enabled
+	if request.Preview {
+		handleLinkPreview(request, response)
+	}
+
 	SendRequest(w, r, &request.QpSendRequest, server)
+}
+
+// handleLinkPreview processes link preview for the request
+func handleLinkPreview(request *models.QpSendAnyRequest, response *models.QpSendResponse) {
+	// Extract URL from text if not provided
+	urlToPreview := library.ExtractURLFromText(request.Text)
+	if urlToPreview == "" {
+		response.Debug = append(response.Debug, "[debug][handleLinkPreview] no URL found in text, skipping preview")
+		return
+	}
+
+	response.Debug = append(response.Debug, "[debug][handleLinkPreview] found URL: "+urlToPreview)
+
+	// Fetch Open Graph data
+	ogData, err := library.FetchOpenGraph(urlToPreview)
+	if err != nil {
+		response.Debug = append(response.Debug, "[warn][handleLinkPreview] failed to fetch OG data: "+err.Error())
+		// Continue without preview, don't fail the request
+		return
+	}
+
+	// Build preview data
+	previewUrl := &whatsapp.WhatsappMessageUrl{
+		Reference: urlToPreview,
+	}
+
+	// Use custom values if provided, otherwise use fetched OG data
+	if request.PreviewTitle != "" {
+		previewUrl.Title = request.PreviewTitle
+	} else if ogData.Title != "" {
+		previewUrl.Title = ogData.Title
+	}
+
+	if request.PreviewDesc != "" {
+		previewUrl.Description = request.PreviewDesc
+	} else if ogData.Description != "" {
+		previewUrl.Description = ogData.Description
+	}
+
+	// Handle thumbnail
+	thumbnailURL := request.PreviewThumb
+	if thumbnailURL == "" && ogData.ImageURL != "" {
+		thumbnailURL = ogData.ImageURL
+	}
+
+	if thumbnailURL != "" {
+		response.Debug = append(response.Debug, "[debug][handleLinkPreview] downloading thumbnail: "+thumbnailURL)
+		thumbData, err := library.DownloadImage(thumbnailURL)
+		if err != nil {
+			response.Debug = append(response.Debug, "[warn][handleLinkPreview] failed to download thumbnail: "+err.Error())
+		} else {
+			previewUrl.SetThumbnail(thumbData)
+			response.Debug = append(response.Debug, fmt.Sprintf("[debug][handleLinkPreview] thumbnail downloaded, size: %d bytes", len(thumbData)))
+		}
+	}
+
+	// Store preview data in request for sending
+	request.QpSendRequest.LinkPreview = previewUrl
+	response.Debug = append(response.Debug, "[debug][handleLinkPreview] preview ready with title: "+previewUrl.Title)
 }
 
 //endregion

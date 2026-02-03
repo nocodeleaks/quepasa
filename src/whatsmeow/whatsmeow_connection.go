@@ -428,6 +428,20 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 							// Thumbnail.Data is base64 encoded, need to decode to bytes
 							thumbBytes, decodeErr := library.DecodeBase64(msg.Url.Thumbnail.Data)
 							if decodeErr == nil && len(thumbBytes) > 0 {
+								// Upload thumbnail to WhatsApp servers for Android compatibility
+								// Android requires the thumbnail to be uploaded, not just inline bytes
+								uploadResp, uploadErr := source.Client.Upload(context.Background(), thumbBytes, whatsmeow.MediaLinkThumbnail)
+								if uploadErr == nil {
+									internal.ThumbnailDirectPath = &uploadResp.DirectPath
+									internal.ThumbnailSHA256 = uploadResp.FileSHA256
+									internal.ThumbnailEncSHA256 = uploadResp.FileEncSHA256
+									internal.MediaKey = uploadResp.MediaKey
+									internal.MediaKeyTimestamp = proto.Int64(time.Now().Unix())
+									logentry.Debugf("link preview thumbnail uploaded: %s", uploadResp.DirectPath)
+								} else {
+									logentry.Warnf("failed to upload link preview thumbnail: %v", uploadErr)
+								}
+								// Also set JPEGThumbnail for web compatibility (fallback)
 								internal.JPEGThumbnail = thumbBytes
 							}
 						}

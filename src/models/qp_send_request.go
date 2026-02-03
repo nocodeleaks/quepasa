@@ -17,6 +17,9 @@ type QpSendRequest struct {
 	// (Optional) Used if passed
 	Id string `json:"id,omitempty"`
 
+	// SkipPreview when true, disables thumbnail generation for attachments (internal use)
+	SkipPreview bool `json:"-"`
+
 	// Recipient of this message
 	ChatId string `json:"chatid"`
 
@@ -165,10 +168,11 @@ func (source *QpSendRequest) ToWhatsappAttachment() (result QpToWhatsappAttachme
 	logentry := source.GetLogger()
 
 	attach := &whatsapp.WhatsappAttachment{
-		Mimetype:   source.Mimetype,
-		FileLength: source.FileLength,
-		FileName:   source.FileName,
-		Seconds:    source.Seconds,
+		Mimetype:    source.Mimetype,
+		FileLength:  source.FileLength,
+		FileName:    source.FileName,
+		Seconds:     source.Seconds,
+		SkipPreview: source.SkipPreview,
 	}
 
 	// validating content length

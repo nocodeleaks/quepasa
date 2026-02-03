@@ -36,7 +36,9 @@ import (
 //	@Description	- poll: JSON object with the poll (question, options, selections)
 //	@Description	- location: JSON object with location data (latitude, longitude, name, address, url)
 //	@Description	- contact: JSON object with contact data (phone, name, vcard)
-//	@Description	- preview: boolean to enable auto link preview (fetches Open Graph metadata from URL in text)
+//
+// @Description	- preview: boolean to control thumbnail generation for media AND link preview for URLs (default: true). Set to false to disable both.
+//
 //	@Description	- preview_title: custom title for link preview (overrides fetched title)
 //	@Description	- preview_desc: custom description for link preview (overrides fetched description)
 //	@Description	- preview_thumb: custom thumbnail URL for link preview (overrides fetched image)
@@ -126,10 +128,18 @@ import (
 //	@Description	"url": "https://example.com/path/to/file.jpg"
 //	@Description	}
 //	@Description	```
+//	@Description	Image without thumbnail (preview disabled):
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"url": "https://example.com/path/to/file.jpg",
+//	@Description	"preview": false
+//	@Description	}
+//	@Description	```
 //	@Tags			Send
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,preview=bool,preview_title=string,preview_desc=string,preview_thumb=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object, or 'preview' for link preview."
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,preview=bool,preview_title=string,preview_desc=string,preview_thumb=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object. Field 'preview' (default: true) controls thumbnail generation for media AND link preview for URLs."
 //	@Success		200		{object}	models.QpSendResponse
 //	@Failure		400		{object}	models.QpSendResponse
 //	@Security		ApiKeyAuth
@@ -215,8 +225,11 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
-	// Handle link preview if enabled
-	if request.Preview {
+	// Set skip preview flag (inverse: preview=false means SkipPreview=true)
+	request.QpSendRequest.SkipPreview = !request.ShouldGeneratePreview()
+
+	// Handle link preview if enabled (default: true)
+	if request.ShouldGeneratePreview() {
 		handleLinkPreview(request, response)
 	}
 

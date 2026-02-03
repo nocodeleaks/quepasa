@@ -94,9 +94,9 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 		mimetype = proto.String(attach.Mimetype)
 	}
 
-	// Generate thumbnail if content is available
+	// Generate thumbnail if content is available and preview is not skipped
 	var thumbnail []byte
-	if attach.GetContent() != nil && len(*attach.GetContent()) > 0 {
+	if attach.GetContent() != nil && len(*attach.GetContent()) > 0 && !attach.SkipPreview {
 		content := *attach.GetContent()
 		mimeType := attach.Mimetype
 
@@ -110,6 +110,8 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 				log.Debugf("Generated thumbnail for %s: %d bytes", mimeType, len(thumbData))
 			}
 		}
+	} else if attach.SkipPreview {
+		log.Debugf("Thumbnail generation skipped by preview flag for %s", attach.Mimetype)
 	}
 
 	switch mediaType {

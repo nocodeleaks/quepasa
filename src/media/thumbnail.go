@@ -23,15 +23,18 @@ type ThumbnailConfig struct {
 	MaxWidth  uint
 	MaxHeight uint
 	Quality   int // JPEG quality 1-100
+	MaxBytes  int // Maximum thumbnail size in bytes (0 = no limit)
 }
 
 // DefaultThumbnailConfig returns default thumbnail settings
-// WhatsApp typically uses 72x72 to 320x320 thumbnails
+// WhatsApp has a limit of ~10KB for embedded thumbnails (JPEGThumbnail field)
+// Thumbnails larger than this limit are ignored by WhatsApp clients
 func DefaultThumbnailConfig() ThumbnailConfig {
 	return ThumbnailConfig{
-		MaxWidth:  320,
-		MaxHeight: 320,
-		Quality:   75,
+		MaxWidth:  200,   // Reduced from 320 to ensure smaller thumbnails
+		MaxHeight: 200,   // Reduced from 320 to ensure smaller thumbnails
+		Quality:   70,    // Reduced from 75 for smaller size
+		MaxBytes:  10240, // 10KB limit for WhatsApp compatibility
 	}
 }
 
@@ -88,14 +91,45 @@ func GenerateImageThumbnail(imageData []byte, config ThumbnailConfig) ([]byte, e
 	// Resize image maintaining aspect ratio
 	thumbnail := resize.Thumbnail(config.MaxWidth, config.MaxHeight, img, resize.Lanczos3)
 
-	// Encode as JPEG
-	var buf bytes.Buffer
-	err = jpeg.Encode(&buf, thumbnail, &jpeg.Options{Quality: config.Quality})
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode thumbnail as JPEG: %w", err)
+	// Encode as JPEG with progressive quality reduction if needed
+	quality := config.Quality
+	maxBytes := config.MaxBytes
+	if maxBytes <= 0 {
+		maxBytes = 10240 // Default 10KB limit for WhatsApp
 	}
 
-	log.Debugf("Generated image thumbnail: %d bytes", buf.Len())
+	var buf bytes.Buffer
+	for quality >= 30 { // Minimum quality threshold
+		buf.Reset()
+		err = jpeg.Encode(&buf, thumbnail, &jpeg.Options{Quality: quality})
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode thumbnail as JPEG: %w", err)
+		}
+
+		if buf.Len() <= maxBytes {
+			break // Size is acceptable
+		}
+
+		log.Debugf("Thumbnail too large (%d bytes), reducing quality from %d to %d", buf.Len(), quality, quality-10)
+		quality -= 10
+	}
+
+	// If still too large after quality reduction, try smaller dimensions
+	if buf.Len() > maxBytes {
+		log.Debugf("Thumbnail still too large (%d bytes) after quality reduction, reducing dimensions", buf.Len())
+		smallerConfig := config
+		smallerConfig.MaxWidth = config.MaxWidth * 3 / 4 // 75% of original
+		smallerConfig.MaxHeight = config.MaxHeight * 3 / 4
+		thumbnail = resize.Thumbnail(smallerConfig.MaxWidth, smallerConfig.MaxHeight, img, resize.Lanczos3)
+
+		buf.Reset()
+		err = jpeg.Encode(&buf, thumbnail, &jpeg.Options{Quality: 60})
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode smaller thumbnail as JPEG: %w", err)
+		}
+	}
+
+	log.Debugf("Generated image thumbnail: %d bytes (quality: %d)", buf.Len(), quality)
 	return buf.Bytes(), nil
 }
 

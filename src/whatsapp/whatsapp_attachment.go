@@ -24,6 +24,9 @@ type WhatsappAttachment struct {
 	// audio, used for define that this attach should be sent as ptt compatible, regards its incompatible mime type
 	ptt bool `json:"-"`
 
+	// SkipPreview when true, disables thumbnail generation for this attachment (default: false = generate)
+	SkipPreview bool `json:"-"`
+
 	// location msgs
 	Latitude  float64 `json:"latitude,omitempty"`
 	Longitude float64 `json:"longitude,omitempty"`

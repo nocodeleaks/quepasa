@@ -10,12 +10,12 @@ const (
 	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"           // synopsis length for messages
 	ENV_CACHELENGTH              = "CACHELENGTH"              // cache max items
 	ENV_CACHEDAYS                = "CACHEDAYS"                // cache max days
-	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"      // convert wave to OGG
 	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO" // treat compatible MIME as audio
 	ENV_ACCOUNTSETUP             = "ACCOUNTSETUP"             // enable or disable account creation
 	ENV_TESTING                  = "TESTING"                  // testing mode
 	ENV_LOGLEVEL                 = "LOGLEVEL"                 // general log level
 	ENV_CONVERT_PNG_TO_JPG       = "CONVERT_PNG_TO_JPG"       // convert PNG to JPG (not implemented yet)
+	ENV_FORCE_AUDIO_AS_PTT       = "FORCE_AUDIO_AS_PTT"       // force all audio formats to be sent as PTT voice notes
 )
 
 // GeneralConfig holds all general application configuration loaded from environment
@@ -26,12 +26,12 @@ type GeneralSettings struct {
 	SynopsisLength        uint32 `json:"synopsis_length"`
 	CacheLength           uint64 `json:"cache_length"`
 	CacheDays             uint32 `json:"cache_days"`
-	ConvertWaveToOGG      bool   `json:"convert_wave_to_ogg"`
 	CompatibleMIMEAsAudio bool   `json:"compatible_mime_as_audio"`
 	AccountSetup          bool   `json:"account_setup"`
 	Testing               bool   `json:"testing"`
 	LogLevel              string `json:"log_level"`
 	ConvertPNGToJPG       bool   `json:"convert_png_to_jpg"`
+	ForceAudioAsPTT       bool   `json:"force_audio_as_ptt"`
 }
 
 // NewGeneralSettings creates a new general settings by loading all values from environment
@@ -43,18 +43,18 @@ func NewGeneralSettings() GeneralSettings {
 		SynopsisLength:        getEnvOrDefaultUint32(ENV_SYNOPSISLENGTH, 150),
 		CacheLength:           getEnvOrDefaultUint64(ENV_CACHELENGTH, 0),
 		CacheDays:             getEnvOrDefaultUint32(ENV_CACHEDAYS, 0),
-		ConvertWaveToOGG:      getEnvOrDefaultBool(ENV_CONVERT_WAVE_TO_OGG, true),
 		CompatibleMIMEAsAudio: getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true),
 		AccountSetup:          getEnvOrDefaultBool(ENV_ACCOUNTSETUP, true),
 		Testing:               getEnvOrDefaultBool(ENV_TESTING, false),
 		LogLevel:              getEnvOrDefaultString(ENV_LOGLEVEL, ""),
 		ConvertPNGToJPG:       getEnvOrDefaultBool(ENV_CONVERT_PNG_TO_JPG, false),
+		ForceAudioAsPTT:       getEnvOrDefaultBool(ENV_FORCE_AUDIO_AS_PTT, true),
 	}
 }
 
-// UseCompatibleMIMEsAsAudio returns combined result of ConvertWaveToOGG and CompatibleMIMEAsAudio
+// UseCompatibleMIMEsAsAudio returns combined result of ForceAudioAsPTT and CompatibleMIMEAsAudio
 func (config *GeneralSettings) UseCompatibleMIMEsAsAudio() bool {
-	return config.ConvertWaveToOGG && config.CompatibleMIMEAsAudio
+	return config.ForceAudioAsPTT && config.CompatibleMIMEAsAudio
 }
 
 // Migrate checks if database migrations should be enabled based on the Migrations setting

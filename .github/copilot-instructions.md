@@ -40,15 +40,15 @@ ContactInfo fields priority (use `ExtractContactName()`):
 ## Documentation Structure
 - AGENTS.md: Task-specific AI agent instructions for issues/features (only in feature branches, not in main/develop)
 - README.md: Human-readable documentation
-- USAGE-*.md: Usage instructions for scripts/specific code
+- INSTRUCTION-*.md: Instruction documents for scripts and specific technical flows
 - copilot-instructions.md: Global AI agent guidelines (this file)
 
-## Development Tools and Usage Documentation
+## Development Tools and Instruction Documents
 
-* **Testing**: Read docs/USAGE-Testing.md for guidelines on setting up tests, creating test users/servers, and using temporary master keys.
+* **Testing**: Read the testing instruction document in docs (currently mapped to docs/USAGE-Testing.md) for guidelines on test setup, test users/servers, and temporary master keys.
 * **Build**: All builds should be "go build -o ../.dist/quepasa.exe", overriding any existing file.
-* **Message Flow**: Read docs/USAGE-Message-Flow.md for detailed message processing flow from Whatsmeow to final dispatch.
-* **WebHooks**: Read docs/USAGE-WebHooks.md for webhook setup and configuration.
+* **Message Flow**: Read the message flow instruction document in docs (currently mapped to docs/USAGE-Message-Flow.md) for detailed processing from Whatsmeow to final dispatch.
+* **WebHooks**: Read the webhook instruction document in docs (currently mapped to docs/USAGE-WebHooks.md) for webhook setup and configuration.
 * **Whatsmeow Update**: `update-whatsmeow.ps1`.
 
 ## Key Files

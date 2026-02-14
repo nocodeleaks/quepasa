@@ -101,6 +101,7 @@ func ValidateUsername(r *http.Request) (username string, ex ApiException) {
 //	@Tags			Connection
 //	@Produce		json
 //	@Param			phone	query		string	true	"Phone number for pairing"
+//	@Param			historysyncdays	query		int	false	"Days of message history to sync"
 //	@Success		200		{object}	models.QpResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -134,7 +135,7 @@ func PairCodeController(w http.ResponseWriter, r *http.Request) {
 		Username:        username,
 		HistorySyncDays: uint32(historysyncdays),
 	}
-	
+
 	con, err := pairing.GetConnection()
 	if err != nil {
 		err := fmt.Errorf("pair code controller, can't get connection: %s", err.Error())

@@ -2198,6 +2198,10 @@ paths:
         name: phone
         required: true
         type: string
+      - description: Days of message history to sync
+        in: query
+        name: historysyncdays
+        type: integer
       produces:
       - application/json
       responses:

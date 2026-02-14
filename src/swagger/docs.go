@@ -1512,6 +1512,12 @@ const docTemplate = `{
                         "name": "phone",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Days of message history to sync",
+                        "name": "historysyncdays",
+                        "in": "query"
                     }
                 ],
                 "responses": {

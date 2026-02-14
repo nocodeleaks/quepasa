@@ -2,6 +2,13 @@
 - Version: 202602142220
 - Scope: GitHub Actions workflow for Telegram notifications in this repository.
 
+## Tags
+- domain:notifications
+- feature:telegram
+- phase:operations
+- risk:secrets
+- owner:devops
+
 ## Files
 - Workflow: `.github/workflows/telegram-notify.yml`
 - Local token file (confidential): `.telegram.token`

@@ -43,6 +43,11 @@ ContactInfo fields priority (use `ExtractContactName()`):
 - `/.github/instructions/*.instructions.md`: Instruction documents for scripts and specific technical flows
 - copilot-instructions.md: Global AI agent guidelines (this file)
 
+### Instruction Document Metadata
+- Each instruction document should define 4 to 6 tags.
+- Include at least one `phase:*` tag to support search by phase.
+- Prefer stable tag naming (e.g., `domain:*`, `feature:*`, `phase:*`, `risk:*`, `owner:*`).
+
 ## Development Tools and Instruction Documents
 
 * **Testing**: Read the testing instruction document in docs (currently mapped to docs/USAGE-Testing.md) for guidelines on test setup, test users/servers, and temporary master keys.

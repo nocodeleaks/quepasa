@@ -50,35 +50,35 @@ jobs:
           if [ "$EVENT" = "push" ]; then
             COMMIT_MSG=$(jq -r '.head_commit.message // "(no message)"' "$GITHUB_EVENT_PATH")
             COMMIT_URL=$(jq -r '.head_commit.url // ""' "$GITHUB_EVENT_PATH")
-            TEXT="🚀 GitHub update in ${REPO}\n\nType: push\nBranch: ${REF_NAME}\nBy: ${ACTOR}\nCommit: ${COMMIT_MSG}\n${COMMIT_URL}\n\nRun: ${RUN_URL}"
+            TEXT="🚀 <b>Push</b> em ${REPO}\n\n📌 Branch: <code>${REF_NAME}</code>\n👤 By: ${ACTOR}\n\n💬 ${COMMIT_MSG}\n\n🔗 ${COMMIT_URL}"
 
           elif [ "$EVENT" = "pull_request" ]; then
             PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
             PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
             PR_URL=$(jq -r '.pull_request.html_url' "$GITHUB_EVENT_PATH")
             PR_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
-            TEXT="🔀 GitHub update in ${REPO}\n\nType: pull_request (${PR_ACTION})\nPR: #${PR_NUMBER} - ${PR_TITLE}\nBy: ${ACTOR}\n${PR_URL}\n\nRun: ${RUN_URL}"
+            TEXT="🔀 <b>Pull Request ${PR_ACTION}</b>\n\n#${PR_NUMBER} - ${PR_TITLE}\n👤 By: ${ACTOR}\n\n🔗 ${PR_URL}"
 
           elif [ "$EVENT" = "issues" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
             ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
             ISSUE_URL=$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")
             ISSUE_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
-            TEXT="📌 GitHub update in ${REPO}\n\nType: issue (${ISSUE_ACTION})\nIssue: #${ISSUE_NUMBER} - ${ISSUE_TITLE}\nBy: ${ACTOR}\n${ISSUE_URL}\n\nRun: ${RUN_URL}"
+            TEXT="📌 <b>Issue ${ISSUE_ACTION}</b>\n\n#${ISSUE_NUMBER} - ${ISSUE_TITLE}\n👤 By: ${ACTOR}\n\n🔗 ${ISSUE_URL}"
 
           elif [ "$EVENT" = "issue_comment" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
             ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
             COMMENT_URL=$(jq -r '.comment.html_url' "$GITHUB_EVENT_PATH")
-            TEXT="💬 GitHub update in ${REPO}\n\nType: issue_comment\nIssue: #${ISSUE_NUMBER} - ${ISSUE_TITLE}\nBy: ${ACTOR}\n${COMMENT_URL}\n\nRun: ${RUN_URL}"
+            TEXT="💬 <b>Comentário</b> em issue\n\n#${ISSUE_NUMBER} - ${ISSUE_TITLE}\n👤 By: ${ACTOR}\n\n🔗 ${COMMENT_URL}"
 
           elif [ "$EVENT" = "release" ]; then
             RELEASE_NAME=$(jq -r '.release.name // .release.tag_name' "$GITHUB_EVENT_PATH")
             RELEASE_URL=$(jq -r '.release.html_url' "$GITHUB_EVENT_PATH")
-            TEXT="📦 GitHub update in ${REPO}\n\nType: release\nRelease: ${RELEASE_NAME}\nBy: ${ACTOR}\n${RELEASE_URL}\n\nRun: ${RUN_URL}"
+            TEXT="📦 <b>Nova Release</b>\n\n🏷️ ${RELEASE_NAME}\n👤 By: ${ACTOR}\n\n🔗 ${RELEASE_URL}"
 
           else
-            TEXT="ℹ️ GitHub update in ${REPO}\n\nType: ${EVENT}\nBy: ${ACTOR}\nRepo: ${REPO_URL}\n\nRun: ${RUN_URL}"
+            TEXT="ℹ️ <b>${EVENT}</b> em ${REPO}\n\n👤 By: ${ACTOR}\n\n🔗 ${RUN_URL}"
           fi
 
           {
@@ -101,11 +101,13 @@ jobs:
             curl -sS --fail -X POST "$API_URL" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "message_thread_id=${TELEGRAM_THREAD_ID}" \
+              -d "parse_mode=HTML" \
               --data-urlencode "text=${{ steps.build.outputs.text }}" \
               -d "disable_web_page_preview=true"
           else
             curl -sS --fail -X POST "$API_URL" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
+              -d "parse_mode=HTML" \
               --data-urlencode "text=${{ steps.build.outputs.text }}" \
               -d "disable_web_page_preview=true"
           fi

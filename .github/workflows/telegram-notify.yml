@@ -1,0 +1,96 @@
+name: Telegram Notifications
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+  issues:
+    types: [opened, reopened, edited, closed]
+  issue_comment:
+    types: [created]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  notify:
+    name: Send Telegram Notification
+    runs-on: ubuntu-latest
+    if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
+
+    steps:
+      - name: Build message
+        id: build
+        shell: bash
+        run: |
+          EVENT="${GITHUB_EVENT_NAME}"
+          REPO="${GITHUB_REPOSITORY}"
+          ACTOR="${GITHUB_ACTOR}"
+          REF_NAME="${GITHUB_REF_NAME}"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          REPO_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+
+          if [ "$EVENT" = "push" ]; then
+            COMMIT_MSG=$(jq -r '.head_commit.message // "(no message)"' "$GITHUB_EVENT_PATH")
+            COMMIT_URL=$(jq -r '.head_commit.url // ""' "$GITHUB_EVENT_PATH")
+            TEXT="🚀 GitHub update in ${REPO}\n\nType: push\nBranch: ${REF_NAME}\nBy: ${ACTOR}\nCommit: ${COMMIT_MSG}\n${COMMIT_URL}\n\nRun: ${RUN_URL}"
+
+          elif [ "$EVENT" = "pull_request" ]; then
+            PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
+            PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
+            PR_URL=$(jq -r '.pull_request.html_url' "$GITHUB_EVENT_PATH")
+            PR_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
+            TEXT="🔀 GitHub update in ${REPO}\n\nType: pull_request (${PR_ACTION})\nPR: #${PR_NUMBER} - ${PR_TITLE}\nBy: ${ACTOR}\n${PR_URL}\n\nRun: ${RUN_URL}"
+
+          elif [ "$EVENT" = "issues" ]; then
+            ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
+            ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
+            ISSUE_URL=$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")
+            ISSUE_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
+            TEXT="📌 GitHub update in ${REPO}\n\nType: issue (${ISSUE_ACTION})\nIssue: #${ISSUE_NUMBER} - ${ISSUE_TITLE}\nBy: ${ACTOR}\n${ISSUE_URL}\n\nRun: ${RUN_URL}"
+
+          elif [ "$EVENT" = "issue_comment" ]; then
+            ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
+            ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
+            COMMENT_URL=$(jq -r '.comment.html_url' "$GITHUB_EVENT_PATH")
+            TEXT="💬 GitHub update in ${REPO}\n\nType: issue_comment\nIssue: #${ISSUE_NUMBER} - ${ISSUE_TITLE}\nBy: ${ACTOR}\n${COMMENT_URL}\n\nRun: ${RUN_URL}"
+
+          elif [ "$EVENT" = "release" ]; then
+            RELEASE_NAME=$(jq -r '.release.name // .release.tag_name' "$GITHUB_EVENT_PATH")
+            RELEASE_URL=$(jq -r '.release.html_url' "$GITHUB_EVENT_PATH")
+            TEXT="📦 GitHub update in ${REPO}\n\nType: release\nRelease: ${RELEASE_NAME}\nBy: ${ACTOR}\n${RELEASE_URL}\n\nRun: ${RUN_URL}"
+
+          else
+            TEXT="ℹ️ GitHub update in ${REPO}\n\nType: ${EVENT}\nBy: ${ACTOR}\nRepo: ${REPO_URL}\n\nRun: ${RUN_URL}"
+          fi
+
+          {
+            echo "text<<EOF"
+            echo "$TEXT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_THREAD_ID: ${{ secrets.TELEGRAM_THREAD_ID }}
+        shell: bash
+        run: |
+          API_URL="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+
+          if [ -n "${TELEGRAM_THREAD_ID}" ]; then
+            curl -sS --fail -X POST "$API_URL" \
+              -d "chat_id=${TELEGRAM_CHAT_ID}" \
+              -d "message_thread_id=${TELEGRAM_THREAD_ID}" \
+              --data-urlencode "text=${{ steps.build.outputs.text }}" \
+              -d "disable_web_page_preview=true"
+          else
+            curl -sS --fail -X POST "$API_URL" \
+              -d "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=${{ steps.build.outputs.text }}" \
+              -d "disable_web_page_preview=true"
+          fi

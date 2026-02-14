@@ -19,11 +19,25 @@ jobs:
   notify:
     name: Send Telegram Notification
     runs-on: ubuntu-latest
-    if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
 
     steps:
+      - name: Check required secrets
+        id: precheck
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        shell: bash
+        run: |
+          if [ -z "${TELEGRAM_BOT_TOKEN}" ] || [ -z "${TELEGRAM_CHAT_ID}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Telegram secrets are missing. Skipping notification."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build message
         id: build
+        if: ${{ steps.precheck.outputs.ready == 'true' }}
         shell: bash
         run: |
           EVENT="${GITHUB_EVENT_NAME}"
@@ -74,6 +88,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Send to Telegram
+        if: ${{ steps.precheck.outputs.ready == 'true' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

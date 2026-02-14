@@ -300,4 +300,20 @@ func ToggleCalls(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+func ToggleReadUpdate(source whatsapp.IWhatsappOptions) error {
+	options := source.GetOptions()
+
+	switch options.ReadUpdate {
+	case whatsapp.UnSetBooleanType:
+		options.ReadUpdate = whatsapp.TrueBooleanType
+	case whatsapp.TrueBooleanType:
+		options.ReadUpdate = whatsapp.FalseBooleanType
+	default:
+		options.ReadUpdate = whatsapp.UnSetBooleanType
+	}
+
+	reason := fmt.Sprintf("toggle read update: %s", options.ReadUpdate)
+	return source.Save(reason)
+}
+
 //#endregion

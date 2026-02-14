@@ -170,6 +170,9 @@ definitions:
     properties:
       master_key:
         type: string
+      password:
+        description: default password for database seeding
+        type: string
       prefix:
         type: string
       signing_secret:
@@ -179,6 +182,9 @@ definitions:
         type: integer
       use_ssl_websocket:
         type: boolean
+      user:
+        description: default user for database seeding
+        type: string
       webhook_timeout:
         description: webhook timeout in milliseconds
         type: integer
@@ -283,7 +289,7 @@ definitions:
         type: boolean
       convert_png_to_jpg:
         type: boolean
-      convert_wave_to_ogg:
+      force_audio_as_ptt:
         type: boolean
       log_level:
         type: string
@@ -1427,12 +1433,19 @@ paths:
       consumes:
       - application/json
       description: Execute control commands for the bot server (start, stop, restart)
+        or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
       parameters:
       - description: Command action
         enum:
         - start
         - stop
         - restart
+        - groups
+        - broadcasts
+        - readreceipts
+        - readupdate
+        - calls
+        - debug
         in: query
         name: action
         required: true
@@ -2458,6 +2471,7 @@ paths:
         - Polls (field "poll") — send the poll JSON in the "poll" field
         - Location (field "location") — send location with latitude/longitude in the "location" object
         - Contact (field "contact") — send contact with phone/name in the "contact" object
+        - Link preview (field "preview") — auto-fetch Open Graph metadata and send with preview
 
         Main fields:
         - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -2468,6 +2482,10 @@ paths:
         - poll: JSON object with the poll (question, options, selections)
         - location: JSON object with location data (latitude, longitude, name, address, url)
         - contact: JSON object with contact data (phone, name, vcard)
+        - preview: boolean to control thumbnail generation for media AND link preview for URLs (default: true). Set to false to disable both.
+        - preview_title: custom title for link preview (overrides fetched title)
+        - preview_desc: custom description for link preview (overrides fetched description)
+        - preview_thumb: custom thumbnail URL for link preview (overrides fetched image)
 
         Location object fields:
         - latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -2487,6 +2505,25 @@ paths:
         {
         "chatId": "5511999999999@s.whatsapp.net",
         "text": "Hello, world!"
+        }
+        ```
+        Text with Link Preview:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "text": "Check this out: https://example.com/article",
+        "preview": true
+        }
+        ```
+        Text with Custom Link Preview:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "text": "Check this out: https://example.com/article",
+        "preview": true,
+        "preview_title": "Custom Title",
+        "preview_desc": "Custom description",
+        "preview_thumb": "https://example.com/thumb.jpg"
         }
         ```
         Poll:
@@ -2535,10 +2572,19 @@ paths:
         "url": "https://example.com/path/to/file.jpg"
         }
         ```
+        Image without thumbnail (preview disabled):
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "url": "https://example.com/path/to/file.jpg",
+        "preview": false
+        }
+        ```
       parameters:
-      - description: Request body. Use 'content' for base64, 'url' for remote files,
-          'poll' for poll JSON, 'location' for location object, or 'contact' for contact
-          object.
+      - description: 'Request body. Use ''content'' for base64, ''url'' for remote
+          files, ''poll'' for poll JSON, ''location'' for location object, ''contact''
+          for contact object. Field ''preview'' (default: true) controls thumbnail
+          generation for media AND link preview for URLs.'
         in: body
         name: request
         schema:
@@ -2584,6 +2630,14 @@ paths:
                 selections:
                   type: integer
               type: object
+            preview:
+              type: boolean
+            preview_desc:
+              type: string
+            preview_thumb:
+              type: string
+            preview_title:
+              type: string
             text:
               type: string
             url:

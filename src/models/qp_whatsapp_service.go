@@ -115,6 +115,14 @@ func (source *QPWhatsappService) AppendPaired(paired *QpWhatsappPairing) (server
 	server.connection = paired.conn
 	server.Verified = true
 
+	// Update handler on the existing connection
+	// The connection was created during pairing without the server's handler
+	// We must link the server's handler to receive messages properly
+	if server.Handler != nil && server.connection != nil && !server.connection.IsInterfaceNil() {
+		logger.Debug("updating server handler on paired connection")
+		server.connection.UpdateHandler(server.Handler)
+	}
+
 	// checking user
 	if len(paired.Username) > 0 {
 		server.User = paired.Username

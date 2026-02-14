@@ -31,7 +31,7 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
     env: 
-      BINARYNAME: ${{github.repository}}-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
+      BINARYNAME: quepasa-${{matrix.go-os}}-${{matrix.go-arch}}${{matrix.suffix}}
       
     steps:
     - uses: actions/checkout@v4
@@ -63,8 +63,77 @@ jobs:
           git push
         fi
 
-    - name: Release
-      uses: softprops/action-gh-release@v2
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
       with:
-        files: ./src/${{env.BINARYNAME}}
-        tag_name: latest
+        name: ${{env.BINARYNAME}}
+        path: ./src/${{env.BINARYNAME}}
+        retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+        merge-multiple: true
+
+    - name: Extract version from source
+      id: version
+      run: |
+        VERSION=$(grep -oP 'QpVersion\s*=\s*"\K[^"]+' src/models/qp_defaults.go)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Detected version: $VERSION"
+
+    - name: Update Latest Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ steps.version.outputs.version }}
+        COMMIT_SHA: ${{ github.sha }}
+      run: |
+        # Delete existing latest release if it exists
+        gh release delete latest --yes || true
+        # Delete the latest tag
+        git push origin :refs/tags/latest || true
+        # Create new latest release with all artifacts
+        gh release create latest ./artifacts/* \
+          --title "Latest Build" \
+          --notes "🚀 Latest automated build from main branch
+
+        Version: **${VERSION}**
+        Commit: ${COMMIT_SHA}
+        Docker: codeleaks/quepasa:latest" \
+          --latest
+
+    - name: Create Version Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ steps.version.outputs.version }}
+        COMMIT_SHA: ${{ github.sha }}
+      run: |
+        # Delete existing version release if it exists
+        gh release delete "$VERSION" --yes || true
+        # Delete the version tag
+        git push origin :refs/tags/"$VERSION" || true
+        # Create version-specific release
+        gh release create "$VERSION" ./artifacts/* \
+          --title "Release $VERSION" \
+          --notes "📦 Release $VERSION
+
+        Commit: ${COMMIT_SHA}
+        Docker: codeleaks/quepasa:${VERSION}
+
+        ## Assets
+        - quepasa-linux-amd64
+        - quepasa-linux-arm64
+        - quepasa-darwin-amd64
+        - quepasa-darwin-arm64
+        - quepasa-windows-amd64.exe"
+        echo "Created release $VERSION"
+

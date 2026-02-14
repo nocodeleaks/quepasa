@@ -6,7 +6,8 @@ require github.com/sirupsen/logrus v1.9.3
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
-	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

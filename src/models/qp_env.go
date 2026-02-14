@@ -35,8 +35,8 @@ const (
 	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"
 	ENV_CACHELENGTH              = "CACHELENGTH" // cache max items
 	ENV_CACHEDAYS                = "CACHEDAYS"   // cache max days
-	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"
 	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO"
+	ENV_FORCE_AUDIO_AS_PTT       = "FORCE_AUDIO_AS_PTT"
 
 	ENV_READUPDATE      = "READUPDATE"
 	ENV_READRECEIPTS    = "READRECEIPTS"
@@ -128,9 +128,7 @@ func (*Environment) GetDBParameters() library.DatabaseParameters {
 // UseCompatibleMIMEsAsAudio checks if compatible MIME types should be treated as audio.
 // Defaults to true.
 func (*Environment) UseCompatibleMIMEsAsAudio() bool {
-	convertWave := getEnvOrDefaultBool(ENV_CONVERT_WAVE_TO_OGG, true)
-	compatibleMime := getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true)
-	return convertWave || compatibleMime
+	return getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true)
 }
 
 // UseSSLForWebSocket checks if SSL should be used for WebSocket QR code. Defaults to false.
@@ -139,8 +137,14 @@ func (*Environment) UseSSLForWebSocket() bool {
 }
 
 // Migrate checks if database migrations should be enabled. Defaults to true.
+// The MIGRATIONS variable can be "true"/"false" for boolean control,
+// or a path string to specify custom migration directory.
 func (*Environment) Migrate() bool {
-	return getEnvOrDefaultBool(ENV_MIGRATIONS, true)
+	if valueStr, ok := os.LookupEnv(ENV_MIGRATIONS); ok {
+		trimmedValueStr := strings.TrimSpace(valueStr)
+		return trimmedValueStr != "false"
+	}
+	return true // default value
 }
 
 // MigrationPath returns the custom path for database migrations.

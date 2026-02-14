@@ -22,6 +22,11 @@
       </div>
     {{ end }}
 
+    <a class="button is-info" href="/swagger/index.html" target="_blank">
+      <span class="icon"><i class="fas fa-book"></i></span>
+      <span>Swagger</span>
+    </a>
+
     {{ if .ErrorMessage }}
       <div class="notification is-warning">
         {{ .ErrorMessage }}
@@ -108,6 +113,14 @@
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Calls">
                         <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
+                      </button>
+                    </form>
+                  </p>
+                  <p class="control"> 
+                    <form class="" method="post" action="/form/toggle?key=server-readupdate" data-value="{{ .ReadUpdate }}">
+                      <input name="token" type="hidden" value="{{ .Token }}">
+                      <button class="button {{ if .IsSetReadUpdate }}{{ if .GetReadUpdate }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Update">
+                        <span class="icon is-small is-inline"><i class="fa fa-eye"></i></span>
                       </button>
                     </form>
                   </p>

@@ -24,7 +24,7 @@ func SetupFormHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	*/
 	data := FormSetupData{
-		PageTitle: "Setup",
+		PageTitle: "Setup - Quepasa",
 	}
 
 	renderSetupForm(w, data)
@@ -40,7 +40,7 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	*/
 	data := FormSetupData{
-		PageTitle: "Setup",
+		PageTitle: "Setup - Quepasa",
 	}
 
 	r.ParseForm()

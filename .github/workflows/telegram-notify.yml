@@ -53,7 +53,6 @@ jobs:
             TEXT="🚀 Push em ${REPO}
 
 📌 Branch: ${REF_NAME}
-👤 By: ${ACTOR}
 
 💬 ${COMMIT_MSG}
 
@@ -67,7 +66,6 @@ jobs:
             TEXT="🔀 Pull Request ${PR_ACTION}
 
 #${PR_NUMBER} - ${PR_TITLE}
-👤 By: ${ACTOR}
 
 🔗 ${PR_URL}"
 
@@ -79,7 +77,6 @@ jobs:
             TEXT="📌 Issue ${ISSUE_ACTION}
 
 #${ISSUE_NUMBER} - ${ISSUE_TITLE}
-👤 By: ${ACTOR}
 
 🔗 ${ISSUE_URL}"
 
@@ -90,7 +87,6 @@ jobs:
             TEXT="💬 Comentário em issue
 
 #${ISSUE_NUMBER} - ${ISSUE_TITLE}
-👤 By: ${ACTOR}
 
 🔗 ${COMMENT_URL}"
 
@@ -100,14 +96,11 @@ jobs:
             TEXT="📦 Nova Release
 
 🏷️ ${RELEASE_NAME}
-👤 By: ${ACTOR}
 
 🔗 ${RELEASE_URL}"
 
           else
             TEXT="ℹ️ ${EVENT} em ${REPO}
-
-👤 By: ${ACTOR}
 
 🔗 ${RUN_URL}"
           fi

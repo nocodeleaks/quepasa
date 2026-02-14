@@ -40,7 +40,7 @@ ContactInfo fields priority (use `ExtractContactName()`):
 ## Documentation Structure
 - AGENTS.md: Task-specific AI agent instructions for issues/features (only in feature branches, not in main/develop)
 - README.md: Human-readable documentation
-- INSTRUCTION-*.md: Instruction documents for scripts and specific technical flows
+- `/.github/instructions/*.instructions.md`: Instruction documents for scripts and specific technical flows
 - copilot-instructions.md: Global AI agent guidelines (this file)
 
 ## Development Tools and Instruction Documents
@@ -49,7 +49,7 @@ ContactInfo fields priority (use `ExtractContactName()`):
 * **Build**: All builds should be "go build -o ../.dist/quepasa.exe", overriding any existing file.
 * **Message Flow**: Read the message flow instruction document in docs (currently mapped to docs/USAGE-Message-Flow.md) for detailed processing from Whatsmeow to final dispatch.
 * **WebHooks**: Read the webhook instruction document in docs (currently mapped to docs/USAGE-WebHooks.md) for webhook setup and configuration.
-* **Telegram Notifications**: Read docs/INSTRUCTION-Telegram-Notifications.md before changing workflow `.github/workflows/telegram-notify.yml` or Telegram notification format.
+* **Telegram Notifications**: Read .github/instructions/telegram-notifications.instructions.md before changing workflow `.github/workflows/telegram-notify.yml` or Telegram notification format.
 * **Whatsmeow Update**: `update-whatsmeow.ps1`.
 
 ## Key Files

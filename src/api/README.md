@@ -62,7 +62,7 @@ swag init -g main.go --output ./swagger
 
 ## Development Guidelines
 
-For AI agent-specific instructions, check the package-level `AGENTS.md` file.
+For AI agent-specific instructions, check `/.github/instructions/` and use the file whose first tag matches the module context.
 
 ### Key Patterns
 

@@ -51,14 +51,14 @@ jobs:
             COMMIT_MSG=$(jq -r '.head_commit.message // "(no message)"' "$GITHUB_EVENT_PATH")
             COMMIT_URL=$(jq -r '.head_commit.url // ""' "$GITHUB_EVENT_PATH")
             TEXT="
-🚀 *Push* em ${REPO}
+🚀 Push em ${REPO}
 
-📌 Branch: \`${REF_NAME}\`
+📌 Branch: ${REF_NAME}
 👤 By: ${ACTOR}
 
 💬 ${COMMIT_MSG}
 
-🔗 [Ver commit](${COMMIT_URL})"
+🔗 ${COMMIT_URL}"
 
           elif [ "$EVENT" = "pull_request" ]; then
             PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
@@ -66,12 +66,12 @@ jobs:
             PR_URL=$(jq -r '.pull_request.html_url' "$GITHUB_EVENT_PATH")
             PR_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
             TEXT="
-🔀 *Pull Request ${PR_ACTION}*
+🔀 Pull Request ${PR_ACTION}
 
-#${PR_NUMBER} \- ${PR_TITLE}
+#${PR_NUMBER} - ${PR_TITLE}
 👤 By: ${ACTOR}
 
-🔗 [Ver PR](${PR_URL})"
+🔗 ${PR_URL}"
 
           elif [ "$EVENT" = "issues" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
@@ -79,43 +79,43 @@ jobs:
             ISSUE_URL=$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")
             ISSUE_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
             TEXT="
-📌 *Issue ${ISSUE_ACTION}*
+📌 Issue ${ISSUE_ACTION}
 
-#${ISSUE_NUMBER} \- ${ISSUE_TITLE}
+#${ISSUE_NUMBER} - ${ISSUE_TITLE}
 👤 By: ${ACTOR}
 
-🔗 [Ver issue](${ISSUE_URL})"
+🔗 ${ISSUE_URL}"
 
           elif [ "$EVENT" = "issue_comment" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
             ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
             COMMENT_URL=$(jq -r '.comment.html_url' "$GITHUB_EVENT_PATH")
             TEXT="
-💬 *Comentário* em issue
+💬 Comentário em issue
 
-#${ISSUE_NUMBER} \- ${ISSUE_TITLE}
+#${ISSUE_NUMBER} - ${ISSUE_TITLE}
 👤 By: ${ACTOR}
 
-🔗 [Ver comentário](${COMMENT_URL})"
+🔗 ${COMMENT_URL}"
 
           elif [ "$EVENT" = "release" ]; then
             RELEASE_NAME=$(jq -r '.release.name // .release.tag_name' "$GITHUB_EVENT_PATH")
             RELEASE_URL=$(jq -r '.release.html_url' "$GITHUB_EVENT_PATH")
             TEXT="
-📦 *Nova Release*
+📦 Nova Release
 
 🏷️ ${RELEASE_NAME}
 👤 By: ${ACTOR}
 
-🔗 [Ver release](${RELEASE_URL})"
+🔗 ${RELEASE_URL}"
 
           else
             TEXT="
-ℹ️ *${EVENT}* em ${REPO}
+ℹ️ ${EVENT} em ${REPO}
 
 👤 By: ${ACTOR}
 
-🔗 [Ver detalhes](${RUN_URL})"
+🔗 ${RUN_URL}"
           fi
 
           {
@@ -138,13 +138,11 @@ jobs:
             curl -sS --fail -X POST "$API_URL" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
               -d "message_thread_id=${TELEGRAM_THREAD_ID}" \
-              -d "parse_mode=MarkdownV2" \
               --data-urlencode "text=${{ steps.build.outputs.text }}" \
-              -d "disable_web_page_preview=true"
+              -d "disable_web_page_preview=false"
           else
             curl -sS --fail -X POST "$API_URL" \
               -d "chat_id=${TELEGRAM_CHAT_ID}" \
-              -d "parse_mode=MarkdownV2" \
               --data-urlencode "text=${{ steps.build.outputs.text }}" \
-              -d "disable_web_page_preview=true"
+              -d "disable_web_page_preview=false"
           fi

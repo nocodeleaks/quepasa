@@ -50,35 +50,35 @@ jobs:
           if [ "$EVENT" = "push" ]; then
             COMMIT_MSG=$(jq -r '.head_commit.message // "(no message)"' "$GITHUB_EVENT_PATH")
             COMMIT_URL=$(jq -r '.head_commit.url // ""' "$GITHUB_EVENT_PATH")
-            TEXT=$'\n🚀 <b>Push</b> em '"${REPO}"$'\n\n📌 Branch: <code>'"${REF_NAME}"$'</code>\n👤 By: '"${ACTOR}"$'\n\n💬 '"${COMMIT_MSG}"$'\n\n🔗 <a href="'"${COMMIT_URL}"$'">Ver commit</a>'
+            printf -v TEXT "\n🚀 <b>Push</b> em %s\n\n📌 Branch: <code>%s</code>\n👤 By: %s\n\n💬 %s\n\n🔗 <a href=\"%s\">Ver commit</a>" "${REPO}" "${REF_NAME}" "${ACTOR}" "${COMMIT_MSG}" "${COMMIT_URL}"
 
           elif [ "$EVENT" = "pull_request" ]; then
             PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
             PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
             PR_URL=$(jq -r '.pull_request.html_url' "$GITHUB_EVENT_PATH")
             PR_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
-            TEXT=$'\n🔀 <b>Pull Request '"${PR_ACTION}"$'</b>\n\n#'"${PR_NUMBER}"$' - '"${PR_TITLE}"$'\n👤 By: '"${ACTOR}"$'\n\n🔗 <a href="'"${PR_URL}"$'">Ver PR</a>'
+            printf -v TEXT "\n🔀 <b>Pull Request %s</b>\n\n#%s - %s\n👤 By: %s\n\n🔗 <a href=\"%s\">Ver PR</a>" "${PR_ACTION}" "${PR_NUMBER}" "${PR_TITLE}" "${ACTOR}" "${PR_URL}"
 
           elif [ "$EVENT" = "issues" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
             ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
             ISSUE_URL=$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")
             ISSUE_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
-            TEXT=$'\n📌 <b>Issue '"${ISSUE_ACTION}"$'</b>\n\n#'"${ISSUE_NUMBER}"$' - '"${ISSUE_TITLE}"$'\n👤 By: '"${ACTOR}"$'\n\n🔗 <a href="'"${ISSUE_URL}"$'">Ver issue</a>'
+            printf -v TEXT "\n📌 <b>Issue %s</b>\n\n#%s - %s\n👤 By: %s\n\n🔗 <a href=\"%s\">Ver issue</a>" "${ISSUE_ACTION}" "${ISSUE_NUMBER}" "${ISSUE_TITLE}" "${ACTOR}" "${ISSUE_URL}"
 
           elif [ "$EVENT" = "issue_comment" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
             ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
             COMMENT_URL=$(jq -r '.comment.html_url' "$GITHUB_EVENT_PATH")
-            TEXT=$'\n💬 <b>Comentário</b> em issue\n\n#'"${ISSUE_NUMBER}"$' - '"${ISSUE_TITLE}"$'\n👤 By: '"${ACTOR}"$'\n\n🔗 <a href="'"${COMMENT_URL}"$'">Ver comentário</a>'
+            printf -v TEXT "\n💬 <b>Comentário</b> em issue\n\n#%s - %s\n👤 By: %s\n\n🔗 <a href=\"%s\">Ver comentário</a>" "${ISSUE_NUMBER}" "${ISSUE_TITLE}" "${ACTOR}" "${COMMENT_URL}"
 
           elif [ "$EVENT" = "release" ]; then
             RELEASE_NAME=$(jq -r '.release.name // .release.tag_name' "$GITHUB_EVENT_PATH")
             RELEASE_URL=$(jq -r '.release.html_url' "$GITHUB_EVENT_PATH")
-            TEXT=$'\n📦 <b>Nova Release</b>\n\n🏷️ '"${RELEASE_NAME}"$'\n👤 By: '"${ACTOR}"$'\n\n🔗 <a href="'"${RELEASE_URL}"$'">Ver release</a>'
+            printf -v TEXT "\n📦 <b>Nova Release</b>\n\n🏷️ %s\n👤 By: %s\n\n🔗 <a href=\"%s\">Ver release</a>" "${RELEASE_NAME}" "${ACTOR}" "${RELEASE_URL}"
 
           else
-            TEXT=$'\nℹ️ <b>'"${EVENT}"$'</b> em '"${REPO}"$'\n\n👤 By: '"${ACTOR}"$'\n\n🔗 <a href="'"${RUN_URL}"$'">Ver detalhes</a>'
+            printf -v TEXT "\nℹ️ <b>%s</b> em %s\n\n👤 By: %s\n\n🔗 <a href=\"%s\">Ver detalhes</a>" "${EVENT}" "${REPO}" "${ACTOR}" "${RUN_URL}"
           fi
 
           {

@@ -10,6 +10,9 @@
 # Current Status
 - `calls` branch builds successfully (warnings from `go-sqlite3` may appear but do not fail the build).
 - Whatsmeow API signature changes were aligned in `calls` to restore build/debug.
+- Added call documentation notes under `src/docs/`:
+  - `src/docs/WHATSAPP_CALL_IMPLEMENTATION.md` (repo-specific overview)
+  - `src/docs/WHATSAPP_PUBLIC_API_CALLS_RESEARCH.md` (public API vs unofficial VoIP)
 
 # Next Steps
 - Decide call scope: reject-only vs accept + media bridge vs full RTP/SRTP integration.
@@ -19,6 +22,7 @@
 # Immutable Constraints Discovered During Execution
 - WhatsApp call handling is sensitive to upstream protocol/API changes; upgrades commonly require refactors in internal send/receive primitives.
 - This repository treats LIDs as opaque identifiers; never derive phone numbers from `@lid`.
+- Meta/WhatsApp docs pages for webhook reference `calls` were intermittently unavailable via fetch in this environment; validate call webhook details in a real browser session.
 
 # Competitor Notes (Public Sources)
 - Evolution API (EvolutionAPI/evolution-api)

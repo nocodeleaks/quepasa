@@ -76,6 +76,7 @@ ContactInfo fields priority (use `ExtractContactName()`):
 * **Message Flow**: Read the instruction document in `/.github/instructions/` with primary context tag `message`.
 * **WebHooks**: Read the instruction document in `/.github/instructions/` with primary context tag `webhooks`.
 * **Redispatch**: Read the instruction document in `/.github/instructions/` with primary context tag `redispatch`.
+* **Merge Workflow**: Read the instruction document in `/.github/instructions/` with primary context tag `merge`.
 * **Whatsmeow Update**: `update-whatsmeow.ps1`.
 
 ## Key Files

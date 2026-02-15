@@ -153,8 +153,9 @@ NEVER ask user permission for version conflict resolution - handle automatically
 IMPORTANT: Whenever you are going to merge/push to the main branch, you MUST:
   1. Update the QpVersion in the models/qp_defaults.go file
   2. Increment the version following the current semantic pattern
-  3. If it ends with .0 it means stable version
-  4. Development versions can use other suffixes
+  3. QpVersion must keep 4 sections only: 3.YY.MMDD.HHMM
+  4. Stable version means HHMM final digit is 0
+  5. Development versions use non-zero final digit in HHMM
 
 Version Location:
 File: models/qp_defaults.go

@@ -11,7 +11,8 @@
 
 ## Version Rules
 - File: `src/models/qp_defaults.go`
-- Stable release must end with `.0`.
+- QpVersion has 4 sections only: `3.YY.MMDD.HHMM`.
+- Stable release means HHMM last digit is `0`.
 - For merge/version conflicts in `QpVersion`, keep the newest version by current task date/time.
 - Do not downgrade `QpVersion` during merge resolution.
 

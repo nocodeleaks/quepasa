@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"fmt"
 
 	"go.mau.fi/whatsmeow/binary"
@@ -38,5 +39,5 @@ func (cm *WhatsmeowCallManager) AcceptCall(from types.JID, callID string) error 
 		}},
 	}
 
-	return cm.connection.Client.DangerousInternals().SendNode(acceptNode)
+	return cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode)
 }

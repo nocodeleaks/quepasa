@@ -16,6 +16,7 @@ import (
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
 )
@@ -31,6 +32,7 @@ type WhatsmeowConnection struct {
 	ContactManager *WhatsmeowContactManager // composition for contact operations
 	CallManager    *WhatsmeowCallManager    // composition for call operations (singleton)
 	SIPCallManager *WhatsmeowSIPCallManager // composition for SIP call operations (internal)
+	WakeUpScheduler *WakeUpScheduler        // scheduled wake-up presence manager
 
 	failedToken  bool
 	paired       func(string)
@@ -283,7 +285,7 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	}
 
 	var participant *string
-	if (types.MessageInfo{}) != info {
+	if !reflect.DeepEqual(types.MessageInfo{}, info) {
 		var sender string
 		if msg.FromGroup() {
 			sender = fmt.Sprint(info.Sender.User, "@", info.Sender.Server)
@@ -385,11 +387,43 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	}
 
 	// testing, mark read function
-	if source.GetHandlers().ReadUpdate {
-		go source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
+	handlers := source.GetHandlers()
+	if handlers != nil {
+		var localReadUpdate whatsapp.WhatsappBoolean
+		if handlers.WhatsappOptions != nil {
+			localReadUpdate = handlers.WhatsappOptions.ReadUpdate
+		}
+		if handlers.GetServiceOptions().HandleReadUpdate(localReadUpdate) {
+			go handlers.MarkRead(msg, types.ReceiptTypeRead)
+		}
 	}
 
 	return msg, err
+}
+
+func (source *WhatsmeowConnection) MarkRead(imsg whatsapp.IWhatsappMessage) error {
+	if imsg == nil {
+		return fmt.Errorf("nil message")
+	}
+
+	id := imsg.GetId()
+	logentry := source.GetLogger().WithField(LogFields.MessageId, id)
+
+	msg, ok := imsg.(*whatsapp.WhatsappMessage)
+	if !ok {
+		msg = &whatsapp.WhatsappMessage{
+			Id:        imsg.GetId(),
+			Timestamp: time.Now(),
+			Chat:      whatsapp.WhatsappChat{Id: imsg.GetChatId()},
+		}
+	}
+
+	err := source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
+	if err != nil {
+		logentry.Errorf("error marking read: %v", err)
+	}
+
+	return err
 }
 
 // useful to check if is a member of a group before send a msg.
@@ -793,5 +827,87 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 		state = types.ChatPresencePaused
 		media = types.ChatPresenceMediaText
 	}
-	return conn.Client.SendChatPresence(jid, state, media)
+	return conn.Client.SendChatPresence(context.Background(), jid, state, media)
+}
+
+func sendAppState(conn *WhatsmeowConnection, patch appstate.PatchInfo) error {
+	ctx := context.Background()
+	return conn.Client.SendAppState(ctx, patch)
+}
+
+// MarkChatAsRead marks a chat as read using app state protocol
+func MarkChatAsRead(conn *WhatsmeowConnection, chatId string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildMarkChatAsRead(jid, true, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// MarkChatAsUnread marks a chat as unread using app state protocol
+func MarkChatAsUnread(conn *WhatsmeowConnection, chatId string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildMarkChatAsRead(jid, false, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// ArchiveChat archives or unarchives a chat using app state protocol
+func ArchiveChat(conn *WhatsmeowConnection, chatId string, archive bool) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(chatId)
+	if err != nil {
+		return fmt.Errorf("invalid chat id format: %v", err)
+	}
+
+	patch := appstate.BuildArchive(jid, archive, time.Time{}, nil)
+	return sendAppState(conn, patch)
+}
+
+// getMessageForRetry provides message content when WhatsApp requests resend after decryption failure
+func (conn *WhatsmeowConnection) getMessageForRetry(requester, to types.JID, id types.MessageID) *waE2E.Message {
+	if conn == nil {
+		return nil
+	}
+
+	logentry := conn.GetLogger()
+	handlers := conn.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil {
+		logentry.Warnf("retry request for message %s ignored: handlers not available", id)
+		return nil
+	}
+
+	cached, err := handlers.WAHandlers.GetById(string(id))
+	if err != nil || cached == nil {
+		logentry.Warnf("retry request for message %s not found in cache (requester=%s to=%s)", id, requester, to)
+		return nil
+	}
+
+	if cached.Content == nil {
+		return nil
+	}
+
+	message, ok := cached.Content.(*waE2E.Message)
+	if !ok {
+		logentry.Warnf("retry request for message %s has invalid cached type: %T", id, cached.Content)
+		return nil
+	}
+
+	return message
 }

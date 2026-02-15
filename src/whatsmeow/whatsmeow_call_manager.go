@@ -2,6 +2,7 @@ package whatsmeow
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -238,7 +239,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 		cm.logger.Infof("🎵🔍 [PREACCEPT-CANDIDATE-%d] %v", i, c.Attrs)
 	}
 
-	err = cm.connection.Client.DangerousInternals().SendNode(preacceptNode)
+	err = cm.connection.Client.DangerousInternals().SendNode(context.Background(), preacceptNode)
 	if err != nil {
 		cm.logger.Errorf("❌🎵 [PREACCEPT-ERROR] Falha ao enviar preaccept: %v", err)
 		return err
@@ -251,7 +252,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 		cm.logger.Warnf("🧪 [HS-MODE=accept-early] Enviando ACCEPT antecipado (experimental)")
 		go func() {
 			acceptNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
-			if err2 := cm.connection.Client.DangerousInternals().SendNode(acceptNode); err2 != nil {
+			if err2 := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err2 != nil {
 				cm.logger.Errorf("❌ [ACCEPT-EARLY-ERROR] %v", err2)
 			} else {
 				cm.logger.Infof("✅ [ACCEPT-EARLY-SENT] ACCEPT enviado antecipadamente")
@@ -261,7 +262,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	if mode == "accept-immediate" {
 		cm.logger.Warnf("🧪 [HS-MODE=accept-immediate] Enviando ACCEPT imediatamente após PREACCEPT (sem esperar transport remoto)")
 		acceptNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
-		if err2 := cm.connection.Client.DangerousInternals().SendNode(acceptNode); err2 != nil {
+		if err2 := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err2 != nil {
 			cm.logger.Errorf("❌ [ACCEPT-IMMEDIATE-ERROR] %v", err2)
 		} else {
 			cm.logger.Infof("✅ [ACCEPT-IMMEDIATE-SENT] ACCEPT enviado logo após PREACCEPT")
@@ -422,7 +423,7 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 		}},
 	}
 
-	if errSend := cm.connection.Client.DangerousInternals().SendNode(transportNode); errSend != nil {
+	if errSend := cm.connection.Client.DangerousInternals().SendNode(context.Background(), transportNode); errSend != nil {
 		return fmt.Errorf("failed to send transport: %w", errSend)
 	}
 
@@ -816,7 +817,7 @@ func (cm *WhatsmeowCallManager) sendAcceptResponseToTransport(from types.JID, ca
 	}
 	acceptResponseNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, callCreator, candidates)
 
-	err := cm.connection.Client.DangerousInternals().SendNode(acceptResponseNode)
+	err := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptResponseNode)
 	if err != nil {
 		return fmt.Errorf("failed to send accept response to transport: %w", err)
 	}
@@ -874,7 +875,7 @@ func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) 
 	candidates := cm.buildCandidates(localIP, publicIP, port, includeSrflx)
 	acceptNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
 
-	if err := cm.connection.Client.DangerousInternals().SendNode(acceptNode); err != nil {
+	if err := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err != nil {
 		return fmt.Errorf("failed to send direct accept: %w", err)
 	}
 	cm.logger.Infof("✅⚡ [DIRECT-ACCEPT-SENT] ACCEPT enviado (aguardando TRANSPORT remoto para log)")

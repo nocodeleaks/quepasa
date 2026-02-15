@@ -1,6 +1,7 @@
 package whatsmeow
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -292,7 +293,7 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		}
 
 		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected()
+			go source.WAHandlers.OnDisconnected("disconnected", msgDisconnected)
 		}
 		return
 
@@ -542,16 +543,20 @@ func (handler *WhatsmeowHandlers) Follow(message *whatsapp.WhatsappMessage, from
 	}
 
 	// testing, mark read function
-	if handler.WhatsappOptionsExtended.ReadUpdate && !message.FromBroadcast() {
+	var localReadUpdate whatsapp.WhatsappBoolean
+	if handler.WhatsappOptions != nil {
+		localReadUpdate = handler.WhatsappOptions.ReadUpdate
+	}
+	if handler.GetServiceOptions().HandleReadUpdate(localReadUpdate) && !message.FromBroadcast() {
 		go handler.MarkRead(message, types.ReceiptTypeRead)
 	}
 }
 
-func (handler *WhatsmeowHandlers) MarkRead(message *whatsapp.WhatsappMessage, receipt types.ReceiptType) (err error) {
+func (handler *WhatsmeowHandlers) MarkRead(message *whatsapp.WhatsappMessage, _ types.ReceiptType) (err error) {
 	logentry := handler.GetLogger()
 
 	client := handler.Client
-	ids := []string{message.Id}
+	ids := []types.MessageID{types.MessageID(message.Id)}
 	chatJID, err := types.ParseJID(message.Chat.Id)
 	if err != nil {
 		logentry.Errorf("error on mark read, parsing chat jid: %s", err.Error())
@@ -568,7 +573,7 @@ func (handler *WhatsmeowHandlers) MarkRead(message *whatsapp.WhatsappMessage, re
 	}
 
 	readtime := time.Now()
-	err = client.MarkRead(ids, readtime, chatJID, senderJID, receipt)
+	err = client.MarkRead(context.Background(), ids, readtime, chatJID, senderJID)
 	if err != nil {
 		logentry.Errorf("error on mark read: %s", err.Error())
 		return

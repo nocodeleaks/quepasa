@@ -1,7 +1,5 @@
 module github.com/nocodeleaks/quepasa/main
 
-replace github.com/nocodeleaks/quepasa/audio => ./audio
-
 replace github.com/nocodeleaks/quepasa/api => ./api
 
 replace github.com/nocodeleaks/quepasa/library => ./library
@@ -81,7 +79,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/audio v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/sipproxy v0.0.0-00010101000000-000000000000 // indirect

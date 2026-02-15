@@ -20,6 +20,12 @@
 - If merge imports unrelated dependency updates, isolate and avoid publishing them with the task unless requested.
 - Resolve only conflicts required by the current scope when possible.
 
+## Dependency and WhatsApp Update Rules
+- Do not bundle broad dependency updates with unrelated task merges.
+- Treat whatsmeow/dependency version updates as separate integration scope.
+- Integrate dependency updates in `develop` first, validate build/tests, then merge to `main`.
+- Prefer controlled integration through PR review when dependency drift is large.
+
 ## Publish Rules
 - Build before publish: `cd src` then `go build -o ../.dist/quepasa.exe`.
 - Publish sequence:

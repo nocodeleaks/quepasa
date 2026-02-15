@@ -8,7 +8,6 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	media "github.com/nocodeleaks/quepasa/media"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	whatsmeow "go.mau.fi/whatsmeow"
@@ -73,7 +72,6 @@ func ToWhatsmeowMessage(source whatsapp.IWhatsappMessage) (msg *waE2E.Message, e
  * NewWhatsmeowMessageAttachment creates a new waE2E.Message with the correct media type and metadata.
  *
  * It builds the internal message (Image, Audio, Video, Document) using the upload response and WhatsappMessage data.
- * Automatically generates thumbnails for images, videos, and PDFs when possible.
  *
  * @param response UploadResponse containing media upload info
  * @param waMsg WhatsappMessage containing attachment and text
@@ -81,7 +79,7 @@ func ToWhatsmeowMessage(source whatsapp.IWhatsappMessage) (msg *waE2E.Message, e
  * @param inreplycontext Optional context info for replies
  * @return waE2E.Message pointer with the correct media type
  */
-func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg whatsapp.WhatsappMessage, mediaType whatsmeow.MediaType, inreplycontext *waE2E.ContextInfo) (msg *waE2E.Message) {
+func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg whatsapp.WhatsappMessage, media whatsmeow.MediaType, inreplycontext *waE2E.ContextInfo) (msg *waE2E.Message) {
 	attach := waMsg.Attachment
 
 	var seconds *uint32
@@ -94,27 +92,7 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 		mimetype = proto.String(attach.Mimetype)
 	}
 
-	// Generate thumbnail if content is available and preview is not skipped
-	var thumbnail []byte
-	if attach.GetContent() != nil && len(*attach.GetContent()) > 0 && !attach.SkipPreview {
-		content := *attach.GetContent()
-		mimeType := attach.Mimetype
-
-		// Check if we can generate a thumbnail for this type
-		if media.CanGenerateThumbnail(mimeType) {
-			thumbData, err := media.GenerateThumbnailByMime(content, mimeType)
-			if err != nil {
-				log.Debugf("Failed to generate thumbnail for %s: %v", mimeType, err)
-			} else {
-				thumbnail = thumbData
-				log.Debugf("Generated thumbnail for %s: %d bytes", mimeType, len(thumbData))
-			}
-		}
-	} else if attach.SkipPreview {
-		log.Debugf("Thumbnail generation skipped by preview flag for %s", attach.Mimetype)
-	}
-
-	switch mediaType {
+	switch media {
 	case whatsmeow.MediaImage:
 		internal := &waE2E.ImageMessage{
 			URL:           proto.String(response.URL),
@@ -126,10 +104,6 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 			Mimetype:      mimetype,
 			Caption:       proto.String(waMsg.Text),
 			ContextInfo:   inreplycontext,
-		}
-		// Add thumbnail for images
-		if len(thumbnail) > 0 {
-			internal.JPEGThumbnail = thumbnail
 		}
 		msg = &waE2E.Message{ImageMessage: internal}
 		return
@@ -169,10 +143,6 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 			Caption:       proto.String(waMsg.Text),
 			ContextInfo:   inreplycontext,
 		}
-		// Add thumbnail for videos
-		if len(thumbnail) > 0 {
-			internal.JPEGThumbnail = thumbnail
-		}
 		msg = &waE2E.Message{VideoMessage: internal}
 		return
 	default:
@@ -188,10 +158,6 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 			FileName:    proto.String(attach.FileName),
 			Caption:     proto.String(waMsg.Text),
 			ContextInfo: inreplycontext,
-		}
-		// Add thumbnail for documents (PDFs mainly)
-		if len(thumbnail) > 0 {
-			internal.JPEGThumbnail = thumbnail
 		}
 		msg = &waE2E.Message{DocumentMessage: internal}
 		return

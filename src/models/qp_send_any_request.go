@@ -28,28 +28,6 @@ type QpSendAnyRequest struct {
 
 	// BASE64 embed content
 	Content string `json:"content,omitempty"`
-
-	// Preview Options (default: true)
-	// Controls both thumbnail generation for media (image/video/PDF) and link preview for URLs in text
-	// Set to false to disable thumbnail generation and link preview
-	Preview *bool `json:"preview,omitempty"`
-
-	// Custom title for link preview (overrides fetched title)
-	PreviewTitle string `json:"preview_title,omitempty"`
-
-	// Custom description for link preview (overrides fetched description)
-	PreviewDesc string `json:"preview_desc,omitempty"`
-
-	// Custom thumbnail URL for link preview (overrides fetched image)
-	PreviewThumb string `json:"preview_thumb,omitempty"`
-}
-
-// ShouldGeneratePreview returns true if preview/thumbnail should be generated (default: true)
-func (source *QpSendAnyRequest) ShouldGeneratePreview() bool {
-	if source.Preview == nil {
-		return true // Default: generate preview
-	}
-	return *source.Preview
 }
 
 // From BASE64 content

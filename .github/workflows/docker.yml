@@ -45,7 +45,7 @@ jobs:
       # 1) Build & push apenas com `latest`
       - name: Extract metadata for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v3
         with:
           images: |
             ${{ env.IMAGE_NAME }}

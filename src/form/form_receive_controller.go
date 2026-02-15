@@ -18,7 +18,7 @@ func SafeURL(url string) template.URL {
 
 // FormReceiveController renders route GET "/form/server/{token}/receive"
 func FormReceiveController(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormReceiveData{PageTitle: "Receive - Quepasa", FormAccountEndpoint: FormAccountEndpoint}
+	data := models.QPFormReceiveData{PageTitle: "Receive", FormAccountEndpoint: FormAccountEndpoint}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {

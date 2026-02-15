@@ -93,12 +93,6 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-			case "server-readupdate":
-				{
-					err = models.ToggleReadUpdate(server)
-					break
-				}
-
 			default:
 				{
 					err = fmt.Errorf("invalid server key: %s", key)
@@ -220,7 +214,7 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 // VerifyFormHandler renders route GET "/bot/verify" ?mode={sd|md}
 func VerifyFormHandler(w http.ResponseWriter, r *http.Request) {
 	data := models.QPFormVerifyData{
-		PageTitle:   "Verify To Add or Update - Quepasa",
+		PageTitle:   "Verify To Add or Update",
 		Protocol:    WebSocketProtocol(),
 		Host:        r.Host,
 		Destination: FormAccountEndpoint,

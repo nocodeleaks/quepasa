@@ -60,6 +60,7 @@ func RegisterAPIControllers(r chi.Router) {
 
 		r.Post(endpoint+"/send", SendAny)
 		r.Post(endpoint+"/send/{chatid}", SendAny)
+		/*r.Post(endpoint+"/sendlinkpreview", SendWithLinkPreviewHandler)*/
 
 		// obsolete, marked for remove (2024/10/22)
 		r.Post(endpoint+"/sendtext", SendAny)
@@ -223,11 +224,11 @@ func RegisterAPIControllers(r chi.Router) {
 // CommandController manages bot server commands
 //
 //	@Summary		Execute bot commands
-//	@Description	Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
+//	@Description	Execute control commands for the bot server (start, stop, restart)
 //	@Tags			Bot
 //	@Accept			json
 //	@Produce		json
-//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, groups, broadcasts, readreceipts, readupdate, calls, debug)
+//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart)
 //	@Success		200		{object}	models.QpResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -288,12 +289,6 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			message := "calls toggled: " + server.Calls.String()
 			response.ParseSuccess(message)
 		}
-	case "readupdate":
-		err := models.ToggleReadUpdate(server)
-		if err == nil {
-			message := "readupdate toggled: " + server.ReadUpdate.String()
-			response.ParseSuccess(message)
-		}
 	case "debug":
 		_, err := server.ToggleDevel()
 		if err == nil {
@@ -301,7 +296,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess(message)
 		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,broadcasts,readreceipts,readupdate,calls,debug}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,broadcasts,readreceipts,calls,debug}", action)
 	}
 
 	if err != nil {

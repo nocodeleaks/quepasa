@@ -1,7 +1,6 @@
 package library
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"mime"
 	"net/http"
@@ -147,9 +146,4 @@ func ToJson(in interface{}) string {
 		return string(bytes)
 	}
 	return ""
-}
-
-// DecodeBase64 decodes a base64 encoded string to bytes
-func DecodeBase64(data string) ([]byte, error) {
-	return base64.StdEncoding.DecodeString(data)
 }

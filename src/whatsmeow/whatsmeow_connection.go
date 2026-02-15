@@ -411,43 +411,6 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			} else {
 				internal := &waE2E.ExtendedTextMessage{Text: &messageText}
 				internal.ContextInfo = source.GetContextInfo(*msg)
-
-				// Add link preview if available
-				if msg.Url != nil && len(msg.Url.Reference) > 0 {
-					// MatchedText MUST be a substring present in Text
-					if strings.Contains(messageText, msg.Url.Reference) {
-						internal.MatchedText = proto.String(msg.Url.Reference)
-
-						if len(msg.Url.Title) > 0 {
-							internal.Title = proto.String(msg.Url.Title)
-						}
-						if len(msg.Url.Description) > 0 {
-							internal.Description = proto.String(msg.Url.Description)
-						}
-						if msg.Url.Thumbnail != nil && len(msg.Url.Thumbnail.Data) > 0 {
-							// Thumbnail.Data is base64 encoded, need to decode to bytes
-							thumbBytes, decodeErr := library.DecodeBase64(msg.Url.Thumbnail.Data)
-							if decodeErr == nil && len(thumbBytes) > 0 {
-								// Upload thumbnail to WhatsApp servers for Android compatibility
-								// Android requires the thumbnail to be uploaded, not just inline bytes
-								uploadResp, uploadErr := source.Client.Upload(context.Background(), thumbBytes, whatsmeow.MediaLinkThumbnail)
-								if uploadErr == nil {
-									internal.ThumbnailDirectPath = &uploadResp.DirectPath
-									internal.ThumbnailSHA256 = uploadResp.FileSHA256
-									internal.ThumbnailEncSHA256 = uploadResp.FileEncSHA256
-									internal.MediaKey = uploadResp.MediaKey
-									internal.MediaKeyTimestamp = proto.Int64(time.Now().Unix())
-									logentry.Debugf("link preview thumbnail uploaded: %s", uploadResp.DirectPath)
-								} else {
-									logentry.Warnf("failed to upload link preview thumbnail: %v", uploadErr)
-								}
-								// Also set JPEGThumbnail for web compatibility (fallback)
-								internal.JPEGThumbnail = thumbBytes
-							}
-						}
-					}
-				}
-
 				newMessage = &waE2E.Message{ExtendedTextMessage: internal}
 			}
 		}
@@ -763,10 +726,9 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 
 	evt, ok := <-qrChan
 	if ok {
-		switch evt.Event {
-		case "code":
+		if evt.Event == "code" {
 			result = evt.Code
-		case "timeout":
+		} else if evt.Event == "timeout" {
 			// QR code timed out - dispatch event
 			logger.Warn("QR code timed out")
 			conn.dispatchQRTimeoutEvent()

@@ -25,7 +25,6 @@ import (
 //	@Description	- Polls (field "poll") — send the poll JSON in the "poll" field
 //	@Description	- Location (field "location") — send location with latitude/longitude in the "location" object
 //	@Description	- Contact (field "contact") — send contact with phone/name in the "contact" object
-//	@Description	- Link preview (field "preview") — auto-fetch Open Graph metadata and send with preview
 //	@Description
 //	@Description	Main fields:
 //	@Description	- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -36,12 +35,6 @@ import (
 //	@Description	- poll: JSON object with the poll (question, options, selections)
 //	@Description	- location: JSON object with location data (latitude, longitude, name, address, url)
 //	@Description	- contact: JSON object with contact data (phone, name, vcard)
-//
-// @Description	- preview: boolean to control thumbnail generation for media AND link preview for URLs (default: true). Set to false to disable both.
-//
-//	@Description	- preview_title: custom title for link preview (overrides fetched title)
-//	@Description	- preview_desc: custom description for link preview (overrides fetched description)
-//	@Description	- preview_thumb: custom thumbnail URL for link preview (overrides fetched image)
 //	@Description
 //	@Description	Location object fields:
 //	@Description	- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -61,25 +54,6 @@ import (
 //	@Description	{
 //	@Description	"chatId": "5511999999999@s.whatsapp.net",
 //	@Description	"text": "Hello, world!"
-//	@Description	}
-//	@Description	```
-//	@Description	Text with Link Preview:
-//	@Description	```json
-//	@Description	{
-//	@Description	"chatId": "5511999999999@s.whatsapp.net",
-//	@Description	"text": "Check this out: https://example.com/article",
-//	@Description	"preview": true
-//	@Description	}
-//	@Description	```
-//	@Description	Text with Custom Link Preview:
-//	@Description	```json
-//	@Description	{
-//	@Description	"chatId": "5511999999999@s.whatsapp.net",
-//	@Description	"text": "Check this out: https://example.com/article",
-//	@Description	"preview": true,
-//	@Description	"preview_title": "Custom Title",
-//	@Description	"preview_desc": "Custom description",
-//	@Description	"preview_thumb": "https://example.com/thumb.jpg"
 //	@Description	}
 //	@Description	```
 //	@Description	Poll:
@@ -128,18 +102,10 @@ import (
 //	@Description	"url": "https://example.com/path/to/file.jpg"
 //	@Description	}
 //	@Description	```
-//	@Description	Image without thumbnail (preview disabled):
-//	@Description	```json
-//	@Description	{
-//	@Description	"chatId": "5511999999999@s.whatsapp.net",
-//	@Description	"url": "https://example.com/path/to/file.jpg",
-//	@Description	"preview": false
-//	@Description	}
-//	@Description	```
 //	@Tags			Send
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,preview=bool,preview_title=string,preview_desc=string,preview_thumb=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object. Field 'preview' (default: true) controls thumbnail generation for media AND link preview for URLs."
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
 //	@Success		200		{object}	models.QpSendResponse
 //	@Failure		400		{object}	models.QpSendResponse
 //	@Security		ApiKeyAuth
@@ -225,74 +191,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
-	// Set skip preview flag (inverse: preview=false means SkipPreview=true)
-	request.QpSendRequest.SkipPreview = !request.ShouldGeneratePreview()
-
-	// Handle link preview if enabled (default: true)
-	if request.ShouldGeneratePreview() {
-		handleLinkPreview(request, response)
-	}
-
 	SendRequest(w, r, &request.QpSendRequest, server)
-}
-
-// handleLinkPreview processes link preview for the request
-func handleLinkPreview(request *models.QpSendAnyRequest, response *models.QpSendResponse) {
-	// Extract URL from text if not provided
-	urlToPreview := library.ExtractURLFromText(request.Text)
-	if urlToPreview == "" {
-		response.Debug = append(response.Debug, "[debug][handleLinkPreview] no URL found in text, skipping preview")
-		return
-	}
-
-	response.Debug = append(response.Debug, "[debug][handleLinkPreview] found URL: "+urlToPreview)
-
-	// Fetch Open Graph data
-	ogData, err := library.FetchOpenGraph(urlToPreview)
-	if err != nil {
-		response.Debug = append(response.Debug, "[warn][handleLinkPreview] failed to fetch OG data: "+err.Error())
-		// Continue without preview, don't fail the request
-		return
-	}
-
-	// Build preview data
-	previewUrl := &whatsapp.WhatsappMessageUrl{
-		Reference: urlToPreview,
-	}
-
-	// Use custom values if provided, otherwise use fetched OG data
-	if request.PreviewTitle != "" {
-		previewUrl.Title = request.PreviewTitle
-	} else if ogData.Title != "" {
-		previewUrl.Title = ogData.Title
-	}
-
-	if request.PreviewDesc != "" {
-		previewUrl.Description = request.PreviewDesc
-	} else if ogData.Description != "" {
-		previewUrl.Description = ogData.Description
-	}
-
-	// Handle thumbnail
-	thumbnailURL := request.PreviewThumb
-	if thumbnailURL == "" && ogData.ImageURL != "" {
-		thumbnailURL = ogData.ImageURL
-	}
-
-	if thumbnailURL != "" {
-		response.Debug = append(response.Debug, "[debug][handleLinkPreview] downloading thumbnail: "+thumbnailURL)
-		thumbData, err := library.DownloadImage(thumbnailURL)
-		if err != nil {
-			response.Debug = append(response.Debug, "[warn][handleLinkPreview] failed to download thumbnail: "+err.Error())
-		} else {
-			previewUrl.SetThumbnail(thumbData)
-			response.Debug = append(response.Debug, fmt.Sprintf("[debug][handleLinkPreview] thumbnail downloaded, size: %d bytes", len(thumbData)))
-		}
-	}
-
-	// Store preview data in request for sending
-	request.QpSendRequest.LinkPreview = previewUrl
-	response.Debug = append(response.Debug, "[debug][handleLinkPreview] preview ready with title: "+previewUrl.Title)
 }
 
 //endregion
@@ -460,38 +359,10 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 		// Successfully converted to phone - use @s.whatsapp.net format
 		waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
 		logentry.Debugf("converted LID %s to phone-based chat ID: %s (from phone %s)", originalChatId, waMsg.Chat.Id, phone)
+	} else if !strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
+		// If it's just a phone number without suffix, ensure it has @s.whatsapp.net
+		waMsg.Chat.Id = whatsapp.PhoneToWid(waMsg.Chat.Id)
 	} else {
-		// Phone number or @s.whatsapp.net format
-		// Try to find LID mapping and use the same conversion flow that works
-		// This fixes the PN→LID session migration bug in whatsmeow
-		phoneNumber := waMsg.Chat.Id
-
-		// Extract phone number from JID if it has suffix
-		if strings.Contains(phoneNumber, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
-			phoneNumber = strings.TrimSuffix(phoneNumber, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX)
-		}
-
-		// Remove + prefix if present
-		phoneNumber = strings.TrimPrefix(phoneNumber, "+")
-
-		// Try to find LID for this phone number
-		lid, lidErr := server.GetLIDFromPhone(phoneNumber)
-		if lidErr == nil && len(lid) > 0 {
-			// Found LID mapping, now get phone back from LID (this establishes correct session)
-			phone, phoneErr := server.GetPhoneFromLID(lid)
-			if phoneErr == nil && len(phone) > 0 {
-				waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
-				logentry.Debugf("phone %s has LID %s, converted via LID to: %s (fixes session migration)", originalChatId, lid, waMsg.Chat.Id)
-			} else {
-				// Fallback to original phone
-				waMsg.Chat.Id = whatsapp.PhoneToWid(phoneNumber)
-				logentry.Debugf("phone %s has LID %s but failed to get phone back, using original: %s", originalChatId, lid, waMsg.Chat.Id)
-			}
-		} else {
-			// No LID mapping found, use phone directly
-			waMsg.Chat.Id = whatsapp.PhoneToWid(phoneNumber)
-			logentry.Debugf("no LID mapping for phone %s, using directly: %s", originalChatId, waMsg.Chat.Id)
-		}
 	}
 
 	sendResponse, err := server.SendMessage(waMsg)

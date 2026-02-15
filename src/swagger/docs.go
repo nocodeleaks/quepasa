@@ -280,7 +280,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)",
+                "description": "Execute control commands for the bot server (start, stop, restart)",
                 "consumes": [
                     "application/json"
                 ],
@@ -296,13 +296,7 @@ const docTemplate = `{
                         "enum": [
                             "start",
                             "stop",
-                            "restart",
-                            "groups",
-                            "broadcasts",
-                            "readreceipts",
-                            "readupdate",
-                            "calls",
-                            "debug"
+                            "restart"
                         ],
                         "type": "string",
                         "description": "Command action",
@@ -1904,7 +1898,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n- Contact (field \"contact\") — send contact with phone/name in the \"contact\" object\n- Link preview (field \"preview\") — auto-fetch Open Graph metadata and send with preview\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n- contact: JSON object with contact data (phone, name, vcard)\n- preview: boolean to control thumbnail generation for media AND link preview for URLs (default: true). Set to false to disable both.\n- preview_title: custom title for link preview (overrides fetched title)\n- preview_desc: custom description for link preview (overrides fetched description)\n- preview_thumb: custom thumbnail URL for link preview (overrides fetched image)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nContact object fields:\n- phone (string, required): Contact phone number\n- name (string, required): Contact display name\n- vcard (string, optional): Full vCard string (auto-generated if not provided)\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nText with Link Preview:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Check this out: https://example.com/article\",\n\"preview\": true\n}\n` + "`" + `` + "`" + `` + "`" + `\nText with Custom Link Preview:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Check this out: https://example.com/article\",\n\"preview\": true,\n\"preview_title\": \"Custom Title\",\n\"preview_desc\": \"Custom description\",\n\"preview_thumb\": \"https://example.com/thumb.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nContact:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"contact\": {\n\"phone\": \"5511999999999\",\n\"name\": \"John Doe\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nImage without thumbnail (preview disabled):\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\",\n\"preview\": false\n}\n` + "`" + `` + "`" + `` + "`" + `",
+                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n- Contact (field \"contact\") — send contact with phone/name in the \"contact\" object\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n- contact: JSON object with contact data (phone, name, vcard)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nContact object fields:\n- phone (string, required): Contact phone number\n- name (string, required): Contact display name\n- vcard (string, optional): Full vCard string (auto-generated if not provided)\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nContact:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"contact\": {\n\"phone\": \"5511999999999\",\n\"name\": \"John Doe\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -1917,7 +1911,7 @@ const docTemplate = `{
                 "summary": "Send any type of message (text, file, poll, base64 content, location, contact)",
                 "parameters": [
                     {
-                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object. Field 'preview' (default: true) controls thumbnail generation for media AND link preview for URLs.",
+                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object.",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -1984,18 +1978,6 @@ const docTemplate = `{
                                             "type": "integer"
                                         }
                                     }
-                                },
-                                "preview": {
-                                    "type": "boolean"
-                                },
-                                "preview_desc": {
-                                    "type": "string"
-                                },
-                                "preview_thumb": {
-                                    "type": "string"
-                                },
-                                "preview_title": {
-                                    "type": "string"
                                 },
                                 "text": {
                                     "type": "string"
@@ -2685,10 +2667,6 @@ const docTemplate = `{
                 "master_key": {
                     "type": "string"
                 },
-                "password": {
-                    "description": "default password for database seeding",
-                    "type": "string"
-                },
                 "prefix": {
                     "type": "string"
                 },
@@ -2701,10 +2679,6 @@ const docTemplate = `{
                 },
                 "use_ssl_websocket": {
                     "type": "boolean"
-                },
-                "user": {
-                    "description": "default user for database seeding",
-                    "type": "string"
                 },
                 "webhook_timeout": {
                     "description": "webhook timeout in milliseconds",
@@ -2865,7 +2839,7 @@ const docTemplate = `{
                 "convert_png_to_jpg": {
                     "type": "boolean"
                 },
-                "force_audio_as_ptt": {
+                "convert_wave_to_ogg": {
                     "type": "boolean"
                 },
                 "log_level": {

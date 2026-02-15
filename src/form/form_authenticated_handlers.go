@@ -87,7 +87,7 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := models.QPFormAccountData{
-		PageTitle: "Account - Quepasa",
+		PageTitle: "Account",
 		User:      *user,
 		Options:   whatsapp.Options,
 		WMOptions: whatsmeow.WhatsmeowService.Options,
@@ -118,7 +118,7 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := models.QPFormWebHooksData{PageTitle: "WebHooks - Quepasa"}
+	data := models.QPFormWebHooksData{PageTitle: "WebHooks"}
 
 	token := library.GetRequestParameter(r, "token")
 	if len(token) > 0 {
@@ -158,7 +158,7 @@ func FormRabbitMQController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := FormRabbitMQControllerData{
-		PageTitle: "RabbitMQ Configurations - Quepasa",
+		PageTitle: "RabbitMQ Configurations",
 	}
 
 	user, err := GetFormUser(r)

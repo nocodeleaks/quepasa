@@ -3,6 +3,8 @@ package sipproxy
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -31,12 +33,132 @@ type CallInfo struct {
 	FromPhone     string
 	ToPhone       string
 	SIPTag        string // Generated SIP tag for this call
+	LocalRTPPort  int    // RTP port announced in our SDP offer (SIP -> us)
+	LocalRTPConn  *net.UDPConn
 	State         CallState
 	StartTime     time.Time
 	LastUpdate    time.Time
 	Context       context.Context
 	CancelFunc    context.CancelFunc
 	DialogSession *sipgo.DialogClientSession // SIP dialog session for BYE/CANCEL
+}
+
+func (scm *SIPCallManagerSipgo) setRTPMirrorPort(callID string, port int) {
+	if scm == nil || callID == "" || port <= 0 {
+		return
+	}
+	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		scm.logger.Warnf("🎵 [RTP-MIRROR] Failed to resolve mirror addr for port=%d (CallID=%s): %v", port, callID, err)
+		return
+	}
+	scm.rtpMirrorMutex.Lock()
+	if scm.rtpMirrorAddr == nil {
+		scm.rtpMirrorAddr = make(map[string]*net.UDPAddr)
+	}
+	scm.rtpMirrorAddr[callID] = addr
+	scm.rtpMirrorMutex.Unlock()
+	scm.logger.Infof("🎵 [RTP-MIRROR] Enabled: SIP RTP will be mirrored to %s (CallID=%s)", addr.String(), callID)
+}
+
+func (scm *SIPCallManagerSipgo) getRTPMirrorAddr(callID string) *net.UDPAddr {
+	scm.rtpMirrorMutex.RLock()
+	defer scm.rtpMirrorMutex.RUnlock()
+	if scm.rtpMirrorAddr == nil {
+		return nil
+	}
+	return scm.rtpMirrorAddr[callID]
+}
+
+func (scm *SIPCallManagerSipgo) allocateLocalRTPListener(callID string) (int, *net.UDPConn, error) {
+	// Prefer even ports in the RTP range.
+	start := RTP_MEDIA_PORT_MIN + int(time.Now().UnixNano()%1000)
+	if start%2 != 0 {
+		start++
+	}
+	for port := start; port <= RTP_MEDIA_PORT_MAX; port += 2 {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
+		if err != nil {
+			continue
+		}
+		conn, err := net.ListenUDP("udp", addr)
+		if err == nil {
+			scm.logger.Infof("🎵 [RTP-MONITOR] Reserved local RTP port :%d (CallID=%s)", port, callID)
+			return port, conn, nil
+		}
+	}
+	// Wrap-around
+	for port := RTP_MEDIA_PORT_MIN; port < start; port += 2 {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
+		if err != nil {
+			continue
+		}
+		conn, err := net.ListenUDP("udp", addr)
+		if err == nil {
+			scm.logger.Infof("🎵 [RTP-MONITOR] Reserved local RTP port :%d (CallID=%s)", port, callID)
+			return port, conn, nil
+		}
+	}
+	return 0, nil, fmt.Errorf("no available RTP port in range %d-%d", RTP_MEDIA_PORT_MIN, RTP_MEDIA_PORT_MAX)
+}
+
+func (scm *SIPCallManagerSipgo) startLocalRTPMonitor(callInfo *CallInfo) {
+	if callInfo == nil {
+		return
+	}
+	port := callInfo.LocalRTPPort
+	if port <= 0 {
+		return
+	}
+	conn := callInfo.LocalRTPConn
+	if conn == nil {
+		scm.logger.Warnf("🎵 [RTP-MONITOR] No UDP conn reserved for :%d (CallID=%s)", port, callInfo.CallID)
+		return
+	}
+
+	scm.logger.Infof("🎵 [RTP-MONITOR] Listening for SIP-side RTP on :%d (CallID=%s)", port, callInfo.CallID)
+
+	go func() {
+		buf := make([]byte, 2000)
+		var packets int64
+		var bytes int64
+		var firstFrom string
+		mirrorLogged := false
+		for {
+			select {
+			case <-callInfo.Context.Done():
+				return
+			default:
+			}
+			_ = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+			n, from, err := conn.ReadFromUDP(buf)
+			if err != nil {
+				if ne, ok := err.(net.Error); ok && ne.Timeout() {
+					continue
+				}
+				return
+			}
+
+			// Optional debug mirror: copy SIP-side RTP packets to a local UDP port (e.g. WhatsApp RTP bridge listener).
+			if mirrorAddr := scm.getRTPMirrorAddr(callInfo.CallID); mirrorAddr != nil {
+				if !mirrorLogged {
+					mirrorLogged = true
+					scm.logger.Infof("🎵 [RTP-MIRROR] Mirroring RTP stream to %s (CallID=%s)", mirrorAddr.String(), callInfo.CallID)
+				}
+				_, _ = conn.WriteToUDP(buf[:n], mirrorAddr)
+			}
+
+			packets++
+			bytes += int64(n)
+			if firstFrom == "" && from != nil {
+				firstFrom = from.String()
+				scm.logger.Infof("🎵 [RTP-MONITOR] First RTP packet: from=%s bytes=%d (CallID=%s)", firstFrom, n, callInfo.CallID)
+			}
+			if packets%50 == 0 {
+				scm.logger.Infof("🎵 [RTP-MONITOR] RTP stats: packets=%d bytes=%d from=%s (CallID=%s)", packets, bytes, firstFrom, callInfo.CallID)
+			}
+		}
+	}()
 }
 
 // SIPCallManagerSipgo manages SIP call lifecycle using sipgo package
@@ -48,11 +170,19 @@ type SIPCallManagerSipgo struct {
 	userAgent       *sipgo.UserAgent
 	dialogUA        *sipgo.DialogUA
 	activeCalls     map[string]*CallInfo
+	rtpMirrorMutex  sync.RWMutex
+	rtpMirrorAddr   map[string]*net.UDPAddr
 	cancelCallCount map[string]int // Track how many times CancelCall is called per CallID
 	cancelMutex     sync.RWMutex   // Protect the counter
 	defaultTimeout  time.Duration
 	onCallRejected  SIPCallRejectedCallback // Callback for call rejection
 	onCallAccepted  SIPCallAcceptedCallback // Callback for call acceptance
+}
+
+// SetRTPMirrorPort enables debug mirroring of SIP-side RTP packets to a local UDP port.
+// Intended to feed other local listeners (e.g. WhatsApp RTP bridge) for correlation/debug.
+func (scm *SIPCallManagerSipgo) SetRTPMirrorPort(callID string, port int) {
+	scm.setRTPMirrorPort(callID, port)
 }
 
 // NewSIPCallManagerSipgo creates a new SIP call manager using sipgo
@@ -200,9 +330,27 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	localIP := scm.networkManager.GetLocalIP()
 	localPort := scm.networkManager.GetLocalPort()
 	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: fromPhone, Host: localIP, Port: localPort}})
+	// SDP body requires Content-Type.
+	headers = append(headers, sip.NewHeader("Content-Type", "application/sdp"))
+
+	// Reserve a local RTP port BEFORE generating SDP so SDP always matches a bound socket.
+	if port, conn, err := scm.allocateLocalRTPListener(callID); err == nil {
+		callInfo.LocalRTPPort = port
+		callInfo.LocalRTPConn = conn
+		scm.startLocalRTPMonitor(callInfo)
+	} else {
+		scm.logger.Errorf("🎵 [RTP-MONITOR] Failed to reserve local RTP port (CallID=%s): %v", callID, err)
+	}
 
 	recipient := scm.GetRecipient(toPhone)
-	sdpBody := scm.CreateSDPOffer(fromPhone)
+	sdpBody := scm.CreateSDPOffer(fromPhone, callInfo.LocalRTPPort)
+	if strings.TrimSpace(os.Getenv("SIPPROXY_LOG_SDP_OFFER")) == "1" {
+		sdpOneLine := strings.ReplaceAll(strings.ReplaceAll(sdpBody, "\r", ""), "\n", "\\n")
+		scm.logger.Infof("🎵 [SIP-SDP-OFFER] INVITE SDP offer (CallID=%s): %s", callID, sdpOneLine)
+	}
+	if callInfo.LocalRTPPort > 0 {
+		scm.logger.Infof("🎵 [SDP] Local RTP port advertised: %d (CallID=%s)", callInfo.LocalRTPPort, callID)
+	}
 
 	// Send INVITE using sipgo Dialog API with SDP body and custom From header
 	dialogSession, err := scm.dialogUA.Invite(ctx, recipient, []byte(sdpBody), headers...)
@@ -271,6 +419,10 @@ func (scm *SIPCallManagerSipgo) updateCallState(callID string, state CallState) 
 // cleanupCall removes a call from active calls
 func (scm *SIPCallManagerSipgo) cleanupCall(callID string) {
 	if callInfo, exists := scm.activeCalls[callID]; exists {
+		if callInfo.LocalRTPConn != nil {
+			_ = callInfo.LocalRTPConn.Close()
+			callInfo.LocalRTPConn = nil
+		}
 		if callInfo.CancelFunc != nil {
 			callInfo.CancelFunc()
 		}
@@ -373,6 +525,22 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	scm.logger.Infof("   ✅ This means the SIP server ACCEPTED the call")
 	scm.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
+	// Parse SDP answer (if any) to extract negotiated remote RTP endpoint.
+	remoteRTPIP := ""
+	remoteRTPPort := 0
+	if dialogSession.InviteResponse != nil {
+		body := dialogSession.InviteResponse.Body()
+		remoteRTPIP, remoteRTPPort = parseSDPAudioEndpoint(body)
+		if remoteRTPIP != "" || remoteRTPPort > 0 {
+			scm.logger.Infof("🎵 [SIP-SDP] 200 OK remote media endpoint: %s:%d (CallID=%s)", remoteRTPIP, remoteRTPPort, callInfo.CallID)
+		}
+		if len(body) > 0 && strings.TrimSpace(os.Getenv("SIPPROXY_LOG_SDP_200OK")) == "1" {
+			sdpOneLine := strings.ReplaceAll(strings.ReplaceAll(string(body), "\r", ""), "\n", "\\n")
+			scm.logger.Infof("🎵 [SIP-SDP-200OK] 200 OK SDP (CallID=%s): %s", callInfo.CallID, sdpOneLine)
+		}
+		scm.logger.Infof("🎵 [SIP-RESP] source=%s dest=%s transport=%s (CallID=%s)", dialogSession.InviteResponse.Source(), dialogSession.InviteResponse.Destination(), dialogSession.InviteResponse.Transport(), callInfo.CallID)
+	}
+
 	scm.updateCallState(callInfo.CallID, CallStateAccepted)
 
 	// 🎉 TRIGGER WHATSAPP CALL ACCEPTANCE!
@@ -392,6 +560,27 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 		scm.logger.Errorf("❌ Failed to send ACK for CallID %s: %v", callInfo.CallID, err)
 	} else {
 		scm.logger.Infof("📨 ACK sent for CallID: %s", callInfo.CallID)
+	}
+
+	// Optional RTP probe to help Asterisk Strict RTP / NAT learning.
+	if os.Getenv("SIPPROXY_RTP_PROBE") == "1" {
+		if callInfo.LocalRTPConn != nil && remoteRTPIP != "" && remoteRTPPort > 0 {
+			// Primary target from SDP
+			sendRTPProbe(scm.logger, callInfo.LocalRTPConn, remoteRTPIP, remoteRTPPort, callInfo.CallID)
+			// If SDP uses loopback, also try local/public IP to avoid any routing oddities.
+			if remoteRTPIP == "127.0.0.1" {
+				alt1 := strings.TrimSpace(scm.networkManager.GetLocalIP())
+				alt2 := strings.TrimSpace(scm.networkManager.GetPublicIP())
+				if alt1 != "" && alt1 != remoteRTPIP {
+					sendRTPProbe(scm.logger, callInfo.LocalRTPConn, alt1, remoteRTPPort, callInfo.CallID)
+				}
+				if alt2 != "" && alt2 != remoteRTPIP && alt2 != alt1 {
+					sendRTPProbe(scm.logger, callInfo.LocalRTPConn, alt2, remoteRTPPort, callInfo.CallID)
+				}
+			}
+		} else {
+			scm.logger.Infof("🎵🧪 [RTP-PROBE] Skipped (missing socket or remote endpoint) localConn=%v remote=%s:%d (CallID=%s)", callInfo.LocalRTPConn != nil, remoteRTPIP, remoteRTPPort, callInfo.CallID)
+		}
 	}
 
 	// Keep the call active - do not automatically hang up

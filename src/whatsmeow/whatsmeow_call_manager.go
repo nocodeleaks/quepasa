@@ -3,10 +3,14 @@ package whatsmeow
 import (
 	"bytes"
 	"context"
+	stdbin "encoding/binary"
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -31,6 +35,36 @@ type WhatsmeowCallManager struct {
 	offersSeen      map[string]time.Time // rastrear CallOffers já processadas
 }
 
+func (cm *WhatsmeowCallManager) getNetMedium() string {
+	return cm.getNetMediumForCall("")
+}
+
+func (cm *WhatsmeowCallManager) getNetMediumForCall(callID string) string {
+	// Observed values:
+	//  - 1: direct/host candidate
+	//  - 2: relay
+	//  - 3: default (legacy)
+	//
+	// New: "auto" chooses relay (2) when we saw relay material in CallOffer.
+	v := strings.TrimSpace(os.Getenv("QP_CALL_NET_MEDIUM"))
+	switch v {
+	case "1", "2", "3":
+		return v
+	}
+	if strings.EqualFold(v, "auto") {
+		if callID != "" {
+			cm.hsMutex.Lock()
+			st := cm.handshakeStates[callID]
+			cm.hsMutex.Unlock()
+			if st != nil && st.Relay != nil && len(st.Relay.TE2) > 0 {
+				return "2"
+			}
+		}
+		return "3"
+	}
+	return "3"
+}
+
 // CallHandshakeState tracks per-call handshake progress
 type CallHandshakeState struct {
 	RemoteTransportReceived bool
@@ -38,6 +72,452 @@ type CallHandshakeState struct {
 	CreatedAt               time.Time
 	LastAttempt             time.Time
 	AcceptSent              bool // se já enviamos ACCEPT (ex: modo direct)
+	Terminated              bool
+	OfferFrom               types.JID
+	OfferFromSet            bool
+
+	// Relay-only material captured from CallOffer (<relay> node). Do not log raw values.
+	Relay *RelayBlock
+	// OfferEnc contains the opaque <enc> payload observed in CallOffer (often type=pkmsg).
+	// This is a prime suspect for relay/TURN short-term integrity material.
+	OfferEnc                 *EncBlock
+	RelayEndpoints           []RelayEndpoint
+	RelaySTUNProbedEndpoints map[string]bool
+
+	// Relay session probe is a minimal UDP connectivity test toward relay endpoints
+	// to validate outbound UDP reachability before attempting SRTP/relay media-plane.
+	RelaySessionProbeStarted   bool
+	RelaySessionProbeStartedAt time.Time
+	RelaySessionProbeEndpoint  string
+	RelaySessionProbePending   bool
+
+	// AcceptTE contains <te> payloads observed in incoming CallAccept events.
+	// These values may be used as candidate TURN USERNAMEs in relay session probing.
+	AcceptTE []string
+
+	// Media port/mapping must be consistent across PREACCEPT/TRANSPORT/ACCEPT.
+	LocalMediaPort  int
+	PublicMediaIP   string
+	PublicMediaPort int
+}
+
+func (cm *WhatsmeowCallManager) setCallOfferEnc(callID string, enc *EncBlock) {
+	if cm == nil || callID == "" || enc == nil {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok || st == nil {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	st.OfferEnc = enc
+}
+
+func (cm *WhatsmeowCallManager) addCallAcceptTE(callID string, teValues []string) {
+	if cm == nil || callID == "" || len(teValues) == 0 {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok || st == nil {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	seen := map[string]bool{}
+	for _, v := range st.AcceptTE {
+		seen[v] = true
+	}
+	for _, v := range teValues {
+		v = strings.TrimSpace(v)
+		if v == "" || seen[v] {
+			continue
+		}
+		seen[v] = true
+		st.AcceptTE = append(st.AcceptTE, v)
+	}
+}
+
+func (cm *WhatsmeowCallManager) getCallAcceptTE(callID string) []string {
+	if cm == nil || callID == "" {
+		return nil
+	}
+	cm.hsMutex.Lock()
+	st := cm.handshakeStates[callID]
+	cm.hsMutex.Unlock()
+	if st == nil || len(st.AcceptTE) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(st.AcceptTE))
+	out = append(out, st.AcceptTE...)
+	return out
+}
+
+func (cm *WhatsmeowCallManager) getRelayEndpoints(callID string) []RelayEndpoint {
+	if cm == nil || callID == "" {
+		return nil
+	}
+	cm.hsMutex.Lock()
+	st := cm.handshakeStates[callID]
+	cm.hsMutex.Unlock()
+	if st == nil || len(st.RelayEndpoints) == 0 {
+		return nil
+	}
+	out := make([]RelayEndpoint, 0, len(st.RelayEndpoints))
+	out = append(out, st.RelayEndpoints...)
+	return out
+}
+
+func (cm *WhatsmeowCallManager) markRelaySessionProbeStarted(callID string, endpoint string) bool {
+	if cm == nil || callID == "" {
+		return false
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st := cm.handshakeStates[callID]
+	if st == nil {
+		return false
+	}
+	if st.RelaySessionProbeStarted {
+		return false
+	}
+	st.RelaySessionProbeStarted = true
+	st.RelaySessionProbePending = false
+	st.RelaySessionProbeStartedAt = time.Now().UTC()
+	st.RelaySessionProbeEndpoint = endpoint
+	return true
+}
+
+func (cm *WhatsmeowCallManager) markRelaySessionProbePending(callID string) bool {
+	if cm == nil || callID == "" {
+		return false
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st := cm.handshakeStates[callID]
+	if st == nil {
+		return false
+	}
+	if st.RelaySessionProbeStarted || st.RelaySessionProbePending {
+		return false
+	}
+	st.RelaySessionProbePending = true
+	return true
+}
+
+func (cm *WhatsmeowCallManager) hasCallState(callID string) bool {
+	if cm == nil || callID == "" {
+		return false
+	}
+	cm.hsMutex.Lock()
+	_, ok := cm.handshakeStates[callID]
+	cm.hsMutex.Unlock()
+	return ok
+}
+
+func (cm *WhatsmeowCallManager) shouldProbeRelayEndpoint(callID string, endpoint string) bool {
+	if cm == nil || callID == "" {
+		return false
+	}
+	endpoint = strings.TrimSpace(endpoint)
+	if endpoint == "" {
+		return false
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok || st == nil {
+		return false
+	}
+	if st.RelaySTUNProbedEndpoints == nil {
+		st.RelaySTUNProbedEndpoints = map[string]bool{}
+	}
+	if st.RelaySTUNProbedEndpoints[endpoint] {
+		return false
+	}
+	st.RelaySTUNProbedEndpoints[endpoint] = true
+	return true
+}
+
+func (cm *WhatsmeowCallManager) ProbeRelaySTUNEndpoint(callID string, ep RelayEndpoint) {
+	if cm == nil || callID == "" {
+		return
+	}
+	if !envTruthy("QP_CALL_RELAY_STUN_PROBE") {
+		return
+	}
+	addr := strings.TrimSpace(ep.Endpoint)
+	if !cm.shouldProbeRelayEndpoint(callID, addr) {
+		return
+	}
+
+	cm.logger.Infof("🧪 [RELAY-STUN-PROBE] Probing relay=%s endpoint=%s (CallID=%s)", ep.RelayName, addr, callID)
+	ip, port, localPort, err := cm.performRealSTUNRequest(addr)
+	if err != nil {
+		cm.logger.Warnf("⚠️ [RELAY-STUN-PROBE] relay=%s endpoint=%s failed: %v (CallID=%s)", ep.RelayName, addr, err, callID)
+		if envTruthy("QP_CALL_RELAY_STUN_PROBE_CONTROL") {
+			control := "stun.cloudflare.com:3478"
+			cm.logger.Infof("🧪 [RELAY-STUN-CONTROL] Probing control STUN endpoint=%s (CallID=%s)", control, callID)
+			ip2, port2, localPort2, err2 := cm.performRealSTUNRequest(control)
+			if err2 != nil {
+				cm.logger.Warnf("⚠️ [RELAY-STUN-CONTROL] endpoint=%s failed: %v (CallID=%s)", control, err2, callID)
+			} else {
+				cm.logger.Infof("✅ [RELAY-STUN-CONTROL] endpoint=%s mapped=%s:%d localPort=%d (CallID=%s)", control, ip2, port2, localPort2, callID)
+			}
+		}
+		return
+	}
+	cm.logger.Infof("✅ [RELAY-STUN-PROBE] relay=%s endpoint=%s mapped=%s:%d localPort=%d (CallID=%s)", ep.RelayName, addr, ip, port, localPort, callID)
+}
+
+func (cm *WhatsmeowCallManager) setOfferFrom(callID string, from types.JID) {
+	if cm == nil || callID == "" {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	st.OfferFrom = from
+	st.OfferFromSet = true
+}
+
+func (cm *WhatsmeowCallManager) getOfferFrom(callID string) (types.JID, bool) {
+	if cm == nil || callID == "" {
+		return types.JID{}, false
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok || st == nil || !st.OfferFromSet {
+		return types.JID{}, false
+	}
+	return st.OfferFrom, true
+}
+
+func (cm *WhatsmeowCallManager) markCallTerminated(callID string) {
+	if cm == nil || callID == "" {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	if st, ok := cm.handshakeStates[callID]; ok {
+		st.Terminated = true
+		delete(cm.handshakeStates, callID)
+	}
+}
+
+func (cm *WhatsmeowCallManager) addRelayEndpoint(callID string, ep RelayEndpoint) {
+	if cm == nil || callID == "" {
+		return
+	}
+	if ep.ObservedAt.IsZero() {
+		ep.ObservedAt = time.Now()
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	// Deduplicate by relay_name + endpoint.
+	for _, existing := range st.RelayEndpoints {
+		if existing.RelayName == ep.RelayName && existing.Endpoint == ep.Endpoint && existing.IP == ep.IP && existing.Port == ep.Port {
+			return
+		}
+	}
+	st.RelayEndpoints = append(st.RelayEndpoints, ep)
+}
+
+func envTruthy(name string) bool {
+	v := strings.TrimSpace(os.Getenv(name))
+	return v == "1" || strings.EqualFold(v, "true") || strings.EqualFold(v, "yes")
+}
+
+func envTruthyDefault(name string, defaultValue bool) bool {
+	v := strings.TrimSpace(os.Getenv(name))
+	if v == "" {
+		return defaultValue
+	}
+	return v == "1" || strings.EqualFold(v, "true") || strings.EqualFold(v, "yes")
+}
+
+func callIsLIDJID(jid types.JID) bool {
+	return strings.EqualFold(strings.TrimSpace(jid.Server), "lid") || strings.Contains(jid.String(), "@lid")
+}
+
+// callReplyJID chooses which JID form should be used when replying to a call peer.
+// When QP_CALL_REPLY_USE_LID=1 and the peer is a LID JID, we reply using the raw LID JID.
+// Otherwise, we use ToNonAD() (phone-number JID when mapping exists).
+func (cm *WhatsmeowCallManager) callReplyJID(peer types.JID) types.JID {
+	if envTruthy("QP_CALL_REPLY_USE_LID") && callIsLIDJID(peer) {
+		return peer
+	}
+	return peer.ToNonAD()
+}
+
+func redactValue(v string, full bool) string {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return ""
+	}
+	if full {
+		return v
+	}
+	// Keep a short prefix/suffix to correlate without leaking full secrets.
+	if len(v) <= 10 {
+		return "***"
+	}
+	return v[:3] + "..." + v[len(v)-3:]
+}
+
+type callTransportSummary struct {
+	NetMedium     string
+	NetProtocol   string
+	ICEUfrag      string
+	ICEPwd        string
+	Fingerprints  []string
+	Candidates    []string
+	SecretsFound  []string
+	AttrSnapshots []string
+}
+
+func anyToString(v any) (string, bool) {
+	switch t := v.(type) {
+	case string:
+		return t, true
+	case []byte:
+		return string(t), true
+	default:
+		return "", false
+	}
+}
+
+func attrString(attrs map[string]any, key string) string {
+	if attrs == nil {
+		return ""
+	}
+	v, ok := attrs[key]
+	if !ok {
+		return ""
+	}
+	if s, ok := anyToString(v); ok {
+		return strings.TrimSpace(s)
+	}
+	return strings.TrimSpace(fmt.Sprint(v))
+}
+
+func summarizeCallTransportNode(node *binary.Node, full bool) callTransportSummary {
+	var s callTransportSummary
+	if node == nil {
+		return s
+	}
+
+	// Walk the full node tree and extract likely ICE/candidate/crypto fields.
+	stack := []*binary.Node{node}
+	for len(stack) > 0 {
+		n := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		// Common places where children are stored.
+		if children, ok := n.Content.([]binary.Node); ok {
+			for i := len(children) - 1; i >= 0; i-- {
+				child := children[i]
+				stack = append(stack, &child)
+			}
+		}
+
+		// Tag-based extraction.
+		if strings.EqualFold(n.Tag, "net") {
+			if s.NetMedium == "" {
+				s.NetMedium = attrString(n.Attrs, "medium")
+			}
+			if s.NetProtocol == "" {
+				s.NetProtocol = attrString(n.Attrs, "protocol")
+			}
+		}
+
+		// Attr-based extraction.
+		for k, vAny := range n.Attrs {
+			key := strings.ToLower(strings.TrimSpace(k))
+			val := ""
+			if s1, ok := anyToString(vAny); ok {
+				val = strings.TrimSpace(s1)
+			} else {
+				val = strings.TrimSpace(fmt.Sprint(vAny))
+			}
+			switch key {
+			case "ufrag", "ice_ufrag", "ice-ufrag":
+				if s.ICEUfrag == "" {
+					s.ICEUfrag = redactValue(val, full)
+				}
+			case "pwd", "ice_pwd", "ice-pwd":
+				if s.ICEPwd == "" {
+					s.ICEPwd = redactValue(val, full)
+				}
+			case "fingerprint":
+				if val != "" {
+					s.Fingerprints = append(s.Fingerprints, redactValue(val, full))
+				}
+			}
+
+			// Detect likely secret-bearing fields.
+			if !full {
+				if strings.Contains(key, "token") || strings.Contains(key, "secret") || strings.Contains(key, "key") || strings.Contains(key, "pwd") {
+					if val != "" {
+						s.SecretsFound = append(s.SecretsFound, k+"="+redactValue(val, false))
+					}
+				}
+			}
+		}
+
+		// Candidate-like node snapshot.
+		if strings.Contains(strings.ToLower(n.Tag), "candidate") {
+			ip := attrString(n.Attrs, "ip")
+			port := attrString(n.Attrs, "port")
+			candType := attrString(n.Attrs, "type")
+			proto := attrString(n.Attrs, "proto")
+			if ip != "" && port != "" {
+				c := ip + ":" + port
+				if proto != "" {
+					c = proto + " " + c
+				}
+				if candType != "" {
+					c = c + " (" + candType + ")"
+				}
+				s.Candidates = append(s.Candidates, c)
+			} else {
+				s.AttrSnapshots = append(s.AttrSnapshots, fmt.Sprintf("%s attrs=%v", n.Tag, n.Attrs))
+			}
+		}
+	}
+
+	// De-dup small slices.
+	uniq := func(in []string) []string {
+		seen := map[string]bool{}
+		out := make([]string, 0, len(in))
+		for _, v := range in {
+			v = strings.TrimSpace(v)
+			if v == "" || seen[v] {
+				continue
+			}
+			seen[v] = true
+			out = append(out, v)
+		}
+		return out
+	}
+	s.Fingerprints = uniq(s.Fingerprints)
+	s.Candidates = uniq(s.Candidates)
+	s.SecretsFound = uniq(s.SecretsFound)
+	s.AttrSnapshots = uniq(s.AttrSnapshots)
+
+	return s
 }
 
 // disableSTUN verifica se STUN deve ser pulado (modo simulação)
@@ -53,6 +533,78 @@ func (cm *WhatsmeowCallManager) initHandshakeState(callID string) {
 		cm.handshakeStates[callID] = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
 		cm.logger.Infof("🧪 [HS-INIT] Handshake state inicializado para CallID=%s", callID)
 	}
+}
+
+func (cm *WhatsmeowCallManager) setCallMediaPort(callID string, port int) {
+	if callID == "" || port <= 0 {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	if st.LocalMediaPort == 0 {
+		st.LocalMediaPort = port
+		cm.logger.Infof("🎵🔒 [MEDIA-PORT] Locked media port=%d for CallID=%s", port, callID)
+		if cm.sipIntegration != nil {
+			cm.sipIntegration.SetSIPRTPMirrorPort(callID, port)
+		}
+	}
+}
+
+func (cm *WhatsmeowCallManager) getCallMediaPort(callID string) int {
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	if st, ok := cm.handshakeStates[callID]; ok {
+		return st.LocalMediaPort
+	}
+	return 0
+}
+
+func (cm *WhatsmeowCallManager) setCallPublicMapping(callID string, publicIP string, publicPort int) {
+	if callID == "" || publicIP == "" || publicPort <= 0 {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	if st.PublicMediaIP == "" && st.PublicMediaPort == 0 {
+		st.PublicMediaIP = publicIP
+		st.PublicMediaPort = publicPort
+		cm.logger.Infof("🎵🌐 [MEDIA-MAP] Locked srflx=%s:%d for CallID=%s", publicIP, publicPort, callID)
+	}
+}
+
+func (cm *WhatsmeowCallManager) setCallRelayBlock(callID string, rb *RelayBlock) {
+	if callID == "" || rb == nil {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	if st.Relay == nil {
+		st.Relay = rb
+	}
+}
+
+func (cm *WhatsmeowCallManager) getCallPublicMapping(callID string) (string, int) {
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	if st, ok := cm.handshakeStates[callID]; ok {
+		return st.PublicMediaIP, st.PublicMediaPort
+	}
+	return "", 0
 }
 
 // markRemoteTransportReceived marks that remote transport arrived
@@ -89,6 +641,12 @@ func (cm *WhatsmeowCallManager) monitorTransportHandshake(callID string, from ty
 		}
 		if st.RemoteTransportReceived {
 			cm.logger.Infof("🧪 [HS-MONITOR-END] Remote transport recebido, encerrando monitor para CallID=%s", callID)
+			delete(cm.handshakeStates, callID)
+			cm.hsMutex.Unlock()
+			return
+		}
+		if st.Terminated {
+			cm.logger.Infof("🧪 [HS-MONITOR-END] Call already terminated, stopping monitor (CallID=%s)", callID)
 			delete(cm.handshakeStates, callID)
 			cm.hsMutex.Unlock()
 			return
@@ -155,12 +713,64 @@ func (cm *WhatsmeowCallManager) StartIncomingCallFlow(from types.JID, callID str
 		cm.logger.Warn("[CALL-FLOW] callID vazio ignorado")
 		return
 	}
+	if envTruthy("QP_CALL_OBSERVE_ONLY") {
+		cm.logger.Warnf("[CALL-FLOW] Observe-only enabled (QP_CALL_OBSERVE_ONLY=1): not sending PREACCEPT/ACCEPT/TRANSPORT (CallID=%s)", callID)
+		return
+	}
 	if cm.hasSeenOffer(callID) {
 		cm.logger.Infof("[CALL-FLOW] Oferta duplicada ignorada (CallID=%s)", callID)
 		return
 	}
 	cm.markOffer(callID)
-	mode := strings.ToLower(strings.TrimSpace(os.Getenv("QP_CALL_ACCEPT_MODE"))) // direct | handshake (default)
+	cm.initHandshakeState(callID)
+	cm.setOfferFrom(callID, from)
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv("QP_CALL_ACCEPT_MODE"))) // minimal | direct | handshake (default)
+	if mode == "legacy" {
+		cm.logger.Infof("[CALL-FLOW] Modo=legacy → enviando PREACCEPT/ACCEPT minimalistas (CallID=%s)", callID)
+		if err := cm.AcceptCallLegacySimple(from, callID); err != nil {
+			cm.logger.Errorf("[CALL-FLOW-ERROR] Legacy accept falhou: %v", err)
+		}
+		return
+	}
+	if mode == "sip" {
+		cm.logger.Infof("[CALL-FLOW] Modo=sip → aguardando SIP 200 OK para enviar ACCEPT no WhatsApp (CallID=%s)", callID)
+		if envTruthyDefault("QP_CALL_SIP_PREACCEPT", true) {
+			cm.logger.Infof("[CALL-FLOW] Modo=sip → enviando PREACCEPT-only para tentar mover UI para 'connecting' (CallID=%s)", callID)
+			if err := cm.SendPreacceptOnly(from, callID); err != nil {
+				cm.logger.Errorf("[CALL-FLOW-ERROR] Modo=sip → PREACCEPT-only falhou: %v", err)
+			}
+			if envTruthyDefault("QP_CALL_SIP_TRANSPORT_AFTER_PREACCEPT", true) {
+				go func() {
+					time.Sleep(250 * time.Millisecond)
+					cm.logger.Infof("[CALL-FLOW] Modo=sip → enviando TRANSPORT inicial após PREACCEPT-only (CallID=%s)", callID)
+					if err := cm.sendTransportInfo(from, callID, 0); err != nil {
+						cm.logger.Errorf("[CALL-FLOW-ERROR] Modo=sip → TRANSPORT pós-PREACCEPT-only falhou: %v", err)
+					}
+				}()
+			}
+		}
+		return
+	}
+	if mode == "minimal" {
+		cm.logger.Infof("[CALL-FLOW] Modo=minimal → enviando ACCEPT minimalista (CallID=%s)", callID)
+		if err := cm.AcceptCallMinimal(from, callID); err != nil {
+			cm.logger.Errorf("[CALL-FLOW-ERROR] Minimal accept falhou: %v", err)
+			return
+		}
+		if envTruthyDefault("QP_CALL_MINIMAL_PREACCEPT_AFTER", true) {
+			// Hybrid approach: after minimal accept (to trigger remote transport), also send PREACCEPT-only.
+			go func() {
+				time.Sleep(150 * time.Millisecond)
+				cm.logger.Infof("[CALL-FLOW] Modo=minimal → enviando PREACCEPT (preaccept-only) após ACCEPT minimal (CallID=%s)", callID)
+				if err := cm.executeWAJSAcceptStructure(from, callID, 0); err != nil {
+					cm.logger.Errorf("[CALL-FLOW-ERROR] PREACCEPT-only pós-minimal falhou: %v", err)
+				}
+			}()
+		} else {
+			cm.logger.Warnf("[CALL-FLOW] Modo=minimal → PREACCEPT pós-minimal desabilitado (QP_CALL_MINIMAL_PREACCEPT_AFTER=0) (CallID=%s)", callID)
+		}
+		return
+	}
 	if mode == "direct" {
 		cm.logger.Infof("[CALL-FLOW] Modo=direct → enviando ACCEPT direto (CallID=%s)", callID)
 		if err := cm.AcceptDirectCall(from, callID); err != nil {
@@ -173,6 +783,75 @@ func (cm *WhatsmeowCallManager) StartIncomingCallFlow(from types.JID, callID str
 	if err := cm.AcceptCall(from, callID); err != nil {
 		cm.logger.Errorf("[CALL-FLOW-ERROR] AcceptCall falhou: %v", err)
 	}
+}
+
+// SendPreacceptOnly sends only the <preaccept> node (no transport, no accept).
+// Intended to move the UI away from ringing while still waiting for SIP-side answer.
+func (cm *WhatsmeowCallManager) SendPreacceptOnly(from types.JID, callID string) error {
+	if cm == nil {
+		return fmt.Errorf("call manager is nil")
+	}
+	if callID == "" {
+		return fmt.Errorf("callID is empty")
+	}
+	ownID := cm.connection.Client.Store.ID
+	if ownID == nil {
+		return fmt.Errorf("own ID not available")
+	}
+
+	// Determine local/public mapping similarly to WA-JS flow.
+	localIP := cm.getLocalNetworkIP()
+	if localIP == "" {
+		return fmt.Errorf("failed to determine local IPv4 address")
+	}
+
+	var publicIP string
+	var publicPort int
+	var localPort int
+	allocatedPort := 0
+	if cm.disableSTUN() {
+		allocatedPort = 64006
+		cm.logger.Infof("🧪 [STUN-DISABLED] PREACCEPT-only usando porta estática %d", allocatedPort)
+	} else {
+		var err error
+		publicIP, publicPort, localPort, err = cm.performSTUNDiscovery()
+		if err != nil || publicIP == "" {
+			cm.logger.Errorf("❌🎵 [PREACCEPT-ONLY-STUN-ERROR] Falha no STUN: %v", err)
+			allocatedPort = 64006
+		} else if localPort > 0 {
+			allocatedPort = localPort
+		}
+	}
+	if allocatedPort <= 0 {
+		allocatedPort = 64006
+	}
+	cm.setCallMediaPort(callID, allocatedPort)
+	cm.setCallPublicMapping(callID, publicIP, publicPort)
+
+	includeSrflx := envTruthy("QP_CALL_INCLUDE_SRFLX")
+	candidates := cm.buildCandidates(localIP, allocatedPort, publicIP, publicPort, includeSrflx)
+	if envTruthy("QP_CALL_PREACCEPT_RELAY_EMPTY_NET") && cm.getNetMediumForCall(callID) == "2" {
+		cm.logger.Warnf("🧊 [PREACCEPT-ONLY-RELAY-EMPTY-NET] Sending PREACCEPT with empty net (no candidates) for relay call (CallID=%s)", callID)
+		candidates = nil
+	}
+	cm.logger.Infof("🧪 [PREACCEPT-ONLY-NET] medium=%s candidates=%d (CallID=%s)", cm.getNetMediumForCall(callID), len(candidates), callID)
+
+	preacceptNode := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": from.ToNonAD(), "from": ownID.ToNonAD(), "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
+		Tag:   "preaccept",
+		Attrs: binary.Attrs{"call-id": callID, "call-creator": from.ToNonAD()},
+		Content: []binary.Node{
+			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "16000"}},
+			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "8000"}},
+			cm.wrapCandidatesInNetNode(callID, candidates),
+			{Tag: "encopt", Attrs: binary.Attrs{"keygen": "2"}},
+		},
+	}}}
+
+	if err := cm.connection.Client.DangerousInternals().SendNode(context.Background(), preacceptNode); err != nil {
+		return err
+	}
+	cm.logger.Infof("✅🎵 [PREACCEPT-ONLY-SENT] PREACCEPT-only enviado (CallID=%s)", callID)
+	return nil
 }
 
 // executeWAJSAcceptStructure implementa a estrutura exata do WA-JS
@@ -190,7 +869,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 
 	rawMode := os.Getenv("QP_CALL_HANDSHAKE_MODE")
 	mode := strings.TrimSpace(strings.ToLower(rawMode)) // preaccept+transport (default), preaccept-only, accept-early, accept-immediate
-	includeSrflx := os.Getenv("QP_CALL_INCLUDE_SRFLX") == "1"
+	includeSrflx := envTruthy("QP_CALL_INCLUDE_SRFLX")
 	cm.logger.Infof("🧪 [HS-MODE] raw='%s' normalized='%s' INCLUDE_SRFLX=%v", rawMode, mode, includeSrflx)
 
 	// 🎵🚀 STEP 1: Enviar PREACCEPT primeiro com informações de rede (candidatos ICE)
@@ -199,25 +878,36 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	// Obter IP local e porta para incluir no preaccept
 	localIP := cm.getLocalNetworkIP()
 	if localIP == "" {
-		localIP = "192.168.31.202" // Fallback
+		return fmt.Errorf("failed to determine local IPv4 address")
 	}
 
 	var publicIP string
+	var publicPort int
+	var localPort int
 	var allocatedPort int
 	var err error
 	if cm.disableSTUN() {
 		allocatedPort = 64006
 		cm.logger.Infof("🧪 [STUN-DISABLED] QP_CALL_DISABLE_STUN=1 -> usando porta estática %d sem discovery", allocatedPort)
 	} else {
-		publicIP, allocatedPort, err = cm.performSTUNDiscovery()
+		publicIP, publicPort, localPort, err = cm.performSTUNDiscovery()
 		if err != nil || publicIP == "" {
 			cm.logger.Errorf("❌🎵 [PREACCEPT-STUN-ERROR] Falha no STUN: %v", err)
 			allocatedPort = 64006
+		} else if localPort > 0 {
+			allocatedPort = localPort
 		}
 	}
-	cm.logger.Infof("🎵🔧 [PREACCEPT-NETWORK] IP local: %s, porta: %d, publicIP=%s (stunDisabled=%v)", localIP, allocatedPort, publicIP, cm.disableSTUN())
+	cm.logger.Infof("🎵🔧 [PREACCEPT-NETWORK] IP local: %s, porta local: %d, public=%s:%d (stunDisabled=%v)", localIP, allocatedPort, publicIP, publicPort, cm.disableSTUN())
+	cm.setCallMediaPort(callID, allocatedPort)
+	cm.setCallPublicMapping(callID, publicIP, publicPort)
 
-	candidates := cm.buildCandidates(localIP, publicIP, allocatedPort, includeSrflx)
+	candidates := cm.buildCandidates(localIP, allocatedPort, publicIP, publicPort, includeSrflx)
+	if envTruthy("QP_CALL_PREACCEPT_RELAY_EMPTY_NET") && cm.getNetMediumForCall(callID) == "2" {
+		cm.logger.Warnf("🧊 [PREACCEPT-RELAY-EMPTY-NET] Sending PREACCEPT with empty net (no candidates) for relay call (CallID=%s)", callID)
+		candidates = nil
+	}
+	cm.logger.Infof("🧪 [PREACCEPT-NET] medium=%s candidates=%d (CallID=%s)", cm.getNetMediumForCall(callID), len(candidates), callID)
 
 	preacceptNode := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": from.ToNonAD(), "from": ownID.ToNonAD(), "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
 		Tag:   "preaccept",
@@ -225,7 +915,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 		Content: []binary.Node{
 			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "16000"}},
 			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "8000"}},
-			cm.wrapCandidatesInNetNode(candidates),
+			cm.wrapCandidatesInNetNode(callID, candidates),
 			{Tag: "encopt", Attrs: binary.Attrs{"keygen": "2"}},
 		},
 	}}}
@@ -246,6 +936,18 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	}
 
 	cm.logger.Infof("✅🎵 [PREACCEPT-SENT] PREACCEPT enviado com dados de rede: %s:%d! (aguardando TRANSPORT antes do ACCEPT)", localIP, allocatedPort)
+
+	// Relay-only calls frequently arrive with disable_p2p=true and peer net medium=2.
+	// In those cases, waiting for remote transport after PREACCEPT may time out; optionally send ACCEPT immediately.
+	if cm.getNetMediumForCall(callID) == "2" && envTruthy("QP_CALL_RELAY_ACCEPT_IMMEDIATE") {
+		cm.logger.Warnf("🧪 [RELAY-ACCEPT-IMMEDIATE] medium=2 detected; sending ACCEPT immediately after PREACCEPT (CallID=%s)", callID)
+		acceptNode := cm.buildAcceptNodeWithMedium(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), nil, "2")
+		if err2 := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err2 != nil {
+			cm.logger.Errorf("❌ [RELAY-ACCEPT-IMMEDIATE-ERROR] %v", err2)
+		} else {
+			cm.logger.Infof("✅ [RELAY-ACCEPT-IMMEDIATE-SENT] ACCEPT sent for relay-only call")
+		}
+	}
 
 	skipTransport := mode == "preaccept-only"
 	if mode == "accept-early" {
@@ -292,7 +994,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 		cm.sendAdvancedRTPConfig(from, callID)
 		cm.sendQualityOfService(from, callID)
 		cm.logger.Infof("🎉🎵 [RTP-OPTIMIZE-COMPLETE] === OTIMIZAÇÃO RTP/CODEC CONCLUÍDA ===")
-		go cm.startVoIPRTPBridge(from, callID, 0)
+		go cm.startVoIPRTPBridge(from, callID, allocatedPort)
 	} else {
 		cm.logger.Infof("🧪 [ISOLATION] Skipping RTP bridge & codec optimization (QP_CALL_META_ONLY=1)")
 	}
@@ -301,7 +1003,8 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 }
 
 // buildCandidates cria lista de candidates (host + opcional srflx)
-func (cm *WhatsmeowCallManager) buildCandidates(localIP, publicIP string, port int, includeSrflx bool) []binary.Node {
+// IMPORTANT: host candidate must use the LOCAL UDP port, while srflx uses the STUN-mapped port.
+func (cm *WhatsmeowCallManager) buildCandidates(localIP string, localPort int, publicIP string, publicPort int, includeSrflx bool) []binary.Node {
 	candidates := []binary.Node{{
 		Tag: "candidate",
 		Attrs: binary.Attrs{
@@ -309,34 +1012,33 @@ func (cm *WhatsmeowCallManager) buildCandidates(localIP, publicIP string, port i
 			"id":         "1",
 			"ip":         localIP,
 			"network":    "1",
-			"port":       fmt.Sprintf("%d", port),
+			"port":       fmt.Sprintf("%d", localPort),
 			"priority":   "2130706431",
 			"protocol":   "udp",
 			"type":       "host",
 		},
 	}}
-	if includeSrflx && publicIP != "" && publicIP != localIP {
+	includeSrflxAlways := envTruthy("QP_CALL_INCLUDE_SRFLX_ALWAYS")
+	if includeSrflx && publicIP != "" && publicPort > 0 && (includeSrflxAlways || publicIP != localIP || publicPort != localPort) {
 		candidates = append(candidates, binary.Node{Tag: "candidate", Attrs: binary.Attrs{
 			"generation": "0",
 			"id":         "2",
 			"ip":         publicIP,
 			"network":    "1",
-			"port":       fmt.Sprintf("%d", port),
+			"port":       fmt.Sprintf("%d", publicPort),
 			"priority":   "2130706430",
 			"protocol":   "udp",
 			"type":       "srflx",
+			"rel-addr":   localIP,
+			"rel-port":   fmt.Sprintf("%d", localPort),
 		}})
 	}
 	return candidates
 }
 
 // wrapCandidatesInNetNode envolve candidates em nó net com medium configurável
-func (cm *WhatsmeowCallManager) wrapCandidatesInNetNode(candidates []binary.Node) binary.Node {
-	medium := "3"
-	if os.Getenv("QP_CALL_NET_MEDIUM") == "1" {
-		medium = "1"
-	}
-	return binary.Node{Tag: "net", Attrs: binary.Attrs{"medium": medium, "protocol": "0"}, Content: candidates}
+func (cm *WhatsmeowCallManager) wrapCandidatesInNetNode(callID string, candidates []binary.Node) binary.Node {
+	return binary.Node{Tag: "net", Attrs: binary.Attrs{"medium": cm.getNetMediumForCall(callID), "protocol": "0"}, Content: candidates}
 }
 
 // sendTransportInfo envia informações de transporte usando IP LOCAL do dispositivo WhatsApp
@@ -348,25 +1050,36 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 	// O WhatsApp device precisa informar onde ELE vai escutar RTP, não o IP público
 	localIP := cm.getLocalNetworkIP()
 	if localIP == "" {
-		cm.logger.Errorf("❌🎵 [LOCAL-IP-ERROR] Falha ao obter IP local")
-		// Fallback para IP local comum da rede 192.168.31.x
-		localIP = "192.168.31.202" // IP local atual do sistema
+		return fmt.Errorf("failed to determine local IPv4 address")
 	}
 
-	// Para a porta, usar STUN discovery apenas para descobrir uma porta externa disponível
-	var allocatedPort int
-	if cm.disableSTUN() {
-		allocatedPort = 64006
-		cm.logger.Infof("🧪 [STUN-DISABLED] Usando porta estática %d para transport (sem STUN)", allocatedPort)
-	} else {
-		if _, portTmp, err2 := cm.performSTUNDiscovery(); err2 != nil {
-			cm.logger.Errorf("❌🎵 [STUN-ERROR] Falha no STUN discovery: %v", err2)
-			allocatedPort = 64006 // Fallback
+	// Prefer a locked media port/mapping for this CallID to avoid mismatches.
+	lockedPort := cm.getCallMediaPort(callID)
+	publicIP, publicPort := cm.getCallPublicMapping(callID)
+	allocatedPort := lockedPort
+	if allocatedPort <= 0 {
+		if cm.disableSTUN() {
+			allocatedPort = 64006
+			cm.logger.Infof("🧪 [STUN-DISABLED] Usando porta estática %d para transport (sem STUN)", allocatedPort)
 		} else {
-			allocatedPort = portTmp
+			ipTmp, pubPortTmp, locPortTmp, err2 := cm.performSTUNDiscovery()
+			if err2 != nil {
+				cm.logger.Errorf("❌🎵 [STUN-ERROR] Falha no STUN discovery: %v", err2)
+				allocatedPort = 64006 // Fallback
+			} else {
+				publicIP = ipTmp
+				publicPort = pubPortTmp
+				if locPortTmp > 0 {
+					allocatedPort = locPortTmp
+				} else {
+					allocatedPort = 64006
+				}
+				cm.setCallMediaPort(callID, allocatedPort)
+				cm.setCallPublicMapping(callID, publicIP, publicPort)
+			}
 		}
 	}
-	cm.logger.Infof("✅🔍 [LOCAL-IP-SUCCESS] IP local para WhatsApp: %s:%d (stunDisabled=%v)", localIP, allocatedPort, cm.disableSTUN())
+	cm.logger.Infof("✅🔍 [LOCAL-IP-SUCCESS] IP local para WhatsApp: %s:%d public=%s:%d (stunDisabled=%v)", localIP, allocatedPort, publicIP, publicPort, cm.disableSTUN())
 
 	// Use port from parameter or STUN discovery
 	var finalPort int
@@ -379,6 +1092,13 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 	cm.logger.Infof("🎵🔧 [RTP-PORT-LOCAL] Usando IP local: %s, porta final: %d", localIP, finalPort)
 	cm.logger.Infof("🎵🚛 [TRANSPORT] Enviando transport INICIAL com IP LOCAL do dispositivo WhatsApp...")
 
+	includeSrflx := envTruthy("QP_CALL_INCLUDE_SRFLX")
+	transportCandidates := cm.buildCandidates(localIP, finalPort, publicIP, publicPort, includeSrflx)
+	if cm.getNetMediumForCall(callID) == "2" && envTruthy("QP_CALL_TRANSPORT_RELAY_EMPTY_NET") {
+		cm.logger.Warnf("🧊 [TRANSPORT-RELAY-EMPTY-NET] Sending initial transport with empty net (no candidates) for relay call (CallID=%s)", callID)
+		transportCandidates = nil
+	}
+
 	ownID := cm.connection.Client.Store.ID
 	if ownID == nil {
 		return fmt.Errorf("own ID not available")
@@ -386,13 +1106,18 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 
 	// CRITICAL: Transport INICIAL sem transport-message-type (ou tipo 0)
 	// Este é o transport que enviamos PRIMEIRO, antes de receber o deles
+	legacyWAJSAttrs := envTruthy("QP_CALL_LEGACY_WAJS_ATTRS")
+	transportCallAttrs := binary.Attrs{
+		"id": cm.connection.Client.GenerateMessageID(),
+		"to": from.ToNonAD(),
+	}
+	if !legacyWAJSAttrs {
+		transportCallAttrs["from"] = ownID.ToNonAD()
+	}
+
 	transportNode := binary.Node{
-		Tag: "call",
-		Attrs: binary.Attrs{
-			"id":   cm.connection.Client.GenerateMessageID(),
-			"from": ownID.ToNonAD(),
-			"to":   from.ToNonAD(),
-		},
+		Tag:   "call",
+		Attrs: transportCallAttrs,
 		Content: []binary.Node{{
 			Tag: "transport",
 			Attrs: binary.Attrs{
@@ -403,28 +1128,25 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 			Content: []binary.Node{{
 				Tag: "net",
 				Attrs: binary.Attrs{
-					"medium":   "1",
+					"medium":   cm.getNetMediumForCall(callID),
 					"protocol": "0",
 				},
-				Content: []binary.Node{{
-					Tag: "candidate",
-					Attrs: binary.Attrs{
-						"generation": "0",
-						"id":         "1",
-						"ip":         localIP,
-						"network":    "1",
-						"port":       fmt.Sprintf("%d", finalPort),
-						"priority":   "2130706431",
-						"protocol":   "udp",
-						"type":       "host",
-					},
-				}},
+				Content: transportCandidates,
 			}},
 		}},
 	}
 
 	if errSend := cm.connection.Client.DangerousInternals().SendNode(context.Background(), transportNode); errSend != nil {
 		return fmt.Errorf("failed to send transport: %w", errSend)
+	}
+
+	// Dump transport sent when configured
+	if os.Getenv("QP_CALL_DUMP_TRANSPORT") == "1" {
+		if p, e := DumpTransportSent(callID, from, *ownID, transportNode); e == nil {
+			cm.logger.Infof("💾 [TRANSPORT-SENT-DUMP] Saved to %s", p)
+		} else {
+			cm.logger.Warnf("⚠️ [TRANSPORT-SENT-DUMP] Failed: %v", e)
+		}
 	}
 
 	cm.logger.Infof("✅ [TRANSPORT-SENT] Transport INICIAL enviado usando padrão whatsmeow!")
@@ -434,8 +1156,147 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 	return nil
 }
 
-// performSTUNDiscovery faz STUN discovery usando APENAS o servidor da Meta
-func (cm *WhatsmeowCallManager) performSTUNDiscovery() (string, int, error) {
+// sendTransportInfoResponse sends a TRANSPORT message in response to a peer-provided transport.
+// For relay-only calls (medium=2), the peer transport often carries no ICE candidates; in this case,
+// we default to sending an empty <net> (no candidates) to avoid mixing P2P candidates inside relay medium.
+func (cm *WhatsmeowCallManager) sendTransportInfoResponse(from types.JID, callID string, receivedTransport *binary.Node) error {
+	if cm == nil || cm.connection == nil || cm.connection.Client == nil {
+		return fmt.Errorf("connection not available")
+	}
+	if callID == "" {
+		return fmt.Errorf("callID is empty")
+	}
+	if receivedTransport == nil {
+		return fmt.Errorf("receivedTransport is nil")
+	}
+
+	ownID := cm.connection.Client.Store.ID
+	if ownID == nil {
+		return fmt.Errorf("own ID not available")
+	}
+
+	// Extract round/type from the received transport attrs
+	p2pRound := ""
+	if receivedTransport.Attrs != nil {
+		if v, ok := receivedTransport.Attrs["p2p-cand-round"]; ok {
+			p2pRound = fmt.Sprintf("%v", v)
+		}
+	}
+
+	// Extract medium from <net> child if present, fallback to computed
+	transportMedium := ""
+	if children, ok := receivedTransport.Content.([]binary.Node); ok {
+		for _, ch := range children {
+			if ch.Tag != "net" {
+				continue
+			}
+			if ch.Attrs != nil {
+				if m, ok2 := ch.Attrs["medium"]; ok2 {
+					transportMedium = fmt.Sprintf("%v", m)
+				}
+			}
+			break
+		}
+	}
+	if strings.TrimSpace(transportMedium) == "" {
+		transportMedium = cm.getNetMediumForCall(callID)
+	}
+	if strings.TrimSpace(transportMedium) == "" {
+		transportMedium = "3"
+	}
+
+	// Default: relay transport response sends empty net (no candidates)
+	includeCandidates := envTruthy("QP_CALL_TRANSPORT_RESPONSE_INCLUDE_CANDIDATES")
+	transportCandidates := []binary.Node(nil)
+	if includeCandidates {
+		localIP := cm.getLocalNetworkIP()
+		if localIP == "" {
+			return fmt.Errorf("failed to determine local IPv4 address")
+		}
+		lockedPort := cm.getCallMediaPort(callID)
+		publicIP, publicPort := cm.getCallPublicMapping(callID)
+		port := lockedPort
+		if port <= 0 {
+			if cm.disableSTUN() {
+				port = 64006
+			} else {
+				var errStun error
+				var localPort int
+				publicIP, publicPort, localPort, errStun = cm.performSTUNDiscovery()
+				if errStun != nil || publicIP == "" {
+					port = 64006
+				} else if localPort > 0 {
+					port = localPort
+				}
+				cm.setCallMediaPort(callID, port)
+				cm.setCallPublicMapping(callID, publicIP, publicPort)
+			}
+		}
+		includeSrflx := envTruthy("QP_CALL_INCLUDE_SRFLX")
+		transportCandidates = cm.buildCandidates(localIP, port, publicIP, publicPort, includeSrflx)
+	}
+
+	responseType := strings.TrimSpace(os.Getenv("QP_CALL_TRANSPORT_RESPONSE_TYPE"))
+	if responseType == "" {
+		responseType = "2"
+	}
+	transportAttrs := binary.Attrs{
+		"call-id":                callID,
+		"call-creator":           from.ToNonAD(),
+		"transport-message-type": responseType,
+	}
+	if p2pRound != "" {
+		transportAttrs["p2p-cand-round"] = p2pRound
+	}
+
+	legacyWAJSAttrs := envTruthy("QP_CALL_LEGACY_WAJS_ATTRS")
+	callAttrs := binary.Attrs{
+		"id": cm.connection.Client.GenerateMessageID(),
+		"to": from.ToNonAD(),
+	}
+	if !legacyWAJSAttrs {
+		callAttrs["from"] = ownID.ToNonAD()
+	}
+
+	transportNode := binary.Node{
+		Tag:   "call",
+		Attrs: callAttrs,
+		Content: []binary.Node{{
+			Tag:   "transport",
+			Attrs: transportAttrs,
+			Content: []binary.Node{{
+				Tag: "net",
+				Attrs: binary.Attrs{
+					"medium":   strings.TrimSpace(transportMedium),
+					"protocol": "0",
+				},
+				Content: transportCandidates,
+			}},
+		}},
+	}
+
+	if errSend := cm.connection.Client.DangerousInternals().SendNode(context.Background(), transportNode); errSend != nil {
+		return fmt.Errorf("failed to send transport response: %w", errSend)
+	}
+	if os.Getenv("QP_CALL_DUMP_TRANSPORT") == "1" {
+		if p, e := DumpTransportSent(callID, from, *ownID, transportNode); e == nil {
+			cm.logger.Infof("💾 [TRANSPORT-RESPONSE-DUMP] Saved to %s", p)
+		} else {
+			cm.logger.Warnf("⚠️ [TRANSPORT-RESPONSE-DUMP] Failed: %v", e)
+		}
+	}
+
+	cm.logger.Infof("✅🎵🚛 [TRANSPORT-RESPONSE-SENT] transport-message-type=2 medium=%s candidates=%d (CallID=%s)", strings.TrimSpace(transportMedium), len(transportCandidates), callID)
+
+	// Next step in connecting state: validate UDP reachability to relay endpoints and capture first inbound packet.
+	cm.MaybeStartRelaySessionProbe(callID)
+	return nil
+}
+
+// performSTUNDiscovery faz STUN discovery e retorna:
+//   - publicIP/publicPort: XOR-MAPPED (srflx)
+//   - localPort: porta local real do socket UDP usado no STUN (host)
+func (cm *WhatsmeowCallManager) performSTUNDiscovery() (string, int, int, error) {
 	// Novo: fallback múltiplo opcional
 	fallbackEnabled := os.Getenv("QP_CALL_STUN_FALLBACK") == "1"
 	primary := "stun1.l.google.com:19302"
@@ -450,33 +1311,37 @@ func (cm *WhatsmeowCallManager) performSTUNDiscovery() (string, int, error) {
 			tag = fmt.Sprintf("FALLBACK-%d", i)
 		}
 		cm.logger.Infof("🔍🌐 [STUN-%s] Tentando servidor STUN: %s", tag, srv)
-		ip, port, err := cm.performRealSTUNRequest(srv)
+		ip, publicPort, localPort, err := cm.performRealSTUNRequest(srv)
 		if err != nil {
 			cm.logger.Errorf("❌🔍 [STUN-%s-FAIL] %v", tag, err)
 			continue
 		}
-		cm.logger.Infof("✅🔍 [STUN-%s-SUCCESS] %s:%d", tag, ip, port)
-		return ip, port, nil
+		cm.logger.Infof("✅🔍 [STUN-%s-SUCCESS] public=%s:%d localPort=%d", tag, ip, publicPort, localPort)
+		return ip, publicPort, localPort, nil
 	}
-	return "", 0, fmt.Errorf("todos servidores STUN falharam (fallback=%v)", fallbackEnabled)
+	return "", 0, 0, fmt.Errorf("todos servidores STUN falharam (fallback=%v)", fallbackEnabled)
 }
 
-// performRealSTUNRequest faz uma consulta STUN REAL ao servidor da Meta
-func (cm *WhatsmeowCallManager) performRealSTUNRequest(stunServer string) (string, int, error) {
+// performRealSTUNRequest faz uma consulta STUN REAL e retorna também a porta local do socket.
+func (cm *WhatsmeowCallManager) performRealSTUNRequest(stunServer string) (string, int, int, error) {
 	cm.logger.Infof("🔍🚀 [STUN-REAL-REQ] Iniciando consulta STUN REAL para: %s", stunServer)
 
 	// Resolver endereço do servidor STUN
 	serverAddr, err := net.ResolveUDPAddr("udp", stunServer)
 	if err != nil {
-		return "", 0, fmt.Errorf("erro ao resolver servidor STUN %s: %w", stunServer, err)
+		return "", 0, 0, fmt.Errorf("erro ao resolver servidor STUN %s: %w", stunServer, err)
 	}
 
 	// Criar conexão UDP
 	conn, err := net.DialUDP("udp", nil, serverAddr)
 	if err != nil {
-		return "", 0, fmt.Errorf("erro ao conectar ao servidor STUN %s: %w", stunServer, err)
+		return "", 0, 0, fmt.Errorf("erro ao conectar ao servidor STUN %s: %w", stunServer, err)
 	}
 	defer conn.Close()
+	localPort := 0
+	if la, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+		localPort = la.Port
+	}
 
 	// Criar mensagem STUN de binding request
 	message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
@@ -486,7 +1351,7 @@ func (cm *WhatsmeowCallManager) performRealSTUNRequest(stunServer string) (strin
 	// Enviar mensagem STUN
 	_, err = conn.Write(message.Raw)
 	if err != nil {
-		return "", 0, fmt.Errorf("erro ao enviar STUN request: %w", err)
+		return "", 0, localPort, fmt.Errorf("erro ao enviar STUN request: %w", err)
 	}
 
 	// Configurar timeout para resposta (mais rápido para Meta, normal para outros)
@@ -505,7 +1370,7 @@ func (cm *WhatsmeowCallManager) performRealSTUNRequest(stunServer string) (strin
 	buffer := make([]byte, 1024)
 	n, err := conn.Read(buffer)
 	if err != nil {
-		return "", 0, fmt.Errorf("erro ao ler resposta STUN: %w", err)
+		return "", 0, localPort, fmt.Errorf("erro ao ler resposta STUN: %w", err)
 	}
 
 	cm.logger.Infof("🔍📥 [STUN-REAL-RECV] Recebida resposta STUN de %d bytes", n)
@@ -515,7 +1380,7 @@ func (cm *WhatsmeowCallManager) performRealSTUNRequest(stunServer string) (strin
 	stunResponse.Raw = buffer[:n]
 
 	if err := stunResponse.Decode(); err != nil {
-		return "", 0, fmt.Errorf("erro ao decodificar resposta STUN: %w", err)
+		return "", 0, localPort, fmt.Errorf("erro ao decodificar resposta STUN: %w", err)
 	}
 
 	// Extrair endereço mapeado (XOR-MAPPED-ADDRESS)
@@ -524,15 +1389,15 @@ func (cm *WhatsmeowCallManager) performRealSTUNRequest(stunServer string) (strin
 		// Tentar MAPPED-ADDRESS como fallback
 		var mappedAddr stun.MappedAddress
 		if err := mappedAddr.GetFrom(&stunResponse); err != nil {
-			return "", 0, fmt.Errorf("erro ao extrair endereço mapeado: %w", err)
+			return "", 0, localPort, fmt.Errorf("erro ao extrair endereço mapeado: %w", err)
 		}
 
 		cm.logger.Infof("✅🔍 [STUN-REAL-MAPPED] Endereço descoberto (MAPPED): %s", mappedAddr.IP.String())
-		return mappedAddr.IP.String(), mappedAddr.Port, nil
+		return mappedAddr.IP.String(), mappedAddr.Port, localPort, nil
 	}
 
-	cm.logger.Infof("✅🔍 [STUN-REAL-XOR] Endereço descoberto (XOR-MAPPED): %s:%d", xorAddr.IP.String(), xorAddr.Port)
-	return xorAddr.IP.String(), xorAddr.Port, nil
+	cm.logger.Infof("✅🔍 [STUN-REAL-XOR] Endereço descoberto (XOR-MAPPED): %s:%d (localPort=%d)", xorAddr.IP.String(), xorAddr.Port, localPort)
+	return xorAddr.IP.String(), xorAddr.Port, localPort, nil
 }
 
 // getLocalNetworkIP obtém o IP local da rede onde o WhatsApp device está executando
@@ -564,6 +1429,7 @@ func (cm *WhatsmeowCallManager) getLocalNetworkIPFromInterfaces() string {
 		return ""
 	}
 
+	var fallbackIPv4 string
 	for _, iface := range interfaces {
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
 			continue
@@ -577,53 +1443,76 @@ func (cm *WhatsmeowCallManager) getLocalNetworkIPFromInterfaces() string {
 		for _, addr := range addrs {
 			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 				if ipnet.IP.To4() != nil {
-					// Priorizar IPs da rede 192.168.x.x (rede local comum)
 					ipStr := ipnet.IP.String()
+					// Prefer RFC1918 addresses first.
 					if strings.HasPrefix(ipStr, "192.168.") {
-						cm.logger.Infof("✅🏠 [LOCAL-IP-FOUND] IP local da rede: %s", ipStr)
+						cm.logger.Infof("✅🏠 [LOCAL-IP-FOUND] RFC1918 IPv4: %s", ipStr)
 						return ipStr
+					}
+					if strings.HasPrefix(ipStr, "10.") {
+						cm.logger.Infof("✅🏠 [LOCAL-IP-FOUND] RFC1918 IPv4: %s", ipStr)
+						return ipStr
+					}
+					if strings.HasPrefix(ipStr, "172.") {
+						// 172.16.0.0/12
+						parts := strings.Split(ipStr, ".")
+						if len(parts) >= 2 {
+							second := parts[1]
+							switch second {
+							case "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31":
+								cm.logger.Infof("✅🏠 [LOCAL-IP-FOUND] RFC1918 IPv4: %s", ipStr)
+								return ipStr
+							}
+						}
+					}
+
+					// Keep a non-loopback IPv4 as fallback (may be public on servers).
+					if fallbackIPv4 == "" {
+						fallbackIPv4 = ipStr
 					}
 				}
 			}
 		}
 	}
+	if fallbackIPv4 != "" {
+		cm.logger.Warnf("⚠️🏠 [LOCAL-IP-FALLBACK] Nenhum RFC1918 IPv4 encontrado; usando IPv4=%s", fallbackIPv4)
+		return fallbackIPv4
+	}
 
-	cm.logger.Warnf("⚠️🏠 [LOCAL-IP-FALLBACK] Nenhum IP 192.168.x.x encontrado, usando fallback")
+	cm.logger.Errorf("❌🏠 [LOCAL-IP-ERROR] Nenhum IPv4 não-loopback encontrado")
 	return ""
 }
 
 // startVoIPRTPBridge cria ponte RTP entre servidor VoIP e dispositivo WhatsApp
 func (cm *WhatsmeowCallManager) startVoIPRTPBridge(from types.JID, callID string, rtpPort int) {
-	cm.logger.Infof("🎵🚀 [RTP-BRIDGE] === INICIANDO PONTE RTP VOIP ↔ WHATSAPP ===")
+	cm.logger.Infof("🎵🚀 [RTP-BRIDGE] === INICIANDO PONTE RTP VOIP ↔ WHATSAPP === (CallID=%s)", callID)
 	cm.logger.Infof("🎵📋 [RTP-BRIDGE-PARAMS] From: %v, CallID: %s, Port: %d", from, callID, rtpPort)
 
-	// 🎵 STEP 1: Obter porta RTP do STUN discovery
-	var allocatedPort int
-	if cm.disableSTUN() {
-		allocatedPort = 64006
-		cm.logger.Infof("🧪 [STUN-DISABLED] Ponte RTP usando porta estática %d (sem STUN)", allocatedPort)
-	} else {
-		if _, portTmp, err2 := cm.performSTUNDiscovery(); err2 != nil {
-			cm.logger.Errorf("❌🎵 [RTP-BRIDGE-ERROR] Falha no STUN discovery: %v", err2)
-			allocatedPort = 64006
+	// Use provided port first. Otherwise prefer the locked media port for this CallID.
+	bridgePort := rtpPort
+	if bridgePort <= 0 {
+		bridgePort = cm.getCallMediaPort(callID)
+	}
+	if bridgePort <= 0 {
+		if cm.disableSTUN() {
+			bridgePort = 64006
+			cm.logger.Infof("🧪 [STUN-DISABLED] Ponte RTP usando porta estática %d (sem STUN)", bridgePort)
 		} else {
-			allocatedPort = portTmp
+			if _, _, portTmp, err2 := cm.performSTUNDiscovery(); err2 != nil {
+				cm.logger.Errorf("❌🎵 [RTP-BRIDGE-ERROR] Falha no STUN discovery: %v", err2)
+				bridgePort = 64006
+			} else {
+				bridgePort = portTmp
+			}
+			cm.setCallMediaPort(callID, bridgePort)
 		}
 	}
 
-	// Use port from parameter or STUN discovery
-	var bridgePort int
-	if rtpPort > 0 {
-		bridgePort = rtpPort
-	} else {
-		bridgePort = allocatedPort
-	}
-
-	cm.logger.Infof("🎵🌉 [RTP-BRIDGE] Criando ponte RTP na porta: %d", bridgePort)
-	cm.logger.Infof("🎵📡 [RTP-BRIDGE-FLOW] VoIP Server → :%d → WhatsApp Device", bridgePort)
+	cm.logger.Infof("🎵🌉 [RTP-BRIDGE] Criando ponte RTP na porta: %d (CallID=%s)", bridgePort, callID)
+	cm.logger.Infof("🎵📡 [RTP-BRIDGE-FLOW] VoIP Server → :%d → WhatsApp Device (CallID=%s)", bridgePort, callID)
 
 	// 🎵 STEP 2: Iniciar listener UDP real para RTP
-	cm.logger.Infof("🎵👂 [RTP-LISTEN] Criando listener UDP real na porta %d...", bridgePort)
+	cm.logger.Infof("🎵👂 [RTP-LISTEN] Criando listener UDP real na porta %d... (CallID=%s)", bridgePort, callID)
 
 	// Criar listener UDP
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", bridgePort))
@@ -634,13 +1523,13 @@ func (cm *WhatsmeowCallManager) startVoIPRTPBridge(from types.JID, callID string
 
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		cm.logger.Errorf("❌🎵 [UDP-ERROR] Erro ao criar listener UDP: %v", err)
+		cm.logger.Errorf("❌🎵 [UDP-ERROR] Erro ao criar listener UDP: %v (CallID=%s)", err, callID)
 		return
 	}
 	defer conn.Close()
 
-	cm.logger.Infof("✅🎵 [UDP-SUCCESS] Listener UDP ativo na porta %d!", bridgePort)
-	cm.logger.Infof("🎵📡 [RTP-READY] Aguardando RTP do servidor VoIP...")
+	cm.logger.Infof("✅🎵 [UDP-SUCCESS] Listener UDP ativo em %s (CallID=%s)", conn.LocalAddr().String(), callID)
+	cm.logger.Infof("🎵📡 [RTP-READY] Aguardando RTP do servidor VoIP... (CallID=%s)", callID)
 
 	// Buffer para receber pacotes RTP
 	buffer := make([]byte, 1500) // MTU padrão
@@ -648,10 +1537,34 @@ func (cm *WhatsmeowCallManager) startVoIPRTPBridge(from types.JID, callID string
 	// Timeout para evitar hang infinito
 	timeout := time.After(2 * time.Minute)
 
+	var wavDumper *rtpWavDumper
+	wavDumpEnabled := strings.TrimSpace(os.Getenv("QP_CALL_RTP_DUMP_WAV"))
+	if wavDumpEnabled == "1" || strings.EqualFold(wavDumpEnabled, "true") {
+		dumpDir := strings.TrimSpace(os.Getenv("QP_CALL_DUMP_DIR"))
+		if dumpDir == "" {
+			dumpDir = "../.dist/call_dumps"
+		}
+		maxSeconds := 10
+		if v := strings.TrimSpace(os.Getenv("QP_CALL_RTP_DUMP_WAV_SECONDS")); v != "" {
+			if i, err := strconv.Atoi(v); err == nil {
+				if i < 1 {
+					i = 1
+				}
+				if i > 60 {
+					i = 60
+				}
+				maxSeconds = i
+			}
+		}
+		wavDumper = newRTPWavDumper(cm.logger, callID, dumpDir, time.Duration(maxSeconds)*time.Second)
+		cm.logger.Infof("🎵🎧 [RTP-WAV-DUMP] Enabled: dumping up to %ds of RTP audio to %s (CallID=%s)", maxSeconds, dumpDir, callID)
+	}
+
+	firstPacketDumped := false
 	for {
 		select {
 		case <-timeout:
-			cm.logger.Infof("🎵⏰ [RTP-TIMEOUT] Timeout de 2 minutos atingido")
+			cm.logger.Infof("🎵⏰ [RTP-TIMEOUT] Timeout de 2 minutos atingido (CallID=%s)", callID)
 			return
 		default:
 			// Set timeout de 1 segundo para cada leitura
@@ -663,14 +1576,295 @@ func (cm *WhatsmeowCallManager) startVoIPRTPBridge(from types.JID, callID string
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 					continue
 				}
-				cm.logger.Errorf("❌🎵 [UDP-READ-ERROR] Erro ao ler UDP: %v", err)
+				cm.logger.Errorf("❌🎵 [UDP-READ-ERROR] Erro ao ler UDP: %v (CallID=%s)", err, callID)
 				continue
 			}
 
-			cm.logger.Infof("🎵📥 [RTP-RECEIVED] %d bytes de %v - reenviando para WhatsApp...", n, clientAddr)
+			if wavDumper != nil {
+				payload, pt, ok := extractRTPPayload(buffer[:n])
+				if ok {
+					wavDumper.HandleRTP(payload, pt)
+				}
+			}
+
+			dumpEnabled := strings.TrimSpace(os.Getenv("QP_CALL_RTP_DUMP_FIRST"))
+			if !firstPacketDumped && (dumpEnabled == "1" || strings.EqualFold(dumpEnabled, "true")) {
+				firstPacketDumped = true
+				dumpLen := n
+				if dumpLen > 32 {
+					dumpLen = 32
+				}
+
+				rtpVersion := -1
+				rtpMarker := -1
+				rtpPayloadType := -1
+				rtpSeq := -1
+				rtpTimestamp := int64(-1)
+				rtpSSRC := int64(-1)
+				rtpPayloadLen := -1
+				if n >= 12 {
+					rtpVersion = int((buffer[0] >> 6) & 0x3)
+					rtpMarker = int((buffer[1] >> 7) & 0x1)
+					rtpPayloadType = int(buffer[1] & 0x7F)
+					rtpSeq = int((uint16(buffer[2]) << 8) | uint16(buffer[3]))
+					rtpTimestamp = int64((uint32(buffer[4]) << 24) | (uint32(buffer[5]) << 16) | (uint32(buffer[6]) << 8) | uint32(buffer[7]))
+					rtpSSRC = int64((uint32(buffer[8]) << 24) | (uint32(buffer[9]) << 16) | (uint32(buffer[10]) << 8) | uint32(buffer[11]))
+					rtpPayloadLen = n - 12
+				}
+
+				cm.logger.Infof(
+					"🎵🧪 [RTP-DUMP-FIRST] from=%v bytes=%d v=%d m=%d pt=%d seq=%d ts=%d ssrc=%d payload=%d first=%x (CallID=%s)",
+					clientAddr,
+					n,
+					rtpVersion,
+					rtpMarker,
+					rtpPayloadType,
+					rtpSeq,
+					rtpTimestamp,
+					rtpSSRC,
+					rtpPayloadLen,
+					buffer[:dumpLen],
+					callID,
+				)
+			}
+
+			cm.logger.Infof("🎵📥 [RTP-RECEIVED] %d bytes de %v - reenviando para WhatsApp... (CallID=%s)", n, clientAddr, callID)
 			cm.forwardRealRTPToWhatsApp(from, callID, buffer[:n], clientAddr.String())
 		}
 	}
+}
+
+type rtpWavDumper struct {
+	logger     *log.Entry
+	callID     string
+	dumpDir    string
+	maxDur     time.Duration
+	startTime  time.Time
+	writer     *wavWriter
+	filePath   string
+	closed     bool
+	bytesWrote int
+}
+
+func newRTPWavDumper(logger *log.Entry, callID string, dumpDir string, maxDur time.Duration) *rtpWavDumper {
+	return &rtpWavDumper{logger: logger, callID: callID, dumpDir: dumpDir, maxDur: maxDur}
+}
+
+func (d *rtpWavDumper) HandleRTP(payload []byte, payloadType int) {
+	if d == nil || d.closed {
+		return
+	}
+	if payloadType != 0 {
+		return
+	}
+	if d.startTime.IsZero() {
+		d.startTime = time.Now()
+		_ = os.MkdirAll(filepath.Clean(d.dumpDir), 0o755)
+		d.filePath = filepath.Join(filepath.Clean(d.dumpDir), fmt.Sprintf("rtp_%s_%s.wav", d.callID, time.Now().Format("20060102_150405")))
+		w, err := newWavWriter(d.filePath, 8000, 1)
+		if err != nil {
+			d.logger.Errorf("❌🎵🎧 [RTP-WAV-DUMP-ERROR] Failed to create wav: %v (CallID=%s)", err, d.callID)
+			d.closed = true
+			return
+		}
+		d.writer = w
+		d.logger.Infof("🎵🎧 [RTP-WAV-DUMP] Started: %s (CallID=%s)", d.filePath, d.callID)
+	}
+
+	if time.Since(d.startTime) > d.maxDur {
+		d.close()
+		return
+	}
+
+	if d.writer == nil {
+		return
+	}
+
+	pcm := decodePCMUToPCM16(payload)
+	if len(pcm) == 0 {
+		return
+	}
+	if err := d.writer.WriteSamples(pcm); err != nil {
+		d.logger.Errorf("❌🎵🎧 [RTP-WAV-DUMP-ERROR] Failed to write wav samples: %v (CallID=%s)", err, d.callID)
+		d.close()
+		return
+	}
+	d.bytesWrote += len(payload)
+}
+
+func (d *rtpWavDumper) close() {
+	if d == nil || d.closed {
+		return
+	}
+	d.closed = true
+	if d.writer != nil {
+		_ = d.writer.Close()
+	}
+	if d.filePath != "" {
+		d.logger.Infof("🎵🎧 [RTP-WAV-DUMP] Done: wrote=%d payload-bytes file=%s (CallID=%s)", d.bytesWrote, d.filePath, d.callID)
+	}
+}
+
+type wavWriter struct {
+	f         *os.File
+	dataBytes uint32
+}
+
+func newWavWriter(path string, sampleRate uint32, channels uint16) (*wavWriter, error) {
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	ww := &wavWriter{f: f, dataBytes: 0}
+	if err := ww.writeHeader(sampleRate, channels, 16); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	return ww, nil
+}
+
+func (w *wavWriter) writeHeader(sampleRate uint32, channels uint16, bitsPerSample uint16) error {
+	byteRate := sampleRate * uint32(channels) * uint32(bitsPerSample) / 8
+	blockAlign := channels * bitsPerSample / 8
+
+	header := make([]byte, 44)
+	copy(header[0:4], []byte("RIFF"))
+	// chunk size at [4:8] filled on Close
+	copy(header[8:12], []byte("WAVE"))
+	copy(header[12:16], []byte("fmt "))
+	stdbin.LittleEndian.PutUint32(header[16:20], 16)
+	stdbin.LittleEndian.PutUint16(header[20:22], 1)
+	stdbin.LittleEndian.PutUint16(header[22:24], channels)
+	stdbin.LittleEndian.PutUint32(header[24:28], sampleRate)
+	stdbin.LittleEndian.PutUint32(header[28:32], byteRate)
+	stdbin.LittleEndian.PutUint16(header[32:34], blockAlign)
+	stdbin.LittleEndian.PutUint16(header[34:36], bitsPerSample)
+	copy(header[36:40], []byte("data"))
+	// data size at [40:44] filled on Close
+
+	_, err := w.f.Write(header)
+	return err
+}
+
+func (w *wavWriter) WriteSamples(samples []int16) error {
+	if w == nil || w.f == nil {
+		return io.ErrClosedPipe
+	}
+	if len(samples) == 0 {
+		return nil
+	}
+
+	buf := make([]byte, len(samples)*2)
+	for i, s := range samples {
+		stdbin.LittleEndian.PutUint16(buf[i*2:i*2+2], uint16(s))
+	}
+
+	n, err := w.f.Write(buf)
+	if err != nil {
+		return err
+	}
+	w.dataBytes += uint32(n)
+	return nil
+}
+
+func (w *wavWriter) Close() error {
+	if w == nil || w.f == nil {
+		return nil
+	}
+
+	chunkSize := uint32(36) + w.dataBytes
+	if _, err := w.f.Seek(4, 0); err != nil {
+		_ = w.f.Close()
+		w.f = nil
+		return err
+	}
+	if err := stdbin.Write(w.f, stdbin.LittleEndian, chunkSize); err != nil {
+		_ = w.f.Close()
+		w.f = nil
+		return err
+	}
+	if _, err := w.f.Seek(40, 0); err != nil {
+		_ = w.f.Close()
+		w.f = nil
+		return err
+	}
+	if err := stdbin.Write(w.f, stdbin.LittleEndian, w.dataBytes); err != nil {
+		_ = w.f.Close()
+		w.f = nil
+		return err
+	}
+
+	err := w.f.Close()
+	w.f = nil
+	return err
+}
+
+func extractRTPPayload(pkt []byte) ([]byte, int, bool) {
+	if len(pkt) < 12 {
+		return nil, -1, false
+	}
+	version := (pkt[0] >> 6) & 0x3
+	if version != 2 {
+		return nil, -1, false
+	}
+	padding := (pkt[0]>>5)&0x1 == 1
+	extension := (pkt[0]>>4)&0x1 == 1
+	csrcCount := int(pkt[0] & 0x0F)
+	pt := int(pkt[1] & 0x7F)
+
+	idx := 12 + 4*csrcCount
+	if len(pkt) < idx {
+		return nil, pt, false
+	}
+	if extension {
+		if len(pkt) < idx+4 {
+			return nil, pt, false
+		}
+		extLenWords := int(stdbin.BigEndian.Uint16(pkt[idx+2 : idx+4]))
+		idx += 4 + 4*extLenWords
+		if len(pkt) < idx {
+			return nil, pt, false
+		}
+	}
+
+	end := len(pkt)
+	if padding {
+		padLen := int(pkt[len(pkt)-1])
+		if padLen <= 0 || padLen > end-idx {
+			return nil, pt, false
+		}
+		end -= padLen
+	}
+	if end <= idx {
+		return nil, pt, false
+	}
+	return pkt[idx:end], pt, true
+}
+
+func decodePCMUToPCM16(pcmu []byte) []int16 {
+	if len(pcmu) == 0 {
+		return nil
+	}
+	out := make([]int16, len(pcmu))
+	for i, b := range pcmu {
+		out[i] = muLawDecode(b)
+	}
+	return out
+}
+
+func muLawDecode(uLaw byte) int16 {
+	u := ^uLaw
+	sign := u & 0x80
+	exponent := (u >> 4) & 0x07
+	mantissa := u & 0x0F
+
+	sample := ((int(mantissa) << 3) + 0x84) << exponent
+	sample -= 0x84
+	if sign != 0 {
+		sample = -sample
+	}
+	return int16(sample)
 }
 
 // forwardRealRTPToWhatsApp reenvía RTP real recebido do VoIP para o dispositivo WhatsApp
@@ -727,11 +1921,46 @@ func (cm *WhatsmeowCallManager) RejectCall(from types.JID, callID string) error 
 
 // HandleCallTransport manipula dados de transporte da chamada
 func (cm *WhatsmeowCallManager) HandleCallTransport(from types.JID, callID string, transportData interface{}) error {
+	if envTruthy("QP_CALL_OBSERVE_ONLY") {
+		cm.logger.Warnf("🚚 [CALL] Observe-only enabled (QP_CALL_OBSERVE_ONLY=1): ignoring transport (CallID=%s)", callID)
+		return nil
+	}
 	cm.logger.Infof("🚚 Processando transporte de chamada de %v (CallID: %s)", from, callID)
 
 	// Log detalhado do node recebido para depuração de ausência de media
 	if node, ok := transportData.(*binary.Node); ok {
 		cm.markRemoteTransportReceived(callID)
+		if envTruthy("QP_CALL_TRANSPORT_SUMMARY") {
+			full := envTruthy("QP_CALL_TRANSPORT_SUMMARY_FULL")
+			s := summarizeCallTransportNode(node, full)
+			cm.logger.Infof(
+				"🧊 [TRANSPORT-SUMMARY] medium=%s protocol=%s ice.ufrag=%s ice.pwd=%s candidates=%d fingerprints=%d secrets=%d (CallID=%s)",
+				s.NetMedium,
+				s.NetProtocol,
+				s.ICEUfrag,
+				s.ICEPwd,
+				len(s.Candidates),
+				len(s.Fingerprints),
+				len(s.SecretsFound),
+				callID,
+			)
+			if full {
+				for _, c := range s.Candidates {
+					cm.logger.Infof("🧊 [TRANSPORT-CANDIDATE] %s (CallID=%s)", c, callID)
+				}
+				for _, fp := range s.Fingerprints {
+					cm.logger.Infof("🧊 [TRANSPORT-FINGERPRINT] %s (CallID=%s)", fp, callID)
+				}
+				for _, sec := range s.SecretsFound {
+					cm.logger.Infof("🧊 [TRANSPORT-SECRET] %s (CallID=%s)", sec, callID)
+				}
+			} else if envTruthy("QP_CALL_TRANSPORT_SUMMARY_DEBUG") {
+				// Optional: show a few snapshots to help add exact extraction rules without flooding logs.
+				for i := 0; i < len(s.AttrSnapshots) && i < 5; i++ {
+					cm.logger.Infof("🧊 [TRANSPORT-SNAPSHOT] %s (CallID=%s)", s.AttrSnapshots[i], callID)
+				}
+			}
+		}
 		if children, okc := node.Content.([]binary.Node); okc {
 			cm.logger.Infof("🧪 [TRANSPORT-RAW] Tag=%s Attrs=%v ChildCount=%d", node.Tag, node.Attrs, len(children))
 			for i, c := range children {
@@ -761,11 +1990,18 @@ func (cm *WhatsmeowCallManager) sendAcceptResponseToTransport(from types.JID, ca
 	cm.logger.Infof("🎵 [ACCEPT-RESPONSE] === ENVIANDO ACCEPT COMO RESPOSTA AO TRANSPORT ===")
 	cm.logger.Infof("🎯📋 [ACCEPT-INFO] From: %v, CallID: %s", from, callID)
 
-	// Se já enviamos ACCEPT antes (modo direct), apenas logar e não reenviar
+	// If we already sent ACCEPT (direct/snippet mode), WhatsApp often expects us to send
+	// a TRANSPORT message next with our media endpoint details (where to send audio).
+	// In that case, do NOT send ACCEPT again. Send transport info instead.
 	cm.hsMutex.Lock()
 	if st, ok := cm.handshakeStates[callID]; ok && st.AcceptSent {
 		cm.hsMutex.Unlock()
-		cm.logger.Infof("🧪 [ACCEPT-SKIP] ACCEPT já enviado anteriormente (modo direct). Apenas logando transport.")
+		cm.logger.Warnf("🧪 [ACCEPT-SKIP] ACCEPT já enviado anteriormente (modo direct/snippet). Enviando TRANSPORT em resposta ao transport remoto.")
+		if err := cm.sendTransportInfoResponse(from, callID, receivedTransport); err != nil {
+			cm.logger.Warnf("⚠️🎵🚛 [TRANSPORT-RESPONSE] Falha ao enviar TRANSPORT em resposta ao transport remoto: %v (CallID=%s)", err, callID)
+			return err
+		}
+		cm.logger.Infof("✅🎵🚛 [TRANSPORT-RESPONSE] TRANSPORT enviado em resposta ao transport remoto (CallID=%s)", callID)
 		return nil
 	}
 	cm.hsMutex.Unlock()
@@ -773,6 +2009,7 @@ func (cm *WhatsmeowCallManager) sendAcceptResponseToTransport(from types.JID, ca
 	// Extrair informações do transport recebido para usar no accept
 	callCreator := ""
 	transportType := ""
+	transportMedium := ""
 
 	if attrs := receivedTransport.Attrs; attrs != nil {
 		if creator, exists := attrs["call-creator"]; exists {
@@ -781,6 +2018,25 @@ func (cm *WhatsmeowCallManager) sendAcceptResponseToTransport(from types.JID, ca
 		if msgType, exists := attrs["transport-message-type"]; exists {
 			transportType = fmt.Sprintf("%v", msgType)
 		}
+	}
+	// Extract medium from <net medium='X'> child if present
+	if transportMedium == "" {
+		if children, ok := receivedTransport.Content.([]binary.Node); ok {
+			for _, ch := range children {
+				if ch.Tag != "net" {
+					continue
+				}
+				if ch.Attrs != nil {
+					if m, ok2 := ch.Attrs["medium"]; ok2 {
+						transportMedium = fmt.Sprintf("%v", m)
+					}
+				}
+				break
+			}
+		}
+	}
+	if transportMedium == "" {
+		transportMedium = cm.getNetMedium()
 	}
 
 	cm.logger.Infof("🎯🔍 [ACCEPT-EXTRACT] CallCreator: %s, MessageType: %s", callCreator, transportType)
@@ -793,33 +2049,58 @@ func (cm *WhatsmeowCallManager) sendAcceptResponseToTransport(from types.JID, ca
 
 	// CRITICAL: Enviar ACCEPT como resposta ao transport (ao invés de outro transport)
 	// Este é o handshake final: PREACCEPT → TRANSPORT (deles) → ACCEPT (nosso)
-	// Reutilizar candidatos locais (host + opcional srflx) para ACCEPT
+	//
+	// Relay-only nuance: when medium=2 and the peer transport has no ICE details/candidates,
+	// sending a host candidate inside a relay net can keep the caller UI stuck.
+	// We support an env-gated mode to send an empty <net> (no candidates) for relay calls.
 	localIP := cm.getLocalNetworkIP()
 	if localIP == "" {
-		localIP = "192.168.31.202"
+		return fmt.Errorf("failed to determine local IPv4 address")
 	}
-	var publicIP string
-	var port int
-	if cm.disableSTUN() {
-		port = 64006
-		cm.logger.Infof("🧪 [STUN-DISABLED] ACCEPT response usando porta estática %d", port)
-	} else {
-		var errStun error
-		publicIP, port, errStun = cm.performSTUNDiscovery()
-		if errStun != nil || publicIP == "" {
+	lockedPort := cm.getCallMediaPort(callID)
+	publicIP, publicPort := cm.getCallPublicMapping(callID)
+	port := lockedPort
+	if port <= 0 {
+		if cm.disableSTUN() {
 			port = 64006
+			cm.logger.Infof("🧪 [STUN-DISABLED] ACCEPT response usando porta estática %d", port)
+		} else {
+			var errStun error
+			var localPort int
+			publicIP, publicPort, localPort, errStun = cm.performSTUNDiscovery()
+			if errStun != nil || publicIP == "" {
+				port = 64006
+			} else if localPort > 0 {
+				port = localPort
+			}
+			cm.setCallMediaPort(callID, port)
+			cm.setCallPublicMapping(callID, publicIP, publicPort)
 		}
 	}
 	includeSrflx := os.Getenv("QP_CALL_INCLUDE_SRFLX") == "1"
-	candidates := cm.buildCandidates(localIP, publicIP, port, includeSrflx)
-	if callCreator == "" {
-		callCreator = from.ToNonAD().String()
+	candidates := cm.buildCandidates(localIP, port, publicIP, publicPort, includeSrflx)
+	if envTruthy("QP_CALL_ACCEPT_RELAY_EMPTY_NET") && strings.TrimSpace(transportMedium) == "2" {
+		cm.logger.Warnf("🧊 [ACCEPT-RELAY-EMPTY-NET] Sending ACCEPT with empty net (no candidates) for relay call (CallID=%s)", callID)
+		candidates = nil
 	}
-	acceptResponseNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, callCreator, candidates)
+	replyTo := cm.callReplyJID(from)
+	if callCreator == "" {
+		callCreator = replyTo.String()
+	}
+	acceptResponseNode := cm.buildAcceptNodeWithMedium(replyTo, ownID.ToNonAD().String(), callID, callCreator, candidates, transportMedium)
 
 	err := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptResponseNode)
 	if err != nil {
 		return fmt.Errorf("failed to send accept response to transport: %w", err)
+	}
+
+	// Dump outgoing ACCEPT (response to transport)
+	if os.Getenv("QP_CALL_DUMP_ACCEPT") == "1" {
+		if p, e := DumpAcceptSent(callID, from, *ownID, acceptResponseNode); e == nil {
+			cm.logger.Infof("💾 [ACCEPT-RESPONSE-DUMP] Saved to %s", p)
+		} else {
+			cm.logger.Warnf("⚠️ [ACCEPT-RESPONSE-DUMP] Failed: %v", e)
+		}
 	}
 
 	cm.logger.Infof("✅🎯 [ACCEPT-RESPONSE-SENT] ACCEPT enviado como resposta ao transport!")
@@ -846,6 +2127,10 @@ func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) 
 		return fmt.Errorf("own ID not available")
 	}
 
+	// Use the peer JID format we want to reply to (raw LID when enabled).
+	targetJID := cm.callReplyJID(from)
+	cm.logger.Infof("📞 [ACCEPT-TARGET] fromRaw=%s replyTo=%s useLID=%v", from.String(), targetJID.String(), envTruthy("QP_CALL_REPLY_USE_LID"))
+
 	// Inicializar estado e marcar AcceptSent
 	cm.initHandshakeState(callID)
 	cm.hsMutex.Lock()
@@ -854,40 +2139,90 @@ func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) 
 	}
 	cm.hsMutex.Unlock()
 
+	// If user requested the exact blog snippet accept, send that structure (no top-level 'from', medium=3)
+	if envTruthy("QP_CALL_USE_SNIPPET_ACCEPT") {
+		selectedMedium := cm.getNetMediumForCall(callID)
+		cm.logger.Warnf("🧪 [SNIPPET-ACCEPT] Sending snippet-accept (no top-level from, medium=%s)", selectedMedium)
+		snippetNode := binary.Node{
+			Tag: "call",
+			Attrs: binary.Attrs{
+				"to": targetJID,
+				"id": cm.connection.Client.GenerateMessageID(),
+			},
+			Content: []binary.Node{{
+				Tag:   "accept",
+				Attrs: binary.Attrs{"call-id": callID, "call-creator": targetJID},
+				Content: []binary.Node{
+					{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "16000"}},
+					{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "8000"}},
+					{Tag: "net", Attrs: binary.Attrs{"medium": selectedMedium}},
+					{Tag: "encopt", Attrs: binary.Attrs{"keygen": "2"}},
+				},
+			}},
+		}
+
+		if err := cm.connection.Client.DangerousInternals().SendNode(context.Background(), snippetNode); err != nil {
+			return fmt.Errorf("failed to send snippet accept: %w", err)
+		}
+		if os.Getenv("QP_CALL_DUMP_ACCEPT") == "1" {
+			if p, e := DumpAcceptSent(callID, targetJID, *ownID, snippetNode); e == nil {
+				cm.logger.Infof("💾 [SNIPPET-ACCEPT-DUMP] Saved to %s", p)
+			} else {
+				cm.logger.Warnf("⚠️ [SNIPPET-ACCEPT-DUMP] Failed: %v", e)
+			}
+		}
+		cm.logger.Infof("✅⚡ [SNIPPET-ACCEPT-SENT] Snippet ACCEPT sent to=%s (awaiting remote TRANSPORT)", targetJID.String())
+		return nil
+	}
+
 	// Construir candidatos mínimos (host). Para consistência reutilizamos lógica existente
 	localIP := cm.getLocalNetworkIP()
 	if localIP == "" {
-		localIP = "192.168.31.202"
+		return fmt.Errorf("failed to determine local IPv4 address")
 	}
-	var publicIP string
-	var port int
-	if cm.disableSTUN() {
-		port = 64006
-		cm.logger.Infof("🧪 [STUN-DISABLED] DIRECT ACCEPT usando porta estática %d", port)
-	} else {
-		var errStun error
-		publicIP, port, errStun = cm.performSTUNDiscovery()
-		if errStun != nil || publicIP == "" {
+	lockedPort := cm.getCallMediaPort(callID)
+	publicIP, publicPort := cm.getCallPublicMapping(callID)
+	port := lockedPort
+	if port <= 0 {
+		if cm.disableSTUN() {
 			port = 64006
+			cm.logger.Infof("🧪 [STUN-DISABLED] DIRECT ACCEPT usando porta estática %d", port)
+		} else {
+			var errStun error
+			var localPort int
+			publicIP, publicPort, localPort, errStun = cm.performSTUNDiscovery()
+			if errStun != nil || publicIP == "" {
+				port = 64006
+			} else if localPort > 0 {
+				port = localPort
+			}
+			cm.setCallMediaPort(callID, port)
+			cm.setCallPublicMapping(callID, publicIP, publicPort)
 		}
 	}
-	includeSrflx := os.Getenv("QP_CALL_INCLUDE_SRFLX") == "1"
-	candidates := cm.buildCandidates(localIP, publicIP, port, includeSrflx)
-	acceptNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
+	includeSrflx := envTruthy("QP_CALL_INCLUDE_SRFLX")
+	candidates := cm.buildCandidates(localIP, port, publicIP, publicPort, includeSrflx)
+	acceptNode := cm.buildAcceptNodeWithMedium(targetJID, ownID.ToNonAD().String(), callID, targetJID.String(), candidates, cm.getNetMediumForCall(callID))
 
 	if err := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err != nil {
 		return fmt.Errorf("failed to send direct accept: %w", err)
 	}
-	cm.logger.Infof("✅⚡ [DIRECT-ACCEPT-SENT] ACCEPT enviado (aguardando TRANSPORT remoto para log)")
+
+	// Dump ACCEPT sent for debugging (captures exact node we sent)
+	if os.Getenv("QP_CALL_DUMP_ACCEPT") == "1" {
+		if dumpPath, dumpErr := DumpAcceptSent(callID, targetJID, *ownID, acceptNode); dumpErr == nil {
+			cm.logger.Infof("💾 [ACCEPT-DUMP] Saved to %s", dumpPath)
+		} else {
+			cm.logger.Warnf("⚠️ [ACCEPT-DUMP] Failed: %v", dumpErr)
+		}
+	}
+
+	cm.logger.Infof("✅⚡ [DIRECT-ACCEPT-SENT] ACCEPT sent to=%s (awaiting remote TRANSPORT)", targetJID.String())
 	return nil
 }
 
-// buildAcceptNode constrói nó ACCEPT completo padronizado
-func (cm *WhatsmeowCallManager) buildAcceptNode(to types.JID, fromNonAD string, callID string, callCreator string, candidates []binary.Node) binary.Node {
-	medium := "3"
-	if os.Getenv("QP_CALL_NET_MEDIUM") == "1" {
-		medium = "1"
-	}
+// buildAcceptNodeWithMedium constrói nó ACCEPT completo padronizado com medium explícito.
+func (cm *WhatsmeowCallManager) buildAcceptNodeWithMedium(to types.JID, fromNonAD string, callID string, callCreator string, candidates []binary.Node, medium string) binary.Node {
 	// Ajuste: ordem dos nós replicando preaccept (audio,audio,net,encopt) para consistência
 	node := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": to.ToNonAD(), "from": fromNonAD, "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
 		Tag:   "accept",
@@ -914,6 +2249,11 @@ func (cm *WhatsmeowCallManager) buildAcceptNode(to types.JID, fromNonAD string, 
 		cm.logger.Infof("📦 [ACCEPT-NODE-FULL]\n%s", cm.debugFormatNode(node))
 	}
 	return node
+}
+
+// buildAcceptNode constrói nó ACCEPT completo padronizado usando o medium configurado por env.
+func (cm *WhatsmeowCallManager) buildAcceptNode(to types.JID, fromNonAD string, callID string, callCreator string, candidates []binary.Node) binary.Node {
+	return cm.buildAcceptNodeWithMedium(to, fromNonAD, callID, callCreator, candidates, cm.getNetMediumForCall(callID))
 }
 
 // debugFormatNode cria uma representação hierárquica do node para inspecionar diferenças sutis de ordem/atributos

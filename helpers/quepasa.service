@@ -2,23 +2,23 @@
 
 [Unit]  
 Description=Quepasa API Service 
-ConditionPathExists=/opt/quepasa
-After=network.target
+ConditionPathExists=/opt/quepasa/quepasa
+After=network-online.target
+Wants=network-online.target
   
 [Service]  
 # make sure log directory exists and owned by syslog
 PermissionsStartOnly=true
-ExecStartPre=-/bin/chown root "/opt/quepasa-source/helpers/quepasa.logrotate.d"
 ExecStartPre=+/bin/mkdir -p /var/log/quepasa
 ExecStartPre=+/bin/chown syslog:adm /var/log/quepasa
 ExecStartPre=+/bin/chmod 755 /var/log/quepasa
 
-ExecStart=/usr/local/go/bin/go run main.go  
-WorkingDirectory=/opt/quepasa/
-EnvironmentFile=-/opt/quepasa/.env
+ExecStart=/opt/quepasa/quepasa
+WorkingDirectory=/opt/quepasa/src
+EnvironmentFile=-/opt/quepasa/src/.env
 UnsetEnvironment=USER
 Type=simple
-User=quepasa     
+User=quepasa
 Group=quepasa
 PrivateTmp=true
 

@@ -119,7 +119,7 @@ func MigrateToLatest(logentry *log.Entry) (err error) {
 		} else {
 			// linux ===================
 			migrationsDir := filepath.Join(workDir, "migrations")
-			fullPath = fmt.Sprintf("file://%s/", strings.Trim(migrationsDir, "/"))
+			fullPath = migrationsDir
 		}
 	}
 

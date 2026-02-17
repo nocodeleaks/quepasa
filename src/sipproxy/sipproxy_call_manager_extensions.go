@@ -3,10 +3,55 @@ package sipproxy
 import (
 	"crypto/rand"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/emiago/sipgo/sip"
 )
+
+type sdpCodecSpec struct {
+	Name       string
+	Payload    int
+	RtpmapLine string
+}
+
+func buildSDPCodecs(codecCSV string) ([]sdpCodecSpec, []int) {
+	known := map[string]sdpCodecSpec{
+		"OPUS": {Name: "OPUS", Payload: 111, RtpmapLine: "a=rtpmap:111 opus/48000/2"},
+		"PCMU": {Name: "PCMU", Payload: 0, RtpmapLine: "a=rtpmap:0 PCMU/8000"},
+		"PCMA": {Name: "PCMA", Payload: 8, RtpmapLine: "a=rtpmap:8 PCMA/8000"},
+		"G729": {Name: "G729", Payload: 18, RtpmapLine: "a=rtpmap:18 G729/8000"},
+	}
+
+	parts := strings.Split(codecCSV, ",")
+	seen := map[int]bool{}
+	codecs := make([]sdpCodecSpec, 0, len(parts))
+	payloads := make([]int, 0, len(parts))
+
+	for _, raw := range parts {
+		name := strings.ToUpper(strings.TrimSpace(raw))
+		if name == "" {
+			continue
+		}
+		spec, ok := known[name]
+		if !ok {
+			continue
+		}
+		if seen[spec.Payload] {
+			continue
+		}
+		seen[spec.Payload] = true
+		codecs = append(codecs, spec)
+		payloads = append(payloads, spec.Payload)
+	}
+
+	if len(codecs) == 0 {
+		codecs = []sdpCodecSpec{known["PCMU"], known["PCMA"]}
+		payloads = []int{0, 8}
+	}
+
+	return codecs, payloads
+}
 
 // generateSIPTag generates a random SIP tag following RFC 3261 recommendations
 // Tags should be cryptographically random and at least 32 bits of randomness
@@ -132,44 +177,53 @@ func SetCallIDHeader(headers []sip.Header, callID string) []sip.Header {
 	return append(headers, &callIDHeader)
 }
 
-// createSDPOffer creates a basic SDP offer for audio call
-func (source *SIPCallManagerSipgo) CreateSDPOffer(fromPhone string) string {
+// CreateSDPOffer creates an SDP offer for an audio call.
+// rtpPort must be a local UDP port that is already reserved/bound by the caller.
+func (source *SIPCallManagerSipgo) CreateSDPOffer(fromPhone string, rtpPort int) string {
 	// Generate a robust SDP for audio call
 	// Using proper SDP structure with standard codecs
 	sessionID := time.Now().Unix()
 	sessionVersion := sessionID + 1 // Version should be different from session ID
-
-	// Use dynamic RTP port range (typically 10000-20000 for RTP)
-	// Simple port allocation to avoid conflicts
-	rtpPort := 10000 + (sessionID % 1000)
+	if rtpPort%2 != 0 {
+		rtpPort++ // RTP typically uses even ports
+	}
 
 	// Get both local and public IPs from network manager
 	localIP := source.networkManager.GetLocalIP()
 	publicIP := source.networkManager.GetPublicIP()
+	if strings.TrimSpace(publicIP) == "" {
+		publicIP = localIP
+	}
 
-	// Use public IP for media connection (RTP) to work through NAT
-	// Use local IP for session origin info
-	return fmt.Sprintf(`v=0
-o=%s %d %d IN IP4 %s
-s=%s
-c=IN IP4 %s
-t=0 0
-m=audio %d RTP/AVP 0 8 101
-a=rtpmap:0 PCMU/8000
-a=rtpmap:8 PCMA/8000
-a=rtpmap:101 telephone-event/8000
-a=fmtp:101 0-15
-a=ptime:20
-a=maxptime:20
-a=sendrecv
-`,
-		fromPhone,
-		sessionID,
-		sessionVersion,
-		localIP, // Origin IP (can be local)
-		source.config.SDPSessionName,
-		publicIP, // Connection IP (public for NAT traversal)
-		rtpPort)
+	codecs, payloads := buildSDPCodecs(source.config.Codecs)
+	payloadParts := make([]string, 0, len(payloads)+1)
+	for _, pt := range payloads {
+		payloadParts = append(payloadParts, fmt.Sprintf("%d", pt))
+	}
+	// Always include telephone-event as 101.
+	payloadParts = append(payloadParts, "101")
+
+	sdpLines := make([]string, 0, 32)
+	sdpLines = append(sdpLines, "v=0")
+	sdpLines = append(sdpLines, fmt.Sprintf("o=%s %d %d IN IP4 %s", fromPhone, sessionID, sessionVersion, localIP))
+	sdpLines = append(sdpLines, fmt.Sprintf("s=%s", source.config.SDPSessionName))
+	sdpLines = append(sdpLines, fmt.Sprintf("c=IN IP4 %s", publicIP))
+	sdpLines = append(sdpLines, "t=0 0")
+	sdpLines = append(sdpLines, fmt.Sprintf("m=audio %d RTP/AVP %s", rtpPort, strings.Join(payloadParts, " ")))
+	for _, c := range codecs {
+		sdpLines = append(sdpLines, c.RtpmapLine)
+		if c.Payload == 111 {
+			// Minimal Opus fmtp; safe defaults for interoperability.
+			sdpLines = append(sdpLines, "a=fmtp:111 minptime=10;useinbandfec=1")
+		}
+	}
+	sdpLines = append(sdpLines, "a=rtpmap:101 telephone-event/8000")
+	sdpLines = append(sdpLines, "a=fmtp:101 0-15")
+	sdpLines = append(sdpLines, "a=ptime:20")
+	sdpLines = append(sdpLines, "a=maxptime:20")
+	sdpLines = append(sdpLines, "a=sendrecv")
+
+	return strings.Join(sdpLines, "\n") + "\n"
 }
 
 /*

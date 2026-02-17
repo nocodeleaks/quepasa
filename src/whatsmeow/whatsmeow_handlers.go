@@ -693,41 +693,61 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 	logentry.Infof("📡 Call processing completed")
 
-	// 🚀 MINIMAL CALL PROCESSING: CallOffer → SIP Server Only
-	handleCallsResult := source.HandleCalls()
-	logentry.Infof("🔍 HandleCalls() result: %v", handleCallsResult)
-
-	if handleCallsResult {
-		logentry.Infof("📡 CALL DETECTED - Forwarding to SIP server")
-		logentry.Infof("📞 CallID: %s | From: %s", evt.CallID, evt.From.User)
-
-		// Use the internal SIP call manager
-		sipCallManager := source.WhatsmeowConnection.GetSIPCallManager()
-		if sipCallManager.IsEnabled() {
-			statusManager := source.GetStatusManager()
-			myNumber, err := statusManager.GetWidInternal()
-			if err != nil {
-				logentry.Errorf("❌ Failed to get WhatsApp number: %v", err)
-				myNumber = "unknown"
-			}
-
-			// Process incoming WhatsApp call through internal SIP manager
-			logentry.Infof("📞 CALL DETECTED - Processing via internal SIP manager:")
-			logentry.Infof("   🔵 From (caller): %s", evt.From.User)
-			logentry.Infof("   🟢 To (receiver): %s", myNumber)
-			logentry.Infof("   📞 CallID: %s", evt.CallID)
-
-			err = sipCallManager.ProcessIncomingCall(evt.CallID, evt.From.User, myNumber)
-			if err != nil {
-				logentry.Errorf("❌ SIP call processing failed: %v", err)
+	// Always trigger WhatsApp-side call flow for BasicCallMeta events too.
+	// Some accounts/devices emit BasicCallMeta without (or before) a full events.CallOffer.
+	if source.WhatsmeowConnection != nil {
+		if callManager := source.WhatsmeowConnection.GetCallManager(); callManager != nil {
+			if envTruthy("QP_CALL_OBSERVE_ONLY") {
+				logentry.Warnf("[CALL] Observe-only enabled (QP_CALL_OBSERVE_ONLY=1): skipping BasicCallMeta accept flow (callID=%s)", evt.CallID)
 			} else {
-				logentry.Infof("✅ Call processed via internal SIP manager")
+				logentry.Infof("[CALL] Starting incoming call flow (BasicCallMeta): callID=%s from=%s", evt.CallID, evt.From)
+				callManager.StartIncomingCallFlow(evt.From, evt.CallID)
+			}
+		}
+	}
+
+	disableSIPForwarding := envTruthy("QP_CALL_DISABLE_SIP_FORWARDING")
+	if disableSIPForwarding {
+		logentry.Warnf("🚫 [CALL] SIP forwarding disabled by env (QP_CALL_DISABLE_SIP_FORWARDING=1): callID=%s", evt.CallID)
+	}
+
+	if !disableSIPForwarding {
+		// 🚀 MINIMAL CALL PROCESSING: CallOffer → SIP Server Only
+		handleCallsResult := source.HandleCalls()
+		logentry.Infof("🔍 HandleCalls() result: %v", handleCallsResult)
+
+		if handleCallsResult {
+			logentry.Infof("📡 CALL DETECTED - Forwarding to SIP server")
+			logentry.Infof("📞 CallID: %s | From: %s", evt.CallID, evt.From.User)
+
+			// Use the internal SIP call manager
+			sipCallManager := source.WhatsmeowConnection.GetSIPCallManager()
+			if sipCallManager.IsEnabled() {
+				statusManager := source.GetStatusManager()
+				myNumber, err := statusManager.GetWidInternal()
+				if err != nil {
+					logentry.Errorf("❌ Failed to get WhatsApp number: %v", err)
+					myNumber = "unknown"
+				}
+
+				// Process incoming WhatsApp call through internal SIP manager
+				logentry.Infof("📞 CALL DETECTED - Processing via internal SIP manager:")
+				logentry.Infof("   🔵 From (caller): %s", evt.From.User)
+				logentry.Infof("   🟢 To (receiver): %s", myNumber)
+				logentry.Infof("   📞 CallID: %s", evt.CallID)
+
+				err = sipCallManager.ProcessIncomingCall(evt.CallID, evt.From.User, myNumber)
+				if err != nil {
+					logentry.Errorf("❌ SIP call processing failed: %v", err)
+				} else {
+					logentry.Infof("✅ Call processed via internal SIP manager")
+				}
+			} else {
+				logentry.Warnf("⚠️ SIP call manager not enabled")
 			}
 		} else {
-			logentry.Warnf("⚠️ SIP call manager not enabled")
+			logentry.Warnf("⚠️ Call handling disabled - no SIP forwarding")
 		}
-	} else {
-		logentry.Warnf("⚠️ Call handling disabled - no SIP forwarding")
 	}
 
 	// =========================================================================
@@ -751,6 +771,18 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 func (source *WhatsmeowHandlers) CallTerminateMessage(evt types.BasicCallMeta, reason interface{}) {
 	logentry := source.GetLogger()
 	logentry.Tracef("📞❌ Call terminated - CallID: %s, From: %s, Reason: %v", evt.CallID, evt.From, reason)
+	if envTruthy("QP_CALL_DUMP_TERMINATE") {
+		if path, err := DumpCallTerminateMeta(evt, reason); err != nil {
+			logentry.Errorf("[CALL] Terminate(meta) dump failed: callID=%s err=%v", evt.CallID, err)
+		} else {
+			logentry.Infof("[CALL] Terminate(meta) dumped: callID=%s path=%s", evt.CallID, path)
+		}
+	}
+	if envTruthy("QP_CALL_DISABLE_SIP_FORWARDING") {
+		logentry.Warnf("🚫 [CALL] SIP termination forwarding disabled by env (QP_CALL_DISABLE_SIP_FORWARDING=1): callID=%s", evt.CallID)
+		// Continue processing (WhatsApp-only) without SIP forwarding.
+		return
+	}
 
 	// =========================================================================
 	// 🚫 SIP PROXY CANCELLATION - SEND BYE/CANCEL TO SIP SERVER FOR ALL TERMINATIONS
@@ -800,6 +832,18 @@ func (source *WhatsmeowHandlers) CallAcceptMessage(evt types.BasicCallMeta) {
 	logentry := source.GetLogger()
 	logentry.Tracef("📞✅ Call accepted - CallID: %s, From: %s", evt.CallID, evt.From)
 
+	if envTruthy("QP_CALL_DUMP_ACCEPT_RECEIVED") {
+		var ownID *types.JID
+		if source != nil && source.WhatsmeowConnection != nil && source.WhatsmeowConnection.Client != nil {
+			ownID = source.WhatsmeowConnection.Client.Store.ID
+		}
+		if path, err := DumpCallAcceptMeta(evt, ownID); err != nil {
+			logentry.Errorf("[CALL] Accept(meta) dump failed: callID=%s err=%v", evt.CallID, err)
+		} else {
+			logentry.Infof("[CALL] Accept(meta) dumped: callID=%s path=%s", evt.CallID, path)
+		}
+	}
+
 	// =========================================================================
 	// 🚫 WhatsApp ACCEPTANCE PROCESSING COMMENTED OUT
 	// =========================================================================
@@ -831,6 +875,11 @@ func (source *WhatsmeowHandlers) CallAcceptMessage(evt types.BasicCallMeta) {
 func (source *WhatsmeowHandlers) CallRejectMessage(evt types.BasicCallMeta) {
 	logentry := source.GetLogger()
 	logentry.Tracef("📞❌ Call rejected - CallID: %s, From: %s", evt.CallID, evt.From)
+
+	if envTruthy("QP_CALL_DISABLE_SIP_FORWARDING") {
+		logentry.Warnf("🚫 [CALL] SIP rejection forwarding disabled by env (QP_CALL_DISABLE_SIP_FORWARDING=1): callID=%s", evt.CallID)
+		return
+	}
 
 	// =========================================================================
 	// � SIP PROXY CANCELLATION WITH CACHE PROTECTION - SAFE TO CALL

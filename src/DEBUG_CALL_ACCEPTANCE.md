@@ -95,7 +95,7 @@ transportNode := binary.Node{
         Content: []binary.Node{{
             Tag: "rtp",
             Attrs: binary.Attrs{
-                "ip": "192.168.31.202",
+                "ip": "192.0.2.1",
                 "port": "5060",
             },
         }},

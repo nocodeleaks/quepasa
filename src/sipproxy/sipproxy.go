@@ -56,6 +56,7 @@ func GetEnvironmentSettings() SIPProxySettings {
 		},
 
 		SDPSessionName: env.SDPSessionName,
+		Codecs:         env.Codecs,
 		UserAgent:      env.UserAgent,
 		ServerHost:     env.Host,
 		ServerPort:     int(env.Port),

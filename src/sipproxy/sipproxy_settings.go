@@ -45,6 +45,7 @@ type SIPProxySettings struct {
 	SIPProxyNetworkManagerSettings
 
 	SDPSessionName string `json:"sdp_session_name"` // Optional SDP session name for media
+	Codecs         string `json:"codecs"`           // Comma-separated audio codecs for SDP offer
 	UserAgent      string `json:"user_agent"`
 	ServerHost     string `json:"server_host"`
 	ServerPort     int    `json:"server_port"`

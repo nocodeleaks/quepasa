@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"strings"
+
 	_ "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	_ "github.com/nocodeleaks/quepasa/form"
@@ -37,6 +40,15 @@ func main() {
 	logentry := library.NewLogEntry("main")
 	logentry.Level = loglevel
 	logentry.Infof("current log level: %v", logentry.Level)
+
+	// Startup summary for call/SIP toggles. This is intentionally explicit to avoid confusion when debugging.
+	logentry.Infof(
+		"[CALL-CONFIG] QP_CALL_ACCEPT_MODE='%s' QP_CALL_OBSERVE_ONLY='%s' QP_CALL_DISABLE_SIP_FORWARDING='%s' SIPPROXY_HOST='%s'",
+		strings.TrimSpace(os.Getenv("QP_CALL_ACCEPT_MODE")),
+		strings.TrimSpace(os.Getenv("QP_CALL_OBSERVE_ONLY")),
+		strings.TrimSpace(os.Getenv("QP_CALL_DISABLE_SIP_FORWARDING")),
+		strings.TrimSpace(os.Getenv("SIPPROXY_HOST")),
+	)
 
 	// checks for pending database migrations
 	err := models.MigrateToLatest(logentry)

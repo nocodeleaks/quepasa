@@ -233,6 +233,14 @@ func (m *SIPProxyManager) SetConfig(config SIPProxySettings) {
 	m.logger.Info("📋 Configuração SIP Proxy atualizada")
 }
 
+// SetRTPMirrorPort enables debug mirroring of SIP-side RTP packets for a given CallID.
+func (m *SIPProxyManager) SetRTPMirrorPort(callID string, port int) {
+	if m == nil || m.callManagerSipgo == nil {
+		return
+	}
+	m.callManagerSipgo.SetRTPMirrorPort(callID, port)
+}
+
 // Métodos avançados de gerenciamento de chamadas
 func (m *SIPProxyManager) CancelCall(callID string) error {
 	return m.callManagerSipgo.CancelCall(callID)

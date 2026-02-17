@@ -37,6 +37,16 @@ The call manager supports multiple modes controlled by environment variables:
 - `QP_CALL_HANDSHAKE_MODE` (affects the handshake strategy)
 	- Examples observed in code: `preaccept+transport` (default), `preaccept-only`, `accept-early`, `accept-immediate`
 
+## Transport debugging (recommended)
+
+Incoming `CallTransport` payloads are critical to understand why audio is not flowing.
+You can enable safe, offline inspection by dumping a normalized JSON file per transport event:
+
+- `QP_CALL_DUMP_TRANSPORT=1` enables file dumps.
+- `QP_CALL_DUMP_OFFER=1` dumps normalized `CallOffer` payloads as well (useful for `voip_settings` and relay tokens).
+- `QP_CALL_DUMP_DIR` sets the dump directory (default: `.dist/call_dumps`).
+- `QP_CALL_LOG_TRANSPORT_JSON=1` logs the raw event JSON to stdout (not recommended for production; may be noisy and can include sensitive tokens).
+
 The implementation builds and sends `binary.Node` stanzas with tags such as:
 
 - `call` root

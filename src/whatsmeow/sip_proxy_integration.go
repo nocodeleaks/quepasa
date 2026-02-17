@@ -2,6 +2,8 @@ package whatsmeow
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/emiago/sipgo/sip"
@@ -162,6 +164,15 @@ func (si *SIPProxyIntegration) GetActiveCalls() map[string]*sipproxy.SIPProxyCal
 	return si.sipProxy.GetActiveCalls()
 }
 
+// SetSIPRTPMirrorPort enables debug mirroring of SIP-side RTP packets to a local UDP port.
+// This is useful to feed the WhatsApp RTP bridge UDP listener for correlation/debug.
+func (si *SIPProxyIntegration) SetSIPRTPMirrorPort(callID string, port int) {
+	if si == nil || si.sipProxy == nil {
+		return
+	}
+	si.sipProxy.SetRTPMirrorPort(callID, port)
+}
+
 // IsReady returns true if the SIP proxy is ready to handle calls
 func (si *SIPProxyIntegration) IsReady() bool {
 	if si.sipProxy == nil {
@@ -271,9 +282,33 @@ func (si *SIPProxyIntegration) onCallAccepted(callID, fromPhone, toPhone string,
 		si.logger.Infof("📡 SIP Status: 200 OK (confirmed by sipgo dialog)")
 	}
 
-	// ✅ SIP authorized call - Call was already accepted in immediate acceptance
-	si.logger.Infof("✅ SIP authorized call, call already handled by immediate acceptance")
-	si.logger.Infof("� SKIPPING SECOND ACCEPT - Call already accepted immediately on CallOffer")
+	acceptMode := strings.ToLower(strings.TrimSpace(os.Getenv("QP_CALL_ACCEPT_MODE")))
+	if acceptMode == "sip" {
+		if si.connection == nil {
+			si.logger.Warnf("⚠️ [SIP->WA] QP_CALL_ACCEPT_MODE=sip but Whatsmeow connection is nil (CallID=%s)", callID)
+			return
+		}
+		callManager := si.connection.GetCallManager()
+		if callManager == nil {
+			si.logger.Warnf("⚠️ [SIP->WA] QP_CALL_ACCEPT_MODE=sip but CallManager is nil (CallID=%s)", callID)
+			return
+		}
+		fromJID, ok := callManager.getOfferFrom(callID)
+		if !ok {
+			si.logger.Warnf("⚠️ [SIP->WA] QP_CALL_ACCEPT_MODE=sip but OfferFrom not found for CallID=%s; cannot accept WhatsApp call", callID)
+			return
+		}
+		si.logger.Infof("📞✅ [SIP->WA] SIP 200 OK received; sending WhatsApp DIRECT ACCEPT now (CallID=%s)", callID)
+		if err := callManager.AcceptDirectCall(fromJID, callID); err != nil {
+			si.logger.Errorf("❌ [SIP->WA] Direct accept failed (CallID=%s): %v", callID, err)
+			return
+		}
+		si.logger.Infof("✅ [SIP->WA] WhatsApp ACCEPT dispatched after SIP answer (CallID=%s)", callID)
+		return
+	}
+
+	// Default behavior (legacy / experimental modes)
+	si.logger.Infof("✅ SIP authorized call, not sending extra WhatsApp accept (QP_CALL_ACCEPT_MODE=%s)", acceptMode)
 	si.logger.Infof("🎯 Reason: SIP server responded with 200 OK")
 	si.logger.Infof("🔗 Bridge established between WhatsApp and SIP server")
 }

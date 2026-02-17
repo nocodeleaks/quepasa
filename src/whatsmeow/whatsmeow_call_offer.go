@@ -27,6 +27,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -51,9 +52,79 @@ type WhatsmeowCallOffer struct {
 	voipWrapped        bool
 	relayOnce          sync.Once
 	relayTokens        []string
+	relayBlockOnce     sync.Once
+	relayBlock         *RelayBlock
 	relayCandOnce      sync.Once
 	relayHasCandidates bool
 	dataOnce           sync.Once
+}
+
+// RelayBlock contains relay-only call material (tokens, relay candidates, keys).
+// This is critical for relay media-plane work (SRTP/relay).
+type RelayBlock struct {
+	UUID      string
+	SelfPID   string
+	PeerPID   string
+	Tokens    []RelayToken
+	Auth      []RelayToken
+	Key       string
+	HBHKey    string
+	TE2       []RelayTE2
+	Protocols []string
+}
+
+// EncBlock contains the opaque <enc> payload from offers (often base64-encoded).
+// This is a prime suspect for relay-only media-plane/TURN short-term key derivation.
+// Never log Raw/RawB64 directly outside of explicit dump files.
+type EncBlock struct {
+	Type        string
+	V           string
+	Raw         []byte `json:"-"`
+	RawLen      int
+	ContentKind string
+}
+
+type RelayToken struct {
+	ID string
+	// Value is a stable base64 representation of the token bytes.
+	// Do not assume this is the raw token/auth bytes.
+	Value string
+	// Raw contains the original bytes (not marshaled) when available.
+	Raw []byte `json:"-"`
+}
+
+func (t RelayToken) Bytes() []byte {
+	if len(t.Raw) > 0 {
+		return t.Raw
+	}
+	s := strings.TrimSpace(t.Value)
+	if s == "" {
+		return nil
+	}
+	if b, err := base64.StdEncoding.DecodeString(s); err == nil && len(b) > 0 {
+		return b
+	}
+	return []byte(s)
+}
+
+type binaryContentWrapped struct {
+	Base64 string `json:"base64"`
+	Len    int    `json:"len"`
+}
+
+type RelayTE2 struct {
+	RelayName   string
+	RelayID     string
+	TokenID     string
+	AuthTokenID string
+	Protocol    string
+	C2RRtt      string
+
+	// Payload is the raw bytes content of the <te2> node when available.
+	// This is often opaque binary data and should not be logged directly.
+	Payload    []byte `json:"-"`
+	PayloadB64 string
+	PayloadLen int
 }
 
 // OfferDataNode / RawNode definitions
@@ -272,9 +343,12 @@ func toRawNode(v reflect.Value) (RawNode, bool) {
 			rn.Content = b
 		case reflect.Slice, reflect.Array:
 			// Could be []byte or []Node
-			if cf.Type().Elem().Kind() == reflect.Uint8 { // []byte -> treat as base64? we just as string
-				b, _ := json.Marshal(string(cf.Bytes()))
-				rn.Content = b
+			if cf.Type().Elem().Kind() == reflect.Uint8 { // []byte -> preserve as base64 to avoid UTF-8 replacement
+				raw := cf.Bytes()
+				wrap := binaryContentWrapped{Base64: base64.StdEncoding.EncodeToString(raw), Len: len(raw)}
+				if b, err := json.Marshal(wrap); err == nil {
+					rn.Content = b
+				}
 			} else {
 				// Iterate children
 				children := make([]RawNode, 0, cf.Len())
@@ -317,6 +391,226 @@ func (o *OfferDataNode) FindFirst(tag string) *RawNode {
 	return nil
 }
 
+func (o *OfferDataNode) ExtractEncBlock() *EncBlock {
+	n := o.FindFirst("enc")
+	if n == nil {
+		return nil
+	}
+	enc := &EncBlock{}
+	if n.Attrs != nil {
+		enc.Type = strings.TrimSpace(n.Attrs["type"])
+		enc.V = strings.TrimSpace(n.Attrs["v"])
+	}
+	if len(n.Content) == 0 {
+		return enc
+	}
+
+	// 1) Wrapped bytes { base64, len }
+	{
+		var w binaryContentWrapped
+		if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+			b64 := strings.TrimSpace(w.Base64)
+			if raw, err := base64.StdEncoding.DecodeString(b64); err == nil {
+				enc.Raw = raw
+				enc.RawLen = len(raw)
+				enc.ContentKind = "wrapped_b64"
+				return enc
+			}
+		}
+	}
+
+	// 2) String content: can be raw base64 (often without padding)
+	{
+		var s string
+		if json.Unmarshal(n.Content, &s) == nil {
+			s = strings.TrimSpace(s)
+			if s == "" {
+				return enc
+			}
+			if raw, ok := decodeB64Loose(s); ok {
+				enc.Raw = raw
+				enc.RawLen = len(raw)
+				enc.ContentKind = "string_b64"
+				return enc
+			}
+			enc.Raw = []byte(s)
+			enc.RawLen = len(enc.Raw)
+			enc.ContentKind = "string_raw"
+			return enc
+		}
+	}
+
+	enc.RawLen = len(n.Content)
+	enc.ContentKind = "json_raw"
+	return enc
+}
+
+func decodeB64Loose(s string) ([]byte, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil, false
+	}
+	// Try as-is first.
+	decoders := []*base64.Encoding{base64.RawStdEncoding, base64.StdEncoding, base64.RawURLEncoding, base64.URLEncoding}
+	for _, enc := range decoders {
+		if b, err := enc.DecodeString(s); err == nil && len(b) > 0 {
+			return b, true
+		}
+	}
+	// Try with padding for the padded encodings.
+	if m := len(s) % 4; m != 0 {
+		padded := s + strings.Repeat("=", 4-m)
+		for _, enc := range []*base64.Encoding{base64.StdEncoding, base64.URLEncoding} {
+			if b, err := enc.DecodeString(padded); err == nil && len(b) > 0 {
+				return b, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// ExtractRelayBlock parses the <relay> node once into a structured form.
+// Values may contain sensitive material; do not log raw values outside redacted paths.
+func (o *OfferDataNode) ExtractRelayBlock() *RelayBlock {
+	relay := o.FindFirst("relay")
+	if relay == nil {
+		return nil
+	}
+
+	b := &RelayBlock{
+		UUID:    strings.TrimSpace(relay.Attrs["uuid"]),
+		SelfPID: strings.TrimSpace(relay.Attrs["self_pid"]),
+		PeerPID: strings.TrimSpace(relay.Attrs["peer_pid"]),
+	}
+
+	if len(relay.Content) == 0 {
+		return b
+	}
+
+	var nodes []RawNode
+	if json.Unmarshal(relay.Content, &nodes) != nil {
+		return b
+	}
+
+	protocolUniq := map[string]struct{}{}
+	for _, n := range nodes {
+		switch n.Tag {
+		case "token":
+			id := strings.TrimSpace(n.Attrs["id"])
+			var w binaryContentWrapped
+			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+				if raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(w.Base64)); err == nil {
+					b.Tokens = append(b.Tokens, RelayToken{ID: id, Value: strings.TrimSpace(w.Base64), Raw: raw})
+					break
+				}
+			}
+			var s string
+			if json.Unmarshal(n.Content, &s) == nil && s != "" {
+				raw := []byte(s)
+				b.Tokens = append(b.Tokens, RelayToken{ID: id, Value: base64.StdEncoding.EncodeToString(raw), Raw: raw})
+			}
+		case "auth_token":
+			id := strings.TrimSpace(n.Attrs["id"])
+			var w binaryContentWrapped
+			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+				if raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(w.Base64)); err == nil {
+					b.Auth = append(b.Auth, RelayToken{ID: id, Value: strings.TrimSpace(w.Base64), Raw: raw})
+					break
+				}
+			}
+			var s string
+			if json.Unmarshal(n.Content, &s) == nil && s != "" {
+				raw := []byte(s)
+				b.Auth = append(b.Auth, RelayToken{ID: id, Value: base64.StdEncoding.EncodeToString(raw), Raw: raw})
+			}
+		case "key":
+			if b.Key != "" {
+				break
+			}
+			// Content may be a raw string or wrapped bytes {base64,len}.
+			var w binaryContentWrapped
+			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+				if raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(w.Base64)); err == nil {
+					b.Key = strings.TrimSpace(string(raw))
+					break
+				}
+			}
+			var s string
+			if json.Unmarshal(n.Content, &s) == nil {
+				b.Key = strings.TrimSpace(s)
+			}
+		case "hbh_key":
+			if b.HBHKey != "" {
+				break
+			}
+			// Content may be a raw string or wrapped bytes {base64,len}.
+			var w binaryContentWrapped
+			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+				if raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(w.Base64)); err == nil {
+					b.HBHKey = strings.TrimSpace(string(raw))
+					break
+				}
+			}
+			var s string
+			if json.Unmarshal(n.Content, &s) == nil {
+				b.HBHKey = strings.TrimSpace(s)
+			}
+		case "te2":
+			te := RelayTE2{
+				RelayName:   strings.TrimSpace(n.Attrs["relay_name"]),
+				RelayID:     strings.TrimSpace(n.Attrs["relay_id"]),
+				TokenID:     strings.TrimSpace(n.Attrs["token_id"]),
+				AuthTokenID: strings.TrimSpace(n.Attrs["auth_token_id"]),
+				Protocol:    strings.TrimSpace(n.Attrs["protocol"]),
+				C2RRtt:      strings.TrimSpace(n.Attrs["c2r_rtt"]),
+			}
+			// Content may be wrapped bytes {base64,len}.
+			var w binaryContentWrapped
+			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+				b64 := strings.TrimSpace(w.Base64)
+				te.PayloadB64 = b64
+				te.PayloadLen = w.Len
+				if raw, err := base64.StdEncoding.DecodeString(b64); err == nil {
+					te.Payload = raw
+					if te.PayloadLen <= 0 {
+						te.PayloadLen = len(raw)
+					}
+				}
+			} else {
+				// Fallback: plain string content (treat as base64 when decodable; else bytes).
+				var s string
+				if json.Unmarshal(n.Content, &s) == nil {
+					s = strings.TrimSpace(s)
+					if s != "" {
+						te.PayloadB64 = s
+						if raw, err := base64.StdEncoding.DecodeString(s); err == nil {
+							te.Payload = raw
+							te.PayloadLen = len(raw)
+						} else {
+							te.Payload = []byte(s)
+							te.PayloadLen = len(te.Payload)
+						}
+					}
+				}
+			}
+			b.TE2 = append(b.TE2, te)
+			if te.Protocol != "" {
+				protocolUniq[te.Protocol] = struct{}{}
+			}
+		}
+	}
+
+	if len(protocolUniq) > 0 {
+		b.Protocols = make([]string, 0, len(protocolUniq))
+		for p := range protocolUniq {
+			b.Protocols = append(b.Protocols, p)
+		}
+		sort.Strings(b.Protocols)
+	}
+
+	return b
+}
+
 // Decode voip_settings variants into a generic map.
 func (o *OfferDataNode) DecodeVoipSettings() (map[string]interface{}, bool, error) {
 	n := o.FindFirst("voip_settings")
@@ -353,21 +647,15 @@ func (o *OfferDataNode) DecodeVoipSettings() (map[string]interface{}, bool, erro
 
 // Relay token extraction
 func (o *OfferDataNode) ExtractRelayTokens() []string {
-	relay := o.FindFirst("relay")
-	if relay == nil || len(relay.Content) == 0 {
+	b := o.ExtractRelayBlock()
+	if b == nil || len(b.Tokens) == 0 {
 		return nil
 	}
-	var nodes []RawNode
-	if json.Unmarshal(relay.Content, &nodes) != nil {
-		return nil
-	}
-	tokens := make([]string, 0, 3)
-	for _, n := range nodes {
-		if n.Tag == "token" && len(n.Content) > 0 {
-			var s string
-			if json.Unmarshal(n.Content, &s) == nil && s != "" {
-				tokens = append(tokens, s)
-			}
+	tokens := make([]string, 0, len(b.Tokens))
+	for _, t := range b.Tokens {
+		if strings.TrimSpace(t.Value) != "" {
+			// Value is base64 of the raw bytes.
+			tokens = append(tokens, strings.TrimSpace(t.Value))
 		}
 	}
 	return tokens
@@ -375,20 +663,8 @@ func (o *OfferDataNode) ExtractRelayTokens() []string {
 
 // Relay candidate presence
 func (o *OfferDataNode) HasRelayCandidates() bool {
-	relay := o.FindFirst("relay")
-	if relay == nil || len(relay.Content) == 0 {
-		return false
-	}
-	var nodes []RawNode
-	if json.Unmarshal(relay.Content, &nodes) != nil {
-		return false
-	}
-	for _, n := range nodes {
-		if n.Tag == "te2" {
-			return true
-		}
-	}
-	return false
+	b := o.ExtractRelayBlock()
+	return b != nil && len(b.TE2) > 0
 }
 
 // Valid heuristic
@@ -460,12 +736,103 @@ func (c *WhatsmeowCallOffer) GetData() *OfferDataNode {
 
 // GetRelayTokens returns relay tokens cached lazily.
 func (c *WhatsmeowCallOffer) GetRelayTokens() []string {
-	c.relayOnce.Do(func() { c.relayTokens = c.Data.ExtractRelayTokens() })
+	c.relayOnce.Do(func() {
+		b := c.GetRelayBlock()
+		if b == nil || len(b.Tokens) == 0 {
+			c.relayTokens = c.Data.ExtractRelayTokens()
+			return
+		}
+		tokens := make([]string, 0, len(b.Tokens))
+		for _, t := range b.Tokens {
+			if t.Value != "" {
+				tokens = append(tokens, t.Value)
+			}
+		}
+		c.relayTokens = tokens
+	})
 	return c.relayTokens
+}
+
+// GetRelayBlock returns parsed relay metadata cached lazily.
+func (c *WhatsmeowCallOffer) GetRelayBlock() *RelayBlock {
+	c.relayBlockOnce.Do(func() { c.relayBlock = c.Data.ExtractRelayBlock() })
+	return c.relayBlock
 }
 
 // HasRelayCandidatesCached returns true if any te2 candidate exists (cached lazily).
 func (c *WhatsmeowCallOffer) HasRelayCandidatesCached() bool {
-	c.relayCandOnce.Do(func() { c.relayHasCandidates = c.Data.HasRelayCandidates() })
+	c.relayCandOnce.Do(func() {
+		b := c.GetRelayBlock()
+		if b != nil {
+			c.relayHasCandidates = len(b.TE2) > 0
+			return
+		}
+		c.relayHasCandidates = c.Data.HasRelayCandidates()
+	})
 	return c.relayHasCandidates
+}
+
+// IsP2PDisabledCached returns true if voip_settings.options.disable_p2p == "1".
+func (c *WhatsmeowCallOffer) IsP2PDisabledCached() bool {
+	voip, _ := c.GetVoipSettings()
+	if len(voip) == 0 {
+		return false
+	}
+	optionsAny, ok := voip["options"]
+	if !ok || optionsAny == nil {
+		return false
+	}
+	options, ok := optionsAny.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	v, ok := options["disable_p2p"]
+	if !ok || v == nil {
+		return false
+	}
+	return fmt.Sprint(v) == "1" || strings.ToLower(fmt.Sprint(v)) == "true"
+}
+
+// RelayNamesCached extracts unique relay_name values from relay/te2 nodes.
+func (c *WhatsmeowCallOffer) RelayNamesCached() []string {
+	d := c.GetData()
+	relay := d.FindFirst("relay")
+	if relay == nil || len(relay.Content) == 0 {
+		return nil
+	}
+	uniq := map[string]struct{}{}
+	if b := c.GetRelayBlock(); b != nil {
+		for _, te := range b.TE2 {
+			name := strings.TrimSpace(te.RelayName)
+			if name != "" {
+				uniq[name] = struct{}{}
+			}
+		}
+	} else {
+		var nodes []RawNode
+		if json.Unmarshal(relay.Content, &nodes) != nil {
+			return nil
+		}
+		for _, n := range nodes {
+			if n.Tag != "te2" {
+				continue
+			}
+			if n.Attrs == nil {
+				continue
+			}
+			name := strings.TrimSpace(n.Attrs["relay_name"])
+			if name != "" {
+				uniq[name] = struct{}{}
+			}
+		}
+	}
+	if len(uniq) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(uniq))
+	for k := range uniq {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+	return names
 }

@@ -8,6 +8,122 @@
 
   <div class="container is-fluid container-receive">
     <h2 class="title is-2">({{ .Count }}) Messages for {{ .Number }}</h2>
+    <form method="get" action="/form/server/{{ .Token }}/receive" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 6px;">
+      <div class="field">
+        <label class="label" for="search">Search (id, text, chat, participant, exceptions)</label>
+        <div class="control">
+          <input id="search" class="input" type="text" name="search" value="{{ .SearchFilter }}" placeholder="Search in cached messages">
+        </div>
+      </div>
+
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <label class="label" for="category">Category</label>
+          <div class="select">
+            <select id="category" name="category">
+              <option value=""{{ if eq .CategoryFilter "" }} selected{{ end }}>All</option>
+              <option value="received"{{ if eq .CategoryFilter "received" }} selected{{ end }}>Received</option>
+              <option value="sent"{{ if eq .CategoryFilter "sent" }} selected{{ end }}>Sent</option>
+              <option value="sync"{{ if eq .CategoryFilter "sync" }} selected{{ end }}>Sync Events</option>
+              <option value="unhandled"{{ if eq .CategoryFilter "unhandled" }} selected{{ end }}>Unhandled</option>
+              <option value="events"{{ if eq .CategoryFilter "events" }} selected{{ end }}>All Events</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="label" for="type">Type</label>
+          <div class="select">
+            <select id="type" name="type">
+              <option value=""{{ if eq .TypeFilter "" }} selected{{ end }}>All</option>
+              <option value="text"{{ if eq .TypeFilter "text" }} selected{{ end }}>text</option>
+              <option value="image"{{ if eq .TypeFilter "image" }} selected{{ end }}>image</option>
+              <option value="document"{{ if eq .TypeFilter "document" }} selected{{ end }}>document</option>
+              <option value="audio"{{ if eq .TypeFilter "audio" }} selected{{ end }}>audio</option>
+              <option value="video"{{ if eq .TypeFilter "video" }} selected{{ end }}>video</option>
+              <option value="location"{{ if eq .TypeFilter "location" }} selected{{ end }}>location</option>
+              <option value="contact"{{ if eq .TypeFilter "contact" }} selected{{ end }}>contact</option>
+              <option value="call"{{ if eq .TypeFilter "call" }} selected{{ end }}>call</option>
+              <option value="system"{{ if eq .TypeFilter "system" }} selected{{ end }}>system</option>
+              <option value="group"{{ if eq .TypeFilter "group" }} selected{{ end }}>group</option>
+              <option value="revoke"{{ if eq .TypeFilter "revoke" }} selected{{ end }}>revoke</option>
+              <option value="poll"{{ if eq .TypeFilter "poll" }} selected{{ end }}>poll</option>
+              <option value="view_once"{{ if eq .TypeFilter "view_once" }} selected{{ end }}>view_once</option>
+              <option value="unhandled"{{ if eq .TypeFilter "unhandled" }} selected{{ end }}>unhandled</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="label" for="exceptions">Exceptions</label>
+          <div class="select">
+            <select id="exceptions" name="exceptions">
+              <option value=""{{ if eq .ExceptionsFilter "" }} selected{{ end }}>All</option>
+              <option value="true"{{ if eq .ExceptionsFilter "true" }} selected{{ end }}>Only Errors</option>
+              <option value="false"{{ if eq .ExceptionsFilter "false" }} selected{{ end }}>Without Errors</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="label" for="fromme">FromMe</label>
+          <div class="select">
+            <select id="fromme" name="fromme">
+              <option value=""{{ if eq .FromMeFilter "" }} selected{{ end }}>All</option>
+              <option value="true"{{ if eq .FromMeFilter "true" }} selected{{ end }}>true</option>
+              <option value="false"{{ if eq .FromMeFilter "false" }} selected{{ end }}>false</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="label" for="fromhistory">FromHistory</label>
+          <div class="select">
+            <select id="fromhistory" name="fromhistory">
+              <option value=""{{ if eq .FromHistoryFilter "" }} selected{{ end }}>All</option>
+              <option value="true"{{ if eq .FromHistoryFilter "true" }} selected{{ end }}>true</option>
+              <option value="false"{{ if eq .FromHistoryFilter "false" }} selected{{ end }}>false</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <label class="label" for="chatid">Chat ID</label>
+          <input id="chatid" class="input" type="text" name="chatid" value="{{ .ChatIDFilter }}" placeholder="5511...@s.whatsapp.net">
+        </div>
+        <div class="control">
+          <label class="label" for="messageid">Message ID</label>
+          <input id="messageid" class="input" type="text" name="messageid" value="{{ .MessageIDFilter }}" placeholder="ABCD...">
+        </div>
+        <div class="control">
+          <label class="label" for="trackid">Track ID</label>
+          <input id="trackid" class="input" type="text" name="trackid" value="{{ .TrackIDFilter }}" placeholder="your-system-id">
+        </div>
+      </div>
+
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <label class="label" for="timestamp">Timestamp</label>
+          <input id="timestamp" class="input" type="text" name="timestamp" value="{{ .TimestampFilter }}" placeholder="unix timestamp">
+        </div>
+        <div class="control">
+          <label class="label" for="last">Last Minutes</label>
+          <input id="last" class="input" type="text" name="last" value="{{ .LastFilter }}" placeholder="e.g. 60">
+        </div>
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button type="submit" class="button is-info">Apply Filters</button>
+        </div>
+        <div class="control">
+          <a class="button is-light" href="/form/server/{{ .Token }}/receive">Clear</a>
+        </div>
+      </div>
+    </form>
+
     <div class="messages">
       {{ range .Messages }}
       <div class="message{{ if .HasExceptions }} dispatch-error{{ end }}">

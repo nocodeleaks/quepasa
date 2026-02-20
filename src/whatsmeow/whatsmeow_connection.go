@@ -278,6 +278,9 @@ func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) 
 
 func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
 	logentry := source.GetLogger()
+	if source == nil || len(msg.InReply) == 0 {
+		return nil
+	}
 
 	// default information for cached messages
 	var info types.MessageInfo
@@ -286,7 +289,15 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	// (optional) another devices will process anyway, but our devices will show quoted only if it exists on cache
 	var quoted *waE2E.Message
 
-	cached, _ := source.GetHandlers().WAHandlers.GetById(msg.InReply)
+	handlers := source.GetHandlers()
+	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+		logentry.Warnf("handlers unavailable, reply context will include stanza only for msg id: %s", msg.InReply)
+		return &waE2E.ContextInfo{
+			StanzaID: proto.String(msg.InReply),
+		}
+	}
+
+	cached, _ := handlers.WAHandlers.GetById(msg.InReply)
 	if cached != nil {
 
 		// update cached info
@@ -491,7 +502,10 @@ func (source *WhatsmeowConnection) UploadAttachment(msg whatsapp.WhatsappMessage
 		return
 	}
 
-	inreplycontext := source.GetInReplyContextInfo(msg)
+	var inreplycontext *waE2E.ContextInfo
+	if len(msg.InReply) > 0 {
+		inreplycontext = source.GetInReplyContextInfo(msg)
+	}
 	result = NewWhatsmeowMessageAttachment(response, msg, mediaType, inreplycontext)
 	return
 }

@@ -149,6 +149,7 @@ Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `R
 - **`DISPATCHUNHANDLED`** - Dispatch unhandled messages (default: `false`)
 - **`WHATSMEOW_LOGLEVEL`** - Whatsmeow library log level
 - **`WHATSMEOW_DBLOGLEVEL`** - Whatsmeow database log level
+- **`WHATSMEOW_USE_RETRY_MESSAGE_STORE`** - Persist outgoing messages in database for retry receipts after process restarts (default: `false`)
 
 ## 📋 Current Working Configuration
 

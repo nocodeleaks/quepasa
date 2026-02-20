@@ -9,31 +9,33 @@ import (
 // EnvironmentSettingsPreview provides a read-only preview of environment settings
 // Used for public endpoints without authentication
 type EnvironmentSettingsPreview struct {
-	Groups         string `json:"groups"`
-	Broadcasts     string `json:"broadcasts"`
-	ReadReceipts   string `json:"read_receipts"`
-	Calls          string `json:"calls"`
-	HistorySync    string `json:"history_sync"`
-	LogLevel       string `json:"log_level"`
-	DBLogLevel     string `json:"db_log_level,omitempty"`
-	Presence       string `json:"presence,omitempty"`
-	ReadUpdate     string `json:"read_update,omitempty"`
-	WakeUpHour     string `json:"wakeup_hour,omitempty"`
-	WakeUpDuration string `json:"wakeup_duration,omitempty"`
+	Groups               string `json:"groups"`
+	Broadcasts           string `json:"broadcasts"`
+	ReadReceipts         string `json:"read_receipts"`
+	Calls                string `json:"calls"`
+	HistorySync          string `json:"history_sync"`
+	LogLevel             string `json:"log_level"`
+	DBLogLevel           string `json:"db_log_level,omitempty"`
+	RetryMessageStore    string `json:"retry_message_store,omitempty"`
+	Presence             string `json:"presence,omitempty"`
+	ReadUpdate           string `json:"read_update,omitempty"`
+	WakeUpHour           string `json:"wakeup_hour,omitempty"`
+	WakeUpDuration       string `json:"wakeup_duration,omitempty"`
 }
 
 // GetPreview returns a read-only preview of current environment settings
 func GetPreview() *EnvironmentSettingsPreview {
 	preview := &EnvironmentSettingsPreview{
-		Groups:       formatBooleanExtended(Settings.WhatsApp.Groups),
-		Broadcasts:   formatBooleanExtended(Settings.WhatsApp.Broadcasts),
-		ReadReceipts: formatBooleanExtended(Settings.WhatsApp.ReadReceipts),
-		Calls:        formatBooleanExtended(Settings.WhatsApp.Calls),
-		HistorySync:  formatHistorySync(Settings.WhatsApp.HistorySyncDays),
-		LogLevel:     formatLogLevel(Settings.Whatsmeow.LogLevel),
-		DBLogLevel:   formatLogLevel(Settings.Whatsmeow.DBLogLevel),
-		Presence:     Settings.WhatsApp.Presence,
-		ReadUpdate:   formatBooleanExtended(Settings.WhatsApp.ReadUpdate),
+		Groups:            formatBooleanExtended(Settings.WhatsApp.Groups),
+		Broadcasts:        formatBooleanExtended(Settings.WhatsApp.Broadcasts),
+		ReadReceipts:      formatBooleanExtended(Settings.WhatsApp.ReadReceipts),
+		Calls:             formatBooleanExtended(Settings.WhatsApp.Calls),
+		HistorySync:       formatHistorySync(Settings.WhatsApp.HistorySyncDays),
+		LogLevel:          formatLogLevel(Settings.Whatsmeow.LogLevel),
+		DBLogLevel:        formatLogLevel(Settings.Whatsmeow.DBLogLevel),
+		RetryMessageStore: formatBool(Settings.Whatsmeow.UseRetryMessageStore),
+		Presence:          Settings.WhatsApp.Presence,
+		ReadUpdate:        formatBooleanExtended(Settings.WhatsApp.ReadUpdate),
 	}
 
 	// Optional fields

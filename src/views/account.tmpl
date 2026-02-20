@@ -195,6 +195,17 @@
       </div>
     {{ end }}
 
+    {{ if .WMOptions.UseRetryMessageStore }}
+      <div class="notification is-info is-light is-small">
+        <div class="subtitle"><b>Retry Message Store</b> cleanup policy:</div>
+        <div>
+          <p>Status: enabled</p>
+          <p>Cleanup trigger: no background cron. Cleanup runs during outgoing message flow when more than 12 hours have passed since the last cleanup.</p>
+          <p>Retention: removes retry-buffer records older than 7 days.</p>
+        </div>
+      </div>
+    {{ end }}
+
   </div>
   <div>&nbsp;</div>
 {{ end }}

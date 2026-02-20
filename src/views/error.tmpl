@@ -1,13 +1,88 @@
 {{ define "content" }}
-<div class="container site-header">
-  <div class="card">
-    <div class="card-body">
-      <h3>Uh oh! Something went wrong.</h3>
-      <br>
-      <p class="lead">{{ .Message }} [{{ .Status }} {{ .Code }}]</p>
-      <pre>{{ .ErrorData }}</pre>
-      <pre>{{ .Stack }}</pre>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+  <div class="max-w-2xl w-full mx-4">
+    <!-- Theme Toggle Button -->
+    <div class="absolute top-4 right-4">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md transition-colors" title="Toggle Dark Mode">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+      </button>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-red-50 dark:bg-red-900/20">
+        <div class="flex items-center">
+          <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mr-4">
+            <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-semibold text-red-900 dark:text-red-100">Oops! Something went wrong</h2>
+            <p class="text-red-700 dark:text-red-300">{{ .Message }} [{{ .Status }} {{ .Code }}]</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        {{ if .ErrorData }}
+          <div>
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Error Details:</h3>
+            <pre class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-3 rounded border dark:border-gray-600 overflow-x-auto"><code>{{ .ErrorData }}</code></pre>
+          </div>
+        {{ end }}
+        
+        {{ if .Stack }}
+          <div>
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stack Trace:</h3>
+            <pre class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-3 rounded border dark:border-gray-600 overflow-x-auto max-h-64"><code>{{ .Stack }}</code></pre>
+          </div>
+        {{ end }}
+      </div>
+      
+      <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <div class="flex justify-between items-center">
+          <p class="text-sm text-gray-600 dark:text-gray-300">If this error persists, please contact support.</p>
+          <a href="/form/account" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
+            <i class="fas fa-home mr-2"></i>Go to Dashboard
+          </a>
+        </div>
+      </div>
     </div>
   </div>
+
+  <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-lg';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-lg';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+    });
+  </script>
 </div>
 {{ end }}

@@ -1,118 +1,433 @@
 {{ define "content" }}
-{{ if .ErrorMessage}}
-<div class="notification is-warning">
-  {{ .ErrorMessage}}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+  <div class="max-w-md w-full mx-4">
+    <!-- Theme Toggle Button -->
+    <div class="absolute top-4 right-4">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md transition-colors" title="Toggle Dark Mode">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+      </button>
+    </div>
+
+    <!-- QuePasa Logo Header -->
+    <div class="text-center mb-6">
+      <div class="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+        <img src="/assets/favicon.png" alt="QuePasa" class="w-24 h-24 object-contain">
+      </div>
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">QuePasa</h1>
+      <p class="text-gray-600 dark:text-gray-300">WhatsApp Gateway Platform</p>
+    </div>
+
+    <!-- Error Message -->
+    {{ if .ErrorMessage }}
+      <div class="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-lg">
+        <div class="flex">
+          <i class="fas fa-exclamation-triangle text-red-400 mr-3 mt-1"></i>
+          <p class="text-red-700 dark:text-red-300">{{ .ErrorMessage }}</p>
+        </div>
+      </div>
+    {{ end }}
+
+    <!-- WebSocket SSL Warning -->
+    <div class="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+      <div class="flex">
+        <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+        <div class="text-yellow-700 dark:text-yellow-300">
+          <p class="font-medium mb-1">Important Configuration</p>
+          <p class="text-sm">If the QR code doesn't appear, please verify that the WEBSOCKETSSL=true variable is set in /src/.env</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code Container -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+          <i class="fas fa-qrcode mr-3"></i>WhatsApp Verification
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 mt-1">Scan this QR code with WhatsApp within 20 seconds</p>
+      </div>
+      
+      <div class="p-8 text-center">
+        <!-- Loading State -->
+        <div id="loadingState" class="space-y-4">
+          <div class="animate-spin mx-auto w-12 h-12 border-4 border-primary border-t-transparent rounded-full"></div>
+          <p class="text-gray-600 dark:text-gray-300">Generating QR code...</p>
+        </div>
+        
+        <!-- QR Code -->
+        <div id="qrContainer" class="hidden space-y-4">
+          <img id="qrcode" src="" alt="QR Code" class="mx-auto rounded-lg border-4 border-gray-200 dark:border-gray-600 transition-all duration-300">
+          <div class="space-y-2">
+            <div class="flex items-center justify-center space-x-2">
+              <div id="statusIndicator" class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+              <span id="statusText" class="text-sm text-gray-600 dark:text-gray-300">Waiting for scan...</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+              <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Success State -->
+        <div id="successState" class="hidden space-y-4">
+          <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-check text-green-600 dark:text-green-400 text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-medium text-green-900 dark:text-green-100">Successfully Connected!</h3>
+            <p class="text-green-700 dark:text-green-300">Redirecting to dashboard...</p>
+          </div>
+        </div>
+        
+        <!-- Error State -->
+        <div id="errorState" class="hidden space-y-4">
+          <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-medium text-red-900 dark:text-red-100">Connection Failed</h3>
+            <p class="text-red-700 dark:text-red-300 mb-4">Unable to establish connection. Retrying...</p>
+            <button onclick="retryConnection()" class="px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors">
+              <i class="fas fa-redo mr-2"></i>Retry Now
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+          <div class="flex items-center space-x-2">
+            <i class="fas fa-mobile-alt"></i>
+            <span>Open WhatsApp → Settings → Linked Devices → Link a Device</span>
+          </div>
+          <a href="/form/account" class="text-primary hover:text-opacity-80 font-medium">
+            Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-{{ end }}
-<div class="is-block is-large is-fullwidth container" style="text-align: center;">
-  <hr />
-  <div class="notification is-warning">CASO O QR CODE NÃO APARECER POR FAVOR VERIFIQUE SE  A VARIAVEL EM /src/.env ESTA DE FORMA WEBSOCKETSSL=true</div>
-  <label class="label">Scan this QR code in the next 20 seconds:</label>
-  <img id="qrcode" src="">
-  <hr />
-  <a href="/form/account">Back</a>
-</div>
-<script type="text/javascript" defer>
+
+<script type="text/javascript">
+  // Theme management
+  function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const currentTheme = savedTheme || systemTheme;
+    
+    applyTheme(currentTheme);
+  }
+  
+  function applyTheme(theme) {
+    const html = document.documentElement;
+    const themeIcon = document.getElementById('themeIcon');
+    
+    if (theme === 'dark') {
+      html.classList.add('dark');
+      if (themeIcon) themeIcon.className = 'fas fa-sun text-lg';
+    } else {
+      html.classList.remove('dark');
+      if (themeIcon) themeIcon.className = 'fas fa-moon text-lg';
+    }
+    
+    localStorage.setItem('theme', theme);
+  }
+  
+  function toggleTheme() {
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+  }
+
+  // Initialize theme before other scripts
+  initializeTheme();
+
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const mode = urlParams.get('mode')
+  const mode = urlParams.get('mode');
 
   let Success = false;
+  let connectionAttempts = 0;
+  let progressTimer;
   const Image = document.querySelector('img#qrcode');
+  const loadingState = document.getElementById('loadingState');
+  const qrContainer = document.getElementById('qrContainer');
+  const successState = document.getElementById('successState');
+  const errorState = document.getElementById('errorState');
+  const statusIndicator = document.getElementById('statusIndicator');
+  const statusText = document.getElementById('statusText');
+  const progressBar = document.getElementById('progressBar');
 
   var myWebSocket;
 
-  function GetQRCode() {
-    loadQrCode();
-    if (myWebSocket === undefined || (myWebSocket && myWebSocket.readyState === 3)) {
-      myWebSocket = new WebSocket("{{ .Protocol }}://{{ .Host }}/form/verify/ws");
-      myWebSocket.onopen = onWebSocketOpen;
-      myWebSocket.onmessage = onWebSocketMessage;
-      myWebSocket.onclose = onWebSocketClose;
-      myWebSocket.onerror = onWebSocketError; 
-            
-      window.MyWebSocket = myWebSocket;
-      window.addEventListener("unload", function(){
-        myWebSocket.close();
-      });   
+  function updateStatus(status, message, color = 'blue') {
+    if (statusText) {
+      statusText.textContent = message;
     }
+    if (statusIndicator) {
+      statusIndicator.className = `w-3 h-3 rounded-full ${color === 'green' ? 'bg-green-500' : color === 'red' ? 'bg-red-500' : 'bg-blue-500'} ${color === 'blue' ? 'animate-pulse' : ''}`;
+    }
+  }
+
+  function startProgressBar() {
+    let progress = 0;
+    if (progressBar) {
+      progressBar.style.width = '0%';
+    }
+    
+    // Clear any existing timer
+    if (progressTimer) {
+      clearInterval(progressTimer);
+    }
+    
+    progressTimer = setInterval(() => {
+      progress += 5;
+      if (progressBar) {
+        progressBar.style.width = `${Math.min(progress, 100)}%`;
+      }
+      
+      if (progress >= 100) {
+        clearInterval(progressTimer);
+        updateStatus('timeout', 'QR code expired, generating new one...', 'red');
+        
+        // Auto-regenerate QR code after timeout
+        setTimeout(() => {
+          if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+            console.debug("Auto-regenerating QR code after timeout");
+            myWebSocket.send("start");
+          } else {
+            console.debug("WebSocket not open, reconnecting...");
+            GetQRCode();
+          }
+        }, 2000);
+      }
+    }, 1000); // 20 seconds total
+  }
+
+  function stopProgressBar() {
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
+    }
+  }
+
+  function showState(state) {
+    // Hide all states
+    const states = ['loadingState', 'qrContainer', 'successState', 'errorState'];
+    states.forEach(stateId => {
+      const element = document.getElementById(stateId);
+      if (element) {
+        element.classList.add('hidden');
+      }
+    });
+    
+    // Show the requested state
+    const targetElement = document.getElementById(state);
+    if (targetElement) {
+      targetElement.classList.remove('hidden');
+    }
+  }
+
+  function GetQRCode() {
+    connectionAttempts++;
+    showState('loadingState');
+    
+    // Close existing WebSocket if any
+    if (myWebSocket && myWebSocket.readyState !== WebSocket.CLOSED) {
+      myWebSocket.close();
+    }
+    
+    console.debug(`Attempting to connect (attempt ${connectionAttempts})`);
+    
+    myWebSocket = new WebSocket("{{ .Protocol }}://{{ .Host }}/form/verify/ws");
+    myWebSocket.onopen = onWebSocketOpen;
+    myWebSocket.onmessage = onWebSocketMessage;
+    myWebSocket.onclose = onWebSocketClose;
+    myWebSocket.onerror = onWebSocketError;
+    
+    window.MyWebSocket = myWebSocket;
+    window.addEventListener("unload", function(){
+      if (myWebSocket) {
+        myWebSocket.close();
+      }
+    });
   }
 
   function SetSuccess(status) {
     Success = status;
+    stopProgressBar();
+    
     if (Success) {
-      Image.style = "border: green 3px solid; filter: blur(5px);";
+      showState('successState');
+      if (Image) {
+        Image.style = "border-color: #10B981;";
+      }
+      updateStatus('success', 'Connected successfully!', 'green');
     } else {
-      Image.style = "border: red 3px solid; filter: blur(4px);";
+      showState('errorState');
+      if (Image) {
+        Image.style = "border-color: #EF4444; filter: blur(2px);";
+      }
+      updateStatus('error', 'Connection failed', 'red');
     }
   }
 
-  function loadQrCode(data)
-  {   
-    if(data){
-      Image.style = "";
-      Image.src = "data:image/png;base64, " + data;
+  function loadQrCode(data) {
+    if (data) {
+      showState('qrContainer');
+      if (Image) {
+        Image.style = "border-color: #E5E7EB;";
+        Image.src = "data:image/png;base64, " + data;
+      }
+      updateStatus('waiting', 'Scan QR code with WhatsApp...', 'blue');
+      startProgressBar();
     } else {
       SetSuccess(false);
     }
   }
 
-  function formatDebug(message)
-  {
+  function retryConnection() {
+    connectionAttempts = 0; // Reset attempts counter
+    GetQRCode();
+  }
+
+  function formatDebug(message) {
     console.debug("(" + Date.now() + ") " + message);
   }
 
-  function onWebSocketOpen(event){
+  function onWebSocketOpen(event) {
     if (event) {
-      console.debug("sending start with mode: " + mode)
+      console.debug("WebSocket opened, sending start with mode: " + mode);
       myWebSocket.send("start");
-    } else { formatDebug("no event passed"); }
+      updateStatus('connecting', 'Establishing connection...', 'blue');
+    } else { 
+      formatDebug("no event passed"); 
+    }
   }
 
-  function onWebSocketError(event){
+  function onWebSocketError(event) {
+    console.error("WebSocket error:", event);
     formatDebug("error socket", event);
+    updateStatus('error', 'Connection error occurred', 'red');
   }
 
-  function onWebSocketClose(event)
-  {
-    if(Success){      
+  function onWebSocketClose(event) {
+    console.debug("WebSocket closed, code:", event.code, "reason:", event.reason);
+    stopProgressBar();
+    
+    if (Success) {
       setTimeout(function() {
         window.location.replace({{ .Destination }});
-      }, 2000);        
+      }, 2000);
       return;
     }
 
-    //console.debug(event);
-    formatDebug("closed socket (" + event.reason + "): regenerating qr code and trying again");    
+    formatDebug("closed socket (" + event.reason + "): regenerating qr code and trying again");
+    
+    // Auto-retry connection
     setTimeout(function() {
-      GetQRCode();
-    }, 1000);
-  }
-
-  function onWebSocketMessage(event){
-    if (event) {
-      if (event.data === "complete") {
-        console.debug("websocket complete");
-        SetSuccess(true);
-        myWebSocket.close();
-      } else if (event.data === "success") {
-        SetSuccess(true);
-        console.debug("websocket success");
-      } else if (event.data === "echo") {
-        //console.debug("websocket echo keep alive");
-      } else if (event.data === "timeout") {
-        console.debug("timeout: regenerating qr code and trying again");
-        myWebSocket.send("start");
-      } else if (event.data === "error") {
-        console.debug("unknown error: regenerating qr code and trying again");
-        myWebSocket.send("start");
+      if (connectionAttempts < 10) { // Increased retry attempts
+        console.debug("Retrying connection...");
+        GetQRCode();
       } else {
-        loadQrCode(event.data);
+        showState('errorState');
+        updateStatus('error', 'Max connection attempts reached', 'red');
       }
-    } else { formatDebug("no event passed"); }
+    }, 3000); // Wait 3 seconds before retry
   }
 
-  window.onload = GetQRCode;
+  function onWebSocketMessage(event) {
+    if (event) {
+      console.debug("WebSocket message received:", event.data);
+      
+      switch(event.data) {
+        case "complete":
+          console.debug("websocket complete");
+          SetSuccess(true);
+          myWebSocket.close();
+          break;
+        case "success":
+          SetSuccess(true);
+          console.debug("websocket success");
+          break;
+        case "echo":
+          // Keep alive message
+          console.debug("websocket echo (keep alive)");
+          break;
+        case "timeout":
+          console.debug("timeout: regenerating qr code and trying again");
+          updateStatus('timeout', 'QR code expired, generating new one...', 'red');
+          stopProgressBar();
+          
+          // Show loading state and request new QR
+          setTimeout(() => {
+            showState('loadingState');
+            if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+              console.debug("Requesting new QR code after timeout");
+              myWebSocket.send("start");
+            } else {
+              console.debug("WebSocket not open, reconnecting after timeout");
+              GetQRCode();
+            }
+          }, 1000);
+          break;
+        case "error":
+          console.debug("unknown error: regenerating qr code and trying again");
+          updateStatus('error', 'Error occurred, retrying...', 'red');
+          stopProgressBar();
+          
+          setTimeout(() => {
+            showState('loadingState');
+            if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+              console.debug("Requesting new QR code after error");
+              myWebSocket.send("start");
+            } else {
+              console.debug("WebSocket not open, reconnecting after error");
+              GetQRCode();
+            }
+          }, 2000);
+          break;
+        default:
+          // This should be the base64 QR code data
+          console.debug("Received QR code data, length:", event.data.length);
+          
+          // Reset connection attempts on successful QR generation
+          connectionAttempts = 0;
+          
+          loadQrCode(event.data);
+          break;
+      }
+    } else { 
+      formatDebug("no event passed"); 
+    }
+  }
+
+  // Manual retry function
+  function retryConnection() {
+    console.debug("Manual retry requested");
+    connectionAttempts = 0;
+    stopProgressBar();
+    GetQRCode();
+  }
+
+  // Auto-retry when QR expires (called from progress bar)
+  function autoRetryQR() {
+    console.debug("Auto-retry QR code generation");
+    if (myWebSocket && myWebSocket.readyState === WebSocket.OPEN) {
+      myWebSocket.send("start");
+    } else {
+      GetQRCode();
+    }
+  }
+
+  // Global functions
+  window.onload = function() {
+    console.debug("Page loaded, starting QR code generation");
+    GetQRCode();
+  };
   window.GetQRCode = GetQRCode;
+  window.retryConnection = retryConnection;
+  window.autoRetryQR = autoRetryQR;
 </script>
 {{ end }}

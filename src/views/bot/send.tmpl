@@ -1,47 +1,172 @@
 {{ define "content" }}
-{{ if .ErrorMessage}}
-<div class="notification is-warning">
-  {{ .ErrorMessage }}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+  <!-- Header -->
+  <div class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+    <div class="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+      <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <h1 class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white truncate">Send Message</h1>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">Send messages via {{ .Server.Token }}</p>
+        </div>
+        <div class="flex items-center space-x-2 flex-shrink-0">
+          <!-- Theme Toggle Button -->
+          <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle Dark Mode">
+            <i id="themeIcon" class="fas fa-moon text-sm"></i>
+          </button>
+          <a href="/form/account" class="inline-flex items-center px-3 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors text-sm">
+            <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+            <span class="sm:hidden">Back</span>
+            <span class="hidden sm:inline">Back</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Success Message -->
+    {{ if .MessageId }}
+      <div class="mb-6 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 p-4 rounded-r-lg">
+        <div class="flex">
+          <i class="fas fa-check-circle text-green-400 mr-3 mt-1"></i>
+          <div>
+            <p class="text-green-700 dark:text-green-300 font-medium">Message sent successfully!</p>
+            <p class="text-green-600 dark:text-green-400 text-sm mt-1">Message ID: {{ .MessageId }}</p>
+          </div>
+        </div>
+      </div>
+    {{ end }}
+
+    <!-- Error Message -->
+    {{ if .ErrorMessage }}
+      <div class="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-lg">
+        <div class="flex">
+          <i class="fas fa-exclamation-circle text-red-400 mr-3 mt-1"></i>
+          <p class="text-red-700 dark:text-red-300">{{ .ErrorMessage }}</p>
+        </div>
+      </div>
+    {{ end }}
+
+    <!-- Send Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+          <i class="fas fa-paper-plane mr-2"></i>Compose Message
+        </h2>
+      </div>
+      
+      <form enctype="multipart/form-data" method="post" action="/form/server/{{ .Server.Token }}/send" class="p-6 space-y-6">
+        <!-- Recipient -->
+        <div>
+          <label for="recipient" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-user mr-1"></i>Recipient
+          </label>
+          <input 
+            type="text" 
+            name="recipient" 
+            id="recipient"
+            placeholder="Phone number or chat ID"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+            required
+            autofocus
+          >
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter phone number with country code (e.g., +5511999999999) or chat ID</p>
+        </div>
+
+        <!-- Message ID (Optional) -->
+        <div>
+          <label for="id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-hashtag mr-1"></i>Message ID <span class="text-gray-400">(Optional)</span>
+          </label>
+          <input 
+            type="text" 
+            name="id" 
+            id="id"
+            placeholder="Custom message ID"
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+          >
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to auto-generate</p>
+        </div>
+
+        <!-- Message Text -->
+        <div>
+          <label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-comment mr-1"></i>Message Text
+          </label>
+          <textarea 
+            name="message" 
+            id="message"
+            rows="4"
+            placeholder="Type your message here..."
+            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-vertical"
+          ></textarea>
+        </div>
+
+        <!-- Attachment -->
+        <div>
+          <label for="attachment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-paperclip mr-1"></i>Attachment <span class="text-gray-400">(Optional)</span>
+          </label>
+          <div class="relative">
+            <input 
+              type="file" 
+              name="attachment" 
+              id="attachment"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-white hover:file:bg-opacity-90"
+            >
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Supported formats: Images, Videos, Documents, Audio</p>
+        </div>
+
+        <!-- Send Button -->
+        <div class="pt-4">
+          <button 
+            type="submit" 
+            class="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-opacity-90 transition-colors font-medium flex items-center justify-center"
+          >
+            <i class="fas fa-paper-plane mr-2"></i>
+            Send Message
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-sm';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-sm';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+    });
+  </script>
 </div>
-{{ end }}
-
-{{ if .MessageId }}
-<div class="notification is-success">
-  Last message send successful: {{ .MessageId }}
-</div>
-{{ end }}
-
-<form enctype="multipart/form-data" class="" method="post" action="/form/server/{{ .Server.Token }}/send">
-  <div class="field">
-    <label class="label" for="recipient">Recipient:</label>
-    <div class="control">
-      <input class="input is-large" name="recipient" type="text" placeholder="" autofocus="" value="">
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="message">Message Id: (*Optional)</label>
-    <div class="control">
-      <input class="input is-large" name="id" type="text" placeholder="" autofocus="" value="">
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="message">Message Text:</label>
-    <div class="control">
-      <input class="input is-large" name="message" type="text" placeholder="" autofocus="" value="">
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="attachment">Attachment:</label>
-    <div class="control">
-      <input type="file" name="attachment" />
-    </div>
-  </div>
-
-  <button class="button is-block is-info is-large is-fullwidth">Send</button>
-</form>
-
-<a href="/form/account">Back</a>
 {{ end }}

@@ -1,3 +1,63 @@
 {{ define "content" }}
-<a href="/login">Login</a>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+  <div class="max-w-md w-full mx-4">
+    <!-- Theme Toggle Button -->
+    <div class="absolute top-4 right-4">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md transition-colors" title="Toggle Dark Mode">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+      </button>
+    </div>
+
+    <div class="text-center">
+      <!-- QuePasa Logo -->
+      <div class="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+        <img src="/assets/favicon.png" alt="QuePasa" class="w-24 h-24 object-contain">
+      </div>
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">QuePasa</h1>
+      <p class="text-gray-600 dark:text-gray-300 mb-8">WhatsApp Gateway Platform</p>
+      
+      <a href="/login" class="inline-flex items-center px-6 py-3 bg-primary text-white text-lg font-medium rounded-lg hover:bg-opacity-90 transition-colors">
+        <i class="fas fa-sign-in-alt mr-2"></i>
+        Login
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
+    
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-lg';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-lg';
+      }
+      
+      localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
+    });
+  </script>
+</div>
 {{ end }}

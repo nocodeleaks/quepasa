@@ -1,164 +1,160 @@
 {{ define "content" }}
-<section class="hero is-fullheight has-background-light">
-  <div class="hero-body">
-    <div class="container">
-      <div class="columns is-centered">
-        <div class="column is-10-tablet is-6-desktop is-4-widescreen">
-          <div class="has-text-centered mb-5">
-            <!-- Logo / Title -->
-            <figure class="image is-96x96 is-inline-block mb-3" aria-hidden="true">
-              <img src="/assets/favicon.png" alt="QuePasa logo">
-            </figure>
-            <h1 class="title is-3">QuePasa</h1>
-            <p class="subtitle is-6 has-text-grey">WhatsApp bot management console</p>
-          </div>
-          <div> &nbsp; </div>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+  <div class="max-w-md w-full mx-4">
+    <!-- Theme Toggle Button -->
+    <div class="absolute top-4 right-4">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md transition-colors" title="Toggle Dark Mode">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+      </button>
+    </div>
 
-          <div class="card">
-            <div class="card-content">
-              <h2 class="title is-5 has-text-grey-dark">Create your admin user</h2>
-                <p class="subtitle is-6 has-text-danger">This project is under development and not secure.</p>
-
-              {{ if .ErrorMessage }}
-              <div class="notification is-warning">
-                {{ .ErrorMessage }}
-              </div>
-              {{ end }}
-
-              <form class="login" method="post" action="/setup" novalidate>
-
-                <div class="field">
-                  <label class="label is-sr-only" for="email">Email</label>
-                  <div class="control has-icons-left">
-                    <input
-                      id="email"
-                      name="email"
-                      class="input is-medium {{ if .EmailError }}is-danger{{ end }}"
-                      type="email"
-                      placeholder="Your email"
-                      value="{{ .Email }}"
-                      required
-                      autocomplete="username"
-                      aria-label="Email"
-                      autofocus>
-                    <span class="icon is-small is-left" aria-hidden="true">
-                      <i class="fas fa-envelope"></i>
-                    </span>
-                  </div>
-                  {{ if .UserExistsError }}
-                  <p class="help is-danger">
-                    This email address is already taken. Please choose a new one.
-                  </p>
-                  {{ end }}
-                  {{ if .EmailInvalidError }}
-                  <p class="help is-danger">
-                    Your email address is not valid. Please double check!
-                  </p>
-                  {{ end }}
-                </div>
-
-                <div class="field">
-                  <label class="label is-sr-only" for="password">Password</label>
-                  <div class="control has-icons-left">
-                    <input
-                      id="password"
-                      name="password"
-                      class="input is-medium {{ if .PasswordStrengthError }}is-danger{{ end }}"
-                      type="password"
-                      placeholder="Your password"
-                      required
-                      autocomplete="new-password"
-                      aria-label="Password">
-                    <span class="icon is-small is-left" aria-hidden="true">
-                      <i class="fas fa-lock"></i>
-                    </span>
-                  </div>
-                  {{ if .PasswordStrengthError }}
-                  <p class="help is-danger">
-                    This password would take {{ .PasswordCrackTime }} to crack.
-                  </p>
-                  {{ end }}
-                </div>
-
-                <div class="field">
-                  <label class="label is-sr-only" for="passwordConfirm">Confirm password</label>
-                  <div class="control has-icons-left">
-                    <input
-                      id="passwordConfirm"
-                      name="passwordConfirm"
-                      class="input is-medium {{ if .PasswordMatchError }}is-danger{{ end }}"
-                      type="password"
-                      placeholder="Confirm password"
-                      required
-                      autocomplete="new-password"
-                      data-form-type="password-confirm"
-                      aria-label="Confirm password">
-                    <span class="icon is-small is-left" aria-hidden="true">
-                      <i class="fas fa-lock"></i>
-                    </span>
-                  </div>
-                  {{ if .PasswordMatchError }}
-                  <p class="help is-danger">
-                    The passwords do not match. Please double-check!
-                  </p>
-                  {{ end }}
-                </div>
-
-                <div class="field mt-4">
-                  <div class="control">
-                    <button type="submit" class="button is-primary is-medium is-fullwidth">Create Admin User</button>
-                  </div>
-                </div>
-
-                <div class="has-text-centered mt-3">
-                  <p class="is-size-7 has-text-grey">Already have an account? <a href="/login">Sign in</a></p>
-                </div>
-
-              </form>
-            </div>
-          </div>
-<div> &nbsp; </div>
-          <p class="has-text-centered is-size-7 has-text-grey mt-4">
-            Development build — use with caution.
-          </p>
-        </div>
+    <div class="text-center mb-8">
+      <!-- QuePasa Logo -->
+      <div class="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center">
+        <img src="/assets/favicon.png" alt="QuePasa" class="w-24 h-24 object-contain">
+      </div>
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">Welcome to QuePasa</h1>
+      <p class="text-gray-600 dark:text-gray-300">Set up your administrator account</p>
+    </div>
+    
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-6">
+      <div class="flex">
+        <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+        <p class="text-yellow-700 dark:text-yellow-300 text-sm">This project is under development and should not be considered secure.</p>
       </div>
     </div>
+
+    <!-- Error Messages -->
+    {{ if .ErrorMessage }}
+      <div class="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-lg">
+        <div class="flex">
+          <i class="fas fa-exclamation-circle text-red-400 mr-3 mt-1"></i>
+          <p class="text-red-700 dark:text-red-300">{{ .ErrorMessage }}</p>
+        </div>
+      </div>
+    {{ end }}
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white text-center">Create Admin User</h2>
+        <p class="text-gray-600 dark:text-gray-300 text-center mt-1">Set up your administrator account</p>
+      </div>
+      
+      <form method="post" action="/setup" class="p-6 space-y-6">
+        <!-- Email Field -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-envelope mr-1"></i>Email Address
+          </label>
+          <input 
+            type="email" 
+            name="email" 
+            id="email"
+            placeholder="admin@example.com"
+            value="{{ .Email }}"
+            class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors {{ if .EmailError }}border-red-300 bg-red-50 dark:bg-red-900/20{{ else }}border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700{{ end }} text-gray-900 dark:text-white"
+            required
+            autofocus
+          >
+          {{ if .UserExistsError }}
+            <p class="text-red-600 dark:text-red-400 text-xs mt-1">
+              <i class="fas fa-exclamation-circle mr-1"></i>This email address is already taken. Please choose a new one.
+            </p>
+          {{ end }}
+          {{ if .EmailInvalidError }}
+            <p class="text-red-600 dark:text-red-400 text-xs mt-1">
+              <i class="fas fa-exclamation-circle mr-1"></i>Your email address is not valid. Please double check!
+            </p>
+          {{ end }}
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-lock mr-1"></i>Password
+          </label>
+          <input 
+            type="password" 
+            name="password" 
+            id="password"
+            placeholder="Create a strong password"
+            class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors {{ if .PasswordStrengthError }}border-red-300 bg-red-50 dark:bg-red-900/20{{ else }}border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700{{ end }} text-gray-900 dark:text-white"
+            required
+          >
+          {{ if .PasswordStrengthError }}
+            <p class="text-red-600 dark:text-red-400 text-xs mt-1">
+              <i class="fas fa-exclamation-circle mr-1"></i>This password would take {{ .PasswordCrackTime }} to crack.
+            </p>
+          {{ end }}
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div>
+          <label for="passwordConfirm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i class="fas fa-lock mr-1"></i>Confirm Password
+          </label>
+          <input 
+            type="password" 
+            name="passwordConfirm" 
+            id="passwordConfirm"
+            placeholder="Confirm your password"
+            class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors {{ if .PasswordMatchError }}border-red-300 bg-red-50 dark:bg-red-900/20{{ else }}border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700{{ end }} text-gray-900 dark:text-white"
+            required
+          >
+          {{ if .PasswordMatchError }}
+            <p class="text-red-600 dark:text-red-400 text-xs mt-1">
+              <i class="fas fa-exclamation-circle mr-1"></i>The passwords do not match. Please double-check!
+            </p>
+          {{ end }}
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          class="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-opacity-90 transition-colors font-medium flex items-center justify-center"
+        >
+          <i class="fas fa-user-plus mr-2"></i>
+          Create Admin User
+        </button>
+      </form>
+    </div>
   </div>
-</section>
-<script>
-// Auto-fill password confirmation when browser autofills password
-document.addEventListener('DOMContentLoaded', function() {
-  const passwordField = document.getElementById('password');
-  const confirmField = document.getElementById('passwordConfirm');
-  
-  if (passwordField && confirmField) {
-    // Listen for input changes (including autofill)
-    passwordField.addEventListener('input', function() {
-      if (this.value && !confirmField.value) {
-        confirmField.value = this.value;
-      }
-    });
+
+  <script>
+    // Theme management
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      const currentTheme = savedTheme || systemTheme;
+      
+      applyTheme(currentTheme);
+    }
     
-    // Also check on change event for browser autofill
-    passwordField.addEventListener('change', function() {
-      if (this.value && !confirmField.value) {
-        confirmField.value = this.value;
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-sun text-lg';
+      } else {
+        html.classList.remove('dark');
+        if (themeIcon) themeIcon.className = 'fas fa-moon text-lg';
       }
-    });
+      
+      localStorage.setItem('theme', theme);
+    }
     
-    // Use MutationObserver to detect autofill changes
-    const observer = new MutationObserver(function(mutations) {
-      if (passwordField.value && !confirmField.value) {
-        confirmField.value = passwordField.value;
-      }
-    });
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
     
-    observer.observe(passwordField, {
-      attributes: true,
-      attributeFilter: ['value']
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTheme();
     });
-  }
-});
-</script>
+  </script>
+</div>
 {{ end }}

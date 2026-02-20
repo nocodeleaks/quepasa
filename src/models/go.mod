@@ -32,8 +32,8 @@ require (
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	go.mau.fi/whatsmeow v0.0.0-20260211193157-7b33f6289f98
-	golang.org/x/crypto v0.47.0
+	go.mau.fi/whatsmeow v0.0.0-20260219150138-7ae702b1eed4
+	golang.org/x/crypto v0.48.0
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -78,11 +78,11 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
-	go.mau.fi/util v0.9.5 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	go.mau.fi/util v0.9.6 // indirect
+	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
+	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )
 
@@ -98,6 +98,4 @@ replace github.com/nocodeleaks/quepasa/swagger => ../swagger
 
 replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0

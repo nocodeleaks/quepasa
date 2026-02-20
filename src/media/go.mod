@@ -24,9 +24,7 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 
-go 1.24.0 // Ou a sua versão do Go
-
-toolchain go1.24.2
+go 1.25.0 // Ou a sua versão do Go
 
 require (
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427
@@ -46,7 +44,7 @@ require (
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 )
 
 replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp

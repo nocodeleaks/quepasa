@@ -178,6 +178,14 @@
           {{ end }}
           </div>
         {{ end }}
+        {{ if .Attachment }}
+          {{ if .Attachment.Thumbnail }}
+            <div title="Attachment Thumbnail" class="thumbnail">
+              <div class="header">Attachment Preview</div>
+              <img src="{{ .Attachment.Thumbnail.GetThumbnailAsUrl|safeURL }}" />
+            </div>
+          {{ end }}
+        {{ end }}
       </div>
       {{ end }}
     </div>

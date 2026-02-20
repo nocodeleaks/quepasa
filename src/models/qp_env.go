@@ -37,6 +37,7 @@ const (
 	ENV_CACHEDAYS                = "CACHEDAYS"   // cache max days
 	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"
 	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO"
+	ENV_FORCE_AUDIO_AS_PTT       = "FORCE_AUDIO_AS_PTT"
 
 	ENV_READUPDATE      = "READUPDATE"
 	ENV_READRECEIPTS    = "READRECEIPTS"
@@ -131,6 +132,12 @@ func (*Environment) UseCompatibleMIMEsAsAudio() bool {
 	convertWave := getEnvOrDefaultBool(ENV_CONVERT_WAVE_TO_OGG, true)
 	compatibleMime := getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true)
 	return convertWave || compatibleMime
+}
+
+// ForceAudioAsPTT checks if all audio formats should be forced as PTT.
+// Defaults to true.
+func (*Environment) ForceAudioAsPTT() bool {
+	return getEnvOrDefaultBool(ENV_FORCE_AUDIO_AS_PTT, true)
 }
 
 // UseSSLForWebSocket checks if SSL should be used for WebSocket QR code. Defaults to false.

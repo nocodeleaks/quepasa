@@ -36,7 +36,7 @@ func RegisterFormControllers(r chi.Router) {
 
 // LoginFormHandler renders route GET "/login"
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormLoginData{PageTitle: "Login"}
+	data := models.QPFormLoginData{PageTitle: "Login - Quepasa", Version: models.QpVersion}
 
 	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("login.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)

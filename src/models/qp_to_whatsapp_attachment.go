@@ -143,7 +143,7 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 	forceAudioAsPTT := environment.Settings.General.ForceAudioAsPTT
 
 	// If force PTT is enabled, convert non-PTT audio formats to OGG Opus via ffmpeg
-	// (MP3, AAC, MP4 audio, OGA, etc. — but NOT WAV, which is handled later without ffmpeg)
+	// (MP3, AAC, MP4 audio, OGA, etc. - but NOT WAV, which is handled later without ffmpeg)
 	if forceAudioAsPTT && media.ShouldConvertToPTT(attach.Mimetype) {
 		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachAudioTreatment] FORCE_AUDIO_AS_PTT enabled, converting %s to OGG Opus via ffmpeg", attach.Mimetype))
 
@@ -168,7 +168,7 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 					}
 				}
 
-				// Send as Ptt Compatible
+				// Send as PTT compatible
 				attach.SetPTTCompatible(true)
 
 				source.Debug = append(source.Debug, fmt.Sprintf("[success][AttachAudioTreatment] converted to OGG Opus PTT. Original: %d bytes (%s), New: %d bytes (%s)", originalSize, originalMime, len(convertedData), whatsapp.WhatsappPTTMime))
@@ -178,13 +178,10 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 		}
 	}
 
-	// Get audio details (duration, waveform) for any audio MIME type
 	if media.IsAudioMIMEType(source.Attach.Mimetype) {
 		source.AttachAudioTreatmentTesting()
 	}
 
-	// Handle PTT-compatible formats (OGG, WAV, Opus, Wave)
-	// These formats can be sent as PTT by overriding the MIME type — no ffmpeg needed
 	if IsCompatibleWithPTT(attach.Mimetype) {
 		source.Debug = append(source.Debug, fmt.Sprintf("[trace][AttachAudioTreatment] mime type is compatible for ptt: %s", attach.Mimetype))
 

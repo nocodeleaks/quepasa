@@ -81,6 +81,6 @@ swag init -g main.go --output ./swagger
 - Supports multiple API versions (v1, v2, v3, latest)
 
 ## Development
-- Check `AGENTS.md` for AI agent-specific guidelines
+- Check `/.github/instructions/` for AI agent-specific guidelines
 - Controller pattern: `api_handlers+*Controller.go` for API endpoints
 - Latest routes in non-versioned files (e.g., `api_handlers.go`)

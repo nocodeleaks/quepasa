@@ -37,18 +37,46 @@ ContactInfo fields priority (use `ExtractContactName()`):
 3. **PushName** - Contact's public name (self-chosen)
 4. **FirstName** - Generic first name (lowest priority)
 
-## Documentation Structure
-- AGENTS.md: Task-specific AI agent instructions for issues/features (only in feature branches, not in main/develop)
+## Software Documentation Structure
 - README.md: Human-readable documentation
-- USAGE-*.md: Usage instructions for scripts/specific code
 - copilot-instructions.md: Global AI agent guidelines (this file)
+- Root `AGENTS.md`: branch-scoped instructions for feature/custom branches only (must not exist on `develop`/`main`/`master`)
 
-## Development Tools and Usage Documentation
+## Root AGENTS.md (Task Tracking)
+- Purpose: track the current task running in the active custom branch.
+- Scope: only the task for that branch; do not mix content from other branches.
+- Required sections in `AGENTS.md`:
+  - task objective
+  - mandatory checklist
+  - current status
+  - next steps
+  - immutable constraints discovered during execution
+- Update cadence: update `AGENTS.md` on each relevant step and whenever new vital information is discovered.
+- Conversation memory rule: if a detail is critical to avoid future loss in summaries or continuation, persist it in `AGENTS.md`.
+- Branch isolation rule: `AGENTS.md` must not be merged into `develop`/`main`/`master` and must not be propagated across unrelated branches.
 
-* **Testing**: Read docs/USAGE-Testing.md for guidelines on setting up tests, creating test users/servers, and using temporary master keys.
+## Instruction Documents (AI-Only)
+- Location: `/.github/instructions/*.instructions.md`.
+- Instruction documents are separate from software documentation.
+- Use them only as AI operating instructions.
+- Do not duplicate or reference specific instruction files in other sections of this document.
+- Tags are defined in the instruction filename, before `.instructions.md`.
+- Use 4 to 6 hyphen-separated tags in the filename.
+- The first tag must be the primary context (e.g., `telegram`, `controller`, `whatsmeow`).
+- Keep tag names stable to support reliable filename-based search.
+- Example: `telegram-operations-notifications-secrets-workflow.instructions.md`.
+- Keep content objective and minimal: only actionable rules, constraints, paths, and commands.
+- Do not use icons, decorative formatting, tables, or explanatory prose for humans.
+- Keep the document focused on a single technical scope.
+
+## Development Tools
+
+* **Testing**: Read the instruction document in `/.github/instructions/` with primary context tag `testing`.
 * **Build**: All builds should be "go build -o ../.dist/quepasa.exe", overriding any existing file.
-* **Message Flow**: Read docs/USAGE-Message-Flow.md for detailed message processing flow from Whatsmeow to final dispatch.
-* **WebHooks**: Read docs/USAGE-WebHooks.md for webhook setup and configuration.
+* **Message Flow**: Read the instruction document in `/.github/instructions/` with primary context tag `message`.
+* **WebHooks**: Read the instruction document in `/.github/instructions/` with primary context tag `webhooks`.
+* **Redispatch**: Read the instruction document in `/.github/instructions/` with primary context tag `redispatch`.
+* **Merge Workflow**: Read the instruction document in `/.github/instructions/` with primary context tag `merge`.
 * **Whatsmeow Update**: `update-whatsmeow.ps1`.
 
 ## Key Files
@@ -68,7 +96,7 @@ ContactInfo fields priority (use `ExtractContactName()`):
 - models: Data structures and business logic
 - rabbitmq: Message queueing and async processing
 - sipproxy: SIP proxy server
-- webserver: HTTP server, routing, middleware, forms, websockets (check AGENTS.md for details)
+- webserver: HTTP server, routing, middleware, forms, websockets (check instruction documents for module-specific rules)
 - whatsapp: WhatsApp abstractions and interfaces
 - whatsmeow: Whatsmeow library integration
 
@@ -125,8 +153,9 @@ NEVER ask user permission for version conflict resolution - handle automatically
 IMPORTANT: Whenever you are going to merge/push to the main branch, you MUST:
   1. Update the QpVersion in the models/qp_defaults.go file
   2. Increment the version following the current semantic pattern
-  3. If it ends with .0 it means stable version
-  4. Development versions can use other suffixes
+  3. QpVersion must keep 4 sections only: 3.YY.MMDD.HHMM
+  4. Stable version means HHMM final digit is 0
+  5. Development versions use non-zero final digit in HHMM
 
 Version Location:
 File: models/qp_defaults.go

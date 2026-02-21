@@ -4,12 +4,39 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
+
+type ReceiveMessageFilters struct {
+	Exceptions  string
+	Type        string
+	Category    string
+	Search      string
+	ChatID      string
+	MessageID   string
+	TrackID     string
+	FromMe      string
+	FromHistory string
+}
+
+func GetReceiveMessageFilters(r *http.Request) ReceiveMessageFilters {
+	return ReceiveMessageFilters{
+		Exceptions:  strings.TrimSpace(library.GetRequestParameter(r, "exceptions")),
+		Type:        strings.TrimSpace(library.GetRequestParameter(r, "type")),
+		Category:    strings.TrimSpace(library.GetRequestParameter(r, "category")),
+		Search:      strings.TrimSpace(library.GetRequestParameter(r, "search")),
+		ChatID:      strings.TrimSpace(library.GetRequestParameter(r, "chatid")),
+		MessageID:   strings.TrimSpace(library.GetRequestParameter(r, "messageid")),
+		TrackID:     strings.TrimSpace(library.GetRequestParameter(r, "trackid")),
+		FromMe:      strings.TrimSpace(library.GetRequestParameter(r, "fromme")),
+		FromHistory: strings.TrimSpace(library.GetRequestParameter(r, "fromhistory")),
+	}
+}
 
 func GetTimestamp(r *http.Request) (result int64, err error) {
 	paramTimestamp := library.GetRequestParameter(r, "timestamp")
@@ -77,32 +104,204 @@ func GetOrderedMessages(server *models.QpWhatsappServer, timestamp int64) (messa
 </summary>
 */
 func GetOrderedMessagesWithExceptionsFilter(server *models.QpWhatsappServer, timestamp int64, ExceptionsFilter string) (messages []whatsapp.WhatsappMessage) {
+	filters := ReceiveMessageFilters{
+		Exceptions: ExceptionsFilter,
+	}
+	return GetOrderedMessagesWithFilters(server, timestamp, filters)
+}
+
+func GetOrderedMessagesWithFilters(server *models.QpWhatsappServer, timestamp int64, filters ReceiveMessageFilters) (messages []whatsapp.WhatsappMessage) {
 	searchTime := time.Unix(timestamp, 0)
 	allMessages := server.GetMessages(searchTime)
 
-	// Filter messages based on exceptions status
-	switch ExceptionsFilter {
-	case "true":
-		// Return only messages with exceptions
-		for _, msg := range allMessages {
-			if msg.HasExceptions() {
-				messages = append(messages, msg)
-			}
+	for _, msg := range allMessages {
+		if !matchesMessage(msg, filters) {
+			continue
 		}
-	case "false":
-		// Return only messages without exceptions
-		for _, msg := range allMessages {
-			if !msg.HasExceptions() {
-				messages = append(messages, msg)
-			}
-		}
-	default:
-		// Return all messages (no filter)
-		messages = allMessages
+		messages = append(messages, msg)
 	}
 
 	sort.Sort(sort.Reverse(whatsapp.WhatsappOrderedMessages(messages)))
 	return
+}
+
+func matchesMessage(msg whatsapp.WhatsappMessage, filters ReceiveMessageFilters) bool {
+	if !matchesExceptionsFilter(msg, filters.Exceptions) {
+		return false
+	}
+
+	if !matchesTypeFilter(msg, filters.Type) {
+		return false
+	}
+
+	if !matchesCategoryFilter(msg, filters.Category) {
+		return false
+	}
+
+	if !matchesBoolFilter(msg.FromMe, filters.FromMe) {
+		return false
+	}
+
+	if !matchesBoolFilter(msg.FromHistory, filters.FromHistory) {
+		return false
+	}
+
+	if !matchesContains(msg.Chat.Id, filters.ChatID) {
+		return false
+	}
+
+	if !matchesContains(msg.Id, filters.MessageID) {
+		return false
+	}
+
+	if !matchesContains(msg.TrackId, filters.TrackID) {
+		return false
+	}
+
+	if !matchesSearch(msg, filters.Search) {
+		return false
+	}
+
+	return true
+}
+
+func matchesExceptionsFilter(msg whatsapp.WhatsappMessage, filter string) bool {
+	switch strings.ToLower(strings.TrimSpace(filter)) {
+	case "true":
+		return msg.HasExceptions()
+	case "false":
+		return !msg.HasExceptions()
+	default:
+		return true
+	}
+}
+
+func matchesTypeFilter(msg whatsapp.WhatsappMessage, filter string) bool {
+	normalized := normalizeFilterValue(filter)
+	if len(normalized) == 0 {
+		return true
+	}
+
+	msgType := normalizeFilterValue(msg.Type.String())
+	for _, v := range splitFilterValues(normalized) {
+		if v == msgType {
+			return true
+		}
+	}
+	return false
+}
+
+func matchesCategoryFilter(msg whatsapp.WhatsappMessage, filter string) bool {
+	switch normalizeFilterValue(filter) {
+	case "", "all":
+		return true
+	case "sent":
+		return msg.FromMe
+	case "received":
+		return !msg.FromMe && msg.Type != whatsapp.SystemMessageType && msg.Type != whatsapp.UnhandledMessageType
+	case "sync":
+		return isSyncMessage(msg)
+	case "unhandled":
+		return msg.Type == whatsapp.UnhandledMessageType
+	case "events":
+		return msg.Type == whatsapp.SystemMessageType || msg.Type == whatsapp.UnhandledMessageType
+	default:
+		return true
+	}
+}
+
+func isSyncMessage(msg whatsapp.WhatsappMessage) bool {
+	if msg.Type != whatsapp.SystemMessageType {
+		return false
+	}
+
+	text := strings.ToLower(msg.Text)
+	return strings.Contains(text, "\"event\":\"sync_") || strings.Contains(text, "history synchronization event")
+}
+
+func matchesBoolFilter(value bool, filter string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(filter))
+	if len(normalized) == 0 {
+		return true
+	}
+
+	b, err := strconv.ParseBool(normalized)
+	if err != nil {
+		return true
+	}
+	return value == b
+}
+
+func matchesContains(value string, filter string) bool {
+	filter = strings.TrimSpace(strings.ToLower(filter))
+	if len(filter) == 0 {
+		return true
+	}
+	return strings.Contains(strings.ToLower(value), filter)
+}
+
+func matchesSearch(msg whatsapp.WhatsappMessage, search string) bool {
+	search = strings.TrimSpace(strings.ToLower(search))
+	if len(search) == 0 {
+		return true
+	}
+
+	if strings.Contains(strings.ToLower(msg.Id), search) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(msg.TrackId), search) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(msg.Text), search) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(msg.Chat.Id), search) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(msg.Chat.Title), search) {
+		return true
+	}
+	if msg.Participant != nil {
+		if strings.Contains(strings.ToLower(msg.Participant.Id), search) {
+			return true
+		}
+		if strings.Contains(strings.ToLower(msg.Participant.Title), search) {
+			return true
+		}
+	}
+	for _, ex := range msg.Exceptions {
+		if strings.Contains(strings.ToLower(ex), search) {
+			return true
+		}
+	}
+	if msg.Debug != nil {
+		if strings.Contains(strings.ToLower(msg.Debug.Event), search) {
+			return true
+		}
+		if strings.Contains(strings.ToLower(msg.Debug.Reason), search) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func splitFilterValues(value string) []string {
+	result := []string{}
+	for _, item := range strings.Split(value, ",") {
+		normalized := normalizeFilterValue(item)
+		if len(normalized) == 0 {
+			continue
+		}
+		result = append(result, normalized)
+	}
+	return result
+}
+
+func normalizeFilterValue(value string) string {
+	normalized := strings.TrimSpace(strings.ToLower(value))
+	normalized = strings.ReplaceAll(normalized, "-", "_")
+	return normalized
 }
 
 /*

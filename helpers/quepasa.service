@@ -1,3 +1,5 @@
+# Last updated: 202601092245
+
 [Unit]  
 Description=Quepasa API Service 
 ConditionPathExists=/opt/quepasa
@@ -14,6 +16,7 @@ ExecStartPre=+/bin/chmod 755 /var/log/quepasa
 ExecStart=/usr/local/go/bin/go run main.go  
 WorkingDirectory=/opt/quepasa/
 EnvironmentFile=-/opt/quepasa/.env
+UnsetEnvironment=USER
 Type=simple
 User=quepasa     
 Group=quepasa
@@ -33,6 +36,7 @@ StandardOutput=journal
 StandardError=journal
 
 KillSignal=SIGINT
+KillMode=mixed
 
 [Install]  
 WantedBy=multi-user.target 

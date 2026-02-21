@@ -12,6 +12,17 @@ type QPFormReceiveData struct {
 	Token               string
 	DownloadPrefix      string
 	FormAccountEndpoint string
+	TimestampFilter     string
+	LastFilter          string
+	SearchFilter        string
+	CategoryFilter      string
+	TypeFilter          string
+	ExceptionsFilter    string
+	FromMeFilter        string
+	FromHistoryFilter   string
+	ChatIDFilter        string
+	MessageIDFilter     string
+	TrackIDFilter       string
 	Messages            []whatsapp.WhatsappMessage
 }
 

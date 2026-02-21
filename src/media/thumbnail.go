@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	// Register image decoders
 	_ "image/gif"
 	_ "image/png"
 
@@ -18,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ThumbnailConfig holds configuration for thumbnail generation
+// ThumbnailConfig holds configuration for thumbnail generation.
 type ThumbnailConfig struct {
 	MaxWidth  uint
 	MaxHeight uint
@@ -26,27 +25,24 @@ type ThumbnailConfig struct {
 	MaxBytes  int // Maximum thumbnail size in bytes (0 = no limit)
 }
 
-// DefaultThumbnailConfig returns default thumbnail settings
-// WhatsApp has a limit of ~10KB for embedded thumbnails (JPEGThumbnail field)
-// Thumbnails larger than this limit are ignored by WhatsApp clients
+// DefaultThumbnailConfig returns default thumbnail settings.
+// WhatsApp has a practical limit around 10KB for JPEGThumbnail.
 func DefaultThumbnailConfig() ThumbnailConfig {
 	return ThumbnailConfig{
-		MaxWidth:  200,   // Reduced from 320 to ensure smaller thumbnails
-		MaxHeight: 200,   // Reduced from 320 to ensure smaller thumbnails
-		Quality:   70,    // Reduced from 75 for smaller size
-		MaxBytes:  10240, // 10KB limit for WhatsApp compatibility
+		MaxWidth:  200,
+		MaxHeight: 200,
+		Quality:   70,
+		MaxBytes:  10240,
 	}
 }
 
-// Static flags for FFmpeg thumbnail availability
 var ffmpegThumbnailAvailable bool
 var ffmpegThumbnailOnce sync.Once
 
-// Static flags for Poppler (pdftoppm) availability
 var popplerAvailable bool
 var popplerOnce sync.Once
 
-// IsFFmpegThumbnailAvailable checks if FFmpeg is available for thumbnail generation
+// IsFFmpegThumbnailAvailable checks if FFmpeg is available for thumbnail generation.
 func IsFFmpegThumbnailAvailable() bool {
 	ffmpegThumbnailOnce.Do(func() {
 		_, err := exec.LookPath("ffmpeg")
@@ -58,7 +54,7 @@ func IsFFmpegThumbnailAvailable() bool {
 	return ffmpegThumbnailAvailable
 }
 
-// IsPopplerAvailable checks if Poppler (pdftoppm) is available for PDF thumbnail generation
+// IsPopplerAvailable checks if Poppler (pdftoppm) is available for PDF thumbnail generation.
 func IsPopplerAvailable() bool {
 	popplerOnce.Do(func() {
 		_, err := exec.LookPath("pdftoppm")
@@ -72,34 +68,28 @@ func IsPopplerAvailable() bool {
 	return popplerAvailable
 }
 
-// GenerateImageThumbnail creates a JPEG thumbnail from image data
+// GenerateImageThumbnail creates a JPEG thumbnail from image data.
 func GenerateImageThumbnail(imageData []byte, config ThumbnailConfig) ([]byte, error) {
 	if len(imageData) == 0 {
 		return nil, fmt.Errorf("empty image data")
 	}
 
-	// Decode image
 	img, format, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
 		log.Debugf("Failed to decode image natively (format: %s): %v, trying FFmpeg", format, err)
-		// Try FFmpeg as fallback
 		return generateThumbnailWithFFmpeg(imageData, "image", config)
 	}
 
-	log.Debugf("Decoded image format: %s, size: %dx%d", format, img.Bounds().Dx(), img.Bounds().Dy())
-
-	// Resize image maintaining aspect ratio
 	thumbnail := resize.Thumbnail(config.MaxWidth, config.MaxHeight, img, resize.Lanczos3)
 
-	// Encode as JPEG with progressive quality reduction if needed
 	quality := config.Quality
 	maxBytes := config.MaxBytes
 	if maxBytes <= 0 {
-		maxBytes = 10240 // Default 10KB limit for WhatsApp
+		maxBytes = 10240
 	}
 
 	var buf bytes.Buffer
-	for quality >= 30 { // Minimum quality threshold
+	for quality >= 30 {
 		buf.Reset()
 		err = jpeg.Encode(&buf, thumbnail, &jpeg.Options{Quality: quality})
 		if err != nil {
@@ -107,18 +97,15 @@ func GenerateImageThumbnail(imageData []byte, config ThumbnailConfig) ([]byte, e
 		}
 
 		if buf.Len() <= maxBytes {
-			break // Size is acceptable
+			break
 		}
 
-		log.Debugf("Thumbnail too large (%d bytes), reducing quality from %d to %d", buf.Len(), quality, quality-10)
 		quality -= 10
 	}
 
-	// If still too large after quality reduction, try smaller dimensions
 	if buf.Len() > maxBytes {
-		log.Debugf("Thumbnail still too large (%d bytes) after quality reduction, reducing dimensions", buf.Len())
 		smallerConfig := config
-		smallerConfig.MaxWidth = config.MaxWidth * 3 / 4 // 75% of original
+		smallerConfig.MaxWidth = config.MaxWidth * 3 / 4
 		smallerConfig.MaxHeight = config.MaxHeight * 3 / 4
 		thumbnail = resize.Thumbnail(smallerConfig.MaxWidth, smallerConfig.MaxHeight, img, resize.Lanczos3)
 
@@ -129,12 +116,10 @@ func GenerateImageThumbnail(imageData []byte, config ThumbnailConfig) ([]byte, e
 		}
 	}
 
-	log.Debugf("Generated image thumbnail: %d bytes (quality: %d)", buf.Len(), quality)
 	return buf.Bytes(), nil
 }
 
-// GenerateVideoThumbnail creates a JPEG thumbnail from video data
-// Extracts frame at 1 second or first frame
+// GenerateVideoThumbnail creates a JPEG thumbnail from video data.
 func GenerateVideoThumbnail(videoData []byte, config ThumbnailConfig) ([]byte, error) {
 	if len(videoData) == 0 {
 		return nil, fmt.Errorf("empty video data")
@@ -147,8 +132,7 @@ func GenerateVideoThumbnail(videoData []byte, config ThumbnailConfig) ([]byte, e
 	return generateThumbnailWithFFmpeg(videoData, "video", config)
 }
 
-// GeneratePDFThumbnail creates a JPEG thumbnail from PDF data using Poppler (pdftoppm)
-// Renders first page as image
+// GeneratePDFThumbnail creates a JPEG thumbnail from PDF data using Poppler (pdftoppm).
 func GeneratePDFThumbnail(pdfData []byte, config ThumbnailConfig) ([]byte, error) {
 	if len(pdfData) == 0 {
 		return nil, fmt.Errorf("empty PDF data")
@@ -161,9 +145,7 @@ func GeneratePDFThumbnail(pdfData []byte, config ThumbnailConfig) ([]byte, error
 	return generatePDFThumbnailWithPoppler(pdfData, config)
 }
 
-// generatePDFThumbnailWithPoppler uses Poppler's pdftoppm to generate PDF thumbnails
 func generatePDFThumbnailWithPoppler(pdfData []byte, config ThumbnailConfig) ([]byte, error) {
-	// Create temporary input file
 	inputFile, err := os.CreateTemp("", "thumb-input-*.pdf")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp input file: %w", err)
@@ -176,25 +158,18 @@ func generatePDFThumbnailWithPoppler(pdfData []byte, config ThumbnailConfig) ([]
 	}
 	inputFile.Close()
 
-	// Create temporary output file prefix (pdftoppm adds -1.jpg suffix)
 	outputPrefix, err := os.CreateTemp("", "thumb-output-")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp output prefix: %w", err)
 	}
 	outputPrefixName := outputPrefix.Name()
 	outputPrefix.Close()
-	os.Remove(outputPrefixName) // pdftoppm will create the file
+	os.Remove(outputPrefixName)
 
-	// The actual output file will be outputPrefixName-1.jpg
 	outputFileName := outputPrefixName + "-1.jpg"
 	defer os.Remove(outputFileName)
-	defer os.Remove(outputPrefixName) // cleanup prefix if exists
+	defer os.Remove(outputPrefixName)
 
-	// Run pdftoppm command
-	// -jpeg: output as JPEG
-	// -f 1 -l 1: first page only
-	// -scale-to: scale to max dimension
-	// -singlefile: don't add page number suffix (but we handle it anyway)
 	cmd := exec.Command("pdftoppm",
 		"-jpeg",
 		"-f", "1",
@@ -207,16 +182,13 @@ func generatePDFThumbnailWithPoppler(pdfData []byte, config ThumbnailConfig) ([]
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	log.Tracef("Executing pdftoppm command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
 		return nil, fmt.Errorf("pdftoppm thumbnail generation failed: %w\nstderr: %s", err, stderr.String())
 	}
 
-	// Read output file
 	thumbData, err := os.ReadFile(outputFileName)
 	if err != nil {
-		// Try without the -1 suffix (singlefile mode)
 		thumbData, err = os.ReadFile(outputPrefixName + ".jpg")
 		if err != nil {
 			return nil, fmt.Errorf("failed to read PDF thumbnail output: %w", err)
@@ -224,17 +196,14 @@ func generatePDFThumbnailWithPoppler(pdfData []byte, config ThumbnailConfig) ([]
 		defer os.Remove(outputPrefixName + ".jpg")
 	}
 
-	log.Debugf("Generated PDF thumbnail with Poppler: %d bytes", len(thumbData))
 	return thumbData, nil
 }
 
-// generateThumbnailWithFFmpeg uses FFmpeg to generate thumbnails for videos and images
 func generateThumbnailWithFFmpeg(data []byte, mediaType string, config ThumbnailConfig) ([]byte, error) {
 	if !IsFFmpegThumbnailAvailable() {
 		return nil, fmt.Errorf("FFmpeg not available")
 	}
 
-	// Create temporary input file
 	var inputExt string
 	switch mediaType {
 	case "video":
@@ -255,7 +224,6 @@ func generateThumbnailWithFFmpeg(data []byte, mediaType string, config Thumbnail
 	}
 	inputFile.Close()
 
-	// Create temporary output file
 	outputFile, err := os.CreateTemp("", "thumb-output-*.jpg")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp output file: %w", err)
@@ -263,14 +231,12 @@ func generateThumbnailWithFFmpeg(data []byte, mediaType string, config Thumbnail
 	defer os.Remove(outputFile.Name())
 	outputFile.Close()
 
-	// Build FFmpeg command based on media type
-	var cmd *exec.Cmd
 	scaleFilter := fmt.Sprintf("scale='min(%d,iw)':'min(%d,ih)':force_original_aspect_ratio=decrease",
 		config.MaxWidth, config.MaxHeight)
 
+	var cmd *exec.Cmd
 	switch mediaType {
 	case "video":
-		// Extract frame at 1 second (or first frame if video is shorter)
 		cmd = exec.Command("ffmpeg",
 			"-i", inputFile.Name(),
 			"-ss", "00:00:01",
@@ -283,7 +249,6 @@ func generateThumbnailWithFFmpeg(data []byte, mediaType string, config Thumbnail
 			outputFile.Name(),
 		)
 	default:
-		// Generic image conversion
 		cmd = exec.Command("ffmpeg",
 			"-i", inputFile.Name(),
 			"-vf", scaleFilter,
@@ -298,12 +263,9 @@ func generateThumbnailWithFFmpeg(data []byte, mediaType string, config Thumbnail
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	log.Tracef("Executing FFmpeg thumbnail command: %s", cmd.String())
 	err = cmd.Run()
 	if err != nil {
-		// For video, try without -ss if it failed (very short video)
 		if mediaType == "video" {
-			log.Debugf("FFmpeg with -ss failed, trying without: %v", err)
 			cmd = exec.Command("ffmpeg",
 				"-i", inputFile.Name(),
 				"-vframes", "1",
@@ -323,17 +285,15 @@ func generateThumbnailWithFFmpeg(data []byte, mediaType string, config Thumbnail
 		}
 	}
 
-	// Read output
 	thumbData, err := os.ReadFile(outputFile.Name())
 	if err != nil {
 		return nil, fmt.Errorf("failed to read thumbnail output: %w", err)
 	}
 
-	log.Debugf("Generated %s thumbnail with FFmpeg: %d bytes", mediaType, len(thumbData))
 	return thumbData, nil
 }
 
-// GenerateThumbnailByMime generates a thumbnail based on MIME type
+// GenerateThumbnailByMime generates a thumbnail based on MIME type.
 func GenerateThumbnailByMime(data []byte, mimeType string) ([]byte, error) {
 	config := DefaultThumbnailConfig()
 	mimeType = strings.ToLower(mimeType)
@@ -346,7 +306,6 @@ func GenerateThumbnailByMime(data []byte, mimeType string) ([]byte, error) {
 		return GenerateVideoThumbnail(data, config)
 	}
 
-	// PDF thumbnail generation using Poppler (pdftoppm)
 	if mimeType == "application/pdf" {
 		return GeneratePDFThumbnail(data, config)
 	}
@@ -354,21 +313,18 @@ func GenerateThumbnailByMime(data []byte, mimeType string) ([]byte, error) {
 	return nil, fmt.Errorf("unsupported MIME type for thumbnail generation: %s", mimeType)
 }
 
-// CanGenerateThumbnail checks if thumbnail generation is supported for a MIME type
+// CanGenerateThumbnail checks if thumbnail generation is supported for a MIME type.
 func CanGenerateThumbnail(mimeType string) bool {
 	mimeType = strings.ToLower(mimeType)
 
-	// Images - always supported (native Go decoding)
 	if strings.HasPrefix(mimeType, "image/") {
 		return true
 	}
 
-	// Videos - require FFmpeg
 	if strings.HasPrefix(mimeType, "video/") {
 		return IsFFmpegThumbnailAvailable()
 	}
 
-	// PDFs - require Poppler (pdftoppm)
 	if mimeType == "application/pdf" {
 		return IsPopplerAvailable()
 	}

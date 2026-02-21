@@ -22,11 +22,6 @@
       </div>
     {{ end }}
 
-    <a class="button is-info" href="/swagger/index.html" target="_blank">
-      <span class="icon"><i class="fas fa-book"></i></span>
-      <span>Swagger</span>
-    </a>
-
     {{ if .ErrorMessage }}
       <div class="notification is-warning">
         {{ .ErrorMessage }}
@@ -116,14 +111,6 @@
                       </button>
                     </form>
                   </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-readupdate" data-value="{{ .ReadUpdate }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetReadUpdate }}{{ if .GetReadUpdate }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Update">
-                        <span class="icon is-small is-inline"><i class="fa fa-eye"></i></span>
-                      </button>
-                    </form>
-                  </p>
                 {{ end }}
                 <p>&nbsp;&nbsp;</p>
                 <p class="control">
@@ -204,6 +191,17 @@
         <div>
           {{ if .WMOptions.WMLogLevel }}<p>LogLevel: {{ .WMOptions.WMLogLevel  }}</p>{{ end }}
           {{ if .WMOptions.DBLogLevel }}<p>Database LogLevel: {{ .WMOptions.DBLogLevel  }}</p>{{ end }}
+        </div>
+      </div>
+    {{ end }}
+
+    {{ if .WMOptions.UseRetryMessageStore }}
+      <div class="notification is-info is-light is-small">
+        <div class="subtitle"><b>Retry Message Store</b> cleanup policy:</div>
+        <div>
+          <p>Status: enabled</p>
+          <p>Cleanup trigger: no background cron. Cleanup runs during outgoing message flow when more than 12 hours have passed since the last cleanup.</p>
+          <p>Retention: removes retry-buffer records older than 7 days.</p>
         </div>
       </div>
     {{ end }}

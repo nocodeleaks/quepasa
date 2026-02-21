@@ -68,6 +68,7 @@ func main() {
 		WhatsappOptionsExtended: whatsapp.Options,
 		WMLogLevel:              environment.Settings.Whatsmeow.LogLevel,
 		DBLogLevel:              environment.Settings.Whatsmeow.DBLogLevel,
+		UseRetryMessageStore:    environment.Settings.Whatsmeow.UseRetryMessageStore,
 	}
 
 	dbParameters := environment.Settings.Database.GetDBParameters()

@@ -41,16 +41,16 @@ func ConvertToOggOpus(audioData []byte) ([]byte, error) {
 	defer os.Remove(outputFile.Name())
 	outputFile.Close()
 
-	// Convert using ffmpeg: input → OGG with Opus codec, mono, 48kHz (WhatsApp standard)
+	// Convert using ffmpeg: input -> OGG with Opus codec, mono, 48kHz (WhatsApp standard)
 	cmd := exec.Command("ffmpeg",
 		"-i", inputFile.Name(),
-		"-c:a", "libopus", // Opus codec
-		"-b:a", "64k", // Bitrate suitable for voice
-		"-ac", "1", // Mono channel (voice notes are mono)
-		"-ar", "48000", // 48kHz sample rate (Opus standard)
-		"-vn",       // No video
-		"-f", "ogg", // OGG container
-		"-y", // Overwrite output
+		"-c:a", "libopus",
+		"-b:a", "64k",
+		"-ac", "1",
+		"-ar", "48000",
+		"-vn",
+		"-f", "ogg",
+		"-y",
 		outputFile.Name(),
 	)
 
@@ -72,15 +72,12 @@ func ConvertToOggOpus(audioData []byte) ([]byte, error) {
 		return nil, fmt.Errorf("converted OGG Opus file is empty")
 	}
 
-	log.Infof("Audio successfully converted to OGG Opus: %d bytes input → %d bytes output", len(audioData), len(convertedData))
+	log.Infof("Audio successfully converted to OGG Opus: %d bytes input -> %d bytes output", len(audioData), len(convertedData))
 	return convertedData, nil
 }
 
 // ShouldConvertToPTT checks if the given MIME type is an audio format that should be
 // automatically converted to OGG Opus for PTT (voice note) delivery.
-// This covers non-PTT audio formats like MP3, MP4 audio, AAC, OGA, etc.
-// WAV/Wave formats are excluded because they are already PTT-compatible
-// (handled by the existing PTT-compatible path without ffmpeg).
 func ShouldConvertToPTT(mimeType string) bool {
 	switch mimeType {
 	case "audio/mpeg", "audio/mp3", "audio/x-mpeg-3", "audio/mpeg3",

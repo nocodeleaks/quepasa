@@ -7,9 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// quepasa build version, if ends with .0 means stable versions.
-// version 3.YY.MMDD.HHMM
-const QpVersion = "3.26.0210.1623"
+// quepasa build version format has 4 sections only: 3.YY.MMDD.HHMM
+// stable versions are identified when HHMM last digit is 0
+const QpVersion = "3.26.0220.1300"
 
 const QpLogLevel = log.InfoLevel
 

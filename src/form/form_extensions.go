@@ -93,12 +93,6 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
-			case "server-readupdate":
-				{
-					err = models.ToggleReadUpdate(server)
-					break
-				}
-
 			default:
 				{
 					err = fmt.Errorf("invalid server key: %s", key)

@@ -109,8 +109,8 @@ Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `R
 - **`SYNOPSISLENGTH`** - Synopsis length for messages (default: `50`)
 - **`CACHELENGTH`** - Cache max items (default: `0` = unlimited)
 - **`CACHEDAYS`** - Cache max days (default: `0` = unlimited)
+- **`CONVERT_WAVE_TO_OGG`** - Convert wave to OGG (default: `true`)
 - **`COMPATIBLE_MIME_AS_AUDIO`** - Treat compatible MIME as audio (default: `true`)
-- **`FORCE_AUDIO_AS_PTT`** - Force all audio formats to be sent as PTT (voice notes) (default: `true`)
 - **`CONVERT_PNG_TO_JPG`** - Convert PNG images to JPG using FFmpeg (default: `false`)
 - **`ACCOUNTSETUP`** - Enable account creation (default: `true`)
 - **`TESTING`** - Testing mode (default: `false`)
@@ -149,6 +149,7 @@ Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `R
 - **`DISPATCHUNHANDLED`** - Dispatch unhandled messages (default: `false`)
 - **`WHATSMEOW_LOGLEVEL`** - Whatsmeow library log level
 - **`WHATSMEOW_DBLOGLEVEL`** - Whatsmeow database log level
+- **`WHATSMEOW_USE_RETRY_MESSAGE_STORE`** - Persist outgoing messages in database for retry receipts after process restarts (default: `false`)
 
 ## 📋 Current Working Configuration
 

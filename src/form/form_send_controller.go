@@ -25,7 +25,7 @@ func FormSendController(w http.ResponseWriter, r *http.Request) {
 
 // Renders route GET "/bot/{token}/send"
 func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormSendData{PageTitle: "Send"}
+	data := models.QPFormSendData{PageTitle: "Send - Quepasa"}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {
@@ -42,7 +42,7 @@ func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
 // Renders route POST "/bot/{token}/send"
 // Vindo do formulário de testes
 func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormSendData{PageTitle: "Send"}
+	data := models.QPFormSendData{PageTitle: "Send - Quepasa"}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {

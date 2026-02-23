@@ -12,6 +12,7 @@ const (
 	ENV_CACHEDAYS                = "CACHEDAYS"                // cache max days
 	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"      // convert wave to OGG
 	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO" // treat compatible MIME as audio
+	ENV_FORCE_AUDIO_AS_PTT       = "FORCE_AUDIO_AS_PTT"       // force all audio formats to be sent as PTT voice notes
 	ENV_ACCOUNTSETUP             = "ACCOUNTSETUP"             // enable or disable account creation
 	ENV_TESTING                  = "TESTING"                  // testing mode
 	ENV_LOGLEVEL                 = "LOGLEVEL"                 // general log level
@@ -28,6 +29,7 @@ type GeneralSettings struct {
 	CacheDays             uint32 `json:"cache_days"`
 	ConvertWaveToOGG      bool   `json:"convert_wave_to_ogg"`
 	CompatibleMIMEAsAudio bool   `json:"compatible_mime_as_audio"`
+	ForceAudioAsPTT       bool   `json:"force_audio_as_ptt"`
 	AccountSetup          bool   `json:"account_setup"`
 	Testing               bool   `json:"testing"`
 	LogLevel              string `json:"log_level"`
@@ -45,6 +47,7 @@ func NewGeneralSettings() GeneralSettings {
 		CacheDays:             getEnvOrDefaultUint32(ENV_CACHEDAYS, 0),
 		ConvertWaveToOGG:      getEnvOrDefaultBool(ENV_CONVERT_WAVE_TO_OGG, true),
 		CompatibleMIMEAsAudio: getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true),
+		ForceAudioAsPTT:       getEnvOrDefaultBool(ENV_FORCE_AUDIO_AS_PTT, true),
 		AccountSetup:          getEnvOrDefaultBool(ENV_ACCOUNTSETUP, true),
 		Testing:               getEnvOrDefaultBool(ENV_TESTING, false),
 		LogLevel:              getEnvOrDefaultString(ENV_LOGLEVEL, ""),

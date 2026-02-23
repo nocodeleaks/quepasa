@@ -18,7 +18,7 @@ func SafeURL(url string) template.URL {
 
 // FormReceiveController renders route GET "/form/server/{token}/receive"
 func FormReceiveController(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormReceiveData{PageTitle: "Receive", FormAccountEndpoint: FormAccountEndpoint}
+	data := models.QPFormReceiveData{PageTitle: "Receive - Quepasa", FormAccountEndpoint: FormAccountEndpoint}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {
@@ -41,7 +41,20 @@ func FormReceiveController(w http.ResponseWriter, r *http.Request) {
 			data.ErrorMessage = fmt.Sprintf("%s; %s", err.Error(), data.ErrorMessage)
 		}
 
-		messages := api.GetOrderedMessages(server, timestamp)
+		filters := api.GetReceiveMessageFilters(r)
+		data.TimestampFilter = r.URL.Query().Get("timestamp")
+		data.LastFilter = r.URL.Query().Get("last")
+		data.SearchFilter = filters.Search
+		data.CategoryFilter = filters.Category
+		data.TypeFilter = filters.Type
+		data.ExceptionsFilter = filters.Exceptions
+		data.FromMeFilter = filters.FromMe
+		data.FromHistoryFilter = filters.FromHistory
+		data.ChatIDFilter = filters.ChatID
+		data.MessageIDFilter = filters.MessageID
+		data.TrackIDFilter = filters.TrackID
+
+		messages := api.GetOrderedMessagesWithFilters(server, timestamp, filters)
 		data.Messages = messages
 	}
 

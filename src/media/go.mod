@@ -24,14 +24,13 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 
-go 1.24.0 // Ou a sua versão do Go
-
-toolchain go1.24.2
+go 1.25.0 // Ou a sua versão do Go
 
 require (
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427
 	github.com/gopxl/beep/v2 v2.1.1 // A versão que você quer usar
 	github.com/mattetti/audio v0.0.0-20240411020228-c5379f9b5b61
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300
 )
@@ -45,7 +44,7 @@ require (
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 )
 
 replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp

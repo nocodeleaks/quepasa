@@ -264,6 +264,7 @@ func (source *WhatsmeowServiceModel) GetWhatsAppClient(options *whatsapp.Whatsap
 	if deviceStore != nil {
 		client = whatsmeow.NewClient(deviceStore, clientLog)
 		client.AutoTrustIdentity = true
+		client.UseRetryMessageStore = source.Options.UseRetryMessageStore
 		client.EnableAutoReconnect = options.GetReconnect()
 	}
 	return

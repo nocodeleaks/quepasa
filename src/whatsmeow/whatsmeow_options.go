@@ -13,8 +13,11 @@ type WhatsmeowOptions struct {
 
 	// default database log level
 	DBLogLevel string `json:"dbloglevel,omitempty"`
+
+	// persist outgoing messages in store to support retry receipts after restarts
+	UseRetryMessageStore bool `json:"use_retry_message_store,omitempty"`
 }
 
 func (source WhatsmeowOptions) IsDefault() bool {
-	return len(source.WMLogLevel) == 0 && len(source.DBLogLevel) == 0 && source.WhatsappOptionsExtended.IsDefault()
+	return len(source.WMLogLevel) == 0 && len(source.DBLogLevel) == 0 && !source.UseRetryMessageStore && source.WhatsappOptionsExtended.IsDefault()
 }

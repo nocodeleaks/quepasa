@@ -22,9 +22,7 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0
 
 replace github.com/nocodeleaks/quepasa/environment => ../environment
 
@@ -54,8 +52,8 @@ require (
 	github.com/pion/dtls/v2 v2.2.7 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport/v2 v2.2.1 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 )

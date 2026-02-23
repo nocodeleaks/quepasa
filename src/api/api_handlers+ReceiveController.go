@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
@@ -12,12 +13,20 @@ import (
 // ReceiveAPIHandler renders route GET "/receive"
 //
 //	@Summary		Receive messages
-//	@Description	Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering
+//	@Description	Retrieves pending messages from WhatsApp with optional cache filters
 //	@Tags			Message
 //	@Accept			json
 //	@Produce		json
 //	@Param			timestamp	query		string	false	"Timestamp filter for messages"
 //	@Param			exceptions	query		string	false	"Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages"
+//	@Param			type		query		string	false	"Filter by message type (supports comma-separated list)"
+//	@Param			category	query		string	false	"Filter by category: sent, received, sync, unhandled, events"
+//	@Param			search		query		string	false	"Search text in id, chat, text, trackid, participant and exceptions"
+//	@Param			fromme		query		string	false	"Filter by fromme boolean: true or false"
+//	@Param			fromhistory	query		string	false	"Filter by fromhistory boolean: true or false"
+//	@Param			chatid		query		string	false	"Filter by chat id (contains)"
+//	@Param			messageid	query		string	false	"Filter by message id (contains)"
+//	@Param			trackid		query		string	false	"Filter by track id (contains)"
 //	@Success		200			{object}	models.QpReceiveResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -57,11 +66,9 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get exceptions filter parameter
-	queryValues := r.URL.Query()
-	exceptionsFilter := queryValues.Get("exceptions")
+	filters := GetReceiveMessageFilters(r)
 
-	messages := GetOrderedMessagesWithExceptionsFilter(server, timestamp, exceptionsFilter)
+	messages := GetOrderedMessagesWithFilters(server, timestamp, filters)
 
 	response.Server = server.QpServer
 	response.Messages = messages
@@ -76,8 +83,36 @@ func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
 		msg = "getting without timestamp filter"
 	}
 
-	if exceptionsFilter != "" {
-		msg += fmt.Sprintf(", exceptions filter: %s", exceptionsFilter)
+	appliedFilters := []string{}
+	if filters.Exceptions != "" {
+		appliedFilters = append(appliedFilters, "exceptions="+filters.Exceptions)
+	}
+	if filters.Type != "" {
+		appliedFilters = append(appliedFilters, "type="+filters.Type)
+	}
+	if filters.Category != "" {
+		appliedFilters = append(appliedFilters, "category="+filters.Category)
+	}
+	if filters.Search != "" {
+		appliedFilters = append(appliedFilters, "search="+filters.Search)
+	}
+	if filters.FromMe != "" {
+		appliedFilters = append(appliedFilters, "fromme="+filters.FromMe)
+	}
+	if filters.FromHistory != "" {
+		appliedFilters = append(appliedFilters, "fromhistory="+filters.FromHistory)
+	}
+	if filters.ChatID != "" {
+		appliedFilters = append(appliedFilters, "chatid="+filters.ChatID)
+	}
+	if filters.MessageID != "" {
+		appliedFilters = append(appliedFilters, "messageid="+filters.MessageID)
+	}
+	if filters.TrackID != "" {
+		appliedFilters = append(appliedFilters, "trackid="+filters.TrackID)
+	}
+	if len(appliedFilters) > 0 {
+		msg += ", filters: " + strings.Join(appliedFilters, ", ")
 	}
 
 	response.ParseSuccess(msg)

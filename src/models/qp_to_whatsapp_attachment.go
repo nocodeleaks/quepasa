@@ -139,6 +139,45 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 		return
 	}
 
+	// Check if force audio as PTT is enabled
+	forceAudioAsPTT := environment.Settings.General.ForceAudioAsPTT
+
+	// If force PTT is enabled, convert non-PTT audio formats to OGG Opus via ffmpeg
+	// (MP3, AAC, MP4 audio, OGA, etc. - but NOT WAV, which is handled later without ffmpeg)
+	if forceAudioAsPTT && media.ShouldConvertToPTT(attach.Mimetype) {
+		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachAudioTreatment] FORCE_AUDIO_AS_PTT enabled, converting %s to OGG Opus via ffmpeg", attach.Mimetype))
+
+		content := attach.GetContent()
+		if content != nil && len(*content) > 0 {
+			originalMime := attach.Mimetype
+			convertedData, err := media.ConvertToOggOpus(*content)
+			if err != nil {
+				source.Debug = append(source.Debug, fmt.Sprintf("[error][AttachAudioTreatment] failed to convert %s to OGG Opus: %v", originalMime, err))
+				log.Errorf("Failed to convert %s to OGG Opus: %v", originalMime, err)
+			} else {
+				originalSize := len(*content)
+				attach.SetContent(&convertedData)
+				attach.Mimetype = whatsapp.WhatsappPTTMime
+				attach.FileLength = uint64(len(convertedData))
+
+				// Update filename extension
+				if len(attach.FileName) > 0 {
+					ext := filepath.Ext(attach.FileName)
+					if len(ext) > 0 {
+						attach.FileName = attach.FileName[:len(attach.FileName)-len(ext)] + ".ogg"
+					}
+				}
+
+				// Send as PTT compatible
+				attach.SetPTTCompatible(true)
+
+				source.Debug = append(source.Debug, fmt.Sprintf("[success][AttachAudioTreatment] converted to OGG Opus PTT. Original: %d bytes (%s), New: %d bytes (%s)", originalSize, originalMime, len(convertedData), whatsapp.WhatsappPTTMime))
+			}
+		} else {
+			source.Debug = append(source.Debug, "[warn][AttachAudioTreatment] no content available for audio conversion")
+		}
+	}
+
 	if media.IsAudioMIMEType(source.Attach.Mimetype) {
 		source.AttachAudioTreatmentTesting()
 	}

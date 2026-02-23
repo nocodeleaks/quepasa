@@ -245,6 +245,44 @@ func isASCII(s string) bool {
 	return true
 }
 
+// region error 463
+// try to fix recipient session-routing issue
+func isSendError463(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "server returned error 463")
+}
+
+func (source *WhatsmeowConnection) resolveLIDRetryJID(currentJID types.JID) (types.JID, bool) {
+	if source == nil || source.GetContactManager() == nil {
+		return types.EmptyJID, false
+	}
+
+	phone, err := whatsapp.GetPhoneIfValid(currentJID.String())
+	if err != nil || len(phone) == 0 {
+		return types.EmptyJID, false
+	}
+
+	lid, err := source.GetContactManager().GetLIDFromPhone(phone)
+	if err != nil || len(lid) == 0 {
+		return types.EmptyJID, false
+	}
+
+	lidJID, err := types.ParseJID(lid)
+	if err != nil || lidJID.IsEmpty() {
+		return types.EmptyJID, false
+	}
+
+	if lidJID.String() == currentJID.String() {
+		return types.EmptyJID, false
+	}
+
+	return lidJID, true
+}
+
+// endregion
+
 func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
 
 	var contextInfo *waE2E.ContextInfo
@@ -450,7 +488,28 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 	resp, err := source.Client.SendMessage(context.Background(), jid, newMessage, extra)
 	if err != nil {
 		logentry.Errorf("whatsmeow connection send error: %s", err)
-		return msg, err
+		// region error 463 retry
+		if isSendError463(err) && jid.Server == types.DefaultUserServer {
+			if retryJID, ok := source.resolveLIDRetryJID(jid); ok {
+				logentry.Warnf("send failed with 463 for %s, retrying once via LID %s", jid, retryJID)
+
+				msg.Chat.Id = retryJID.String()
+				msg.Id = source.Client.GenerateMessageID()
+				extra.ID = msg.Id
+
+				resp, err = source.Client.SendMessage(context.Background(), retryJID, newMessage, extra)
+				if err != nil {
+					logentry.Errorf("LID retry after 463 failed: %s", err)
+					return msg, err
+				}
+				logentry.Infof("send succeeded after 463 retry via LID: %s", retryJID)
+			}
+		}
+
+		if err != nil {
+			return msg, err
+		}
+		//endregion
 	}
 
 	// updating timestamp

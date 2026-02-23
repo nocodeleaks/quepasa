@@ -281,6 +281,58 @@ func (source *WhatsmeowConnection) resolveLIDRetryJID(currentJID types.JID) (typ
 	return lidJID, true
 }
 
+func (source *WhatsmeowConnection) resetSignalStateForTargets(targets ...types.JID) {
+	if source == nil || source.Client == nil || source.Client.Store == nil {
+		return
+	}
+
+	ctx := context.Background()
+	logentry := source.GetLogger()
+	seen := make(map[string]bool)
+
+	for _, target := range targets {
+		if target.IsEmpty() {
+			continue
+		}
+
+		signalUser := target.SignalAddressUser()
+		if len(signalUser) == 0 || seen[signalUser] {
+			continue
+		}
+		seen[signalUser] = true
+
+		if err := source.Client.Store.Identities.DeleteAllIdentities(ctx, signalUser); err != nil {
+			logentry.Warnf("failed to clear identities for %s: %v", signalUser, err)
+		}
+
+		if err := source.Client.Store.Sessions.DeleteAllSessions(ctx, signalUser); err != nil {
+			logentry.Warnf("failed to clear sessions for %s: %v", signalUser, err)
+		}
+
+		logentry.Debugf("cleared signal state for retry target: %s", signalUser)
+	}
+}
+
+func (source *WhatsmeowConnection) logPrivacyTokenStatus(target types.JID) {
+	if source == nil || source.Client == nil || source.Client.Store == nil {
+		return
+	}
+
+	logentry := source.GetLogger()
+	token, err := source.Client.Store.PrivacyTokens.GetPrivacyToken(context.Background(), target)
+	if err != nil {
+		logentry.Warnf("failed to read privacy token for %s: %v", target, err)
+		return
+	}
+
+	if token == nil {
+		logentry.Debugf("no privacy token available for %s", target)
+		return
+	}
+
+	logentry.Debugf("privacy token found for %s (ts: %s)", target, token.Timestamp)
+}
+
 // endregion
 
 func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
@@ -485,24 +537,50 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 		msg.Content = newMessage
 	}
 
+	source.logPrivacyTokenStatus(jid)
 	resp, err := source.Client.SendMessage(context.Background(), jid, newMessage, extra)
 	if err != nil {
 		logentry.Errorf("whatsmeow connection send error: %s", err)
+		retryJID := types.EmptyJID
 		// region error 463 retry
 		if isSendError463(err) && jid.Server == types.DefaultUserServer {
-			if retryJID, ok := source.resolveLIDRetryJID(jid); ok {
+			if resolvedRetryJID, ok := source.resolveLIDRetryJID(jid); ok {
+				retryJID = resolvedRetryJID
 				logentry.Warnf("send failed with 463 for %s, retrying once via LID %s", jid, retryJID)
 
 				msg.Chat.Id = retryJID.String()
 				msg.Id = source.Client.GenerateMessageID()
 				extra.ID = msg.Id
 
+				source.logPrivacyTokenStatus(retryJID)
 				resp, err = source.Client.SendMessage(context.Background(), retryJID, newMessage, extra)
 				if err != nil {
 					logentry.Errorf("LID retry after 463 failed: %s", err)
-					return msg, err
+				} else {
+					logentry.Infof("send succeeded after 463 retry via LID: %s", retryJID)
 				}
-				logentry.Infof("send succeeded after 463 retry via LID: %s", retryJID)
+			}
+		}
+
+		if err != nil && isSendError463(err) {
+			finalJID := jid
+			if !retryJID.IsEmpty() {
+				finalJID = retryJID
+			}
+
+			source.resetSignalStateForTargets(jid, retryJID)
+			logentry.Warnf("retrying send after signal state reset, target: %s", finalJID)
+
+			msg.Chat.Id = finalJID.String()
+			msg.Id = source.Client.GenerateMessageID()
+			extra.ID = msg.Id
+
+			source.logPrivacyTokenStatus(finalJID)
+			resp, err = source.Client.SendMessage(context.Background(), finalJID, newMessage, extra)
+			if err != nil {
+				logentry.Errorf("final retry after signal state reset failed: %s", err)
+			} else {
+				logentry.Infof("send succeeded after signal state reset retry: %s", finalJID)
 			}
 		}
 

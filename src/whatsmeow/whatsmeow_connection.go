@@ -876,9 +876,10 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 
 	evt, ok := <-qrChan
 	if ok {
-		if evt.Event == "code" {
+		switch evt.Event {
+		case "code":
 			result = evt.Code
-		} else if evt.Event == "timeout" {
+		case "timeout":
 			// QR code timed out - dispatch event
 			logger.Warn("QR code timed out")
 			conn.dispatchQRTimeoutEvent()

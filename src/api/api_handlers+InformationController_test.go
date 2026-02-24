@@ -232,6 +232,45 @@ func TestInfoEndpoint_InvalidToken(t *testing.T) {
 	t.Log("Invalid token correctly returned 204 No Content")
 }
 
+func TestInfoPost_AllowsMultiplePlaceholderServersWithEmptyWid(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	testUser := "testuser"
+	testPassword := "testpass123"
+	CreateTestUser(t, testUser, testPassword)
+
+	create := func(t *testing.T, token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/info?user="+testUser, nil)
+		req.Header.Set("X-QUEPASA-TOKEN", token)
+		rec := httptest.NewRecorder()
+		CreateInformationController(rec, req)
+		return rec
+	}
+
+	// First placeholder (wid empty)
+	resp1 := create(t, "test-token-001")
+	if resp1.Result().StatusCode != http.StatusCreated {
+		t.Fatalf("Expected status 201 for first placeholder server, got %d", resp1.Result().StatusCode)
+	}
+
+	// Second placeholder (wid empty again) must also be accepted
+	resp2 := create(t, "test-token-002")
+	if resp2.Result().StatusCode != http.StatusCreated {
+		body := resp2.Body.String()
+		t.Fatalf("Expected status 201 for second placeholder server, got %d. Body: %s", resp2.Result().StatusCode, body)
+	}
+
+	// Basic response validation
+	var response api.InformationResponse
+	if err := json.NewDecoder(resp2.Result().Body).Decode(&response); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+	if !response.Success {
+		t.Fatalf("Expected success=true for second placeholder creation, got: %+v", response)
+	}
+}
+
 // TestInfoEndpoint_AuthenticationPriority tests authentication header priority
 func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 	// Setup test environment

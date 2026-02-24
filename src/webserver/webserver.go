@@ -62,6 +62,9 @@ func newRouter() chi.Router {
 		r.Use(middleware.Logger)
 	}
 
+	// Recoverer should wrap all previous middlewares.
+	// chi applies middlewares in reverse when building the final handler chain,
+	// so adding Recoverer last makes it the outermost wrapper.
 	r.Use(middleware.Recoverer)
 
 	// Form and SignalR routes are now configured automatically via configurators

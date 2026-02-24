@@ -52,7 +52,7 @@ func createTestSchema(db *sqlx.DB) error {
 		-- Servers table
 		CREATE TABLE IF NOT EXISTS servers (
 			token TEXT PRIMARY KEY,
-			wid TEXT,
+			wid TEXT UNIQUE,
 			user TEXT NOT NULL,
 			verified BOOLEAN DEFAULT 0,
 			devel BOOLEAN DEFAULT 0,
@@ -61,6 +61,7 @@ func createTestSchema(db *sqlx.DB) error {
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,
+			readupdate INTEGER DEFAULT 1,
 			FOREIGN KEY (user) REFERENCES users(username)
 		);
 

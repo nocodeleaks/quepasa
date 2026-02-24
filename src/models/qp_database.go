@@ -211,7 +211,7 @@ func GetBase() migrate.SqlxMigration {
 	  
 	  CREATE TABLE IF NOT EXISTS "servers" (
 		"token" CHAR (100) PRIMARY KEY UNIQUE NOT NULL,
-		"wid" VARCHAR (255) UNIQUE NOT NULL,
+		"wid" VARCHAR (255) UNIQUE,
 		"verified" BOOLEAN NOT NULL DEFAULT FALSE,
 		"devel" BOOLEAN NOT NULL DEFAULT FALSE,
 		"groups" INT(1) NOT NULL DEFAULT 0,
@@ -245,7 +245,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202403021242'),
 	  ('202403141920'),
 	  ('202512151400'),
-	  ('202512231500');
+	  ('202512231500'),
+	  ('202602241200');
 	  `, "")
 	return migration
 }

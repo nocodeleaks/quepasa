@@ -5,10 +5,6 @@ on:
     branches:
       - main
       - develop
-  issues:
-    types: [opened, reopened, edited, closed]
-  issue_comment:
-    types: [created]
   release:
     types: [published]
   workflow_dispatch:
@@ -49,19 +45,6 @@ jobs:
             COMMIT_MSG=$(jq -r '.head_commit.message // "(no message)"' "$GITHUB_EVENT_PATH")
             COMMIT_URL=$(jq -r '.head_commit.url // ""' "$GITHUB_EVENT_PATH")
             TEXT=$(printf " \n🚀 Push em %s\n\n📌 Branch: %s\n\n💬 %s\n\n%s" "${REPO}" "${REF_NAME}" "${COMMIT_MSG}" "${COMMIT_URL}")
-
-          elif [ "$EVENT" = "issues" ]; then
-            ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
-            ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
-            ISSUE_URL=$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")
-            ISSUE_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
-            TEXT=$(printf " \n📌 Issue %s\n\n#%s - %s\n\n%s" "${ISSUE_ACTION}" "${ISSUE_NUMBER}" "${ISSUE_TITLE}" "${ISSUE_URL}")
-
-          elif [ "$EVENT" = "issue_comment" ]; then
-            ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")
-            ISSUE_TITLE=$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")
-            COMMENT_URL=$(jq -r '.comment.html_url' "$GITHUB_EVENT_PATH")
-            TEXT=$(printf " \n💬 Comentário em issue\n\n#%s - %s\n\n%s" "${ISSUE_NUMBER}" "${ISSUE_TITLE}" "${COMMENT_URL}")
 
           elif [ "$EVENT" = "release" ]; then
             RELEASE_NAME=$(jq -r '.release.name // .release.tag_name' "$GITHUB_EVENT_PATH")

@@ -25,8 +25,6 @@
 
 ## Event Coverage
 - `push` (main, develop)
-- `issues` (opened, reopened, edited, closed)
-- `issue_comment` (created)
 - `release` (published)
 - `workflow_dispatch`
 

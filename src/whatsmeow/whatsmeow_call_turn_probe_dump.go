@@ -22,12 +22,32 @@ type callTurnProbeAttemptResult struct {
 	NonceLen int    `json:"nonce_len"`
 	RealmLen int    `json:"realm_len"`
 
+	RespMsgType    string `json:"resp_msg_type,omitempty"`
+	MappedEndpoint string `json:"mapped_endpoint,omitempty"`
+	Extra4002Hex   string `json:"extra_4002_hex,omitempty"`
+
 	Success  bool `json:"success"`
 	LongTerm bool `json:"long_term"`
 	TryMI256 bool `json:"try_mi_sha256"`
 
 	RelayName string `json:"relay_name,omitempty"`
 	Endpoint  string `json:"endpoint,omitempty"`
+}
+
+type callTurnProbeRequestAttr struct {
+	Type string `json:"type"`
+	Len  int    `json:"len"`
+	Hex  string `json:"hex"`
+}
+
+type callTurnProbeRequestDump struct {
+	Stage       string                     `json:"stage"`
+	TxID        string                     `json:"txid,omitempty"`
+	MsgType     string                     `json:"msg_type,omitempty"`
+	Len         int                        `json:"len"`
+	PreimageHex string                     `json:"preimage_hex,omitempty"`
+	RawHex      string                     `json:"raw_hex,omitempty"`
+	Attrs       []callTurnProbeRequestAttr `json:"attrs,omitempty"`
 }
 
 type callTurnProbeDump struct {
@@ -39,7 +59,11 @@ type callTurnProbeDump struct {
 	Endpoint  string `json:"endpoint,omitempty"`
 	LocalAddr string `json:"local_addr,omitempty"`
 
-	BaseAllocateTxID string `json:"base_allocate_txid,omitempty"`
+	BaseAllocateTxID    string `json:"base_allocate_txid,omitempty"`
+	BaseAllocateSuccess bool   `json:"base_allocate_success"`
+	BaseRespMsgType     string `json:"base_resp_msg_type,omitempty"`
+	BaseMappedEndpoint  string `json:"base_mapped_endpoint,omitempty"`
+	BaseExtra4002Hex    string `json:"base_extra_4002_hex,omitempty"`
 
 	BaseAllocateCode   int    `json:"base_allocate_code"`
 	BaseAllocateReason string `json:"base_allocate_reason,omitempty"`
@@ -61,6 +85,8 @@ type callTurnProbeDump struct {
 
 	Buckets map[string]int `json:"buckets,omitempty"`
 	MaxTry  int            `json:"max_try"`
+
+	Requests []callTurnProbeRequestDump `json:"requests,omitempty"`
 
 	Attempts []callTurnProbeAttemptResult `json:"attempts,omitempty"`
 }

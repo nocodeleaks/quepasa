@@ -37,6 +37,17 @@
 - Systemd unit template `helpers/quepasa.service` was updated to run the deployed binary `/opt/quepasa/quepasa` with `WorkingDirectory=/opt/quepasa/src` and `EnvironmentFile=/opt/quepasa/src/.env`.
 - Default server port for `apoint-voip` env was set to `WEBSERVER_PORT=31000`.
 
+- Server TURN probe retest (2026-02-17):
+  - CallID `A577A48471E98EC32D3195FED8A7BCA4`: received `CallTransport` with `<net medium="2" protocol="0">` (relay-only) and replied with `transport-message-type=2` using `medium=2`.
+  - TURN probe ran against `ffln5c01` (`170.150.237.35:3478`); `call_turn_probe_*.json` confirmed outgoing Allocate requests include attrs `0x4000`, `0x4024`, `0x0016`, `MESSAGE-INTEGRITY` and `FINGERPRINT`.
+  - Outcome still blocked: base/discovery Allocate return `451 Integrity failure: Hmac missing` (no MI) and MI attempts return `450 Integrity failure: Hmac mismatch`.
+  - Fix applied: updated `src/.env.apoint-voip` to use WhatsApp Desktop-derived `QP_CALL_RELAY_TURN_ATTR_4024` and endpoint-specific `QP_CALL_RELAY_TURN_ATTR_4000_BY_ENDPOINT` for `170.150.237.35:3478`, then redeployed/restarted `apoint-voip`.
+
+- Server TURN probe retest (2026-02-17):
+  - CallID `A5D89C1BDFBB09B23C8063101E1E316B`: call terminated before RelayLatency/Transport; env fallback relay probe still produced `call_turn_probe_*.json` targeting `170.150.237.35:3478`.
+  - Confirmed `0x4000` is now taken from `QP_CALL_RELAY_TURN_ATTR_4000_BY_ENDPOINT` (request attr `0x4000` hex starts with `090f015501a17c...`), and `0x4024` matches the Desktop-derived value.
+  - Outcome unchanged: base/discovery `451` and integrity attempts `450` (no `0x0103` Allocate success observed).
+
 - Media-port consistency fix deployed (2026-02-15): WhatsApp call flow now locks a single media UDP port per `CallID` and reuses it across PREACCEPT/TRANSPORT/ACCEPT and the RTP bridge listener.
   - Evidence: logs show `🎵🔒 [MEDIA-PORT] Locked media port=47993` and `✅🎵 [UDP-SUCCESS] Listener UDP ativo na porta 47993` for the same call.
   - Result: the previous bug (announcing one port but listening on another) is resolved.
@@ -198,6 +209,99 @@
   - PCAP evidence: Allocate requests include non-UTF8 USERNAME bytes (now identifiable as `hex:...` in the decoder output).
   - Outcome unchanged: all integrity attempts still return `450 Integrity failure: Hmac mismatch` (112/112).
 
+- Fix in progress (2026-02-17): ensure `te2 payload-user(...)` candidates are actually attempted
+  - Evidence (CallID `A5981CF85256EAFA019A1AE53B210243`): `te2` bucket exists but executed attempts include only `te2 payload(...):u=uuid(bin):key=payload` etc; no `te2 payload-user(...)` appears under `maxTry=120`.
+  - Root cause: TE2 per-family budget defaults to 25 and sorting favored `u=uuid(bin)` TE2 candidates, starving `payload-user` candidates.
+  - Change: `src/whatsmeow/whatsmeow_call_relay_session_probe.go`
+    - Promote labels containing `payload-user(` to the top of `usernameRank()`.
+    - Treat `key=authRaw`/`key=tokRaw` as raw in `encodingRank()`.
+    - Add `:u=payload:` into `payload-user` labels for stable ranking and clearer dumps.
+  - Goal: next call should show `te2 payload-user(...):u=payload:key=authRaw/tokRaw` within the executed attempts.
+
+- Verified (2026-02-17): `te2 payload-user` is now attempted; adding authText/tokText did not change TURN outcomes
+  - CallID `A5F8A2B45092CD07FC4FD48942A11D6C`: `te2 payload-user(...):u=payload:key=authRaw/tokRaw` attempted early (index ~40), still `450`.
+  - CallID `A596FC72BDC60AF174492CDF0FBA2357`: `te2 payload-user(...):u=payload:key=authText/tokText` also attempted (indexes ~46-51), still `450`; base/discovery still `451`; `nonce/realm` remain `0`.
+
+- Verified (2026-02-17): `extra-key(...)` attempts executed (still blocked)
+  - CallID `A564881C5BBD97C2DD931CE23F2B9687`: base/discovery Allocate still `451` (no realm/nonce); `extra-key(extra0016|extra4000|extra4024|concat|tlv...)` attempts executed and still `450` (no Allocate success `0x0103`).
+
+- Verified (2026-02-17): TURN request `preimage_hex` dump works (Desktop-shape validation)
+  - CallID `A53BC31AC519667571FCE4EE04032009`: `requests[].preimage_hex` is present for base/discovery/attempts.
+  - Base request shows `preimage_hex` length-field `300` and `raw_hex` length-field `308` (delta is `FINGERPRINT` attr `0x8028`).
+  - Desktop Allocate to `170.150.237.35:3478` has `len=324` with `MESSAGE-INTEGRITY (0x0008)` and no `FINGERPRINT`; `324 - 24 = 300`, matching our preimage length-field.
+
+- Verified (2026-02-18): disabling TURN Fingerprint does not change outcomes; found likely 0x4024 mismatch
+  - CallID `A58E0E215A14A1452DE0FAF0D500ECB5`: base/discovery Allocate still `451`, integrity attempts still `450`, now with base request `len=320` and no `0x8028` attribute.
+  - Notable: server used `0x4024 len=94`, while Desktop captures for `170.150.237.35:3478` show `0x4024 len=95` (different bytes). Updated `src/.env.apoint-voip` to Desktop-exact `0x4024` for next test.
+
+- Verified (2026-02-18): Desktop-exact `0x4024 len=95` + miKDF Allocate-preimage still blocked
+  - CallID `A580D6A47CBC3C79CC272BC3ED535E7F`: request attrs show `0x4024 len=95` and Fingerprint is off; base/discovery still `451` and MI attempts still `450`.
+  - Logs confirm new candidates executed early: `miKDF:msg=alloc.preimage` and `miKDF:msg=alloc.preimage_lenplus24`.
+
+- Observed (2026-02-17): server call ran older TURN-probe binary/env (miKDF not active)
+  - CallID `A585B6ADBF2424361C42A7613E5843C4` journal shows `Candidate buckets: lt=0 rest=...` (no `mikdf=...` field), indicating the deployed server binary predates the miKDF + extended dump schema changes.
+  - Next verification signal after deploy: journal line must include `Candidate buckets: lt=... mikdf=...` and TURN probe dumps must include new fields like `base_allocate_success` / `mapped_endpoint` when present.
+
+- Next approach (2026-02-17): capture TURN/STUN from a real WhatsApp Desktop client on Windows
+  - Added helper: `helpers/capture-wa-desktop-turn.ps1`
+  - Uses `pktmon` to capture and converts to `.pcapng`; if `tshark` is installed it prints a quick STUN/TURN/USERNAME summary.
+  - Goal: observe the real TURN Allocate USERNAME/auth shape to stop guessing candidate derivations.
+
+- Verified (2026-02-17): WhatsApp Desktop TURN requests include proprietary required attributes and no USERNAME/REALM/NONCE
+  - Capture: `.dist/pcaps/wa_desktop_20260217_140419.pcapng` (converted via pktmon)
+  - Added local parser: `helpers/parse-pktmon-stun.ps1` (decodes STUN headers/attrs from pktmon etl2txt output)
+  - Observed STUN/TURN to UDP/3478 (multiple relays):
+    - `msgType=0x0003 len=324` with `MESSAGE-INTEGRITY` present, but no `USERNAME` (0x0006) and no `REALM/NONCE`.
+    - Required unknown attrs: `0x4000 (len=182)` and `0x4024 (len=96)`.
+    - Also includes attr `0x0016 (len=8)`.
+  - Verified (2026-02-17): attr `0x0016` decodes as an XOR-ADDRESS-style IPv4 endpoint
+    - Decoding matches the relay destination exactly (`ip:port`), using STUN magic cookie XOR rules.
+    - Parser enhancement: `helpers/parse-pktmon-stun.ps1` now exports `attrs[].decoded.endpoint` for `0x0016`.
+    - Server probe enhancement: `src/whatsmeow/whatsmeow_call_relay_session_probe.go` can auto-build `0x0016` from the relay endpoint when `QP_CALL_RELAY_TURN_AUTO_ATTR_0016=1`.
+  - Implication: brute-forcing TURN USERNAME variants may be irrelevant; correct Allocate shape likely depends on these proprietary attrs and a short-term MI key derived from offer/handshake.
+
+- Verified (2026-02-17): Desktop STUN/TURN flow includes Allocate success + post-Allocate keepalive without USERNAME/REALM/NONCE
+  - Export: `.dist/pcaps/wa_desktop_20260217_161318_stun_all.json` (no msgType filter)
+  - Observed msg types:
+    - `0x0003` Allocate Request includes `0x4000/0x4024/0x0016` + `MESSAGE-INTEGRITY`.
+    - `0x0103` Allocate Success Response includes `XOR-MAPPED-ADDRESS (0x0020)` + proprietary `0x4002 (len=8)` + `MESSAGE-INTEGRITY`.
+    - Relay keepalive: relay sends `0x0001` (with `MESSAGE-INTEGRITY`) and client replies `0x0101` (with `MESSAGE-INTEGRITY`).
+  - VoIP logs show matching relay bind tids (e.g. `8ae2f96f4afe1d012352f528`) that appear as STUN txids on-wire.
+  - Conclusion: correct MI key is still unknown, but flow confirms short-term integrity without USERNAME/REALM/NONCE and that success responses exist.
+
+- Implemented (2026-02-17): export Desktop STUN/TURN without msgType filter
+  - `helpers/process-wa-desktop-turn-capture.ps1`: `-OnlyMsgTypeHex all` now exports all msg types into `*_stun_all.json`.
+  - `helpers/parse-pktmon-stun.ps1`: sentinel `OnlyMsgTypeHex=all` means no filtering.
+  - `helpers/summarize-desktop-stun-json.py` summarizes msg_type/attr presence (quick triage).
+
+- Implemented (2026-02-17): server TURN probe can detect Allocate success and dump mapped/0x4002
+  - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: detects `Allocate SuccessResponse` and records `mapped_endpoint` + `extra_4002_hex` in dumps.
+  - `src/whatsmeow/whatsmeow_call_turn_probe_dump.go`: new dump fields for base/attempt success details.
+
+- Implemented (2026-02-17): MI-KDF experiment using offer secrets + Desktop-like extra attrs
+  - Env: `QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS=1`
+  - Adds `miKDF` candidate family (separate budget `QP_CALL_RELAY_TURN_MIKDF_BUDGET`, default 20) deriving MI key as `HMAC-SHA1(seedKey, extraAttrs)`.
+
+- Implemented (2026-02-17): Desktop TURN <-> VoIP timeline correlation helpers
+  - `helpers/export-wa-desktop-artifacts.ps1` exports Desktop Store LocalState (including current `applog.txt`).
+  - `helpers/summarize-wa-desktop-voip-logs.ps1` now includes non-rotated `applog.txt` and writes NDJSON via `StreamWriter` to avoid intermittent Windows file-lock errors.
+  - `helpers/parse-pktmon-stun.ps1` exports `pkt_ts/pkt_group_id/pkt_number` into TURN Allocate JSON items.
+  - `helpers/correlate-wa-desktop-turn-voip.ps1` generates a Markdown report correlating Allocate packets with VoIP log events (compares by time-of-day because Desktop log dates are not reliable).
+
+- Implemented (2026-02-17): inject WhatsApp Desktop Allocate attrs into server TURN probe (env-gated)
+  - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: can add attrs `0x4000`, `0x4024`, `0x0016` to base Allocate, discovery Allocate, and integrity attempts.
+  - Env vars (accept hex/base64/raw):
+    - `QP_CALL_RELAY_TURN_ATTR_4000`
+    - `QP_CALL_RELAY_TURN_ATTR_4024`
+    - `QP_CALL_RELAY_TURN_ATTR_0016`
+  - Optional: `QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT=1` to mimic Desktop packets that omit `REQUESTED-TRANSPORT`.
+
+- Verified (2026-02-17): Desktop-like Allocate attrs + no USERNAME still returns 451/450 (no realm/nonce)
+  - CallID `A5F417B3E8EC8DE0756404D8CC475ADF`: attrs injected (0x4000=182, 0x4024=96, 0x0016=8) with normal flow; base/discovery still `451`.
+  - Implemented env fix: prevent hex env values from being mis-decoded as base64 (previously caused `456 Failed to decode allocate request`).
+  - CallID `A5A251921D651ED2ED36B35104D84C08`: attrs injected (0x4000=182, 0x4024=96, 0x0016=8) + `QP_CALL_RELAY_TURN_FORCE_NO_USERNAME=1` + omit requested-transport + fingerprint off; base/discovery still `451` and integrity attempts still `450`.
+  - Conclusion: matching Desktop packet shape alone is insufficient; missing short-term MESSAGE-INTEGRITY key derivation remains the blocker.
+
 - Implemented (2026-02-17): enable TURN REST candidate attempts by default
   - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: `QP_CALL_RELAY_TURN_TRY_REST` now defaults to enabled (still disable-able via env).
   - Rationale: adds a distinct auth family (password = base64(hmac-sha1(secret, username))) within existing budgets/maxTry.
@@ -235,6 +339,19 @@
 - Fixed (2026-02-15): TURN MESSAGE-INTEGRITY invalidated by re-Encode
   - Root cause: integrity attempts computed `MESSAGE-INTEGRITY`, then called `Encode()` which re-serialized the message and invalidated the HMAC (causing guaranteed `450 Hmac mismatch`).
   - TURN requests now follow: add base attrs -> `Encode()` -> `MESSAGE-INTEGRITY.AddTo()` -> `FINGERPRINT.AddTo()` with no re-encode.
+
+- Implemented (2026-02-17): prioritize TE2 candidates earlier in TURN probe ordering
+  - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: candidate sort now places `te2` before `relay.key`/`relay.hbh_key`.
+  - Goal: under `QP_CALL_RELAY_TURN_MAX_CANDIDATES=120`, ensure we attempt a broader TE2 slice (previously TE2 started around attempt ~100).
+
+- Implemented (2026-02-17): add TURN candidates from `te2` payload bytes
+  - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: adds a small, budget-limited set of candidates using `RelayTE2.Payload` as potential MI key (and `sha1/sha256(payload)`), labeled as `te2` family.
+  - Env: `QP_CALL_RELAY_TURN_TE2_PAYLOAD_MAX` (default 4; clamp 0..10).
+  - Goal: test hypothesis that relay short-term auth is seeded by opaque TE2 payload bytes.
+
+- Implemented (2026-02-17): try `te2.Payload` as TURN USERNAME (and map to token/auth keys)
+  - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: adds candidates where `USERNAME=te2.Payload` with keys from `payload/sha1/sha256(payload)` and also `key=authRaw` / `key=tokRaw` from the same TE2 mapping (budget-limited by `QP_CALL_RELAY_TURN_TE2_PAYLOAD_MAX`).
+  - Goal: cover relays where payload selects the short-term key (instead of UUID-based username selection).
 - Adjusted (2026-02-15): candidate ordering to avoid `drv` starvation
   - `src/whatsmeow/whatsmeow_call_relay_session_probe.go`: integrity candidate sort now prioritizes direct `relay.key`/`relay.hbh_key` and `te2` variants before the large `drv` bucket.
   - Added `Candidate buckets: ...` log to confirm which categories exist for a given call and how maxTry may truncate them.

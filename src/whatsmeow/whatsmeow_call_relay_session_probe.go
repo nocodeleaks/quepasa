@@ -7,7 +7,9 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -307,6 +309,14 @@ func (cm *WhatsmeowCallManager) MaybeStartRelaySessionProbe(callID string) {
 				}
 				time.Sleep(250 * time.Millisecond)
 			}
+			if !cm.hasCallState(callID) {
+				return
+			}
+			if fallback := relaySessionFallbackEndpointsFromEnv(); len(fallback) > 0 {
+				cm.logger.Warnf("⚠️📡 [RELAY-SESSION] No relay endpoints after wait window; using env fallback endpoints=%d (CallID=%s)", len(fallback), callID)
+				cm.forceStartRelaySessionProbe(callID, fallback)
+				return
+			}
 			cm.logger.Warnf("⚠️📡 [RELAY-SESSION] No relay endpoints after wait window (CallID=%s)", callID)
 		}()
 		return
@@ -322,6 +332,57 @@ func (cm *WhatsmeowCallManager) MaybeStartRelaySessionProbe(callID string) {
 	}
 
 	go cm.runRelaySessionProbe(callID, best, endpoints)
+}
+
+func (cm *WhatsmeowCallManager) forceStartRelaySessionProbe(callID string, endpoints []RelayEndpoint) {
+	if cm == nil || callID == "" {
+		return
+	}
+	if len(endpoints) == 0 {
+		return
+	}
+	best := pickBestRelayEndpoint(endpoints)
+	if best.Endpoint == "" {
+		cm.logger.Warnf("⚠️📡 [RELAY-SESSION] Best relay endpoint empty (fallback) (CallID=%s)", callID)
+		return
+	}
+	if !cm.markRelaySessionProbeStarted(callID, best.Endpoint) {
+		return
+	}
+	go cm.runRelaySessionProbe(callID, best, endpoints)
+}
+
+func relaySessionFallbackEndpointsFromEnv() []RelayEndpoint {
+	raw := strings.TrimSpace(os.Getenv("QP_CALL_RELAY_SESSION_FALLBACK_ENDPOINTS"))
+	if raw == "" {
+		return nil
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == ';' || r == ' ' || r == '\n' || r == '\r' || r == '\t'
+	})
+	out := make([]RelayEndpoint, 0, len(parts))
+	seen := map[string]bool{}
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		host, portStr, err := net.SplitHostPort(p)
+		if err != nil {
+			continue
+		}
+		port, err := strconv.Atoi(portStr)
+		if err != nil || port <= 0 || port > 65535 {
+			continue
+		}
+		ep := net.JoinHostPort(host, strconv.Itoa(port))
+		if seen[ep] {
+			continue
+		}
+		seen[ep] = true
+		out = append(out, RelayEndpoint{RelayName: "env", Endpoint: ep, LatencyRaw: ""})
+	}
+	return out
 }
 
 func pickBestRelayEndpoint(endpoints []RelayEndpoint) RelayEndpoint {
@@ -392,12 +453,412 @@ func envInt(name string, def int) int {
 	return v
 }
 
+func envBytes(name string) ([]byte, bool) {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return nil, false
+	}
+	// Allow explicit prefixes to avoid ambiguity.
+	// Note: hex-only strings are also valid base64 alphabet, so we MUST prefer hex when it matches.
+	lower := strings.ToLower(raw)
+	switch {
+	case strings.HasPrefix(lower, "hex:"):
+		b, ok := decodeMaybeHex(strings.TrimSpace(raw[4:]))
+		return b, ok
+	case strings.HasPrefix(lower, "b64:"):
+		b, ok := decodeMaybeBase64(strings.TrimSpace(raw[4:]))
+		return b, ok
+	case strings.HasPrefix(lower, "raw:"):
+		v := strings.TrimSpace(raw[4:])
+		if v == "" {
+			return nil, false
+		}
+		return []byte(v), true
+	}
+
+	// Prefer hex when it matches (otherwise hex would be mis-decoded as base64).
+	if b, ok := decodeMaybeHex(raw); ok {
+		return b, true
+	}
+	if b, ok := decodeMaybeBase64(raw); ok {
+		return b, true
+	}
+	// Fallback: treat as raw ASCII bytes.
+	return []byte(raw), true
+}
+
+type turnExtraAttrs struct {
+	a4000           []byte
+	a4024           []byte
+	a0016           []byte
+	a4000ByEndpoint map[string][]byte
+}
+
+func decodeFlexibleBytes(raw string) ([]byte, bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, false
+	}
+	lower := strings.ToLower(raw)
+	switch {
+	case strings.HasPrefix(lower, "hex:"):
+		return decodeMaybeHex(strings.TrimSpace(raw[4:]))
+	case strings.HasPrefix(lower, "b64:"):
+		return decodeMaybeBase64(strings.TrimSpace(raw[4:]))
+	case strings.HasPrefix(lower, "raw:"):
+		v := strings.TrimSpace(raw[4:])
+		if v == "" {
+			return nil, false
+		}
+		return []byte(v), true
+	}
+	// Same preference as envBytes(): hex first, then base64, else raw.
+	if b, ok := decodeMaybeHex(raw); ok {
+		return b, true
+	}
+	if b, ok := decodeMaybeBase64(raw); ok {
+		return b, true
+	}
+	return []byte(raw), true
+}
+
+func parseEndpointBytesMapEnv(name string) map[string][]byte {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return nil
+	}
+
+	// Preferred: JSON object mapping endpoint -> value
+	// Example: {"170.150.237.35:3478":"hex:...","57.144.179.54:3478":"hex:..."}
+	var js map[string]string
+	if err := json.Unmarshal([]byte(raw), &js); err == nil && len(js) > 0 {
+		out := make(map[string][]byte, len(js))
+		for ep, v := range js {
+			ep = strings.TrimSpace(ep)
+			if ep == "" {
+				continue
+			}
+			if b, ok := decodeFlexibleBytes(v); ok && len(b) > 0 {
+				out[ep] = b
+			}
+		}
+		if len(out) == 0 {
+			return nil
+		}
+		return out
+	}
+
+	// Fallback: semicolon-separated list: endpoint=value;endpoint=value
+	parts := strings.Split(raw, ";")
+	out := make(map[string][]byte, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		kv := strings.SplitN(p, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		ep := strings.TrimSpace(kv[0])
+		val := strings.TrimSpace(kv[1])
+		if ep == "" || val == "" {
+			continue
+		}
+		if b, ok := decodeFlexibleBytes(val); ok && len(b) > 0 {
+			out[ep] = b
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func buildTurnXorAddrAttr0016(remote *net.UDPAddr) ([]byte, bool) {
+	if remote == nil {
+		return nil, false
+	}
+	ip4 := remote.IP.To4()
+	if ip4 == nil {
+		return nil, false
+	}
+	if remote.Port <= 0 || remote.Port > 65535 {
+		return nil, false
+	}
+
+	// Observed WhatsApp Desktop Allocate packets include attr 0x0016 as an XOR-ADDRESS-like IPv4 tuple.
+	// Format (8 bytes): 0x00 0x01 | X-Port(2) | X-Addr(4)
+	// X-Port = port ^ 0x2112 ; X-Addr = ipv4_u32 ^ 0x2112A442
+	b := make([]byte, 8)
+	b[0] = 0
+	b[1] = 0x01
+	xPort := uint16(remote.Port) ^ 0x2112
+	binary.BigEndian.PutUint16(b[2:4], xPort)
+	ipU32 := binary.BigEndian.Uint32(ip4)
+	xAddr := ipU32 ^ 0x2112A442
+	binary.BigEndian.PutUint32(b[4:8], xAddr)
+	return b, true
+}
+
+func readTurnExtraAttrsFromEnv() turnExtraAttrs {
+	var out turnExtraAttrs
+	if b, ok := envBytes("QP_CALL_RELAY_TURN_ATTR_4000"); ok {
+		out.a4000 = b
+	}
+	if b, ok := envBytes("QP_CALL_RELAY_TURN_ATTR_4024"); ok {
+		out.a4024 = b
+	}
+	if b, ok := envBytes("QP_CALL_RELAY_TURN_ATTR_0016"); ok {
+		out.a0016 = b
+	}
+	out.a4000ByEndpoint = parseEndpointBytesMapEnv("QP_CALL_RELAY_TURN_ATTR_4000_BY_ENDPOINT")
+	return out
+}
+
+func addTurnExtraAttrs(req *stun.Message, extra turnExtraAttrs) {
+	if req == nil {
+		return
+	}
+	if len(extra.a4000) > 0 {
+		req.Add(stun.AttrType(0x4000), extra.a4000)
+	}
+	if len(extra.a4024) > 0 {
+		req.Add(stun.AttrType(0x4024), extra.a4024)
+	}
+	if len(extra.a0016) > 0 {
+		req.Add(stun.AttrType(0x0016), extra.a0016)
+	}
+}
+
+func addTurnExtraAttrsForEndpoint(req *stun.Message, extra turnExtraAttrs, remote *net.UDPAddr) {
+	if req == nil {
+		return
+	}
+	if len(extra.a4000ByEndpoint) > 0 && remote != nil {
+		key := net.JoinHostPort(remote.IP.String(), strconv.Itoa(remote.Port))
+		if b, ok := extra.a4000ByEndpoint[key]; ok && len(b) > 0 {
+			req.Add(stun.AttrType(0x4000), b)
+		} else if len(extra.a4000) > 0 {
+			req.Add(stun.AttrType(0x4000), extra.a4000)
+		}
+	} else if len(extra.a4000) > 0 {
+		req.Add(stun.AttrType(0x4000), extra.a4000)
+	}
+	if len(extra.a4024) > 0 {
+		req.Add(stun.AttrType(0x4024), extra.a4024)
+	}
+	if len(extra.a0016) > 0 {
+		req.Add(stun.AttrType(0x0016), extra.a0016)
+		return
+	}
+	if envTruthy("QP_CALL_RELAY_TURN_AUTO_ATTR_0016") {
+		if b, ok := buildTurnXorAddrAttr0016(remote); ok {
+			req.Add(stun.AttrType(0x0016), b)
+		}
+	}
+}
+
+func resolveTurnExtraAttrsForEndpoint(extra turnExtraAttrs, remote *net.UDPAddr) (a4000, a4024, a0016 []byte) {
+	if len(extra.a4000ByEndpoint) > 0 && remote != nil {
+		key := net.JoinHostPort(remote.IP.String(), strconv.Itoa(remote.Port))
+		if b, ok := extra.a4000ByEndpoint[key]; ok && len(b) > 0 {
+			a4000 = b
+		} else if len(extra.a4000) > 0 {
+			a4000 = extra.a4000
+		}
+	} else if len(extra.a4000) > 0 {
+		a4000 = extra.a4000
+	}
+	if len(extra.a4024) > 0 {
+		a4024 = extra.a4024
+	}
+	if len(extra.a0016) > 0 {
+		a0016 = extra.a0016
+	} else if envTruthy("QP_CALL_RELAY_TURN_AUTO_ATTR_0016") {
+		if b, ok := buildTurnXorAddrAttr0016(remote); ok {
+			a0016 = b
+		}
+	}
+	return a4000, a4024, a0016
+}
+
+func stunTLVBytes(attrType uint16, value []byte) []byte {
+	if len(value) == 0 {
+		return nil
+	}
+	b := make([]byte, 0, 4+len(value)+3)
+	hdr := make([]byte, 4)
+	binary.BigEndian.PutUint16(hdr[0:2], attrType)
+	binary.BigEndian.PutUint16(hdr[2:4], uint16(len(value)))
+	b = append(b, hdr...)
+	b = append(b, value...)
+	if pad := (4 - (len(value) % 4)) % 4; pad != 0 {
+		b = append(b, make([]byte, pad)...)
+	}
+	return b
+}
+
+func buildExtraAttrsMsgVariants(a4000, a4024, a0016 []byte) map[string][]byte {
+	out := map[string][]byte{}
+	if len(a4024) > 0 {
+		out["extra4024"] = a4024
+		out["tlv4024"] = stunTLVBytes(0x4024, a4024)
+	}
+	// Values concatenation in a stable order.
+	valuesAll := make([]byte, 0, len(a4000)+len(a4024)+len(a0016))
+	if len(a4000) > 0 {
+		valuesAll = append(valuesAll, a4000...)
+		out["extra4000"] = a4000
+		out["tlv4000"] = stunTLVBytes(0x4000, a4000)
+	}
+	if len(a4024) > 0 {
+		valuesAll = append(valuesAll, a4024...)
+	}
+	if len(a0016) > 0 {
+		valuesAll = append(valuesAll, a0016...)
+		out["extra0016"] = a0016
+		out["tlv0016"] = stunTLVBytes(0x0016, a0016)
+	}
+	if len(valuesAll) > 0 {
+		out["extra4000+4024+0016"] = valuesAll
+	}
+
+	// TLV concatenation in the same stable order.
+	tlvsAll := make([]byte, 0, 0)
+	if len(a4000) > 0 {
+		tlvsAll = append(tlvsAll, stunTLVBytes(0x4000, a4000)...)
+	}
+	if len(a4024) > 0 {
+		tlvsAll = append(tlvsAll, stunTLVBytes(0x4024, a4024)...)
+	}
+	if len(a0016) > 0 {
+		tlvsAll = append(tlvsAll, stunTLVBytes(0x0016, a0016)...)
+	}
+	if len(tlvsAll) > 0 {
+		out["tlv4000+4024+0016"] = tlvsAll
+	}
+
+	return out
+}
+
+func buildAllocatePreimageMsgVariants(extra turnExtraAttrs, remote *net.UDPAddr) map[string][]byte {
+	// Allocate preimage = request bytes after Encode() and before MESSAGE-INTEGRITY/FINGERPRINT.
+	// Desktop uses MI without USERNAME/REALM/NONCE, so the relay may derive the short-term key from
+	// the exact Allocate payload shape.
+	out := map[string][]byte{}
+	if remote == nil {
+		return out
+	}
+
+	req := stun.MustBuild(stun.TransactionID)
+	req.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
+	if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+		req.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
+	}
+	addTurnExtraAttrsForEndpoint(req, extra, remote)
+	req.Encode()
+	if len(req.Raw) == 0 {
+		return out
+	}
+	pre := append([]byte(nil), req.Raw...)
+	out["alloc.preimage"] = pre
+	out["alloc.preimage_sha1"] = sha1Sum(pre)
+	out["alloc.preimage_sha256"] = sha256Sum(pre)
+
+	// Variant: patch header length as if MI (24 bytes) was appended.
+	// This matches Desktop's Allocate header length-field when MI is present.
+	if len(pre) >= 4 {
+		patched := append([]byte(nil), pre...)
+		baseLen := int(binary.BigEndian.Uint16(patched[2:4]))
+		patchedLen := baseLen + 24
+		if patchedLen <= 0xffff {
+			binary.BigEndian.PutUint16(patched[2:4], uint16(patchedLen))
+			out["alloc.preimage_lenplus24"] = patched
+			out["alloc.preimage_lenplus24_sha1"] = sha1Sum(patched)
+			out["alloc.preimage_lenplus24_sha256"] = sha256Sum(patched)
+		}
+	}
+
+	return out
+}
+
 func isSTUNPacket(b []byte) bool {
 	if len(b) < 8 {
 		return false
 	}
 	// STUN magic cookie (RFC 5389)
 	return b[4] == 0x21 && b[5] == 0x12 && b[6] == 0xA4 && b[7] == 0x42
+}
+
+func stunMsgTypeHexFromMessage(m *stun.Message) string {
+	if m == nil {
+		return ""
+	}
+	return stunMsgTypeHexFromRaw(m.Raw)
+}
+
+func extractMappedEndpointAnd4002(resp *stun.Message) (mapped string, a4002Hex string) {
+	if resp == nil {
+		return "", ""
+	}
+	var xorAddr stun.XORMappedAddress
+	if err := xorAddr.GetFrom(resp); err == nil {
+		mapped = net.JoinHostPort(xorAddr.IP.String(), strconv.Itoa(xorAddr.Port))
+	}
+	for _, a := range resp.Attributes {
+		if uint16(a.Type) == 0x4002 && len(a.Value) > 0 {
+			a4002Hex = strings.ToLower(hex.EncodeToString(a.Value))
+			break
+		}
+	}
+	return mapped, a4002Hex
+}
+
+func stunMsgTypeHexFromRaw(raw []byte) string {
+	if len(raw) < 2 {
+		return ""
+	}
+	return fmt.Sprintf("0x%02x%02x", raw[0], raw[1])
+}
+
+func stunTxIDHexFromRaw(raw []byte) string {
+	// STUN header is 20 bytes, TXID at bytes 8..20.
+	if len(raw) < 20 {
+		return ""
+	}
+	return strings.ToLower(hex.EncodeToString(raw[8:20]))
+}
+
+func captureTurnRequestDump(stage string, raw []byte, preimage []byte) callTurnProbeRequestDump {
+	out := callTurnProbeRequestDump{Stage: strings.TrimSpace(stage)}
+	out.Len = len(raw)
+	out.TxID = stunTxIDHexFromRaw(raw)
+	out.MsgType = stunMsgTypeHexFromRaw(raw)
+	if len(preimage) > 0 {
+		out.PreimageHex = strings.ToLower(hex.EncodeToString(preimage))
+	}
+	if len(raw) == 0 {
+		return out
+	}
+	out.RawHex = strings.ToLower(hex.EncodeToString(raw))
+
+	// Decode attrs from raw (safer than relying on internal state after Encode/AddTo).
+	var decoded stun.Message
+	decoded.Raw = raw
+	if err := decoded.Decode(); err == nil {
+		attrs := make([]callTurnProbeRequestAttr, 0, len(decoded.Attributes))
+		for _, a := range decoded.Attributes {
+			attrs = append(attrs, callTurnProbeRequestAttr{
+				Type: fmt.Sprintf("0x%04x", uint16(a.Type)),
+				Len:  len(a.Value),
+				Hex:  strings.ToLower(hex.EncodeToString(a.Value)),
+			})
+		}
+		out.Attrs = attrs
+	}
+
+	return out
 }
 
 func (cm *WhatsmeowCallManager) runRelaySessionProbe(callID string, best RelayEndpoint, endpoints []RelayEndpoint) {
@@ -771,6 +1232,10 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 
 	// Collect summary for optional dump (no secrets).
 	baseAllocateTxID := ""
+	baseAllocateSuccess := false
+	baseRespMsgType := ""
+	baseMappedEndpoint := ""
+	baseExtra4002Hex := ""
 	baseAllocateCode := 0
 	baseAllocateReason := ""
 	baseNonceLen := 0
@@ -784,14 +1249,45 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 
 	// TURN Allocate request (without integrity) should elicit an error response from the relay.
 	// We use this to confirm the endpoint is alive and to learn what kind of auth is expected.
+	extra := readTurnExtraAttrsFromEnv()
+	if len(extra.a4000) > 0 || len(extra.a4024) > 0 || len(extra.a0016) > 0 || len(extra.a4000ByEndpoint) > 0 {
+		cm.logger.Warnf("📡 [RELAY-TURN] Using extra Allocate attrs: 0x4000=%d 0x4000_map=%d 0x4024=%d 0x0016=%d (CallID=%s)", len(extra.a4000), len(extra.a4000ByEndpoint), len(extra.a4024), len(extra.a0016), callID)
+	}
+	if len(extra.a0016) == 0 && envTruthy("QP_CALL_RELAY_TURN_AUTO_ATTR_0016") {
+		cm.logger.Warnf("📡 [RELAY-TURN] Auto-building Allocate attr 0x0016 from remote endpoint (CallID=%s)", callID)
+	}
+	captureReqs := envTruthy("QP_CALL_DUMP_TURN_REQUESTS") && envTruthy("QP_CALL_DUMP_TURN_PROBE")
+	capMax := clampInt(envInt("QP_CALL_DUMP_TURN_REQUESTS_MAX", 20), 0, 200)
+	requestDumps := make([]callTurnProbeRequestDump, 0, 8)
+	maybeCap := func(stage string, m *stun.Message, preimage []byte) {
+		if !captureReqs {
+			return
+		}
+		if capMax == 0 {
+			return
+		}
+		if len(requestDumps) >= capMax {
+			return
+		}
+		if m == nil {
+			return
+		}
+		requestDumps = append(requestDumps, captureTurnRequestDump(stage, m.Raw, preimage))
+	}
+
 	baseReq := stun.MustBuild(stun.TransactionID)
 	baseReq.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest) // Allocate
-	baseReq.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})            // REQUESTED-TRANSPORT: UDP
+	if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+		baseReq.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0}) // REQUESTED-TRANSPORT: UDP
+	}
+	addTurnExtraAttrsForEndpoint(baseReq, extra, remote)
 	baseAllocateTxID = stunTxIDHex(baseReq)
 	baseReq.Encode()
+	basePreimage := append([]byte(nil), baseReq.Raw...)
 	if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
 		_ = stun.Fingerprint.AddTo(baseReq)
 	}
+	maybeCap("base", baseReq, basePreimage)
 	if _, err := conn.Write(baseReq.Raw); err != nil {
 		return fmt.Errorf("turn allocate write: %w", err)
 	}
@@ -815,10 +1311,25 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if err := resp.Decode(); err != nil {
 		return fmt.Errorf("turn allocate decode: %w", err)
 	}
+	baseRespMsgType = stunMsgTypeHexFromMessage(&resp)
 	if baseAllocateTxID != "" {
 		respTxID := stunTxIDHex(&resp)
 		if respTxID != "" && respTxID != baseAllocateTxID {
 			cm.logger.Warnf("⚠️📡 [RELAY-TURN] Base Allocate txid mismatch: req=%s resp=%s relay=%s endpoint=%s (CallID=%s)", baseAllocateTxID, respTxID, ep.RelayName, endpoint, callID)
+		}
+	}
+	if resp.Type.Method == stun.Method(0x003) && resp.Type.Class == stun.ClassSuccessResponse {
+		baseAllocateSuccess = true
+		baseMappedEndpoint, baseExtra4002Hex = extractMappedEndpointAnd4002(&resp)
+		cm.logger.Warnf("✅📡 [RELAY-TURN] Allocate SUCCESS (base): txid=%s relay=%s endpoint=%s mapped=%s a4002=%s (CallID=%s)", baseAllocateTxID, ep.RelayName, endpoint, baseMappedEndpoint, baseExtra4002Hex, callID)
+		if envTruthy("QP_CALL_DUMP_TURN_PROBE") {
+			// Dump still gets written at the end; skip integrity attempts.
+			// Fall through to dump section by returning nil from here is not possible
+			// because we want to preserve the dump fields. We'll short-circuit later.
+		}
+		// No need to attempt integrity candidates.
+		if !envTruthy("QP_CALL_DUMP_TURN_PROBE") {
+			return nil
 		}
 	}
 
@@ -845,11 +1356,23 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		cm.logger.Warnf("🔐📡 [RELAY-TURN] Base response auth hints: nonceLen=%d realmLen=%d (CallID=%s)", len(baseNonceB), len(baseRealmB), callID)
 	}
 
-	if !envTruthy("QP_CALL_RELAY_TURN_ALLOCATE_TRY_INTEGRITY") {
-		return nil
+	tryIntegrity := envTruthy("QP_CALL_RELAY_TURN_ALLOCATE_TRY_INTEGRITY")
+	if baseAllocateSuccess {
+		tryIntegrity = false
 	}
 
 	rb := cm.getRelayBlockForCall(callID)
+	if rb == nil {
+		rb = &RelayBlock{}
+	}
+
+	if !tryIntegrity {
+		if envTruthy("QP_CALL_DUMP_TURN_PROBE") {
+			// fall through to dump section
+		} else {
+			return nil
+		}
+	}
 	if rb == nil {
 		cm.logger.Warnf("⚠️📡 [RELAY-TURN] No RelayBlock available for integrity attempts (CallID=%s)", callID)
 		return nil
@@ -859,6 +1382,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	// Sometimes servers only return these when USERNAME is present, so we do one discovery request.
 	ltNonce := baseNonceB
 	ltRealm := baseRealmB
+	forceNoUsername := envTruthy("QP_CALL_RELAY_TURN_FORCE_NO_USERNAME")
 	if (len(ltNonce) == 0 || len(ltRealm) == 0) && len(rb.TE2) > 0 {
 		u := strings.TrimSpace(rb.TE2[0].TokenID)
 		if u == "" {
@@ -868,13 +1392,22 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			discUser = u
 			disc := stun.MustBuild(stun.TransactionID)
 			disc.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
-			disc.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
-			disc.Add(stun.AttrUsername, []byte(u))
+			if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+				disc.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
+			}
+			addTurnExtraAttrsForEndpoint(disc, extra, remote)
+			if !forceNoUsername {
+				disc.Add(stun.AttrUsername, []byte(u))
+			} else {
+				discUser = ""
+			}
 			discTxID = stunTxIDHex(disc)
 			disc.Encode()
+			discPreimage := append([]byte(nil), disc.Raw...)
 			if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
 				_ = stun.Fingerprint.AddTo(disc)
 			}
+			maybeCap("discovery", disc, discPreimage)
 			if _, err := conn.Write(disc.Raw); err == nil {
 				_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
 				if n3, err := conn.Read(buf); err == nil && n3 > 0 {
@@ -929,6 +1462,75 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		// Stable, fixed-size seed (useful if relays hash the offer payload first).
 		encHash = sha256Sum(encRaw)
 	}
+	// Extra attrs used in Desktop-like Allocate flow (if provided). Used as KDF message material.
+	a4000Used, a4024Used, a0016Used := resolveTurnExtraAttrsForEndpoint(extra, remote)
+	extraMsgs := buildExtraAttrsMsgVariants(a4000Used, a4024Used, a0016Used)
+	if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_ALLOC_PREIMAGE") {
+		for k, v := range buildAllocatePreimageMsgVariants(extra, remote) {
+			if len(v) == 0 {
+				continue
+			}
+			extraMsgs[k] = v
+		}
+	}
+	// Env-gated experiment: try using the extra attrs themselves as MESSAGE-INTEGRITY keys.
+	// Rationale: Desktop Allocate succeeds without USERNAME/REALM/NONCE; the short-term key may be derived from
+	// or equal to these proprietary blobs (or their hashes) rather than offer secrets.
+	if envTruthy("QP_CALL_RELAY_TURN_TRY_EXTRA_ATTRS_AS_KEY") {
+		selected := []struct {
+			label string
+			data  []byte
+		}{
+			{label: "extra4000", data: a4000Used},
+			{label: "extra4024", data: a4024Used},
+			{label: "extra0016", data: a0016Used},
+			{label: "extra4000+4024+0016", data: extraMsgs["extra4000+4024+0016"]},
+			{label: "tlv4000+4024+0016", data: extraMsgs["tlv4000+4024+0016"]},
+		}
+		for _, it := range selected {
+			if len(it.data) == 0 {
+				continue
+			}
+			appendCand(&cands, fmt.Sprintf("extra-key(%s):user=none:key=raw", it.label), nil, it.data)
+			appendCand(&cands, fmt.Sprintf("extra-key(%s):user=none:key=sha1", it.label), nil, sha1Sum(it.data))
+			appendCand(&cands, fmt.Sprintf("extra-key(%s):user=none:key=sha256", it.label), nil, sha256Sum(it.data))
+		}
+	}
+	appendMiKDF := func(labelPrefix string, seedKey []byte) {
+		if len(seedKey) == 0 {
+			return
+		}
+		// Derive MI key candidates using only HMAC-SHA1 (Desktop packets use MI-SHA1 attr 0x0008).
+		// Keep this space intentionally small: relay probe has a global maxTry budget.
+		seedSHA1 := sha1Sum(seedKey)
+		for msgLabel, msg := range extraMsgs {
+			if len(msg) == 0 {
+				continue
+			}
+			msgSHA1 := sha1Sum(msg)
+
+			// Baseline: HMAC(seedKey, msg)
+			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=hmac1", nil, hmacSHA1(seedKey, msg))
+			// Reverse: HMAC(msg, seedKey)
+			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=hmac1_rev", nil, hmacSHA1(msg, seedKey))
+			// Hashed seed: HMAC(sha1(seedKey), msg)
+			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=hmac1_seedSHA1", nil, hmacSHA1(seedSHA1, msg))
+			// Hashed msg: HMAC(seedKey, sha1(msg))
+			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=hmac1_msgSHA1", nil, hmacSHA1(seedKey, msgSHA1))
+		}
+	}
+	// Env-gated experiment: derive MI keys from offer secrets + Desktop-like extra attrs.
+	if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+		if len(extraMsgs) > 0 {
+			// enc-based seeds
+			if len(encRaw) > 0 {
+				appendMiKDF("enc."+strings.TrimSpace(encBlock.Type)+fmt.Sprintf("(raw,len=%d)", len(encRaw)), encRaw)
+			}
+			if len(encHash) > 0 {
+				appendMiKDF("enc.sha256", encHash)
+			}
+		}
+	}
 	// For relay keys, try using relay UUID as USERNAME to help server-side key selection.
 	defaultUser := []byte(strings.TrimSpace(rb.UUID))
 	userVariants := buildRelayUsernameVariants(rb)
@@ -967,6 +1569,76 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			userVariants = append(userVariants, labeledBytes{label: fmt.Sprintf("accept.te[%d]", i), data: []byte(v)})
 		}
 	}
+	// TE2 payload candidates: treat relay <te2> payload bytes as potential short-term integrity secrets.
+	// Rationale: offers include multiple small opaque TE2 payloads (len=6/18) that may seed relay auth.
+	// Keep this VERY small to avoid exploding the candidate space.
+	te2PayloadMax := envInt("QP_CALL_RELAY_TURN_TE2_PAYLOAD_MAX", 4)
+	if te2PayloadMax > 0 {
+		if te2PayloadMax > 10 {
+			te2PayloadMax = 10
+		}
+		added := 0
+		seenPayload := make(map[string]struct{}, te2PayloadMax)
+		pickUsers := func() []labeledBytes {
+			picked := make([]labeledBytes, 0, 6)
+			want := map[string]bool{
+				"uuid(bin)":      true,
+				"uuid":           true,
+				"uuid(bin):peer": true,
+				"uuid(bin):self": true,
+				"peer":           true,
+				"self":           true,
+			}
+			for _, u := range userVariants {
+				if want[u.label] {
+					picked = append(picked, u)
+				}
+				if len(picked) >= 6 {
+					break
+				}
+			}
+			if len(picked) == 0 && len(userVariants) > 0 {
+				picked = append(picked, userVariants[0])
+			}
+			return picked
+		}
+		for _, te := range rb.TE2 {
+			if added >= te2PayloadMax {
+				break
+			}
+			if len(te.Payload) == 0 {
+				continue
+			}
+			// Dedupe by payload bytes (as hex) to avoid repeating identical payloads.
+			ph := strings.ToLower(hex.EncodeToString(te.Payload))
+			if _, ok := seenPayload[ph]; ok {
+				continue
+			}
+			seenPayload[ph] = struct{}{}
+			users := pickUsers()
+			if len(users) == 0 {
+				continue
+			}
+			keys := []labeledBytes{
+				{label: "key=payload", data: te.Payload},
+				{label: "key=sha1(payload)", data: sha1Sum(te.Payload)},
+				{label: "key=sha256(payload)", data: sha256Sum(te.Payload)},
+			}
+			for _, u := range users {
+				for _, k := range keys {
+					appendCand(&cands, fmt.Sprintf("te2 payload(relay=%s,len=%d):u=%s:%s", te.RelayName, len(te.Payload), u.label, k.label), u.data, k.data)
+				}
+			}
+			// Also try TE2 payload as the TURN USERNAME (raw bytes), with a few key options.
+			for _, k := range keys {
+				appendCand(&cands, fmt.Sprintf("te2 payload(relay=%s,len=%d):u=payload:%s", te.RelayName, len(te.Payload), k.label), te.Payload, k.data)
+			}
+			for _, k := range keys {
+				appendCand(&cands, fmt.Sprintf("te2 payload(relay=%s,len=%d):user=none:%s", te.RelayName, len(te.Payload), k.label), nil, k.data)
+			}
+			added++
+		}
+	}
 	deriveHMAC := envTruthyDefault("QP_CALL_RELAY_TURN_DERIVE_HMAC", true)
 	var relayKeyDecoded []byte
 	var relayKeyDecoded2 []byte
@@ -976,6 +1648,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if rb.Key != "" {
 		if b1, ok := decodeMaybeBase64(rb.Key); ok {
 			relayKeyDecoded = b1
+			if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+				appendMiKDF(fmt.Sprintf("relay.key(dec1_b64,len=%d)", len(b1)), b1)
+			}
 			for _, u := range userVariants {
 				appendKeyVariantsUserEncodings(&cands, fmt.Sprintf("relay.key(dec1_b64,len=%d):u=%s", len(b1), u.label), u.data, b1)
 				appendMD5RealmEmptyCandidates(&cands, fmt.Sprintf("relay.key(dec1_b64,len=%d):u=%s", len(b1), u.label), u.data, b1)
@@ -983,6 +1658,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			appendKeyVariantsNoUser(&cands, fmt.Sprintf("relay.key(dec1_b64,len=%d)", len(b1)), b1)
 			if b2, depth, ok2 := decodeMaybeBase64Recursive(rb.Key, 2); ok2 && depth >= 2 && len(b2) > 0 && !bytes.Equal(b2, b1) {
 				relayKeyDecoded2 = b2
+				if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+					appendMiKDF(fmt.Sprintf("relay.key(dec2_b64,len=%d)", len(b2)), b2)
+				}
 				for _, u := range userVariants {
 					appendKeyVariantsUserEncodings(&cands, fmt.Sprintf("relay.key(dec2_b64,len=%d):u=%s", len(b2), u.label), u.data, b2)
 					appendMD5RealmEmptyCandidates(&cands, fmt.Sprintf("relay.key(dec2_b64,len=%d):u=%s", len(b2), u.label), u.data, b2)
@@ -999,6 +1677,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if rb.HBHKey != "" {
 		if b1, ok := decodeMaybeBase64(rb.HBHKey); ok {
 			hbhKeyDecoded = b1
+			if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+				appendMiKDF(fmt.Sprintf("relay.hbh_key(dec1_b64,len=%d)", len(b1)), b1)
+			}
 			for _, u := range userVariants {
 				appendKeyVariantsUserEncodings(&cands, fmt.Sprintf("relay.hbh_key(dec1_b64,len=%d):u=%s", len(b1), u.label), u.data, b1)
 				appendMD5RealmEmptyCandidates(&cands, fmt.Sprintf("relay.hbh_key(dec1_b64,len=%d):u=%s", len(b1), u.label), u.data, b1)
@@ -1006,6 +1687,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			appendKeyVariantsNoUser(&cands, fmt.Sprintf("relay.hbh_key(dec1_b64,len=%d)", len(b1)), b1)
 			if b2, depth, ok2 := decodeMaybeBase64Recursive(rb.HBHKey, 2); ok2 && depth >= 2 && len(b2) > 0 && !bytes.Equal(b2, b1) {
 				hbhKeyDecoded2 = b2
+				if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+					appendMiKDF(fmt.Sprintf("relay.hbh_key(dec2_b64,len=%d)", len(b2)), b2)
+				}
 				for _, u := range userVariants {
 					appendKeyVariantsUserEncodings(&cands, fmt.Sprintf("relay.hbh_key(dec2_b64,len=%d):u=%s", len(b2), u.label), u.data, b2)
 					appendMD5RealmEmptyCandidates(&cands, fmt.Sprintf("relay.hbh_key(dec2_b64,len=%d):u=%s", len(b2), u.label), u.data, b2)
@@ -1059,6 +1743,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		}
 
 		seenPairs := map[string]bool{}
+		payloadUserAdded := 0
 		for _, te := range rb.TE2 {
 			tokID := strings.TrimSpace(te.TokenID)
 			authID := strings.TrimSpace(te.AuthTokenID)
@@ -1089,6 +1774,18 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				}
 			}
 			if tok != "" && auth != "" {
+				// Try TE2 payload as USERNAME with key=token/auth raw bytes (budget-limited).
+				// This tests the mapping: payload selects/derives the auth key rather than UUID.
+				if te2PayloadMax > 0 && payloadUserAdded < te2PayloadMax && len(te.Payload) > 0 {
+					appendCand(&cands, fmt.Sprintf("te2 payload-user(relay=%s,len=%d) tok(%s) auth(%s):u=payload:key=authRaw", te.RelayName, len(te.Payload), tokID, authID), te.Payload, authRawBytes)
+					appendCand(&cands, fmt.Sprintf("te2 payload-user(relay=%s,len=%d) tok(%s) auth(%s):u=payload:key=tokRaw", te.RelayName, len(te.Payload), tokID, authID), te.Payload, tokRawBytes)
+					// Also try the original text form (often base64) as the key.
+					// Some short-term schemes use ASCII secrets directly instead of decoded bytes.
+					appendCand(&cands, fmt.Sprintf("te2 payload-user(relay=%s,len=%d) tok(%s) auth(%s):u=payload:key=authText", te.RelayName, len(te.Payload), tokID, authID), te.Payload, []byte(strings.TrimSpace(auth)))
+					appendCand(&cands, fmt.Sprintf("te2 payload-user(relay=%s,len=%d) tok(%s) auth(%s):u=payload:key=tokText", te.RelayName, len(te.Payload), tokID, authID), te.Payload, []byte(strings.TrimSpace(tok)))
+					payloadUserAdded++
+				}
+
 				// Optional: TURN REST-style derived password.
 				// NOTE: In observed offers, te2 payload length is 6/18 and looks like endpoint bytes,
 				// so it is likely NOT a TURN username. Instead, try small stable usernames: tokID/authID
@@ -1316,13 +2013,20 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			appendKeyVariants(&cands, fmt.Sprintf("auth-only(id=%s,len=%d)", t.ID, len(t.Value)), []byte(t.Value), []byte(t.Value))
 		}
 	}
-	if len(cands) == 0 {
-		cm.logger.Warnf("⚠️📡 [RELAY-TURN] No integrity candidates available (CallID=%s)", callID)
-		return nil
+	if tryIntegrity {
+		if len(cands) == 0 {
+			cm.logger.Warnf("⚠️📡 [RELAY-TURN] No integrity candidates available (CallID=%s)", callID)
+			// Still dump if requested.
+			if !envTruthy("QP_CALL_DUMP_TURN_PROBE") {
+				return nil
+			}
+			tryIntegrity = false
+		}
 	}
 
 	// Category counts to understand what will be tried under maxTry.
 	countLT := 0
+	countMiKDF := 0
 	countDrv := 0
 	countTE2 := 0
 	countRelayKey := 0
@@ -1330,12 +2034,16 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	countTokOnly := 0
 	countAuthOnly := 0
 	countREST := 0
-	cands = dedupeTurnIntegrityCandidates(cands)
+	if tryIntegrity {
+		cands = dedupeTurnIntegrityCandidates(cands)
+	}
 	for _, c := range cands {
 		l := c.label
 		switch {
 		case strings.HasPrefix(l, "lt "):
 			countLT++
+		case strings.Contains(l, "miKDF"):
+			countMiKDF++
 		case strings.HasPrefix(l, "rest "):
 			countREST++
 		case strings.HasPrefix(l, "drv ") || strings.Contains(l, ":drv="):
@@ -1352,9 +2060,11 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			countAuthOnly++
 		}
 	}
-	cm.logger.Warnf("📡 [RELAY-TURN] Candidate buckets: lt=%d rest=%d relay.key=%d relay.hbh=%d te2=%d drv=%d tokenOnly=%d authOnly=%d (CallID=%s)", countLT, countREST, countRelayKey, countRelayHBH, countTE2, countDrv, countTokOnly, countAuthOnly, callID)
+	if tryIntegrity {
+		cm.logger.Warnf("📡 [RELAY-TURN] Candidate buckets: lt=%d mikdf=%d rest=%d relay.key=%d relay.hbh=%d te2=%d drv=%d tokenOnly=%d authOnly=%d (CallID=%s)", countLT, countMiKDF, countREST, countRelayKey, countRelayHBH, countTE2, countDrv, countTokOnly, countAuthOnly, callID)
+	}
 
-	if deriveHMAC {
+	if tryIntegrity && deriveHMAC {
 		sort.SliceStable(cands, func(i, j int) bool {
 			pi := 10
 			pj := 10
@@ -1370,22 +2080,26 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				s = strings.ToLower(s)
 				s = strings.ReplaceAll(s, "u=", "u=")
 				switch {
-				case strings.Contains(s, "u=uuid(bin)"):
+				case strings.Contains(s, "payload-user("):
+					// Force TE2 payload-as-USERNAME mapping candidates (token/auth-keyed) early.
+					// These can otherwise be starved under the default per-family TE2 budget.
 					return 0
-				case strings.Contains(s, "u=uuid"):
+				case strings.Contains(s, "u=uuid(bin)"):
 					return 1
-				case strings.Contains(s, "u=uuid:self") || strings.Contains(s, "u=self:uuid"):
+				case strings.Contains(s, "u=uuid"):
 					return 2
-				case strings.Contains(s, "u=uuid:peer") || strings.Contains(s, "u=peer:uuid"):
+				case strings.Contains(s, "u=uuid:self") || strings.Contains(s, "u=self:uuid"):
 					return 3
-				case strings.Contains(s, "u=self:peer") || strings.Contains(s, "u=peer:self"):
+				case strings.Contains(s, "u=uuid:peer") || strings.Contains(s, "u=peer:uuid"):
 					return 4
-				case strings.Contains(s, "u=self"):
+				case strings.Contains(s, "u=self:peer") || strings.Contains(s, "u=peer:self"):
 					return 5
-				case strings.Contains(s, "u=peer"):
+				case strings.Contains(s, "u=self"):
 					return 6
-				case strings.Contains(s, "accept.te"):
+				case strings.Contains(s, "u=peer"):
 					return 7
+				case strings.Contains(s, "accept.te"):
+					return 8
 				default:
 					return 9
 				}
@@ -1395,7 +2109,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				// Prefer raw USERNAME/key encodings first; then base64/hex text variants.
 				s := strings.ToLower(label)
 				switch {
-				case strings.Contains(s, "uenc=raw") || strings.Contains(s, "key=raw"):
+				case strings.Contains(s, "uenc=raw") || strings.Contains(s, "key=raw") || strings.Contains(s, "key=authraw") || strings.Contains(s, "key=tokraw"):
 					return 0
 				case strings.Contains(s, "uenc=b64") || strings.Contains(s, "key=b64"):
 					return 1
@@ -1412,36 +2126,43 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				if strings.HasPrefix(label, "lt ") {
 					return 0
 				}
-				// Offer-derived enc candidates are high-signal and should be tried early.
-				if strings.HasPrefix(label, "enc.") {
+				if strings.Contains(label, "miKDF") {
 					return 1
 				}
-				// REST-like candidates are derived from relays/TE2 material and must be tried early,
-				// otherwise relay.key() alone can consume the whole maxTry window.
-				if strings.HasPrefix(label, "rest ") {
+				// Direct extra-attrs-as-key attempts: small but high-signal.
+				if strings.HasPrefix(label, "extra-key(") {
 					return 2
 				}
-				if strings.HasPrefix(label, "relay.key(") {
+				// Offer-derived enc candidates are high-signal and should be tried early.
+				if strings.HasPrefix(label, "enc.") {
 					return 3
 				}
-				if strings.HasPrefix(label, "relay.hbh_key(") {
+				// REST-like candidates are derived from relays/TE2 material and must be tried early.
+				if strings.HasPrefix(label, "rest ") {
 					return 4
 				}
 				// TE2 mapping (token_id/auth_token_id) is often used as TURN username/password.
-				// However, we've observed repeated HMAC mismatches; try direct relay keys first.
+				// In practice, relay.key()/hbh_key variants are so numerous that TE2 can be starved under maxTry.
+				// Prioritize TE2 earlier so we get broader TE2 coverage per call.
 				if strings.HasPrefix(label, "te2 ") || strings.HasPrefix(label, "te2(") {
 					return 5
 				}
-				if strings.HasPrefix(label, "drv ") || strings.Contains(label, ":drv=") {
+				if strings.HasPrefix(label, "relay.key(") {
 					return 6
 				}
-				if strings.HasPrefix(label, "token-only(") {
+				if strings.HasPrefix(label, "relay.hbh_key(") {
 					return 7
 				}
-				if strings.HasPrefix(label, "auth-only(") {
+				if strings.HasPrefix(label, "drv ") || strings.Contains(label, ":drv=") {
 					return 8
 				}
-				return 9
+				if strings.HasPrefix(label, "token-only(") {
+					return 9
+				}
+				if strings.HasPrefix(label, "auth-only(") {
+					return 10
+				}
+				return 10
 			}
 
 			pi = prio(li)
@@ -1485,6 +2206,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	// Collect attempt results for optional dump (labels only, no secrets).
 	attemptResults := make([]callTurnProbeAttemptResult, 0, maxTry)
 	familyOf := func(label string) string {
+		if strings.Contains(label, "miKDF") {
+			return "mikdf"
+		}
 		if strings.HasPrefix(label, "lt ") {
 			return "lt"
 		}
@@ -1506,6 +2230,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		if strings.HasPrefix(label, "drv ") || strings.Contains(label, ":drv=") {
 			return "drv"
 		}
+		if strings.HasPrefix(label, "extra-key(") {
+			return "extra-key"
+		}
 		if strings.HasPrefix(label, "token-only(") {
 			return "token-only"
 		}
@@ -1518,7 +2245,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	// Per-family budgets (caps). These defaults are tuned for diversity within maxTry.
 	budgets := map[string]int{
 		"enc":        clampInt(envInt("QP_CALL_RELAY_TURN_ENC_BUDGET", 20), 0, maxTry),
+		"mikdf":      clampInt(envInt("QP_CALL_RELAY_TURN_MIKDF_BUDGET", 20), 0, maxTry),
 		"rest":       clampInt(envInt("QP_CALL_RELAY_TURN_REST_BUDGET", 20), 0, maxTry),
+		"extra-key":  clampInt(envInt("QP_CALL_RELAY_TURN_EXTRA_KEY_BUDGET", 15), 0, maxTry),
 		"relay.key":  clampInt(envInt("QP_CALL_RELAY_TURN_RELAY_KEY_BUDGET", 30), 0, maxTry),
 		"relay.hbh":  clampInt(envInt("QP_CALL_RELAY_TURN_RELAY_HBH_BUDGET", 30), 0, maxTry),
 		"te2":        clampInt(envInt("QP_CALL_RELAY_TURN_TE2_BUDGET", 25), 0, maxTry),
@@ -1530,243 +2259,267 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	}
 	triedByFamily := map[string]int{}
 	attemptIndex := 0
-	for i := 0; i < len(cands) && attemptIndex < maxTry; i++ {
-		c := cands[i]
-		fam := familyOf(c.label)
-		capV, ok := budgets[fam]
-		if ok {
-			if capV == 0 || triedByFamily[fam] >= capV {
-				continue
+	if tryIntegrity {
+		for i := 0; i < len(cands) && attemptIndex < maxTry; i++ {
+			c := cands[i]
+			fam := familyOf(c.label)
+			capV, ok := budgets[fam]
+			if ok {
+				if capV == 0 || triedByFamily[fam] >= capV {
+					continue
+				}
 			}
-		}
-		triedByFamily[fam] = triedByFamily[fam] + 1
-		curAttemptIndex := attemptIndex
-		attemptIndex++
-		req := stun.MustBuild(stun.TransactionID)
-		txid := stunTxIDHex(req)
-		req.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
-		req.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
-		if len(c.username) > 0 {
-			req.Add(stun.AttrUsername, c.username)
-		}
-		if c.longTerm {
-			if len(c.realm) > 0 {
-				_ = stun.NewRealm(string(c.realm)).AddTo(req)
+			triedByFamily[fam] = triedByFamily[fam] + 1
+			curAttemptIndex := attemptIndex
+			attemptIndex++
+			req := stun.MustBuild(stun.TransactionID)
+			txid := stunTxIDHex(req)
+			req.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
+			if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+				req.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
 			}
-			if len(c.nonce) > 0 {
-				_ = stun.NewNonce(string(c.nonce)).AddTo(req)
+			addTurnExtraAttrsForEndpoint(req, extra, remote)
+			if !forceNoUsername && len(c.username) > 0 {
+				req.Add(stun.AttrUsername, c.username)
 			}
-		}
+			if c.longTerm {
+				if len(c.realm) > 0 {
+					_ = stun.NewRealm(string(c.realm)).AddTo(req)
+				}
+				if len(c.nonce) > 0 {
+					_ = stun.NewNonce(string(c.nonce)).AddTo(req)
+				}
+			}
 
-		// IMPORTANT: Encode BEFORE adding MESSAGE-INTEGRITY/FINGERPRINT.
-		// Re-encoding after MESSAGE-INTEGRITY will invalidate the computed HMAC.
-		req.Encode()
-		if len(c.key) > 0 {
-			if tryMI256 {
-				if err := addMessageIntegritySHA256(req, c.key); err != nil {
-					cm.logger.Warnf("⚠️📡 [RELAY-TURN] MI-SHA256 add failed, falling back to SHA1: cand=%s err=%v (CallID=%s)", c.label, err, callID)
-					tryMI256 = false
+			// IMPORTANT: Encode BEFORE adding MESSAGE-INTEGRITY/FINGERPRINT.
+			// Re-encoding after MESSAGE-INTEGRITY will invalidate the computed HMAC.
+			req.Encode()
+			attemptPreimage := append([]byte(nil), req.Raw...)
+			if len(c.key) > 0 {
+				if tryMI256 {
+					if err := addMessageIntegritySHA256(req, c.key); err != nil {
+						cm.logger.Warnf("⚠️📡 [RELAY-TURN] MI-SHA256 add failed, falling back to SHA1: cand=%s err=%v (CallID=%s)", c.label, err, callID)
+						tryMI256 = false
+						_ = stun.MessageIntegrity(c.key).AddTo(req)
+					}
+				} else {
 					_ = stun.MessageIntegrity(c.key).AddTo(req)
 				}
-			} else {
-				_ = stun.MessageIntegrity(c.key).AddTo(req)
 			}
-		}
-		if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
-			_ = stun.Fingerprint.AddTo(req)
-		}
-		if _, err := conn.Write(req.Raw); err != nil {
-			if txid != "" {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt write failed: txid=%s cand=%s err=%v (CallID=%s)", txid, c.label, err, callID)
-			} else {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt write failed: cand=%s err=%v (CallID=%s)", c.label, err, callID)
+			if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
+				_ = stun.Fingerprint.AddTo(req)
 			}
-			continue
-		}
-		_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
-		n2, err := conn.Read(buf)
-		if err != nil {
-			if txid != "" {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt read failed: txid=%s cand=%s err=%v (CallID=%s)", txid, c.label, err, callID)
-			} else {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt read failed: cand=%s err=%v (CallID=%s)", c.label, err, callID)
+			if captureReqs && len(requestDumps) < capMax {
+				maybeCap(fmt.Sprintf("attempt_%d", curAttemptIndex), req, attemptPreimage)
 			}
-			continue
-		}
-		if n2 <= 0 {
-			if txid != "" {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt empty read: txid=%s cand=%s (CallID=%s)", txid, c.label, callID)
-			} else {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt empty read: cand=%s (CallID=%s)", c.label, callID)
-			}
-			continue
-		}
-		resp2Raw := buf[:n2]
-		if !isSTUNPacket(resp2Raw) {
-			if txid != "" {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt non-STUN response: txid=%s cand=%s bytes=%d (CallID=%s)", txid, c.label, n2, callID)
-			} else {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt non-STUN response: cand=%s bytes=%d (CallID=%s)", c.label, n2, callID)
-			}
-			continue
-		}
-		var resp2 stun.Message
-		resp2.Raw = resp2Raw
-		if err := resp2.Decode(); err != nil {
-			if txid != "" {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt decode failed: txid=%s cand=%s err=%v (CallID=%s)", txid, c.label, err, callID)
-			} else {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt decode failed: cand=%s err=%v (CallID=%s)", c.label, err, callID)
-			}
-			continue
-		}
-		if txid != "" {
-			respTxID := stunTxIDHex(&resp2)
-			if respTxID != "" && respTxID != txid {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt txid mismatch: req=%s resp=%s cand=%s relay=%s endpoint=%s (CallID=%s)", txid, respTxID, c.label, ep.RelayName, endpoint, callID)
-			}
-		}
-
-		// Extract STUN error info if present.
-		var ec stun.ErrorCodeAttribute
-		code := 0
-		reason := ""
-		if err := ec.GetFrom(&resp2); err == nil {
-			code = int(ec.Code)
-			reason = strings.TrimSpace(string(ec.Reason))
-		}
-
-		// Optional: extract nonce/realm if server switches to long-term auth.
-		var nonce stun.Nonce
-		var realm stun.Realm
-		_ = resp2.Parse(&nonce, &realm)
-		nonceLen := len([]byte(nonce))
-		realmLen := len([]byte(realm))
-
-		algo := "sha1"
-		if tryMI256 {
-			algo = "sha256"
-		}
-		if txid != "" {
-			cm.logger.Warnf("📡 [RELAY-TURN] Integrity attempt result: txid=%s cand=%s algo=%s userLen=%d keyLen=%d code=%d reason=%q nonceLen=%d realmLen=%d (CallID=%s)", txid, c.label, algo, len(c.username), len(c.key), code, reason, nonceLen, realmLen, callID)
-		} else {
-			cm.logger.Warnf("📡 [RELAY-TURN] Integrity attempt result: cand=%s algo=%s userLen=%d keyLen=%d code=%d reason=%q nonceLen=%d realmLen=%d (CallID=%s)", c.label, algo, len(c.username), len(c.key), code, reason, nonceLen, realmLen, callID)
-		}
-		attemptResults = append(attemptResults, callTurnProbeAttemptResult{
-			Index:     curAttemptIndex,
-			TxID:      txid,
-			Cand:      c.label,
-			Algo:      algo,
-			UserLen:   len(c.username),
-			KeyLen:    len(c.key),
-			Code:      code,
-			Reason:    reason,
-			NonceLen:  nonceLen,
-			RealmLen:  realmLen,
-			Success:   resp2.Type.Class == stun.ClassSuccessResponse,
-			LongTerm:  c.longTerm,
-			TryMI256:  tryMI256,
-			Endpoint:  endpoint,
-			RelayName: ep.RelayName,
-		})
-
-		// If the server reveals REALM/NONCE only after integrity attempts, immediately add and try long-term candidates.
-		if !ltAppended && realmLen > 0 && nonceLen > 0 {
-			ltRealm = []byte(realm)
-			ltNonce = []byte(nonce)
-			if added := appendLongTermCandidatesFromRelayBlock(&cands, rb, ltRealm, ltNonce); added > 0 {
-				ltAppended = true
-				cm.logger.Warnf("🔐📡 [RELAY-TURN] Learned REALM/NONCE during attempts; appended long-term candidates: added=%d total=%d (CallID=%s)", added, len(cands), callID)
-				if deriveHMAC {
-					sort.SliceStable(cands, func(i2, j2 int) bool {
-						li := cands[i2].label
-						lj := cands[j2].label
-						prio := func(label string) int {
-							if strings.HasPrefix(label, "lt ") {
-								return 0
-							}
-							if strings.HasPrefix(label, "rest ") {
-								return 1
-							}
-							if strings.HasPrefix(label, "relay.key(") {
-								return 2
-							}
-							if strings.HasPrefix(label, "relay.hbh_key(") {
-								return 3
-							}
-							if strings.HasPrefix(label, "te2 ") || strings.HasPrefix(label, "te2(") {
-								return 4
-							}
-							if strings.HasPrefix(label, "drv ") || strings.Contains(label, ":drv=") {
-								return 5
-							}
-							if strings.HasPrefix(label, "token-only(") {
-								return 6
-							}
-							if strings.HasPrefix(label, "auth-only(") {
-								return 7
-							}
-							return 9
-						}
-						pi := prio(li)
-						pj := prio(lj)
-						if pi != pj {
-							return pi < pj
-						}
-						return li < lj
-					})
+			if _, err := conn.Write(req.Raw); err != nil {
+				if txid != "" {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt write failed: txid=%s cand=%s err=%v (CallID=%s)", txid, c.label, err, callID)
+				} else {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt write failed: cand=%s err=%v (CallID=%s)", c.label, err, callID)
 				}
-				// Restart the loop so newly-added lt candidates are attempted early.
-				i = -1
 				continue
 			}
-		}
-
-		// If relay can't decode requests with MI-SHA256, disable it for subsequent attempts.
-		if tryMI256 {
-			if code == 456 || code == 420 || strings.Contains(strings.ToLower(reason), "decode") || strings.Contains(strings.ToLower(reason), "unknown") {
-				cm.logger.Warnf("⚠️📡 [RELAY-TURN] Disabling MI-SHA256 after server error: code=%d reason=%q (CallID=%s)", code, reason, callID)
-				tryMI256 = false
+			_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
+			n2, err := conn.Read(buf)
+			if err != nil {
+				if txid != "" {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt read failed: txid=%s cand=%s err=%v (CallID=%s)", txid, c.label, err, callID)
+				} else {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt read failed: cand=%s err=%v (CallID=%s)", c.label, err, callID)
+				}
+				continue
 			}
-		}
+			if n2 <= 0 {
+				if txid != "" {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt empty read: txid=%s cand=%s (CallID=%s)", txid, c.label, callID)
+				} else {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt empty read: cand=%s (CallID=%s)", c.label, callID)
+				}
+				continue
+			}
+			resp2Raw := buf[:n2]
+			if !isSTUNPacket(resp2Raw) {
+				if txid != "" {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt non-STUN response: txid=%s cand=%s bytes=%d (CallID=%s)", txid, c.label, n2, callID)
+				} else {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt non-STUN response: cand=%s bytes=%d (CallID=%s)", c.label, n2, callID)
+				}
+				continue
+			}
+			var resp2 stun.Message
+			resp2.Raw = resp2Raw
+			if err := resp2.Decode(); err != nil {
+				if txid != "" {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt decode failed: txid=%s cand=%s err=%v (CallID=%s)", txid, c.label, err, callID)
+				} else {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt decode failed: cand=%s err=%v (CallID=%s)", c.label, err, callID)
+				}
+				continue
+			}
+			if txid != "" {
+				respTxID := stunTxIDHex(&resp2)
+				if respTxID != "" && respTxID != txid {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Integrity attempt txid mismatch: req=%s resp=%s cand=%s relay=%s endpoint=%s (CallID=%s)", txid, respTxID, c.label, ep.RelayName, endpoint, callID)
+				}
+			}
 
-		// Stop early only on meaningful state changes.
-		if resp2.Type.Class == stun.ClassSuccessResponse {
-			cm.logger.Warnf("✅📡 [RELAY-TURN] Allocate success candidate: cand=%s (CallID=%s)", c.label, callID)
-			break
-		}
-		if code == int(stun.CodeUnauthorized) || code == int(stun.CodeStaleNonce) || nonceLen > 0 || realmLen > 0 {
-			cm.logger.Warnf("🔐📡 [RELAY-TURN] Server requested long-term auth: cand=%s code=%d (CallID=%s)", c.label, code, callID)
-			break
+			// Extract STUN error info if present.
+			var ec stun.ErrorCodeAttribute
+			code := 0
+			reason := ""
+			if err := ec.GetFrom(&resp2); err == nil {
+				code = int(ec.Code)
+				reason = strings.TrimSpace(string(ec.Reason))
+			}
+
+			respMsgType := stunMsgTypeHexFromMessage(&resp2)
+			mappedEndpoint := ""
+			extra4002Hex := ""
+			if resp2.Type.Method == stun.Method(0x003) && resp2.Type.Class == stun.ClassSuccessResponse {
+				mappedEndpoint, extra4002Hex = extractMappedEndpointAnd4002(&resp2)
+			}
+
+			// Optional: extract nonce/realm if server switches to long-term auth.
+			var nonce stun.Nonce
+			var realm stun.Realm
+			_ = resp2.Parse(&nonce, &realm)
+			nonceLen := len([]byte(nonce))
+			realmLen := len([]byte(realm))
+
+			algo := "sha1"
+			if tryMI256 {
+				algo = "sha256"
+			}
+			if txid != "" {
+				cm.logger.Warnf("📡 [RELAY-TURN] Integrity attempt result: txid=%s cand=%s algo=%s userLen=%d keyLen=%d code=%d reason=%q nonceLen=%d realmLen=%d (CallID=%s)", txid, c.label, algo, len(c.username), len(c.key), code, reason, nonceLen, realmLen, callID)
+			} else {
+				cm.logger.Warnf("📡 [RELAY-TURN] Integrity attempt result: cand=%s algo=%s userLen=%d keyLen=%d code=%d reason=%q nonceLen=%d realmLen=%d (CallID=%s)", c.label, algo, len(c.username), len(c.key), code, reason, nonceLen, realmLen, callID)
+			}
+			attemptResults = append(attemptResults, callTurnProbeAttemptResult{
+				Index:          curAttemptIndex,
+				TxID:           txid,
+				Cand:           c.label,
+				Algo:           algo,
+				UserLen:        len(c.username),
+				KeyLen:         len(c.key),
+				Code:           code,
+				Reason:         reason,
+				NonceLen:       nonceLen,
+				RealmLen:       realmLen,
+				Success:        resp2.Type.Method == stun.Method(0x003) && resp2.Type.Class == stun.ClassSuccessResponse,
+				LongTerm:       c.longTerm,
+				TryMI256:       tryMI256,
+				Endpoint:       endpoint,
+				RelayName:      ep.RelayName,
+				RespMsgType:    respMsgType,
+				MappedEndpoint: mappedEndpoint,
+				Extra4002Hex:   extra4002Hex,
+			})
+
+			// If the server reveals REALM/NONCE only after integrity attempts, immediately add and try long-term candidates.
+			if !ltAppended && realmLen > 0 && nonceLen > 0 {
+				ltRealm = []byte(realm)
+				ltNonce = []byte(nonce)
+				if added := appendLongTermCandidatesFromRelayBlock(&cands, rb, ltRealm, ltNonce); added > 0 {
+					ltAppended = true
+					cm.logger.Warnf("🔐📡 [RELAY-TURN] Learned REALM/NONCE during attempts; appended long-term candidates: added=%d total=%d (CallID=%s)", added, len(cands), callID)
+					if deriveHMAC {
+						sort.SliceStable(cands, func(i2, j2 int) bool {
+							li := cands[i2].label
+							lj := cands[j2].label
+							prio := func(label string) int {
+								if strings.HasPrefix(label, "lt ") {
+									return 0
+								}
+								if strings.HasPrefix(label, "rest ") {
+									return 1
+								}
+								if strings.HasPrefix(label, "relay.key(") {
+									return 2
+								}
+								if strings.HasPrefix(label, "relay.hbh_key(") {
+									return 3
+								}
+								if strings.HasPrefix(label, "te2 ") || strings.HasPrefix(label, "te2(") {
+									return 4
+								}
+								if strings.HasPrefix(label, "drv ") || strings.Contains(label, ":drv=") {
+									return 5
+								}
+								if strings.HasPrefix(label, "token-only(") {
+									return 6
+								}
+								if strings.HasPrefix(label, "auth-only(") {
+									return 7
+								}
+								return 9
+							}
+							pi := prio(li)
+							pj := prio(lj)
+							if pi != pj {
+								return pi < pj
+							}
+							return li < lj
+						})
+					}
+					// Restart the loop so newly-added lt candidates are attempted early.
+					i = -1
+					continue
+				}
+			}
+
+			// If relay can't decode requests with MI-SHA256, disable it for subsequent attempts.
+			if tryMI256 {
+				if code == 456 || code == 420 || strings.Contains(strings.ToLower(reason), "decode") || strings.Contains(strings.ToLower(reason), "unknown") {
+					cm.logger.Warnf("⚠️📡 [RELAY-TURN] Disabling MI-SHA256 after server error: code=%d reason=%q (CallID=%s)", code, reason, callID)
+					tryMI256 = false
+				}
+			}
+
+			// Stop early only on meaningful state changes.
+			if resp2.Type.Method == stun.Method(0x003) && resp2.Type.Class == stun.ClassSuccessResponse {
+				cm.logger.Warnf("✅📡 [RELAY-TURN] Allocate SUCCESS candidate: cand=%s mapped=%s a4002=%s (CallID=%s)", c.label, mappedEndpoint, extra4002Hex, callID)
+				break
+			}
+			if code == int(stun.CodeUnauthorized) || code == int(stun.CodeStaleNonce) || nonceLen > 0 || realmLen > 0 {
+				cm.logger.Warnf("🔐📡 [RELAY-TURN] Server requested long-term auth: cand=%s code=%d (CallID=%s)", c.label, code, callID)
+				break
+			}
 		}
 	}
 
 	if envTruthy("QP_CALL_DUMP_TURN_PROBE") {
 		dump := callTurnProbeDump{
-			Kind:               "TurnProbe",
-			Captured:           time.Now().UTC().Format(time.RFC3339Nano),
-			CallID:             callID,
-			RelayName:          ep.RelayName,
-			Endpoint:           endpoint,
-			LocalAddr:          local,
-			BaseAllocateTxID:   baseAllocateTxID,
-			BaseAllocateCode:   baseAllocateCode,
-			BaseAllocateReason: baseAllocateReason,
-			BaseNonceLen:       baseNonceLen,
-			BaseRealmLen:       baseRealmLen,
-			DiscoveryTxID:      discTxID,
-			DiscoveryUser:      discUser,
-			DiscoveryCode:      discCode,
-			DiscoveryReason:    discReason,
-			DiscoveryNonceLen:  discNonceLen,
-			DiscoveryRealmLen:  discRealmLen,
-			RelayUUID:          strings.TrimSpace(rb.UUID),
-			SelfPID:            strings.TrimSpace(rb.SelfPID),
-			PeerPID:            strings.TrimSpace(rb.PeerPID),
-			HasKey:             strings.TrimSpace(rb.Key) != "",
-			HasHBHKey:          strings.TrimSpace(rb.HBHKey) != "",
+			Kind:                "TurnProbe",
+			Captured:            time.Now().UTC().Format(time.RFC3339Nano),
+			CallID:              callID,
+			RelayName:           ep.RelayName,
+			Endpoint:            endpoint,
+			LocalAddr:           local,
+			BaseAllocateTxID:    baseAllocateTxID,
+			BaseAllocateSuccess: baseAllocateSuccess,
+			BaseRespMsgType:     baseRespMsgType,
+			BaseMappedEndpoint:  baseMappedEndpoint,
+			BaseExtra4002Hex:    baseExtra4002Hex,
+			BaseAllocateCode:    baseAllocateCode,
+			BaseAllocateReason:  baseAllocateReason,
+			BaseNonceLen:        baseNonceLen,
+			BaseRealmLen:        baseRealmLen,
+			DiscoveryTxID:       discTxID,
+			DiscoveryUser:       discUser,
+			DiscoveryCode:       discCode,
+			DiscoveryReason:     discReason,
+			DiscoveryNonceLen:   discNonceLen,
+			DiscoveryRealmLen:   discRealmLen,
+			RelayUUID:           strings.TrimSpace(rb.UUID),
+			SelfPID:             strings.TrimSpace(rb.SelfPID),
+			PeerPID:             strings.TrimSpace(rb.PeerPID),
+			HasKey:              strings.TrimSpace(rb.Key) != "",
+			HasHBHKey:           strings.TrimSpace(rb.HBHKey) != "",
 			Buckets: map[string]int{
 				"lt":        countLT,
+				"mikdf":     countMiKDF,
 				"relay_key": countRelayKey,
 				"relay_hbh": countRelayHBH,
 				"te2":       countTE2,
@@ -1775,6 +2528,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				"authOnly":  countAuthOnly,
 			},
 			MaxTry:   maxTry,
+			Requests: requestDumps,
 			Attempts: attemptResults,
 		}
 		if p, e := DumpCallTurnProbeSummary(callID, dump); e == nil {

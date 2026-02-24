@@ -73,6 +73,8 @@ type CallHandshakeState struct {
 	LastAttempt             time.Time
 	AcceptSent              bool // se já enviamos ACCEPT (ex: modo direct)
 	Terminated              bool
+	TerminatedAt            time.Time
+	TerminateCleanupPlanned bool
 	OfferFrom               types.JID
 	OfferFromSet            bool
 
@@ -304,12 +306,45 @@ func (cm *WhatsmeowCallManager) markCallTerminated(callID string) {
 	if cm == nil || callID == "" {
 		return
 	}
-	cm.hsMutex.Lock()
-	defer cm.hsMutex.Unlock()
-	if st, ok := cm.handshakeStates[callID]; ok {
-		st.Terminated = true
-		delete(cm.handshakeStates, callID)
+	keepSeconds := 0
+	if raw := strings.TrimSpace(os.Getenv("QP_CALL_KEEP_STATE_AFTER_TERMINATE_SECONDS")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			if v < 0 {
+				v = 0
+			}
+			if v > 300 {
+				v = 300
+			}
+			keepSeconds = v
+		}
 	}
+
+	cm.hsMutex.Lock()
+	st, ok := cm.handshakeStates[callID]
+	if ok && st != nil {
+		st.Terminated = true
+		st.TerminatedAt = time.Now().UTC()
+		if keepSeconds <= 0 {
+			delete(cm.handshakeStates, callID)
+			cm.hsMutex.Unlock()
+			return
+		}
+		if !st.TerminateCleanupPlanned {
+			st.TerminateCleanupPlanned = true
+			delay := time.Duration(keepSeconds) * time.Second
+			cm.hsMutex.Unlock()
+			go func() {
+				time.Sleep(delay)
+				cm.hsMutex.Lock()
+				if st2, ok2 := cm.handshakeStates[callID]; ok2 && st2 != nil && st2.Terminated {
+					delete(cm.handshakeStates, callID)
+				}
+				cm.hsMutex.Unlock()
+			}()
+			return
+		}
+	}
+	cm.hsMutex.Unlock()
 }
 
 func (cm *WhatsmeowCallManager) addRelayEndpoint(callID string, ep RelayEndpoint) {
@@ -2122,6 +2157,26 @@ func (cm *WhatsmeowCallManager) sendAcceptResponseToTransport(from types.JID, ca
 func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) error {
 	cm.logger.Infof("📞⚡ [DIRECT-ACCEPT] Respondendo CallOffer diretamente com ACCEPT (sem PREACCEPT)")
 
+	// Optional: delay direct/snippet ACCEPT to avoid immediately taking ownership and getting
+	// an instant hangup before relay latency / probes can run.
+	// Clamp to 0..5000ms to keep behavior predictable.
+	delayMS := 0
+	if raw := strings.TrimSpace(os.Getenv("QP_CALL_DIRECT_ACCEPT_DELAY_MS")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			if v < 0 {
+				v = 0
+			}
+			if v > 5000 {
+				v = 5000
+			}
+			delayMS = v
+		}
+	}
+	if delayMS > 0 {
+		cm.logger.Warnf("🕰️📞 [DIRECT-ACCEPT-DELAY] Delaying ACCEPT by %dms (CallID=%s)", delayMS, callID)
+		time.Sleep(time.Duration(delayMS) * time.Millisecond)
+	}
+
 	ownID := cm.connection.Client.Store.ID
 	if ownID == nil {
 		return fmt.Errorf("own ID not available")
@@ -2172,6 +2227,7 @@ func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) 
 			}
 		}
 		cm.logger.Infof("✅⚡ [SNIPPET-ACCEPT-SENT] Snippet ACCEPT sent to=%s (awaiting remote TRANSPORT)", targetJID.String())
+		cm.MaybeStartRelaySessionProbe(callID)
 		return nil
 	}
 
@@ -2218,6 +2274,7 @@ func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) 
 	}
 
 	cm.logger.Infof("✅⚡ [DIRECT-ACCEPT-SENT] ACCEPT sent to=%s (awaiting remote TRANSPORT)", targetJID.String())
+	cm.MaybeStartRelaySessionProbe(callID)
 	return nil
 }
 

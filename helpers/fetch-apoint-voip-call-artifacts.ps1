@@ -9,6 +9,8 @@ param(
   [string]$CallID = "",
   [switch]$Latest,
   [int]$JournalTail = 6000,
+  [int]$WaitForNewDumpsSeconds = 8,
+  [int]$WaitForNewDumpsPollMs = 800,
   [string]$LocalBaseDir = ".dist/server_artifacts"
 )
 
@@ -91,6 +93,7 @@ $list = Invoke-RemoteBash @(
 )
 
 $remoteFiles = @($list | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+$downloaded = New-Object 'System.Collections.Generic.HashSet[string]'
 if ($remoteFiles.Count -eq 0) {
   Write-Warning "No files matched '$dumpDir/*$callIDSafe*'"
 } else {
@@ -98,7 +101,39 @@ if ($remoteFiles.Count -eq 0) {
   foreach ($f in $remoteFiles) {
     $src = "$User@${HostIP}:$f"
     & scp -i $KeyPath -P $SshPort $src $localOutDir | Out-Host
+    [void]$downloaded.Add($f)
   }
+}
+
+# 1.1) Some dumps are produced a couple seconds after the first ones (e.g. TURN probe dumps).
+# Re-scan for a short window and download anything new.
+if ($WaitForNewDumpsSeconds -gt 0) {
+  $deadline = (Get-Date).AddSeconds([math]::Max(1, $WaitForNewDumpsSeconds))
+  do {
+    Start-Sleep -Milliseconds ([math]::Max(200, $WaitForNewDumpsPollMs))
+
+    $list2 = Invoke-RemoteBash @(
+      'set -e',
+      ("cid='{0}'" -f $callIDSafe),
+      ("d='{0}'" -f $dumpDir),
+      'shopt -s nullglob',
+      'for f in "$d"/*"$cid"*; do',
+      '  if [ -f "$f" ]; then echo "$f"; fi',
+      'done'
+    )
+
+    $remoteFiles2 = @($list2 | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    $newOnes = @($remoteFiles2 | Where-Object { -not $downloaded.Contains($_) })
+    if ($newOnes.Count -gt 0) {
+      Write-Host ("Found {0} new dump file(s). Downloading..." -f $newOnes.Count) -ForegroundColor Yellow
+      foreach ($f in $newOnes) {
+        $src = "$User@${HostIP}:$f"
+        & scp -i $KeyPath -P $SshPort $src $localOutDir | Out-Host
+        [void]$downloaded.Add($f)
+      }
+      break
+    }
+  } while ((Get-Date) -lt $deadline)
 }
 
 # 2) Capture journal excerpts for this CallID

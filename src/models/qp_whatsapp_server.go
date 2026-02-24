@@ -659,10 +659,18 @@ func (source *QpWhatsappServer) Save(reason string) (err error) {
 
 	if ok {
 		logger.Debugf("updating server info: %+v", source)
-		return source.db.Update(source.QpServer)
+		err = source.db.Update(source.QpServer)
+		if err != nil {
+			logger.Errorf("failed to update server in database (token=%s wid=%s): %v", source.Token, source.Wid, err)
+		}
+		return err
 	} else {
 		logger.Debugf("adding server info: %+v", source)
-		return source.db.Add(source.QpServer)
+		err = source.db.Add(source.QpServer)
+		if err != nil {
+			logger.Errorf("failed to insert server in database (token=%s wid=%s): %v", source.Token, source.Wid, err)
+		}
+		return err
 	}
 }
 

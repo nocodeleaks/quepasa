@@ -141,8 +141,23 @@ func MigrateToLatest(logentry *log.Entry) (err error) {
 }
 
 func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
+	fullPath = strings.TrimRight(fullPath, "/\\")
 	log.Debugf("migrating files from: %s", fullPath)
 	files, err := os.ReadDir(fullPath)
+	if err != nil {
+		// Common case: binary is started from repo root, but migrations live in src/migrations.
+		// If <workdir>/migrations doesn't exist, fall back to <workdir>/src/migrations.
+		alt := filepath.Join(filepath.Dir(fullPath), "src", "migrations")
+		alt = strings.TrimRight(alt, "/\\")
+		if alt != fullPath {
+			if altFiles, altErr := os.ReadDir(alt); altErr == nil {
+				log.Infof("migrations path fallback: using %s", alt)
+				fullPath = alt
+				files = altFiles
+				err = nil
+			}
+		}
+	}
 	if err != nil {
 		if strings.Contains(err.Error(), "cannot find the file specified") {
 			log.Warnf("no migrations found at: %s", fullPath)

@@ -55,3 +55,5 @@ main.exe
 .dist/win-quepasa-service.exe
 **/.token
 .telegram.token
+apoint-voip-server.json
+src/.env.apoint-voip

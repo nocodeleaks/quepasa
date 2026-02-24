@@ -252,7 +252,12 @@ func GetBase() migrate.SqlxMigration {
 		CONSTRAINT "dispatching_pkey" PRIMARY KEY ("context", "connection_string")
 	  );
 	  
-	  INSERT OR REPLACE INTO migrations (id) VALUES
+	  -- IMPORTANT:
+	  -- This seed is only applied on brand-new/empty databases (base migration).
+	  -- It marks historical migrations as applied because the base schema already
+	  -- includes their end-state. Do NOT add new migration IDs here unless the
+	  -- base schema was also updated to include the same changes.
+	  INSERT OR IGNORE INTO migrations (id) VALUES
 	  ('202207131700'),
 	  ('202209281840'),
 	  ('202303011900'),

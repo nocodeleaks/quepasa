@@ -334,7 +334,6 @@ func (source *WhatsmeowConnection) logPrivacyTokenStatus(target types.JID) {
 }
 
 // endregion
-
 func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
 
 	var contextInfo *waE2E.ContextInfo

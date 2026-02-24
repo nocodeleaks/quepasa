@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - develop
-  pull_request:
-    types: [opened, reopened, synchronize, closed]
   issues:
     types: [opened, reopened, edited, closed]
   issue_comment:
@@ -51,13 +49,6 @@ jobs:
             COMMIT_MSG=$(jq -r '.head_commit.message // "(no message)"' "$GITHUB_EVENT_PATH")
             COMMIT_URL=$(jq -r '.head_commit.url // ""' "$GITHUB_EVENT_PATH")
             TEXT=$(printf " \n🚀 Push em %s\n\n📌 Branch: %s\n\n💬 %s\n\n%s" "${REPO}" "${REF_NAME}" "${COMMIT_MSG}" "${COMMIT_URL}")
-
-          elif [ "$EVENT" = "pull_request" ]; then
-            PR_NUMBER=$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")
-            PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
-            PR_URL=$(jq -r '.pull_request.html_url' "$GITHUB_EVENT_PATH")
-            PR_ACTION=$(jq -r '.action' "$GITHUB_EVENT_PATH")
-            TEXT=$(printf " \n🔀 Pull Request %s\n\n#%s - %s\n\n%s" "${PR_ACTION}" "${PR_NUMBER}" "${PR_TITLE}" "${PR_URL}")
 
           elif [ "$EVENT" = "issues" ]; then
             ISSUE_NUMBER=$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")

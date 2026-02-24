@@ -25,7 +25,6 @@
 
 ## Event Coverage
 - `push` (main, develop)
-- `pull_request` (opened, reopened, synchronize, closed)
 - `issues` (opened, reopened, edited, closed)
 - `issue_comment` (created)
 - `release` (published)

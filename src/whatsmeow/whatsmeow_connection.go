@@ -252,17 +252,24 @@ func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) 
 		contextInfo = source.GetInReplyContextInfo(msg)
 	}
 
+	messageText := msg.GetText()
+
 	// mentions ---------------------------------------
 	if msg.FromGroup() {
-		messageText := msg.GetText()
-		mentions := GetMentions(messageText)
-		if len(mentions) > 0 {
-
+		if ContainsMentionAll(messageText) {
 			if contextInfo == nil {
 				contextInfo = &waE2E.ContextInfo{}
 			}
+			contextInfo.NonJIDMentions = proto.Uint32(1)
+		} else {
+			mentions := GetMentions(messageText)
+			if len(mentions) > 0 {
+				if contextInfo == nil {
+					contextInfo = &waE2E.ContextInfo{}
+				}
 
-			contextInfo.MentionedJID = mentions
+				contextInfo.MentionedJID = mentions
+			}
 		}
 	}
 

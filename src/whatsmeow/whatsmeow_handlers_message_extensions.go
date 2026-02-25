@@ -258,13 +258,13 @@ func HandleReactionMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 
 	out.Type = whatsapp.TextMessageType
 	out.Text = in.GetText()
-	
+
 	// marking as reaction
 	out.InReaction = true
-	
+
 	// setting the message ID being reacted to
 	out.InReply = in.Key.GetID()
-	
+
 	// If text is empty, it means the reaction was removed
 	if out.Text == "" {
 		out.Info = "reaction removed"

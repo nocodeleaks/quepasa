@@ -170,6 +170,9 @@ definitions:
     properties:
       master_key:
         type: string
+      password:
+        description: default password for database seeding
+        type: string
       prefix:
         type: string
       signing_secret:
@@ -179,6 +182,9 @@ definitions:
         type: integer
       use_ssl_websocket:
         type: boolean
+      user:
+        description: default user for database seeding
+        type: string
       webhook_timeout:
         description: webhook timeout in milliseconds
         type: integer
@@ -257,6 +263,8 @@ definitions:
         type: string
       read_update:
         type: string
+      retry_message_store:
+        type: string
       wakeup_duration:
         type: string
       wakeup_hour:
@@ -284,6 +292,8 @@ definitions:
       convert_png_to_jpg:
         type: boolean
       convert_wave_to_ogg:
+        type: boolean
+      force_audio_as_ptt:
         type: boolean
       log_level:
         type: string
@@ -402,6 +412,8 @@ definitions:
         type: string
       whatsmeow_log_level:
         type: string
+      whatsmeow_use_retry_message_store:
+        type: boolean
     type: object
   models.QpContactsResponse:
     properties:
@@ -1426,7 +1438,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
+      description: Execute control commands for the bot server (start, stop, restart)
+        or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
       parameters:
       - description: Command action
         enum:
@@ -2371,8 +2384,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves pending messages from WhatsApp with optional timestamp
-        filtering and exceptions error filtering
+      description: Retrieves pending messages from WhatsApp with optional cache filters
       parameters:
       - description: Timestamp filter for messages
         in: query
@@ -2383,6 +2395,38 @@ paths:
           for all messages'
         in: query
         name: exceptions
+        type: string
+      - description: Filter by message type (supports comma-separated list)
+        in: query
+        name: type
+        type: string
+      - description: 'Filter by category: sent, received, sync, unhandled, events'
+        in: query
+        name: category
+        type: string
+      - description: Search text in id, chat, text, trackid, participant and exceptions
+        in: query
+        name: search
+        type: string
+      - description: 'Filter by fromme boolean: true or false'
+        in: query
+        name: fromme
+        type: string
+      - description: 'Filter by fromhistory boolean: true or false'
+        in: query
+        name: fromhistory
+        type: string
+      - description: Filter by chat id (contains)
+        in: query
+        name: chatid
+        type: string
+      - description: Filter by message id (contains)
+        in: query
+        name: messageid
+        type: string
+      - description: Filter by track id (contains)
+        in: query
+        name: trackid
         type: string
       produces:
       - application/json

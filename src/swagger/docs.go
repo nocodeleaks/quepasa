@@ -1776,7 +1776,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering",
+                "description": "Retrieves pending messages from WhatsApp with optional cache filters",
                 "consumes": [
                     "application/json"
                 ],
@@ -1798,6 +1798,54 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages",
                         "name": "exceptions",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message type (supports comma-separated list)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category: sent, received, sync, unhandled, events",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text in id, chat, text, trackid, participant and exceptions",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromme boolean: true or false",
+                        "name": "fromme",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromhistory boolean: true or false",
+                        "name": "fromhistory",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by chat id (contains)",
+                        "name": "chatid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message id (contains)",
+                        "name": "messageid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by track id (contains)",
+                        "name": "trackid",
                         "in": "query"
                     }
                 ],
@@ -2673,6 +2721,10 @@ const docTemplate = `{
                 "master_key": {
                     "type": "string"
                 },
+                "password": {
+                    "description": "default password for database seeding",
+                    "type": "string"
+                },
                 "prefix": {
                     "type": "string"
                 },
@@ -2685,6 +2737,10 @@ const docTemplate = `{
                 },
                 "use_ssl_websocket": {
                     "type": "boolean"
+                },
+                "user": {
+                    "description": "default user for database seeding",
+                    "type": "string"
                 },
                 "webhook_timeout": {
                     "description": "webhook timeout in milliseconds",
@@ -2805,6 +2861,9 @@ const docTemplate = `{
                 "read_update": {
                     "type": "string"
                 },
+                "retry_message_store": {
+                    "type": "string"
+                },
                 "wakeup_duration": {
                     "type": "string"
                 },
@@ -2846,6 +2905,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "convert_wave_to_ogg": {
+                    "type": "boolean"
+                },
+                "force_audio_as_ptt": {
                     "type": "boolean"
                 },
                 "log_level": {
@@ -3025,6 +3087,9 @@ const docTemplate = `{
                 },
                 "whatsmeow_log_level": {
                     "type": "string"
+                },
+                "whatsmeow_use_retry_message_store": {
+                    "type": "boolean"
                 }
             }
         },

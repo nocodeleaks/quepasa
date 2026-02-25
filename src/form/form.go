@@ -45,8 +45,10 @@ func Configure(r chi.Router) {
 
 func ServeForms(r chi.Router) {
 
-	// Static Forms content
-	ServeStaticContent(r)
+	// Static Forms content (skip in dev frontend mode - SPA proxy handles assets)
+	if v := os.Getenv("QUEPASA_DEV_FRONTEND"); v != "1" && v != "true" {
+		ServeStaticContent(r)
+	}
 
 	// setting group
 	r.Group(func(r chi.Router) {

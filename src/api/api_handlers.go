@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -26,6 +27,9 @@ func RegisterAPIControllers(r chi.Router) {
 		// Environment settings (master key only)
 		r.Get(endpoint+"/environment", EnvironmentController)
 
+		// Login config (public)
+		r.Get(endpoint+"/login/config", LoginConfigController)
+
 		r.Post(endpoint+"/account", AccountController)
 
 		// CONTROL METHODS ************************
@@ -38,7 +42,7 @@ func RegisterAPIControllers(r chi.Router) {
 		r.Get(endpoint+"/scan", ScannerController)
 		r.Get(endpoint+"/paircode", PairCodeController)
 
-		r.Get(endpoint+"/command", CommandController)
+		r.Post(endpoint+"/command", CommandController)
 
 		// ----------------------------------------
 		// CONTROL METHODS ************************
@@ -54,6 +58,9 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// Mark message as read
 		r.Post(endpoint+"/read", MarkReadController)
+
+		// Edit message
+		r.Put(endpoint+"/edit", EditMessageController)
 
 		// used to send alert msgs via url, triggers on monitor systems like zabbix
 		r.Get(endpoint+"/send", SendAny)
@@ -224,29 +231,55 @@ func RegisterAPIControllers(r chi.Router) {
 // CommandController manages bot server commands
 //
 //	@Summary		Execute bot commands
-//	@Description	Execute control commands for the bot server (start, stop, restart)
+//	@Description	Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
 //	@Tags			Bot
 //	@Accept			json
 //	@Produce		json
-//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart)
-//	@Success		200		{object}	models.QpResponse
-//	@Failure		400		{object}	models.QpResponse
-//	@Security		ApiKeyAuth
-//	@Router			/command [get]
+//	@Param		request	body		object{token=string,action=string}	true	"Command request"
+//	@Success	200	{object}	models.QpResponse
+//	@Failure	400	{object}	models.QpResponse
+//	@Failure	500	{object}	models.QpResponse
+//	@Security	ApiKeyAuth
+//	@Router		/command [post]
 func CommandController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
 	response := &models.QpResponse{}
 
-	server, err := GetServer(r)
-	if err != nil {
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
+	// parse optional JSON body { token, action }
+	var body struct {
+		Token  string `json:"token"`
+		Action string `json:"action"`
+	}
+	if r.ContentLength > 0 {
+		_ = json.NewDecoder(r.Body).Decode(&body)
 	}
 
-	action := library.GetRequestParameter(r, "action")
+	// Determine action (body over query)
+	action := body.Action
+	if action == "" {
+		action = library.GetRequestParameter(r, "action")
+	}
+
+	// Resolve server: prefer explicit token from body, else from request
+	var server *models.QpWhatsappServer
+	var err error
+	if body.Token != "" {
+		server, err = models.GetServerFromToken(body.Token)
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+	} else {
+		server, err = GetServer(r)
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+	}
 	switch action {
 	case "start":
 		err = server.Start()
@@ -264,39 +297,47 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess("restarted")
 		}
 	case "status":
-		err = fmt.Errorf("status command has been removed, please use /health endpoint instead")
+		// status action is deprecated; provide a helpful success message pointing to /health
+		response.ParseSuccess("'status' is deprecated; use /health endpoint instead")
+		err = nil
 	case "groups":
-		err := models.ToggleGroups(server)
+		err = models.ToggleGroups(server)
 		if err == nil {
 			message := "groups toggled: " + server.Groups.String()
 			response.ParseSuccess(message)
 		}
 	case "broadcasts":
-		err := models.ToggleBroadcasts(server)
+		err = models.ToggleBroadcasts(server)
 		if err == nil {
 			message := "broadcasts toggled: " + server.Broadcasts.String()
 			response.ParseSuccess(message)
 		}
 	case "readreceipts":
-		err := models.ToggleReadReceipts(server)
+		err = models.ToggleReadReceipts(server)
 		if err == nil {
 			message := "readreceipts toggled: " + server.ReadReceipts.String()
 			response.ParseSuccess(message)
 		}
 	case "calls":
-		err := models.ToggleCalls(server)
+		err = models.ToggleCalls(server)
 		if err == nil {
 			message := "calls toggled: " + server.Calls.String()
 			response.ParseSuccess(message)
 		}
+	case "readupdate":
+		err = models.ToggleReadUpdate(server)
+		if err == nil {
+			message := "readupdate toggled: " + server.ReadUpdate.String()
+			response.ParseSuccess(message)
+		}
 	case "debug":
-		_, err := server.ToggleDevel()
+		_, err = server.ToggleDevel()
 		if err == nil {
 			message := "debug toggled: " + fmt.Sprintf("%t", server.Devel)
 			response.ParseSuccess(message)
 		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,broadcasts,readreceipts,calls,debug}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,broadcasts,readreceipts,readupdate,calls,debug}", action)
 	}
 
 	if err != nil {

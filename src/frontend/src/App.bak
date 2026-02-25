@@ -1,0 +1,80 @@
+<template>
+  <div id="app" class="container py-4">
+    <header class="mb-4">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-primary rounded">
+        <div class="container-fluid">
+          <RouterLink class="navbar-brand" to="/">{{ title }}</RouterLink>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+              <li class="nav-item">
+                <RouterLink class="nav-link" to="/">Home</RouterLink>
+              </li>
+              <li class="nav-item">
+                <RouterLink class="nav-link" to="/account">Account</RouterLink>
+              </li>
+            </ul>
+            <div class="d-flex align-items-center text-white" v-if="session.user.value">
+              <small class="me-3">{{ session.user.value.username }}</small>
+              <button class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div v-if="session.loading.value" class="text-center py-5">Carregando sessão...</div>
+      <RouterView v-else />
+    </main>
+
+    <footer class="mt-4 text-center text-muted small">© {{ year }}</footer>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, onMounted } from 'vue'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useSessionStore } from '@/stores/session'
+import api from './services/api'
+
+export default defineComponent({
+  components: { RouterLink, RouterView },
+  setup() {
+    const title = 'Servidor Hermes'
+    const year = new Date().getFullYear()
+    const session = useSessionStore()
+    const router = useRouter()
+
+    const checkSession = async () => {
+      await session.loadSession()
+    }
+
+    const logout = async () => {
+      try {
+        await api.get('/logout')
+      } catch (_) {
+        /* ignore */
+      }
+      session.clearSession()
+      router.push('/login')
+    }
+
+    onMounted(() => {
+      checkSession()
+    })
+
+    return { title, year, session, logout }
+  }
+})
+</script>

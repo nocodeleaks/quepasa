@@ -57,3 +57,5 @@ main.exe
 .telegram.token
 apoint-voip-server.json
 src/.env.apoint-voip
+bin
+pkg

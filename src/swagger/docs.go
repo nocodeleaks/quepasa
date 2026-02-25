@@ -75,6 +75,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/server/{token}/messages": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieves messages from WhatsApp server with pagination, timestamp and exceptions filtering (authenticated SPA endpoint)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SPA"
+                ],
+                "summary": "Get server messages (SPA)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Timestamp filter for messages (Unix timestamp)",
+                        "name": "timestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by exceptions: 'true' for messages with errors, 'false' for messages without errors, omit for all",
+                        "name": "exceptions",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Messages per page (default: 50, max: 500)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpReceiveResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/chat/archive": {
             "post": {
                 "security": [
@@ -274,13 +359,13 @@ const docTemplate = `{
             }
         },
         "/command": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart)",
+                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)",
                 "consumes": [
                     "application/json"
                 ],
@@ -293,16 +378,21 @@ const docTemplate = `{
                 "summary": "Execute bot commands",
                 "parameters": [
                     {
-                        "enum": [
-                            "start",
-                            "stop",
-                            "restart"
-                        ],
-                        "type": "string",
-                        "description": "Command action",
-                        "name": "action",
-                        "in": "query",
-                        "required": true
+                        "description": "Command request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "action": {
+                                    "type": "string"
+                                },
+                                "token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -314,6 +404,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.QpResponse"
                         }
@@ -1770,7 +1866,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering",
+                "description": "Retrieves pending messages from WhatsApp with optional cache filters",
                 "consumes": [
                     "application/json"
                 ],
@@ -1792,6 +1888,54 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages",
                         "name": "exceptions",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message type (supports comma-separated list)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category: sent, received, sync, unhandled, events",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text in id, chat, text, trackid, participant and exceptions",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromme boolean: true or false",
+                        "name": "fromme",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromhistory boolean: true or false",
+                        "name": "fromhistory",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by chat id (contains)",
+                        "name": "chatid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message id (contains)",
+                        "name": "messageid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by track id (contains)",
+                        "name": "trackid",
                         "in": "query"
                     }
                 ],
@@ -2061,6 +2205,184 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.QpSendResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/{token}/disable": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Stops the WhatsApp server instance identified by {token}. Sends feedback to the caller on success.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SPA"
+                ],
+                "summary": "Disable a server (SPA)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/{token}/enable": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Starts the WhatsApp server instance identified by {token}. Sends a system message to notify connected listeners.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SPA"
+                ],
+                "summary": "Enable a server (SPA)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/{token}/messages/{messageid}/history/download": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Given a ProtocolMessage history-sync event message id, attempts to download and decrypt the referenced media using the active Whatsmeow connection, attaches it to the message and triggers an update so the UI and dispatchers are notified.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SPA"
+                ],
+                "summary": "Download history-sync media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message id (protocol message)",
+                        "name": "messageid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
                         }
                     }
                 }
@@ -2667,6 +2989,10 @@ const docTemplate = `{
                 "master_key": {
                     "type": "string"
                 },
+                "password": {
+                    "description": "default password for database seeding",
+                    "type": "string"
+                },
                 "prefix": {
                     "type": "string"
                 },
@@ -2680,9 +3006,42 @@ const docTemplate = `{
                 "use_ssl_websocket": {
                     "type": "boolean"
                 },
+                "user": {
+                    "description": "default user for database seeding",
+                    "type": "string"
+                },
                 "webhook_timeout": {
                     "description": "webhook timeout in milliseconds",
                     "type": "integer"
+                }
+            }
+        },
+        "environment.BrandingSettings": {
+            "type": "object",
+            "properties": {
+                "accentColor": {
+                    "type": "string"
+                },
+                "companyName": {
+                    "type": "string"
+                },
+                "companyUrl": {
+                    "type": "string"
+                },
+                "favicon": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "primaryColor": {
+                    "type": "string"
+                },
+                "secondaryColor": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
@@ -2728,6 +3087,9 @@ const docTemplate = `{
             "properties": {
                 "api": {
                     "$ref": "#/definitions/environment.APISettings"
+                },
+                "branding": {
+                    "$ref": "#/definitions/environment.BrandingSettings"
                 },
                 "database": {
                     "description": "Embedded structs for organized access to different environment categories",
@@ -2799,6 +3161,9 @@ const docTemplate = `{
                 "read_update": {
                     "type": "string"
                 },
+                "retry_message_store": {
+                    "type": "string"
+                },
                 "wakeup_duration": {
                     "type": "string"
                 },
@@ -2814,6 +3179,10 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "prefix": {
+                    "type": "string"
+                },
+                "serversViewMode": {
+                    "description": "\"card\" or \"table\"",
                     "type": "string"
                 }
             }
@@ -2842,7 +3211,36 @@ const docTemplate = `{
                 "convert_wave_to_ogg": {
                     "type": "boolean"
                 },
+                "force_audio_as_ptt": {
+                    "type": "boolean"
+                },
                 "log_level": {
+                    "type": "string"
+                },
+                "login_custom_css": {
+                    "type": "string"
+                },
+                "login_font_awesome": {
+                    "type": "string"
+                },
+                "login_footer": {
+                    "type": "string"
+                },
+                "login_google_fonts": {
+                    "type": "string"
+                },
+                "login_layout": {
+                    "description": "center|split|simple",
+                    "type": "string"
+                },
+                "login_logo": {
+                    "description": "Login customization",
+                    "type": "string"
+                },
+                "login_subtitle": {
+                    "type": "string"
+                },
+                "login_warning": {
                     "type": "string"
                 },
                 "migrations": {
@@ -3019,6 +3417,9 @@ const docTemplate = `{
                 },
                 "whatsmeow_log_level": {
                     "type": "string"
+                },
+                "whatsmeow_use_retry_message_store": {
+                    "type": "boolean"
                 }
             }
         },
@@ -3412,11 +3813,17 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "limit": {
+                    "type": "integer"
+                },
                 "messages": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/whatsapp.WhatsappMessage"
                     }
+                },
+                "page": {
+                    "type": "integer"
                 },
                 "server": {
                     "$ref": "#/definitions/models.QpServer"
@@ -3428,6 +3835,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
                     "type": "integer"
                 }
             }

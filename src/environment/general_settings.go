@@ -17,6 +17,16 @@ const (
 	ENV_TESTING                  = "TESTING"                  // testing mode
 	ENV_LOGLEVEL                 = "LOGLEVEL"                 // general log level
 	ENV_CONVERT_PNG_TO_JPG       = "CONVERT_PNG_TO_JPG"       // convert PNG to JPG (not implemented yet)
+
+	// Login customization
+	ENV_LOGIN_LOGO     = "LOGIN_LOGO"     // URL for login page logo/icon
+	ENV_LOGIN_SUBTITLE = "LOGIN_SUBTITLE" // subtitle under logo
+	ENV_LOGIN_WARNING  = "LOGIN_WARNING"  // prominent warning text on login
+	ENV_LOGIN_FOOTER   = "LOGIN_FOOTER"   // footer text on login
+	ENV_LOGIN_LAYOUT   = "LOGIN_LAYOUT"   // layout type: center|split|simple
+	ENV_LOGIN_CUSTOM_CSS = "LOGIN_CUSTOM_CSS" // URL to custom CSS for login page
+	ENV_LOGIN_FONT_AWESOME = "LOGIN_FONT_AWESOME" // URL to Font Awesome CSS
+	ENV_LOGIN_GOOGLE_FONTS = "LOGIN_GOOGLE_FONTS" // URL to Google Fonts stylesheet
 )
 
 // GeneralConfig holds all general application configuration loaded from environment
@@ -34,6 +44,16 @@ type GeneralSettings struct {
 	Testing               bool   `json:"testing"`
 	LogLevel              string `json:"log_level"`
 	ConvertPNGToJPG       bool   `json:"convert_png_to_jpg"`
+
+	// Login customization
+	LoginLogo     string `json:"login_logo"`
+	LoginSubtitle string `json:"login_subtitle"`
+	LoginWarning  string `json:"login_warning"`
+	LoginFooter   string `json:"login_footer"`
+	LoginLayout        string `json:"login_layout"` // center|split|simple
+	LoginCustomCSS     string `json:"login_custom_css"`
+	LoginFontAwesome   string `json:"login_font_awesome"`
+	LoginGoogleFonts   string `json:"login_google_fonts"`
 }
 
 // NewGeneralSettings creates a new general settings by loading all values from environment
@@ -52,6 +72,15 @@ func NewGeneralSettings() GeneralSettings {
 		Testing:               getEnvOrDefaultBool(ENV_TESTING, false),
 		LogLevel:              getEnvOrDefaultString(ENV_LOGLEVEL, ""),
 		ConvertPNGToJPG:       getEnvOrDefaultBool(ENV_CONVERT_PNG_TO_JPG, false),
+	// Login customization
+	LoginLogo:             getEnvOrDefaultString(ENV_LOGIN_LOGO, ""),
+	LoginSubtitle:         getEnvOrDefaultString(ENV_LOGIN_SUBTITLE, ""),
+	LoginWarning:          getEnvOrDefaultString(ENV_LOGIN_WARNING, ""),
+	LoginFooter:           getEnvOrDefaultString(ENV_LOGIN_FOOTER, ""),
+	LoginLayout:           getEnvOrDefaultString(ENV_LOGIN_LAYOUT, "center"),
+	LoginCustomCSS:        getEnvOrDefaultString(ENV_LOGIN_CUSTOM_CSS, ""),
+	LoginFontAwesome:      getEnvOrDefaultString(ENV_LOGIN_FONT_AWESOME, ""),
+	LoginGoogleFonts:      getEnvOrDefaultString(ENV_LOGIN_GOOGLE_FONTS, ""),
 	}
 }
 

@@ -170,6 +170,9 @@ definitions:
     properties:
       master_key:
         type: string
+      password:
+        description: default password for database seeding
+        type: string
       prefix:
         type: string
       signing_secret:
@@ -179,9 +182,31 @@ definitions:
         type: integer
       use_ssl_websocket:
         type: boolean
+      user:
+        description: default user for database seeding
+        type: string
       webhook_timeout:
         description: webhook timeout in milliseconds
         type: integer
+    type: object
+  environment.BrandingSettings:
+    properties:
+      accentColor:
+        type: string
+      companyName:
+        type: string
+      companyUrl:
+        type: string
+      favicon:
+        type: string
+      logo:
+        type: string
+      primaryColor:
+        type: string
+      secondaryColor:
+        type: string
+      title:
+        type: string
     type: object
   environment.DashboardSettings:
     properties:
@@ -211,6 +236,8 @@ definitions:
     properties:
       api:
         $ref: '#/definitions/environment.APISettings'
+      branding:
+        $ref: '#/definitions/environment.BrandingSettings'
       database:
         allOf:
         - $ref: '#/definitions/environment.DatabaseSettings'
@@ -257,6 +284,8 @@ definitions:
         type: string
       read_update:
         type: string
+      retry_message_store:
+        type: string
       wakeup_duration:
         type: string
       wakeup_hour:
@@ -267,6 +296,9 @@ definitions:
       enabled:
         type: boolean
       prefix:
+        type: string
+      serversViewMode:
+        description: '"card" or "table"'
         type: string
     type: object
   environment.GeneralSettings:
@@ -285,7 +317,27 @@ definitions:
         type: boolean
       convert_wave_to_ogg:
         type: boolean
+      force_audio_as_ptt:
+        type: boolean
       log_level:
+        type: string
+      login_custom_css:
+        type: string
+      login_font_awesome:
+        type: string
+      login_footer:
+        type: string
+      login_google_fonts:
+        type: string
+      login_layout:
+        description: center|split|simple
+        type: string
+      login_logo:
+        description: Login customization
+        type: string
+      login_subtitle:
+        type: string
+      login_warning:
         type: string
       migrations:
         type: string
@@ -402,6 +454,8 @@ definitions:
         type: string
       whatsmeow_log_level:
         type: string
+      whatsmeow_use_retry_message_store:
+        type: boolean
     type: object
   models.QpContactsResponse:
     properties:
@@ -658,10 +712,14 @@ definitions:
         items:
           type: string
         type: array
+      limit:
+        type: integer
       messages:
         items:
           $ref: '#/definitions/whatsapp.WhatsappMessage'
         type: array
+      page:
+        type: integer
       server:
         $ref: '#/definitions/models.QpServer'
       status:
@@ -669,6 +727,8 @@ definitions:
       success:
         type: boolean
       total:
+        type: integer
+      total_pages:
         type: integer
     type: object
   models.QpRequestResponse:
@@ -1297,6 +1357,63 @@ paths:
       summary: Manage user accounts
       tags:
       - Application
+  /api/server/{token}/messages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves messages from WhatsApp server with pagination, timestamp
+        and exceptions filtering (authenticated SPA endpoint)
+      parameters:
+      - description: Server token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: Timestamp filter for messages (Unix timestamp)
+        in: query
+        name: timestamp
+        type: string
+      - description: 'Filter by exceptions: ''true'' for messages with errors, ''false''
+          for messages without errors, omit for all'
+        in: query
+        name: exceptions
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Messages per page (default: 50, max: 500)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpReceiveResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - Bearer: []
+      summary: Get server messages (SPA)
+      tags:
+      - SPA
   /chat/archive:
     post:
       consumes:
@@ -1423,20 +1540,23 @@ paths:
       tags:
       - Chat
   /command:
-    get:
+    post:
       consumes:
       - application/json
       description: Execute control commands for the bot server (start, stop, restart)
+        or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
       parameters:
-      - description: Command action
-        enum:
-        - start
-        - stop
-        - restart
-        in: query
-        name: action
+      - description: Command request
+        in: body
+        name: request
         required: true
-        type: string
+        schema:
+          properties:
+            action:
+              type: string
+            token:
+              type: string
+          type: object
       produces:
       - application/json
       responses:
@@ -1446,6 +1566,10 @@ paths:
             $ref: '#/definitions/models.QpResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/models.QpResponse'
       security:
@@ -2365,8 +2489,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves pending messages from WhatsApp with optional timestamp
-        filtering and exceptions error filtering
+      description: Retrieves pending messages from WhatsApp with optional cache filters
       parameters:
       - description: Timestamp filter for messages
         in: query
@@ -2377,6 +2500,38 @@ paths:
           for all messages'
         in: query
         name: exceptions
+        type: string
+      - description: Filter by message type (supports comma-separated list)
+        in: query
+        name: type
+        type: string
+      - description: 'Filter by category: sent, received, sync, unhandled, events'
+        in: query
+        name: category
+        type: string
+      - description: Search text in id, chat, text, trackid, participant and exceptions
+        in: query
+        name: search
+        type: string
+      - description: 'Filter by fromme boolean: true or false'
+        in: query
+        name: fromme
+        type: string
+      - description: 'Filter by fromhistory boolean: true or false'
+        in: query
+        name: fromhistory
+        type: string
+      - description: Filter by chat id (contains)
+        in: query
+        name: chatid
+        type: string
+      - description: Filter by message id (contains)
+        in: query
+        name: messageid
+        type: string
+      - description: Filter by track id (contains)
+        in: query
+        name: trackid
         type: string
       produces:
       - application/json
@@ -2662,6 +2817,125 @@ paths:
       summary: Send document with forced document type
       tags:
       - Send
+  /server/{token}/disable:
+    post:
+      consumes:
+      - application/json
+      description: Stops the WhatsApp server instance identified by {token}. Sends
+        feedback to the caller on success.
+      parameters:
+      - description: Server token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - Bearer: []
+      summary: Disable a server (SPA)
+      tags:
+      - SPA
+  /server/{token}/enable:
+    post:
+      consumes:
+      - application/json
+      description: Starts the WhatsApp server instance identified by {token}. Sends
+        a system message to notify connected listeners.
+      parameters:
+      - description: Server token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - Bearer: []
+      summary: Enable a server (SPA)
+      tags:
+      - SPA
+  /server/{token}/messages/{messageid}/history/download:
+    post:
+      consumes:
+      - application/json
+      description: Given a ProtocolMessage history-sync event message id, attempts
+        to download and decrypt the referenced media using the active Whatsmeow connection,
+        attaches it to the message and triggers an update so the UI and dispatchers
+        are notified.
+      parameters:
+      - description: Server token
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: Message id (protocol message)
+        in: path
+        name: messageid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - Bearer: []
+      summary: Download history-sync media
+      tags:
+      - SPA
   /spam:
     post:
       consumes:

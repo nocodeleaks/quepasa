@@ -12,7 +12,6 @@ import (
 	api "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
-	log "github.com/sirupsen/logrus"
 )
 
 var FormLoginEndpoint string = "/login"
@@ -22,14 +21,21 @@ var FormDownloadEndpoint string = "/download"
 
 func RegisterFormControllers(r chi.Router) {
 
-	r.Get("/", IndexHandler)
-	r.Get(FormLoginEndpoint, LoginFormHandler)
+	// The SPA replaces server rendered pages. Redirect page GETs to the SPA root
+	r.Get(FormLoginEndpoint, func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusFound)
+	})
+	// Keep POST /login for API login; LoginHandler will return JSON and set cookie
 	r.Post(FormLoginEndpoint, LoginHandler)
 	r.Get(FormLogoutEndpoint, LogoutHandler)
+	// Public JSON for login page customization
+	r.Get(FormEndpointPrefix+"/login/json", FormLoginJSONController)
 
 	// disable /setup if environment is false
 	if environment.Settings.General.AccountSetup {
-		r.Get(FormSetupEndpoint, SetupFormHandler)
+		r.Get(FormSetupEndpoint, func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StatusFound)
+		})
 		r.Post(FormSetupEndpoint, SetupHandler)
 	}
 }
@@ -78,7 +84,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	}
 
-	log.Debugf("setting cookie and redirecting to: %v", FormAccountEndpoint)
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, FormAccountEndpoint, http.StatusFound)
+
+	// For SPA clients, return a JSON success so frontend can proceed without expecting a redirect
+	resp := map[string]string{"result": "success"}
+	api.RespondSuccess(w, resp)
 }

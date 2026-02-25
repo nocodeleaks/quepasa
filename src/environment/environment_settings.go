@@ -26,10 +26,29 @@ type EnvironmentSettings struct {
 	General   GeneralSettings
 	RabbitMQ  RabbitMQSettings
 	MCP       MCPSettings
+	Branding  BrandingSettings
 }
 
 // Settings is the global singleton instance for accessing all environment configurations.
 var Settings EnvironmentSettings
+
+// expandEnvVariables expands environment variable references like ${VAR} or $VAR in all environment variables
+func expandEnvVariables() {
+	for _, env := range os.Environ() {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := parts[0]
+		value := parts[1]
+
+		// Expand ${VAR} and $VAR references
+		expanded := os.ExpandEnv(value)
+		if expanded != value {
+			os.Setenv(key, expanded)
+		}
+	}
+}
 
 // Initialize the global environment manager
 func init() {
@@ -44,6 +63,9 @@ func init() {
 		logentry.Println("Successfully loaded .env file")
 	}
 
+	// Expand variable references like ${VAR} after loading .env
+	expandEnvVariables()
+
 	Settings = EnvironmentSettings{
 		Database:  NewDatabaseSettings(),
 		API:       NewAPISettings(),
@@ -57,6 +79,7 @@ func init() {
 		General:   NewGeneralSettings(),
 		RabbitMQ:  NewRabbitMQSettings(),
 		MCP:       NewMCPSettings(),
+		Branding:  NewBrandingSettings(),
 	}
 
 	logentry.Println("Environment Manager ready - All configurations loaded!")

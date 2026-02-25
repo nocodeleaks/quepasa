@@ -49,10 +49,20 @@ func Configure(r chi.Router) {
 		}))
 		*/
 
-		// Mount API routes under the configured prefix
+		// Mount API routes under the configured prefix (e.g., /api)
 		r.Route("/"+apiPrefix, func(r chi.Router) {
 			r.Group(RegisterAPIControllers)
 			r.Group(RegisterAPIV3Controllers)
+			r.Group(RegisterSPAControllers)
 		})
+
+		// For backward compatibility, also register routes at root level
+		// when API_PREFIX is not empty. This allows legacy clients using
+		// /info, /v3/bot/..., /health to continue working.
+		if apiPrefix != "" {
+			log.Info("Registering legacy API routes at root level for backward compatibility")
+			r.Group(RegisterAPIControllers)
+			r.Group(RegisterAPIV3Controllers)
+		}
 	})
 }

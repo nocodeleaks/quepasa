@@ -52,3 +52,15 @@ func (source WhatsappBooleanExtended) Compare(item WhatsappBoolean, value bool) 
 		return item.ToBoolean(value)
 	}
 }
+
+// ToWhatsappBoolean converts WhatsappBooleanExtended to WhatsappBoolean.
+func (source WhatsappBooleanExtended) ToWhatsappBoolean() WhatsappBoolean {
+	switch source {
+	case ForcedFalseBooleanType:
+		return FalseBooleanType
+	case ForcedTrueBooleanType:
+		return TrueBooleanType
+	default:
+		return WhatsappBoolean(source)
+	}
+}

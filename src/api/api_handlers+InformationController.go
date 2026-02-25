@@ -20,7 +20,7 @@ import (
 //	@Tags			Information
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		InfoCreateRequest	true	"Server creation request"
+//	@Param			request	body		InfoCreateRequest		true	"Server creation request"
 //	@Success		200		{object}	api.InformationResponse	"Server updated"
 //	@Success		201		{object}	api.InformationResponse	"Server created"
 //	@Failure		400		{object}	models.QpResponse

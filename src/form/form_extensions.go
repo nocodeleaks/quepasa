@@ -92,6 +92,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 					err = models.ToggleCalls(server)
 					break
 				}
+			case "server-readupdate":
+				{
+					err = models.ToggleReadUpdate(server)
+					break
+				}
 
 			default:
 				{

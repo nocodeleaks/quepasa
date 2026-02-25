@@ -280,7 +280,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart)",
+                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)",
                 "consumes": [
                     "application/json"
                 ],
@@ -296,7 +296,13 @@ const docTemplate = `{
                         "enum": [
                             "start",
                             "stop",
-                            "restart"
+                            "restart",
+                            "groups",
+                            "broadcasts",
+                            "readreceipts",
+                            "readupdate",
+                            "calls",
+                            "debug"
                         ],
                         "type": "string",
                         "description": "Command action",

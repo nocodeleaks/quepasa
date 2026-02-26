@@ -58,9 +58,11 @@ func createTestSchema(db *sqlx.DB) error {
 			devel BOOLEAN DEFAULT 0,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			groups INTEGER DEFAULT 1,
+			individuals INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,
+			readupdate INTEGER DEFAULT 1,
 			FOREIGN KEY (user) REFERENCES users(username)
 		);
 
@@ -69,11 +71,12 @@ func createTestSchema(db *sqlx.DB) error {
 			context TEXT NOT NULL,
 			connection_string TEXT NOT NULL,
 			type TEXT NOT NULL DEFAULT 'webhook',
-			forward_internal BOOLEAN DEFAULT 0,
-			track_id TEXT,
+			forwardinternal BOOLEAN DEFAULT 0,
+			trackid TEXT,
 			extra TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			groups INTEGER DEFAULT 1,
+			individuals INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,

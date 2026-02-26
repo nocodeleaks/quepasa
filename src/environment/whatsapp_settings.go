@@ -13,6 +13,7 @@ const (
 	ENV_READRECEIPTS    = "READRECEIPTS"    // trigger dispatch methods for read receipts events
 	ENV_CALLS           = "CALLS"           // defines if will be accepted calls
 	ENV_GROUPS          = "GROUPS"          // handle groups
+	ENV_INDIVIDUALS     = "INDIVIDUALS"     // handle individual chats (@s.whatsapp.net and @lid)
 	ENV_BROADCASTS      = "BROADCASTS"      // handle broadcasts
 	ENV_HISTORYSYNCDAYS = "HISTORYSYNCDAYS" // history sync days
 	ENV_PRESENCE        = "PRESENCE"        // presence state
@@ -26,6 +27,7 @@ type WhatsAppSettings struct {
 	ReadReceipts    whatsapp.WhatsappBooleanExtended `json:"read_receipts"`
 	Calls           whatsapp.WhatsappBooleanExtended `json:"calls"`
 	Groups          whatsapp.WhatsappBooleanExtended `json:"groups"`
+	Individuals     whatsapp.WhatsappBooleanExtended `json:"individuals"`
 	Broadcasts      whatsapp.WhatsappBooleanExtended `json:"broadcasts"`
 	HistorySyncDays *uint32                          `json:"history_sync_days"`
 	Presence        string                           `json:"presence"`
@@ -40,6 +42,7 @@ func NewWhatsAppSettings() WhatsAppSettings {
 		ReadReceipts:    getWhatsappBooleanExtended(ENV_READRECEIPTS),
 		Calls:           getWhatsappBooleanExtended(ENV_CALLS),
 		Groups:          getWhatsappBooleanExtended(ENV_GROUPS),
+		Individuals:     getWhatsappBooleanExtended(ENV_INDIVIDUALS),
 		Broadcasts:      getWhatsappBooleanExtended(ENV_BROADCASTS),
 		HistorySyncDays: getOptionalEnvUint32(ENV_HISTORYSYNCDAYS),
 		Presence:        getEnvOrDefaultString(ENV_PRESENCE, "unavailable"),

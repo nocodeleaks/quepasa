@@ -38,6 +38,11 @@ func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.Wha
 			continue
 		}
 
+		if message.FromIndividual() && dispatching.IsSetIndividuals() && !dispatching.Individuals.Boolean() {
+			logentry.Debug("ignoring individual message")
+			continue
+		}
+
 		if message.FromBroadcast() && dispatching.IsSetBroadcasts() && !dispatching.Broadcasts.Boolean() {
 			logentry.Debug("ignoring broadcast message")
 			continue
@@ -141,6 +146,11 @@ func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMe
 
 		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
 			logentry.Debug("ignoring group message")
+			continue
+		}
+
+		if message.FromIndividual() && dispatching.IsSetIndividuals() && !dispatching.Individuals.Boolean() {
+			logentry.Debug("ignoring individual message")
 			continue
 		}
 

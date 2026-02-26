@@ -97,13 +97,14 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 
 	// Apply configuration from request
 	// Handle both InfoCreateRequest and QpInfoPatchRequest
-	var groups, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
+	var groups, individuals, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
 	var devel *bool
 
 	switch req := request.(type) {
 	case *InfoCreateRequest:
 		if req != nil {
 			groups = req.Groups
+			individuals = req.Individuals
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
 			calls = req.Calls
@@ -114,6 +115,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 		if req != nil {
 			// QpInfoPatchRequest may have Username field, handle groups/broadcasts/etc
 			groups = req.Groups
+			individuals = req.Individuals
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
 			calls = req.Calls
@@ -125,6 +127,11 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 	if groups != nil && server.Groups != *groups {
 		server.Groups = *groups
 		update += fmt.Sprintf("groups to: {%s}; ", *groups)
+	}
+
+	if individuals != nil && server.Individuals != *individuals {
+		server.Individuals = *individuals
+		update += fmt.Sprintf("individuals to: {%s}; ", *individuals)
 	}
 
 	if broadcasts != nil && server.Broadcasts != *broadcasts {
@@ -238,6 +245,9 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 		if request != nil {
 			if request.Groups != nil {
 				info.Groups = *request.Groups
+			}
+			if request.Individuals != nil {
+				info.Individuals = *request.Individuals
 			}
 			if request.Broadcasts != nil {
 				info.Broadcasts = *request.Broadcasts

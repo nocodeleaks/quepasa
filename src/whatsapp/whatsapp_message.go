@@ -150,6 +150,11 @@ func (source *WhatsappMessage) FromGroup() bool {
 	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX)
 }
 
+func (source *WhatsappMessage) FromIndividual() bool {
+	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_USER_SUFFIX) ||
+		strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_LID_SUFFIX)
+}
+
 func (source *WhatsappMessage) FromAds() bool {
 	return source.Ads != nil
 }

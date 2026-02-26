@@ -280,7 +280,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)",
+                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, individuals, broadcasts, readreceipts, readupdate, calls, debug)",
                 "consumes": [
                     "application/json"
                 ],
@@ -298,6 +298,7 @@ const docTemplate = `{
                             "stop",
                             "restart",
                             "groups",
+                            "individuals",
                             "broadcasts",
                             "readreceipts",
                             "readupdate",
@@ -1872,7 +1873,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).",
+                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, individuals, broadcasts, calls, read receipts).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2613,6 +2614,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "individuals": {
+                    "description": "should handle individual messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "readreceipts": {
                     "description": "should emit read receipts",
                     "allOf": [
@@ -2849,6 +2858,9 @@ const docTemplate = `{
                 "history_sync": {
                     "type": "string"
                 },
+                "individuals": {
+                    "type": "string"
+                },
                 "log_level": {
                     "type": "string"
                 },
@@ -3057,6 +3069,9 @@ const docTemplate = `{
                 "history_sync_days": {
                     "type": "integer"
                 },
+                "individuals": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
                 "presence": {
                     "type": "string"
                 },
@@ -3177,6 +3192,14 @@ const docTemplate = `{
                 },
                 "groups": {
                     "description": "should handle groups messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "individuals": {
+                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -3407,6 +3430,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "individuals": {
+                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "queue_history": {
                     "description": "RabbitMQ history queue name (optional)",
                     "type": "string"
@@ -3614,6 +3645,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "individuals": {
+                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "readreceipts": {
                     "description": "should emit read receipts",
                     "allOf": [
@@ -3733,6 +3772,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "individuals": {
+                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "readreceipts": {
                     "description": "should emit read receipts",
                     "allOf": [
@@ -3825,6 +3872,14 @@ const docTemplate = `{
                 },
                 "groups": {
                     "description": "should handle groups messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "individuals": {
+                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"

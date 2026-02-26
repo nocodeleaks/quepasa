@@ -81,6 +81,14 @@ func (source QpDispatching) IsSetGroups() bool {
 	return source.Groups != whatsapp.UnSetBooleanType
 }
 
+func (source QpDispatching) GetIndividuals() bool {
+	return source.Individuals.Boolean()
+}
+
+func (source QpDispatching) IsSetIndividuals() bool {
+	return source.Individuals != whatsapp.UnSetBooleanType
+}
+
 func (source QpDispatching) GetBroadcasts() bool {
 	return source.Broadcasts.Boolean()
 }

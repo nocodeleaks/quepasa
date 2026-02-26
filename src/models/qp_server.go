@@ -123,4 +123,14 @@ func (source QpServer) GetGroups() bool {
 	return source.Groups.Boolean()
 }
 
+// used for view
+func (source QpServer) IsSetIndividuals() bool {
+	return source.Individuals != whatsapp.UnSetBooleanType
+}
+
+// used for view
+func (source QpServer) GetIndividuals() bool {
+	return source.Individuals.Boolean()
+}
+
 //#endregion

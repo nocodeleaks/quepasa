@@ -215,6 +215,7 @@ func GetBase() migrate.SqlxMigration {
 		"verified" BOOLEAN NOT NULL DEFAULT FALSE,
 		"devel" BOOLEAN NOT NULL DEFAULT FALSE,
 		"groups" INT(1) NOT NULL DEFAULT 0,
+		"individuals" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
   		"readreceipts" INT(1) NOT NULL DEFAULT 0,
   		"calls" INT(1) NOT NULL DEFAULT 0,
@@ -231,6 +232,7 @@ func GetBase() migrate.SqlxMigration {
 		"trackid" VARCHAR (100) NOT NULL DEFAULT '',
 		"readreceipts" INT(1) NOT NULL DEFAULT 0,
   		"groups" INT(1) NOT NULL DEFAULT 0,
+		"individuals" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
 		"extra" BLOB DEFAULT NULL,
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -245,7 +247,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202403021242'),
 	  ('202403141920'),
 	  ('202512151400'),
-	  ('202512231500');
+	  ('202512231500'),
+	  ('202602261900');
 	  `, "")
 	return migration
 }

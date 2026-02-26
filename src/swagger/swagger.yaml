@@ -101,6 +101,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle individual messages
       readreceipts:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -255,6 +259,8 @@ definitions:
         type: string
       history_sync:
         type: string
+      individuals:
+        type: string
       log_level:
         type: string
       presence:
@@ -391,6 +397,8 @@ definitions:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       history_sync_days:
         type: integer
+      individuals:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       presence:
         type: string
       read_receipts:
@@ -475,6 +483,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle individual messages (@s.whatsapp.net and @lid)
       readreceipts:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -620,6 +632,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle individual messages (@s.whatsapp.net and @lid)
       queue_history:
         description: RabbitMQ history queue name (optional)
         type: string
@@ -753,6 +769,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle individual messages (@s.whatsapp.net and @lid)
       readreceipts:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -829,6 +849,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle individual messages (@s.whatsapp.net and @lid)
       readreceipts:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -889,6 +913,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle individual messages (@s.whatsapp.net and @lid)
       readreceipts:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -1439,7 +1467,8 @@ paths:
       consumes:
       - application/json
       description: Execute control commands for the bot server (start, stop, restart)
-        or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
+        or toggle settings (groups, individuals, broadcasts, readreceipts, readupdate,
+        calls, debug)
       parameters:
       - description: Command action
         enum:
@@ -1447,6 +1476,7 @@ paths:
         - stop
         - restart
         - groups
+        - individuals
         - broadcasts
         - readreceipts
         - readupdate
@@ -2450,7 +2480,8 @@ paths:
       - application/json
       description: Forces re-dispatch of a cached message to webhooks/RabbitMQ using
         the message ID. Applies all original dispatching validations including TrackId,
-        ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).
+        ForwardInternal, message type filters (groups, individuals, broadcasts, calls,
+        read receipts).
       parameters:
       - description: Message ID to re-dispatch
         in: path

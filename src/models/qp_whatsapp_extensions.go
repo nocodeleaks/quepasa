@@ -268,6 +268,22 @@ func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+func ToggleIndividuals(source whatsapp.IWhatsappOptions) error {
+	options := source.GetOptions()
+
+	switch options.Individuals {
+	case whatsapp.UnSetBooleanType:
+		options.Individuals = whatsapp.TrueBooleanType
+	case whatsapp.TrueBooleanType:
+		options.Individuals = whatsapp.FalseBooleanType
+	default:
+		options.Individuals = whatsapp.UnSetBooleanType
+	}
+
+	reason := fmt.Sprintf("toggle individuals: %s", options.Individuals)
+	return source.Save(reason)
+}
+
 func ToggleBroadcasts(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 

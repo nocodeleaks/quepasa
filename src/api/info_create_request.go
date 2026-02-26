@@ -6,6 +6,7 @@ import whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 // Used for pre-configuring a server before QR code scanning
 type InfoCreateRequest struct {
 	Groups       *whatsapp.WhatsappBoolean `json:"groups,omitempty"`       // should handle groups messages
+	Individuals  *whatsapp.WhatsappBoolean `json:"individuals,omitempty"`  // should handle individual messages
 	Broadcasts   *whatsapp.WhatsappBoolean `json:"broadcasts,omitempty"`   // should handle broadcast messages
 	ReadReceipts *whatsapp.WhatsappBoolean `json:"readreceipts,omitempty"` // should emit read receipts
 	Calls        *whatsapp.WhatsappBoolean `json:"calls,omitempty"`        // should handle calls

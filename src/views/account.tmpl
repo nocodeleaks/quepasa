@@ -105,7 +105,7 @@
                     <form class="" method="post" action="/form/toggle?key=server-broadcasts" data-value="{{ .Broadcasts }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Broadcast Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-bullhorn"></i></span>
                       </button>
                     </form>
                   </p>
@@ -113,7 +113,7 @@
                     <form class="" method="post" action="/form/toggle?key=server-groups" data-value="{{ .Groups }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Group Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comments"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-users"></i></span>
                       </button>
                     </form>
                   </p>
@@ -121,7 +121,7 @@
                     <form class="" method="post" action="/form/toggle?key=server-direct" data-value="{{ .Direct }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Direct Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-user"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
                       </button>
                     </form>
                   </p>
@@ -129,7 +129,7 @@
                     <form class="" method="post" action="/form/toggle?key=server-readreceipts" data-value="{{ .ReadReceipts }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Receipts">
-                        <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-check-double"></i></span>
                       </button>
                     </form>
                   </p>

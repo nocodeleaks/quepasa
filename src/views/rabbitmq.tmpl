@@ -58,7 +58,7 @@
                   <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-broadcasts" data-value="{{ .Broadcasts }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts: {{ .Broadcasts }}">
-                      <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                      <span class="icon is-small is-inline"><i class="fa fa-bullhorn"></i></span>
                     </button>
                   </form>
                 </p>
@@ -66,7 +66,7 @@
                   <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-groups" data-value="{{ .Groups }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups: {{ .Groups }}">
-                      <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
+                      <span class="icon is-small is-inline"><i class="fa fa-users"></i></span>
                     </button>
                   </form>
                 </p>
@@ -74,7 +74,7 @@
                   <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-direct" data-value="{{ .Direct }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Direct: {{ .Direct }}">
-                      <span class="icon is-small is-inline"><i class="fa fa-user"></i></span>
+                      <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
                     </button>
                   </form>
                 </p>
@@ -82,7 +82,7 @@
                   <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-readreceipts" data-value="{{ .ReadReceipts }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="ReadReceipts: {{ .ReadReceipts }}">
-                      <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                      <span class="icon is-small is-inline"><i class="fa fa-check-double"></i></span>
                     </button>
                   </form>
                 </p>

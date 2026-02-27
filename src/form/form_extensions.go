@@ -82,6 +82,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 					err = models.ToggleGroups(server)
 					break
 				}
+			case "server-direct", "server-individuals":
+				{
+					err = models.ToggleDirect(server)
+					break
+				}
 			case "server-readreceipts":
 				{
 					err = models.ToggleReadReceipts(server)
@@ -130,6 +135,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 						err = models.ToggleGroups(webhook)
 						break
 					}
+				case "webhook-direct", "webhook-individuals":
+					{
+						err = models.ToggleDirect(webhook)
+						break
+					}
 				case "webhook-readreceipts":
 					{
 						err = models.ToggleReadReceipts(webhook)
@@ -174,6 +184,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 				case "rabbitmq-groups":
 					{
 						err = models.ToggleGroups(rabbitmq)
+						break
+					}
+				case "rabbitmq-direct", "rabbitmq-individuals":
+					{
+						err = models.ToggleDirect(rabbitmq)
 						break
 					}
 				case "rabbitmq-readreceipts":

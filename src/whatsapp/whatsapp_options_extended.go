@@ -8,6 +8,9 @@ type WhatsappOptionsExtended struct {
 	// should handle groups messages
 	Groups WhatsappBooleanExtended `json:"groups,omitempty"`
 
+	// should handle direct messages (@s.whatsapp.net and @lid)
+	Direct WhatsappBooleanExtended `json:"direct,omitempty"`
+
 	// should handle broadcast messages
 	Broadcasts WhatsappBooleanExtended `json:"broadcasts,omitempty"`
 
@@ -35,6 +38,7 @@ type WhatsappOptionsExtended struct {
 
 func (source WhatsappOptionsExtended) IsDefault() bool {
 	return source.Groups.Equals(UnSetBooleanType) &&
+		source.Direct.Equals(UnSetBooleanType) &&
 		source.Broadcasts.Equals(UnSetBooleanType) &&
 		source.ReadReceipts.Equals(UnSetBooleanType) &&
 		source.Calls.Equals(UnSetBooleanType) &&
@@ -96,6 +100,21 @@ func (source WhatsappOptionsExtended) HandleGroups(local WhatsappBoolean) bool {
 		}
 
 		return source.Groups.ToBoolean(WhatsappGroups)
+	}
+}
+
+func (source WhatsappOptionsExtended) HandleDirect(local WhatsappBoolean) bool {
+	switch source.Direct {
+	case ForcedFalseBooleanType:
+		return false
+	case ForcedTrueBooleanType:
+		return true
+	default:
+		if local != UnSetBooleanType {
+			return local.Boolean()
+		}
+
+		return source.Direct.ToBoolean(WhatsappDirect)
 	}
 }
 

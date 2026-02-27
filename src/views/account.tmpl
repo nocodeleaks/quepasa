@@ -1,10 +1,27 @@
 {{ define "content" }}
   <script src="/assets/copytoclipboard.js"></script>
-  <div class="container site-header">
+  <style>
+    .account-page {
+      max-width: 1720px;
+      margin: 0 auto;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    .account-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.1rem;
+      align-items: center;
+    }
+    .account-actions .control {
+      margin: 0 !important;
+    }
+  </style>
+  <div class="container is-fluid account-page site-header">
     <h1 class="title is-1">QuePasa (v{{ .Version }}) Bots</h1>
     <p class="subtitle">Welcome <b>{{ .User.Username }}</b></p>
   </div>
-  <div class="container">
+  <div class="container is-fluid account-page">
     <h2 class="title is-2">({{ len .Servers }}) Your bots</h2>
 
     <a class="button is-primary" href="/form/verify?mode=md">Add or Update Bot</a>
@@ -63,7 +80,7 @@
               <small><code title="click to copy" style="cursor: pointer;" onclick="CopyToClipboard(this.textContent)">{{ .Token }}</code></small>
             </td>
             <td style="text-align: center;">              
-              <div class="field has-addons">
+              <div class="field account-actions">
                 {{ if .IsDevelopmentGlobal }}
                   <p class="control"> 
                     <form class="" method="post" action="/form/debug">
@@ -88,7 +105,7 @@
                     <form class="" method="post" action="/form/toggle?key=server-broadcasts" data-value="{{ .Broadcasts }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Broadcast Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-bullhorn"></i></span>
                       </button>
                     </form>
                   </p>
@@ -96,7 +113,15 @@
                     <form class="" method="post" action="/form/toggle?key=server-groups" data-value="{{ .Groups }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Group Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comments"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-users"></i></span>
+                      </button>
+                    </form>
+                  </p>
+                  <p class="control"> 
+                    <form class="" method="post" action="/form/toggle?key=server-direct" data-value="{{ .Direct }}">
+                      <input name="token" type="hidden" value="{{ .Token }}">
+                      <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Direct Messages">
+                        <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
                       </button>
                     </form>
                   </p>
@@ -104,7 +129,7 @@
                     <form class="" method="post" action="/form/toggle?key=server-readreceipts" data-value="{{ .ReadReceipts }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
                       <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Receipts">
-                        <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
+                        <span class="icon is-small is-inline"><i class="fa fa-check-double"></i></span>
                       </button>
                     </form>
                   </p>
@@ -138,7 +163,7 @@
               </div>
             </td>
             <td style="text-align: center;"> 
-              <div class="field has-addons">
+              <div class="field account-actions">
                 {{ if eq .GetStatusString "Ready" }}               
                   <p class="control">
                     <a href="/form/server/{{ .Token }}/send" class="button" title="Send a message as this bot">
@@ -189,6 +214,7 @@
         <div class="subtitle"><b>Whatsapp</b> service environment options:</div>
         <div>
           {{ if .Options.Groups }}<p>Groups: {{ .Options.Groups.String  }}</p>{{ end }}
+          {{ if .Options.Direct }}<p>Direct: {{ .Options.Direct.String  }}</p>{{ end }}
           {{ if .Options.Broadcasts }}<p>Broadcasts: {{ .Options.Broadcasts.String  }}</p>{{ end }}
           {{ if .Options.ReadReceipts }}<p>ReadReceipts: {{ .Options.ReadReceipts.String  }}</p>{{ end }}
           {{ if .Options.Calls }}<p>Calls: {{ .Options.Calls.String  }}</p>{{ end }}

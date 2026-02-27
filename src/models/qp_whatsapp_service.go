@@ -112,7 +112,12 @@ func (source *QPWhatsappService) AppendPaired(paired *QpWhatsappPairing) (server
 		logger.Infof("updating paired server on cache: %s, old wid: %s, new wid: %s", server.Token, server.Wid, paired.Wid)
 	}
 
-	server.connection = paired.conn
+	// Ensure the paired connection has the server handler attached.
+	if paired.conn != nil && !paired.conn.IsInterfaceNil() {
+		server.UpdateConnection(paired.conn)
+	} else {
+		server.connection = paired.conn
+	}
 	server.Verified = true
 
 	// checking user

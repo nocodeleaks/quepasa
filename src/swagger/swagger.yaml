@@ -97,10 +97,18 @@ definitions:
       devel:
         description: enable debug mode (devel)
         type: boolean
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct messages
       groups:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle groups messages
+      individuals:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: deprecated alias for direct
       readreceipts:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -251,6 +259,8 @@ definitions:
         type: string
       db_log_level:
         type: string
+      direct:
+        type: string
       groups:
         type: string
       history_sync:
@@ -387,6 +397,8 @@ definitions:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       calls:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      direct:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       groups:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       history_sync_days:
@@ -463,6 +475,10 @@ definitions:
       connection_string:
         description: destination URL (webhook) or connection string (rabbitmq)
         type: string
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct messages (@s.whatsapp.net and @lid)
       extra:
         description: extra info to append on payload
       failure:
@@ -605,6 +621,10 @@ definitions:
       connection_string:
         description: RabbitMQ Connection Settings
         type: string
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct messages (@s.whatsapp.net and @lid)
       exchange_name:
         description: RabbitMQ exchange name for routing
         type: string
@@ -749,6 +769,10 @@ definitions:
         description: should handle calls
       devel:
         type: boolean
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct messages (@s.whatsapp.net and @lid)
       groups:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -817,6 +841,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct messages (@s.whatsapp.net and @lid)
       extra:
         description: extra info to append on payload
       failure:
@@ -881,6 +909,10 @@ definitions:
         description: should handle calls
       devel:
         type: boolean
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct messages (@s.whatsapp.net and @lid)
       dispatching:
         items:
           $ref: '#/definitions/models.QpDispatching'
@@ -1439,7 +1471,8 @@ paths:
       consumes:
       - application/json
       description: Execute control commands for the bot server (start, stop, restart)
-        or toggle settings (groups, broadcasts, readreceipts, readupdate, calls, debug)
+        or toggle settings (groups, direct, broadcasts, readreceipts, readupdate,
+        calls, debug)
       parameters:
       - description: Command action
         enum:
@@ -1447,6 +1480,7 @@ paths:
         - stop
         - restart
         - groups
+        - direct
         - broadcasts
         - readreceipts
         - readupdate
@@ -2450,7 +2484,8 @@ paths:
       - application/json
       description: Forces re-dispatch of a cached message to webhooks/RabbitMQ using
         the message ID. Applies all original dispatching validations including TrackId,
-        ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).
+        ForwardInternal, message type filters (groups, direct, broadcasts, calls,
+        read receipts).
       parameters:
       - description: Message ID to re-dispatch
         in: path

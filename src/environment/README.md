@@ -1,6 +1,6 @@
 # QuePasa Environment Variables Documentation
 
-This document describes all environment variables used by the QuePasa application, organized by category. **Total: 65 variables across 12 categories**.
+This document describes all environment variables used by the QuePasa application, organized by category. **Total: 66 variables across 12 categories**.
 
 ## 📡 SIP Proxy Configuration
 
@@ -82,6 +82,7 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`READRECEIPTS`** - Handle read receipts (default: `false`)
 - **`CALLS`** - Handle calls (default: `false`)
 - **`GROUPS`** - Handle group messages (default: `false`)
+- **`DIRECT`** - Handle direct messages (`@s.whatsapp.net` and `@lid`) (default: `true`)
 - **`BROADCASTS`** - Handle broadcast messages (default: `false`)
 - **`HISTORYSYNCDAYS`** - History sync days
 - **`PRESENCE`** - Presence state (default: `unavailable`)
@@ -90,7 +91,7 @@ This document describes all environment variables used by the QuePasa applicatio
 
 ### Individual Server Configuration
 
-Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `READRECEIPTS`, and `BROADCASTS`:
+Each server can override global settings for `READUPDATE`, `GROUPS`, `DIRECT`, `CALLS`, `READRECEIPTS`, and `BROADCASTS`:
 - Set to `true` or `1` to enable for this specific server
 - Set to `false` or `-1` to disable for this specific server  
 - Leave unset to use global environment variable value

@@ -123,4 +123,14 @@ func (source QpServer) GetGroups() bool {
 	return source.Groups.Boolean()
 }
 
+// used for view
+func (source QpServer) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
+}
+
+// used for view
+func (source QpServer) GetDirect() bool {
+	return source.Direct.Boolean()
+}
+
 //#endregion

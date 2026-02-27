@@ -118,9 +118,9 @@
                     </form>
                   </p>
                   <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-individuals" data-value="{{ .Individuals }}">
+                    <form class="" method="post" action="/form/toggle?key=server-direct" data-value="{{ .Direct }}">
                       <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetIndividuals }}{{ if .GetIndividuals }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Individual Messages">
+                      <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Direct Messages">
                         <span class="icon is-small is-inline"><i class="fa fa-user"></i></span>
                       </button>
                     </form>
@@ -214,7 +214,7 @@
         <div class="subtitle"><b>Whatsapp</b> service environment options:</div>
         <div>
           {{ if .Options.Groups }}<p>Groups: {{ .Options.Groups.String  }}</p>{{ end }}
-          {{ if .Options.Individuals }}<p>Individuals: {{ .Options.Individuals.String  }}</p>{{ end }}
+          {{ if .Options.Direct }}<p>Direct: {{ .Options.Direct.String  }}</p>{{ end }}
           {{ if .Options.Broadcasts }}<p>Broadcasts: {{ .Options.Broadcasts.String  }}</p>{{ end }}
           {{ if .Options.ReadReceipts }}<p>ReadReceipts: {{ .Options.ReadReceipts.String  }}</p>{{ end }}
           {{ if .Options.Calls }}<p>Calls: {{ .Options.Calls.String  }}</p>{{ end }}

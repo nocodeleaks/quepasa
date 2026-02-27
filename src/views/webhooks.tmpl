@@ -65,9 +65,9 @@
                   </form>
                 </p>
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-individuals" data-value="{{ .Individuals }}">
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=webhook-direct" data-value="{{ .Direct }}">
                     <input name="url" type="hidden" value="{{ .Url }}">
-                    <button class="button {{ if .IsSetIndividuals }}{{ if .GetIndividuals }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Individuals: {{ .Individuals }}">
+                    <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Direct: {{ .Direct }}">
                       <span class="icon is-small is-inline"><i class="fa fa-user"></i></span>
                     </button>
                   </form>
@@ -173,8 +173,8 @@
             </p>
             <p class="control">
               <label class="checkbox">
-                <input type="checkbox" id="newWebhookIndividuals">
-                Receive Individual Messages
+                <input type="checkbox" id="newWebhookDirect">
+                Receive Direct Messages
               </label>
             </p>
             <p class="control">
@@ -370,7 +370,7 @@
       document.getElementById('newWebhookForwardInternal').checked = false;
       document.getElementById('newWebhookBroadcasts').checked = true; // Default to true
       document.getElementById('newWebhookGroups').checked = true; // Default to true
-      document.getElementById('newWebhookIndividuals').checked = true; // Default to true
+      document.getElementById('newWebhookDirect').checked = true; // Default to true
       document.getElementById('newWebhookReadReceipts').checked = false;
       document.getElementById('newWebhookCalls').checked = false;
       document.getElementById('newWebhookExtra').value = '';
@@ -388,7 +388,7 @@
       const forwardInternal = document.getElementById('newWebhookForwardInternal').checked;
       const broadcasts = document.getElementById('newWebhookBroadcasts').checked;
       const groups = document.getElementById('newWebhookGroups').checked;
-      const individuals = document.getElementById('newWebhookIndividuals').checked;
+      const direct = document.getElementById('newWebhookDirect').checked;
       const readReceipts = document.getElementById('newWebhookReadReceipts').checked;
       const calls = document.getElementById('newWebhookCalls').checked;
       const extraText = document.getElementById('newWebhookExtra').value.trim();
@@ -425,7 +425,7 @@
         forwardInternal: forwardInternal,
         broadcasts: broadcasts,
         groups: groups,
-        individuals: individuals,
+        direct: direct,
         readReceipts: readReceipts,
         calls: calls,
         extra: extraData

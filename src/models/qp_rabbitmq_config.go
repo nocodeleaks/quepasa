@@ -77,12 +77,12 @@ func (source QpRabbitMQConfig) IsSetGroups() bool {
 	return source.Groups != whatsapp.UnSetBooleanType
 }
 
-func (source QpRabbitMQConfig) GetIndividuals() bool {
-	return source.Individuals.Boolean()
+func (source QpRabbitMQConfig) GetDirect() bool {
+	return source.Direct.Boolean()
 }
 
-func (source QpRabbitMQConfig) IsSetIndividuals() bool {
-	return source.Individuals != whatsapp.UnSetBooleanType
+func (source QpRabbitMQConfig) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
 }
 
 func (source QpRabbitMQConfig) GetBroadcasts() bool {

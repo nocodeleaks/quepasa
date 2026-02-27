@@ -73,12 +73,12 @@ func (source QpWebhook) IsSetGroups() bool {
 	return source.Groups != whatsapp.UnSetBooleanType
 }
 
-func (source QpWebhook) GetIndividuals() bool {
-	return source.Individuals.Boolean()
+func (source QpWebhook) GetDirect() bool {
+	return source.Direct.Boolean()
 }
 
-func (source QpWebhook) IsSetIndividuals() bool {
-	return source.Individuals != whatsapp.UnSetBooleanType
+func (source QpWebhook) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
 }
 
 func (source QpWebhook) GetBroadcasts() bool {

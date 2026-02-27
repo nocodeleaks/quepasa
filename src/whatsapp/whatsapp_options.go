@@ -6,8 +6,8 @@ type WhatsappOptions struct {
 	// should handle groups messages
 	Groups WhatsappBoolean `db:"groups" json:"groups,omitempty"`
 
-	// should handle individual messages (@s.whatsapp.net and @lid)
-	Individuals WhatsappBoolean `db:"individuals" json:"individuals,omitempty"`
+	// should handle direct messages (@s.whatsapp.net and @lid)
+	Direct WhatsappBoolean `db:"direct" json:"direct,omitempty"`
 
 	// should handle broadcast messages
 	Broadcasts WhatsappBoolean `db:"broadcasts" json:"broadcasts,omitempty"`

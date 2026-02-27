@@ -71,9 +71,9 @@
                   </form>
                 </p>
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-individuals" data-value="{{ .Individuals }}">
+                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-direct" data-value="{{ .Direct }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
-                    <button class="button {{ if .IsSetIndividuals }}{{ if .GetIndividuals }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Individuals: {{ .Individuals }}">
+                    <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Direct: {{ .Direct }}">
                       <span class="icon is-small is-inline"><i class="fa fa-user"></i></span>
                     </button>
                   </form>
@@ -208,8 +208,8 @@
             </p>
             <p class="control">
               <label class="checkbox">
-                <input type="checkbox" id="newIndividuals">
-                Receive Individual Messages
+                <input type="checkbox" id="newDirect">
+                Receive Direct Messages
               </label>
             </p>
             <p class="control">
@@ -395,7 +395,7 @@
       document.getElementById('newForwardInternal').checked = false;
       document.getElementById('newBroadcasts').checked = true; // Default to true
       document.getElementById('newGroups').checked = true; // Default to true
-      document.getElementById('newIndividuals').checked = true; // Default to true
+      document.getElementById('newDirect').checked = true; // Default to true
       document.getElementById('newReadReceipts').checked = false;
       document.getElementById('newCalls').checked = false;
       document.getElementById('newExtra').value = '';
@@ -413,7 +413,7 @@
       const forwardInternal = document.getElementById('newForwardInternal').checked;
       const broadcasts = document.getElementById('newBroadcasts').checked;
       const groups = document.getElementById('newGroups').checked;
-      const individuals = document.getElementById('newIndividuals').checked;
+      const direct = document.getElementById('newDirect').checked;
       const readReceipts = document.getElementById('newReadReceipts').checked;
       const calls = document.getElementById('newCalls').checked;
       const extraText = document.getElementById('newExtra').value.trim();
@@ -448,7 +448,7 @@
         forwardinternal: forwardInternal,
         broadcasts: broadcasts,
         groups: groups,
-        individuals: individuals,
+        direct: direct,
         readreceipts: readReceipts,
         calls: calls,
         extra: extraData

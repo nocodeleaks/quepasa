@@ -224,11 +224,11 @@ func RegisterAPIControllers(r chi.Router) {
 // CommandController manages bot server commands
 //
 //	@Summary		Execute bot commands
-//	@Description	Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, individuals, broadcasts, readreceipts, readupdate, calls, debug)
+//	@Description	Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, direct, broadcasts, readreceipts, readupdate, calls, debug)
 //	@Tags			Bot
 //	@Accept			json
 //	@Produce		json
-//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, groups, individuals, broadcasts, readreceipts, readupdate, calls, debug)
+//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, groups, direct, broadcasts, readreceipts, readupdate, calls, debug)
 //	@Success		200		{object}	models.QpResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -271,10 +271,10 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			message := "groups toggled: " + server.Groups.String()
 			response.ParseSuccess(message)
 		}
-	case "individuals":
-		err := models.ToggleIndividuals(server)
+	case "direct", "individuals":
+		err := models.ToggleDirect(server)
 		if err == nil {
-			message := "individuals toggled: " + server.Individuals.String()
+			message := "direct toggled: " + server.Direct.String()
 			response.ParseSuccess(message)
 		}
 	case "broadcasts":
@@ -308,7 +308,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess(message)
 		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,individuals,broadcasts,readreceipts,readupdate,calls,debug}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,direct,broadcasts,readreceipts,readupdate,calls,debug}", action)
 	}
 
 	if err != nil {

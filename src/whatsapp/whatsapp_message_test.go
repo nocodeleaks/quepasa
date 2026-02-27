@@ -2,7 +2,7 @@ package whatsapp
 
 import "testing"
 
-func TestWhatsappMessageFromIndividual(t *testing.T) {
+func TestWhatsappMessageFromDirect(t *testing.T) {
 	tests := []struct {
 		name   string
 		chatID string
@@ -21,8 +21,8 @@ func TestWhatsappMessageFromIndividual(t *testing.T) {
 			msg := &WhatsappMessage{
 				Chat: WhatsappChat{Id: tt.chatID},
 			}
-			if got := msg.FromIndividual(); got != tt.want {
-				t.Fatalf("FromIndividual() = %v, want %v", got, tt.want)
+			if got := msg.FromDirect(); got != tt.want {
+				t.Fatalf("FromDirect() = %v, want %v", got, tt.want)
 			}
 		})
 	}

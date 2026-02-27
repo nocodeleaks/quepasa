@@ -250,7 +250,7 @@ DBDATABASE=quepasa_whatsmeow
 
 # Features
 GROUPS=true
-INDIVIDUALS=true
+DIRECT=true
 READRECEIPTS=true
 CALLS=true
 WEBSOCKETSSL=false
@@ -327,7 +327,7 @@ For detailed configuration options, see [docker/.env.example](docker/.env.exampl
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GROUPS` | Enable group messaging | `true` |
-| `INDIVIDUALS` | Enable individual chat messaging (`@s.whatsapp.net` and `@lid`) | `true` |
+| `DIRECT` | Enable direct chat messaging (`@s.whatsapp.net` and `@lid`) | `true` |
 | `BROADCASTS` | Enable broadcast messages | `false` |
 | `READRECEIPTS` | Trigger webhooks for read receipts | `false` |
 | `CALLS` | Accept incoming calls | `true` |

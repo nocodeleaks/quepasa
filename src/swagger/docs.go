@@ -280,7 +280,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, individuals, broadcasts, readreceipts, readupdate, calls, debug)",
+                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, direct, broadcasts, readreceipts, readupdate, calls, debug)",
                 "consumes": [
                     "application/json"
                 ],
@@ -298,7 +298,7 @@ const docTemplate = `{
                             "stop",
                             "restart",
                             "groups",
-                            "individuals",
+                            "direct",
                             "broadcasts",
                             "readreceipts",
                             "readupdate",
@@ -1873,7 +1873,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, individuals, broadcasts, calls, read receipts).",
+                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, direct, broadcasts, calls, read receipts).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2606,6 +2606,14 @@ const docTemplate = `{
                     "description": "enable debug mode (devel)",
                     "type": "boolean"
                 },
+                "direct": {
+                    "description": "should handle direct messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "groups": {
                     "description": "should handle groups messages",
                     "allOf": [
@@ -2615,7 +2623,7 @@ const docTemplate = `{
                     ]
                 },
                 "individuals": {
-                    "description": "should handle individual messages",
+                    "description": "deprecated alias for direct",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -2852,13 +2860,13 @@ const docTemplate = `{
                 "db_log_level": {
                     "type": "string"
                 },
+                "direct": {
+                    "type": "string"
+                },
                 "groups": {
                     "type": "string"
                 },
                 "history_sync": {
-                    "type": "string"
-                },
-                "individuals": {
                     "type": "string"
                 },
                 "log_level": {
@@ -3063,14 +3071,14 @@ const docTemplate = `{
                 "calls": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
+                "direct": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
                 "groups": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
                 "history_sync_days": {
                     "type": "integer"
-                },
-                "individuals": {
-                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
                 "presence": {
                     "type": "string"
@@ -3179,6 +3187,14 @@ const docTemplate = `{
                     "description": "destination URL (webhook) or connection string (rabbitmq)",
                     "type": "string"
                 },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "extra": {
                     "description": "extra info to append on payload"
                 },
@@ -3192,14 +3208,6 @@ const docTemplate = `{
                 },
                 "groups": {
                     "description": "should handle groups messages",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "individuals": {
-                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -3407,6 +3415,14 @@ const docTemplate = `{
                     "description": "RabbitMQ Connection Settings",
                     "type": "string"
                 },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "exchange_name": {
                     "description": "RabbitMQ exchange name for routing",
                     "type": "string"
@@ -3424,14 +3440,6 @@ const docTemplate = `{
                 },
                 "groups": {
                     "description": "should handle groups messages",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "individuals": {
-                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -3637,16 +3645,16 @@ const docTemplate = `{
                 "devel": {
                     "type": "boolean"
                 },
-                "groups": {
-                    "description": "should handle groups messages",
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
                         }
                     ]
                 },
-                "individuals": {
-                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
+                "groups": {
+                    "description": "should handle groups messages",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -3753,6 +3761,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "extra": {
                     "description": "extra info to append on payload"
                 },
@@ -3766,14 +3782,6 @@ const docTemplate = `{
                 },
                 "groups": {
                     "description": "should handle groups messages",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "individuals": {
-                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -3864,6 +3872,14 @@ const docTemplate = `{
                 "devel": {
                     "type": "boolean"
                 },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "dispatching": {
                     "type": "array",
                     "items": {
@@ -3872,14 +3888,6 @@ const docTemplate = `{
                 },
                 "groups": {
                     "description": "should handle groups messages",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
-                "individuals": {
-                    "description": "should handle individual messages (@s.whatsapp.net and @lid)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"

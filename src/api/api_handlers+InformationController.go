@@ -97,14 +97,14 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 
 	// Apply configuration from request
 	// Handle both InfoCreateRequest and QpInfoPatchRequest
-	var groups, individuals, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
+	var groups, direct, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
 	var devel *bool
 
 	switch req := request.(type) {
 	case *InfoCreateRequest:
 		if req != nil {
 			groups = req.Groups
-			individuals = req.Individuals
+			direct = req.GetDirect()
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
 			calls = req.Calls
@@ -115,7 +115,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 		if req != nil {
 			// QpInfoPatchRequest may have Username field, handle groups/broadcasts/etc
 			groups = req.Groups
-			individuals = req.Individuals
+			direct = req.GetDirect()
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
 			calls = req.Calls
@@ -129,9 +129,9 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 		update += fmt.Sprintf("groups to: {%s}; ", *groups)
 	}
 
-	if individuals != nil && server.Individuals != *individuals {
-		server.Individuals = *individuals
-		update += fmt.Sprintf("individuals to: {%s}; ", *individuals)
+	if direct != nil && server.Direct != *direct {
+		server.Direct = *direct
+		update += fmt.Sprintf("direct to: {%s}; ", *direct)
 	}
 
 	if broadcasts != nil && server.Broadcasts != *broadcasts {
@@ -246,8 +246,8 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 			if request.Groups != nil {
 				info.Groups = *request.Groups
 			}
-			if request.Individuals != nil {
-				info.Individuals = *request.Individuals
+			if direct := request.GetDirect(); direct != nil {
+				info.Direct = *direct
 			}
 			if request.Broadcasts != nil {
 				info.Broadcasts = *request.Broadcasts

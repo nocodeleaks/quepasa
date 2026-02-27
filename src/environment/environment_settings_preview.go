@@ -10,7 +10,7 @@ import (
 // Used for public endpoints without authentication
 type EnvironmentSettingsPreview struct {
 	Groups            string `json:"groups"`
-	Individuals       string `json:"individuals"`
+	Direct            string `json:"direct"`
 	Broadcasts        string `json:"broadcasts"`
 	ReadReceipts      string `json:"read_receipts"`
 	Calls             string `json:"calls"`
@@ -28,7 +28,7 @@ type EnvironmentSettingsPreview struct {
 func GetPreview() *EnvironmentSettingsPreview {
 	preview := &EnvironmentSettingsPreview{
 		Groups:            formatBooleanExtended(Settings.WhatsApp.Groups),
-		Individuals:       formatBooleanExtended(Settings.WhatsApp.Individuals),
+		Direct:            formatBooleanExtended(Settings.WhatsApp.Direct),
 		Broadcasts:        formatBooleanExtended(Settings.WhatsApp.Broadcasts),
 		ReadReceipts:      formatBooleanExtended(Settings.WhatsApp.ReadReceipts),
 		Calls:             formatBooleanExtended(Settings.WhatsApp.Calls),

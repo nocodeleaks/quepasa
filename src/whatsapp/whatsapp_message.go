@@ -150,7 +150,7 @@ func (source *WhatsappMessage) FromGroup() bool {
 	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX)
 }
 
-func (source *WhatsappMessage) FromIndividual() bool {
+func (source *WhatsappMessage) FromDirect() bool {
 	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_USER_SUFFIX) ||
 		strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_LID_SUFFIX)
 }

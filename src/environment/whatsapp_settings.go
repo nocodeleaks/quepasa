@@ -14,7 +14,6 @@ const (
 	ENV_CALLS           = "CALLS"           // defines if will be accepted calls
 	ENV_GROUPS          = "GROUPS"          // handle groups
 	ENV_DIRECT          = "DIRECT"          // handle direct chats (@s.whatsapp.net and @lid)
-	ENV_DIRECT_LEGACY   = "INDIVIDUALS"     // deprecated legacy alias for direct chats
 	ENV_BROADCASTS      = "BROADCASTS"      // handle broadcasts
 	ENV_HISTORYSYNCDAYS = "HISTORYSYNCDAYS" // history sync days
 	ENV_PRESENCE        = "PRESENCE"        // presence state
@@ -43,7 +42,7 @@ func NewWhatsAppSettings() WhatsAppSettings {
 		ReadReceipts:    getWhatsappBooleanExtended(ENV_READRECEIPTS),
 		Calls:           getWhatsappBooleanExtended(ENV_CALLS),
 		Groups:          getWhatsappBooleanExtended(ENV_GROUPS),
-		Direct:          getWhatsappBooleanExtendedWithFallback(ENV_DIRECT, ENV_DIRECT_LEGACY),
+		Direct:          getWhatsappBooleanExtended(ENV_DIRECT),
 		Broadcasts:      getWhatsappBooleanExtended(ENV_BROADCASTS),
 		HistorySyncDays: getOptionalEnvUint32(ENV_HISTORYSYNCDAYS),
 		Presence:        getEnvOrDefaultString(ENV_PRESENCE, "unavailable"),
@@ -73,12 +72,4 @@ func getWhatsappBooleanExtended(key string) whatsapp.WhatsappBooleanExtended {
 		}
 	}
 	return whatsapp.WhatsappBooleanExtended(whatsapp.UnSetBooleanType)
-}
-
-// Reads a primary environment key and falls back to a deprecated alias when primary is unset.
-func getWhatsappBooleanExtendedWithFallback(primary, legacy string) whatsapp.WhatsappBooleanExtended {
-	if _, ok := os.LookupEnv(primary); ok {
-		return getWhatsappBooleanExtended(primary)
-	}
-	return getWhatsappBooleanExtended(legacy)
 }

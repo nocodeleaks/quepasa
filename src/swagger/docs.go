@@ -2622,14 +2622,6 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "individuals": {
-                    "description": "deprecated alias for direct",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
-                        }
-                    ]
-                },
                 "readreceipts": {
                     "description": "should emit read receipts",
                     "allOf": [

@@ -271,7 +271,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			message := "groups toggled: " + server.Groups.String()
 			response.ParseSuccess(message)
 		}
-	case "direct", "individuals":
+	case "direct":
 		err := models.ToggleDirect(server)
 		if err == nil {
 			message := "direct toggled: " + server.Direct.String()

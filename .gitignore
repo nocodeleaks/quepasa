@@ -21,8 +21,14 @@ __debug_bin*
 # any environment file
 .env
 
-#files for production
-src/.cache 
+# files for production
+src/.cache
+.cache/
+/**/.cache/
+.config/
+/**/.config/
+go/
+/**/go/
 src/.profile
 src/go
 src/sqlite3
@@ -57,3 +63,4 @@ main.exe
 .telegram.token
 apoint-voip-server.json
 src/.env.apoint-voip
+.bash_history

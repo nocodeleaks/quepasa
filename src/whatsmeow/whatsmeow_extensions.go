@@ -306,6 +306,10 @@ func GetDownloadableMessage(msg *waE2E.Message) whatsmeow.DownloadableMessage {
 		return msg.VideoMessage
 	}
 
+	if msg.PtvMessage != nil {
+		return msg.PtvMessage
+	}
+
 	if msg.StickerMessage != nil {
 		return msg.StickerMessage
 	}

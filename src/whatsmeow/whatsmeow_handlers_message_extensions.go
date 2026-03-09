@@ -28,6 +28,9 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 		HandleAudioMessage(logentry, out, in.AudioMessage)
 	case in.VideoMessage != nil:
 		HandleVideoMessage(logentry, out, in.VideoMessage)
+	case in.PtvMessage != nil:
+		HandleVideoMessage(logentry, out, in.PtvMessage)
+		out.InVideoNote = true
 	case in.ExtendedTextMessage != nil:
 		HandleExtendedTextMessage(logentry, out, in.ExtendedTextMessage)
 	case in.EphemeralMessage != nil:

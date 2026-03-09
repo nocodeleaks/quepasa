@@ -399,8 +399,9 @@ func (source *QpWhatsappServer) Start() (err error) {
 		source.Handler.Register(source.DispatchingHandler)
 	}
 
-	// Handler already configured during connection creation via ExternalHandler
-	// No need to call UpdateHandler here
+	// Ensure handlers are bound even when connection originated from QR pairing
+	// (empty connections are created without ExternalHandler).
+	source.connection.UpdateHandler(source.Handler)
 
 	// Initialize RabbitMQ connections for this server
 	source.InitializeRabbitMQConnections()
@@ -451,8 +452,9 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 		logger.Debug("handlers already attached")
 	}
 
-	// Handler already configured during connection creation via ExternalHandler
-	// No need to call UpdateHandler here
+	// Ensure handlers are bound even when connection originated from QR pairing
+	// (empty connections are created without ExternalHandler).
+	source.connection.UpdateHandler(source.Handler)
 
 	statusManager := source.GetStatusManager()
 	if !statusManager.IsConnected() {

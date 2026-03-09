@@ -30,3 +30,10 @@ func GetChatTitleFromWId(source *WhatsmeowConnection, wid string) string {
 
 	return ""
 }
+
+// ContainsMentionAll checks if text contains @all pattern (case-insensitive)
+// Used to detect when user wants to mention all group participants
+func ContainsMentionAll(text string) bool {
+	re := regexp.MustCompile(`(?i)@all\b`)
+	return re.MatchString(text)
+}

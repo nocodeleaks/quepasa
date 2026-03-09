@@ -77,6 +77,14 @@ func (source QpRabbitMQConfig) IsSetGroups() bool {
 	return source.Groups != whatsapp.UnSetBooleanType
 }
 
+func (source QpRabbitMQConfig) GetDirect() bool {
+	return source.Direct.Boolean()
+}
+
+func (source QpRabbitMQConfig) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
+}
+
 func (source QpRabbitMQConfig) GetBroadcasts() bool {
 	return source.Broadcasts.Boolean()
 }

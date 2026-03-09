@@ -10,7 +10,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-// handle message deliver to individual dispatching distribution
+// handle message deliver to dispatching distribution
 func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
 	if server == nil {
 		err = fmt.Errorf("server nil")
@@ -35,6 +35,11 @@ func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.Wha
 
 		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
 			logentry.Debug("ignoring group message")
+			continue
+		}
+
+		if message.FromDirect() && dispatching.IsSetDirect() && !dispatching.Direct.Boolean() {
+			logentry.Debug("ignoring direct message")
 			continue
 		}
 
@@ -141,6 +146,11 @@ func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMe
 
 		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
 			logentry.Debug("ignoring group message")
+			continue
+		}
+
+		if message.FromDirect() && dispatching.IsSetDirect() && !dispatching.Direct.Boolean() {
+			logentry.Debug("ignoring direct message")
 			continue
 		}
 

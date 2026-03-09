@@ -2,9 +2,9 @@ package environment
 
 // WhatsApp environment variable names
 const (
-	ENV_DISPATCH_UNHANDLED                = "DISPATCHUNHANDLED"                // enable or disable dispatch unhandled messages
-	ENV_WHATSMEOWLOGLEVEL                 = "WHATSMEOW_LOGLEVEL"               // Whatsmeow log level
-	ENV_WHATSMEOWDBLOGLEVEL               = "WHATSMEOW_DBLOGLEVEL"             // Whatsmeow database log level
+	ENV_DISPATCH_UNHANDLED                = "DISPATCHUNHANDLED"                 // enable or disable dispatch unhandled messages
+	ENV_WHATSMEOWLOGLEVEL                 = "WHATSMEOW_LOGLEVEL"                // Whatsmeow log level
+	ENV_WHATSMEOWDBLOGLEVEL               = "WHATSMEOW_DBLOGLEVEL"              // Whatsmeow database log level
 	ENV_WHATSMEOW_USE_RETRY_MESSAGE_STORE = "WHATSMEOW_USE_RETRY_MESSAGE_STORE" // persist outgoing messages for retry receipts
 )
 

@@ -280,7 +280,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute control commands for the bot server (start, stop, restart)",
+                "description": "Execute control commands for the bot server (start, stop, restart) or toggle settings (groups, direct, broadcasts, readreceipts, readupdate, calls, debug)",
                 "consumes": [
                     "application/json"
                 ],
@@ -296,7 +296,14 @@ const docTemplate = `{
                         "enum": [
                             "start",
                             "stop",
-                            "restart"
+                            "restart",
+                            "groups",
+                            "direct",
+                            "broadcasts",
+                            "readreceipts",
+                            "readupdate",
+                            "calls",
+                            "debug"
                         ],
                         "type": "string",
                         "description": "Command action",
@@ -1821,7 +1828,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering",
+                "description": "Retrieves pending messages from WhatsApp with optional cache filters",
                 "consumes": [
                     "application/json"
                 ],
@@ -1843,6 +1850,54 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages",
                         "name": "exceptions",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message type (supports comma-separated list)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category: sent, received, sync, unhandled, events",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text in id, chat, text, trackid, participant and exceptions",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromme boolean: true or false",
+                        "name": "fromme",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromhistory boolean: true or false",
+                        "name": "fromhistory",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by chat id (contains)",
+                        "name": "chatid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message id (contains)",
+                        "name": "messageid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by track id (contains)",
+                        "name": "trackid",
                         "in": "query"
                     }
                 ],
@@ -1869,7 +1924,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, broadcasts, calls, read receipts).",
+                "description": "Forces re-dispatch of a cached message to webhooks/RabbitMQ using the message ID. Applies all original dispatching validations including TrackId, ForwardInternal, message type filters (groups, direct, broadcasts, calls, read receipts).",
                 "consumes": [
                     "application/json"
                 ],
@@ -2602,6 +2657,14 @@ const docTemplate = `{
                     "description": "enable debug mode (devel)",
                     "type": "boolean"
                 },
+                "direct": {
+                    "description": "should handle direct messages",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "groups": {
                     "description": "should handle groups messages",
                     "allOf": [
@@ -2727,6 +2790,10 @@ const docTemplate = `{
                 "master_key": {
                     "type": "string"
                 },
+                "password": {
+                    "description": "default password for database seeding",
+                    "type": "string"
+                },
                 "prefix": {
                     "type": "string"
                 },
@@ -2739,6 +2806,10 @@ const docTemplate = `{
                 },
                 "use_ssl_websocket": {
                     "type": "boolean"
+                },
+                "user": {
+                    "description": "default user for database seeding",
+                    "type": "string"
                 },
                 "webhook_timeout": {
                     "description": "webhook timeout in milliseconds",
@@ -2841,6 +2912,9 @@ const docTemplate = `{
                 "db_log_level": {
                     "type": "string"
                 },
+                "direct": {
+                    "type": "string"
+                },
                 "groups": {
                     "type": "string"
                 },
@@ -2857,6 +2931,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "read_update": {
+                    "type": "string"
+                },
+                "retry_message_store": {
                     "type": "string"
                 },
                 "wakeup_duration": {
@@ -2900,6 +2977,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "convert_wave_to_ogg": {
+                    "type": "boolean"
+                },
+                "force_audio_as_ptt": {
                     "type": "boolean"
                 },
                 "log_level": {
@@ -3043,6 +3123,9 @@ const docTemplate = `{
                 "calls": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
+                "direct": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
                 "groups": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
@@ -3079,6 +3162,9 @@ const docTemplate = `{
                 },
                 "whatsmeow_log_level": {
                     "type": "string"
+                },
+                "whatsmeow_use_retry_message_store": {
+                    "type": "boolean"
                 }
             }
         },
@@ -3152,6 +3238,14 @@ const docTemplate = `{
                 "connection_string": {
                     "description": "destination URL (webhook) or connection string (rabbitmq)",
                     "type": "string"
+                },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "extra": {
                     "description": "extra info to append on payload"
@@ -3372,6 +3466,14 @@ const docTemplate = `{
                 "connection_string": {
                     "description": "RabbitMQ Connection Settings",
                     "type": "string"
+                },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "exchange_name": {
                     "description": "RabbitMQ exchange name for routing",
@@ -3595,6 +3697,14 @@ const docTemplate = `{
                 "devel": {
                     "type": "boolean"
                 },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "groups": {
                     "description": "should handle groups messages",
                     "allOf": [
@@ -3703,6 +3813,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "extra": {
                     "description": "extra info to append on payload"
                 },
@@ -3805,6 +3923,14 @@ const docTemplate = `{
                 },
                 "devel": {
                     "type": "boolean"
+                },
+                "direct": {
+                    "description": "should handle direct messages (@s.whatsapp.net and @lid)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "dispatching": {
                     "type": "array",

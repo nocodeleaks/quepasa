@@ -52,6 +52,7 @@ func main() {
 
 	whatsappOptions := &whatsapp.WhatsappOptionsExtended{
 		Groups:            environment.Settings.WhatsApp.Groups,
+		Direct:            environment.Settings.WhatsApp.Direct,
 		Broadcasts:        environment.Settings.WhatsApp.Broadcasts,
 		ReadReceipts:      environment.Settings.WhatsApp.ReadReceipts,
 		Calls:             environment.Settings.WhatsApp.Calls,

@@ -100,10 +100,10 @@ func ValidateUsername(r *http.Request) (username string, ex ApiException) {
 //	@Description	Generates a pairing code for WhatsApp authentication using phone number
 //	@Tags			Connection
 //	@Produce		json
-//	@Param			phone	query		string	true	"Phone number for pairing"
-//	@Param			historysyncdays	query		int	false	"Days of message history to sync"
-//	@Success		200		{object}	models.QpResponse
-//	@Failure		400		{object}	models.QpResponse
+//	@Param			phone			query		string	true	"Phone number for pairing"
+//	@Param			historysyncdays	query		int		false	"Days of message history to sync"
+//	@Success		200				{object}	models.QpResponse
+//	@Failure		400				{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/paircode [get]
 func PairCodeController(w http.ResponseWriter, r *http.Request) {

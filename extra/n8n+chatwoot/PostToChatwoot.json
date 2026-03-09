@@ -1997,7 +1997,7 @@
   "versionId": "5d86244c-a183-4761-9aee-3878d965f4e4",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
+    "instanceId": "SANITIZED_INSTANCE_ID"
   },
   "id": "1006",
   "tags": []

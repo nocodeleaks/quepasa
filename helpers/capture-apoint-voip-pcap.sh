@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Capture UDP traffic relevant to WhatsApp/WebRTC call setup on apoint-voip.
+# Capture UDP traffic relevant to WhatsApp/WebRTC call setup on public-voip-example.
 # - Focuses on STUN/TURN (3478/5349) and typical UDP media ports.
 # - Produces a .pcap and a .log.
 #
 # Usage examples:
-#   ./capture-apoint-voip-pcap.sh --duration 180 --callid A519... \
+#   ./capture-public-voip-example-pcap.sh --duration 180 --callid A519... \
 #     --filter "udp and (port 3478 or port 5349 or portrange 10000-65000)"
 #
 #   # Narrow to a specific relay from dumps:
-#   ./capture-apoint-voip-pcap.sh --duration 180 --callid A519... \
-#     --filter "udp and host 57.144.179.54 and port 3478"
+#   ./capture-public-voip-example-pcap.sh --duration 180 --callid A519... \
+#     --filter "udp and host 203.0.113.54 and port 3478"
 
 DURATION=180
 IFACE=eth0

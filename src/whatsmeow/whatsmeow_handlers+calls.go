@@ -227,7 +227,7 @@ func (source *WhatsmeowHandlers) HandleCallOffer(evt *events.CallOffer) {
 		}
 
 		logentry.Infof(
-			"🧊 [OFFER-SUMMARY] callID=%s offer.medium=%s disable_p2p=%v relay_candidates=%v relays=%v relay_tokens=%d sample_tokens_b64=%v enc.type=%s enc.v=%s enc.len=%d enc.kind=%s relay.uuid=%s relay.self_pid=%s relay.peer_pid=%s relay.te2=%d relay.protocols=%v relay.token_nodes=%d relay.auth_token_nodes=%d relay.key=%s relay.hbh_key=%s codecs=%v",
+			"🧊 [OFFER-SUMMARY] callID=%s offer.medium=%s disable_p2p=%v relay_candidates=%v relays=%v relay_tokens=%d sample_tokens_b64=%v enc.type=%s enc.v=%s enc.len=%d enc.kind=%s relay.uuid=%s relay.self_pid=%s relay.peer_pid=%s relay.te2=%d relay.protocols=%v relay.token_nodes=%d relay.auth_token_nodes=%d has_relay_key=%t has_hbh_key=%t codecs=%v",
 			evt.CallID,
 			offerMedium,
 			callOffer.IsP2PDisabledCached(),
@@ -246,8 +246,8 @@ func (source *WhatsmeowHandlers) HandleCallOffer(evt *events.CallOffer) {
 			protocols,
 			tokenCount,
 			authTokenCount,
-			redactValue(relayKey, full),
-			redactValue(hbhKey, full),
+			strings.TrimSpace(relayKey) != '',
+			strings.TrimSpace(hbhKey) != '',
 			codecs,
 		)
 	}

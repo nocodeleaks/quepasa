@@ -2,7 +2,7 @@
 
 ## 🎯 Sistema Configurado
 
-**Servidor SIP:** `voip.sufficit.com.br:26499`  
+**Servidor SIP:** `voip.example.com:26499`  
 **Protocolo:** UDP  
 **Status:** ✅ Ativo  
 
@@ -20,32 +20,32 @@
 📡 SIP Data: From=5571xxxxx@s.whatsapp.net, To=5521xxxxx@s.whatsapp.net, Method=INVITE
 ```
 
-### 3. **Forwarding para voip.sufficit.com.br:26499**
+### 3. **Forwarding para voip.example.com:26499**
 ```
-🚀 FORWARDING TO SIP SERVER: voip.sufficit.com.br:26499
-📡 SIP INVITE will be sent to voip.sufficit.com.br:26499
-🔌 Establishing UDP connection to voip.sufficit.com.br:26499
-✅ UDP message sent successfully to voip.sufficit.com.br:26499 (1234 bytes)
+🚀 FORWARDING TO SIP SERVER: voip.example.com:26499
+📡 SIP INVITE will be sent to voip.example.com:26499
+🔌 Establishing UDP connection to voip.example.com:26499
+✅ UDP message sent successfully to voip.example.com:26499 (1234 bytes)
 ```
 
 ## 📋 Mensagens SIP Geradas
 
 ### SIP INVITE
 ```
-INVITE sip:5571999999999@voip.sufficit.com.br SIP/2.0
-Via: SIP/2.0/UDP voip.sufficit.com.br:26499;branch=z9hG4bKABC12345
-From: <sip:5571888888888@voip.sufficit.com.br>;tag=ABC12345
-To: <sip:5571999999999@voip.sufficit.com.br>
+INVITE sip:5571999999999@voip.example.com SIP/2.0
+Via: SIP/2.0/UDP voip.example.com:26499;branch=z9hG4bKABC12345
+From: <sip:5571888888888@voip.example.com>;tag=ABC12345
+To: <sip:5571999999999@voip.example.com>
 Call-ID: ABCDEF123456789@whatsapp-proxy
 CSeq: 1 INVITE
-Contact: <sip:whatsapp-proxy@voip.sufficit.com.br:26499>
+Contact: <sip:whatsapp-proxy@voip.example.com:26499>
 Content-Type: application/sdp
 User-Agent: QuePasa-WhatsApp-SIP-Proxy/1.0
 
 v=0
-o=whatsapp-proxy 1691234567 1691234567 IN IP4 voip.sufficit.com.br
+o=whatsapp-proxy 1691234567 1691234567 IN IP4 voip.example.com
 s=WhatsApp Call Proxy
-c=IN IP4 voip.sufficit.com.br
+c=IN IP4 voip.example.com
 t=0 0
 m=audio 5004 RTP/AVP 0 8
 a=rtpmap:0 PCMU/8000
@@ -56,25 +56,25 @@ a=sendrecv
 ### SIP 200 OK (se chamada for aceita)
 ```
 SIP/2.0 200 OK
-Via: SIP/2.0/UDP voip.sufficit.com.br:26499;branch=z9hG4bKABC12345
-From: <sip:5571888888888@voip.sufficit.com.br>;tag=ABC12345
-To: <sip:5571999999999@voip.sufficit.com.br>;tag=DEF56789
+Via: SIP/2.0/UDP voip.example.com:26499;branch=z9hG4bKABC12345
+From: <sip:5571888888888@voip.example.com>;tag=ABC12345
+To: <sip:5571999999999@voip.example.com>;tag=DEF56789
 Call-ID: ABCDEF123456789@whatsapp-proxy
 CSeq: 1 INVITE
-Contact: <sip:whatsapp-proxy@voip.sufficit.com.br:26499>
+Contact: <sip:whatsapp-proxy@voip.example.com:26499>
 Content-Type: application/sdp
 User-Agent: QuePasa-WhatsApp-SIP-Proxy/1.0
 ```
 
 ### SIP BYE (quando chamada termina)
 ```
-BYE sip:5571999999999@voip.sufficit.com.br SIP/2.0
-Via: SIP/2.0/UDP voip.sufficit.com.br:26499;branch=z9hG4bKABC12345
-From: <sip:5571888888888@voip.sufficit.com.br>;tag=ABC12345
-To: <sip:5571999999999@voip.sufficit.com.br>;tag=DEF56789
+BYE sip:5571999999999@voip.example.com SIP/2.0
+Via: SIP/2.0/UDP voip.example.com:26499;branch=z9hG4bKABC12345
+From: <sip:5571888888888@voip.example.com>;tag=ABC12345
+To: <sip:5571999999999@voip.example.com>;tag=DEF56789
 Call-ID: ABCDEF123456789@whatsapp-proxy
 CSeq: 2 BYE
-Contact: <sip:whatsapp-proxy@voip.sufficit.com.br:26499>
+Contact: <sip:whatsapp-proxy@voip.example.com:26499>
 Content-Length: 0
 User-Agent: QuePasa-WhatsApp-SIP-Proxy/1.0
 ```
@@ -84,7 +84,7 @@ User-Agent: QuePasa-WhatsApp-SIP-Proxy/1.0
 ### Configuração Inicial
 ```
 🎯 SIP PROXY CONFIGURED:
-   📡 Server: voip.sufficit.com.br:26499
+   📡 Server: voip.example.com:26499
    🔧 Protocol: UDP
    ✅ Status: Enabled
 ```
@@ -93,10 +93,10 @@ User-Agent: QuePasa-WhatsApp-SIP-Proxy/1.0
 ```
 🔍 CALL DEBUG - Event: CallOffer
 🎯 SIP PROXY: Captured CallOffer for CallID: ABC123...
-📤 Sending SIP message to voip.sufficit.com.br:26499
-🔌 Establishing UDP connection to voip.sufficit.com.br:26499
-✅ UDP message sent successfully to voip.sufficit.com.br:26499
-📥 Received response from voip.sufficit.com.br:26499: (se houver resposta)
+📤 Sending SIP message to voip.example.com:26499
+🔌 Establishing UDP connection to voip.example.com:26499
+✅ UDP message sent successfully to voip.example.com:26499
+📥 Received response from voip.example.com:26499: (se houver resposta)
 ```
 
 ## 🛠️ Comandos para Testar
@@ -113,7 +113,7 @@ go run main.go
 
 ### 3. **Verificar Logs**
 - Procure por: `🔥 AUTO-ACCEPTING CALL`
-- Verifique: `📡 SIP INVITE will be sent to voip.sufficit.com.br:26499`
+- Verifique: `📡 SIP INVITE will be sent to voip.example.com:26499`
 - Confirme: `✅ UDP message sent successfully`
 
 ## 📊 Dados Capturados
@@ -127,7 +127,7 @@ go run main.go
   "status": "offered",
   "start_time": "2025-08-11T14:30:00Z",
   "end_time": "2025-08-11T14:35:00Z",
-  "sip_server": "voip.sufficit.com.br:26499"
+  "sip_server": "voip.example.com:26499"
 }
 ```
 
@@ -154,7 +154,7 @@ go run main.go
 ## ⚡ Status do Sistema
 
 - ✅ **Compilação:** Bem-sucedida
-- ✅ **Configuração:** voip.sufficit.com.br:26499
+- ✅ **Configuração:** voip.example.com:26499
 - ✅ **Protocolo:** UDP
 - ✅ **Auto-aceitação:** Ativada
 - ✅ **Captura SIP:** Implementada

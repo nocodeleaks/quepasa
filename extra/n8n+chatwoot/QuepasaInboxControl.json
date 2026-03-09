@@ -405,7 +405,7 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/inbox",
+        "url": "https://endpoints.example.com/gateway/chatwoot/inbox",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -419,7 +419,7 @@
             },
             {
               "name": "contextid",
-              "value": "={{ $env[\"C8Q_SUFFICIT_CONTEXTID\"] }}"
+              "value": "={{ $env[\"C8Q_PUBLIC_CONTEXTID\"] }}"
             }
           ]
         },
@@ -438,7 +438,7 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/inbox",
+        "url": "https://endpoints.example.com/gateway/chatwoot/inbox",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -512,7 +512,7 @@
           "string": [
             {
               "name": "response",
-              "value": "={{ $json.message }}:\n  * identifier: {{ $json.data?.identifier }}\n  * destination: {{ $json.data?.destination }}\n  * contextId: {{ $json.data?.contextid }}\n\n--------------------------------------\nFor more informations, check:\n*** https://www.sufficit.com.br/gateway/chatwoot/default?objectid={{ $json.data?.contextid }}"
+              "value": "={{ $json.message }}:\n  * identifier: {{ $json.data?.identifier }}\n  * destination: {{ $json.data?.destination }}\n  * contextId: {{ $json.data?.contextid }}\n\n--------------------------------------\nFor more informations, check:\n*** https://www.example.com/gateway/chatwoot/default?objectid={{ $json.data?.contextid }}"
             }
           ]
         },
@@ -2441,7 +2441,7 @@
   "versionId": "de7a657f-3aed-4110-b530-155c192b6281",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "SANITIZED_INSTANCE_ID"
   },
   "id": "1001",
   "tags": [

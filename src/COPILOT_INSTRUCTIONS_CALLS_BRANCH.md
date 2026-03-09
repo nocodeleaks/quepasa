@@ -10,7 +10,7 @@
 
 #### O QUE JÁ FUNCIONA ✅
 - ✅ Detecção de chamadas WhatsApp (CallOffer)
-- ✅ Envio para servidor SIP (voip.sufficit.com.br:26499)
+- ✅ Envio para servidor SIP (voip.example.com:26499)
 - ✅ Resposta 200 OK do servidor SIP
 - ✅ Integração SIP configurada corretamente
 - ✅ Terminação de chamadas (BYE/CANCEL) funcionando
@@ -92,7 +92,7 @@ WhatsApp CallOffer → SIP INVITE → SIP Server (200 OK) → WhatsApp Accept �
 #### Contexto de Desenvolvimento:
 - Branch: `calls`
 - Ambiente: Windows + Go
-- Servidor SIP: voip.sufficit.com.br:26499
+- Servidor SIP: voip.example.com:26499
 - Biblioteca: whatsmeow + sipgo
 
 #### Comportamento Esperado:

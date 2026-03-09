@@ -1,8 +1,8 @@
 param(
-  [string]$HostIP = "143.208.224.21",
+  [string]$HostIP = "198.51.100.10",
   [int]$SshPort = 26492,
   [string]$User = "root",
-  [string]$KeyPath = "$env:USERPROFILE\\.ssh\\id_ed25519_sufficit",
+  [string]$KeyPath = "$env:USERPROFILE\\.ssh\\id_ed25519_public_example",
   [string]$RemoteBase = "/opt/quepasa",
   [string]$RemoteDumpSubdir = ".dist/call_dumps",
   [string]$RemoteUnit = "quepasa",

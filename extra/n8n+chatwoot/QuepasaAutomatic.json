@@ -1216,7 +1216,7 @@
   "versionId": "721bed44-e6d2-445c-90e6-3e794c64d75f",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "SANITIZED_INSTANCE_ID"
   },
   "id": "1011",
   "tags": [

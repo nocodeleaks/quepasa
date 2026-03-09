@@ -18,7 +18,7 @@ Este documento detalha a implementação completa do sistema de aceitação auto
 - Parada do toque em outros dispositivos WhatsApp
 
 ### ✅ Integração SIP Proxy
-- Encaminhamento automático para servidor SIP (voip.sufficit.com.br:26499)
+- Encaminhamento automático para servidor SIP (voip.example.com:26499)
 - Suporte a codecs OPUS para melhor qualidade
 - Gerenciamento de estado de chamadas unificado
 
@@ -249,7 +249,7 @@ sipIntegration.ProcessCall(callID, from, to)
 ### 🌐 Configuração de Rede
 ```go
 // Configurações SIP
-ServerHost: "voip.sufficit.com.br"
+ServerHost: "voip.example.com"
 ServerPort: 26499
 LocalPort: 5060
 Protocol: UDP
@@ -262,7 +262,7 @@ RTP_PORT_MAX: 20000
 ### 🔐 Variáveis de Ambiente
 ```env
 SIPPROXY_ENABLED=true
-SIPPROXY_HOST=voip.sufficit.com.br
+SIPPROXY_HOST=voip.example.com
 SIPPROXY_PORT=26499
 SIPPROXY_PROTOCOL=UDP
 ```
@@ -291,7 +291,7 @@ SIPPROXY_PROTOCOL=UDP
 tail -f logs/quepasa.log | grep -E "CALL|SIP|RTP"
 
 # Testar conectividade SIP
-nc -u voip.sufficit.com.br 26499
+nc -u voip.example.com 26499
 
 # Monitorar tráfego RTP
 tcpdump -i any port 10000-20000

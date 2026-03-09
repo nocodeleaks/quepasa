@@ -24,8 +24,8 @@ Este documento documenta o padrão observado "accepted_elsewhere" durante o dese
 
 #### 2. **SIP Proxy Funcionou Perfeitamente** ✅
 ```
-🚀 FORWARDING TO SIP SERVER: voip.sufficit.com.br:26499
-✅ Sent 840 bytes to voip.sufficit.com.br:26499
+🚀 FORWARDING TO SIP SERVER: voip.example.com:26499
+✅ Sent 840 bytes to voip.example.com:26499
 📡 Message should have arrived at your SIP server!
 ```
 
@@ -164,7 +164,7 @@ Binary Data: [170 150 236 35 13 150] / [57 144 179 54 13 150] / [157 240 222 62 
 ```
 
 ### SIP Proxy Performance
-- **INVITE enviado**: 840 bytes para voip.sufficit.com.br:26499
+- **INVITE enviado**: 840 bytes para voip.example.com:26499
 - **200 OK automático**: 764 bytes para prevenção de timeout
 - **Conexão UDP**: Estabelecida com sucesso (35.198.6.30:26499)
 - **Timing**: 2 segundos entre INVITE e 200 OK automático

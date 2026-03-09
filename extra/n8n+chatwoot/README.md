@@ -116,7 +116,7 @@
 		> (optional) (string => control@quepasa.io) set identifier for quepasa inbox control contact
 		
 		# C8Q_SUFFICIT_CONTEXTID
-		> (optional) (string => 00000000-0000-0000-0000-000000000000) sufficit client identification
+		> (optional) (string => 00000000-0000-0000-0000-000000000000) custom client identification
 
 		# C8Q_UNKNOWN_SENDER
 		> (optional) 'Mensagem de sistema: '

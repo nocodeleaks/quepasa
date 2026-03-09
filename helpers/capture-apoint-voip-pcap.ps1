@@ -1,8 +1,8 @@
 param(
-  [string]$HostIP = "143.208.224.21",
+  [string]$HostIP = "198.51.100.10",
   [int]$SshPort = 26492,
   [string]$User = "root",
-  [string]$KeyPath = "$env:USERPROFILE\\.ssh\\id_ed25519_sufficit",
+  [string]$KeyPath = "$env:USERPROFILE\\.ssh\\id_ed25519_public_example",
   [int]$DurationSeconds = 180,
   [string]$RemoteBase = "/opt/quepasa",
   [string]$RemoteSubdir = ".dist/pcaps",
@@ -11,7 +11,7 @@ param(
   [string]$CallID = "",
   # Default captures STUN/TURN (3478/5349) + typical high UDP media ports.
   # Tip: to avoid SIP noise, set Filter to something like:
-  #   "udp and host 57.144.179.54 and port 3478"
+  #   "udp and host 203.0.113.54 and port 3478"
   [string]$Filter = "udp and (port 3478 or port 5349 or portrange 10000-65000)",
   [string]$LocalOutDir = ".dist/pcaps"
 )

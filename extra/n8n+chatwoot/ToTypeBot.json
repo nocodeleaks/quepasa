@@ -59,7 +59,7 @@
         -4080,
         480
       ],
-      "webhookId": "9061e7cf-a643-47a3-a036-15a7fc8cfc3c"
+      "webhookId": "SANITIZED_WEBHOOK_ID"
     },
     {
       "parameters": {
@@ -1139,7 +1139,7 @@
         1328,
         576
       ],
-      "webhookId": "fcd2e4ee-0d8b-43cd-bb26-cc9e1a3e9c13"
+      "webhookId": "SANITIZED_WEBHOOK_ID"
     },
     {
       "parameters": {
@@ -1413,7 +1413,7 @@
         1088,
         848
       ],
-      "webhookId": "a5094ecc-3fa9-4468-b5d0-c0d17d7c604c"
+      "webhookId": "SANITIZED_WEBHOOK_ID"
     },
     {
       "parameters": {
@@ -2463,7 +2463,7 @@
   "versionId": "8778c3f5-39ce-4525-bf9a-f54b0e372467",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
+    "instanceId": "SANITIZED_INSTANCE_ID"
   },
   "id": "JSpCXQiF7TT1zUgp",
   "tags": []

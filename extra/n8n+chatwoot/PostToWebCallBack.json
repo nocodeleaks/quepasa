@@ -135,7 +135,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://endpoints.sufficit.com.br/gateway/chatwoot/webcallback",
+        "url": "https://endpoints.example.com/gateway/chatwoot/webcallback",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json }}",
@@ -346,7 +346,7 @@
   "versionId": "f742ea25-38ab-435d-9ef5-ee8b83822ede",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+    "instanceId": "SANITIZED_INSTANCE_ID"
   },
   "id": "1005",
   "tags": []

@@ -1,8 +1,8 @@
 param(
-  [string]$HostIP = "143.208.224.21",
+  [string]$HostIP = "198.51.100.10",
   [int]$SshPort = 26492,
   [string]$User = "root",
-  [string]$KeyPath = "$env:USERPROFILE\\.ssh\\id_ed25519_sufficit",
+  [string]$KeyPath = "$env:USERPROFILE\\.ssh\\id_ed25519_public_example",
   [string]$RemoteBase = "/opt/quepasa",
   [switch]$SkipBuild
 )
@@ -25,7 +25,7 @@ if (-not (Test-Path $KeyPath)) {
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $srcPath = Join-Path $repoRoot "src"
-$envFile = Join-Path $srcPath ".env.apoint-voip"
+$envFile = Join-Path $srcPath ".env.public-voip-example"
 
 if (-not (Test-Path $srcPath)) { throw "src/ not found: $srcPath" }
 if (-not (Test-Path $envFile)) { throw "Missing env file: $envFile" }
@@ -43,7 +43,7 @@ $sshBase = @("-i", $KeyPath, "-p", "$SshPort", "$User@$HostIP")
 & scp -i $KeyPath -P $SshPort -r "$srcPath" "$User@${HostIP}:$RemoteBase/" | Out-Host
 
 # 3) Activate env file on server
-& ssh @sshBase "cp -f $RemoteBase/src/.env.apoint-voip $RemoteBase/src/.env" | Out-Host
+& ssh @sshBase "cp -f $RemoteBase/src/.env.public-voip-example $RemoteBase/src/.env" | Out-Host
 
 # 3.1) Fix ownership so systemd user can write sqlite DBs and dumps
 & ssh @sshBase "chown -R quepasa:quepasa $RemoteBase/src; chown -R quepasa:quepasa $RemoteBase/.dist || true" | Out-Host

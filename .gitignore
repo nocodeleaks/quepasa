@@ -55,3 +55,4 @@ main.exe
 .dist/win-quepasa-service.exe
 **/.token
 .telegram.token
+src/.gocache

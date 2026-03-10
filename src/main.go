@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"strings"
 
@@ -36,6 +37,14 @@ func main() {
 
 	loglevel := environment.Settings.General.LogLevelFromLogrus(logrus.InfoLevel)
 	logrus.SetLevel(loglevel)
+
+	if logPath := strings.TrimSpace(os.Getenv("QP_LOG_FILE")); logPath != "" {
+		if file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+			logrus.SetOutput(io.MultiWriter(os.Stdout, file))
+		} else {
+			logrus.WithError(err).Warnf("failed to open QP_LOG_FILE=%s", logPath)
+		}
+	}
 
 	logentry := library.NewLogEntry("main")
 	logentry.Level = loglevel

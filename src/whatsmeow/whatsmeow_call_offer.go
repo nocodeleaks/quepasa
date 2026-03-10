@@ -24,6 +24,7 @@ package whatsmeow
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -125,6 +126,29 @@ type RelayTE2 struct {
 	Payload    []byte `json:"-"`
 	PayloadB64 string
 	PayloadLen int
+	IPv6Prefix string
+	MarkerHex  string
+	RelayTailHex string
+	SuffixHex  string
+}
+
+func formatRelayTE2IPv6Prefix(b []byte) string {
+	if len(b) != 8 {
+		return ""
+	}
+	return fmt.Sprintf("%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+		b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+	)
+}
+
+func parseRelayTE2Payload(te *RelayTE2) {
+	if te == nil || len(te.Payload) != 18 {
+		return
+	}
+	te.IPv6Prefix = formatRelayTE2IPv6Prefix(te.Payload[:8])
+	te.MarkerHex = hex.EncodeToString(te.Payload[8:12])
+	te.RelayTailHex = hex.EncodeToString(te.Payload[12:16])
+	te.SuffixHex = hex.EncodeToString(te.Payload[16:18])
 }
 
 // OfferDataNode / RawNode definitions
@@ -575,6 +599,7 @@ func (o *OfferDataNode) ExtractRelayBlock() *RelayBlock {
 					if te.PayloadLen <= 0 {
 						te.PayloadLen = len(raw)
 					}
+					parseRelayTE2Payload(&te)
 				}
 			} else {
 				// Fallback: plain string content (treat as base64 when decodable; else bytes).
@@ -586,6 +611,7 @@ func (o *OfferDataNode) ExtractRelayBlock() *RelayBlock {
 						if raw, err := base64.StdEncoding.DecodeString(s); err == nil {
 							te.Payload = raw
 							te.PayloadLen = len(raw)
+							parseRelayTE2Payload(&te)
 						} else {
 							te.Payload = []byte(s)
 							te.PayloadLen = len(te.Payload)

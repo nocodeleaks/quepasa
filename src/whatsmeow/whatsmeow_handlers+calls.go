@@ -22,11 +22,17 @@
 package whatsmeow
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	stdbinary "encoding/binary"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -48,6 +54,210 @@ func normalizePhoneFromJIDString(value string) string {
 		v = v[:i]
 	}
 	return strings.TrimSpace(v)
+}
+
+func collectCallOfferSignalJIDs(source *WhatsmeowHandlers, evt *events.CallOffer) []types.JID {
+	if evt == nil {
+		return nil
+	}
+	out := make([]types.JID, 0, 8)
+	seen := make(map[string]struct{}, 8)
+	add := func(jid types.JID) {
+		if jid.IsEmpty() {
+			return
+		}
+		key := jid.String()
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		out = append(out, jid)
+	}
+	add(evt.From)
+	add(evt.CallCreator)
+	add(evt.CallCreatorAlt)
+	if source == nil || source.WhatsmeowConnection == nil || source.WhatsmeowConnection.Client == nil {
+		return out
+	}
+	client := source.WhatsmeowConnection.Client
+	base := append([]types.JID(nil), out...)
+	for _, jid := range base {
+		if jid.Server == types.DefaultUserServer && !jid.IsBot() {
+			if lid, err := client.Store.LIDs.GetLIDForPN(context.Background(), jid); err == nil && !lid.IsEmpty() {
+				client.DangerousInternals().MigrateSessionStore(context.Background(), jid, lid)
+				add(lid)
+			}
+		}
+		if jid.Server == types.HiddenUserServer && !jid.IsBot() {
+			if pn, err := client.Store.LIDs.GetPNForLID(context.Background(), jid); err == nil && !pn.IsEmpty() {
+				client.DangerousInternals().MigrateSessionStore(context.Background(), pn, jid)
+				add(pn)
+			}
+		}
+	}
+	return out
+}
+
+func tryDecryptCallOfferEnc(source *WhatsmeowHandlers, evt *events.CallOffer, logentry interface{ Infof(string, ...interface{}); Warnf(string, ...interface{}) }) ([]byte, string, string, error) {
+	if source == nil || evt == nil || evt.Data == nil || source.WhatsmeowConnection == nil || source.WhatsmeowConnection.Client == nil {
+		if logentry != nil {
+			logentry.Warnf("[CALL] Offer enc decrypt skipped: missing source/client/data (callID=%s)", func() string {
+				if evt != nil {
+					return evt.CallID
+				}
+				return ""
+			}())
+		}
+		return nil, "", "", nil
+	}
+	encNode, ok := evt.Data.GetOptionalChildByTag("enc")
+	if !ok {
+		if logentry != nil {
+			logentry.Warnf("[CALL] Offer enc decrypt skipped: no <enc> node (callID=%s)", evt.CallID)
+		}
+		return nil, "", "", nil
+	}
+	encType := strings.TrimSpace(fmt.Sprint(encNode.Attrs["type"]))
+	if encType != "pkmsg" && encType != "msg" {
+		if logentry != nil {
+			logentry.Warnf("[CALL] Offer enc decrypt skipped: unsupported enc.type=%s (callID=%s)", encType, evt.CallID)
+		}
+		return nil, encType, "", nil
+	}
+	jids := collectCallOfferSignalJIDs(source, evt)
+	if logentry != nil {
+		asText := make([]string, 0, len(jids))
+		for _, jid := range jids {
+			asText = append(asText, jid.String())
+		}
+		logentry.Infof("[CALL] Offer enc decrypt candidates: callID=%s type=%s jids=%v", evt.CallID, encType, asText)
+	}
+	var lastErr error
+	for _, signalJID := range jids {
+		plaintext, _, err := source.WhatsmeowConnection.Client.DangerousInternals().DecryptDM(
+			context.Background(),
+			&encNode,
+			signalJID,
+			encType == "pkmsg",
+			evt.Timestamp,
+		)
+		if err == nil && len(plaintext) > 0 {
+			if logentry != nil {
+				logentry.Infof("[CALL] Offer enc decrypt success: callID=%s type=%s via=%s plain_len=%d", evt.CallID, encType, signalJID, len(plaintext))
+			}
+			return plaintext, encType, signalJID.String(), nil
+		}
+		if err != nil {
+			if logentry != nil {
+				logentry.Warnf("[CALL] Offer enc decrypt attempt failed: callID=%s type=%s via=%s err=%v", evt.CallID, encType, signalJID, err)
+			}
+			lastErr = fmt.Errorf("%s via %s", err, signalJID.String())
+		}
+	}
+	if logentry != nil {
+		logentry.Warnf("[CALL] Offer enc decrypt exhausted candidates: callID=%s type=%s", evt.CallID, encType)
+	}
+	return nil, encType, "", lastErr
+}
+
+func dumpCallOfferEncPlain(source *WhatsmeowHandlers, callID string, plaintext []byte, encType string, signalJID string) (string, error) {
+	if strings.TrimSpace(callID) == "" || len(plaintext) == 0 {
+		return "", fmt.Errorf("empty callID/plaintext")
+	}
+	dumpDir := strings.TrimSpace(os.Getenv("QP_CALL_DUMP_DIR"))
+	if dumpDir == "" {
+		dumpDir = filepath.Join(".dist", "call_dumps")
+	}
+	if err := os.MkdirAll(dumpDir, 0o755); err != nil {
+		return "", err
+	}
+	payload := map[string]interface{}{
+		"kind":       "CallOfferEncPlain",
+		"captured":   time.Now().UTC().Format(time.RFC3339Nano),
+		"call_id":    callID,
+		"enc_type":   strings.TrimSpace(encType),
+		"signal_jid": strings.TrimSpace(signalJID),
+		"plain_len":  len(plaintext),
+		"plain_hex":  hex.EncodeToString(plaintext),
+		"plain_b64":  base64.StdEncoding.EncodeToString(plaintext),
+	}
+	fields := parseSimpleProtoFields(plaintext)
+	if len(fields) > 0 {
+		parsed := map[string]map[string]interface{}{}
+		for k, v := range fields {
+			parsed[k] = map[string]interface{}{
+				"len": len(v),
+				"hex": hex.EncodeToString(v),
+				"b64": base64.StdEncoding.EncodeToString(v),
+			}
+		}
+		payload["parsed_fields"] = parsed
+
+		aliases := map[string]interface{}{}
+		if v := fields["proto.f10.f1"]; len(v) == 32 {
+			aliases["crypto_candidate"] = "proto.f10.f1"
+			aliases["crypto_candidate_len"] = len(v)
+		}
+		if v := strings.TrimSpace(string(fields["proto.f35.f1.f2.varint"])); v != "" {
+			if unix, err := strconv.ParseInt(v, 10, 64); err == nil {
+				aliases["proto.f35.f1.f2_role"] = "issued_at?"
+				aliases["proto.f35.f1.f2_unix"] = unix
+				aliases["proto.f35.f1.f2_utc"] = time.Unix(unix, 0).UTC().Format(time.RFC3339)
+			}
+		}
+		if v := strings.TrimSpace(string(fields["proto.f35.f1.f9.varint"])); v != "" {
+			if unix, err := strconv.ParseInt(v, 10, 64); err == nil {
+				aliases["proto.f35.f1.f9_role"] = "observed_at_or_expires_at?"
+				aliases["proto.f35.f1.f9_unix"] = unix
+				aliases["proto.f35.f1.f9_utc"] = time.Unix(unix, 0).UTC().Format(time.RFC3339)
+			}
+		}
+		if v := strings.TrimSpace(string(fields["proto.f35.f2.varint"])); v != "" {
+			if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+				aliases["proto.f35.f2_role"] = "kind_or_version?"
+				aliases["proto.f35.f2_value"] = n
+			}
+		}
+		if len(aliases) > 0 {
+			payload["parsed_aliases"] = aliases
+		}
+
+		if candidate := fields["proto.f10.f1"]; len(candidate) == 32 && source != nil && source.WhatsmeowConnection != nil && source.WhatsmeowConnection.Client != nil && source.WhatsmeowConnection.Client.Store != nil {
+			clientAliases := map[string]interface{}{}
+			client := source.WhatsmeowConnection.Client
+			if kp := client.Store.IdentityKey; kp != nil && kp.Pub != nil {
+				pub := kp.Pub[:]
+				sum := sha256.Sum256(pub)
+				clientAliases["identity_pub_eq_proto.f10.f1"] = bytes.Equal(pub, candidate)
+				clientAliases["identity_pub_sha256_eq_proto.f10.f1"] = hex.EncodeToString(sum[:]) == hex.EncodeToString(candidate)
+			}
+			if kp := client.Store.SignedPreKey; kp != nil && kp.Pub != nil {
+				pub := kp.Pub[:]
+				sum := sha256.Sum256(pub)
+				clientAliases["signedprekey_pub_eq_proto.f10.f1"] = bytes.Equal(pub, candidate)
+				clientAliases["signedprekey_pub_sha256_eq_proto.f10.f1"] = hex.EncodeToString(sum[:]) == hex.EncodeToString(candidate)
+			}
+			if kp := client.Store.NoiseKey; kp != nil && kp.Pub != nil {
+				pub := kp.Pub[:]
+				sum := sha256.Sum256(pub)
+				clientAliases["noise_pub_eq_proto.f10.f1"] = bytes.Equal(pub, candidate)
+				clientAliases["noise_pub_sha256_eq_proto.f10.f1"] = hex.EncodeToString(sum[:]) == hex.EncodeToString(candidate)
+			}
+			if len(clientAliases) > 0 {
+				payload["client_key_aliases"] = clientAliases
+			}
+		}
+	}
+	data, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	filename := fmt.Sprintf("call_offer_enc_plain_%s_%s.json", time.Now().Format("20060102150405"), sanitizeFilenamePart(callID))
+	path := filepath.Join(dumpDir, filename)
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func (source *WhatsmeowHandlers) HandleCallOffer(evt *events.CallOffer) {
@@ -246,8 +456,8 @@ func (source *WhatsmeowHandlers) HandleCallOffer(evt *events.CallOffer) {
 			protocols,
 			tokenCount,
 			authTokenCount,
-			strings.TrimSpace(relayKey) != '',
-			strings.TrimSpace(hbhKey) != '',
+			strings.TrimSpace(relayKey) != "",
+			strings.TrimSpace(hbhKey) != "",
 			codecs,
 		)
 	}
@@ -317,6 +527,17 @@ func (source *WhatsmeowHandlers) HandleCallOffer(evt *events.CallOffer) {
 			if d := callOffer.GetData(); d != nil {
 				if enc := d.ExtractEncBlock(); enc != nil && enc.RawLen > 0 {
 					cm.setCallOfferEnc(evt.CallID, enc)
+				}
+			}
+			if plaintext, encType, signalJID, err := tryDecryptCallOfferEnc(source, evt, logentry); err != nil {
+				logentry.Warnf("[CALL] Offer enc decrypt failed: callID=%s type=%s err=%v", evt.CallID, encType, err)
+			} else if len(plaintext) > 0 {
+				cm.setCallOfferEncDecrypted(evt.CallID, plaintext, encType)
+				logentry.Infof("[CALL] Offer enc decrypted: callID=%s type=%s via=%s plain_len=%d", evt.CallID, encType, signalJID, len(plaintext))
+				if path, dumpErr := dumpCallOfferEncPlain(source, evt.CallID, plaintext, encType, signalJID); dumpErr != nil {
+					logentry.Warnf("[CALL] Offer enc plain dump failed: callID=%s err=%v", evt.CallID, dumpErr)
+				} else {
+					logentry.Infof("[CALL] Offer enc plain dumped: callID=%s path=%s", evt.CallID, path)
 				}
 			}
 			cm.StartIncomingCallFlow(evt.From, evt.CallID)

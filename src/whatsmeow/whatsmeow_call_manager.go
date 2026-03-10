@@ -83,6 +83,8 @@ type CallHandshakeState struct {
 	// OfferEnc contains the opaque <enc> payload observed in CallOffer (often type=pkmsg).
 	// This is a prime suspect for relay/TURN short-term integrity material.
 	OfferEnc                 *EncBlock
+	OfferEncDecrypted        []byte
+	OfferEncDecryptedSource  string
 	RelayEndpoints           []RelayEndpoint
 	RelaySTUNProbedEndpoints map[string]bool
 
@@ -115,6 +117,21 @@ func (cm *WhatsmeowCallManager) setCallOfferEnc(callID string, enc *EncBlock) {
 		cm.handshakeStates[callID] = st
 	}
 	st.OfferEnc = enc
+}
+
+func (cm *WhatsmeowCallManager) setCallOfferEncDecrypted(callID string, plaintext []byte, source string) {
+	if cm == nil || callID == "" || len(plaintext) == 0 {
+		return
+	}
+	cm.hsMutex.Lock()
+	defer cm.hsMutex.Unlock()
+	st, ok := cm.handshakeStates[callID]
+	if !ok || st == nil {
+		st = &CallHandshakeState{CreatedAt: time.Now(), LastAttempt: time.Now()}
+		cm.handshakeStates[callID] = st
+	}
+	st.OfferEncDecrypted = append([]byte(nil), plaintext...)
+	st.OfferEncDecryptedSource = strings.TrimSpace(source)
 }
 
 func (cm *WhatsmeowCallManager) addCallAcceptTE(callID string, teValues []string) {
@@ -170,6 +187,19 @@ func (cm *WhatsmeowCallManager) getRelayEndpoints(callID string) []RelayEndpoint
 	out := make([]RelayEndpoint, 0, len(st.RelayEndpoints))
 	out = append(out, st.RelayEndpoints...)
 	return out
+}
+
+func (cm *WhatsmeowCallManager) getRelayBlock(callID string) *RelayBlock {
+	if cm == nil || callID == "" {
+		return nil
+	}
+	cm.hsMutex.Lock()
+	st := cm.handshakeStates[callID]
+	cm.hsMutex.Unlock()
+	if st == nil || st.Relay == nil {
+		return nil
+	}
+	return st.Relay
 }
 
 func (cm *WhatsmeowCallManager) markRelaySessionProbeStarted(callID string, endpoint string) bool {
@@ -871,9 +901,10 @@ func (cm *WhatsmeowCallManager) SendPreacceptOnly(from types.JID, callID string)
 	}
 	cm.logger.Infof("🧪 [PREACCEPT-ONLY-NET] medium=%s candidates=%d (CallID=%s)", cm.getNetMediumForCall(callID), len(candidates), callID)
 
-	preacceptNode := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": from.ToNonAD(), "from": ownID.ToNonAD(), "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
+	replyTo := cm.callReplyJID(from)
+	preacceptNode := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": replyTo, "from": ownID.ToNonAD(), "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
 		Tag:   "preaccept",
-		Attrs: binary.Attrs{"call-id": callID, "call-creator": from.ToNonAD()},
+		Attrs: binary.Attrs{"call-id": callID, "call-creator": replyTo},
 		Content: []binary.Node{
 			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "16000"}},
 			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "8000"}},
@@ -944,9 +975,10 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	}
 	cm.logger.Infof("🧪 [PREACCEPT-NET] medium=%s candidates=%d (CallID=%s)", cm.getNetMediumForCall(callID), len(candidates), callID)
 
-	preacceptNode := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": from.ToNonAD(), "from": ownID.ToNonAD(), "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
+	replyTo := cm.callReplyJID(from)
+	preacceptNode := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": replyTo, "from": ownID.ToNonAD(), "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
 		Tag:   "preaccept",
-		Attrs: binary.Attrs{"call-id": callID, "call-creator": from.ToNonAD()},
+		Attrs: binary.Attrs{"call-id": callID, "call-creator": replyTo},
 		Content: []binary.Node{
 			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "16000"}},
 			{Tag: "audio", Attrs: binary.Attrs{"enc": "opus", "rate": "8000"}},
@@ -957,7 +989,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 
 	// Dump também o ACCEPT hipotético se variável de debug estiver ativa
 	if os.Getenv("QP_CALL_DUMP_ACCEPT") == "1" {
-		acceptPreview := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
+		acceptPreview := cm.buildAcceptNode(replyTo, ownID.ToNonAD().String(), callID, replyTo.String(), candidates)
 		cm.logger.Infof("🧪 [ACCEPT-DUMP-PREVIEW] Modo dump ativo (QP_CALL_DUMP_ACCEPT=1). Node hipotético abaixo (NÃO ENVIADO):\n%s", cm.debugFormatNode(acceptPreview))
 	}
 	for i, c := range candidates {
@@ -976,7 +1008,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	// In those cases, waiting for remote transport after PREACCEPT may time out; optionally send ACCEPT immediately.
 	if cm.getNetMediumForCall(callID) == "2" && envTruthy("QP_CALL_RELAY_ACCEPT_IMMEDIATE") {
 		cm.logger.Warnf("🧪 [RELAY-ACCEPT-IMMEDIATE] medium=2 detected; sending ACCEPT immediately after PREACCEPT (CallID=%s)", callID)
-		acceptNode := cm.buildAcceptNodeWithMedium(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), nil, "2")
+		acceptNode := cm.buildAcceptNodeWithMedium(replyTo, ownID.ToNonAD().String(), callID, replyTo.String(), nil, "2")
 		if err2 := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err2 != nil {
 			cm.logger.Errorf("❌ [RELAY-ACCEPT-IMMEDIATE-ERROR] %v", err2)
 		} else {
@@ -988,7 +1020,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	if mode == "accept-early" {
 		cm.logger.Warnf("🧪 [HS-MODE=accept-early] Enviando ACCEPT antecipado (experimental)")
 		go func() {
-			acceptNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
+			acceptNode := cm.buildAcceptNode(replyTo, ownID.ToNonAD().String(), callID, replyTo.String(), candidates)
 			if err2 := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err2 != nil {
 				cm.logger.Errorf("❌ [ACCEPT-EARLY-ERROR] %v", err2)
 			} else {
@@ -998,7 +1030,7 @@ func (cm *WhatsmeowCallManager) executeWAJSAcceptStructure(from types.JID, callI
 	}
 	if mode == "accept-immediate" {
 		cm.logger.Warnf("🧪 [HS-MODE=accept-immediate] Enviando ACCEPT imediatamente após PREACCEPT (sem esperar transport remoto)")
-		acceptNode := cm.buildAcceptNode(from, ownID.ToNonAD().String(), callID, from.ToNonAD().String(), candidates)
+		acceptNode := cm.buildAcceptNode(replyTo, ownID.ToNonAD().String(), callID, replyTo.String(), candidates)
 		if err2 := cm.connection.Client.DangerousInternals().SendNode(context.Background(), acceptNode); err2 != nil {
 			cm.logger.Errorf("❌ [ACCEPT-IMMEDIATE-ERROR] %v", err2)
 		} else {
@@ -1142,9 +1174,10 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 	// CRITICAL: Transport INICIAL sem transport-message-type (ou tipo 0)
 	// Este é o transport que enviamos PRIMEIRO, antes de receber o deles
 	legacyWAJSAttrs := envTruthy("QP_CALL_LEGACY_WAJS_ATTRS")
+	replyTo := cm.callReplyJID(from)
 	transportCallAttrs := binary.Attrs{
 		"id": cm.connection.Client.GenerateMessageID(),
-		"to": from.ToNonAD(),
+		"to": replyTo,
 	}
 	if !legacyWAJSAttrs {
 		transportCallAttrs["from"] = ownID.ToNonAD()
@@ -1157,7 +1190,7 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 			Tag: "transport",
 			Attrs: binary.Attrs{
 				"call-id":      callID,
-				"call-creator": from.ToNonAD(),
+				"call-creator": replyTo,
 				// Não incluir transport-message-type no initial transport
 			},
 			Content: []binary.Node{{
@@ -1275,9 +1308,10 @@ func (cm *WhatsmeowCallManager) sendTransportInfoResponse(from types.JID, callID
 	if responseType == "" {
 		responseType = "2"
 	}
+	replyTo := cm.callReplyJID(from)
 	transportAttrs := binary.Attrs{
 		"call-id":                callID,
-		"call-creator":           from.ToNonAD(),
+		"call-creator":           replyTo,
 		"transport-message-type": responseType,
 	}
 	if p2pRound != "" {
@@ -1287,7 +1321,7 @@ func (cm *WhatsmeowCallManager) sendTransportInfoResponse(from types.JID, callID
 	legacyWAJSAttrs := envTruthy("QP_CALL_LEGACY_WAJS_ATTRS")
 	callAttrs := binary.Attrs{
 		"id": cm.connection.Client.GenerateMessageID(),
-		"to": from.ToNonAD(),
+		"to": replyTo,
 	}
 	if !legacyWAJSAttrs {
 		callAttrs["from"] = ownID.ToNonAD()
@@ -2281,7 +2315,7 @@ func (cm *WhatsmeowCallManager) AcceptDirectCall(from types.JID, callID string) 
 // buildAcceptNodeWithMedium constrói nó ACCEPT completo padronizado com medium explícito.
 func (cm *WhatsmeowCallManager) buildAcceptNodeWithMedium(to types.JID, fromNonAD string, callID string, callCreator string, candidates []binary.Node, medium string) binary.Node {
 	// Ajuste: ordem dos nós replicando preaccept (audio,audio,net,encopt) para consistência
-	node := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": to.ToNonAD(), "from": fromNonAD, "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
+	node := binary.Node{Tag: "call", Attrs: binary.Attrs{"to": to, "from": fromNonAD, "id": cm.connection.Client.GenerateMessageID()}, Content: []binary.Node{{
 		Tag:   "accept",
 		Attrs: binary.Attrs{"call-id": callID, "call-creator": callCreator},
 		Content: []binary.Node{

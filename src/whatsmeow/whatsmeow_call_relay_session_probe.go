@@ -17,8 +17,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/pion/stun"
+	"golang.org/x/crypto/curve25519"
 )
 
 type turnIntegrityCandidate struct {
@@ -28,6 +30,60 @@ type turnIntegrityCandidate struct {
 	realm    []byte
 	nonce    []byte
 	longTerm bool
+}
+
+func summarizeRelayTE2IPv6(rb *RelayBlock) []string {
+	if rb == nil || len(rb.TE2) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(rb.TE2))
+	seen := make(map[string]struct{}, len(rb.TE2))
+	for _, te := range rb.TE2 {
+		if te.PayloadLen != 18 || strings.TrimSpace(te.IPv6Prefix) == "" {
+			continue
+		}
+		item := te.RelayName + "=" + te.IPv6Prefix
+		if te.RelayTailHex != "" {
+			item += "|tail=" + te.RelayTailHex
+		}
+		if te.Protocol != "" {
+			item += "|p=" + te.Protocol
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		out = append(out, item)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func buildRelayTE2MsgVariants(rb *RelayBlock) map[string][]byte {
+	out := map[string][]byte{}
+	if rb == nil || len(rb.TE2) == 0 {
+		return out
+	}
+	add := func(label string, data []byte) {
+		if len(data) == 0 {
+			return
+		}
+		cp := append([]byte(nil), data...)
+		out[label] = cp
+	}
+	for _, te := range rb.TE2 {
+		if te.PayloadLen != 18 || len(te.Payload) != 18 {
+			continue
+		}
+		base := "te2." + strings.TrimSpace(te.RelayName)
+		add(base+".full18", te.Payload)
+		add(base+".prefix8", te.Payload[:8])
+		add(base+".marker4", te.Payload[8:12])
+		add(base+".tail4", te.Payload[12:16])
+		add(base+".suffix2", te.Payload[16:18])
+		add(base+".prefix8+tail4", appendParts(te.Payload[:8], te.Payload[12:16]))
+	}
+	return out
 }
 
 func dedupeTurnIntegrityCandidates(in []turnIntegrityCandidate) []turnIntegrityCandidate {
@@ -97,6 +153,11 @@ type seedMsgVariant struct {
 	data  []byte
 }
 
+type labeledSeed struct {
+	label string
+	data  []byte
+}
+
 func hmacSHA1(key []byte, msg []byte) []byte {
 	h := hmac.New(sha1.New, key)
 	_, _ = h.Write(msg)
@@ -112,6 +173,27 @@ func hmacSHA256(key []byte, msg []byte) []byte {
 func sha1Sum(msg []byte) []byte {
 	s := sha1.Sum(msg)
 	return s[:]
+}
+
+func appendParts(parts ...[]byte) []byte {
+	total := 0
+	for _, p := range parts {
+		total += len(p)
+	}
+	if total == 0 {
+		return nil
+	}
+	out := make([]byte, 0, total)
+	for _, p := range parts {
+		if len(p) == 0 {
+			continue
+		}
+		out = append(out, p...)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func sha256Sum(msg []byte) []byte {
@@ -330,6 +412,9 @@ func (cm *WhatsmeowCallManager) MaybeStartRelaySessionProbe(callID string) {
 	if !cm.markRelaySessionProbeStarted(callID, best.Endpoint) {
 		return
 	}
+	if te2 := summarizeRelayTE2IPv6(cm.getRelayBlock(callID)); len(te2) > 0 {
+		cm.logger.Infof("📡 [RELAY-SESSION] TE2 IPv6 hints: callID=%s best=%s hints=%v", callID, best.Endpoint, te2)
+	}
 
 	go cm.runRelaySessionProbe(callID, best, endpoints)
 }
@@ -348,6 +433,9 @@ func (cm *WhatsmeowCallManager) forceStartRelaySessionProbe(callID string, endpo
 	}
 	if !cm.markRelaySessionProbeStarted(callID, best.Endpoint) {
 		return
+	}
+	if te2 := summarizeRelayTE2IPv6(cm.getRelayBlock(callID)); len(te2) > 0 {
+		cm.logger.Infof("📡 [RELAY-SESSION] TE2 IPv6 hints (fallback): callID=%s best=%s hints=%v", callID, best.Endpoint, te2)
 	}
 	go cm.runRelaySessionProbe(callID, best, endpoints)
 }
@@ -783,6 +871,155 @@ func buildAllocatePreimageMsgVariants(extra turnExtraAttrs, remote *net.UDPAddr)
 	return out
 }
 
+func buildRelayContextMsgVariants(rb *RelayBlock, extraMsgs map[string][]byte) map[string][]byte {
+	out := map[string][]byte{}
+	if rb == nil {
+		return out
+	}
+
+	uuidText := strings.TrimSpace(rb.UUID)
+	selfText := strings.TrimSpace(rb.SelfPID)
+	peerText := strings.TrimSpace(rb.PeerPID)
+
+	var uuidBin []byte
+	for _, u := range buildRelayUsernameVariants(rb) {
+		if u.label == "uuid(bin)" {
+			uuidBin = append([]byte(nil), u.data...)
+			break
+		}
+	}
+
+	add := func(label string, parts ...[]byte) {
+		total := 0
+		for _, p := range parts {
+			total += len(p)
+		}
+		if total == 0 {
+			return
+		}
+		buf := make([]byte, 0, total)
+		for _, p := range parts {
+			if len(p) == 0 {
+				continue
+			}
+			buf = append(buf, p...)
+		}
+		if len(buf) == 0 {
+			return
+		}
+		out[label] = buf
+	}
+
+	uuidTextBytes := []byte(uuidText)
+	selfTextBytes := []byte(selfText)
+	peerTextBytes := []byte(peerText)
+
+	add("ctx.uuid_text", uuidTextBytes)
+	add("ctx.uuid_bin", uuidBin)
+	add("ctx.self_text", selfTextBytes)
+	add("ctx.peer_text", peerTextBytes)
+	add("ctx.uuid_bin+self+peer", uuidBin, selfTextBytes, peerTextBytes)
+	add("ctx.uuid_text+self+peer", uuidTextBytes, selfTextBytes, peerTextBytes)
+	add("ctx.self+peer", selfTextBytes, peerTextBytes)
+	add("ctx.peer+self", peerTextBytes, selfTextBytes)
+
+	for msgLabel, msg := range extraMsgs {
+		if len(msg) == 0 {
+			continue
+		}
+		add("ctx.uuid_bin+"+msgLabel, uuidBin, msg)
+		add("ctx.uuid_text+"+msgLabel, uuidTextBytes, msg)
+		add("ctx.uuid_bin+self+peer+"+msgLabel, uuidBin, selfTextBytes, peerTextBytes, msg)
+		add("ctx.uuid_text+self+peer+"+msgLabel, uuidTextBytes, selfTextBytes, peerTextBytes, msg)
+		add("ctx.self+peer+"+msgLabel, selfTextBytes, peerTextBytes, msg)
+	}
+
+	return out
+}
+
+func parseSimpleProtoFields(raw []byte) map[string][]byte {
+	return parseSimpleProtoFieldsWithPrefix(raw, "proto", 0)
+}
+
+func deriveX25519SharedSecret(priv *[32]byte, peerPub []byte) []byte {
+	if priv == nil || len(peerPub) != 32 {
+		return nil
+	}
+	shared, err := curve25519.X25519(priv[:], peerPub)
+	if err != nil || len(shared) == 0 {
+		return nil
+	}
+	return append([]byte(nil), shared...)
+}
+
+func parseSimpleProtoFieldsWithPrefix(raw []byte, prefix string, depth int) map[string][]byte {
+	out := map[string][]byte{}
+	if len(raw) == 0 || depth > 2 {
+		return out
+	}
+	readVarint := func(data []byte, idx int) (uint64, int, bool) {
+		var v uint64
+		var shift uint
+		for i := 0; i < 10 && idx < len(data); i++ {
+			b := data[idx]
+			idx++
+			v |= uint64(b&0x7f) << shift
+			if b < 0x80 {
+				return v, idx, true
+			}
+			shift += 7
+		}
+		return 0, idx, false
+	}
+	idx := 0
+	for idx < len(raw) {
+		key, next, ok := readVarint(raw, idx)
+		if !ok {
+			break
+		}
+		idx = next
+		fieldNum := int(key >> 3)
+		wireType := int(key & 0x7)
+		if fieldNum <= 0 {
+			break
+		}
+		base := fmt.Sprintf("%s.f%d", prefix, fieldNum)
+		switch wireType {
+		case 0:
+			val, ni, ok := readVarint(raw, idx)
+			if !ok {
+				return out
+			}
+			idx = ni
+			out[base+".varint"] = []byte(strconv.FormatUint(val, 10))
+		case 2:
+			n, ni, ok := readVarint(raw, idx)
+			if !ok {
+				return out
+			}
+			idx = ni
+			if int(n) < 0 || idx+int(n) > len(raw) {
+				return out
+			}
+			b := append([]byte(nil), raw[idx:idx+int(n)]...)
+			idx += int(n)
+			out[base] = b
+			if len(b) == 32 {
+				out[base+".sha256"] = sha256Sum(b)
+			}
+			if utf8.Valid(b) {
+				out[base+".text"] = b
+			}
+			for k, v := range parseSimpleProtoFieldsWithPrefix(b, base, depth+1) {
+				out[k] = v
+			}
+		default:
+			return out
+		}
+	}
+	return out
+}
+
 func isSTUNPacket(b []byte) bool {
 	if len(b) < 8 {
 		return false
@@ -1206,6 +1443,19 @@ func (cm *WhatsmeowCallManager) getOfferEncForCall(callID string) *EncBlock {
 	return st.OfferEnc
 }
 
+func (cm *WhatsmeowCallManager) getOfferEncDecryptedForCall(callID string) ([]byte, string) {
+	if cm == nil || callID == "" {
+		return nil, ""
+	}
+	cm.hsMutex.Lock()
+	st := cm.handshakeStates[callID]
+	cm.hsMutex.Unlock()
+	if st == nil || len(st.OfferEncDecrypted) == 0 {
+		return nil, ""
+	}
+	return append([]byte(nil), st.OfferEncDecrypted...), strings.TrimSpace(st.OfferEncDecryptedSource)
+}
+
 func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep RelayEndpoint, readTimeout time.Duration) error {
 	endpoint := strings.TrimSpace(ep.Endpoint)
 	if endpoint == "" {
@@ -1457,10 +1707,18 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	encBlock := cm.getOfferEncForCall(callID)
 	var encRaw []byte
 	var encHash []byte
+	var encPlain []byte
+	var encPlainHash []byte
+	encPlainFields := map[string][]byte(nil)
+	encPlain, encPlainSource := cm.getOfferEncDecryptedForCall(callID)
 	if encBlock != nil && len(encBlock.Raw) > 0 {
 		encRaw = encBlock.Raw
 		// Stable, fixed-size seed (useful if relays hash the offer payload first).
 		encHash = sha256Sum(encRaw)
+	}
+	if len(encPlain) > 0 {
+		encPlainHash = sha256Sum(encPlain)
+		encPlainFields = parseSimpleProtoFields(encPlain)
 	}
 	// Extra attrs used in Desktop-like Allocate flow (if provided). Used as KDF message material.
 	a4000Used, a4024Used, a0016Used := resolveTurnExtraAttrsForEndpoint(extra, remote)
@@ -1471,6 +1729,28 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				continue
 			}
 			extraMsgs[k] = v
+		}
+	}
+	if envTruthyDefault("QP_CALL_RELAY_TURN_TRY_MIKDF_CONTEXT", true) {
+		for k, v := range buildRelayContextMsgVariants(rb, extraMsgs) {
+			if len(v) == 0 {
+				continue
+			}
+			extraMsgs[k] = v
+		}
+	}
+	for k, v := range buildRelayTE2MsgVariants(rb) {
+		if len(v) == 0 {
+			continue
+		}
+		extraMsgs[k] = v
+	}
+	if len(encPlainFields) > 0 {
+		for k, v := range encPlainFields {
+			if len(v) == 0 {
+				continue
+			}
+			extraMsgs["encplain."+k] = v
 		}
 	}
 	// Env-gated experiment: try using the extra attrs themselves as MESSAGE-INTEGRITY keys.
@@ -1517,17 +1797,169 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=hmac1_seedSHA1", nil, hmacSHA1(seedSHA1, msg))
 			// Hashed msg: HMAC(seedKey, sha1(msg))
 			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=hmac1_msgSHA1", nil, hmacSHA1(seedKey, msgSHA1))
+			// Desktop-like context variant: hash the candidate key material once first.
+			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=sha1(seed||msg)", nil, sha1Sum(append(append([]byte(nil), seedKey...), msg...)))
+			appendCand(&cands, labelPrefix+"(miKDF:msg="+msgLabel+"):user=none:key=sha1(msg||seed)", nil, sha1Sum(append(append([]byte(nil), msg...), seedKey...)))
 		}
 	}
 	// Env-gated experiment: derive MI keys from offer secrets + Desktop-like extra attrs.
-	if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+	if envTruthyDefault("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS", true) {
 		if len(extraMsgs) > 0 {
-			// enc-based seeds
+			var uuidBin []byte
+			for _, u := range buildRelayUsernameVariants(rb) {
+				if u.label == "uuid(bin)" {
+					uuidBin = append([]byte(nil), u.data...)
+					break
+				}
+			}
+			selfBytes := []byte(strings.TrimSpace(rb.SelfPID))
+			peerBytes := []byte(strings.TrimSpace(rb.PeerPID))
+			te2Msgs := buildRelayTE2MsgVariants(rb)
+
+			seeds := make([]labeledSeed, 0, 8)
+			if len(encPlain) > 0 {
+				label := "enc.plain"
+				if encPlainSource != "" {
+					label += "." + encPlainSource
+				}
+				label += fmt.Sprintf("(len=%d)", len(encPlain))
+				seeds = append(seeds, labeledSeed{label: label, data: encPlain})
+				if b := appendParts(encPlain, uuidBin); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.plain+uuid(bin)", data: b})
+				}
+				if b := appendParts(encPlain, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.plain+self+peer", data: b})
+				}
+				if b := appendParts(encPlain, uuidBin, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.plain+uuid(bin)+self+peer", data: b})
+				}
+				for k, v := range encPlainFields {
+					if len(v) == 0 {
+						continue
+					}
+					seeds = append(seeds, labeledSeed{label: "enc.plain." + k, data: v})
+					if strings.Contains(k, "proto.f10.f1") {
+						if b := appendParts(v, uuidBin); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+uuid(bin)", data: b})
+						}
+						if b := appendParts(v, a4000Used); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+a4000", data: b})
+						}
+						if b := appendParts(v, a4024Used); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+a4024", data: b})
+						}
+						if b := appendParts(v, a0016Used); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+a0016", data: b})
+						}
+						if b := appendParts(v, a4000Used, a4024Used, a0016Used); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+a4000+a4024+a0016", data: b})
+						}
+						if b := appendParts(v, uuidBin, a4000Used, a4024Used, a0016Used, selfBytes, peerBytes); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+uuid(bin)+attrs+self+peer", data: b})
+						}
+					}
+					if b := appendParts(v, selfBytes, peerBytes); len(b) > 0 {
+						seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+self+peer", data: b})
+					}
+					if b := appendParts(v, uuidBin, selfBytes, peerBytes); len(b) > 0 {
+						seeds = append(seeds, labeledSeed{label: "enc.plain." + k + "+uuid(bin)+self+peer", data: b})
+					}
+				}
+				if remotePub := encPlainFields["proto.f10.f1"]; len(remotePub) == 32 && cm.connection != nil && cm.connection.Client != nil && cm.connection.Client.Store != nil {
+					for te2Label, te2Data := range te2Msgs {
+						if len(te2Data) == 0 {
+							continue
+						}
+						if b := appendParts(remotePub, te2Data); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+" + te2Label, data: b})
+						}
+						if b := appendParts(te2Data, remotePub); len(b) > 0 {
+							seeds = append(seeds, labeledSeed{label: te2Label + "+enc.plain.proto.f10.f1", data: b})
+						}
+					}
+					if id := cm.connection.Client.Store.IdentityKey; id != nil && id.Priv != nil {
+						if shared := deriveX25519SharedSecret(id.Priv, remotePub); len(shared) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(identity)", data: shared})
+							if b := appendParts(shared, uuidBin); len(b) > 0 {
+								seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(identity)+uuid(bin)", data: b})
+							}
+							if b := appendParts(shared, a4000Used, a4024Used, a0016Used); len(b) > 0 {
+								seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(identity)+attrs", data: b})
+							}
+							if b := appendParts(shared, uuidBin, a4000Used, a4024Used, a0016Used, selfBytes, peerBytes); len(b) > 0 {
+								seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(identity)+uuid(bin)+attrs+self+peer", data: b})
+							}
+						}
+					}
+					if spk := cm.connection.Client.Store.SignedPreKey; spk != nil && spk.Priv != nil {
+						if shared := deriveX25519SharedSecret(spk.Priv, remotePub); len(shared) > 0 {
+							seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(signedprekey)", data: shared})
+							if b := appendParts(shared, uuidBin); len(b) > 0 {
+								seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(signedprekey)+uuid(bin)", data: b})
+							}
+							if b := appendParts(shared, a4000Used, a4024Used, a0016Used); len(b) > 0 {
+								seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(signedprekey)+attrs", data: b})
+							}
+							if b := appendParts(shared, uuidBin, a4000Used, a4024Used, a0016Used, selfBytes, peerBytes); len(b) > 0 {
+								seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1.ecdh(signedprekey)+uuid(bin)+attrs+self+peer", data: b})
+							}
+						}
+					}
+				}
+			}
+			if len(encPlainHash) > 0 {
+				seeds = append(seeds, labeledSeed{label: "enc.plain.sha256", data: encPlainHash})
+				if b := appendParts(encPlainHash, uuidBin); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.plain.sha256+uuid(bin)", data: b})
+				}
+				if b := appendParts(encPlainHash, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.plain.sha256+self+peer", data: b})
+				}
+				if b := appendParts(encPlainHash, uuidBin, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.plain.sha256+uuid(bin)+self+peer", data: b})
+				}
+			}
 			if len(encRaw) > 0 {
-				appendMiKDF("enc."+strings.TrimSpace(encBlock.Type)+fmt.Sprintf("(raw,len=%d)", len(encRaw)), encRaw)
+				seeds = append(seeds, labeledSeed{label: "enc." + strings.TrimSpace(encBlock.Type) + fmt.Sprintf("(raw,len=%d)", len(encRaw)), data: encRaw})
+				if b := appendParts(encRaw, uuidBin); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.raw+uuid(bin)", data: b})
+				}
+				if b := appendParts(encRaw, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.raw+self+peer", data: b})
+				}
+				if b := appendParts(encRaw, uuidBin, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.raw+uuid(bin)+self+peer", data: b})
+				}
 			}
 			if len(encHash) > 0 {
-				appendMiKDF("enc.sha256", encHash)
+				seeds = append(seeds, labeledSeed{label: "enc.sha256", data: encHash})
+				if b := appendParts(encHash, uuidBin); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.sha256+uuid(bin)", data: b})
+				}
+				if b := appendParts(encHash, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.sha256+self+peer", data: b})
+				}
+				if b := appendParts(encHash, uuidBin, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: "enc.sha256+uuid(bin)+self+peer", data: b})
+				}
+			}
+			for te2Label, te2Data := range te2Msgs {
+				if len(te2Data) == 0 {
+					continue
+				}
+				seeds = append(seeds, labeledSeed{label: te2Label, data: te2Data})
+				if b := appendParts(te2Data, uuidBin); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: te2Label + "+uuid(bin)", data: b})
+				}
+				if b := appendParts(te2Data, selfBytes, peerBytes); len(b) > 0 {
+					seeds = append(seeds, labeledSeed{label: te2Label + "+self+peer", data: b})
+				}
+			}
+			for _, s := range seeds {
+				if len(s.data) == 0 {
+					continue
+				}
+				appendMiKDF(s.label, s.data)
 			}
 		}
 	}
@@ -1539,6 +1971,25 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	}
 	// Offer enc (pkmsg/msg) candidates: try using enc bytes directly as MI key.
 	// Rationale: relay short-term integrity secret may be derived from or equal to offer enc payload.
+	if len(encPlain) > 0 {
+		encPlainLabel := "enc.plain"
+		if encPlainSource != "" {
+			encPlainLabel += "." + encPlainSource
+		}
+		encPlainLabel += fmt.Sprintf("(len=%d)", len(encPlain))
+		for _, u := range userVariants {
+			appendKeyVariantsUserEncodings(&cands, encPlainLabel+":u="+u.label, u.data, encPlain)
+			appendMD5RealmEmptyCandidates(&cands, encPlainLabel+":u="+u.label, u.data, encPlain)
+		}
+		appendKeyVariantsNoUser(&cands, encPlainLabel, encPlain)
+	}
+	if len(encPlainHash) > 0 {
+		for _, u := range userVariants {
+			appendKeyVariantsUserEncodings(&cands, "enc.plain.sha256:u="+u.label, u.data, encPlainHash)
+			appendMD5RealmEmptyCandidates(&cands, "enc.plain.sha256:u="+u.label, u.data, encPlainHash)
+		}
+		appendKeyVariantsNoUser(&cands, "enc.plain.sha256", encPlainHash)
+	}
 	if len(encRaw) > 0 {
 		encLabel := fmt.Sprintf("enc.%s(raw,len=%d)", strings.TrimSpace(encBlock.Type), len(encRaw))
 		for _, u := range userVariants {
@@ -1648,7 +2099,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if rb.Key != "" {
 		if b1, ok := decodeMaybeBase64(rb.Key); ok {
 			relayKeyDecoded = b1
-			if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+			if envTruthyDefault("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS", true) {
 				appendMiKDF(fmt.Sprintf("relay.key(dec1_b64,len=%d)", len(b1)), b1)
 			}
 			for _, u := range userVariants {
@@ -1658,7 +2109,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			appendKeyVariantsNoUser(&cands, fmt.Sprintf("relay.key(dec1_b64,len=%d)", len(b1)), b1)
 			if b2, depth, ok2 := decodeMaybeBase64Recursive(rb.Key, 2); ok2 && depth >= 2 && len(b2) > 0 && !bytes.Equal(b2, b1) {
 				relayKeyDecoded2 = b2
-				if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+				if envTruthyDefault("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS", true) {
 					appendMiKDF(fmt.Sprintf("relay.key(dec2_b64,len=%d)", len(b2)), b2)
 				}
 				for _, u := range userVariants {
@@ -1677,7 +2128,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if rb.HBHKey != "" {
 		if b1, ok := decodeMaybeBase64(rb.HBHKey); ok {
 			hbhKeyDecoded = b1
-			if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+			if envTruthyDefault("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS", true) {
 				appendMiKDF(fmt.Sprintf("relay.hbh_key(dec1_b64,len=%d)", len(b1)), b1)
 			}
 			for _, u := range userVariants {
@@ -1687,7 +2138,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			appendKeyVariantsNoUser(&cands, fmt.Sprintf("relay.hbh_key(dec1_b64,len=%d)", len(b1)), b1)
 			if b2, depth, ok2 := decodeMaybeBase64Recursive(rb.HBHKey, 2); ok2 && depth >= 2 && len(b2) > 0 && !bytes.Equal(b2, b1) {
 				hbhKeyDecoded2 = b2
-				if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS") {
+				if envTruthyDefault("QP_CALL_RELAY_TURN_TRY_MIKDF_EXTRA_ATTRS", true) {
 					appendMiKDF(fmt.Sprintf("relay.hbh_key(dec2_b64,len=%d)", len(b2)), b2)
 				}
 				for _, u := range userVariants {
@@ -2126,43 +2577,143 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				if strings.HasPrefix(label, "lt ") {
 					return 0
 				}
-				if strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage") {
 					return 1
+				}
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage") {
+					return 2
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+					return 3
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+					return 4
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+					return 5
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+					return 6
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+					return 7
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+					return 8
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8") {
+					return 9
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "tail4") {
+					return 10
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+					return 9
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+attrs") && strings.Contains(label, "miKDF") {
+					return 10
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+uuid(bin)") && strings.Contains(label, "miKDF") {
+					return 11
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF") {
+					return 12
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+					return 13
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+attrs") && strings.Contains(label, "miKDF") {
+					return 14
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+uuid(bin)") && strings.Contains(label, "miKDF") {
+					return 15
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF") {
+					return 16
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+					return 17
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a4000+a4024+a0016") && strings.Contains(label, "miKDF") {
+					return 18
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a4000") && strings.Contains(label, "miKDF") {
+					return 19
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a4024") && strings.Contains(label, "miKDF") {
+					return 20
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a0016") && strings.Contains(label, "miKDF") {
+					return 21
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+uuid(bin)") && strings.Contains(label, "miKDF") {
+					return 22
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+self+peer") && strings.Contains(label, "miKDF") {
+					return 23
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF") {
+					return 24
+				}
+				if strings.Contains(label, "enc.plain.proto.f10") && strings.Contains(label, "miKDF") {
+					return 25
+				}
+				if strings.Contains(label, "enc.plain.proto.") && strings.Contains(label, ".f1") && strings.Contains(label, "miKDF") {
+					return 26
+				}
+				if strings.HasPrefix(label, "enc.plain") {
+					if strings.Contains(label, "miKDF") && strings.Contains(label, "alloc.preimage") {
+						return 27
+					}
+					if strings.Contains(label, "miKDF") {
+						return 28
+					}
+					return 29
+				}
+				if strings.Contains(label, "miKDF") {
+					if strings.Contains(label, "alloc.preimage") {
+						return 30
+					}
+					if strings.Contains(label, "uuid(bin)+self+peer") || strings.Contains(label, "self+peer") {
+						return 31
+					}
+					return 32
 				}
 				// Direct extra-attrs-as-key attempts: small but high-signal.
 				if strings.HasPrefix(label, "extra-key(") {
-					return 2
+					return 29
 				}
 				// Offer-derived enc candidates are high-signal and should be tried early.
 				if strings.HasPrefix(label, "enc.") {
-					return 3
+					return 30
 				}
-				// REST-like candidates are derived from relays/TE2 material and must be tried early.
+				// REST-like candidates are numerous and low-signal at this stage.
+				// Keep them behind the decrypted-offer/ECDH families so they don't consume maxTry.
 				if strings.HasPrefix(label, "rest ") {
-					return 4
+					return 27
 				}
 				// TE2 mapping (token_id/auth_token_id) is often used as TURN username/password.
 				// In practice, relay.key()/hbh_key variants are so numerous that TE2 can be starved under maxTry.
 				// Prioritize TE2 earlier so we get broader TE2 coverage per call.
 				if strings.HasPrefix(label, "te2 ") || strings.HasPrefix(label, "te2(") {
-					return 5
+					return 31
 				}
 				if strings.HasPrefix(label, "relay.key(") {
-					return 6
+					return 32
 				}
 				if strings.HasPrefix(label, "relay.hbh_key(") {
-					return 7
+					return 33
 				}
 				if strings.HasPrefix(label, "drv ") || strings.Contains(label, ":drv=") {
-					return 8
+					return 34
 				}
 				if strings.HasPrefix(label, "token-only(") {
-					return 9
+					return 35
 				}
 				if strings.HasPrefix(label, "auth-only(") {
-					return 10
+					return 36
 				}
-				return 10
+				return 36
 			}
 
 			pi = prio(li)

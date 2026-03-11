@@ -12,13 +12,14 @@ import (
 )
 
 type callTransportDump struct {
-	Kind      string             `json:"kind"`
-	Captured  string             `json:"captured"`
-	CallID    string             `json:"call_id"`
-	From      string             `json:"from"`
-	Timestamp string             `json:"timestamp,omitempty"`
-	Attrs     map[string]string  `json:"attrs,omitempty"`
-	Data      *TransportDataNode `json:"data"`
+	Kind         string                 `json:"kind"`
+	Captured     string                 `json:"captured"`
+	CallID       string                 `json:"call_id"`
+	From         string                 `json:"from"`
+	Timestamp    string                 `json:"timestamp,omitempty"`
+	Attrs        map[string]string      `json:"attrs,omitempty"`
+	Data         *TransportDataNode     `json:"data"`
+	CompactItems []transportCompactItem `json:"compact_items,omitempty"`
 }
 
 func DumpCallTransportEvent(evt *events.CallTransport, normalized *WhatsmeowCallTransport) (string, error) {
@@ -58,13 +59,14 @@ func DumpCallTransportEvent(evt *events.CallTransport, normalized *WhatsmeowCall
 	}
 
 	dump := callTransportDump{
-		Kind:      "CallTransport",
-		Captured:  time.Now().UTC().Format(time.RFC3339Nano),
-		CallID:    evt.CallID,
-		From:      fmt.Sprint(evt.From),
-		Timestamp: timestamp,
-		Attrs:     attrs,
-		Data:      data,
+		Kind:         "CallTransport",
+		Captured:     time.Now().UTC().Format(time.RFC3339Nano),
+		CallID:       evt.CallID,
+		From:         fmt.Sprint(evt.From),
+		Timestamp:    timestamp,
+		Attrs:        attrs,
+		Data:         data,
+		CompactItems: extractCompactTransportItems(data),
 	}
 
 	bytes, err := json.MarshalIndent(dump, "", "  ")

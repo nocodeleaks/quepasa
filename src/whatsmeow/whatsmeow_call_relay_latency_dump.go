@@ -47,6 +47,13 @@ func DumpCallRelayLatencyEvent(evt *events.CallRelayLatency, endpoints []RelayEn
 		From:      fmt.Sprint(evt.From),
 		Endpoints: endpoints,
 	}
+	for i := range dump.Endpoints {
+		if dump.Endpoints[i].CompactHex == "" {
+			if ep := encodeCompactEndpoint6(dump.Endpoints[i].IP, dump.Endpoints[i].Port); ep != nil {
+				dump.Endpoints[i].CompactHex = ep.RawHex
+			}
+		}
+	}
 
 	bytes, err := json.MarshalIndent(dump, "", "  ")
 	if err != nil {

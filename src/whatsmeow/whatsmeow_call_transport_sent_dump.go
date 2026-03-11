@@ -13,12 +13,14 @@ import (
 )
 
 type callTransportSentDump struct {
-	Kind     string                 `json:"kind"`
-	Captured string                 `json:"captured"`
-	CallID   string                 `json:"call_id"`
-	To       string                 `json:"to"`
-	From     string                 `json:"from"`
-	Node     map[string]interface{} `json:"node"`
+	Kind              string                         `json:"kind"`
+	Captured          string                         `json:"captured"`
+	CallID            string                         `json:"call_id"`
+	To                string                         `json:"to"`
+	From              string                         `json:"from"`
+	Node              map[string]interface{}         `json:"node"`
+	CompactItems      []transportCompactItem         `json:"compact_items,omitempty"`
+	CompactCandidates []transportSentCompactCandidate `json:"compact_candidates,omitempty"`
 }
 
 // DumpTransportSent salva o transport que enviamos ao peer/WhatsApp
@@ -43,12 +45,14 @@ func DumpTransportSent(callID string, to types.JID, from types.JID, transportNod
 	path := filepath.Join(dumpDir, filename)
 
 	dump := callTransportSentDump{
-		Kind:     "TransportSent",
-		Captured: time.Now().UTC().Format(time.RFC3339Nano),
-		CallID:   callID,
-		To:       to.String(),
-		From:     from.String(),
-		Node:     flattenBinaryNode(transportNode),
+		Kind:              "TransportSent",
+		Captured:          time.Now().UTC().Format(time.RFC3339Nano),
+		CallID:            callID,
+		To:                to.String(),
+		From:              from.String(),
+		Node:              flattenBinaryNode(transportNode),
+		CompactItems:      extractCompactTransportItemsFromBinaryNode(transportNode),
+		CompactCandidates: extractCompactTransportCandidates(transportNode),
 	}
 	data, err := json.MarshalIndent(dump, "", "  ")
 	if err != nil {

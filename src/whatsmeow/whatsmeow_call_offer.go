@@ -55,6 +55,8 @@ type WhatsmeowCallOffer struct {
 	relayTokens        []string
 	relayBlockOnce     sync.Once
 	relayBlock         *RelayBlock
+	rteBlockOnce       sync.Once
+	rteBlock           *RTEBlock
 	relayCandOnce      sync.Once
 	relayHasCandidates bool
 	dataOnce           sync.Once
@@ -72,6 +74,16 @@ type RelayBlock struct {
 	HBHKey    string
 	TE2       []RelayTE2
 	Protocols []string
+}
+
+type RTEBlock struct {
+	Payload    []byte `json:"-"`
+	PayloadB64 string
+	PayloadLen int
+	IPv6Prefix string
+	Middle4Hex string
+	Tail4Hex   string
+	SuffixHex  string
 }
 
 // EncBlock contains the opaque <enc> payload from offers (often base64-encoded).
@@ -92,6 +104,32 @@ type RelayToken struct {
 	Value string
 	// Raw contains the original bytes (not marshaled) when available.
 	Raw []byte `json:"-"`
+	// Summary fields for quick structural comparisons without touching Raw.
+	RawLen    int
+	PrefixHex string
+	SuffixHex string
+	TrimLen   int
+	TrimPrefixHex string
+	TrimSuffixHex string
+	TrimModulo16 int
+	EnvelopeHeadLen int
+	EnvelopeHeadHex string
+	Head4Hex  string
+	Left32Hex string
+	Right32Hex string
+	Head3Hex string
+	Block16Count int
+	Block16FirstHex string
+	Block16LastHex string
+	Block16Hex []string
+	ProtoFieldKeys []string
+	ProtoF1Fixed64Hex string
+	TrimProtoFieldKeys []string
+	TrimProtoF1Fixed64Hex string
+	ProtoF2Len int
+	ProtoF2PrefixHex string
+	TrimProtoF2Len int
+	TrimProtoF2PrefixHex string
 }
 
 func (t RelayToken) Bytes() []byte {
@@ -106,6 +144,118 @@ func (t RelayToken) Bytes() []byte {
 		return b
 	}
 	return []byte(s)
+}
+
+func parseRelayTokenSummary(t *RelayToken) {
+	if t == nil {
+		return
+	}
+	raw := t.Bytes()
+	t.RawLen = len(raw)
+	if len(raw) == 0 {
+		return
+	}
+	if fields := parseSimpleProtoFields(raw); len(fields) > 0 {
+		keys := make([]string, 0, len(fields))
+		for k := range fields {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		t.ProtoFieldKeys = keys
+		if v := fields["proto.f1.fixed64hex"]; len(v) > 0 {
+			t.ProtoF1Fixed64Hex = string(v)
+		}
+		if v := fields["proto.f2"]; len(v) > 0 {
+			t.ProtoF2Len = len(v)
+			h := hex.EncodeToString(v)
+			if len(h) > 40 {
+				t.ProtoF2PrefixHex = h[:40]
+			} else {
+				t.ProtoF2PrefixHex = h
+			}
+		}
+	}
+	hexRaw := hex.EncodeToString(raw)
+	if len(hexRaw) > 40 {
+		t.PrefixHex = hexRaw[:40]
+	} else {
+		t.PrefixHex = hexRaw
+	}
+	if len(hexRaw) > 16 {
+		t.SuffixHex = hexRaw[len(hexRaw)-16:]
+	} else {
+		t.SuffixHex = hexRaw
+	}
+	var trim []byte
+	switch {
+	case len(raw) >= 3 && raw[0] == 0x09 && raw[1] == 0x0f && raw[2] == 0x01:
+		trim = raw[3:]
+	case len(raw) >= 2 && raw[0] == 0x09 && raw[1] == 0x03:
+		trim = raw[2:]
+	}
+	if len(trim) > 0 {
+		if fields := parseSimpleProtoFields(trim); len(fields) > 0 {
+			keys := make([]string, 0, len(fields))
+			for k := range fields {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			t.TrimProtoFieldKeys = keys
+			if v := fields["proto.f1.fixed64hex"]; len(v) > 0 {
+				t.TrimProtoF1Fixed64Hex = string(v)
+			}
+			if v := fields["proto.f2"]; len(v) > 0 {
+				t.TrimProtoF2Len = len(v)
+				h := hex.EncodeToString(v)
+				if len(h) > 40 {
+					t.TrimProtoF2PrefixHex = h[:40]
+				} else {
+					t.TrimProtoF2PrefixHex = h
+				}
+			}
+		}
+		t.TrimLen = len(trim)
+		t.TrimModulo16 = len(trim) % 16
+		hexTrim := hex.EncodeToString(trim)
+		if len(hexTrim) > 40 {
+			t.TrimPrefixHex = hexTrim[:40]
+		} else {
+			t.TrimPrefixHex = hexTrim
+		}
+		if len(hexTrim) > 16 {
+			t.TrimSuffixHex = hexTrim[len(hexTrim)-16:]
+		} else {
+			t.TrimSuffixHex = hexTrim
+		}
+		if len(trim) == 68 {
+			t.Head4Hex = hex.EncodeToString(trim[:4])
+			t.Left32Hex = hex.EncodeToString(trim[4:36])
+			t.Right32Hex = hex.EncodeToString(trim[36:68])
+		}
+		if len(trim) >= 3 {
+			t.Head3Hex = hex.EncodeToString(trim[:3])
+		}
+		headLen := len(trim) % 16
+		t.EnvelopeHeadLen = headLen
+		if headLen > 0 && len(trim) >= headLen {
+			t.EnvelopeHeadHex = hex.EncodeToString(trim[:headLen])
+		}
+		if len(trim) > headLen && (len(trim)-headLen)%16 == 0 {
+			t.Block16Count = (len(trim) - headLen) / 16
+			if t.Block16Count > 0 {
+				t.Block16Hex = make([]string, 0, t.Block16Count)
+				for i := 0; i < t.Block16Count; i++ {
+					start := headLen + (i * 16)
+					end := start + 16
+					t.Block16Hex = append(t.Block16Hex, hex.EncodeToString(trim[start:end]))
+				}
+				first := trim[headLen : headLen+16]
+				last := trim[len(trim)-16:]
+				t.Block16FirstHex = hex.EncodeToString(first)
+				t.Block16LastHex = hex.EncodeToString(last)
+			}
+		}
+	}
 }
 
 type binaryContentWrapped struct {
@@ -149,6 +299,42 @@ func parseRelayTE2Payload(te *RelayTE2) {
 	te.MarkerHex = hex.EncodeToString(te.Payload[8:12])
 	te.RelayTailHex = hex.EncodeToString(te.Payload[12:16])
 	te.SuffixHex = hex.EncodeToString(te.Payload[16:18])
+}
+
+func parseRTEPayload(rte *RTEBlock) {
+	if rte == nil || len(rte.Payload) != 18 {
+		return
+	}
+	rte.IPv6Prefix = formatRelayTE2IPv6Prefix(rte.Payload[:8])
+	rte.Middle4Hex = hex.EncodeToString(rte.Payload[8:12])
+	rte.Tail4Hex = hex.EncodeToString(rte.Payload[12:16])
+	rte.SuffixHex = hex.EncodeToString(rte.Payload[16:18])
+}
+
+func (b *RelayBlock) FindToken(id string) *RelayToken {
+	if b == nil {
+		return nil
+	}
+	id = strings.TrimSpace(id)
+	for i := range b.Tokens {
+		if strings.TrimSpace(b.Tokens[i].ID) == id {
+			return &b.Tokens[i]
+		}
+	}
+	return nil
+}
+
+func (b *RelayBlock) FindAuthToken(id string) *RelayToken {
+	if b == nil {
+		return nil
+	}
+	id = strings.TrimSpace(id)
+	for i := range b.Auth {
+		if strings.TrimSpace(b.Auth[i].ID) == id {
+			return &b.Auth[i]
+		}
+	}
+	return nil
 }
 
 // OfferDataNode / RawNode definitions
@@ -524,28 +710,36 @@ func (o *OfferDataNode) ExtractRelayBlock() *RelayBlock {
 			var w binaryContentWrapped
 			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
 				if raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(w.Base64)); err == nil {
-					b.Tokens = append(b.Tokens, RelayToken{ID: id, Value: strings.TrimSpace(w.Base64), Raw: raw})
+					tok := RelayToken{ID: id, Value: strings.TrimSpace(w.Base64), Raw: raw}
+					parseRelayTokenSummary(&tok)
+					b.Tokens = append(b.Tokens, tok)
 					break
 				}
 			}
 			var s string
 			if json.Unmarshal(n.Content, &s) == nil && s != "" {
 				raw := []byte(s)
-				b.Tokens = append(b.Tokens, RelayToken{ID: id, Value: base64.StdEncoding.EncodeToString(raw), Raw: raw})
+				tok := RelayToken{ID: id, Value: base64.StdEncoding.EncodeToString(raw), Raw: raw}
+				parseRelayTokenSummary(&tok)
+				b.Tokens = append(b.Tokens, tok)
 			}
 		case "auth_token":
 			id := strings.TrimSpace(n.Attrs["id"])
 			var w binaryContentWrapped
 			if json.Unmarshal(n.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
 				if raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(w.Base64)); err == nil {
-					b.Auth = append(b.Auth, RelayToken{ID: id, Value: strings.TrimSpace(w.Base64), Raw: raw})
+					tok := RelayToken{ID: id, Value: strings.TrimSpace(w.Base64), Raw: raw}
+					parseRelayTokenSummary(&tok)
+					b.Auth = append(b.Auth, tok)
 					break
 				}
 			}
 			var s string
 			if json.Unmarshal(n.Content, &s) == nil && s != "" {
 				raw := []byte(s)
-				b.Auth = append(b.Auth, RelayToken{ID: id, Value: base64.StdEncoding.EncodeToString(raw), Raw: raw})
+				tok := RelayToken{ID: id, Value: base64.StdEncoding.EncodeToString(raw), Raw: raw}
+				parseRelayTokenSummary(&tok)
+				b.Auth = append(b.Auth, tok)
 			}
 		case "key":
 			if b.Key != "" {
@@ -635,6 +829,48 @@ func (o *OfferDataNode) ExtractRelayBlock() *RelayBlock {
 	}
 
 	return b
+}
+
+func (o *OfferDataNode) ExtractRTEBlock() *RTEBlock {
+	node := o.FindFirst("rte")
+	if node == nil {
+		return nil
+	}
+
+	rte := &RTEBlock{}
+	var w binaryContentWrapped
+	if json.Unmarshal(node.Content, &w) == nil && strings.TrimSpace(w.Base64) != "" {
+		b64 := strings.TrimSpace(w.Base64)
+		rte.PayloadB64 = b64
+		rte.PayloadLen = w.Len
+		if raw, err := base64.StdEncoding.DecodeString(b64); err == nil {
+			rte.Payload = raw
+			if rte.PayloadLen <= 0 {
+				rte.PayloadLen = len(raw)
+			}
+			parseRTEPayload(rte)
+		}
+		return rte
+	}
+
+	var s string
+	if json.Unmarshal(node.Content, &s) == nil {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			rte.PayloadB64 = s
+			if raw, err := base64.StdEncoding.DecodeString(s); err == nil {
+				rte.Payload = raw
+				rte.PayloadLen = len(raw)
+				parseRTEPayload(rte)
+			} else {
+				rte.Payload = []byte(s)
+				rte.PayloadLen = len(rte.Payload)
+			}
+			return rte
+		}
+	}
+
+	return nil
 }
 
 // Decode voip_settings variants into a generic map.
@@ -783,6 +1019,11 @@ func (c *WhatsmeowCallOffer) GetRelayTokens() []string {
 func (c *WhatsmeowCallOffer) GetRelayBlock() *RelayBlock {
 	c.relayBlockOnce.Do(func() { c.relayBlock = c.Data.ExtractRelayBlock() })
 	return c.relayBlock
+}
+
+func (c *WhatsmeowCallOffer) GetRTEBlock() *RTEBlock {
+	c.rteBlockOnce.Do(func() { c.rteBlock = c.Data.ExtractRTEBlock() })
+	return c.rteBlock
 }
 
 // HasRelayCandidatesCached returns true if any te2 candidate exists (cached lazily).

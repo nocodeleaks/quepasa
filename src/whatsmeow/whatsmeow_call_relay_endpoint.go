@@ -9,6 +9,7 @@ type RelayEndpoint struct {
 	IP         string    `json:"ip,omitempty"`
 	Port       int       `json:"port,omitempty"`
 	Endpoint   string    `json:"endpoint,omitempty"`
+	CompactHex string    `json:"compact_hex,omitempty"`
 	LatencyRaw string    `json:"latency_raw,omitempty"`
 	ObservedAt time.Time `json:"observed_at"`
 }

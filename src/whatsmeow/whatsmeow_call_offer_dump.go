@@ -21,6 +21,8 @@ type callOfferDump struct {
 	Data         *OfferDataNode         `json:"data"`
 	VoipSettings map[string]interface{} `json:"voip_settings,omitempty"`
 	RelayTokens  []string               `json:"relay_tokens,omitempty"`
+	RelayBlock   *RelayBlock            `json:"relay_block,omitempty"`
+	RTEBlock     *RTEBlock              `json:"rte_block,omitempty"`
 }
 
 func DumpCallOfferEvent(evt *events.CallOffer, normalized *WhatsmeowCallOffer) (string, error) {
@@ -52,12 +54,16 @@ func DumpCallOfferEvent(evt *events.CallOffer, normalized *WhatsmeowCallOffer) (
 	data := &OfferDataNode{Tag: "offer", Attrs: map[string]string{}, Content: nil}
 	voip := map[string]interface{}(nil)
 	relay := []string(nil)
+	relayBlock := (*RelayBlock)(nil)
+	rteBlock := (*RTEBlock)(nil)
 	if normalized != nil {
 		data = normalized.GetData()
 		if v, _ := normalized.GetVoipSettings(); len(v) > 0 {
 			voip = v
 		}
 		relay = normalized.GetRelayTokens()
+		relayBlock = normalized.GetRelayBlock()
+		rteBlock = normalized.GetRTEBlock()
 	}
 
 	attrs := map[string]string{}
@@ -75,6 +81,8 @@ func DumpCallOfferEvent(evt *events.CallOffer, normalized *WhatsmeowCallOffer) (
 		Data:         data,
 		VoipSettings: voip,
 		RelayTokens:  relay,
+		RelayBlock:   relayBlock,
+		RTEBlock:     rteBlock,
 	}
 
 	bytes, err := json.MarshalIndent(dump, "", "  ")

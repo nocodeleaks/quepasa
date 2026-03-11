@@ -86,6 +86,93 @@ func buildRelayTE2MsgVariants(rb *RelayBlock) map[string][]byte {
 	return out
 }
 
+func buildRelayTokenMsgVariants(rb *RelayBlock) map[string][]byte {
+	out := map[string][]byte{}
+	if rb == nil {
+		return out
+	}
+	add := func(label string, data []byte) {
+		if len(data) == 0 {
+			return
+		}
+		out[label] = append([]byte(nil), data...)
+	}
+	for _, t := range rb.Tokens {
+		id := strings.TrimSpace(t.ID)
+		raw := t.Bytes()
+		if len(raw) > 0 {
+			add("tokRaw(id="+id+")", raw)
+			if len(raw) >= 9 && raw[0] == 0x09 {
+				add("tokRawF1Fixed64(id="+id+")", raw[1:9])
+				add("tokRawAfterF1(id="+id+")", raw[9:])
+			}
+		}
+		if trim := trimRelayTokenSeed(raw); len(trim) > 0 {
+			add("tokTrim(id="+id+")", trim)
+			headLen := len(trim) % 16
+			if headLen > 0 && len(trim) >= headLen {
+				add("tokEnvHead(id="+id+")", trim[:headLen])
+			}
+			if len(trim) > headLen && (len(trim)-headLen)%16 == 0 {
+				blockCount := (len(trim) - headLen) / 16
+				if blockCount > 0 {
+					add("tokBlock0(id="+id+")", trim[headLen:headLen+16])
+					lastStart := len(trim) - 16
+					add("tokBlockLast(id="+id+")", trim[lastStart:])
+				}
+			}
+		}
+	}
+	for _, a := range rb.Auth {
+		id := strings.TrimSpace(a.ID)
+		raw := a.Bytes()
+		if len(raw) > 0 {
+			add("authRaw(id="+id+")", raw)
+			if len(raw) >= 9 && raw[0] == 0x09 {
+				add("authRawF1Fixed64(id="+id+")", raw[1:9])
+				add("authRawAfterF1(id="+id+")", raw[9:])
+			}
+		}
+		if trim := trimRelayAuthSeed(raw); len(trim) > 0 {
+			add("authTrim(id="+id+")", trim)
+			headLen := len(trim) % 16
+			if headLen > 0 && len(trim) >= headLen {
+				add("authEnvHead(id="+id+")", trim[:headLen])
+			}
+			if len(trim) > headLen && (len(trim)-headLen)%16 == 0 {
+				blockCount := (len(trim) - headLen) / 16
+				if blockCount > 0 {
+					add("authBlock0(id="+id+")", trim[headLen:headLen+16])
+					lastStart := len(trim) - 16
+					add("authBlockLast(id="+id+")", trim[lastStart:])
+				}
+			}
+			if len(trim) == 68 {
+				add("authTrimHead4(id="+id+")", trim[:4])
+				add("authTrimLeft32(id="+id+")", trim[4:36])
+				add("authTrimRight32(id="+id+")", trim[36:68])
+				add("authTrimLeft32+Right32(id="+id+")", appendParts(trim[4:36], trim[36:68]))
+				add("authTrimRight32+Left32(id="+id+")", appendParts(trim[36:68], trim[4:36]))
+			}
+		}
+	}
+	return out
+}
+
+func trimRelayTokenSeed(raw []byte) []byte {
+	if len(raw) >= 3 && raw[0] == 0x09 && raw[1] == 0x0f && raw[2] == 0x01 {
+		return append([]byte(nil), raw[3:]...)
+	}
+	return nil
+}
+
+func trimRelayAuthSeed(raw []byte) []byte {
+	if len(raw) >= 2 && raw[0] == 0x09 && raw[1] == 0x03 {
+		return append([]byte(nil), raw[2:]...)
+	}
+	return nil
+}
+
 func dedupeTurnIntegrityCandidates(in []turnIntegrityCandidate) []turnIntegrityCandidate {
 	if len(in) == 0 {
 		return in
@@ -168,6 +255,31 @@ func hmacSHA256(key []byte, msg []byte) []byte {
 	h := hmac.New(sha256.New, key)
 	_, _ = h.Write(msg)
 	return h.Sum(nil)
+}
+
+func hkdfSHA256(ikm []byte, salt []byte, info []byte, outLen int) []byte {
+	if len(ikm) == 0 || outLen <= 0 {
+		return nil
+	}
+	if len(salt) == 0 {
+		salt = make([]byte, sha256.Size)
+	}
+	prk := hmacSHA256(salt, ikm)
+	var okm []byte
+	var t []byte
+	for counter := byte(1); len(okm) < outLen; counter++ {
+		h := hmac.New(sha256.New, prk)
+		if len(t) > 0 {
+			_, _ = h.Write(t)
+		}
+		if len(info) > 0 {
+			_, _ = h.Write(info)
+		}
+		_, _ = h.Write([]byte{counter})
+		t = h.Sum(nil)
+		okm = append(okm, t...)
+	}
+	return okm[:outLen]
 }
 
 func sha1Sum(msg []byte) []byte {
@@ -992,6 +1104,14 @@ func parseSimpleProtoFieldsWithPrefix(raw []byte, prefix string, depth int) map[
 			}
 			idx = ni
 			out[base+".varint"] = []byte(strconv.FormatUint(val, 10))
+		case 1:
+			if idx+8 > len(raw) {
+				return out
+			}
+			b := append([]byte(nil), raw[idx:idx+8]...)
+			idx += 8
+			out[base+".fixed64"] = b
+			out[base+".fixed64hex"] = []byte(hex.EncodeToString(b))
 		case 2:
 			n, ni, ok := readVarint(raw, idx)
 			if !ok {
@@ -1013,6 +1133,14 @@ func parseSimpleProtoFieldsWithPrefix(raw []byte, prefix string, depth int) map[
 			for k, v := range parseSimpleProtoFieldsWithPrefix(b, base, depth+1) {
 				out[k] = v
 			}
+		case 5:
+			if idx+4 > len(raw) {
+				return out
+			}
+			b := append([]byte(nil), raw[idx:idx+4]...)
+			idx += 4
+			out[base+".fixed32"] = b
+			out[base+".fixed32hex"] = []byte(hex.EncodeToString(b))
 		default:
 			return out
 		}
@@ -1101,6 +1229,7 @@ func captureTurnRequestDump(stage string, raw []byte, preimage []byte) callTurnP
 func (cm *WhatsmeowCallManager) runRelaySessionProbe(callID string, best RelayEndpoint, endpoints []RelayEndpoint) {
 	stunTimeoutMS := clampInt(envInt("QP_CALL_RELAY_SESSION_STUN_TIMEOUT_MS", 900), 100, 5000)
 	readTimeout := time.Duration(stunTimeoutMS) * time.Millisecond
+	attemptTimeoutMS := clampInt(envInt("QP_CALL_RELAY_TURN_ATTEMPT_TIMEOUT_MS", 150), 50, 2000)
 
 	ordered := make([]RelayEndpoint, 0, len(endpoints))
 	ordered = append(ordered, endpoints...)
@@ -1115,7 +1244,7 @@ func (cm *WhatsmeowCallManager) runRelaySessionProbe(callID string, best RelayEn
 		return ordered[i].Endpoint < ordered[j].Endpoint
 	})
 
-	cm.logger.Infof("📡 [RELAY-SESSION] Starting relay session probe (TURN Allocate): endpoints=%d readTimeoutMS=%d (CallID=%s)", len(ordered), stunTimeoutMS, callID)
+	cm.logger.Infof("📡 [RELAY-SESSION] Starting relay session probe (TURN Allocate): endpoints=%d readTimeoutMS=%d attemptTimeoutMS=%d (CallID=%s)", len(ordered), stunTimeoutMS, attemptTimeoutMS, callID)
 
 	for _, ep := range ordered {
 		if strings.TrimSpace(ep.Endpoint) == "" {
@@ -1461,6 +1590,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if endpoint == "" {
 		return fmt.Errorf("empty endpoint")
 	}
+	attemptTimeoutMS := clampInt(envInt("QP_CALL_RELAY_TURN_ATTEMPT_TIMEOUT_MS", 150), 50, 2000)
+	attemptReadTimeout := time.Duration(attemptTimeoutMS) * time.Millisecond
+	fastProbe := !envTruthy("QP_CALL_RELAY_TURN_FULL_PROBE")
 
 	// Resolve as UDP4 first (observed relay endpoints are IPv4), fallback to generic.
 	remote, err := net.ResolveUDPAddr("udp4", endpoint)
@@ -1745,6 +1877,12 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		}
 		extraMsgs[k] = v
 	}
+	for k, v := range buildRelayTokenMsgVariants(rb) {
+		if len(v) == 0 {
+			continue
+		}
+		extraMsgs[k] = v
+	}
 	if len(encPlainFields) > 0 {
 		for k, v := range encPlainFields {
 			if len(v) == 0 {
@@ -1785,6 +1923,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		seedSHA1 := sha1Sum(seedKey)
 		for msgLabel, msg := range extraMsgs {
 			if len(msg) == 0 {
+				continue
+			}
+			if fastProbe && msgLabel != "alloc.preimage" {
 				continue
 			}
 			msgSHA1 := sha1Sum(msg)
@@ -1875,6 +2016,210 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 						}
 						if b := appendParts(te2Data, remotePub); len(b) > 0 {
 							seeds = append(seeds, labeledSeed{label: te2Label + "+enc.plain.proto.f10.f1", data: b})
+						}
+					}
+					if rb != nil {
+						seenTok := make(map[string]bool)
+						seenAuth := make(map[string]bool)
+						seenPair := make(map[string]bool)
+						for _, te := range rb.TE2 {
+							tokID := strings.TrimSpace(te.TokenID)
+							authID := strings.TrimSpace(te.AuthTokenID)
+							if tokID != "" && !seenTok[tokID] {
+								for _, t := range rb.Tokens {
+									if strings.TrimSpace(t.ID) != tokID {
+										continue
+									}
+									if tokRaw := t.Bytes(); len(tokRaw) > 0 {
+										if len(tokRaw) >= 9 && tokRaw[0] == 0x09 {
+											f1 := append([]byte(nil), tokRaw[1:9]...)
+											after := append([]byte(nil), tokRaw[9:]...)
+											seeds = append(seeds, labeledSeed{label: "tokRawF1Fixed64(id=" + tokID + ")", data: f1})
+											seeds = append(seeds, labeledSeed{label: "tokRawAfterF1(id=" + tokID + ")", data: after})
+											if b := appendParts(remotePub, f1); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+tokRawF1Fixed64(id=" + tokID + ")", data: b})
+											}
+										}
+										if tokTrim := trimRelayTokenSeed(tokRaw); len(tokTrim) > 0 {
+											seeds = append(seeds, labeledSeed{label: "tokTrim(id=" + tokID + ")", data: tokTrim})
+											headLen := len(tokTrim) % 16
+											if len(tokTrim) > headLen && (len(tokTrim)-headLen)%16 == 0 {
+												block0 := append([]byte(nil), tokTrim[headLen:headLen+16]...)
+												blockLast := append([]byte(nil), tokTrim[len(tokTrim)-16:]...)
+												seeds = append(seeds, labeledSeed{label: "tokBlock0(id=" + tokID + ")", data: block0})
+												seeds = append(seeds, labeledSeed{label: "tokBlockLast(id=" + tokID + ")", data: blockLast})
+												if b := appendParts(remotePub, block0); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+tokBlock0(id=" + tokID + ")", data: b})
+												}
+												if b := appendParts(remotePub, blockLast); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+tokBlockLast(id=" + tokID + ")", data: b})
+												}
+											}
+										}
+										if b := appendParts(remotePub, tokRaw); len(b) > 0 {
+											seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+tokRaw(id=" + tokID + ")", data: b})
+										}
+										if b := appendParts(tokRaw, remotePub); len(b) > 0 {
+											seeds = append(seeds, labeledSeed{label: "tokRaw(id=" + tokID + ")+enc.plain.proto.f10.f1", data: b})
+										}
+										if tokTrim := trimRelayTokenSeed(tokRaw); len(tokTrim) > 0 {
+											if b := appendParts(remotePub, tokTrim); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+tokTrim(id=" + tokID + ")", data: b})
+											}
+											if b := appendParts(tokTrim, remotePub); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "tokTrim(id=" + tokID + ")+enc.plain.proto.f10.f1", data: b})
+											}
+										}
+									}
+									seenTok[tokID] = true
+									break
+								}
+							}
+							if authID != "" && !seenAuth[authID] {
+								for _, a := range rb.Auth {
+									if strings.TrimSpace(a.ID) != authID {
+										continue
+									}
+									if authRaw := a.Bytes(); len(authRaw) > 0 {
+										seeds = append(seeds, labeledSeed{label: "authRaw(id=" + authID + ")", data: authRaw})
+										if len(authRaw) >= 9 && authRaw[0] == 0x09 {
+											f1 := append([]byte(nil), authRaw[1:9]...)
+											after := append([]byte(nil), authRaw[9:]...)
+											seeds = append(seeds, labeledSeed{label: "authRawF1Fixed64(id=" + authID + ")", data: f1})
+											seeds = append(seeds, labeledSeed{label: "authRawAfterF1(id=" + authID + ")", data: after})
+											if b := appendParts(remotePub, f1); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authRawF1Fixed64(id=" + authID + ")", data: b})
+											}
+										}
+									if authTrim := trimRelayAuthSeed(authRaw); len(authTrim) > 0 {
+										seeds = append(seeds, labeledSeed{label: "authTrim(id=" + authID + ")", data: authTrim})
+											headLen := len(authTrim) % 16
+											if len(authTrim) > headLen && (len(authTrim)-headLen)%16 == 0 {
+												block0 := append([]byte(nil), authTrim[headLen:headLen+16]...)
+												blockLast := append([]byte(nil), authTrim[len(authTrim)-16:]...)
+												seeds = append(seeds, labeledSeed{label: "authBlock0(id=" + authID + ")", data: block0})
+												seeds = append(seeds, labeledSeed{label: "authBlockLast(id=" + authID + ")", data: blockLast})
+												if b := appendParts(remotePub, block0); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authBlock0(id=" + authID + ")", data: b})
+												}
+												if b := appendParts(remotePub, blockLast); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authBlockLast(id=" + authID + ")", data: b})
+												}
+											}
+											if len(authTrim) == 68 {
+												head4 := append([]byte(nil), authTrim[:4]...)
+												left32 := append([]byte(nil), authTrim[4:36]...)
+												right32 := append([]byte(nil), authTrim[36:68]...)
+												seeds = append(seeds, labeledSeed{label: "authTrimHead4(id=" + authID + ")", data: head4})
+											seeds = append(seeds, labeledSeed{label: "authTrimLeft32(id=" + authID + ")", data: left32})
+											seeds = append(seeds, labeledSeed{label: "authTrimRight32(id=" + authID + ")", data: right32})
+											if b := appendParts(head4, left32); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrimHead4+Left32(id=" + authID + ")", data: b})
+											}
+											if b := appendParts(left32, head4); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrimLeft32+Head4(id=" + authID + ")", data: b})
+											}
+											if b := appendParts(head4, right32); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrimHead4+Right32(id=" + authID + ")", data: b})
+											}
+												if b := appendParts(right32, head4); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authTrimRight32+Head4(id=" + authID + ")", data: b})
+												}
+												if d := hkdfSHA256(left32, right32, head4, 32); len(d) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authHKDF(ikm=authTrimLeft32(id=" + authID + "),salt=authTrimRight32(id=" + authID + "),info=authTrimHead4(id=" + authID + "))", data: d})
+												}
+												if d := hkdfSHA256(right32, left32, head4, 32); len(d) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authHKDF(ikm=authTrimRight32(id=" + authID + "),salt=authTrimLeft32(id=" + authID + "),info=authTrimHead4(id=" + authID + "))", data: d})
+												}
+												if d := hkdfSHA256(left32, remotePub, head4, 32); len(d) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authHKDF(ikm=authTrimLeft32(id=" + authID + "),salt=enc.plain.proto.f10.f1,info=authTrimHead4(id=" + authID + "))", data: d})
+												}
+												if d := hkdfSHA256(right32, remotePub, head4, 32); len(d) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authHKDF(ikm=authTrimRight32(id=" + authID + "),salt=enc.plain.proto.f10.f1,info=authTrimHead4(id=" + authID + "))", data: d})
+												}
+												if b := appendParts(authTrim[4:36], authTrim[36:68]); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authTrimLeft32+Right32(id=" + authID + ")", data: b})
+												}
+											if b := appendParts(authTrim[36:68], authTrim[4:36]); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrimRight32+Left32(id=" + authID + ")", data: b})
+											}
+											if b := appendParts(remotePub, head4); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authTrimHead4(id=" + authID + ")", data: b})
+											}
+											if b := appendParts(head4, remotePub); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrimHead4(id=" + authID + ")+enc.plain.proto.f10.f1", data: b})
+											}
+											if b := appendParts(remotePub, left32); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authTrimLeft32(id=" + authID + ")", data: b})
+											}
+											if b := appendParts(left32, remotePub); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrimLeft32(id=" + authID + ")+enc.plain.proto.f10.f1", data: b})
+												}
+												if b := appendParts(remotePub, right32); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authTrimRight32(id=" + authID + ")", data: b})
+												}
+												if b := appendParts(right32, remotePub); len(b) > 0 {
+													seeds = append(seeds, labeledSeed{label: "authTrimRight32(id=" + authID + ")+enc.plain.proto.f10.f1", data: b})
+												}
+											}
+										}
+										if b := appendParts(remotePub, authRaw); len(b) > 0 {
+											seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authRaw(id=" + authID + ")", data: b})
+										}
+										if b := appendParts(authRaw, remotePub); len(b) > 0 {
+											seeds = append(seeds, labeledSeed{label: "authRaw(id=" + authID + ")+enc.plain.proto.f10.f1", data: b})
+										}
+										if authTrim := trimRelayAuthSeed(authRaw); len(authTrim) > 0 {
+											if b := appendParts(remotePub, authTrim); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "enc.plain.proto.f10.f1+authTrim(id=" + authID + ")", data: b})
+											}
+											if b := appendParts(authTrim, remotePub); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrim(id=" + authID + ")+enc.plain.proto.f10.f1", data: b})
+											}
+										}
+									}
+									seenAuth[authID] = true
+									break
+								}
+							}
+							if tokID != "" && authID != "" {
+								pairKey := tokID + ":" + authID
+								if !seenPair[pairKey] {
+									var tokRaw []byte
+									var authRaw []byte
+									for _, t := range rb.Tokens {
+										if strings.TrimSpace(t.ID) == tokID {
+											tokRaw = t.Bytes()
+											break
+										}
+									}
+									for _, a := range rb.Auth {
+										if strings.TrimSpace(a.ID) == authID {
+											authRaw = a.Bytes()
+											break
+										}
+									}
+									if len(authRaw) > 0 && len(tokRaw) > 0 {
+										if b := appendParts(authRaw, tokRaw); len(b) > 0 {
+											seeds = append(seeds, labeledSeed{label: "authRaw(id=" + authID + ")+tokRaw(id=" + tokID + ")", data: b})
+										}
+										if b := appendParts(tokRaw, authRaw); len(b) > 0 {
+											seeds = append(seeds, labeledSeed{label: "tokRaw(id=" + tokID + ")+authRaw(id=" + authID + ")", data: b})
+										}
+										authTrim := trimRelayAuthSeed(authRaw)
+										tokTrim := trimRelayTokenSeed(tokRaw)
+										if len(authTrim) > 0 && len(tokTrim) > 0 {
+											if b := appendParts(authTrim, tokTrim); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "authTrim(id=" + authID + ")+tokTrim(id=" + tokID + ")", data: b})
+											}
+											if b := appendParts(tokTrim, authTrim); len(b) > 0 {
+												seeds = append(seeds, labeledSeed{label: "tokTrim(id=" + tokID + ")+authTrim(id=" + authID + ")", data: b})
+											}
+										}
+									}
+									seenPair[pairKey] = true
+								}
+							}
 						}
 					}
 					if id := cm.connection.Client.Store.IdentityKey; id != nil && id.Priv != nil {
@@ -2577,107 +2922,281 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				if strings.HasPrefix(label, "lt ") {
 					return 0
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authBlock0(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -40
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authBlockLast(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -39
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+tokBlock0(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -38
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+tokBlockLast(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -37
+				}
+				if strings.Contains(label, "authRawAfterF1(id=") && strings.Contains(label, "miKDF:msg=authRawF1Fixed64(id=") {
+					return -36
+				}
+				if strings.Contains(label, "tokRawAfterF1(id=") && strings.Contains(label, "miKDF:msg=tokRawF1Fixed64(id=") {
+					return -35
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authRawF1Fixed64(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -34
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+tokRawF1Fixed64(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -33
+				}
+				if strings.Contains(label, "authHKDF(ikm=authTrimLeft32(id=") && strings.Contains(label, "salt=authTrimRight32(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -32
+				}
+				if strings.Contains(label, "authHKDF(ikm=authTrimRight32(id=") && strings.Contains(label, "salt=authTrimLeft32(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -31
+				}
+				if strings.Contains(label, "authHKDF(ikm=authTrimLeft32(id=") && strings.Contains(label, "salt=enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -30
+				}
+				if strings.Contains(label, "authHKDF(ikm=authTrimRight32(id=") && strings.Contains(label, "salt=enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -29
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authTrimHead4(id=") && strings.Contains(label, "miKDF:msg=authTrimLeft32(id=") {
+					return -28
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authTrimHead4(id=") && strings.Contains(label, "miKDF:msg=authTrimRight32(id=") {
+					return -27
+				}
+				if strings.Contains(label, "authTrimHead4(id=") && strings.Contains(label, "miKDF:msg=authTrimLeft32(id=") {
+					return -26
+				}
+				if strings.Contains(label, "authTrimHead4(id=") && strings.Contains(label, "miKDF:msg=authTrimRight32(id=") {
+					return -25
+				}
+				if strings.Contains(label, "authTrimLeft32(id=") && strings.Contains(label, "miKDF:msg=authTrimHead4(id=") {
+					return -24
+				}
+				if strings.Contains(label, "authTrimRight32(id=") && strings.Contains(label, "miKDF:msg=authTrimHead4(id=") {
+					return -23
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authTrimHead4(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -22
+				}
+				if strings.Contains(label, "authTrimHead4(id=") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -21
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authTrimLeft32(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -20
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authTrimRight32(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -19
+				}
+				if strings.Contains(label, "authTrimLeft32(id=") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -18
+				}
+				if strings.Contains(label, "authTrimRight32(id=") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -17
+				}
+				if strings.Contains(label, "authTrimLeft32(id=") && strings.Contains(label, "miKDF:msg=authTrimRight32(id=") {
+					return -16
+				}
+				if strings.Contains(label, "authTrimRight32(id=") && strings.Contains(label, "miKDF:msg=authTrimLeft32(id=") {
+					return -15
+				}
+				if strings.Contains(label, "authTrimLeft32(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -14
+				}
+				if strings.Contains(label, "authTrimRight32(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -13
+				}
+				if strings.Contains(label, "authTrim(id=") && strings.Contains(label, "miKDF:msg=tokTrim(id=") {
+					return -12
+				}
+				if strings.Contains(label, "tokTrim(id=") && strings.Contains(label, "miKDF:msg=authTrim(id=") {
+					return -11
+				}
+				if strings.Contains(label, "authTrim(id=") && strings.Contains(label, "miKDF:msg=authTrim(id=") {
+					return -10
+				}
+				if strings.Contains(label, "tokTrim(id=") && strings.Contains(label, "miKDF:msg=tokTrim(id=") {
+					return -9
+				}
+				if strings.Contains(label, "authTrim(id=") && !strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -8
+				}
+				if strings.Contains(label, "authTrim(id=") && strings.Contains(label, "+tokTrim(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -7
+				}
+				if strings.Contains(label, "tokTrim(id=") && strings.Contains(label, "+authTrim(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -6
+				}
+				if strings.Contains(label, "tokTrim(id=") && !strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -5
+				}
+				if strings.Contains(label, "authRaw(id=") && !strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -4
+				}
+				if strings.Contains(label, "authRaw(id=") && strings.Contains(label, "+tokRaw(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -3
+				}
+				if strings.Contains(label, "tokRaw(id=") && strings.Contains(label, "+authRaw(id=") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -2
+				}
+				if strings.Contains(label, "tokRaw(id=") && !strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
+					return -1
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+authRaw(") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
 					return 1
 				}
-				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+tokRaw(") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
 					return 2
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+				if strings.Contains(label, "authRaw(") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
 					return 3
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+				if strings.Contains(label, "tokRaw(") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") {
 					return 4
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "prefix8+tail4") {
 					return 5
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "tail4") {
 					return 6
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "prefix8") {
 					return 7
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "full18") {
 					return 8
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "prefix8+tail4") {
 					return 9
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "tail4") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "tail4") {
 					return 10
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
-					return 9
-				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+attrs") && strings.Contains(label, "miKDF") {
-					return 10
-				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+uuid(bin)") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "prefix8") {
 					return 11
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage)") && strings.Contains(label, "full18") {
 					return 12
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "prefix8+tail4") {
 					return 13
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+attrs") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "tail4") {
 					return 14
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+uuid(bin)") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "prefix8") {
 					return 15
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1+te2.") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "full18") {
 					return 16
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "prefix8+tail4") {
 					return 17
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+a4000+a4024+a0016") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "tail4") {
 					return 18
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+a4000") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "prefix8") {
 					return 19
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+a4024") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "te2.") && strings.Contains(label, "+enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=alloc.preimage_lenplus24") && strings.Contains(label, "full18") {
 					return 20
 				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+a0016") && strings.Contains(label, "miKDF") {
-					return 21
-				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+uuid(bin)") && strings.Contains(label, "miKDF") {
-					return 22
-				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1+self+peer") && strings.Contains(label, "miKDF") {
-					return 23
-				}
-				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
 					return 24
 				}
-				if strings.Contains(label, "enc.plain.proto.f10") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
 					return 25
 				}
-				if strings.Contains(label, "enc.plain.proto.") && strings.Contains(label, ".f1") && strings.Contains(label, "miKDF") {
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
 					return 26
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+					return 27
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8+tail4") {
+					return 28
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "full18") {
+					return 29
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "prefix8") {
+					return 30
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF:msg=te2.") && strings.Contains(label, "tail4") {
+					return 31
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+					return 32
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+attrs") && strings.Contains(label, "miKDF") {
+					return 33
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "+uuid(bin)") && strings.Contains(label, "miKDF") {
+					return 34
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(signedprekey)") && strings.Contains(label, "miKDF") {
+					return 35
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+					return 36
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+attrs") && strings.Contains(label, "miKDF") {
+					return 37
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "+uuid(bin)") && strings.Contains(label, "miKDF") {
+					return 38
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1.ecdh(identity)") && strings.Contains(label, "miKDF") {
+					return 39
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+uuid(bin)+attrs+self+peer") && strings.Contains(label, "miKDF") {
+					return 40
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a4000+a4024+a0016") && strings.Contains(label, "miKDF") {
+					return 41
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a4000") && strings.Contains(label, "miKDF") {
+					return 42
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a4024") && strings.Contains(label, "miKDF") {
+					return 43
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+a0016") && strings.Contains(label, "miKDF") {
+					return 44
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+uuid(bin)") && strings.Contains(label, "miKDF") {
+					return 45
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1+self+peer") && strings.Contains(label, "miKDF") {
+					return 46
+				}
+				if strings.Contains(label, "enc.plain.proto.f10.f1") && strings.Contains(label, "miKDF") {
+					return 47
+				}
+				if strings.Contains(label, "enc.plain.proto.f10") && strings.Contains(label, "miKDF") {
+					return 48
+				}
+				if strings.Contains(label, "enc.plain.proto.") && strings.Contains(label, ".f1") && strings.Contains(label, "miKDF") {
+					return 49
 				}
 				if strings.HasPrefix(label, "enc.plain") {
 					if strings.Contains(label, "miKDF") && strings.Contains(label, "alloc.preimage") {
-						return 27
+						return 50
 					}
 					if strings.Contains(label, "miKDF") {
-						return 28
+						return 51
 					}
-					return 29
+					return 52
 				}
 				if strings.Contains(label, "miKDF") {
 					if strings.Contains(label, "alloc.preimage") {
-						return 30
+						return 53
 					}
 					if strings.Contains(label, "uuid(bin)+self+peer") || strings.Contains(label, "self+peer") {
-						return 31
+						return 54
 					}
-					return 32
+					return 55
 				}
 				// Direct extra-attrs-as-key attempts: small but high-signal.
 				if strings.HasPrefix(label, "extra-key(") {
@@ -2744,6 +3263,9 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if v := envInt("QP_CALL_RELAY_TURN_MAX_CANDIDATES", 10); v > 0 {
 		maxTry = clampInt(v, 1, 120)
 	}
+	if !envTruthy("QP_CALL_RELAY_TURN_FULL_PROBE") && maxTry > 24 {
+		maxTry = 24
+	}
 	cm.logger.Warnf("📡 [RELAY-TURN] Integrity candidates: total=%d maxTry=%d deriveHMAC=%v (CallID=%s)", len(cands), maxTry, deriveHMAC, callID)
 	if maxTry > 0 {
 		labels := make([]string, 0, 6)
@@ -2796,7 +3318,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	// Per-family budgets (caps). These defaults are tuned for diversity within maxTry.
 	budgets := map[string]int{
 		"enc":        clampInt(envInt("QP_CALL_RELAY_TURN_ENC_BUDGET", 20), 0, maxTry),
-		"mikdf":      clampInt(envInt("QP_CALL_RELAY_TURN_MIKDF_BUDGET", 20), 0, maxTry),
+		"mikdf":      maxTry,
 		"rest":       clampInt(envInt("QP_CALL_RELAY_TURN_REST_BUDGET", 20), 0, maxTry),
 		"extra-key":  clampInt(envInt("QP_CALL_RELAY_TURN_EXTRA_KEY_BUDGET", 15), 0, maxTry),
 		"relay.key":  clampInt(envInt("QP_CALL_RELAY_TURN_RELAY_KEY_BUDGET", 30), 0, maxTry),
@@ -2871,7 +3393,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				}
 				continue
 			}
-			_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
+			_ = conn.SetReadDeadline(time.Now().Add(attemptReadTimeout))
 			n2, err := conn.Read(buf)
 			if err != nil {
 				if txid != "" {

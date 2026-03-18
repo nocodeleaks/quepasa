@@ -7,6 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const DEFAULTEMAIL string = "default@quepasa.io"
+
 func InitialSeed() (err error) {
 	// Ensure DB services are initialized
 	if WhatsappService == nil || WhatsappService.DB == nil || WhatsappService.DB.Users == nil {

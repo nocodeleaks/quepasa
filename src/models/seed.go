@@ -7,8 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const DEFAULTEMAIL string = "default@quepasa.io"
-
 func InitialSeed() (err error) {
 	// Ensure DB services are initialized
 	if WhatsappService == nil || WhatsappService.DB == nil || WhatsappService.DB.Users == nil {
@@ -19,20 +17,21 @@ func InitialSeed() (err error) {
 	envEMAIL := environment.Settings.API.User
 	envPASSWORD := environment.Settings.API.Password
 
-	// Log loaded values for debugging
-	log.Debugf("InitialSeed: Loaded USER='%s' PASSWORD='%s' (length: %d)",
-		envEMAIL,
-		func() string {
-			if envPASSWORD != "" {
-				return "***"
-			} else {
-				return ""
-			}
-		}(),
-		len(envPASSWORD))
-
 	// Use environment variable if set, otherwise fallback to DEFAULTEMAIL
 	if envEMAIL != "" {
+
+		// Log loaded values for debugging
+		log.Debugf("InitialSeed: Loaded QUEPASA_USER='%s' QUEPASA_PASSWORD='%s' (length: %d)",
+			envEMAIL,
+			func() string {
+				if envPASSWORD != "" {
+					return "***"
+				} else {
+					return ""
+				}
+			}(),
+			len(envPASSWORD))
+
 		// Check if user exists
 		exists, err := WhatsappService.DB.Users.Exists(envEMAIL)
 		if err != nil {
@@ -42,7 +41,7 @@ func InitialSeed() (err error) {
 		if !exists {
 			// Validate password is not empty for security
 			if envPASSWORD == "" {
-				return fmt.Errorf("PASSWORD not set; refusing to create user '%s' with empty password", envEMAIL)
+				return fmt.Errorf("QUEPASA_PASSWORD not set; refusing to create user '%s' with empty password", envEMAIL)
 			}
 
 			log.Infof("Creating default user from environment: %s", envEMAIL)
@@ -54,7 +53,7 @@ func InitialSeed() (err error) {
 		} else {
 			log.Infof("User '%s' already exists, skipping creation", envEMAIL)
 		}
-	} else {
+	} /*else {
 		// Fallback to default email with empty password (legacy behavior)
 		log.Warnf("USER not set, using default: %s", DEFAULTEMAIL)
 		exists, err := WhatsappService.DB.Users.Exists(DEFAULTEMAIL)
@@ -69,7 +68,7 @@ func InitialSeed() (err error) {
 				return fmt.Errorf("failed to create default user: %w", err)
 			}
 		}
-	}
+	}*/
 
 	return nil
 }

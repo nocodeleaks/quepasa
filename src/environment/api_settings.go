@@ -4,14 +4,14 @@ import "time"
 
 // API environment variable names
 const (
-	ENV_WEBSOCKETSSL    = "WEBSOCKETSSL"    // use SSL for websocket qrcode
-	ENV_SIGNING_SECRET  = "SIGNING_SECRET"  // token for hash signing cookies
-	ENV_MASTER_KEY      = "MASTERKEY"       // used for manage all instances at all
-	ENV_WEBHOOK_TIMEOUT = "WEBHOOK_TIMEOUT" // timeout in milliseconds for webhook requests
-	ENV_API_PREFIX      = "API_PREFIX"      // API routes prefix
-	ENV_API_TIMEOUT     = "API_TIMEOUT"     // API request timeout in milliseconds
-	ENV_USER            = "USER"            // default user for database seeding
-	ENV_PASSWORD        = "PASSWORD"        // default password for database seeding
+	ENV_WEBSOCKETSSL    = "WEBSOCKETSSL"     // use SSL for websocket qrcode
+	ENV_SIGNING_SECRET  = "SIGNING_SECRET"   // token for hash signing cookies
+	ENV_MASTER_KEY      = "MASTERKEY"        // used for manage all instances at all
+	ENV_WEBHOOK_TIMEOUT = "WEBHOOK_TIMEOUT"  // timeout in milliseconds for webhook requests
+	ENV_API_PREFIX      = "API_PREFIX"       // API routes prefix
+	ENV_API_TIMEOUT     = "API_TIMEOUT"      // API request timeout in milliseconds
+	ENV_USER            = "QUEPASA_USER"     // default user for database seeding (prefixed to avoid conflict with Linux USER env var)
+	ENV_PASSWORD        = "QUEPASA_PASSWORD" // default password for database seeding
 )
 
 // APISettings holds all API configuration loaded from environment

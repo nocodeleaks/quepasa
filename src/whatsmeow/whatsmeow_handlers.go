@@ -114,6 +114,20 @@ func (source *WhatsmeowHandlers) HandleGroups() bool {
 	return serviceOptions.HandleGroups(defaultValue)
 }
 
+func (source *WhatsmeowHandlers) HandleDirect() bool {
+	if source == nil {
+		return false
+	}
+
+	var defaultValue whatsapp.WhatsappBoolean
+	if source.WhatsappOptions != nil {
+		defaultValue = source.WhatsappOptions.Direct
+	}
+
+	serviceOptions := source.GetServiceOptions()
+	return serviceOptions.HandleDirect(defaultValue)
+}
+
 func (source *WhatsmeowHandlers) HandleReadReceipts() bool {
 	if source == nil {
 		return false
@@ -864,6 +878,12 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 
 	// Ignore chats with @broadcast and @newsletter
 	if strings.Contains(chatID, "@broadcast") || strings.Contains(chatID, "@newsletter") || strings.Contains(chatID, "@g.us") {
+		return
+	}
+
+	// should skip direct messages ?
+	if !source.HandleDirect() {
+		logentry.Debug("ignoring direct receipt, HandleDirect is false")
 		return
 	}
 

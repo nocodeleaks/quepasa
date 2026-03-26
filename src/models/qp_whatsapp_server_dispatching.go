@@ -41,6 +41,12 @@ func (source *QpWhatsappServerDispatching) GetOptions() *whatsapp.WhatsappOption
 
 //#endregion
 
+// Save validates the wrapper state before persisting the dispatching settings.
+//
+// The dispatching instance keeps a cached copy of the server WID that is later
+// reused as the X-QUEPASA-WID header during webhook delivery. Synchronizing the
+// current server WID here prevents saving a configuration that would keep using
+// an outdated or empty header value after the server identity becomes available.
 func (source *QpWhatsappServerDispatching) Save(reason string) (err error) {
 
 	if source == nil {
@@ -57,6 +63,8 @@ func (source *QpWhatsappServerDispatching) Save(reason string) (err error) {
 		err = fmt.Errorf("nil source configuration")
 		return err
 	}
+
+	source.QpDispatching.Wid = source.server.GetWId()
 
 	logentry := source.GetLogger()
 	logentry.Debugf("saving configuration info, reason: %s, content: %+v", reason, source)

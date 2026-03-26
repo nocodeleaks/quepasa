@@ -50,7 +50,13 @@ func TestWebhookRetrySuccess(t *testing.T) {
 
 // TestWebhookPayloadFormat tests that the webhook payload is correctly formatted
 func TestWebhookPayloadFormat(t *testing.T) {
-	var receivedPayload *QpWebhookPayload
+	type receivedWebhookPayload struct {
+		Id    string      `json:"id"`
+		Type  string      `json:"type"`
+		Extra interface{} `json:"extra,omitempty"`
+	}
+
+	var receivedPayload *receivedWebhookPayload
 
 	// Setup test server to capture the payload
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -118,15 +124,58 @@ func TestWebhookPayloadFormat(t *testing.T) {
 		t.Fatal("No payload received")
 	}
 
-	if receivedPayload.WhatsappMessage == nil {
-		t.Error("Expected WhatsappMessage in payload")
+	if receivedPayload.Id != "test-message-id" {
+		t.Errorf("Expected message ID 'test-message-id', got '%s'", receivedPayload.Id)
 	}
 
-	if receivedPayload.WhatsappMessage.Id != "test-message-id" {
-		t.Errorf("Expected message ID 'test-message-id', got '%s'", receivedPayload.WhatsappMessage.Id)
+	if receivedPayload.Type != "unhandled" {
+		t.Errorf("Expected message type 'unhandled', got '%s'", receivedPayload.Type)
 	}
 
 	if receivedPayload.Extra == nil {
 		t.Error("Expected Extra data in payload")
+	}
+}
+
+func TestPostToDispatchingFromServerUsesCurrentServerWid(t *testing.T) {
+	var receivedWid string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedWid = r.Header.Get("X-QUEPASA-WID")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "OK")
+	}))
+	defer server.Close()
+
+	whatsappServer := &QpWhatsappServer{
+		QpServer: &QpServer{
+			Token: "test-token",
+			Wid:   "current@whatsapp",
+		},
+		QpDataDispatching: QpDataDispatching{
+			Dispatching: []*QpDispatching{{
+				ConnectionString: server.URL,
+				Type:             DispatchingTypeWebhook,
+				Wid:              "",
+			}},
+		},
+	}
+
+	message := &whatsapp.WhatsappMessage{
+		Id:   "test-message-id",
+		Text: "Test message",
+	}
+
+	err := PostToDispatchingFromServer(whatsappServer, message)
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+
+	if receivedWid != "current@whatsapp" {
+		t.Fatalf("Expected X-QUEPASA-WID 'current@whatsapp', got '%s'", receivedWid)
+	}
+
+	if whatsappServer.QpDataDispatching.Dispatching[0].Wid != "current@whatsapp" {
+		t.Fatalf("Expected dispatching Wid to be synchronized, got '%s'", whatsappServer.QpDataDispatching.Dispatching[0].Wid)
 	}
 }

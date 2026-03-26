@@ -21,6 +21,7 @@ replace github.com/nocodeleaks/quepasa/form => ./form
 replace github.com/nocodeleaks/quepasa/sipproxy => ./sipproxy
 
 replace github.com/nocodeleaks/quepasa/environment => ./environment
+replace go.mau.fi/whatsmeow => ./.localmods/whatsmeow
 
 go 1.23.2
 

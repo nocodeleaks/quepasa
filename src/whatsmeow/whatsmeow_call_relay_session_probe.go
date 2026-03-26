@@ -1622,6 +1622,10 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	baseAllocateReason := ""
 	baseNonceLen := 0
 	baseRealmLen := 0
+	fallbackMinimalTxID := ""
+	fallbackMinimalRespMsgType := ""
+	fallbackMinimalCode := 0
+	fallbackMinimalReason := ""
 	discTxID := ""
 	discUser := ""
 	discCode := 0
@@ -1641,6 +1645,24 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	captureReqs := envTruthy("QP_CALL_DUMP_TURN_REQUESTS") && envTruthy("QP_CALL_DUMP_TURN_PROBE")
 	capMax := clampInt(envInt("QP_CALL_DUMP_TURN_REQUESTS_MAX", 20), 0, 200)
 	requestDumps := make([]callTurnProbeRequestDump, 0, 8)
+	var baseRequestDump *callTurnProbeRequestDump
+	var fallbackMinimalRequestDump *callTurnProbeRequestDump
+	var noRequestedTransportRequestDump *callTurnProbeRequestDump
+	var discoveryRequestDump *callTurnProbeRequestDump
+	attemptRequestsPreview := make([]callTurnProbeRequestDump, 0, 3)
+	useStructuredTxID := envTruthyDefault("QP_CALL_RELAY_TURN_STRUCTURED_TXID", true)
+	txidSeed := sha1.Sum([]byte("turn-txid|" + callID + "|" + ep.RelayName + "|" + endpoint))
+	txidCounter := txidSeed[11]
+	nextTurnMessage := func() *stun.Message {
+		if !useStructuredTxID {
+			return stun.MustBuild(stun.TransactionID)
+		}
+		var txid [stun.TransactionIDSize]byte
+		copy(txid[:11], txidSeed[:11])
+		txid[11] = txidCounter
+		txidCounter++
+		return stun.MustBuild(stun.NewTransactionIDSetter(txid))
+	}
 	maybeCap := func(stage string, m *stun.Message, preimage []byte) {
 		if !captureReqs {
 			return
@@ -1657,7 +1679,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		requestDumps = append(requestDumps, captureTurnRequestDump(stage, m.Raw, preimage))
 	}
 
-	baseReq := stun.MustBuild(stun.TransactionID)
+	baseReq := nextTurnMessage()
 	baseReq.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest) // Allocate
 	if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
 		baseReq.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0}) // REQUESTED-TRANSPORT: UDP
@@ -1666,9 +1688,11 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	baseAllocateTxID = stunTxIDHex(baseReq)
 	baseReq.Encode()
 	basePreimage := append([]byte(nil), baseReq.Raw...)
-	if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
+	if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", false) {
 		_ = stun.Fingerprint.AddTo(baseReq)
 	}
+	baseRequestCaptured := captureTurnRequestDump("base", baseReq.Raw, basePreimage)
+	baseRequestDump = &baseRequestCaptured
 	maybeCap("base", baseReq, basePreimage)
 	if _, err := conn.Write(baseReq.Raw); err != nil {
 		return fmt.Errorf("turn allocate write: %w", err)
@@ -1742,6 +1766,86 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	if baseAllocateSuccess {
 		tryIntegrity = false
 	}
+	useMinimalAllocateShape := false
+	useNoRequestedTransportShape := false
+	noRequestedTransportTxID := ""
+	noRequestedTransportRespMsgType := ""
+	noRequestedTransportCode := 0
+	noRequestedTransportReason := ""
+
+	if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") && !baseAllocateSuccess {
+		noReq := nextTurnMessage()
+		noReq.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
+		addTurnExtraAttrsForEndpoint(noReq, extra, remote)
+		noRequestedTransportTxID = stunTxIDHex(noReq)
+		noReq.Encode()
+		noReqPreimage := append([]byte(nil), noReq.Raw...)
+		noRequestedTransportCaptured := captureTurnRequestDump("no_requested_transport", noReq.Raw, noReqPreimage)
+		noRequestedTransportRequestDump = &noRequestedTransportCaptured
+		maybeCap("no_requested_transport", noReq, noReqPreimage)
+		if _, err := conn.Write(noReq.Raw); err == nil {
+			_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
+			if nNoReq, errNoReq := conn.Read(buf); errNoReq == nil && nNoReq > 0 {
+				respNoReqRaw := buf[:nNoReq]
+				if isSTUNPacket(respNoReqRaw) {
+					var respNoReq stun.Message
+					respNoReq.Raw = respNoReqRaw
+					if err := respNoReq.Decode(); err == nil {
+						noRequestedTransportRespMsgType = stunMsgTypeHexFromMessage(&respNoReq)
+						var noReqErrCode stun.ErrorCodeAttribute
+						if err2 := noReqErrCode.GetFrom(&respNoReq); err2 == nil {
+							noRequestedTransportCode = int(noReqErrCode.Code)
+							noRequestedTransportReason = strings.TrimSpace(string(noReqErrCode.Reason))
+						}
+						noReqDecodeError := noRequestedTransportCode == 456 || strings.Contains(strings.ToLower(noRequestedTransportReason), "decode")
+						if !noReqDecodeError {
+							useNoRequestedTransportShape = true
+						}
+						cm.logger.Warnf("📡 [RELAY-TURN] No-REQUESTED-TRANSPORT Allocate: txid=%s relay=%s endpoint=%s code=%d reason=%q (CallID=%s)", noRequestedTransportTxID, ep.RelayName, endpoint, noRequestedTransportCode, noRequestedTransportReason, callID)
+					}
+				}
+			}
+		}
+	}
+
+	baseDecodeError := baseAllocateCode == 456 || strings.Contains(strings.ToLower(baseAllocateReason), "decode")
+	if baseDecodeError {
+		minReq := nextTurnMessage()
+		minReq.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
+		if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+			minReq.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
+		}
+		fallbackMinimalTxID = stunTxIDHex(minReq)
+		minReq.Encode()
+		minPreimage := append([]byte(nil), minReq.Raw...)
+		fallbackMinimalCaptured := captureTurnRequestDump("fallback_minimal", minReq.Raw, minPreimage)
+		fallbackMinimalRequestDump = &fallbackMinimalCaptured
+		maybeCap("fallback_minimal", minReq, minPreimage)
+		if _, err := conn.Write(minReq.Raw); err == nil {
+			_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
+			if nMin, errMin := conn.Read(buf); errMin == nil && nMin > 0 {
+				respMinRaw := buf[:nMin]
+				if isSTUNPacket(respMinRaw) {
+					var respMin stun.Message
+					respMin.Raw = respMinRaw
+					if err := respMin.Decode(); err == nil {
+						fallbackMinimalRespMsgType = stunMsgTypeHexFromMessage(&respMin)
+						var minErrCode stun.ErrorCodeAttribute
+						if err2 := minErrCode.GetFrom(&respMin); err2 == nil {
+							fallbackMinimalCode = int(minErrCode.Code)
+							fallbackMinimalReason = strings.TrimSpace(string(minErrCode.Reason))
+						}
+						cm.logger.Warnf("📡 [RELAY-TURN] Fallback minimal Allocate: txid=%s relay=%s endpoint=%s code=%d reason=%q (CallID=%s)", fallbackMinimalTxID, ep.RelayName, endpoint, fallbackMinimalCode, fallbackMinimalReason, callID)
+						minDecodeError := fallbackMinimalCode == 456 || strings.Contains(strings.ToLower(fallbackMinimalReason), "decode")
+						if !minDecodeError {
+							cm.logger.Warnf("📡 [RELAY-TURN] Extra attrs/fingerprint likely causing malformed Allocate; switching to minimal TURN shape for discovery/MI attempts (CallID=%s)", callID)
+							useMinimalAllocateShape = true
+						}
+					}
+				}
+			}
+		}
+	}
 
 	rb := cm.getRelayBlockForCall(callID)
 	if rb == nil {
@@ -1750,7 +1854,49 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 
 	if !tryIntegrity {
 		if envTruthy("QP_CALL_DUMP_TURN_PROBE") {
-			// fall through to dump section
+			dump := callTurnProbeDump{
+				Kind:                        "TurnProbe",
+				Captured:                    time.Now().UTC().Format(time.RFC3339Nano),
+				CallID:                      callID,
+				RelayName:                   ep.RelayName,
+				Endpoint:                    endpoint,
+				LocalAddr:                   local,
+				BaseAllocateTxID:            baseAllocateTxID,
+				BaseAllocateSuccess:         baseAllocateSuccess,
+				BaseRespMsgType:             baseRespMsgType,
+				BaseMappedEndpoint:          baseMappedEndpoint,
+				BaseExtra4002Hex:            baseExtra4002Hex,
+				BaseAllocateCode:            baseAllocateCode,
+				BaseAllocateReason:          baseAllocateReason,
+				BaseNonceLen:                baseNonceLen,
+				BaseRealmLen:                baseRealmLen,
+				FallbackMinimalTxID:         fallbackMinimalTxID,
+				FallbackMinimalRespMsgType:  fallbackMinimalRespMsgType,
+				FallbackMinimalCode:         fallbackMinimalCode,
+				FallbackMinimalReason:       fallbackMinimalReason,
+				NoRequestedTransportTxID:        noRequestedTransportTxID,
+				NoRequestedTransportRespMsgType: noRequestedTransportRespMsgType,
+				NoRequestedTransportCode:        noRequestedTransportCode,
+				NoRequestedTransportReason:      noRequestedTransportReason,
+				RelayUUID:                   strings.TrimSpace(rb.UUID),
+				SelfPID:                     strings.TrimSpace(rb.SelfPID),
+				PeerPID:                     strings.TrimSpace(rb.PeerPID),
+				HasKey:                      strings.TrimSpace(rb.Key) != "",
+				HasHBHKey:                   strings.TrimSpace(rb.HBHKey) != "",
+				UsedMinimalAllocateShape:    useMinimalAllocateShape,
+				UsedNoRequestedTransportShape: useNoRequestedTransportShape,
+				BaseRequest:                 baseRequestDump,
+				FallbackMinimalRequest:      fallbackMinimalRequestDump,
+				NoRequestedTransportRequest: noRequestedTransportRequestDump,
+				DiscoveryRequest:            discoveryRequestDump,
+				AttemptRequestsPreview:      attemptRequestsPreview,
+			}
+			if p, e := DumpCallTurnProbeSummary(callID, dump); e == nil {
+				cm.logger.Infof("💾 [TURN-PROBE-DUMP] Saved to %s (CallID=%s)", p, callID)
+			} else {
+				cm.logger.Warnf("⚠️ [TURN-PROBE-DUMP] Failed: %v (CallID=%s)", e, callID)
+			}
+			return nil
 		} else {
 			return nil
 		}
@@ -1764,6 +1910,12 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	// Sometimes servers only return these when USERNAME is present, so we do one discovery request.
 	ltNonce := baseNonceB
 	ltRealm := baseRealmB
+	attemptExtra := extra
+	includeAttemptFingerprint := envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", false)
+	if useMinimalAllocateShape {
+		attemptExtra = turnExtraAttrs{}
+		includeAttemptFingerprint = false
+	}
 	forceNoUsername := envTruthy("QP_CALL_RELAY_TURN_FORCE_NO_USERNAME")
 	if (len(ltNonce) == 0 || len(ltRealm) == 0) && len(rb.TE2) > 0 {
 		u := strings.TrimSpace(rb.TE2[0].TokenID)
@@ -1772,12 +1924,12 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 		}
 		if u != "" {
 			discUser = u
-			disc := stun.MustBuild(stun.TransactionID)
+			disc := nextTurnMessage()
 			disc.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
-			if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+			if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") && !useNoRequestedTransportShape {
 				disc.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
 			}
-			addTurnExtraAttrsForEndpoint(disc, extra, remote)
+			addTurnExtraAttrsForEndpoint(disc, attemptExtra, remote)
 			if !forceNoUsername {
 				disc.Add(stun.AttrUsername, []byte(u))
 			} else {
@@ -1786,9 +1938,11 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			discTxID = stunTxIDHex(disc)
 			disc.Encode()
 			discPreimage := append([]byte(nil), disc.Raw...)
-			if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
+			if includeAttemptFingerprint {
 				_ = stun.Fingerprint.AddTo(disc)
 			}
+			discoveryCaptured := captureTurnRequestDump("discovery", disc.Raw, discPreimage)
+			discoveryRequestDump = &discoveryCaptured
 			maybeCap("discovery", disc, discPreimage)
 			if _, err := conn.Write(disc.Raw); err == nil {
 				_ = conn.SetReadDeadline(time.Now().Add(readTimeout))
@@ -1856,7 +2010,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 	a4000Used, a4024Used, a0016Used := resolveTurnExtraAttrsForEndpoint(extra, remote)
 	extraMsgs := buildExtraAttrsMsgVariants(a4000Used, a4024Used, a0016Used)
 	if envTruthy("QP_CALL_RELAY_TURN_TRY_MIKDF_ALLOC_PREIMAGE") {
-		for k, v := range buildAllocatePreimageMsgVariants(extra, remote) {
+		for k, v := range buildAllocatePreimageMsgVariants(attemptExtra, remote) {
 			if len(v) == 0 {
 				continue
 			}
@@ -3345,13 +3499,13 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			triedByFamily[fam] = triedByFamily[fam] + 1
 			curAttemptIndex := attemptIndex
 			attemptIndex++
-			req := stun.MustBuild(stun.TransactionID)
+			req := nextTurnMessage()
 			txid := stunTxIDHex(req)
 			req.Type = stun.NewType(stun.Method(0x003), stun.ClassRequest)
-			if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") {
+			if !envTruthy("QP_CALL_RELAY_TURN_OMIT_REQUESTED_TRANSPORT") && !useNoRequestedTransportShape {
 				req.Add(stun.AttrType(0x0019), []byte{17, 0, 0, 0})
 			}
-			addTurnExtraAttrsForEndpoint(req, extra, remote)
+			addTurnExtraAttrsForEndpoint(req, attemptExtra, remote)
 			if !forceNoUsername && len(c.username) > 0 {
 				req.Add(stun.AttrUsername, c.username)
 			}
@@ -3379,7 +3533,7 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 					_ = stun.MessageIntegrity(c.key).AddTo(req)
 				}
 			}
-			if envTruthyDefault("QP_CALL_RELAY_TURN_INCLUDE_FINGERPRINT", true) {
+			if includeAttemptFingerprint {
 				_ = stun.Fingerprint.AddTo(req)
 			}
 			if captureReqs && len(requestDumps) < capMax {
@@ -3489,6 +3643,13 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 				MappedEndpoint: mappedEndpoint,
 				Extra4002Hex:   extra4002Hex,
 			})
+			if len(attemptRequestsPreview) < 3 {
+				preview := captureTurnRequestDump(fmt.Sprintf("attempt_%d", curAttemptIndex), req.Raw, attemptPreimage)
+				preview.Cand = c.label
+				preview.Code = code
+				preview.Reason = reason
+				attemptRequestsPreview = append(attemptRequestsPreview, preview)
+			}
 
 			// If the server reveals REALM/NONCE only after integrity attempts, immediately add and try long-term candidates.
 			if !ltAppended && realmLen > 0 && nonceLen > 0 {
@@ -3579,6 +3740,14 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			BaseAllocateReason:  baseAllocateReason,
 			BaseNonceLen:        baseNonceLen,
 			BaseRealmLen:        baseRealmLen,
+			FallbackMinimalTxID:        fallbackMinimalTxID,
+			FallbackMinimalRespMsgType: fallbackMinimalRespMsgType,
+			FallbackMinimalCode:        fallbackMinimalCode,
+			FallbackMinimalReason:      fallbackMinimalReason,
+			NoRequestedTransportTxID:        noRequestedTransportTxID,
+			NoRequestedTransportRespMsgType: noRequestedTransportRespMsgType,
+			NoRequestedTransportCode:        noRequestedTransportCode,
+			NoRequestedTransportReason:      noRequestedTransportReason,
 			DiscoveryTxID:       discTxID,
 			DiscoveryUser:       discUser,
 			DiscoveryCode:       discCode,
@@ -3590,6 +3759,13 @@ func (cm *WhatsmeowCallManager) probeRelayEndpointTURNAllocate(callID string, ep
 			PeerPID:             strings.TrimSpace(rb.PeerPID),
 			HasKey:              strings.TrimSpace(rb.Key) != "",
 			HasHBHKey:           strings.TrimSpace(rb.HBHKey) != "",
+			UsedMinimalAllocateShape: useMinimalAllocateShape,
+			UsedNoRequestedTransportShape: useNoRequestedTransportShape,
+			BaseRequest:         baseRequestDump,
+			FallbackMinimalRequest: fallbackMinimalRequestDump,
+			NoRequestedTransportRequest: noRequestedTransportRequestDump,
+			DiscoveryRequest:    discoveryRequestDump,
+			AttemptRequestsPreview: attemptRequestsPreview,
 			Buckets: map[string]int{
 				"lt":        countLT,
 				"mikdf":     countMiKDF,

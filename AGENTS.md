@@ -576,3 +576,73 @@
   - `call_relaylatency_*` dumps now preserve `compact_hex` for relay endpoints (`IPv4+port` encoded as 6 bytes)
   - `call_transport_received_*` dumps now expose `compact_items` when `<te>` / `<rte>` are present
   - `call_transport_sent_*` dumps now expose `compact_candidates` derived from local host/srflx ICE candidates for direct comparison with Desktop compact endpoint encodings
+
+# New Findings (2026-03-10, Desktop plaintext envelope masks)
+- Offline parsing of `wa_cdp_page_console.log` above the `WANoiseSocket` now confirms stable binary plaintext families, captured via `crypto.direct.encrypt` / `crypto.result.decrypt`.
+- Helpers added:
+  - `helpers/summarize-wa-cdp-plaintext.ps1`
+  - `helpers/summarize-wa-cdp-plaintext-mask.ps1`
+  - `helpers/extract-wa-cdp-plaintext-ascii.ps1`
+  - `helpers/extract-wa-cdp-fc-fields.ps1`
+- Strong fixed-mask results:
+  - inbound `decrypt len=21 prefix=00f80719`
+    - fixed mask: `00f8071906fa0003041408ff..12472b55864a....`
+    - only bytes `12`, `19`, `20` vary in the current sample set
+  - inbound `decrypt len=29 prefix=00f80919`
+    - fixed mask: `00f8091906fa0003041408ff..12472b55864a....1aff05177319....`
+    - same middle core as the 21-byte family, plus a fixed trailer `1aff05177319` and a final 2-byte varying tail
+  - outbound `encrypt len=23 prefix=00f80919`
+    - fixed mask: `00f8091908ff..12472b55864a....0429165711fa0003`
+    - same middle core as the inbound `00f80919` family, but with a direction-specific fixed tail `0429165711fa0003`
+  - outbound `encrypt len=27 prefix=00f8071b`
+    - fixed mask: `00f8071b11faff88................7608ff............1509`
+    - this is a looser, separate control family
+- Practical interpretation:
+  - `00f80719`, `00f80919` (inbound), and `00f80919` (outbound) are compact control envelopes with a large stable core and only a few variable bytes; they look more like ack/state/counter traffic than media secret material
+  - the shared stable middle core is the strongest current clue for mapping Desktop-side binary plaintext back to local `offer/accept/transport/receipt` control flow
+- `00f80a09` remains the semantically richest Desktop plaintext family:
+  - common length `89`
+  - consistently carries printable ASCII fields extracted from `fc<len>`-encoded segments
+  - observed examples include:
+    - `2:HG6ecVEq`
+    - `2:A04TcOFJ`
+    - `2:WTidL88I`
+  - and ASCII decimal timestamps such as:
+    - `1773194166`
+    - `1773182017`
+    - `1773177794`
+- Practical boundary:
+  - current high-value work is decoding these `00f8...` binary envelopes semantically
+  - not more `TURN probe` permutations or more `transport.te/rte` shape tweaks
+
+# New Findings (2026-03-10, Desktop plaintext decodes directly as WhatsApp binary nodes)
+- The Desktop plaintexts captured above `WANoiseSocket` (`crypto.direct.encrypt` / `crypto.result.decrypt`) can be decoded with the normal WhatsApp binary decoder already present in `whatsmeow`.
+- Working rule:
+  - hex-decode payload
+  - skip the first byte
+  - run `go.mau.fi/whatsmeow/binary.Unmarshal(data[1:])`
+- Confirmed examples:
+  - `00f8091906fa0003041408ff0712472b55864a171aff051773173626`
+    - decodes to `<iq from="s.whatsapp.net" id="12472.55864-17" t="1773173626" type="result"/>`
+  - `00f8080706f70100ff076255633294134508ff0812472b55864a13851aff051773194932f801f805ec6268fc20414337373932413936363430373843394338413930413042424530373630313347f70100ff88189335563419811f`
+    - decodes to `<receipt from="62556332941345@lid" id="12472.55864-1385" t="1773194932"><accept call-creator="189335563419811@lid" call-id="AC7792A9664078C9C8A90A0BBE076013"/></receipt>`
+- Practical consequence:
+  - the `00f8...` payloads should no longer be treated as opaque custom envelopes
+  - Desktop-side work can now proceed from decoded `binary.Node` stanzas instead of raw hex families
+  - best next step is filtering/decoding only call-related nodes from `.dist\wa_cdp_page_console.log`
+- Helper added for Desktop callflow extraction:
+  - `helpers/extract-wa-cdp-callflow.go`
+  - `helpers/extract-wa-cdp-callflow.ps1`
+- These consume `.dist\wa_cdp_page_console.log`, decode plaintext call-related payloads with `binary.Unmarshal(data[1:])`, and group events by `call-id` into `.dist\wa_cdp_callflow.json`.
+- Practical consequence:
+  - Desktop-side correlation can now proceed from structured call events instead of manual `Select-String` over decoded logs.
+- Local unknown call stanza dumping added:
+  - `src/whatsmeow/whatsmeow_call_unknown_dump.go`
+  - `HandleCallUnknown(...)` now dumps raw `events.UnknownCallEvent` when `QP_CALL_DUMP_UNKNOWN_CALL=1`
+- Dump includes:
+  - `subtag`
+  - `call_id` (when present in first child)
+  - `xml`
+  - flattened `binary.Node`
+- Practical use:
+  - this is now the best local hook for `mute_v2`, `receipt<accept>`, and any other call stanza not mapped to a typed whatsmeow event

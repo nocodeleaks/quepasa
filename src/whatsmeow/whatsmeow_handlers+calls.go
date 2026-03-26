@@ -866,4 +866,11 @@ func (source *WhatsmeowHandlers) HandleCallUnknown(evt *events.UnknownCallEvent)
 	}
 	logentry := source.GetLogger()
 	logentry.Infof("[CALL] UnknownCallEvent: raw=%+v", evt)
+	if envTruthy("QP_CALL_DUMP_UNKNOWN_CALL") {
+		if path, err := DumpCallUnknownEvent(evt); err != nil {
+			logentry.Errorf("[CALL] UnknownCallEvent dump failed: err=%v", err)
+		} else {
+			logentry.Infof("[CALL] UnknownCallEvent dumped: path=%s", path)
+		}
+	}
 }

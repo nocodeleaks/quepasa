@@ -1,0 +1,325 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>6.0</version>
+    <date>2025-12-01T22:00:00Z</date>
+<templates>
+        <template>
+            <uuid>c49aeb4f9931417b97448485cddb3abc</uuid>
+            <template>Template QuePasa Service</template>
+            <name>Template QuePasa Service</name>
+            <description>Template for QuePasa service monitoring via HTTP Agent with API authentication
+
+Monitors:
+- Total servers
+- Healthy vs unhealthy servers
+- Health percentage
+- List of WIDs with problems (displayed directly in alert)
+
+Updated: 2025-12-01 - Fixed HTTP Agent with X-QUEPASA-MASTERKEY header
+Status: ✅ WORKING - Uses HTTP Agent type with authentication header instead of UserParameters</description>
+<tags>
+                <tag>
+                    <tag>Application</tag>
+                    <value>QuePasa</value>
+                </tag>
+            </tags>
+            <items>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3001</uuid>
+                    <name>QuePasa Health Raw Response</name>
+                    <type>SCRIPT</type>
+                    <key>quepasa.health.raw</key>
+                    <delay>60s</delay>
+                    <history>7d</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <params>var request = new HttpRequest();
+request.addHeader('X-QUEPASA-MASTERKEY: {$QUEPASA.MASTERKEY}');
+var response = request.get('{$QUEPASA.URL}/health');
+return response;</params>
+                    <timeout>10s</timeout>
+                    <description>Full response from the QuePasa /health endpoint via authenticated script item</description>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3002</uuid>
+                    <name>QuePasa Total Servers</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.stats.total</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <value_type>UNSIGNED</value_type>
+                    <description>Total number of configured QuePasa servers</description>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.stats.total</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3003</uuid>
+                    <name>QuePasa Healthy Servers</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.stats.healthy</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <value_type>UNSIGNED</value_type>
+                    <description>Number of healthy servers (status Ready)</description>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.stats.healthy</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3004</uuid>
+                    <name>QuePasa Unhealthy Servers</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.stats.unhealthy</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <value_type>UNSIGNED</value_type>
+                    <description>Number of unhealthy servers (status != Ready)</description>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.stats.unhealthy</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3005</uuid>
+                    <name>QuePasa Health Percentage</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.stats.percentage</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <description>Percentage of healthy servers</description>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.stats.percentage</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3006</uuid>
+                    <name>QuePasa Unhealthy WIDs List</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.unhealthy.wids</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <description>JSON list of WIDs with issues (status != Ready and != Stopped)</description>
+                    <preprocessing>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <parameters>
+                                <parameter>var data = JSON.parse(value);
+var items = Array.isArray(data.items) ? data.items : [];
+var filtered = items.filter(function (item) {
+    var state = item.status || item.state || '';
+    return state !== 'Ready' &amp;&amp; state !== 'Stopped';
+});
+return JSON.stringify(filtered);</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3007</uuid>
+                    <name>QuePasa Stopped WIDs List</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.stopped.wids</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <description>JSON list of WIDs with Stopped status</description>
+                    <preprocessing>
+                        <step>
+                            <type>JSONPATH</type>
+                            <parameters>
+                                <parameter>$.items[?(@.status=='Stopped')]</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3008</uuid>
+                    <name>QuePasa Problematic Servers Count</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.servers.problematic.count</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <value_type>UNSIGNED</value_type>
+                    <description>Number of unavailable servers (status != Ready and != Stopped)</description>
+                    <preprocessing>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <parameters>
+                                <parameter>var data = JSON.parse(value);
+if (!Array.isArray(data.items)) {
+    return 0;
+}
+return data.items.filter(function (item) {
+    var state = item.status || item.state || '';
+    return state !== 'Ready' &amp;&amp; state !== 'Stopped';
+}).length;</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+                <item>
+                    <uuid>a1b2c3d4e5f6417b97448485cddb3009</uuid>
+                    <name>QuePasa Problematic Servers Percentage</name>
+                    <type>DEPENDENT</type>
+                    <key>quepasa.servers.problematic.percentage</key>
+                    <delay>0</delay>
+                    <history>30d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <description>Percentage of unavailable servers over total (status != Ready and != Stopped)</description>
+                    <preprocessing>
+                        <step>
+                            <type>JAVASCRIPT</type>
+                            <parameters>
+                                <parameter>var data = JSON.parse(value);
+var items = Array.isArray(data.items) ? data.items : [];
+var total = items.length;
+if (total === 0) {
+    return 0;
+}
+var problematic = items.filter(function (item) {
+    var state = item.status || item.state || '';
+    return state !== 'Ready' &amp;&amp; state !== 'Stopped';
+}).length;
+return (problematic * 100.0) / total;</parameter>
+                            </parameters>
+                        </step>
+                    </preprocessing>
+                    <master_item>
+                        <key>quepasa.health.raw</key>
+                    </master_item>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>QuePasa</value>
+                        </tag>
+                    </tags>
+                </item>
+            </items>
+            <macros>
+                <macro>
+                    <macro>{$QUEPASA.URL}</macro>
+                    <value>http://localhost:31000</value>
+                    <description>QuePasa service base URL (local endpoint for HTTP Agent)</description>
+                </macro>
+                <macro>
+                    <macro>{$QUEPASA.MASTERKEY}</macro>
+                    <value>YOUR_MASTER_KEY_HERE</value>
+                    <description>Master Key for QuePasa API authentication (X-QUEPASA-MASTERKEY header)</description>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+    <triggers>
+        <trigger>
+            <uuid>a1b2c3d4e5f6417b97448485cddb3100</uuid>
+            <expression>last(/Template QuePasa Service/quepasa.servers.problematic.count)&gt;0 and length(last(/Template QuePasa Service/quepasa.unhealthy.wids))&gt;2 and last(/Template QuePasa Service/quepasa.stats.total)&gt;=0 and last(/Template QuePasa Service/quepasa.servers.problematic.percentage)&gt;=0</expression>
+            <name>QuePasa: {ITEM.VALUE1} (/{ITEM.LASTVALUE3}) - {ITEM.LASTVALUE4} unavailable</name>
+            <opdata>{ITEM.VALUE1} (/{ITEM.LASTVALUE3}) - {ITEM.LASTVALUE4} unavailable: {ITEM.LASTVALUE2}</opdata>
+            <priority>AVERAGE</priority>
+            <description>Alert when QuePasa has unavailable servers (status different from Ready and Stopped).
+
+Opdata shows the count and full list of unavailable WIDs with their respective statuses and tokens.</description>
+            <tags>
+                <tag>
+                    <tag>Application</tag>
+                    <value>QuePasa</value>
+                </tag>
+            </tags>
+        </trigger>
+    </triggers>
+</zabbix_export>

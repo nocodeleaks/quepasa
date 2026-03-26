@@ -55,15 +55,10 @@ func buildCompactTransportNodes(localIP string, localPort int, publicIP string, 
 	return nodes
 }
 
-func appendCompactTransportNodes(netContent []binary.Node, localIP string, localPort int, publicIP string, publicPort int, includeSrflx bool) []binary.Node {
-	compact := buildCompactTransportNodes(localIP, localPort, publicIP, publicPort, includeSrflx)
-	if len(compact) == 0 {
-		return netContent
-	}
-	out := make([]binary.Node, 0, len(netContent)+len(compact))
-	out = append(out, compact...)
-	out = append(out, netContent...)
-	return out
+func splitTransportNodes(netContent []binary.Node, localIP string, localPort int, publicIP string, publicPort int, includeSrflx bool) (compact []binary.Node, candidates []binary.Node) {
+	compact = buildCompactTransportNodes(localIP, localPort, publicIP, publicPort, includeSrflx)
+	candidates = netContent
+	return
 }
 
 func shouldIncludeCompactTransportNodes() bool {

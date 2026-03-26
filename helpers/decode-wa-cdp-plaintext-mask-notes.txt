@@ -1,0 +1,12 @@
+Desktop plaintext above WANoiseSocket can be decoded as WhatsApp binary nodes.
+
+Rule:
+- hex-decode payload
+- skip the first byte
+- call go.mau.fi/whatsmeow/binary.Unmarshal(data[1:])
+
+Confirmed examples:
+- 00f8091906fa0003041408ff0712472b55864a171aff051773173626
+  -> <iq from="s.whatsapp.net" id="12472.55864-17" t="1773173626" type="result"/>
+- 00f8080706f70100ff076255633294134508ff0812472b55864a13851aff051773194932f801f805ec6268fc20414337373932413936363430373843394338413930413042424530373630313347f70100ff88189335563419811f
+  -> <receipt from="62556332941345@lid" id="12472.55864-1385" t="1773194932"><accept call-creator="189335563419811@lid" call-id="AC7792A9664078C9C8A90A0BBE076013"/></receipt>

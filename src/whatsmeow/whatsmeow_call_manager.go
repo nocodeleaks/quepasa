@@ -1165,8 +1165,9 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 		cm.logger.Warnf("ðŸ§Š [TRANSPORT-RELAY-EMPTY-NET] Sending initial transport with empty net (no candidates) for relay call (CallID=%s)", callID)
 		transportCandidates = nil
 	}
-	if shouldIncludeCompactTransportNodes() && transportCandidates != nil {
-		transportCandidates = appendCompactTransportNodes(transportCandidates, localIP, finalPort, publicIP, publicPort, includeSrflx)
+	var compactTransportNodes []binary.Node
+	if shouldIncludeCompactTransportNodes() {
+		compactTransportNodes, transportCandidates = splitTransportNodes(transportCandidates, localIP, finalPort, publicIP, publicPort, includeSrflx)
 	}
 
 	ownID := cm.connection.Client.Store.ID
@@ -1196,14 +1197,14 @@ func (cm *WhatsmeowCallManager) sendTransportInfo(from types.JID, callID string,
 				"call-creator": replyTo,
 				// NÃ£o incluir transport-message-type no initial transport
 			},
-			Content: []binary.Node{{
+			Content: append(compactTransportNodes, binary.Node{
 				Tag: "net",
 				Attrs: binary.Attrs{
 					"medium":   cm.getNetMediumForCall(callID),
 					"protocol": "0",
 				},
 				Content: transportCandidates,
-			}},
+			}),
 		}},
 	}
 
@@ -1279,6 +1280,7 @@ func (cm *WhatsmeowCallManager) sendTransportInfoResponse(from types.JID, callID
 	// Default: relay transport response sends empty net (no candidates)
 	includeCandidates := envTruthy("QP_CALL_TRANSPORT_RESPONSE_INCLUDE_CANDIDATES")
 	transportCandidates := []binary.Node(nil)
+	compactTransportNodes := []binary.Node(nil)
 	if includeCandidates {
 		localIP := cm.getLocalNetworkIP()
 		if localIP == "" {
@@ -1306,7 +1308,7 @@ func (cm *WhatsmeowCallManager) sendTransportInfoResponse(from types.JID, callID
 		includeSrflx := envTruthy("QP_CALL_INCLUDE_SRFLX")
 		transportCandidates = cm.buildCandidates(localIP, port, publicIP, publicPort, includeSrflx)
 		if shouldIncludeCompactTransportNodes() {
-			transportCandidates = appendCompactTransportNodes(transportCandidates, localIP, port, publicIP, publicPort, includeSrflx)
+			compactTransportNodes, transportCandidates = splitTransportNodes(transportCandidates, localIP, port, publicIP, publicPort, includeSrflx)
 		}
 	}
 
@@ -1339,14 +1341,14 @@ func (cm *WhatsmeowCallManager) sendTransportInfoResponse(from types.JID, callID
 		Content: []binary.Node{{
 			Tag:   "transport",
 			Attrs: transportAttrs,
-			Content: []binary.Node{{
+			Content: append(compactTransportNodes, binary.Node{
 				Tag: "net",
 				Attrs: binary.Attrs{
 					"medium":   strings.TrimSpace(transportMedium),
 					"protocol": "0",
 				},
 				Content: transportCandidates,
-			}},
+			}),
 		}},
 	}
 

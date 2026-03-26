@@ -259,6 +259,20 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 
 	//#endregion
 
+	case *binary.Node:
+		if evt.Tag == "call" {
+			source.HandleRawCallNode(evt)
+			return
+		}
+		if evt.Tag == "ack" {
+			source.HandleRawAckNode(evt)
+			return
+		}
+		if evt.Tag == "receipt" {
+			source.HandleRawReceiptNode(evt)
+			return
+		}
+
 	case *events.Receipt:
 		go source.Receipt(*evt)
 		return

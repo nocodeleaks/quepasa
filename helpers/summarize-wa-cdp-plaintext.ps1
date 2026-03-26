@@ -51,6 +51,30 @@ function Get-PrefixHex {
     return $Hex.Substring(0, $chars)
 }
 
+function Get-NestedDataLen {
+    param(
+        [string]$Line
+    )
+
+    $m = [regex]::Match($Line, '"data"\s*:\s*\{\s*"len"\s*:\s*([0-9]+)')
+    if ($m.Success) {
+        return [int]$m.Groups[1].Value
+    }
+    return $null
+}
+
+function Get-NestedDataHex {
+    param(
+        [string]$Line
+    )
+
+    $m = [regex]::Match($Line, '"data"\s*:\s*\{.*?"head_hex"\s*:\s*"([0-9a-fA-F]+)"')
+    if ($m.Success) {
+        return $m.Groups[1].Value.ToLowerInvariant()
+    }
+    return $null
+}
+
 $decryptGroups = @{}
 $encryptGroups = @{}
 $interesting = New-Object System.Collections.Generic.List[object]
@@ -59,8 +83,11 @@ Get-Content -LiteralPath $LogPath | ForEach-Object {
     $line = $_
 
     if ($line -like '*crypto.result.decrypt*') {
-        $plainHex = Get-HexField -Line $line -FieldName 'plain_hex'
-        $plainLen = Get-IntField -Line $line -FieldName 'plain_len'
+        $plainHex = Get-HexField -Line $line -FieldName 'full_hex'
+        if (-not $plainHex) {
+            $plainHex = Get-HexField -Line $line -FieldName 'head_hex'
+        }
+        $plainLen = Get-IntField -Line $line -FieldName 'len'
         if ($plainHex -and $plainLen -ne $null) {
             $prefix = Get-PrefixHex -Hex $plainHex -Bytes 4
             $key = "$plainLen|$prefix"
@@ -86,27 +113,27 @@ Get-Content -LiteralPath $LogPath | ForEach-Object {
     }
 
     if ($line -like '*crypto.direct.encrypt*') {
-        $plainHex = Get-HexField -Line $line -FieldName 'plain_hex'
-        $plainLen = Get-IntField -Line $line -FieldName 'plain_len'
-        if ($plainHex -and $plainLen -ne $null) {
-            $prefix = Get-PrefixHex -Hex $plainHex -Bytes 4
-            $key = "$plainLen|$prefix"
+        $dataHex = Get-NestedDataHex -Line $line
+        $dataLen = Get-NestedDataLen -Line $line
+        if ($dataHex -and $dataLen -ne $null) {
+            $prefix = Get-PrefixHex -Hex $dataHex -Bytes 4
+            $key = "$dataLen|$prefix"
             if (-not $encryptGroups.ContainsKey($key)) {
                 $encryptGroups[$key] = [pscustomobject]@{
                     Kind    = 'encrypt'
-                    Len     = $plainLen
+                    Len     = $dataLen
                     Prefix  = $prefix
                     Count   = 0
-                    Example = $plainHex
+                    Example = $dataHex
                 }
             }
             $encryptGroups[$key].Count++
             if ($prefix.StartsWith('00f8')) {
                 $interesting.Add([pscustomobject]@{
                     Kind    = 'encrypt'
-                    Len     = $plainLen
+                    Len     = $dataLen
                     Prefix  = $prefix
-                    PlainHex = $plainHex
+                    PlainHex = $dataHex
                 })
             }
         }

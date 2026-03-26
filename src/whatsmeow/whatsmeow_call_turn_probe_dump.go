@@ -43,10 +43,13 @@ type callTurnProbeRequestAttr struct {
 type callTurnProbeRequestDump struct {
 	Stage       string                     `json:"stage"`
 	TxID        string                     `json:"txid,omitempty"`
+	Cand        string                     `json:"cand,omitempty"`
 	MsgType     string                     `json:"msg_type,omitempty"`
 	Len         int                        `json:"len"`
 	PreimageHex string                     `json:"preimage_hex,omitempty"`
 	RawHex      string                     `json:"raw_hex,omitempty"`
+	Code        int                        `json:"code,omitempty"`
+	Reason      string                     `json:"reason,omitempty"`
 	Attrs       []callTurnProbeRequestAttr `json:"attrs,omitempty"`
 }
 
@@ -70,6 +73,16 @@ type callTurnProbeDump struct {
 	BaseNonceLen       int    `json:"base_nonce_len"`
 	BaseRealmLen       int    `json:"base_realm_len"`
 
+	FallbackMinimalTxID        string `json:"fallback_minimal_txid,omitempty"`
+	FallbackMinimalRespMsgType string `json:"fallback_minimal_resp_msg_type,omitempty"`
+	FallbackMinimalCode        int    `json:"fallback_minimal_code"`
+	FallbackMinimalReason      string `json:"fallback_minimal_reason,omitempty"`
+
+	NoRequestedTransportTxID        string `json:"no_requested_transport_txid,omitempty"`
+	NoRequestedTransportRespMsgType string `json:"no_requested_transport_resp_msg_type,omitempty"`
+	NoRequestedTransportCode        int    `json:"no_requested_transport_code"`
+	NoRequestedTransportReason      string `json:"no_requested_transport_reason,omitempty"`
+
 	DiscoveryTxID     string `json:"discovery_txid,omitempty"`
 	DiscoveryUser     string `json:"discovery_user,omitempty"`
 	DiscoveryCode     int    `json:"discovery_code"`
@@ -82,6 +95,14 @@ type callTurnProbeDump struct {
 	PeerPID   string `json:"peer_pid,omitempty"`
 	HasKey    bool   `json:"has_key"`
 	HasHBHKey bool   `json:"has_hbh_key"`
+	UsedMinimalAllocateShape bool `json:"used_minimal_allocate_shape"`
+	UsedNoRequestedTransportShape bool `json:"used_no_requested_transport_shape"`
+
+	BaseRequest            *callTurnProbeRequestDump `json:"base_request,omitempty"`
+	FallbackMinimalRequest *callTurnProbeRequestDump `json:"fallback_minimal_request,omitempty"`
+	NoRequestedTransportRequest *callTurnProbeRequestDump `json:"no_requested_transport_request,omitempty"`
+	DiscoveryRequest       *callTurnProbeRequestDump `json:"discovery_request,omitempty"`
+	AttemptRequestsPreview []callTurnProbeRequestDump `json:"attempt_requests_preview,omitempty"`
 
 	Buckets map[string]int `json:"buckets,omitempty"`
 	MaxTry  int            `json:"max_try"`

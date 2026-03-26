@@ -5,53 +5,92 @@ import "encoding/json"
 type WhatsappConnectionState uint
 
 const (
-	// Unknown, not treated state
+	// Unknown is a fallback for invalid, missing, or unmapped state values.
+	// It is currently returned by the server wrapper only for invalid/nil server references.
 	Unknown WhatsappConnectionState = iota
 
-	// No connection attached, possible failed on retry after connection lost
+	// UnPrepared means the server exists but has no active connection object attached.
+	// This usually happens before a start attempt or after a connection was disposed.
+	// It is currently emitted by both the server wrapper and the whatsmeow status provider.
 	UnPrepared
 
-	// Not verified (not logged)
+	// UnVerified means the server is not authenticated with WhatsApp yet.
+	// It is expected before pairing/login and is not, by itself, a transport failure.
+	// It is currently emitted when no authenticated client/session is available.
 	UnVerified
 
-	// Starting variables
+	// Starting means local startup and dependency initialization are in progress.
+	// Reserved for finer-grained lifecycle reporting. It is not currently emitted by
+	// the active status calculation path.
 	Starting
 
-	// Connecting to whatsapp servers
+	// Connecting means the client is trying to establish a session with WhatsApp servers.
+	// It is currently emitted by the whatsmeow status provider while IsConnecting is true.
 	Connecting
 
-	// Stopped requested
+	// Stopping means a stop was requested and the active connection is still being released.
+	// This is a transitional state, not a failure state.
+	// It is currently emitted by the server wrapper when StopRequested is true but the
+	// transport is still connected.
 	Stopping
 
-	// Stopped after request completed
+	// Stopped means the server is intentionally offline after a stop request completed.
+	// In this project, it is considered operationally healthy because the server is
+	// in a stable requested state and can be started again.
+	//
+	// This state is driven by StopRequested and is commonly reached by explicit user
+	// actions such as toggling stop, but it may also appear in controlled internal
+	// flows that call Stop(), such as restart.
+	// It is currently emitted by the server wrapper and is considered healthy by the
+	// health endpoint.
 	Stopped
 
+	// Restarting means a controlled stop/start cycle is being executed.
+	// Reserved for finer-grained lifecycle reporting. It is not currently emitted by
+	// the active status calculation path.
 	Restarting
 
-	// Attempting to reconnect after connection loss (auto-reconnect active)
+	// Reconnecting means the connection was lost and the auto-reconnect flow is trying
+	// to restore the session without requiring a new manual start.
+	// Reserved for finer-grained lifecycle reporting. It is not currently emitted by
+	// the active status calculation path.
 	Reconnecting
 
 	/*
 		<summary>
-			Connected to whatsapp servers
-			Start to logging with saved keys or waiting for qrcode reads
+			Connected to WhatsApp servers.
+			The transport is established, but the session may still be completing login,
+			loading saved credentials, or waiting for QR code confirmation.
+			This state is currently emitted by the whatsmeow status provider when the
+			transport is connected but the client is not yet fully logged in.
 		</summary>
 	*/
 	Connected
 
-	// Fetching messages from servers
+	// Fetching means the session is connected and synchronizing initial data/history.
+	// Reserved for finer-grained lifecycle reporting. It is not currently emitted by
+	// the active status calculation path.
 	Fetching
 
-	// Ready and Fully operational
+	// Ready means the server is connected, authenticated, and fully operational.
+	// It is currently emitted by the whatsmeow status provider and is considered healthy
+	// by the health endpoint.
 	Ready
 
-	// Finalizing
+	// Halting means the connection is shutting down as part of a finalization flow.
+	// Reserved for finer-grained lifecycle reporting. It is not currently emitted by
+	// the active status calculation path.
 	Halting
 
-	// Disconnected from whatsapp servers
+	// Disconnected means the connection to WhatsApp servers was lost unexpectedly or
+	// ended outside the intentional stopped state.
+	// It is currently emitted by the whatsmeow status provider for non-intentional
+	// offline states.
 	Disconnected
 
-	// Failed state, for any reason
+	// Failed means the server entered an error state that prevented normal operation.
+	// It is currently emitted by the whatsmeow status provider when a connection/token
+	// failure is flagged.
 	Failed
 )
 
@@ -80,7 +119,10 @@ func (s WhatsappConnectionState) String() string {
 	}[s]
 }
 
-// used for the status monitoring systems
+// IsHealthy reports whether the server is in an operationally acceptable state for
+// health monitoring. Ready is healthy because the server is fully available, and
+// Stopped is also healthy because it represents an intentional, stable stop state
+// rather than a fault condition.
 func (s WhatsappConnectionState) IsHealthy() bool {
 	return s == Ready || s == Stopped
 }

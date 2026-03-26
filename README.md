@@ -58,6 +58,7 @@ docker-compose up -d --build
   - [Local Development](#local-development)
 - [Integration Examples](#integration-examples)
 - [API Documentation](#api-documentation)
+- [Connection States](#connection-states)
 - [Configuration](#configuration)
 - [Community & Support](#community--support)
 - [Contributing](#contributing)
@@ -230,6 +231,12 @@ curl --location 'localhost:31000/webhook' \
 - **v1** - Deprecated
 
 📖 **[Complete API Documentation](docs/)** - Detailed endpoint documentation with examples.
+
+## 🔌 Connection States
+
+QuePasa exposes connection states such as `Ready`, `Stopped`, `Disconnected`, and `Failed` to represent the runtime status of each WhatsApp server.
+
+📖 **[Connection States Guide](docs/CONNECTION_STATES.md)** - Detailed explanation of each state, health semantics, and which states are currently emitted by the runtime.
 
 ## ⚙️ Configuration
 

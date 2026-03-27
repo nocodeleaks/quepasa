@@ -284,31 +284,7 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 	logger := source.GetLogger()
 	logger.Infof("dispatching server delete event: %s", cause)
 
-	// Get phone number and wid from server
-	phone := source.server.GetNumber()
-	wid := source.server.GetWId()
-
-	// Create description
-	description := fmt.Sprintf("WhatsApp server was deleted: %s", cause)
-
-	// Create delete event message with JSON details
-	eventData := map[string]interface{}{
-		"event":     "deleted",
-		"cause":     cause,
-		"wid":       wid,
-		"phone":     phone,
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        uuid.New().String(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      description,
-		Info:      eventData,
-	}
+	message := NewServerDeletedEvent(source.server, cause, nil)
 
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "deleted")
@@ -481,4 +457,40 @@ func (source *DispatchingHandler) processUnhandledMessage(msg *whatsapp.Whatsapp
 
 func (source *DispatchingHandler) IsInterfaceNil() bool {
 	return nil == source
+}
+
+func NewServerDeletedEvent(server *QpWhatsappServer, cause string, previousState *whatsapp.WhatsappConnectionState) *whatsapp.WhatsappMessage {
+	if server == nil {
+		return nil
+	}
+
+	phone := server.GetNumber()
+	wid := server.GetWId()
+	currentState := server.GetState()
+	now := time.Now().UTC()
+
+	eventData := map[string]interface{}{
+		"event":     "deleted",
+		"cause":     cause,
+		"wid":       wid,
+		"phone":     phone,
+		"state":     currentState.String(),
+		"timestamp": now.Format(time.RFC3339),
+	}
+
+	if previousState != nil {
+		eventData["previous_state"] = previousState.String()
+	}
+
+	description := fmt.Sprintf("WhatsApp server was deleted: %s", cause)
+
+	return &whatsapp.WhatsappMessage{
+		Id:        uuid.New().String(),
+		Timestamp: now,
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      description,
+		Info:      eventData,
+	}
 }

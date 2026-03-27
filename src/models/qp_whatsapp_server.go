@@ -35,8 +35,9 @@ type QpWhatsappServer struct {
 	ContactManager     *QpContactManager     `json:"-"` // composition for contact operations
 
 	// Stop request token
-	StopRequested bool                   `json:"-"`
-	db            QpDataServersInterface `json:"-"`
+	StopRequested   bool                   `json:"-"`
+	DeleteRequested bool                   `json:"-"`
+	db              QpDataServersInterface `json:"-"`
 }
 
 // MarshalJSON customizes JSON serialization to include only dispatching field instead of webhooks
@@ -148,6 +149,10 @@ func (server *QpWhatsappServer) GetStatus() whatsapp.WhatsappConnectionState {
 func (server *QpWhatsappServer) GetState() whatsapp.WhatsappConnectionState {
 	if server == nil {
 		return whatsapp.Unknown // invalid state
+	}
+
+	if server.DeleteRequested {
+		return whatsapp.Stopping
 	}
 
 	if server.connection == nil {
@@ -701,14 +706,32 @@ func (source *QpWhatsappServer) ToggleDevel() (handle bool, err error) {
 //endregion
 
 // delete this whatsapp server and underlaying connection
-func (server *QpWhatsappServer) Delete(cause string) error {
-	// Send delete event to dispatchers before deletion
-	if server.Handler != nil {
-		server.Handler.OnDeleted(cause)
+func (server *QpWhatsappServer) Delete(cause string) (err error) {
+	if server == nil {
+		return fmt.Errorf("whatsapp server, delete error: nil server")
 	}
 
+	if server.db == nil {
+		return fmt.Errorf("whatsapp server, delete error: server database not configured")
+	}
+
+	previousState := server.GetState()
+	previousStopRequested := server.StopRequested
+	previousDeleteRequested := server.DeleteRequested
+	dispatchingSnapshot := cloneDispatchings(server.QpDataDispatching.Dispatching)
+
+	server.DeleteRequested = true
+	server.StopRequested = true
+
+	defer func() {
+		if err != nil {
+			server.StopRequested = previousStopRequested
+			server.DeleteRequested = previousDeleteRequested
+		}
+	}()
+
 	if server.connection != nil {
-		err := server.connection.Delete()
+		err = server.connection.Delete()
 		if err != nil {
 			return fmt.Errorf("whatsapp server, delete connection, error: %s", err.Error())
 		}
@@ -716,18 +739,74 @@ func (server *QpWhatsappServer) Delete(cause string) error {
 		server.connection = nil
 	}
 
-	// Clear dispatching data from new system
-	db := GetDatabase()
-	if db != nil && db.Dispatching != nil {
-		err := db.Dispatching.Clear(server.Token)
-		if err != nil {
-			return fmt.Errorf("whatsapp server, dispatching clear, error: %s", err.Error())
+	err = server.clearDispatchingsForDelete()
+	if err != nil {
+		return fmt.Errorf("whatsapp server, dispatching clear, error: %s", err.Error())
+	}
+
+	err = server.db.Delete(server.Token)
+	if err != nil {
+		restoreErr := server.restoreDispatchingsAfterFailedDelete(dispatchingSnapshot)
+		if restoreErr != nil {
+			return fmt.Errorf("whatsapp server, database delete connection, error: %s; dispatching restore error: %s", err.Error(), restoreErr.Error())
+		}
+		return fmt.Errorf("whatsapp server, database delete connection, error: %s", err.Error())
+	}
+
+	if len(dispatchingSnapshot) > 0 {
+		deleteEvent := NewServerDeletedEvent(server, cause, &previousState)
+		dispatchErr := PostToDispatchings(server.GetWId(), dispatchingSnapshot, deleteEvent)
+		if dispatchErr != nil {
+			server.GetLogger().Errorf("error dispatching delete event: %s", dispatchErr.Error())
 		}
 	}
 
-	err := server.db.Delete(server.Token)
-	if err != nil {
-		return fmt.Errorf("whatsapp server, database delete connection, error: %s", err.Error())
+	return nil
+}
+
+func cloneDispatchings(dispatchings []*QpDispatching) []*QpDispatching {
+	if len(dispatchings) == 0 {
+		return nil
+	}
+
+	cloned := make([]*QpDispatching, len(dispatchings))
+	copy(cloned, dispatchings)
+	return cloned
+}
+
+func (server *QpWhatsappServer) clearDispatchingsForDelete() error {
+	if server == nil {
+		return nil
+	}
+
+	if server.QpDataDispatching.db == nil {
+		server.QpDataDispatching.Dispatching = server.QpDataDispatching.Dispatching[:0]
+		return nil
+	}
+
+	return server.DispatchingClear()
+}
+
+func (server *QpWhatsappServer) restoreDispatchingsAfterFailedDelete(snapshot []*QpDispatching) error {
+	if server == nil {
+		return nil
+	}
+
+	if len(snapshot) == 0 {
+		server.QpDataDispatching.Dispatching = nil
+		return nil
+	}
+
+	if server.QpDataDispatching.db == nil {
+		server.QpDataDispatching.Dispatching = cloneDispatchings(snapshot)
+		return nil
+	}
+
+	server.QpDataDispatching.Dispatching = server.QpDataDispatching.Dispatching[:0]
+	for _, dispatching := range snapshot {
+		if _, err := server.DispatchingAddOrUpdate(dispatching); err != nil {
+			return err
+		}
 	}
 
 	return nil

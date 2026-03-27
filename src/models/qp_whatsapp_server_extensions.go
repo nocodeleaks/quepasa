@@ -17,17 +17,23 @@ func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.Wha
 		return err
 	}
 
+	return PostToDispatchings(server.GetWId(), server.QpDataDispatching.Dispatching, message)
+}
+
+// PostToDispatchings delivers a message to the provided dispatching targets.
+// It is used by the normal server flow and by deletion flows that need to use
+// a preserved snapshot instead of the server's live dispatching slice.
+func PostToDispatchings(serverWid string, dispatchings []*QpDispatching, message *whatsapp.WhatsappMessage) (err error) {
 	// Webhook headers are built from dispatching.Wid, while some system payloads
 	// already carry the server WID in the message body. This resynchronizes the
 	// in-memory dispatching before every delivery so system events such as
 	// OnStopped/OnDisconnected do not reach the webhook with an empty
 	// X-QUEPASA-WID header and a populated body wid/info.wid.
-	serverWid := server.GetWId()
 
 	// ignoring ssl issues
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	for _, dispatching := range server.QpDataDispatching.Dispatching {
+	for _, dispatching := range dispatchings {
 		if dispatching != nil && dispatching.Wid != serverWid {
 			dispatching.Wid = serverWid
 		}

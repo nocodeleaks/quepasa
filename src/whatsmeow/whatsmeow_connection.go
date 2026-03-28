@@ -36,6 +36,8 @@ type WhatsmeowConnection struct {
 	failedToken  bool
 	paired       func(string)
 	IsConnecting bool `json:"isconnecting"` // used to avoid multiple connection attempts
+
+	mediaRetryPending sync.Map // map[string]*PendingMediaRetry
 }
 
 //#region IMPLEMENT WHATSAPP CONNECTION OPTIONS INTERFACE
@@ -105,7 +107,11 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 	downloadable, ok := msg.(whatsmeow.DownloadableMessage)
 	if ok {
 		logentry.Trace("Message implements DownloadableMessage directly, using Client.Download()")
-		return source.Client.Download(context.Background(), downloadable)
+		data, err = source.Client.Download(context.Background(), downloadable)
+		if err != nil {
+			return source.handleDownloadMediaRetry(imsg, downloadable, err)
+		}
+		return data, nil
 	}
 
 	waMsg, ok := msg.(*waE2E.Message)
@@ -113,7 +119,11 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 		downloadable = GetDownloadableMessage(waMsg)
 		if downloadable != nil {
 			logentry.Trace("waMsg implements DownloadableMessage, using Client.Download()")
-			return source.Client.Download(context.Background(), downloadable)
+			data, err = source.Client.Download(context.Background(), downloadable)
+			if err != nil {
+				return source.handleDownloadMediaRetry(imsg, downloadable, err)
+			}
+			return data, nil
 		}
 	}
 

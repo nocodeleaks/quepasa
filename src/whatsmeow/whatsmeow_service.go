@@ -100,25 +100,28 @@ func Start(options WhatsmeowOptions, dbParameters library.DatabaseParameters, lo
 	// this section is broken, history sync configurations, do nothing ......
 	// --------------------------------
 
-	historysync := WhatsmeowService.GetHistorySync()
-	if historysync != nil {
-		HistorySyncValue := *historysync
-		logentry.Infof("setting history sync to %v days", HistorySyncValue)
+	if WhatsmeowService.Options.HistorySyncDisabled {
+		logentry.Info("history sync explicitly disabled (HISTORYSYNCDAYS=0)")
+	} else if WhatsmeowService.Options.HistorySyncAll {
+		logentry.Info("setting history sync to all")
+		store.DeviceProps.RequireFullSync = proto.Bool(true)
+		store.DeviceProps.HistorySyncConfig = &waCompanionReg.DeviceProps_HistorySyncConfig{
+			FullSyncDaysLimit:   proto.Uint32(3650),
+			FullSyncSizeMbLimit: proto.Uint32(102400),
+			StorageQuotaMb:      proto.Uint32(102400),
+		}
+	} else {
+		historysync := WhatsmeowService.GetHistorySync()
+		if historysync != nil {
+			HistorySyncValue := *historysync
+			logentry.Infof("setting history sync to %v days", HistorySyncValue)
 
-		if HistorySyncValue == 0 {
-			store.DeviceProps.RequireFullSync = proto.Bool(true)
-			store.DeviceProps.HistorySyncConfig = &waCompanionReg.DeviceProps_HistorySyncConfig{
-				FullSyncDaysLimit:   proto.Uint32(3650),
-				FullSyncSizeMbLimit: proto.Uint32(102400),
-			}
-		} else {
 			store.DeviceProps.RequireFullSync = proto.Bool(false)
 			store.DeviceProps.HistorySyncConfig = &waCompanionReg.DeviceProps_HistorySyncConfig{
 				RecentSyncDaysLimit: proto.Uint32(HistorySyncValue * 10),
+				StorageQuotaMb:      proto.Uint32(102400),
 			}
 		}
-
-		store.DeviceProps.HistorySyncConfig.StorageQuotaMb = proto.Uint32(102400)
 	}
 }
 
@@ -132,11 +135,12 @@ func (source *WhatsmeowServiceModel) GetHistorySync() *uint32 {
 
 // Used for scan QR Codes
 // Dont forget to attach handlers after success login
-func (source *WhatsmeowServiceModel) CreateEmptyConnection() (conn *WhatsmeowConnection, err error) {
+func (source *WhatsmeowServiceModel) CreateEmptyConnection(historySyncOverride *uint32) (conn *WhatsmeowConnection, err error) {
 	logentry := source.GetLogger()
 	options := &whatsapp.WhatsappConnectionOptions{
-		Reconnect: false,
-		LogStruct: library.LogStruct{LogEntry: logentry},
+		Reconnect:           false,
+		LogStruct:           library.LogStruct{LogEntry: logentry},
+		HistorySyncOverride: historySyncOverride,
 		// Note: No ExternalHandler for empty connections (QR scan)
 		// QR events will be handled by internal handlers only
 	}
@@ -167,8 +171,16 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 	// Initialize wake-up scheduler
 	conn.WakeUpScheduler = NewWakeUpScheduler(conn)
 
-	// Initialize handlers with proper options after connection is created
-	err = conn.initializeHandlers(options.WhatsappOptions, source.Options)
+	// Initialize handlers with proper options after connection is created.
+	// Scan/Pair endpoints may override history sync per connection unless env force-disables it.
+	handlerOptions := source.Options
+	if !handlerOptions.HistorySyncDisabled && options.HistorySyncOverride != nil {
+		override := *options.HistorySyncOverride
+		handlerOptions.HistorySync = &override
+		handlerOptions.HistorySyncAll = false
+	}
+
+	err = conn.initializeHandlers(options.WhatsappOptions, handlerOptions)
 	if err != nil {
 		return
 	}

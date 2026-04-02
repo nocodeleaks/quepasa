@@ -7,8 +7,8 @@ import (
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
 
-func NewWhatsmeowEmptyConnection(callback func(string)) (conn whatsapp.IWhatsappConnection, err error) {
-	conn, err = whatsmeow.WhatsmeowService.CreateEmptyConnection()
+func NewWhatsmeowEmptyConnection(callback func(string), historySyncOverride *uint32) (conn whatsapp.IWhatsappConnection, err error) {
+	conn, err = whatsmeow.WhatsmeowService.CreateEmptyConnection(historySyncOverride)
 	if err != nil {
 		return
 	}

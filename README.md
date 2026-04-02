@@ -257,6 +257,10 @@ WEBSOCKETSSL=false
 
 # Performance
 CACHELENGTH=800
+# History sync:
+#   N   = sync last N days
+#   0   = disable history sync
+#   all = sync full history
 HISTORYSYNCDAYS=30
 ```
 
@@ -338,8 +342,15 @@ For detailed configuration options, see [docker/.env.example](docker/.env.exampl
 |----------|-------------|---------|
 | `CACHELENGTH` | Number of messages in cache | `800` |
 | `CACHEDAYS` | Days to keep messages in cache | `7` |
-| `HISTORYSYNCDAYS` | Days of history to sync on QR scan | `30` |
+| `HISTORYSYNCDAYS` | History sync mode: `N` (days), `0` (disabled), `all` (full history) | `30` |
 | `SYNOPSISLENGTH` | Length for message synopsis | `50` |
+
+#### History Sync Rules
+| Scope | Rule |
+|-------|------|
+| Environment (`HISTORYSYNCDAYS`) | `N` syncs the last `N` days, `0` disables history sync, `all` syncs full history |
+| Connection parameter (`historysyncdays` in `/scan` and `/paircode`) | Overrides the global value for that connection when provided |
+| Precedence | If environment is `0`, history remains disabled even when connection parameter is provided |
 
 #### Database Configuration
 | Variable | Description | Default |

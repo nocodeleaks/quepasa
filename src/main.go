@@ -51,16 +51,18 @@ func main() {
 	}
 
 	whatsappOptions := &whatsapp.WhatsappOptionsExtended{
-		Groups:            environment.Settings.WhatsApp.Groups,
-		Direct:            environment.Settings.WhatsApp.Direct,
-		Broadcasts:        environment.Settings.WhatsApp.Broadcasts,
-		ReadReceipts:      environment.Settings.WhatsApp.ReadReceipts,
-		Calls:             environment.Settings.WhatsApp.Calls,
-		ReadUpdate:        environment.Settings.WhatsApp.ReadUpdate,
-		HistorySync:       environment.Settings.WhatsApp.HistorySyncDays,
-		Presence:          environment.Settings.WhatsApp.Presence,
-		DispatchUnhandled: environment.Settings.Whatsmeow.DispatchUnhandled,
-		LogLevel:          logentry.Level.String(),
+		Groups:              environment.Settings.WhatsApp.Groups,
+		Direct:              environment.Settings.WhatsApp.Direct,
+		Broadcasts:          environment.Settings.WhatsApp.Broadcasts,
+		ReadReceipts:        environment.Settings.WhatsApp.ReadReceipts,
+		Calls:               environment.Settings.WhatsApp.Calls,
+		ReadUpdate:          environment.Settings.WhatsApp.ReadUpdate,
+		HistorySync:         environment.Settings.WhatsApp.HistorySyncDays,
+		HistorySyncDisabled: environment.Settings.WhatsApp.HistorySyncDisabled,
+		HistorySyncAll:      environment.Settings.WhatsApp.HistorySyncAll,
+		Presence:            environment.Settings.WhatsApp.Presence,
+		DispatchUnhandled:   environment.Settings.Whatsmeow.DispatchUnhandled,
+		LogLevel:            logentry.Level.String(),
 	}
 
 	whatsapp.Options = *whatsappOptions

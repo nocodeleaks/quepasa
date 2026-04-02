@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
@@ -43,13 +44,12 @@ func ScannerController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	HSDString := library.GetRequestParameter(r, "historysyncdays")
-	historysyncdays, _ := strconv.ParseUint(HSDString, 10, 32)
+	historysyncdays := parseHistorySyncDaysParam(r)
 
 	pairing := &models.QpWhatsappPairing{
 		Token:           token,
 		Username:        username,
-		HistorySyncDays: uint32(historysyncdays),
+		HistorySyncDays: historysyncdays,
 	}
 
 	con, err := pairing.GetConnection()
@@ -101,7 +101,7 @@ func ValidateUsername(r *http.Request) (username string, ex ApiException) {
 //	@Tags			Connection
 //	@Produce		json
 //	@Param			phone			query		string	true	"Phone number for pairing"
-//	@Param			historysyncdays	query		int		false	"Days of message history to sync"
+//	@Param			historysyncdays	query		string	false	"History sync mode: N days (e.g. 30), 0 to disable, or all for full history"
 //	@Success		200				{object}	models.QpResponse
 //	@Failure		400				{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -127,13 +127,12 @@ func PairCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	HSDString := library.GetRequestParameter(r, "historysyncdays")
-	historysyncdays, _ := strconv.ParseUint(HSDString, 10, 32)
+	historysyncdays := parseHistorySyncDaysParam(r)
 
 	pairing := &models.QpWhatsappPairing{
 		Token:           token,
 		Username:        username,
-		HistorySyncDays: uint32(historysyncdays),
+		HistorySyncDays: historysyncdays,
 	}
 
 	con, err := pairing.GetConnection()
@@ -163,4 +162,19 @@ func PairCodeController(w http.ResponseWriter, r *http.Request) {
 	response.Success = true
 	response.Status = code
 	RespondSuccess(w, response)
+}
+
+func parseHistorySyncDaysParam(r *http.Request) *uint32 {
+	raw := strings.TrimSpace(library.GetRequestParameter(r, "historysyncdays"))
+	if raw == "" {
+		return nil
+	}
+
+	parsed, err := strconv.ParseUint(raw, 10, 32)
+	if err != nil {
+		return nil
+	}
+
+	result := uint32(parsed)
+	return &result
 }

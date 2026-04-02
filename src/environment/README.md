@@ -84,7 +84,11 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`GROUPS`** - Handle group messages (default: `false`)
 - **`DIRECT`** - Handle direct messages (`@s.whatsapp.net` and `@lid`) (default: `true`)
 - **`BROADCASTS`** - Handle broadcast messages (default: `false`)
-- **`HISTORYSYNCDAYS`** - History sync days
+- **`HISTORYSYNCDAYS`** - History sync mode
+  - `N` (e.g., `30`): sync last `N` days
+  - `0`: disable history sync
+  - `all`: sync full history
+  - Connection override (`historysyncdays` in scan/pair endpoints) can set a specific value per connection, except when `HISTORYSYNCDAYS=0` (forced disable)
 - **`PRESENCE`** - Presence state (default: `unavailable`)
 - **`WAKEUP_HOUR`** - Single hour (0-23) to activate presence daily (e.g., `9` for 9 AM)
 - **`WAKEUP_DURATION`** - Duration in seconds to keep presence online during scheduled wake-up (default: `10`)

@@ -12,8 +12,8 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-func NewEmptyConnection(callback func(string)) (conn whatsapp.IWhatsappConnection, err error) {
-	return NewWhatsmeowEmptyConnection(callback)
+func NewEmptyConnection(callback func(string), historySyncOverride *uint32) (conn whatsapp.IWhatsappConnection, err error) {
+	return NewWhatsmeowEmptyConnection(callback, historySyncOverride)
 }
 
 func NewConnection(options *whatsapp.WhatsappConnectionOptions) (whatsapp.IWhatsappConnection, error) {

@@ -13,9 +13,9 @@ import (
 
 // ContactSaveRequest defines the parameters for saving a contact
 type ContactSaveRequest struct {
-	Phone       string `json:"phone"`                  // Required: phone number (e.g. 5516998824990)
-	FullName    string `json:"fullname"`               // Required: full name
-	FirstName   string `json:"firstname,omitempty"`    // Optional: first name (defaults to FullName if empty)
+	Phone       string `json:"phone"`                 // Required: phone number (e.g. 5516998824990)
+	FullName    string `json:"fullname"`              // Required: full name
+	FirstName   string `json:"firstname,omitempty"`   // Optional: first name (defaults to FullName if empty)
 	SyncToPhone bool   `json:"synctophone,omitempty"` // Optional: sync to phone address book (default false)
 }
 

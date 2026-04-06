@@ -28,6 +28,21 @@ definitions:
         description: 'Required: Chat to mark as read/unread'
         type: string
     type: object
+  api.ContactSaveRequest:
+    properties:
+      firstname:
+        description: 'Optional: first name (defaults to FullName if empty)'
+        type: string
+      fullname:
+        description: 'Required: full name'
+        type: string
+      phone:
+        description: 'Required: phone number (e.g. 5516998824990)'
+        type: string
+      synctophone:
+        description: 'Optional: sync to phone address book (default false)'
+        type: boolean
+    type: object
   api.EnvironmentResponse:
     properties:
       debug:
@@ -1509,6 +1524,40 @@ paths:
       summary: Execute bot commands
       tags:
       - Bot
+  /contact/save:
+    post:
+      consumes:
+      - application/json
+      description: Saves a contact to WhatsApp address book. Set synctophone=true
+        to also sync to the device's contacts (equivalent to "Sync contact with phone"
+        in WhatsApp Web)
+      parameters:
+      - description: Contact save request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ContactSaveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save contact
+      tags:
+      - Contacts
   /contact/search:
     post:
       consumes:

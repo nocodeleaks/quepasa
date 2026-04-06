@@ -38,7 +38,7 @@ func GetMediaTypeFromAttachment(source *whatsapp.WhatsappAttachment) whatsmeow.M
  */
 func GetMediaTypeFromWAMsgType(msgType whatsapp.WhatsappMessageType) whatsmeow.MediaType {
 	switch msgType {
-	case whatsapp.ImageMessageType:
+	case whatsapp.ImageMessageType, whatsapp.StickerMessageType:
 		return whatsmeow.MediaImage
 	case whatsapp.AudioMessageType:
 		return whatsmeow.MediaAudio
@@ -94,8 +94,9 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 	}
 
 	// Generate thumbnail when possible for image/video/pdf content.
+	// Stickers skip thumbnail generation
 	var thumbnail []byte
-	if attach.GetContent() != nil && len(*attach.GetContent()) > 0 {
+	if waMsg.Type != whatsapp.StickerMessageType && attach.GetContent() != nil && len(*attach.GetContent()) > 0 {
 		content := *attach.GetContent()
 		mimeType := attach.Mimetype
 
@@ -112,6 +113,21 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 
 	switch mediaType {
 	case whatsmeow.MediaImage:
+		if waMsg.Type == whatsapp.StickerMessageType {
+			internal := &waE2E.StickerMessage{
+				URL:           proto.String(response.URL),
+				DirectPath:    proto.String(response.DirectPath),
+				MediaKey:      response.MediaKey,
+				FileEncSHA256: response.FileEncSHA256,
+				FileSHA256:    response.FileSHA256,
+				FileLength:    proto.Uint64(response.FileLength),
+				Mimetype:      mimetype,
+				IsAnimated:    proto.Bool(attach.Mimetype == "video/webp"),
+				ContextInfo:   inreplycontext,
+			}
+			msg = &waE2E.Message{StickerMessage: internal}
+			return
+		}
 		internal := &waE2E.ImageMessage{
 			URL:           proto.String(response.URL),
 			DirectPath:    proto.String(response.DirectPath),

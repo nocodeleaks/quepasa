@@ -1521,8 +1521,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Days of message history to sync",
+                        "type": "string",
+                        "description": "History sync mode: N days (e.g. 30), 0 to disable, or all for full history",
                         "name": "historysyncdays",
                         "in": "query"
                     }
@@ -3129,8 +3129,14 @@ const docTemplate = `{
                 "groups": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
+                "history_sync_all": {
+                    "type": "boolean"
+                },
                 "history_sync_days": {
                     "type": "integer"
+                },
+                "history_sync_disabled": {
+                    "type": "boolean"
                 },
                 "presence": {
                     "type": "string"
@@ -4249,6 +4255,10 @@ const docTemplate = `{
                 "inreply": {
                     "description": "Msg in reply of another ? Message ID",
                     "type": "string"
+                },
+                "invideonote": {
+                    "description": "Is this video message a video note (PTV Message)?",
+                    "type": "boolean"
                 },
                 "location": {
                     "description": "Location if exists",

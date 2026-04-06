@@ -23,8 +23,14 @@ type WhatsappOptionsExtended struct {
 	// should send markread requests when receiving messages
 	ReadUpdate WhatsappBooleanExtended `json:"readupdate,omitempty"`
 
-	// nil for no sync, 0 for all, X for specific days
+	// history sync days when using N syntax (N > 0)
 	HistorySync *uint32 `json:"historysync,omitempty"`
+
+	// force-disable history sync processing regardless of other values
+	HistorySyncDisabled bool `json:"historysyncdisabled,omitempty"`
+
+	// enable full history sync (HISTORYSYNCDAYS=all)
+	HistorySyncAll bool `json:"historysyncall,omitempty"`
 
 	// default log level
 	LogLevel string `json:"loglevel,omitempty"`
@@ -44,6 +50,8 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 		source.Calls.Equals(UnSetBooleanType) &&
 		source.ReadUpdate.Equals(UnSetBooleanType) &&
 		source.HistorySync == nil &&
+		!source.HistorySyncDisabled &&
+		!source.HistorySyncAll &&
 		!source.DispatchUnhandled &&
 		len(source.LogLevel) == 0
 }
@@ -149,10 +157,18 @@ func (source WhatsappOptionsExtended) HandleReadUpdate(local WhatsappBoolean) bo
 }
 
 func (source WhatsappOptionsExtended) HandleHistory(mts uint64) bool {
+	if source.HistorySyncDisabled {
+		return false
+	}
+
+	if source.HistorySyncAll {
+		return true
+	}
+
 	if source.HistorySync != nil {
 		days := *source.HistorySync
 		if days == 0 {
-			return true
+			return false
 		}
 
 		current := time.Now()

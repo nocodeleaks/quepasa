@@ -403,8 +403,12 @@ definitions:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       groups:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      history_sync_all:
+        type: boolean
       history_sync_days:
         type: integer
+      history_sync_disabled:
+        type: boolean
       presence:
         type: string
       read_receipts:
@@ -1146,6 +1150,9 @@ definitions:
       inreply:
         description: Msg in reply of another ? Message ID
         type: string
+      invideonote:
+        description: Is this video message a video note (PTV Message)?
+        type: boolean
       location:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappLocation'
@@ -2253,10 +2260,11 @@ paths:
         name: phone
         required: true
         type: string
-      - description: Days of message history to sync
+      - description: 'History sync mode: N days (e.g. 30), 0 to disable, or all for
+          full history'
         in: query
         name: historysyncdays
-        type: integer
+        type: string
       produces:
       - application/json
       responses:

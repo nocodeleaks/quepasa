@@ -1,4 +1,4 @@
-<!-- VERSION: 3.26.0324.0007 -->
+<!-- VERSION: 3.26.0402.1951 -->
 [![Go Build](https://github.com/nocodeleaks/quepasa/actions/workflows/go.yml/badge.svg)](https://github.com/nocodeleaks/quepasa/actions/workflows/go.yml)
 
 <p align="center">
@@ -22,7 +22,7 @@
 
 > A micro web-application to make web-based WhatsApp bots easy to write.
 
-**Current Version:** `3.26.0324.0007`
+**Current Version:** `3.26.0402.1951`
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://god.gw.postman.com/run-collection/5047984-405506cf-59f5-479e-b512-4ba5b935411b?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D5047984-405506cf-59f5-479e-b512-4ba5b935411b%26entityType%3Dcollection%26workspaceId%3Dbd72aaba-0c31-40ad-801c-d5ba19184aff#?env%5BQuepasa%5D=W3sia2V5IjoiYmFzZVVybCIsInZhbHVlIjoiIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiIiLCJjb21wbGV0ZVNlc3Npb25WYWx1ZSI6IiIsInNlc3Npb25JbmRleCI6MH0seyJrZXkiOiJ0b2tlbiIsInZhbHVlIjoiIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiIiLCJjb21wbGV0ZVNlc3Npb25WYWx1ZSI6IiIsInNlc3Npb25JbmRleCI6MX0seyJrZXkiOiJjaGF0SWQiLCJ2YWx1ZSI6IiIsImVuYWJsZWQiOnRydWUsInR5cGUiOiJkZWZhdWx0Iiwic2Vzc2lvblZhbHVlIjoiIiwiY29tcGxldGVTZXNzaW9uVmFsdWUiOiIiLCJzZXNzaW9uSW5kZXgiOjJ9LHsia2V5IjoiZmlsZU5hbWUiLCJ2YWx1ZSI6IiIsImVuYWJsZWQiOnRydWUsInR5cGUiOiJkZWZhdWx0Iiwic2Vzc2lvblZhbHVlIjoiIiwiY29tcGxldGVTZXNzaW9uVmFsdWUiOiIiLCJzZXNzaW9uSW5kZXgiOjN9LHsia2V5IjoidGV4dCIsInZhbHVlIjoiIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiIiLCJjb21wbGV0ZVNlc3Npb25WYWx1ZSI6IiIsInNlc3Npb25JbmRleCI6NH0seyJrZXkiOiJ0cmFja0lkIiwidmFsdWUiOiJwb3N0bWFuIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiJwb3N0bWFuIiwiY29tcGxldGVTZXNzaW9uVmFsdWUiOiJwb3N0bWFuIiwic2Vzc2lvbkluZGV4Ijo1fV0=)
 
@@ -257,6 +257,10 @@ WEBSOCKETSSL=false
 
 # Performance
 CACHELENGTH=800
+# History sync:
+#   N   = sync last N days
+#   0   = disable history sync
+#   all = sync full history
 HISTORYSYNCDAYS=30
 ```
 
@@ -338,8 +342,15 @@ For detailed configuration options, see [docker/.env.example](docker/.env.exampl
 |----------|-------------|---------|
 | `CACHELENGTH` | Number of messages in cache | `800` |
 | `CACHEDAYS` | Days to keep messages in cache | `7` |
-| `HISTORYSYNCDAYS` | Days of history to sync on QR scan | `30` |
+| `HISTORYSYNCDAYS` | History sync mode: `N` (days), `0` (disabled), `all` (full history) | `30` |
 | `SYNOPSISLENGTH` | Length for message synopsis | `50` |
+
+#### History Sync Rules
+| Scope | Rule |
+|-------|------|
+| Environment (`HISTORYSYNCDAYS`) | `N` syncs the last `N` days, `0` disables history sync, `all` syncs full history |
+| Connection parameter (`historysyncdays` in `/scan` and `/paircode`) | Overrides the global value for that connection when provided |
+| Precedence | If environment is `0`, history remains disabled even when connection parameter is provided |
 
 #### Database Configuration
 | Variable | Description | Default |

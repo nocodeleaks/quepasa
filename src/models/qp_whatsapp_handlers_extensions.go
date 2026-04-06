@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 
+	environment "github.com/nocodeleaks/quepasa/environment"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -20,6 +21,10 @@ import (
 //	string: An empty string if the message is valid for dispatch.
 //	        A non-empty string containing an explanation message if the message should be ignored.
 func IsValidForDispatch(payload *whatsapp.WhatsappMessage) string {
+	if environment.Settings.WhatsApp.HistorySyncDisabled && payload.FromHistory {
+		return fmt.Sprintf("ignoring historical message because history sync is force-disabled: %s", payload.Id)
+	}
+
 	// Ignores messages with 'Discard' or 'Unknown' types, as these are typically not meant for
 	// application-level processing or indicate an unhandled message format.
 

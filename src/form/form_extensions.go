@@ -271,12 +271,19 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	HSDString := library.GetRequestParameter(r, "historysyncdays")
-	historysyncdays, _ := strconv.ParseUint(HSDString, 10, 32)
+	HSDString := strings.TrimSpace(library.GetRequestParameter(r, "historysyncdays"))
+	var historysyncdays *uint32
+	if HSDString != "" {
+		parsed, err := strconv.ParseUint(HSDString, 10, 32)
+		if err == nil {
+			result := uint32(parsed)
+			historysyncdays = &result
+		}
+	}
 
 	pairing := &models.QpWhatsappPairing{
 		Username:        user.Username,
-		HistorySyncDays: uint32(historysyncdays),
+		HistorySyncDays: historysyncdays,
 	}
 
 	WebSocketStart(*pairing, conn)

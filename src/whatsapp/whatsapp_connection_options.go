@@ -15,6 +15,10 @@ type WhatsappConnectionOptions struct {
 	Wid       string
 	Reconnect bool
 
+	// Optional per-connection history sync override (used by scan/pair flows).
+	// When nil, service-level configuration is used.
+	HistorySyncOverride *uint32
+
 	// ExternalHandler allows passing a pre-configured handler to the connection
 	// This decouples handler lifecycle from connection lifecycle
 	ExternalHandler IWhatsappHandlers

@@ -114,6 +114,20 @@ func (source *WhatsmeowHandlers) HandleGroups() bool {
 	return serviceOptions.HandleGroups(defaultValue)
 }
 
+func (source *WhatsmeowHandlers) HandleDirect() bool {
+	if source == nil {
+		return false
+	}
+
+	var defaultValue whatsapp.WhatsappBoolean
+	if source.WhatsappOptions != nil {
+		defaultValue = source.WhatsappOptions.Direct
+	}
+
+	serviceOptions := source.GetServiceOptions()
+	return serviceOptions.HandleDirect(defaultValue)
+}
+
 func (source *WhatsmeowHandlers) HandleReadReceipts() bool {
 	if source == nil {
 		return false
@@ -165,6 +179,14 @@ func (source WhatsmeowHandlers) ShouldDispatchUnhandled() bool {
 
 func (source WhatsmeowHandlers) HandleHistorySync() bool {
 	options := source.GetServiceOptions()
+	if options.HistorySyncDisabled {
+		return false
+	}
+
+	if options.HistorySyncAll {
+		return true
+	}
+
 	if options.HistorySync != nil {
 		return true
 	}
@@ -574,7 +596,11 @@ func (source *WhatsmeowHandlers) OnHistorySyncEvent(evt events.HistorySync) {
 
 	// whatsmeow service options
 	options := source.GetServiceOptions()
-	if options.HistorySync == nil {
+	if options.HistorySyncDisabled {
+		return
+	}
+
+	if !options.HistorySyncAll && options.HistorySync == nil {
 		return
 	}
 
@@ -871,6 +897,12 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 		return
 	}
 
+	// should skip direct messages ?
+	if !source.HandleDirect() {
+		logentry.Debug("ignoring direct receipt, HandleDirect is false")
+		return
+	}
+
 	statuses := make(map[string]whatsapp.WhatsappMessageStatus)
 	for _, id := range evt.MessageIDs {
 		last := statuses[id]
@@ -1044,6 +1076,10 @@ func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
 
 // OnOfflineSyncPreview handles the start of offline synchronization
 func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPreview) {
+	if handler.GetServiceOptions().HistorySyncDisabled {
+		return
+	}
+
 	logentry := handler.GetLogger()
 	logentry.Infof("offline sync preview started - Total: %d, Messages: %d, Notifications: %d, Receipts: %d",
 		evt.Total, evt.Messages, evt.Notifications, evt.Receipts)
@@ -1065,6 +1101,10 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPre
 
 // OnOfflineSyncCompleted handles the completion of offline synchronization
 func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncCompleted) {
+	if handler.GetServiceOptions().HistorySyncDisabled {
+		return
+	}
+
 	logentry := handler.GetLogger()
 	logentry.Infof("offline sync completed - Count: %d", evt.Count)
 

@@ -18,7 +18,7 @@ type QpWhatsappPairing struct {
 
 	Username string `json:"username,omitempty"`
 
-	HistorySyncDays uint32 `json:"historysyncdays,omitempty"`
+	HistorySyncDays *uint32 `json:"historysyncdays,omitempty"`
 
 	conn whatsapp.IWhatsappConnection `json:"-"`
 }
@@ -70,7 +70,7 @@ func (source *QpWhatsappPairing) OnPaired(wid string) {
 
 func (source *QpWhatsappPairing) GetConnection() (whatsapp.IWhatsappConnection, error) {
 	if source.conn == nil {
-		conn, err := NewEmptyConnection(source.OnPaired)
+		conn, err := NewEmptyConnection(source.OnPaired, source.HistorySyncDays)
 		if err != nil {
 			return nil, err
 		}

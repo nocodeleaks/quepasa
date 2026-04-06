@@ -833,7 +833,22 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	message.Timestamp = evt.Timestamp
 	message.FromMe = false
 
-	message.Chat = *NewWhatsappChat(source, evt.From)
+	// Resolve the best JID to use for the chat, preferring phone over LID when available
+	identifiers := ResolveCallIdentifiers(evt, logentry)
+
+	// If we have both LID and phone from the CallOffer, cache the mapping immediately
+	// so subsequent lookups don't have to query the database
+	if identifiers.HasLID && !identifiers.LidJID.IsEmpty() &&
+		identifiers.ChatJID.Server != whatsapp.WHATSAPP_SERVERDOMAIN_LID {
+		if cm, ok := source.GetContactManager().(*WhatsmeowContactManager); ok && cm != nil && cm.maps != nil {
+			lid := identifiers.LidJID.User + "@" + identifiers.LidJID.Server
+			cm.maps.SetPhoneFromLIDMap(lid, identifiers.ChatJID.User)
+			cm.maps.SetLIDFromPhoneMap(identifiers.ChatJID.User, lid)
+			logentry.Debugf("cached LID<->phone from CallOffer: %s <-> %s", lid, identifiers.ChatJID.User)
+		}
+	}
+
+	message.Chat = *NewWhatsappChat(source, identifiers.ChatJID)
 	message.Type = whatsapp.CallMessageType
 
 	if source.WAHandlers != nil {

@@ -93,3 +93,22 @@ func SaveContact(conn *WhatsmeowConnection, phone, fullName, firstName string, s
 
 	return sendAppState(conn, patch)
 }
+
+// SendPresence updates global presence status (available/unavailable)
+func (conn *WhatsmeowConnection) SendPresence(presence string) error {
+	if conn.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	var presenceType types.Presence
+	switch presence {
+	case "available":
+		presenceType = types.PresenceAvailable
+	case "unavailable":
+		presenceType = types.PresenceUnavailable
+	default:
+		return fmt.Errorf("invalid presence type: %s (must be 'available' or 'unavailable')", presence)
+	}
+
+	return conn.Client.SendPresence(context.Background(), presenceType)
+}

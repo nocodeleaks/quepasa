@@ -161,6 +161,12 @@ definitions:
       success:
         type: boolean
     type: object
+  api.PresenceRequest:
+    properties:
+      presence:
+        description: '"available" or "unavailable"'
+        type: string
+    type: object
   api.UserInfoRequest:
     properties:
       jids:
@@ -2324,6 +2330,39 @@ paths:
       summary: Generate pairing code
       tags:
       - Connection
+  /presence:
+    post:
+      consumes:
+      - application/json
+      description: Controls the bot's global presence status (available/unavailable)
+        on WhatsApp
+      parameters:
+      - description: Presence request (available or unavailable)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.PresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Control global presence
+      tags:
+      - Presence
   /rabbitmq:
     delete:
       consumes:

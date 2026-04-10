@@ -190,12 +190,18 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 		// GROUPS CONTROLLER **********************
 
-		// Typing Controller ********************
+		// PRESENCE CONTROLLER *******************
+		// ----------------------------------------
+		r.Post(endpoint+"/presence", PresenceController)
+		// ----------------------------------------
+		// PRESENCE CONTROLLER *******************
+
+		// CHAT PRESENCE CONTROLLER **************
 		// ----------------------------------------
 		r.Post(endpoint+"/chat/presence", ChatPresenceController)
 
 		// ----------------------------------------
-		// Typing Controller ********************
+		// CHAT PRESENCE CONTROLLER **************
 
 		// CHAT READ STATUS CONTROLLER **********
 		// ----------------------------------------

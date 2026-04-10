@@ -303,6 +303,10 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		go source.Receipt(*evt)
 		return
 
+	case *events.MediaRetry:
+		go source.OnMediaRetry(*evt)
+		return
+
 	case *events.Connected:
 		// Initialize offline sync flags - assume sync will happen after connection
 		source.offlineSyncStarted = true

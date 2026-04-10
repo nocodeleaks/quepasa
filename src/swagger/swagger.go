@@ -65,7 +65,7 @@ func ServeSwaggerJSON(w http.ResponseWriter, r *http.Request, apiPrefix string) 
 	}
 
 	// Update the basePath dynamically
-	swaggerDoc["basePath"] = "/" + apiPrefix + "/"
+	swaggerDoc["basePath"] = "/" + apiPrefix
 
 	// Convert back to JSON
 	modifiedSpec, err := json.Marshal(swaggerDoc)

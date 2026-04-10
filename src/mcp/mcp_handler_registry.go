@@ -60,6 +60,9 @@ var HandlerRegistry = map[string]http.HandlerFunc{
 	"GetPhoneController":          api.GetPhoneController,
 	"GetUserIdentifierController": api.GetUserIdentifierController,
 
+	// Presence Operations
+	"PresenceController": api.PresenceController,
+
 	// Chat Operations
 	"ArchiveChatController":      api.ArchiveChatController,
 	"ChatPresenceController":     api.ChatPresenceController,

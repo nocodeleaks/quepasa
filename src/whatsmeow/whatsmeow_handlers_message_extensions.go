@@ -270,7 +270,8 @@ func HandleReactionMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 
 	// If text is empty, it means the reaction was removed
 	if out.Text == "" {
-		out.Info = "reaction removed"
+		//out.Info = "reaction removed"
+		out.Text = "reaction_removed"
 		log.Debug("reaction removed (empty text)")
 	}
 }

@@ -67,6 +67,7 @@ type IWhatsappConnection interface {
 
 	//region Send Presence
 	SendChatPresence(chatId string, presenceType uint) error
+	SendPresence(presence string) error
 	//endregion
 
 	// NOTE: Group operations have been moved to IGroupManager

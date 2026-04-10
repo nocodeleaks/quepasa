@@ -328,6 +328,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/contact/save": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Saves a contact to WhatsApp address book. Set synctophone=true to also sync to the device's contacts (equivalent to \"Sync contact with phone\" in WhatsApp Web)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Save contact",
+                "parameters": [
+                    {
+                        "description": "Contact save request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ContactSaveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/contact/search": {
             "post": {
                 "security": [
@@ -2548,6 +2599,27 @@ const docTemplate = `{
                 "chatid": {
                     "description": "Required: Chat to mark as read/unread",
                     "type": "string"
+                }
+            }
+        },
+        "api.ContactSaveRequest": {
+            "type": "object",
+            "properties": {
+                "firstname": {
+                    "description": "Optional: first name (defaults to FullName if empty)",
+                    "type": "string"
+                },
+                "fullname": {
+                    "description": "Required: full name",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "Required: phone number (e.g. 5516998824990)",
+                    "type": "string"
+                },
+                "synctophone": {
+                    "description": "Optional: sync to phone address book (default false)",
+                    "type": "boolean"
                 }
             }
         },

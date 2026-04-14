@@ -1,28 +1,140 @@
 {{ define "content" }}
+  <style>
+    .page-header {
+      padding: 1.5rem 1.5rem 0.5rem;
+      border-bottom: 1px solid var(--qp-border-soft);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .page-header-left { display: flex; flex-direction: column; }
+    .page-header-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .table-container { padding: 0 1.5rem 1.5rem; }
+    .table thead th { background: var(--qp-thead-bg); color: var(--qp-thead-text); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--qp-thead-border) !important; }
+    .table td { vertical-align: middle; }
+    .btn-group { display: flex; gap: 2px; }
+
+    /* ── Modal ──────────────────────────────────────────── */
+    .modal-card { border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px var(--qp-shadow-lg); }
+    .modal-head-brand {
+      background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+      border-bottom: none !important;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-head-brand .modal-card-title {
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .modal-head-brand .modal-close-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .modal-head-brand .modal-close-btn:hover { background: rgba(255,255,255,0.38); }
+    .modal-card-body { padding: 1.25rem 1.5rem; }
+    .modal-card-foot {
+      background: var(--qp-surface-alt);
+      border-top: 1px solid var(--qp-border) !important;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .modal-section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--qp-text-light);
+      margin-bottom: 0.6rem;
+    }
+    .page-alert { padding: 0 1.5rem; }
+    .page-icon { color: var(--qp-primary); }
+    .required-mark { color: var(--qp-danger-solid); }
+    .mono-field { font-family: monospace; font-size: 0.82rem; }
+    .readonly-field {
+      background: var(--qp-surface-accent) !important;
+      color: var(--qp-primary-dark) !important;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+    /* Checkbox grid */
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.65rem;
+      border: 1px solid var(--qp-border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.83rem;
+      color: var(--qp-text);
+      transition: background 0.12s, border-color 0.12s;
+      user-select: none;
+    }
+    .check-item:hover { background: var(--qp-primary-light); border-color: var(--qp-primary-border); }
+    .check-item input[type=checkbox] { margin: 0; accent-color: #7C3AED; width: 14px; height: 14px; flex-shrink: 0; }
+    .check-item .check-icon { color: var(--qp-primary); font-size: 0.75rem; width: 14px; text-align: center; flex-shrink: 0; }
+  </style>
+
   {{ if .ErrorMessage }}
-    <div class="notification is-warning">
+  <div class="page-alert">
+    <div class="notification is-warning is-light">
+      <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
       {{ .ErrorMessage }}
     </div>
-  {{ end }}
-  <div class="container site-header">
-    <h1 class="title is-1">WebHooks</h1>
-    <p class="subtitle">({{ len .Webhooks }}) For <b>{{ .Server.Wid }}</b></p>
   </div>
-  <div>&nbsp;  </div>
-  <div class="container">
-    <div class="field is-grouped" style="margin-bottom: 1rem;">
-      <p class="control">
-        <button class="button is-primary" onclick="showAddWebhookModal()">
-          <span class="icon is-small">
-            <i class="fa fa-plus"></i>
-          </span>
-          <span>Add Webhook</span>
-        </button>
+  {{ end }}
+
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="title is-3 mb-0">
+        <span class="icon-text">
+          <span class="icon page-icon"><i class="fas fa-link"></i></span>
+          <span>WebHooks</span>
+        </span>
+      </h1>
+      <p class="subtitle is-6 has-text-grey mt-1">
+        <span class="tag is-light mr-1">{{ len .Webhooks }}</span> configured for <b>{{ .Server.Wid }}</b>
       </p>
     </div>
+    <div class="page-header-actions">
+      <button class="button is-primary" onclick="showAddWebhookModal()">
+        <span class="icon is-small"><i class="fa fa-plus"></i></span>
+        <span>Add Webhook</span>
+      </button>
+      <a class="button is-light" href="/form/account">
+        <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+        <span>Back</span>
+      </a>
+    </div>
   </div>
-  <div class="container">
-    <table class="table is-fullwidth">
+  <div class="table-container">
+    <table class="table is-fullwidth is-hoverable">
       <thead>
         <tr>
           <th>Url</th>
@@ -121,125 +233,155 @@
           </tr>       
         {{ end }}
       </tbody>
-    </table>     
+    </table>
   </div>
-  <div>&nbsp;  </div>
 
-  <!-- Modal para adicionar novo webhook -->
+  <!-- Modal: Add Webhook -->
   <div class="modal" id="addWebhookModal">
-    <div class="modal-background"></div>
+    <div class="modal-background" onclick="closeAddWebhookModal()"></div>
     <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">Add New Webhook</p>
-        <button class="delete" aria-label="close" onclick="closeAddWebhookModal()"></button>
+      <header class="modal-card-head modal-head-brand">
+        <p class="modal-card-title">
+          <span class="icon"><i class="fas fa-link"></i></span>
+          Add New Webhook
+        </p>
+        <button class="modal-close-btn" aria-label="close" onclick="closeAddWebhookModal()">
+          <i class="fas fa-times"></i>
+        </button>
       </header>
       <section class="modal-card-body">
-        <div class="field">
-          <label class="label">Webhook URL *</label>
-          <p class="control">
-            <input class="input" type="url" id="newWebhookUrl" placeholder="https://your-webhook-url.com/endpoint" required>
-          </p>
-          <p class="help">The webhook URL where messages will be sent</p>
-        </div>
-        
-        <div class="field">
-          <label class="label">Track ID</label>
-          <p class="control">
-            <input class="input" type="text" id="newWebhookTrackId" placeholder="Optional tracking identifier">
-          </p>
-          <p class="help">Optional identifier for tracking this webhook</p>
+
+        <div class="field mb-4">
+          <label class="label is-small">Webhook URL <span class="required-mark">*</span></label>
+          <div class="control has-icons-left">
+            <input class="input" type="url" id="newWebhookUrl"
+              placeholder="https://your-endpoint.com/webhook" required>
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-link"></i></span>
+          </div>
+          <p class="help">The URL where messages will be POSTed</p>
         </div>
 
-        <div class="field">
-          <label class="label">Configuration</label>
-          <div class="field is-grouped is-grouped-multiline">
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newWebhookForwardInternal">
-                Forward Internal Messages
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newWebhookBroadcasts">
-                Receive Broadcasts
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newWebhookGroups">
-                Receive Group Messages
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newWebhookDirect">
-                Receive Direct Messages
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newWebhookReadReceipts">
-                Receive Read Receipts
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newWebhookCalls">
-                Receive Call Events
-              </label>
-            </p>
+        <div class="field mb-4">
+          <label class="label is-small">Track ID</label>
+          <div class="control has-icons-left">
+            <input class="input" type="text" id="newWebhookTrackId"
+              placeholder="Optional tracking identifier">
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-tag"></i></span>
+          </div>
+        </div>
+
+        <div class="field mb-4">
+          <p class="modal-section-label">
+            <span class="icon is-small"><i class="fas fa-sliders-h"></i></span>
+            <span>Configuration</span>
+          </p>
+          <div class="check-grid">
+            <label class="check-item">
+              <input type="checkbox" id="newWebhookForwardInternal">
+              <span class="check-icon"><i class="fas fa-forward"></i></span>
+              Forward Internal
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newWebhookBroadcasts">
+              <span class="check-icon"><i class="fas fa-bullhorn"></i></span>
+              Broadcasts
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newWebhookGroups">
+              <span class="check-icon"><i class="fas fa-users"></i></span>
+              Group Messages
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newWebhookDirect">
+              <span class="check-icon"><i class="fas fa-comment"></i></span>
+              Direct Messages
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newWebhookReadReceipts">
+              <span class="check-icon"><i class="fas fa-check-double"></i></span>
+              Read Receipts
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newWebhookCalls">
+              <span class="check-icon"><i class="fas fa-phone"></i></span>
+              Call Events
+            </label>
           </div>
         </div>
 
         <div class="field">
-          <label class="label">Extra Data (JSON)</label>
-          <p class="control">
-            <textarea class="textarea" id="newWebhookExtra" rows="6" placeholder='{"custom_field": "value", "api_key": "secret", "timeout": 30}'></textarea>
+          <p class="modal-section-label">
+            <span class="icon is-small"><i class="fas fa-code"></i></span>
+            <span>Extra Data (JSON)</span>
           </p>
-          <p class="help">Optional JSON data to be included with webhook calls. Must be valid JSON format.</p>
+          <div class="control">
+            <textarea class="textarea is-small mono-field" id="newWebhookExtra" rows="4"
+              placeholder='{"api_key": "secret", "timeout": 30}'></textarea>
+          </div>
+          <p class="help">Optional JSON forwarded with every webhook call</p>
         </div>
+
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-success" onclick="saveNewWebhook()">Add Webhook</button>
-        <button class="button" onclick="closeAddWebhookModal()">Cancel</button>
+        <button class="button is-primary" onclick="saveNewWebhook()">
+          <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
+          <span>Add Webhook</span>
+        </button>
+        <button class="button is-light" onclick="closeAddWebhookModal()">Cancel</button>
       </footer>
     </div>
   </div>
 
-  <!-- Modal para visualizar/editar Extra -->
+  <!-- Modal: Edit Extra / Track ID -->
   <div class="modal" id="extraModal">
-    <div class="modal-background"></div>
+    <div class="modal-background" onclick="closeExtraModal()"></div>
     <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">Webhook Configuration</p>
-        <button class="delete" aria-label="close" onclick="closeExtraModal()"></button>
+      <header class="modal-card-head modal-head-brand">
+        <p class="modal-card-title">
+          <span class="icon"><i class="fas fa-cog"></i></span>
+          Webhook Configuration
+        </p>
+        <button class="modal-close-btn" aria-label="close" onclick="closeExtraModal()">
+          <i class="fas fa-times"></i>
+        </button>
       </header>
       <section class="modal-card-body">
-        <div class="field">
-          <label class="label">Webhook URL:</label>
-          <p class="control">
-            <input class="input" type="text" id="extraWebhookUrl" readonly>
-          </p>
+
+        <div class="field mb-4">
+          <label class="label is-small">Webhook URL</label>
+          <div class="control has-icons-left">
+            <input class="input readonly-field" type="text" id="extraWebhookUrl" readonly>
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-link"></i></span>
+          </div>
         </div>
-        <div class="field">
-          <label class="label">Track ID:</label>
-          <p class="control">
+
+        <div class="field mb-4">
+          <label class="label is-small">Track ID</label>
+          <div class="control has-icons-left">
             <input class="input" type="text" id="extraTrackId" placeholder="Optional tracking identifier">
-          </p>
-          <p class="help">Optional identifier for tracking this webhook</p>
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-tag"></i></span>
+          </div>
         </div>
+
         <div class="field">
-          <label class="label">Extra Data (JSON):</label>
-          <p class="control">
-            <textarea class="textarea" id="extraData" rows="10" placeholder='{"exemplo": "valor", "outro_campo": 123}'></textarea>
+          <p class="modal-section-label">
+            <span class="icon is-small"><i class="fas fa-code"></i></span>
+            <span>Extra Data (JSON)</span>
           </p>
-          <p class="help">Enter valid JSON data or leave empty to remove extra field</p>
+          <div class="control">
+            <textarea class="textarea mono-field" id="extraData" rows="8"
+              placeholder='{"exemplo": "valor", "outro_campo": 123}'></textarea>
+          </div>
+          <p class="help">Leave empty to remove extra data</p>
         </div>
+
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-success" onclick="saveExtra()">Save</button>
-        <button class="button" onclick="closeExtraModal()">Cancel</button>
+        <button class="button is-primary" onclick="saveExtra()">
+          <span class="icon is-small"><i class="fas fa-save"></i></span>
+          <span>Save</span>
+        </button>
+        <button class="button is-light" onclick="closeExtraModal()">Cancel</button>
       </footer>
     </div>
   </div>

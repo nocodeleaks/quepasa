@@ -1,115 +1,336 @@
 {{ define "content" }}
-{{ if .ErrorMessage}}
-<div class="notification is-warning">
-  {{ .ErrorMessage}}
+<style>
+  .verify-page {
+    max-width: 540px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .verify-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 24px var(--qp-shadow-md);
+    overflow: hidden;
+  }
+  .verify-card .card-header {
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    justify-content: center;
+  }
+  .verify-card .card-header-title {
+    color: #fff;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+  .verify-card .card-content {
+    padding: 1.5rem 2rem 2rem;
+    background: var(--qp-surface);
+  }
+  /* QR */
+  #qr-wrapper { text-align: center; min-height: 300px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  .qr-placeholder {
+    width: 280px; height: 280px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--qp-surface-alt); border-radius: 8px; border: 3px dashed var(--qp-border);
+  }
+  #qrcode {
+    max-width: 280px; width: 100%;
+    border-radius: 8px; border: 3px solid var(--qp-border-soft);
+    transition: border-color 0.3s, filter 0.3s;
+    display: none;
+  }
+  /* Paircode */
+  .paircode-display {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--qp-primary-dark);
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--qp-primary-mid);
+    border-radius: 8px;
+    border: 2px solid var(--qp-primary);
+    font-family: monospace;
+  }
+  .verify-footer {
+    padding: 1rem 2rem;
+    background: var(--qp-surface-alt);
+    border-top: 1px solid var(--qp-border-soft);
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+
+<div class="verify-page">
+  {{ if .ErrorMessage }}
+  <div class="notification is-warning is-light mb-4">
+    <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+    {{ .ErrorMessage }}
+  </div>
+  {{ end }}
+
+  <div class="card verify-card">
+    <header class="card-header">
+      <p class="card-header-title">
+        <span class="icon mr-2"><i class="fas fa-mobile-alt"></i></span>
+        Connect WhatsApp
+      </p>
+    </header>
+
+    <div class="card-content">
+
+      <!-- Tabs -->
+      <div class="tabs is-centered is-boxed mb-4">
+        <ul>
+          <li id="tab-qr" class="is-active">
+            <a onclick="switchTab('qr')">
+              <span class="icon is-small"><i class="fas fa-qrcode"></i></span>
+              <span>QR Code</span>
+            </a>
+          </li>
+          <li id="tab-pair">
+            <a onclick="switchTab('pair')">
+              <span class="icon is-small"><i class="fas fa-keyboard"></i></span>
+              <span>Pair Code</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- QR Code Panel -->
+      <div id="panel-qr">
+        <p class="has-text-grey has-text-centered is-size-7 mb-3">
+          Open WhatsApp → <strong>Settings → Linked Devices → Link a Device</strong>
+        </p>
+
+        <div id="qr-wrapper">
+          <div class="qr-placeholder" id="qr-loading">
+            <span class="icon is-large has-text-grey-light">
+              <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+            </span>
+          </div>
+          <img id="qrcode" src="" alt="QR Code">
+        </div>
+
+        <p class="has-text-grey is-size-7 has-text-centered mt-3" id="qr-status">Connecting, please wait...</p>
+      </div>
+
+      <!-- Pair Code Panel -->
+      <div id="panel-pair" style="display:none;">
+        <p class="has-text-grey is-size-7 mb-4">
+          Enter your phone number (with country code). A code will be generated — type it in <strong>WhatsApp → Linked Devices → Link with phone number</strong>.
+        </p>
+
+        <div class="field has-addons" id="pair-input-group">
+          <div class="control is-expanded has-icons-left">
+            <input class="input" id="pair-phone" type="tel" placeholder="5511999999999" autocomplete="tel">
+            <span class="icon is-left"><i class="fas fa-phone"></i></span>
+          </div>
+          <div class="control">
+            <button class="button is-primary" id="pair-btn" onclick="requestPairCode()">
+              <span class="icon"><i class="fas fa-key"></i></span>
+              <span>Get Code</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="paircode-result" style="display:none;">
+          <p class="has-text-grey is-size-7 mb-2 has-text-centered">Enter this code in WhatsApp:</p>
+          <div class="paircode-display" id="paircode-value">----</div>
+          <p class="has-text-grey is-size-7 has-text-centered mt-3" id="pair-status">Waiting for confirmation in WhatsApp...</p>
+        </div>
+
+        <div id="pair-error" class="notification is-danger is-light mt-3" style="display:none;">
+          <span class="icon"><i class="fas fa-times-circle"></i></span>
+          <span id="pair-error-msg">Failed to generate pair code. Try again.</span>
+        </div>
+      </div>
+
+      <!-- SSL warning -->
+      <div class="notification is-warning is-light mt-4" style="font-size: 0.75rem;">
+        <span class="icon"><i class="fas fa-info-circle"></i></span>
+        If nothing happens, check if <code>WEBSOCKETSSL</code> is correctly set in <code>/src/.env</code>
+      </div>
+
+    </div>
+
+    <footer class="verify-footer">
+      <a class="button is-light is-small" href="/form/account">
+        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+        <span>Back</span>
+      </a>
+    </footer>
+  </div>
 </div>
-{{ end }}
-<div class="is-block is-large is-fullwidth container" style="text-align: center;">
-  <hr />
-  <div class="notification is-warning">CASO O QR CODE NÃO APARECER POR FAVOR VERIFIQUE SE  A VARIAVEL EM /src/.env ESTA DE FORMA WEBSOCKETSSL=true</div>
-  <label class="label">Scan this QR code in the next 20 seconds:</label>
-  <img id="qrcode" src="">
-  <hr />
-  <a href="/form/account">Back</a>
-</div>
+
 <script type="text/javascript" defer>
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const mode = urlParams.get('mode')
+  const mode = urlParams.get('mode');
 
   let Success = false;
-  const Image = document.querySelector('img#qrcode');
+  let activeTab = 'qr';
+
+  const QRImage     = document.getElementById('qrcode');
+  const QRLoading   = document.getElementById('qr-loading');
+  const QRStatus    = document.getElementById('qr-status');
+  const PairResult  = document.getElementById('paircode-result');
+  const PairValue   = document.getElementById('paircode-value');
+  const PairStatus  = document.getElementById('pair-status');
+  const PairError   = document.getElementById('pair-error');
+  const PairBtn     = document.getElementById('pair-btn');
 
   var myWebSocket;
 
+  // ---- Tab switching ----
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-qr').classList.toggle('is-active', tab === 'qr');
+    document.getElementById('tab-pair').classList.toggle('is-active', tab === 'pair');
+    document.getElementById('panel-qr').style.display  = tab === 'qr'   ? '' : 'none';
+    document.getElementById('panel-pair').style.display = tab === 'pair' ? '' : 'none';
+
+    if (tab === 'qr' && (!myWebSocket || myWebSocket.readyState === 3)) {
+      GetQRCode();
+    }
+  }
+
+  // ---- WebSocket ----
+  function connectWebSocket(onOpen) {
+    if (myWebSocket && myWebSocket.readyState !== 3) myWebSocket.close();
+
+    myWebSocket = new WebSocket("{{ .Protocol }}://{{ .Host }}/form/verify/ws");
+    myWebSocket.onopen    = onOpen;
+    myWebSocket.onmessage = onWebSocketMessage;
+    myWebSocket.onclose   = onWebSocketClose;
+    myWebSocket.onerror   = onWebSocketError;
+
+    window.MyWebSocket = myWebSocket;
+    window.addEventListener("unload", () => myWebSocket.close());
+  }
+
   function GetQRCode() {
-    loadQrCode();
-    if (myWebSocket === undefined || (myWebSocket && myWebSocket.readyState === 3)) {
-      myWebSocket = new WebSocket("{{ .Protocol }}://{{ .Host }}/form/verify/ws");
-      myWebSocket.onopen = onWebSocketOpen;
-      myWebSocket.onmessage = onWebSocketMessage;
-      myWebSocket.onclose = onWebSocketClose;
-      myWebSocket.onerror = onWebSocketError; 
-            
-      window.MyWebSocket = myWebSocket;
-      window.addEventListener("unload", function(){
-        myWebSocket.close();
-      });   
+    if (myWebSocket === undefined || myWebSocket.readyState === 3) {
+      connectWebSocket(function(event) {
+        if (event) {
+          console.debug("starting QR code mode");
+          myWebSocket.send("start");
+        }
+      });
     }
   }
 
-  function SetSuccess(status) {
-    Success = status;
-    if (Success) {
-      Image.style = "border: green 3px solid; filter: blur(5px);";
-    } else {
-      Image.style = "border: red 3px solid; filter: blur(4px);";
-    }
-  }
-
-  function loadQrCode(data)
-  {   
-    if(data){
-      Image.style = "";
-      Image.src = "data:image/png;base64, " + data;
-    } else {
-      SetSuccess(false);
-    }
-  }
-
-  function formatDebug(message)
-  {
-    console.debug("(" + Date.now() + ") " + message);
-  }
-
-  function onWebSocketOpen(event){
-    if (event) {
-      console.debug("sending start with mode: " + mode)
-      myWebSocket.send("start");
-    } else { formatDebug("no event passed"); }
-  }
-
-  function onWebSocketError(event){
-    formatDebug("error socket", event);
-  }
-
-  function onWebSocketClose(event)
-  {
-    if(Success){      
-      setTimeout(function() {
-        window.location.replace({{ .Destination }});
-      }, 2000);        
+  function requestPairCode() {
+    const phone = document.getElementById('pair-phone').value.trim().replace(/\D/g, '');
+    if (!phone) {
+      showPairError('Please enter a phone number.');
       return;
     }
 
-    //console.debug(event);
-    formatDebug("closed socket (" + event.reason + "): regenerating qr code and trying again");    
-    setTimeout(function() {
-      GetQRCode();
-    }, 1000);
+    PairError.style.display   = 'none';
+    PairResult.style.display  = 'none';
+    PairBtn.classList.add('is-loading');
+    PairBtn.disabled = true;
+
+    connectWebSocket(function(event) {
+      if (event) {
+        console.debug("starting pair code mode for phone: " + phone);
+        myWebSocket.send("paircode:" + phone);
+      }
+    });
   }
 
-  function onWebSocketMessage(event){
-    if (event) {
-      if (event.data === "complete") {
-        console.debug("websocket complete");
-        SetSuccess(true);
-        myWebSocket.close();
-      } else if (event.data === "success") {
-        SetSuccess(true);
-        console.debug("websocket success");
-      } else if (event.data === "echo") {
-        //console.debug("websocket echo keep alive");
-      } else if (event.data === "timeout") {
-        console.debug("timeout: regenerating qr code and trying again");
-        myWebSocket.send("start");
-      } else if (event.data === "error") {
-        console.debug("unknown error: regenerating qr code and trying again");
-        myWebSocket.send("start");
+  function showPairError(msg) {
+    document.getElementById('pair-error-msg').textContent = msg;
+    PairError.style.display = '';
+    PairBtn.classList.remove('is-loading');
+    PairBtn.disabled = false;
+  }
+
+  // ---- QR helpers ----
+  function setQRSuccess(status) {
+    Success = status;
+    if (status) {
+      QRImage.style.border  = '3px solid var(--qp-success-solid)';
+      QRImage.style.filter  = 'blur(5px)';
+      QRStatus.textContent  = 'Connected! Redirecting...';
+      QRStatus.className    = 'has-text-success is-size-7 has-text-centered mt-3';
+    } else {
+      QRImage.style.border = '3px solid var(--qp-danger-solid)';
+      QRImage.style.filter = 'blur(4px)';
+    }
+  }
+
+  function loadQrCode(data) {
+    if (data) {
+      QRLoading.style.display = 'none';
+      QRImage.style.display   = 'block';
+      QRImage.style.border    = '3px solid var(--qp-border-soft)';
+      QRImage.style.filter    = '';
+      QRImage.src = 'data:image/png;base64, ' + data;
+      QRStatus.textContent = 'Scan the code with your phone';
+    } else {
+      setQRSuccess(false);
+    }
+  }
+
+  // ---- WebSocket handlers ----
+  function onWebSocketError(event) {
+    console.debug('websocket error', event);
+    if (activeTab === 'pair') showPairError('WebSocket connection error. Try again.');
+  }
+
+  function onWebSocketClose(event) {
+    if (Success) {
+      setTimeout(() => window.location.replace({{ .Destination }}), 2000);
+      return;
+    }
+    if (activeTab === 'qr') {
+      console.debug('closed socket (' + event.reason + '): retrying QR...');
+      setTimeout(GetQRCode, 1000);
+    }
+  }
+
+  function onWebSocketMessage(event) {
+    if (!event) return;
+    const data = event.data;
+
+    if (data === 'complete') {
+      Success = true;
+      if (activeTab === 'qr') {
+        setQRSuccess(true);
       } else {
-        loadQrCode(event.data);
+        PairStatus.textContent = 'Paired successfully! Redirecting...';
+        PairStatus.className   = 'has-text-success is-size-7 has-text-centered mt-3';
       }
-    } else { formatDebug("no event passed"); }
+      myWebSocket.close();
+
+    } else if (data === 'success') {
+      Success = true;
+      if (activeTab === 'qr') setQRSuccess(true);
+
+    } else if (data.startsWith('paircode:')) {
+      const code = data.replace('paircode:', '');
+      PairValue.textContent        = code;
+      PairResult.style.display     = '';
+      PairBtn.classList.remove('is-loading');
+      PairBtn.disabled = false;
+
+    } else if (data === 'error') {
+      if (activeTab === 'pair') {
+        showPairError('Failed to generate pair code. Check the phone number and try again.');
+      }
+
+    } else if (data === 'timeout') {
+      if (activeTab === 'qr') myWebSocket.send('start');
+
+    } else if (data === 'echo') {
+      // keep-alive, ignore
+
+    } else {
+      // base64 QR image
+      if (activeTab === 'qr') loadQrCode(data);
+    }
   }
 
   window.onload = GetQRCode;

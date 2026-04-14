@@ -1,33 +1,198 @@
 {{ define "content" }}
+  <style>
+    .page-header {
+      padding: 1.5rem 1.5rem 0.5rem;
+      border-bottom: 1px solid var(--qp-border-soft);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .page-header-left { display: flex; flex-direction: column; }
+    .page-header-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .table-container { padding: 0 1.5rem 1.5rem; }
+    .table thead th { background: var(--qp-thead-bg); color: var(--qp-thead-text); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--qp-thead-border) !important; }
+    .table td { vertical-align: middle; }
+
+    /* ── Modal ──────────────────────────────────────────── */
+    .modal-card { border-radius: 12px; overflow: hidden; box-shadow: 0 8px 40px var(--qp-shadow-lg); }
+    .modal-head-brand {
+      background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+      border-bottom: none !important;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-head-brand .modal-card-title {
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .modal-head-brand .modal-close-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .modal-head-brand .modal-close-btn:hover { background: rgba(255,255,255,0.38); }
+    .modal-card-body { padding: 1.25rem 1.5rem; }
+    .modal-card-foot {
+      background: var(--qp-surface-alt);
+      border-top: 1px solid var(--qp-border) !important;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .modal-section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--qp-text-light);
+      margin-bottom: 0.6rem;
+    }
+    .page-alert { padding: 0 1.5rem; }
+    .page-icon { color: var(--qp-primary); }
+    .required-mark { color: var(--qp-danger-solid); }
+    .mono-field { font-family: monospace; font-size: 0.82rem; }
+    .mono-field-compact { font-family: monospace; font-size: 0.78rem; }
+    .mono-input { font-family: monospace; font-size: 0.85rem; }
+    .readonly-field {
+      background: var(--qp-surface-accent) !important;
+      color: var(--qp-primary-dark) !important;
+      font-family: monospace;
+      font-size: 0.78rem;
+    }
+    /* RabbitMQ info box */
+    .rmq-info {
+      border-radius: 8px;
+      background: var(--qp-primary-light);
+      border: 1px solid var(--qp-primary-border);
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .rmq-info-title {
+      font-weight: 700;
+      color: var(--qp-primary-dark);
+      font-size: 0.88rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .rmq-info code {
+      background: var(--qp-primary-mid);
+      color: var(--qp-primary-dark);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      border: 1px solid var(--qp-primary-border);
+    }
+    .rmq-info-queue-list {
+      list-style: none;
+      margin: 0.35rem 0 0.35rem 0.25rem;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.81rem;
+      color: var(--qp-primary-dark);
+    }
+    .rmq-info-queue-list li { display: flex; align-items: baseline; gap: 0.5rem; }
+    .rmq-info-note {
+      font-size: 0.77rem;
+      color: var(--qp-primary);
+      font-style: italic;
+      margin-top: 0.4rem;
+    }
+    .rmq-info-line {
+      font-size: 0.82rem;
+      color: var(--qp-primary-dark);
+      margin-bottom: 0.3rem;
+    }
+    .rmq-info-subtitle {
+      font-size: 0.8rem;
+      color: var(--qp-primary);
+      margin-bottom: 0.2rem;
+    }
+    .rmq-info-queue-note {
+      color: var(--qp-text-muted);
+    }
+    /* Checkbox grid */
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.65rem;
+      border: 1px solid var(--qp-border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.83rem;
+      color: var(--qp-text);
+      transition: background 0.12s, border-color 0.12s;
+      user-select: none;
+    }
+    .check-item:hover { background: var(--qp-primary-light); border-color: var(--qp-primary-border); }
+    .check-item input[type=checkbox] { margin: 0; accent-color: #7C3AED; width: 14px; height: 14px; flex-shrink: 0; }
+    .check-item .check-icon { color: var(--qp-primary); font-size: 0.75rem; width: 14px; text-align: center; flex-shrink: 0; }
+  </style>
+
   {{ if .ErrorMessage }}
-    <div class="notification is-warning">
+  <div class="page-alert">
+    <div class="notification is-warning is-light">
+      <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
       {{ .ErrorMessage }}
     </div>
-  {{ end }}
-  <div class="container site-header">
-    <h1 class="title is-1">RabbitMQ Configurations</h1>
-    <p class="subtitle">({{ len .RabbitMQ }}) For <b>{{ .Server.Wid }}</b></p>
   </div>
+  {{ end }}
 
-
-
-  <div class="container">
-    <div>&nbsp;  </div>
-    <div class="field is-grouped" style="margin-bottom: 1rem;">
-      <p class="control">
-        <button class="button is-primary" onclick="showAddRabbitMQModal()">
-          <span class="icon is-small">
-            <i class="fa fa-plus"></i>
-          </span>
-          <span>Add RabbitMQ Configuration</span>
-        </button>
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="title is-3 mb-0">
+        <span class="icon-text">
+          <span class="icon page-icon"><i class="fas fa-exchange-alt"></i></span>
+          <span>RabbitMQ Configurations</span>
+        </span>
+      </h1>
+      <p class="subtitle is-6 has-text-grey mt-1">
+        <span class="tag is-light mr-1">{{ len .RabbitMQ }}</span> configured for <b>{{ .Server.Wid }}</b>
       </p>
+    </div>
+    <div class="page-header-actions">
+      <button class="button is-primary" onclick="showAddRabbitMQModal()">
+        <span class="icon is-small"><i class="fa fa-plus"></i></span>
+        <span>Add RabbitMQ Configuration</span>
+      </button>
+      <a class="button is-light" href="/form/account">
+        <span class="icon is-small"><i class="fas fa-arrow-left"></i></span>
+        <span>Back</span>
+      </a>
     </div>
   </div>
 
   <!-- RabbitMQ Configurations Table -->
-  <div class="container">
-    <table class="table is-fullwidth">
+  <div class="table-container">
+    <table class="table is-fullwidth is-hoverable">
       <thead>
         <tr>
           <th>Connection String</th>
@@ -142,132 +307,167 @@
           </tr>       
         {{ end }}
       </tbody>
-    </table>     
+    </table>
   </div>
-  <div>&nbsp;</div>
 
-  <!-- Modal para adicionar novo RabbitMQ -->
+  <!-- Modal: Add RabbitMQ -->
   <div class="modal" id="addRabbitMQModal">
-    <div class="modal-background"></div>
+    <div class="modal-background" onclick="closeAddRabbitMQModal()"></div>
     <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">Add New RabbitMQ Configuration</p>
-        <button class="delete" aria-label="close" onclick="closeAddRabbitMQModal()"></button>
+      <header class="modal-card-head modal-head-brand">
+        <p class="modal-card-title">
+          <span class="icon"><i class="fas fa-exchange-alt"></i></span>
+          Add RabbitMQ Configuration
+        </p>
+        <button class="modal-close-btn" aria-label="close" onclick="closeAddRabbitMQModal()">
+          <i class="fas fa-times"></i>
+        </button>
       </header>
       <section class="modal-card-body">
-        <!-- Information about RabbitMQ Routing System -->
-        <div class="notification is-info" style="margin-bottom: 1.5rem;">
-          <h4 class="title is-6">🔄 QuePasa RabbitMQ Routing System</h4>
-          <p><strong>Exchange:</strong> <code>quepasa.exchange</code></p>
-          <p><strong>Automatic Queues:</strong></p>
-          <ul style="margin-left: 1rem;">
-            <li><code>quepasa.production</code> - Production messages (normal chat messages)</li>
-            <li><code>quepasa.history</code> - History sync messages</li>
-            <li><code>quepasa.other</code> - System events, calls, contacts, etc.</li>
+
+        <!-- Routing info -->
+        <div class="rmq-info">
+          <div class="rmq-info-title">
+            <i class="fas fa-project-diagram"></i>
+            QuePasa RabbitMQ Routing System
+          </div>
+          <div class="rmq-info-line">
+            <strong>Exchange:</strong> <code>quepasa.exchange</code>
+          </div>
+          <div class="rmq-info-subtitle"><strong>Queues:</strong></div>
+          <ul class="rmq-info-queue-list">
+            <li><code>quepasa.production</code><span class="rmq-info-queue-note">— normal chat messages</span></li>
+            <li><code>quepasa.history</code><span class="rmq-info-queue-note">— history sync</span></li>
+            <li><code>quepasa.other</code><span class="rmq-info-queue-note">— system events, calls, contacts</span></li>
           </ul>
-          <p><em>All bots use the same Exchange and Queues. Only the connection string is configured per bot.</em></p>
+          <p class="rmq-info-note">All bots share the same Exchange and Queues. Only the connection string is per bot.</p>
         </div>
 
-        <div class="field">
-          <label class="label">RabbitMQ Connection String *</label>
-          <p class="control">
-            <input class="input" type="text" id="newConnectionString" placeholder="amqp://username:password@host:port/vhost" required>
+        <div class="field mb-4">
+          <label class="label is-small">Connection String <span class="required-mark">*</span></label>
+          <div class="control has-icons-left">
+            <input class="input mono-input" type="text" id="newConnectionString"
+              placeholder="amqp://username:password@host:port/vhost" required
+              >
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-plug"></i></span>
+          </div>
+          <p class="help">
+            Example: <code>amqp://admin:password@rabbitmq.example.com:5672/%2F</code>
           </p>
-          <p class="help">Complete RabbitMQ connection string including credentials and virtual host</p>
-          <p class="help has-text-info">Example: <code>amqp://admin:password@rabbitmq.example.com:5672/%2F</code></p>
         </div>
-        
-        <div class="field">
-          <label class="label">Track ID</label>
-          <p class="control">
+
+        <div class="field mb-4">
+          <label class="label is-small">Track ID</label>
+          <div class="control has-icons-left">
             <input class="input" type="text" id="newTrackId" placeholder="Optional tracking identifier">
-          </p>
-          <p class="help">Optional identifier for tracking this RabbitMQ configuration</p>
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-tag"></i></span>
+          </div>
         </div>
 
-        <div class="field">
-          <label class="label">Configuration</label>
-          <div class="field is-grouped is-grouped-multiline">
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newForwardInternal">
-                Forward Internal Messages
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newBroadcasts">
-                Receive Broadcasts
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newGroups">
-                Receive Group Messages
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newDirect">
-                Receive Direct Messages
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newReadReceipts">
-                Receive Read Receipts
-              </label>
-            </p>
-            <p class="control">
-              <label class="checkbox">
-                <input type="checkbox" id="newCalls">
-                Receive Call Events
-              </label>
-            </p>
+        <div class="field mb-4">
+          <p class="modal-section-label">
+            <span class="icon is-small"><i class="fas fa-sliders-h"></i></span>
+            <span>Configuration</span>
+          </p>
+          <div class="check-grid">
+            <label class="check-item">
+              <input type="checkbox" id="newForwardInternal">
+              <span class="check-icon"><i class="fas fa-forward"></i></span>
+              Forward Internal
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newBroadcasts">
+              <span class="check-icon"><i class="fas fa-bullhorn"></i></span>
+              Broadcasts
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newGroups">
+              <span class="check-icon"><i class="fas fa-users"></i></span>
+              Group Messages
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newDirect">
+              <span class="check-icon"><i class="fas fa-comment"></i></span>
+              Direct Messages
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newReadReceipts">
+              <span class="check-icon"><i class="fas fa-check-double"></i></span>
+              Read Receipts
+            </label>
+            <label class="check-item">
+              <input type="checkbox" id="newCalls">
+              <span class="check-icon"><i class="fas fa-phone"></i></span>
+              Call Events
+            </label>
           </div>
         </div>
 
         <div class="field">
-          <label class="label">Extra Data (JSON)</label>
-          <p class="control">
-            <textarea class="textarea" id="newExtra" rows="6" placeholder='{"custom_field": "value", "api_key": "secret", "timeout": 30}'></textarea>
+          <p class="modal-section-label">
+            <span class="icon is-small"><i class="fas fa-code"></i></span>
+            <span>Extra Data (JSON)</span>
           </p>
-          <p class="help">Optional JSON data to be included with RabbitMQ messages. Must be valid JSON format.</p>
+          <div class="control">
+            <textarea class="textarea is-small mono-field" id="newExtra" rows="4"
+              placeholder='{"api_key": "secret", "timeout": 30}'></textarea>
+          </div>
+          <p class="help">Optional JSON forwarded with every RabbitMQ message</p>
         </div>
+
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-success" onclick="saveNewRabbitMQ()">Add Configuration</button>
-        <button class="button" onclick="closeAddRabbitMQModal()">Cancel</button>
+        <button class="button is-primary" onclick="saveNewRabbitMQ()">
+          <span class="icon is-small"><i class="fas fa-plus-circle"></i></span>
+          <span>Add Configuration</span>
+        </button>
+        <button class="button is-light" onclick="closeAddRabbitMQModal()">Cancel</button>
       </footer>
     </div>
   </div>
 
-  <!-- Modal para visualizar/editar Extra -->
+  <!-- Modal: Edit Extra -->
   <div class="modal" id="extraModal">
-    <div class="modal-background"></div>
+    <div class="modal-background" onclick="closeExtraModal()"></div>
     <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">Extra Field</p>
-        <button class="delete" aria-label="close" onclick="closeExtraModal()"></button>
+      <header class="modal-card-head modal-head-brand">
+        <p class="modal-card-title">
+          <span class="icon"><i class="fas fa-cog"></i></span>
+          Extra Field
+        </p>
+        <button class="modal-close-btn" aria-label="close" onclick="closeExtraModal()">
+          <i class="fas fa-times"></i>
+        </button>
       </header>
       <section class="modal-card-body">
-        <div class="field">
-          <label class="label">Connection String:</label>
-          <p class="control">
-            <input class="input" type="text" id="extraConnectionString" readonly>
-          </p>
+
+        <div class="field mb-4">
+          <label class="label is-small">Connection String</label>
+          <div class="control has-icons-left">
+            <input class="input readonly-field" type="text" id="extraConnectionString" readonly>
+            <span class="icon is-small is-left has-text-grey-light"><i class="fas fa-plug"></i></span>
+          </div>
         </div>
+
         <div class="field">
-          <label class="label">Extra Data (JSON):</label>
-          <p class="control">
-            <textarea class="textarea" id="extraData" rows="10" placeholder='{"exemplo": "valor", "outro_campo": 123}'></textarea>
+          <p class="modal-section-label">
+            <span class="icon is-small"><i class="fas fa-code"></i></span>
+            <span>Extra Data (JSON)</span>
           </p>
-          <p class="help">Enter valid JSON data or leave empty to remove extra field</p>
+          <div class="control">
+            <textarea class="textarea mono-field" id="extraData" rows="8"
+              placeholder='{"exemplo": "valor", "outro_campo": 123}'></textarea>
+          </div>
+          <p class="help">Leave empty to remove extra data</p>
         </div>
+
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-success" onclick="saveExtra()">Save</button>
-        <button class="button" onclick="closeExtraModal()">Cancel</button>
+        <button class="button is-primary" onclick="saveExtra()">
+          <span class="icon is-small"><i class="fas fa-save"></i></span>
+          <span>Save</span>
+        </button>
+        <button class="button is-light" onclick="closeExtraModal()">Cancel</button>
       </footer>
     </div>
   </div>

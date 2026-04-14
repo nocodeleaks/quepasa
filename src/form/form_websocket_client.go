@@ -82,6 +82,10 @@ func (c *Client) readPump(pairing models.QpWhatsappPairing) {
 		if normalized == "start" {
 
 			go c.QrCodeScanner(pairing)
+		} else if strings.HasPrefix(normalized, "paircode:") {
+			phone := strings.TrimPrefix(normalized, "paircode:")
+			phone = strings.TrimSpace(phone)
+			go c.PairCodeScanner(pairing, phone)
 		} else {
 			log.Warnf("(websocket): received unknown msg: %s", normalized)
 		}
@@ -108,6 +112,41 @@ func (c *Client) QrCodeScanner(pairing models.QpWhatsappPairing) {
 	} else {
 		log.Info("complete to read qr code on websocket")
 		c.hub.broadcast <- []byte("complete")
+	}
+}
+
+func (c *Client) PairCodeScanner(pairing models.QpWhatsappPairing, phone string) {
+	con, err := pairing.GetConnection()
+	if err != nil {
+		log.Errorf("(paircode) failed to get connection: %s", err.Error())
+		c.hub.broadcast <- []byte("error")
+		return
+	}
+
+	code, err := con.PairPhone(phone)
+	if err != nil {
+		log.Errorf("(paircode) PairPhone error: %s", err.Error())
+		c.hub.broadcast <- []byte("error")
+		return
+	}
+
+	log.Infof("(paircode) code generated for phone %s", phone)
+	c.hub.broadcast <- []byte("paircode:" + code)
+
+	// Poll until OnPaired callback sets pairing.Wid
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case <-ticker.C:
+			if len(pairing.Wid) > 0 {
+				log.Info("(paircode) pairing complete")
+				c.hub.broadcast <- []byte("complete")
+				return
+			}
+		}
 	}
 }
 

@@ -1,13 +1,85 @@
 {{ define "content" }}
-<div class="container site-header">
-  <div class="card">
-    <div class="card-body">
-      <h3>Uh oh! Something went wrong.</h3>
-      <br>
-      <p class="lead">{{ .Message }} [{{ .Status }} {{ .Code }}]</p>
-      <pre>{{ .ErrorData }}</pre>
-      <pre>{{ .Stack }}</pre>
+<style>
+  .error-page {
+    max-width: 720px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+    text-align: center;
+  }
+  .error-code {
+    font-size: 5rem;
+    font-weight: 900;
+    color: var(--qp-danger-solid);
+    line-height: 1;
+  }
+  .error-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 24px var(--qp-shadow-md);
+    text-align: left;
+    margin-top: 2rem;
+    overflow: hidden;
+  }
+  .error-card .card-header {
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, var(--qp-danger-solid) 0%, var(--qp-danger-deep) 100%);
+  }
+  .error-card .card-header-title {
+    color: #fff;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 0.8rem;
+    background: var(--qp-surface-alt);
+    color: var(--qp-text);
+    border-radius: 6px;
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+</style>
+
+<div class="error-page">
+  <div class="error-code">{{ .Code }}</div>
+  <p class="title is-4 has-text-grey-dark mt-2">{{ .Status }}</p>
+  <p class="subtitle is-6 has-text-grey">Uh oh! Something went wrong.</p>
+
+  <div class="card error-card">
+    <header class="card-header">
+      <p class="card-header-title">
+        <span class="icon mr-2"><i class="fas fa-exclamation-circle"></i></span>
+        Error Details
+      </p>
+    </header>
+    <div class="card-content">
+      <div class="notification is-danger is-light">
+        <strong>{{ .Message }}</strong>
+      </div>
+
+      {{ if .ErrorData }}
+      <div class="field">
+        <label class="label has-text-grey">Error Data</label>
+        <pre>{{ .ErrorData }}</pre>
+      </div>
+      {{ end }}
+
+      {{ if .Stack }}
+      <div class="field">
+        <label class="label has-text-grey">Stack Trace</label>
+        <pre>{{ .Stack }}</pre>
+      </div>
+      {{ end }}
     </div>
+    <footer class="card-footer">
+      <a href="/form/account" class="card-footer-item">
+        <span class="icon"><i class="fas fa-home"></i></span>
+        <span>Go Home</span>
+      </a>
+      <a href="javascript:history.back()" class="card-footer-item">
+        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+        <span>Go Back</span>
+      </a>
+    </footer>
   </div>
 </div>
 {{ end }}

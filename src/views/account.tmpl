@@ -1,256 +1,638 @@
 {{ define "content" }}
-  <script src="/assets/copytoclipboard.js"></script>
-  <style>
-    .account-page {
-      max-width: 1720px;
-      margin: 0 auto;
-      padding-left: 1rem;
-      padding-right: 1rem;
+<script src="/assets/copytoclipboard.js"></script>
+<style>
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  .ap-navbar {
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    padding: 0.6rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    box-shadow: 0 2px 12px rgba(91,33,182,0.35);
+  }
+  .ap-navbar-brand { display: flex; align-items: center; gap: 1rem; }
+  .ap-navbar-brand .ap-logo-wrap {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--qp-surface);
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 6px var(--qp-shadow-lg);
+  }
+  .ap-navbar-brand .ap-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .ap-navbar-brand .ap-title { color: #fff; font-size: 1.25rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; }
+  .ap-navbar-brand .ap-version { color: rgba(255,255,255,0.6); font-size: 0.7rem; font-weight: 400; margin-top: 1px; }
+  .ap-navbar-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .ap-user { color: rgba(255,255,255,0.85); font-size: 0.85rem; }
+  .ap-user strong { color: #fff; }
+
+  /* ── Page body ─────────────────────────────────────────────────────── */
+  .ap-body { max-width: 1600px; margin: 0 auto; padding: 1.5rem; background: var(--qp-bg); min-height: calc(100vh - 60px); }
+
+  /* ── Actions bar ───────────────────────────────────────────────────── */
+  .ap-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .ap-count { font-size: 1rem; font-weight: 600; color: var(--qp-text-sub); margin-right: 0.5rem; }
+
+  /* ── Bots table card ───────────────────────────────────────────────── */
+  .bots-card { border-radius: 10px; background: var(--qp-surface); box-shadow: 0 2px 16px var(--qp-shadow-sm); overflow: hidden; }
+  .bots-card .table { margin: 0; }
+  .bots-card .table thead th { background: var(--qp-thead-bg); color: var(--qp-thead-text); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--qp-thead-border) !important; }
+  .bots-card .table tbody tr { transition: background 0.15s; }
+  .bots-card .table tbody tr:hover { background: var(--qp-row-hover); }
+  .bots-card .table td { vertical-align: middle; }
+
+  /* ── Token ─────────────────────────────────────────────────────────── */
+  .token-code {
+    font-family: monospace;
+    font-size: 0.72rem;
+    background: var(--qp-primary-mid);
+    color: var(--qp-primary-dark);
+    padding: 3px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1px solid var(--qp-primary-border);
+    transition: opacity 0.15s;
+  }
+  .token-code:hover { opacity: 0.8; }
+
+  /* ── Status badge ──────────────────────────────────────────────────── */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .status-ready    { background: var(--qp-ready-bg);  color: var(--qp-ready-text); }
+  .status-waiting  { background: var(--qp-warn-bg);   color: var(--qp-warn-text); }
+  .status-error    { background: var(--qp-error-bg);  color: var(--qp-error-text); }
+  .status-default  { background: var(--qp-surface-alt); color: var(--qp-text-muted); }
+
+  /* ── Toggle buttons ────────────────────────────────────────────────── */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+  .btn-row form { display: inline-flex; }
+  .btn-row .button { padding: 0 0.5rem; height: 2rem; }
+
+  /* ── Options footer ────────────────────────────────────────────────── */
+  .ap-options { margin-top: 1.25rem; display: grid; gap: 0.85rem; }
+  .ap-simple-card {
+    background: var(--qp-surface);
+    border: 1px solid var(--qp-border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 2px 12px var(--qp-shadow-sm);
+  }
+  .ap-simple-card--accent {
+    background: var(--qp-surface-accent);
+    border-color: var(--qp-primary-border);
+  }
+  .ap-simple-title {
+    margin: 0 0 0.45rem;
+    font-size: 0.84rem;
+    line-height: 1.3;
+    color: var(--qp-text);
+  }
+  .ap-simple-title strong {
+    color: var(--qp-text);
+  }
+  .ap-simple-list {
+    display: grid;
+    gap: 0.18rem;
+  }
+  .ap-simple-line {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--qp-text-sub);
+  }
+  .ap-simple-line strong {
+    color: var(--qp-text);
+    font-weight: 600;
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────────────── */
+  .bots-mobile { display: none; }
+
+  @media (max-width: 768px) {
+    .ap-navbar { padding: 0.5rem 1rem; flex-wrap: nowrap; }
+    .ap-navbar-brand .ap-logo-wrap { width: 38px; height: 38px; border-radius: 9px; }
+    .ap-navbar-brand .ap-title { font-size: 1.05rem; }
+    .ap-navbar-brand .ap-version { display: none; }
+    .ap-user { display: none; }
+    .ap-body { padding: 1rem; }
+    .ap-actions { gap: 0.4rem; }
+    .ap-actions .button { font-size: 0.8rem; padding: 0.4rem 0.75rem; }
+    .ap-count { font-size: 0.9rem; }
+
+    /* Hide table, show cards */
+    .bots-card { display: none; }
+    .bots-mobile { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    /* Bot card */
+    .bot-card {
+      background: var(--qp-surface);
+      border-radius: 10px;
+      box-shadow: 0 2px 12px var(--qp-shadow-sm);
+      overflow: hidden;
     }
-    .account-actions {
+    .bot-card-top {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.1rem;
       align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: var(--qp-surface-accent);
+      border-bottom: 1px solid var(--qp-border-strong);
+      gap: 0.5rem;
     }
-    .account-actions .control {
-      margin: 0 !important;
+    .bot-card-number {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--qp-text);
+      flex-shrink: 0;
     }
-  </style>
-  <div class="container is-fluid account-page site-header">
-    <h1 class="title is-1">QuePasa (v{{ .Version }}) Bots</h1>
-    <p class="subtitle">Welcome <b>{{ .User.Username }}</b></p>
+    .bot-card-token {
+      font-family: monospace;
+      font-size: 0.68rem;
+      background: var(--qp-primary-mid);
+      color: var(--qp-primary-dark);
+      padding: 3px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--qp-primary-border);
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bot-card-body {
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      background: var(--qp-surface);
+    }
+    .bot-card-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .bot-card-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--qp-text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      min-width: 64px;
+      flex-shrink: 0;
+    }
+    .bot-card-row .btn-row { gap: 3px; }
+    .bot-card-row .btn-row form { display: inline-flex; }
+    .bot-card-row .btn-row .button { height: 1.9rem; padding: 0 0.5rem; font-size: 0.78rem; }
+    .bot-card-row .button { height: 1.9rem; padding: 0 0.6rem; font-size: 0.78rem; }
+    .bot-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem 0.75rem;
+    }
+    .ap-simple-card { padding: 0.9rem 0.95rem; }
+  }
+</style>
+
+<!-- Navbar -->
+<nav class="ap-navbar">
+  <div class="ap-navbar-brand">
+    <div class="ap-logo-wrap">
+      <img src="/assets/favicon.png" alt="QuePasa logo">
+    </div>
+    <div>
+      <div class="ap-title">QuePasa</div>
+      <div class="ap-version">v{{ .Version }}</div>
+    </div>
   </div>
-  <div class="container is-fluid account-page">
-    <h2 class="title is-2">({{ len .Servers }}) Your bots</h2>
+  <div class="ap-navbar-right">
+    {{ if .HasMasterKey }}
+      <span class="tag is-light" title="Master Key Is Set">
+        <span class="icon has-text-success"><i class="fas fa-key"></i></span>
+      </span>
+      {{ if .HasSignalRActiveConnections }}
+        <span class="tag is-success is-light" title="Active Master WebSockets">
+          <span class="icon"><i class="fas fa-wifi"></i></span>
+        </span>
+      {{ else }}
+        <span class="tag is-warning is-light" title="No Master WebSockets">
+          <span class="icon"><i class="fas fa-wifi"></i></span>
+        </span>
+      {{ end }}
+    {{ end }}
+    <span class="ap-user">Welcome, <strong>{{ .User.Username }}</strong></span>
+    <a class="button is-small is-light" href="/logout">
+      <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+    </a>
+  </div>
+</nav>
 
-    <a class="button is-primary" href="/form/verify?mode=md">Add or Update Bot</a>
+<!-- Body -->
+<div class="ap-body">
 
-    <a class="button is-link" href="/dashboard">
+  {{ if .ErrorMessage }}
+  <div class="notification is-warning is-light mb-4">
+    <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+    {{ .ErrorMessage }}
+  </div>
+  {{ end }}
+
+  <!-- Actions bar -->
+  <div class="ap-actions">
+    <span class="ap-count">({{ len .Servers }}) Bots</span>
+
+    <a class="button is-primary" href="/form/verify?mode=md">
+      <span class="icon"><i class="fas fa-plus-circle"></i></span>
+      <span>Add or Update Bot</span>
+    </a>
+
+    <a class="button is-primary is-outlined" href="/dashboard">
       <span class="icon"><i class="fas fa-chart-line"></i></span>
       <span>Dashboard</span>
     </a>
 
-    <a class="button is-info" href="/swagger/index.html" target="_blank">
+    <a class="button is-light" href="/swagger/index.html" target="_blank">
       <span class="icon"><i class="fas fa-book"></i></span>
       <span>Swagger</span>
     </a>
-    {{ if .HasMasterKey }}
-      <div class="button">
-          <span class="icon has-text-success" title="Master Key Is Set"><i class="fas fa-key"></i> </span>
-      </div>
-      <div class="button">
-        {{ if .HasSignalRActiveConnections }}
-          <span class="icon has-text-success" title="Active Master WebSockets"><i class="fas fa-check-square"></i> </span>
-        {{ else }}
-          <span class="icon has-text-warning" title="No Master WebSockets"><i class="fas fa-exclamation-triangle"></i> </span>
-        {{ end }}
-      </div>
-    {{ end }}
+  </div>
 
-
-    {{ if .ErrorMessage }}
-      <div class="notification is-warning">
-        {{ .ErrorMessage }}
-      </div>
-    {{ end }}
+  <!-- Bots table -->
+  <div class="bots-card">
     <table class="table is-fullwidth">
       <thead>
         <tr>
           <th>Number</th>
-          <th>Verified</th>
           <th>Token</th>
-          <th style="text-align: center;">Actions</th>
-          <th style="text-align: center;">Extra</th>
-          <th style="text-align: center;">WH | RMQ | WS</th>
+          <th style="text-align:center;">Settings</th>
+          <th style="text-align:center;">Actions</th>
+          <th style="text-align:center;">WH / RMQ / WS</th>
           <th>State</th>
         </tr>
-        </thead>
-        <tbody>
-        {{ range .Servers }}   
-          <tr>
-            <td>
-              <span>{{ .GetNumber }}</span>
-            </td>
-            <td>
-              <span class="button" disabled>
-                {{ if .Verified }}
-                  <span class="icon has-text-success"><i class="fas fa-check-square"></i></span>
-                {{ else }}
-                  <span class="icon has-text-warning"><i class="fas fa-exclamation-triangle"></i></span>
-                {{ end }}
-              </span>
-            </td>
-            <td>
-              <small><code title="click to copy" style="cursor: pointer;" onclick="CopyToClipboard(this.textContent)">{{ .Token }}</code></small>
-            </td>
-            <td style="text-align: center;">              
-              <div class="field account-actions">
-                {{ if .IsDevelopmentGlobal }}
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/debug">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button is-warning {{ if .Devel }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Debug for this bot">
-                        <span class="icon is-small is-inline"><i class="fa fa-bug"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                {{ end }}
-                {{ if .Verified }}                  
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button is-danger {{ if not .GetWorking }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Running state for this bot">
-                        <span class="icon is-small is-inline"><i class="fa fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p>&nbsp;</p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-broadcasts" data-value="{{ .Broadcasts }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Broadcast Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-bullhorn"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-groups" data-value="{{ .Groups }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Group Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-users"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-direct" data-value="{{ .Direct }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Direct Messages">
-                        <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-readreceipts" data-value="{{ .ReadReceipts }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Receipts">
-                        <span class="icon is-small is-inline"><i class="fa fa-check-double"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-calls" data-value="{{ .Calls }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Calls">
-                        <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                  <p class="control"> 
-                    <form class="" method="post" action="/form/toggle?key=server-readupdate" data-value="{{ .ReadUpdate }}">
-                      <input name="token" type="hidden" value="{{ .Token }}">
-                      <button class="button {{ if .IsSetReadUpdate }}{{ if .GetReadUpdate }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Handle Read Update">
-                        <span class="icon is-small is-inline"><i class="fa fa-eye"></i></span>
-                      </button>
-                    </form>
-                  </p>
-                {{ end }}
-                <p>&nbsp;&nbsp;</p>
-                <p class="control">
-                  <form class="" method="post" action="/form/delete?key=server">
-                    <input name="token" type="hidden" value="{{ .Token }}">
-                    <button class="button  is-danger is-outlined" title="Delete this server">
-                      <i class="fa fa-trash"></i>&nbsp;&nbsp;
-                      Delete
-                    </button>
-                  </form>
-                </p>
-              </div>
-            </td>
-            <td style="text-align: center;"> 
-              <div class="field account-actions">
-                {{ if eq .GetStatusString "Ready" }}               
-                  <p class="control">
-                    <a href="/form/server/{{ .Token }}/send" class="button" title="Send a message as this bot">
-                      <i class="fa fa-paper-plane"></i>&nbsp;&nbsp;
-                      Send
-                    </a>
-                  </p>
-                {{ end }}
-                <p class="control">
-                  <a href="/form/server/{{ .Token }}/receive" class="button" title="Receive messages for this bot">
-                    <i class="fa fa-download"></i>&nbsp;&nbsp;
-                    Receive
-                  </a>
-                </p>
-              </div>
-            </td>
-            <td style="text-align: center;">
-              <a class="button" href="/form/webhooks?token={{ .Token }}">
+      </thead>
+      <tbody>
+      {{ range .Servers }}
+        <tr>
+
+          <!-- Number + verified badge -->
+          <td>
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+              {{ if .Verified }}
+                <span class="icon has-text-success" title="Verified"><i class="fas fa-check-circle"></i></span>
+              {{ else }}
+                <span class="icon has-text-warning" title="Not verified"><i class="fas fa-exclamation-circle"></i></span>
+              {{ end }}
+              <strong>{{ .GetNumber }}</strong>
+            </div>
+          </td>
+
+          <!-- Token -->
+          <td>
+            <code class="token-code" title="Click to copy" onclick="CopyToClipboard(this.textContent)">{{ .Token }}</code>
+          </td>
+
+          <!-- Settings toggles -->
+          <td style="text-align:center;">
+            <div class="btn-row" style="justify-content:center;">
+              {{ if .IsDevelopmentGlobal }}
+                <form method="post" action="/form/debug">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button is-warning {{ if .Devel }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Debug">
+                    <span class="icon is-small"><i class="fa fa-bug"></i></span>
+                  </button>
+                </form>
+              {{ end }}
+              {{ if .Verified }}
+                <form method="post" action="/form/toggle?key=server">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button is-danger {{ if not .GetWorking }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Running">
+                    <span class="icon is-small"><i class="fa fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle"></i></span>
+                  </button>
+                </form>
+                <form method="post" action="/form/toggle?key=server-broadcasts" data-value="{{ .Broadcasts }}">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts">
+                    <span class="icon is-small"><i class="fa fa-bullhorn"></i></span>
+                  </button>
+                </form>
+                <form method="post" action="/form/toggle?key=server-groups" data-value="{{ .Groups }}">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups">
+                    <span class="icon is-small"><i class="fa fa-users"></i></span>
+                  </button>
+                </form>
+                <form method="post" action="/form/toggle?key=server-direct" data-value="{{ .Direct }}">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Direct">
+                    <span class="icon is-small"><i class="fa fa-comment"></i></span>
+                  </button>
+                </form>
+                <form method="post" action="/form/toggle?key=server-readreceipts" data-value="{{ .ReadReceipts }}">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Read Receipts">
+                    <span class="icon is-small"><i class="fa fa-check-double"></i></span>
+                  </button>
+                </form>
+                <form method="post" action="/form/toggle?key=server-calls" data-value="{{ .Calls }}">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls">
+                    <span class="icon is-small"><i class="fa fa-phone"></i></span>
+                  </button>
+                </form>
+                <form method="post" action="/form/toggle?key=server-readupdate" data-value="{{ .ReadUpdate }}">
+                  <input name="token" type="hidden" value="{{ .Token }}">
+                  <button class="button {{ if .IsSetReadUpdate }}{{ if .GetReadUpdate }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Read Update">
+                    <span class="icon is-small"><i class="fa fa-eye"></i></span>
+                  </button>
+                </form>
+              {{ end }}
+              <form method="post" action="/form/delete?key=server">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button is-danger is-outlined" title="Delete">
+                  <span class="icon is-small"><i class="fa fa-trash"></i></span>
+                </button>
+              </form>
+            </div>
+          </td>
+
+          <!-- Extra actions: Send / Receive -->
+          <td style="text-align:center;">
+            <div class="btn-row" style="justify-content:center;">
+              {{ if eq .GetStatusString "Ready" }}
+                <a href="/form/server/{{ .Token }}/send" class="button is-small is-primary is-outlined" title="Send message">
+                  <span class="icon is-small"><i class="fa fa-paper-plane"></i></span>
+                  <span>Send</span>
+                </a>
+              {{ end }}
+              <a href="/form/server/{{ .Token }}/receive" class="button is-small is-outlined" title="Receive messages">
+                <span class="icon is-small"><i class="fa fa-download"></i></span>
+                <span>Receive</span>
+              </a>
+            </div>
+          </td>
+
+          <!-- WH / RMQ / WS -->
+          <td style="text-align:center;">
+            <div class="btn-row" style="justify-content:center;">
+              <a class="button is-small" href="/form/webhooks?token={{ .Token }}" title="WebHooks">
                 {{ if .HasWebhooks }}
-                  <span class="icon has-text-success" title="Active WebHooks"><i class="fas fa-check-square"></i> </span>
+                  <span class="icon has-text-success"><i class="fas fa-link"></i></span>
                 {{ else }}
-                  <span class="icon has-text-warning"title="No WebHooks"><i class="fas fa-exclamation-triangle"></i> </span>
+                  <span class="icon has-text-grey-light"><i class="fas fa-link"></i></span>
                 {{ end }}
-              </a>  
-              <a class="button" href="/form/rabbitmq?token={{ .Token }}">
+              </a>
+              <a class="button is-small" href="/form/rabbitmq?token={{ .Token }}" title="RabbitMQ">
                 {{ if .HasRabbitMQConfigs }}
-                  <span class="icon has-text-success" title="Active RabbitMQ"><i class="fas fa-exchange-alt"></i> </span>
+                  <span class="icon has-text-success"><i class="fas fa-exchange-alt"></i></span>
                 {{ else }}
-                  <span class="icon has-text-warning" title="No RabbitMQ"><i class="fas fa-exclamation-triangle"></i> </span>
+                  <span class="icon has-text-grey-light"><i class="fas fa-exchange-alt"></i></span>
                 {{ end }}
               </a>
-              <a class="button" href="/form/signalr?token={{ .Token }}">
+              <a class="button is-small" href="/form/signalr?token={{ .Token }}" title="WebSockets">
                 {{ if .HasSignalRActiveConnections }}
-                  <span class="icon has-text-success" title="Active WebSockets"><i class="fas fa-check-square"></i> </span>
+                  <span class="icon has-text-success"><i class="fas fa-wifi"></i></span>
                 {{ else }}
-                  <span class="icon has-text-warning" title="No WebSockets"><i class="fas fa-exclamation-triangle"></i> </span>
+                  <span class="icon has-text-grey-light"><i class="fas fa-wifi"></i></span>
                 {{ end }}
               </a>
-            </td>
-            <td><span title="{{ .GetStartedTime }}">{{ .GetStatusString }}</span></td>
-            </tr>            
-        {{ end }}
-        </tbody>
+            </div>
+          </td>
+
+          <!-- State badge -->
+          <td>
+            {{ $s := .GetStatusString }}
+            {{ if eq $s "Ready" }}
+              <span class="status-badge status-ready" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ else if eq $s "Waiting" }}
+              <span class="status-badge status-waiting" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ else if eq $s "Failed" }}
+              <span class="status-badge status-error" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ else }}
+              <span class="status-badge status-default" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ end }}
+          </td>
+
+        </tr>
+      {{ end }}
+      </tbody>
     </table>
-      
-    {{ if not .Options.IsDefault }}
-      <div class="notification is-light is-small">
-        <div class="subtitle"><b>Whatsapp</b> service environment options:</div>
-        <div>
-          {{ if .Options.Groups }}<p>Groups: {{ .Options.Groups.String  }}</p>{{ end }}
-          {{ if .Options.Direct }}<p>Direct: {{ .Options.Direct.String  }}</p>{{ end }}
-          {{ if .Options.Broadcasts }}<p>Broadcasts: {{ .Options.Broadcasts.String  }}</p>{{ end }}
-          {{ if .Options.ReadReceipts }}<p>ReadReceipts: {{ .Options.ReadReceipts.String  }}</p>{{ end }}
-          {{ if .Options.Calls }}<p>Calls: {{ .Options.Calls.String  }}</p>{{ end }}
-          {{ if .Options.HistorySync }}<p>HistorySync: {{ .Options.HistorySync  }} days</p>{{ end }}
-          {{ if .Options.LogLevel }}<p>LogLevel: {{ .Options.LogLevel  }}</p>{{ end }}
-          {{ if .Options.ReadUpdate }}<p>ReadUpdate: {{ .Options.ReadUpdate }}</p>{{ end }}
+  </div>
+
+  <!-- Bots mobile cards (shown only on mobile) -->
+  <div class="bots-mobile">
+    {{ range .Servers }}
+    <div class="bot-card">
+
+      <!-- Top: number + token -->
+      <div class="bot-card-top">
+        <div class="bot-card-number">
+          {{ if .Verified }}
+            <span class="icon has-text-success" title="Verified"><i class="fas fa-check-circle"></i></span>
+          {{ else }}
+            <span class="icon has-text-warning" title="Not verified"><i class="fas fa-exclamation-circle"></i></span>
+          {{ end }}
+          {{ .GetNumber }}
         </div>
+        <code class="bot-card-token" title="Click to copy" onclick="CopyToClipboard(this.textContent)">{{ .Token }}</code>
       </div>
+
+      <div class="bot-card-body">
+
+        <!-- Settings -->
+        <div class="bot-card-row">
+          <span class="bot-card-label">Settings</span>
+          <div class="btn-row">
+            {{ if .IsDevelopmentGlobal }}
+              <form method="post" action="/form/debug">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button is-warning {{ if .Devel }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Debug">
+                  <span class="icon is-small"><i class="fa fa-bug"></i></span>
+                </button>
+              </form>
+            {{ end }}
+            {{ if .Verified }}
+              <form method="post" action="/form/toggle?key=server">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button is-danger {{ if not .GetWorking }}is-hovered{{ else }}is-outlined{{ end }}" title="Toggle Running">
+                  <span class="icon is-small"><i class="fa fa-{{ if not .GetWorking }}play{{ else }}stop{{ end }}-circle"></i></span>
+                </button>
+              </form>
+              <form method="post" action="/form/toggle?key=server-broadcasts" data-value="{{ .Broadcasts }}">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts">
+                  <span class="icon is-small"><i class="fa fa-bullhorn"></i></span>
+                </button>
+              </form>
+              <form method="post" action="/form/toggle?key=server-groups" data-value="{{ .Groups }}">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups">
+                  <span class="icon is-small"><i class="fa fa-users"></i></span>
+                </button>
+              </form>
+              <form method="post" action="/form/toggle?key=server-direct" data-value="{{ .Direct }}">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button {{ if .IsSetDirect }}{{ if .GetDirect }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Direct">
+                  <span class="icon is-small"><i class="fa fa-comment"></i></span>
+                </button>
+              </form>
+              <form method="post" action="/form/toggle?key=server-readreceipts" data-value="{{ .ReadReceipts }}">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Read Receipts">
+                  <span class="icon is-small"><i class="fa fa-check-double"></i></span>
+                </button>
+              </form>
+              <form method="post" action="/form/toggle?key=server-calls" data-value="{{ .Calls }}">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls">
+                  <span class="icon is-small"><i class="fa fa-phone"></i></span>
+                </button>
+              </form>
+              <form method="post" action="/form/toggle?key=server-readupdate" data-value="{{ .ReadUpdate }}">
+                <input name="token" type="hidden" value="{{ .Token }}">
+                <button class="button {{ if .IsSetReadUpdate }}{{ if .GetReadUpdate }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Read Update">
+                  <span class="icon is-small"><i class="fa fa-eye"></i></span>
+                </button>
+              </form>
+            {{ end }}
+            <form method="post" action="/form/delete?key=server">
+              <input name="token" type="hidden" value="{{ .Token }}">
+              <button class="button is-danger is-outlined" title="Delete">
+                <span class="icon is-small"><i class="fa fa-trash"></i></span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bot-card-row">
+          <span class="bot-card-label">Actions</span>
+          {{ if eq .GetStatusString "Ready" }}
+            <a href="/form/server/{{ .Token }}/send" class="button is-small is-primary is-outlined" title="Send message">
+              <span class="icon is-small"><i class="fa fa-paper-plane"></i></span>
+              <span>Send</span>
+            </a>
+          {{ end }}
+          <a href="/form/server/{{ .Token }}/receive" class="button is-small is-outlined" title="Receive messages">
+            <span class="icon is-small"><i class="fa fa-download"></i></span>
+            <span>Receive</span>
+          </a>
+        </div>
+
+        <!-- Connections + Status -->
+        <div class="bot-card-footer" style="padding:0;">
+          <div class="bot-card-row">
+            <span class="bot-card-label">Connect</span>
+            <a class="button is-small" href="/form/webhooks?token={{ .Token }}" title="WebHooks">
+              {{ if .HasWebhooks }}
+                <span class="icon has-text-success"><i class="fas fa-link"></i></span>
+              {{ else }}
+                <span class="icon has-text-grey-light"><i class="fas fa-link"></i></span>
+              {{ end }}
+            </a>
+            <a class="button is-small" href="/form/rabbitmq?token={{ .Token }}" title="RabbitMQ">
+              {{ if .HasRabbitMQConfigs }}
+                <span class="icon has-text-success"><i class="fas fa-exchange-alt"></i></span>
+              {{ else }}
+                <span class="icon has-text-grey-light"><i class="fas fa-exchange-alt"></i></span>
+              {{ end }}
+            </a>
+            <a class="button is-small" href="/form/signalr?token={{ .Token }}" title="WebSockets">
+              {{ if .HasSignalRActiveConnections }}
+                <span class="icon has-text-success"><i class="fas fa-wifi"></i></span>
+              {{ else }}
+                <span class="icon has-text-grey-light"><i class="fas fa-wifi"></i></span>
+              {{ end }}
+            </a>
+          </div>
+          <div>
+            {{ $s := .GetStatusString }}
+            {{ if eq $s "Ready" }}
+              <span class="status-badge status-ready" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ else if eq $s "Waiting" }}
+              <span class="status-badge status-waiting" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ else if eq $s "Failed" }}
+              <span class="status-badge status-error" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ else }}
+              <span class="status-badge status-default" title="{{ .GetStartedTime }}">
+                <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ $s }}
+              </span>
+            {{ end }}
+          </div>
+        </div>
+
+      </div>
+    </div>
     {{ end }}
-    
-    {{ if not .WMOptions.IsDefault }}
-      <div class="notification is-light is-small">
-        <div class="subtitle"><b>Whatsmeow</b> service environment options:</div>
-        <div>
-          {{ if .WMOptions.WMLogLevel }}<p>LogLevel: {{ .WMOptions.WMLogLevel  }}</p>{{ end }}
-          {{ if .WMOptions.DBLogLevel }}<p>Database LogLevel: {{ .WMOptions.DBLogLevel  }}</p>{{ end }}
-        </div>
+  </div>
+
+  <!-- Environment options -->
+  <div class="ap-options">
+    {{ if not .Options.IsDefault }}
+    <section class="ap-simple-card">
+      <p class="ap-simple-title"><strong>WhatsApp</strong> service environment options:</p>
+      <div class="ap-simple-list">
+        {{ if .Options.Groups }}<p class="ap-simple-line"><strong>Groups:</strong> {{ .Options.Groups.String }}</p>{{ end }}
+        {{ if .Options.Direct }}<p class="ap-simple-line"><strong>Direct:</strong> {{ .Options.Direct.String }}</p>{{ end }}
+        {{ if .Options.Broadcasts }}<p class="ap-simple-line"><strong>Broadcasts:</strong> {{ .Options.Broadcasts.String }}</p>{{ end }}
+        {{ if .Options.ReadReceipts }}<p class="ap-simple-line"><strong>ReadReceipts:</strong> {{ .Options.ReadReceipts.String }}</p>{{ end }}
+        {{ if .Options.Calls }}<p class="ap-simple-line"><strong>Calls:</strong> {{ .Options.Calls.String }}</p>{{ end }}
+        {{ if .Options.HistorySync }}<p class="ap-simple-line"><strong>HistorySync:</strong> {{ .Options.HistorySync }} days</p>{{ end }}
+        {{ if .Options.LogLevel }}<p class="ap-simple-line"><strong>LogLevel:</strong> {{ .Options.LogLevel }}</p>{{ end }}
+        {{ if .Options.ReadUpdate }}<p class="ap-simple-line"><strong>ReadUpdate:</strong> {{ .Options.ReadUpdate }}</p>{{ end }}
       </div>
+    </section>
+    {{ end }}
+
+    {{ if not .WMOptions.IsDefault }}
+    <section class="ap-simple-card">
+      <p class="ap-simple-title"><strong>Whatsmeow</strong> service environment options:</p>
+      <div class="ap-simple-list">
+        {{ if .WMOptions.WMLogLevel }}<p class="ap-simple-line"><strong>LogLevel:</strong> {{ .WMOptions.WMLogLevel }}</p>{{ end }}
+        {{ if .WMOptions.DBLogLevel }}<p class="ap-simple-line"><strong>Database LogLevel:</strong> {{ .WMOptions.DBLogLevel }}</p>{{ end }}
+      </div>
+    </section>
     {{ end }}
 
     {{ if .WMOptions.UseRetryMessageStore }}
-      <div class="notification is-info is-light is-small">
-        <div class="subtitle"><b>Retry Message Store</b> cleanup policy:</div>
-        <div>
-          <p>Status: enabled</p>
-          <p>Cleanup trigger: no background cron. Cleanup runs during outgoing message flow when more than 12 hours have passed since the last cleanup.</p>
-          <p>Retention: removes retry-buffer records older than 7 days.</p>
-        </div>
+    <section class="ap-simple-card ap-simple-card--accent">
+      <p class="ap-simple-title"><strong>Retry Message Store</strong> cleanup policy:</p>
+      <div class="ap-simple-list">
+        <p class="ap-simple-line"><strong>Status:</strong> enabled</p>
+        <p class="ap-simple-line">Cleanup runs during outgoing message flow every 12 hours, retaining records for up to 7 days.</p>
       </div>
+    </section>
     {{ end }}
-
   </div>
-  <div>&nbsp;</div>
+
+</div>
 {{ end }}

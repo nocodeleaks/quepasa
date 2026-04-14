@@ -1,47 +1,164 @@
 {{ define "content" }}
-{{ if .ErrorMessage}}
-<div class="notification is-warning">
-  {{ .ErrorMessage }}
+<style>
+  .send-page {
+    max-width: 680px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .send-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 24px var(--qp-shadow-md);
+  }
+  .send-card .card-header {
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  }
+  .send-card .card-header-title {
+    color: #fff;
+    font-size: 1.2rem;
+  }
+  .send-card .card-content {
+    padding: 2rem;
+    background: var(--qp-surface);
+  }
+  .file-label { width: 100%; }
+  .file-label .file-cta {
+    border-radius: 6px 0 0 6px;
+  }
+  .file-label .file-name {
+    border-radius: 0 6px 6px 0;
+    max-width: 100%;
+    flex: 1;
+  }
+  .send-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: var(--qp-surface-alt);
+    border-top: 1px solid var(--qp-border-soft);
+    border-radius: 0 0 12px 12px;
+  }
+</style>
+
+<div class="send-page">
+
+  {{ if .ErrorMessage }}
+  <div class="notification is-warning is-light mb-4">
+    <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+    {{ .ErrorMessage }}
+  </div>
+  {{ end }}
+
+  {{ if .MessageId }}
+  <div class="notification is-success is-light mb-4">
+    <span class="icon"><i class="fas fa-check-circle"></i></span>
+    Message sent! ID: <strong>{{ .MessageId }}</strong>
+  </div>
+  {{ end }}
+
+  <div class="card send-card">
+    <header class="card-header">
+      <p class="card-header-title">
+        <span class="icon mr-2"><i class="fas fa-paper-plane"></i></span>
+        Send Message
+      </p>
+    </header>
+
+    <div class="card-content">
+      <form enctype="multipart/form-data" method="post" action="/form/server/{{ .Server.Token }}/send">
+
+        <div class="field">
+          <label class="label" for="recipient">
+            <span class="icon-text">
+              <span class="icon has-text-grey"><i class="fas fa-user"></i></span>
+              <span>Recipient</span>
+            </span>
+          </label>
+          <div class="control has-icons-left">
+            <input class="input" name="recipient" type="text" placeholder="5511999999999@s.whatsapp.net" autofocus value="">
+            <span class="icon is-left"><i class="fas fa-address-book"></i></span>
+          </div>
+          <p class="help">Phone number or WID (e.g. 5511999999999@s.whatsapp.net)</p>
+        </div>
+
+        <div class="field">
+          <label class="label" for="id">
+            <span class="icon-text">
+              <span class="icon has-text-grey"><i class="fas fa-fingerprint"></i></span>
+              <span>Message Id <span class="tag is-light ml-1">Optional</span></span>
+            </span>
+          </label>
+          <div class="control has-icons-left">
+            <input class="input" name="id" type="text" placeholder="Leave blank to auto-generate" value="">
+            <span class="icon is-left"><i class="fas fa-hashtag"></i></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="message">
+            <span class="icon-text">
+              <span class="icon has-text-grey"><i class="fas fa-comment-alt"></i></span>
+              <span>Message Text</span>
+            </span>
+          </label>
+          <div class="control">
+            <textarea class="textarea" name="message" placeholder="Type your message here..." rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">
+            <span class="icon-text">
+              <span class="icon has-text-grey"><i class="fas fa-paperclip"></i></span>
+              <span>Attachment</span>
+            </span>
+          </label>
+          <div class="control">
+            <div class="file has-name is-fullwidth">
+              <label class="file-label">
+                <input class="file-input" type="file" name="attachment" id="attachment-input">
+                <span class="file-cta">
+                  <span class="file-icon"><i class="fas fa-upload"></i></span>
+                  <span class="file-label">Choose file</span>
+                </span>
+                <span class="file-name" id="attachment-filename">No file selected</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="field mt-5">
+          <div class="control">
+            <button type="submit" class="button is-primary is-fullwidth is-medium">
+              <span class="icon"><i class="fas fa-paper-plane"></i></span>
+              <span>Send</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <footer class="send-footer">
+      <a class="button is-light is-small" href="/form/account">
+        <span class="icon"><i class="fas fa-arrow-left"></i></span>
+        <span>Back</span>
+      </a>
+
+      <span class="tag is-light has-text-grey">
+        <span class="icon"><i class="fas fa-phone"></i></span>
+        <span>{{ .Server.Wid }}</span>
+      </span>
+    </footer>
+  </div>
+
 </div>
-{{ end }}
 
-{{ if .MessageId }}
-<div class="notification is-success">
-  Last message send successful: {{ .MessageId }}
-</div>
-{{ end }}
-
-<form enctype="multipart/form-data" class="" method="post" action="/form/server/{{ .Server.Token }}/send">
-  <div class="field">
-    <label class="label" for="recipient">Recipient:</label>
-    <div class="control">
-      <input class="input is-large" name="recipient" type="text" placeholder="" autofocus="" value="">
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="message">Message Id: (*Optional)</label>
-    <div class="control">
-      <input class="input is-large" name="id" type="text" placeholder="" autofocus="" value="">
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="message">Message Text:</label>
-    <div class="control">
-      <input class="input is-large" name="message" type="text" placeholder="" autofocus="" value="">
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label" for="attachment">Attachment:</label>
-    <div class="control">
-      <input type="file" name="attachment" />
-    </div>
-  </div>
-
-  <button class="button is-block is-info is-large is-fullwidth">Send</button>
-</form>
-
-<a href="/form/account">Back</a>
+<script>
+  document.getElementById('attachment-input').addEventListener('change', function () {
+    var label = document.getElementById('attachment-filename');
+    label.textContent = this.files.length > 0 ? this.files[0].name : 'No file selected';
+  });
+</script>
 {{ end }}

@@ -1,84 +1,141 @@
 {{ define "content" }}
-<section class="hero is-fullheight has-background-light">
-  <div class="hero-body">
-    <div class="container">
-      <div class="columns is-centered">
-        <div class="column is-10-tablet is-6-desktop is-4-widescreen">
-            <div class="has-text-centered mb-5">
-            <!-- Logo / Title -->
-            <figure class="image is-96x96 is-inline-block mb-3" aria-hidden="true">
-              <img src="/assets/favicon.png" alt="QuePasa logo">
-            </figure>
-            <h1 class="title is-3">QuePasa</h1>
-            <p class="subtitle is-6 has-text-grey">WhatsApp bot management console</p>
-            <p class="subtitle is-6 has-text-grey">Version v{{ .Version }}</p>
-            </div>
-          <div> &nbsp; </div>
+<style>
+  .login-page {
+    min-height: 100vh;
+    background: var(--qp-bg);
+    color: var(--qp-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem 2rem;
+  }
+  .login-wrapper {
+    width: 100%;
+    max-width: 420px;
+  }
+  .login-brand {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .login-brand img {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--qp-surface);
+    padding: 8px;
+    box-shadow: 0 2px 12px var(--qp-shadow-md);
+  }
+  .login-brand .brand-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--qp-text);
+    margin: 0.5rem 0 0;
+  }
+  .login-brand .brand-sub {
+    font-size: 0.85rem;
+    color: var(--qp-text-muted);
+  }
+  .login-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 24px var(--qp-shadow-md);
+    background: var(--qp-surface);
+    overflow: hidden;
+  }
+  .login-card-header {
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    padding: 1rem 1.5rem;
+  }
+  .login-card-header p {
+    color: rgba(255,255,255,0.9);
+    font-size: 0.85rem;
+    margin: 0;
+  }
+  .login-card-body {
+    padding: 1.75rem 2rem;
+    background: var(--qp-surface);
+  }
+</style>
 
-          <div class="card">
-            <div class="card-content">
-              <h2 class="title is-5 has-text-grey-dark">Please sign in</h2>
-              <p class="subtitle is-6 has-text-danger">This project is under development and not secure.</p>
+<div class="login-page">
+  <div class="login-wrapper">
 
-              <form class="login" method="post" action="/login" novalidate>
+    <div class="login-brand">
+      <img src="/assets/favicon.png" alt="QuePasa logo">
+      <p class="brand-title">QuePasa</p>
+      <p class="brand-sub">WhatsApp bot management console &mdash; v{{ .Version }}</p>
+    </div>
 
-                <div class="field">
-                  <label class="label is-sr-only" for="email">Email</label>
-                  <div class="control has-icons-left">
-                    <input
-                      id="email"
-                      name="email"
-                      class="input is-medium"
-                      type="email"
-                      placeholder="Your email"
-                      required
-                      autocomplete="username"
-                      aria-label="Email">
-                    <span class="icon is-small is-left" aria-hidden="true">
-                      <i class="fas fa-envelope"></i>
-                    </span>
-                  </div>
-                </div>
+    <div class="login-card">
+      <div class="login-card-header">
+        <p>Sign in to your account</p>
+      </div>
 
-                <div class="field">
-                  <label class="label is-sr-only" for="password">Password</label>
-                  <div class="control has-icons-left">
-                    <input
-                      id="password"
-                      name="password"
-                      class="input is-medium"
-                      type="password"
-                      placeholder="Your password"
-                      required
-                      autocomplete="current-password"
-                      aria-label="Password">
-                    <span class="icon is-small is-left" aria-hidden="true">
-                      <i class="fas fa-lock"></i>
-                    </span>
-                  </div>
-                </div>
+      <div class="login-card-body">
 
-                <div class="field mt-4">
-                  <div class="control">
-                    <button type="submit" class="button is-primary is-medium is-fullwidth">
-                      Sign in
-                    </button>
-                  </div>
-                </div>
+        {{ if .ErrorMessage }}
+        <div class="notification is-danger is-light mb-4" style="padding: 0.75rem 1rem;">
+          <span class="icon"><i class="fas fa-times-circle"></i></span>
+          {{ .ErrorMessage }}
+        </div>
+        {{ end }}
 
-                <div class="has-text-centered mt-3">
-                  <p class="is-size-7 has-text-grey">Don't have an account? <a href="/setup">Create one</a></p>
-                </div>
-              </form>
+        <form class="login" method="post" action="/login" novalidate>
+
+          <div class="field">
+            <label class="label is-sr-only" for="email">Email</label>
+            <div class="control has-icons-left">
+              <input
+                id="email"
+                name="email"
+                class="input is-medium"
+                type="email"
+                placeholder="Your email"
+                required
+                autocomplete="username"
+                aria-label="Email"
+                autofocus>
+              <span class="icon is-small is-left" aria-hidden="true">
+                <i class="fas fa-envelope"></i>
+              </span>
             </div>
           </div>
 
-          <p class="has-text-centered is-size-7 has-text-grey mt-4">
-            Development build — use with caution.
-          </p>
-        </div>
+          <div class="field">
+            <label class="label is-sr-only" for="password">Password</label>
+            <div class="control has-icons-left">
+              <input
+                id="password"
+                name="password"
+                class="input is-medium"
+                type="password"
+                placeholder="Your password"
+                required
+                autocomplete="current-password"
+                aria-label="Password">
+              <span class="icon is-small is-left" aria-hidden="true">
+                <i class="fas fa-lock"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="field mt-5">
+            <div class="control">
+              <button type="submit" class="button is-primary is-medium is-fullwidth">
+                <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
+                <span>Sign in</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="has-text-centered mt-3">
+            <p class="is-size-7 has-text-grey">Don't have an account? <a href="/setup">Create one</a></p>
+          </div>
+
+        </form>
       </div>
     </div>
+
+    <p class="has-text-centered is-size-7 has-text-grey mt-4">Development build &mdash; use with caution.</p>
+
   </div>
-</section>
+</div>
 {{ end }}

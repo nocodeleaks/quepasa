@@ -42,6 +42,17 @@ func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "main", data)
 }
 
+func renderLoginWithError(w http.ResponseWriter, msg string) {
+	data := models.QPFormLoginData{
+		PageTitle:    "Login - Quepasa",
+		Version:      models.QpVersion,
+		ErrorMessage: msg,
+	}
+	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("login.tmpl")))
+	w.WriteHeader(http.StatusUnauthorized)
+	templates.ExecuteTemplate(w, "main", data)
+}
+
 // LoginHandler renders route POST "/login"
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -49,13 +60,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.Form.Get("password")
 
 	if username == "" || password == "" {
-		api.RespondUnauthorized(w, errors.New("missing username or password"))
+		renderLoginWithError(w, "Email and password are required.")
 		return
 	}
 
 	user, err := models.WhatsappService.GetUser(username, password)
 	if err != nil {
-		api.RespondUnauthorized(w, err)
+		renderLoginWithError(w, "Invalid email or password.")
 		return
 	}
 

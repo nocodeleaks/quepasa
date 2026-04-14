@@ -26,6 +26,15 @@
 
     <a class="button is-primary" href="/form/verify?mode=md">Add or Update Bot</a>
 
+    <a class="button is-link" href="/dashboard">
+      <span class="icon"><i class="fas fa-chart-line"></i></span>
+      <span>Dashboard</span>
+    </a>
+
+    <a class="button is-info" href="/swagger/index.html" target="_blank">
+      <span class="icon"><i class="fas fa-book"></i></span>
+      <span>Swagger</span>
+    </a>
     {{ if .HasMasterKey }}
       <div class="button">
           <span class="icon has-text-success" title="Master Key Is Set"><i class="fas fa-key"></i> </span>
@@ -39,10 +48,6 @@
       </div>
     {{ end }}
 
-    <a class="button is-info" href="/swagger/index.html" target="_blank">
-      <span class="icon"><i class="fas fa-book"></i></span>
-      <span>Swagger</span>
-    </a>
 
     {{ if .ErrorMessage }}
       <div class="notification is-warning">

@@ -268,14 +268,6 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	}
 	logentry := source.LogWithField(LogFields.MessageId, messageIdForLog)
 
-	// Safely derive message type string to avoid nil pointer dereference
-	// var messageType string - removed as no longer used after metrics refactoring
-	if message != nil {
-		// messageType = message.Type.String() - removed
-	} else {
-		// messageType = "unknown" - removed
-	}
-
 	// Determine the routing key based on message type
 	routingKey := source.DetermineRoutingKey(message)
 

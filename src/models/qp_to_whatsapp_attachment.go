@@ -185,6 +185,12 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 	if IsCompatibleWithPTT(attach.Mimetype) {
 		source.Debug = append(source.Debug, fmt.Sprintf("[trace][AttachAudioTreatment] mime type is compatible for ptt: %s", attach.Mimetype))
 
+		// FORCE_AUDIO_AS_PTT must also affect already valid compatible audio formats (e.g. audio/opus).
+		if forceAudioAsPTT {
+			source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachAudioTreatment] FORCE_AUDIO_AS_PTT enabled, setting compatible mime as ptt: %s", attach.Mimetype))
+			attach.SetPTTCompatible(true)
+		}
+
 		// set compatible audios to be sent as ptt
 		ForceCompatiblePTT := ENV.UseCompatibleMIMEsAsAudio()
 		if ForceCompatiblePTT && !attach.IsValidAudio() {

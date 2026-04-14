@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"sync"
 	"time"
 
@@ -57,10 +58,23 @@ func NewRabbitMQClient(connURI string, maxCacheSize uint64) *RabbitMQClient {
 	return client
 }
 
+const (
+	dialTimeout    = 10 * time.Second // TCP connection timeout per attempt
+	amqpHeartbeat  = 10 * time.Second // AMQP heartbeat — detects dead connections within ~20s
+	initialBackoff = 5 * time.Second
+	maxBackoff     = 60 * time.Second
+)
+
 // connect establishes a new connection and channel with RabbitMQ.
+// Uses an explicit dial timeout and AMQP heartbeat for fast failure detection.
 // Slow I/O (Dial, Channel) happens outside the mutex; fields are set under lock.
 func (r *RabbitMQClient) connect() error {
-	conn, err := amqp.Dial(r.connURI)
+	conn, err := amqp.DialConfig(r.connURI, amqp.Config{
+		Heartbeat: amqpHeartbeat,
+		Dial: func(network, addr string) (net.Conn, error) {
+			return net.DialTimeout(network, addr, dialTimeout)
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
@@ -102,8 +116,12 @@ func (r *RabbitMQClient) connect() error {
 }
 
 // monitorConnection monitors the connection state and attempts to reconnect on failure.
+// Uses exponential backoff (5s → 10s → 20s … cap 60s) to avoid overwhelming the broker.
+// Backoff resets to the initial value after every successful connection.
 func (r *RabbitMQClient) monitorConnection() {
 	defer r.wg.Done()
+
+	backoff := initialBackoff
 
 	for {
 		// Attempt connection if no active channel.
@@ -112,18 +130,26 @@ func (r *RabbitMQClient) monitorConnection() {
 		r.mu.RUnlock()
 
 		if !channelAvailable {
-			log.Println("Attempting to connect to RabbitMQ...")
+			log.Printf("Attempting to connect to RabbitMQ (backoff: %v)...", backoff)
 			err := r.connect()
 			if err != nil {
-				log.Printf("Error connecting: %v. Retrying in 5 seconds...", err)
+				log.Printf("Error connecting: %v. Retrying in %v...", err, backoff)
 				ReconnectionAttempts.Inc()
+				ReconnectionBackoff.Set(backoff.Seconds())
 				select {
-				case <-time.After(5 * time.Second):
-					continue
+				case <-time.After(backoff):
 				case <-r.closed:
 					return
 				}
+				// Double the backoff for next failure, capped at maxBackoff.
+				if backoff *= 2; backoff > maxBackoff {
+					backoff = maxBackoff
+				}
+				continue
 			}
+			// Successful connection — reset backoff.
+			backoff = initialBackoff
+			ReconnectionBackoff.Set(0)
 		}
 
 		// Wait for channel close notification or shutdown signal.
@@ -134,9 +160,8 @@ func (r *RabbitMQClient) monitorConnection() {
 			} else {
 				log.Println("RabbitMQ connection closed (clean disconnect). Attempting to reconnect...")
 			}
-			// Count every disconnect (clean or error) and the upcoming reconnect attempt.
+			// Count every disconnect and the upcoming reconnect attempt.
 			ConnectionsLost.Inc()
-			ReconnectionAttempts.Inc()
 
 			r.mu.Lock()
 			r.channel = nil
@@ -172,14 +197,17 @@ func (r *RabbitMQClient) GetChannel() *amqp.Channel {
 func (r *RabbitMQClient) AddToCache(msg RabbitMQMessage) bool {
 	select {
 	case r.messageCache <- msg:
+		size := len(r.messageCache)
 		payloadStr := fmt.Sprintf("%v", msg.Payload)
 		if len(payloadStr) > 50 {
 			payloadStr = payloadStr[:47] + "..."
 		}
-		log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, len(r.messageCache), r.maxCacheSize)
+		log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, size, r.maxCacheSize)
+		CacheSizeCurrent.Set(float64(size))
 		return true
 	default:
 		log.Printf("Cache is full, dropping message: ID=%s. Max cache size: %d", msg.ID, r.maxCacheSize)
+		MessagesCacheDropped.Inc()
 		return false
 	}
 }
@@ -259,8 +287,10 @@ func (r *RabbitMQClient) processCache() {
 						goto CACHE_LOOP_END
 					}
 
-					log.Printf("Cached message ID %s published successfully (exchange '%s', routing key '%s'). Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, len(r.messageCache), r.maxCacheSize)
+					size := len(r.messageCache)
+					log.Printf("Cached message ID %s published successfully (exchange '%s', routing key '%s'). Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, size, r.maxCacheSize)
 					MessagesCacheProcessed.Inc()
+					CacheSizeCurrent.Set(float64(size))
 
 				default:
 					goto CACHE_LOOP_END

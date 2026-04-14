@@ -506,6 +506,7 @@
         .chart-legend {
             display: flex;
             flex-wrap: wrap;
+            justify-content: center;
             gap: 6px 12px;
         }
         .chart-legend-item {
@@ -838,6 +839,24 @@ quepasa_api_messages_sent_total 32
                     <div class="stat-card-value error" id="rabbitmqConnectionsLost">–</div>
                     <div class="stat-card-meta">connections_lost_total</div>
                 </div>
+                <div class="stat-card">
+                    <span class="stat-card-icon">📥</span>
+                    <div class="stat-card-label">Cache Atual</div>
+                    <div class="stat-card-value warning" id="rabbitmqCacheSizeCurrent">–</div>
+                    <div class="stat-card-meta">rabbitmq_cache_size_current</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card-icon">🗑️</span>
+                    <div class="stat-card-label">Cache Descartado</div>
+                    <div class="stat-card-value error" id="rabbitmqCacheDropped">–</div>
+                    <div class="stat-card-meta">messages_cache_dropped_total</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card-icon">⏳</span>
+                    <div class="stat-card-label">Backoff Reconexão (s)</div>
+                    <div class="stat-card-value warning" id="rabbitmqReconnectionBackoff">–</div>
+                    <div class="stat-card-meta">reconnection_backoff_seconds</div>
+                </div>
             </div>
         </div>
     </section>
@@ -1104,15 +1123,16 @@ quepasa_api_messages_sent_total 32
         }
 
         const {
-            height      = 220,
-            gridLines   = 4,
-            labelRotate = false,
-            singleColor = null,
+            height         = 220,
+            gridLines      = 4,
+            labelRotate    = false,
+            singleColor    = null,
+            hideBarLabels  = false,
         } = opts;
 
         const W  = container.clientWidth || 420;
         const H  = height;
-        const PT = 28, PR = 8, PB = labelRotate ? 56 : 38, PL = 8;
+        const PT = 28, PR = 8, PB = hideBarLabels ? 16 : (labelRotate ? 56 : 20), PL = 8;
         const cW = W - PL - PR;
         const cH = H - PT - PB;
 
@@ -1183,21 +1203,23 @@ quepasa_api_messages_sent_total 32
             svg.appendChild(valText);
 
             /* X-axis label */
-            if (labelRotate) {
-                const lbl = svgEl('text', {
-                    x: cx, y: PT + cH + 8,
-                    'text-anchor': 'end', 'font-size': 9.5, fill: '#6e7681',
-                    transform: `rotate(-38 ${cx} ${PT + cH + 8})`,
-                });
-                lbl.textContent = item.label;
-                svg.appendChild(lbl);
-            } else {
-                const lbl = svgEl('text', {
-                    x: cx, y: PT + cH + 15,
-                    'text-anchor': 'middle', 'font-size': 10, fill: '#6e7681',
-                });
-                lbl.textContent = item.label;
-                svg.appendChild(lbl);
+            if (!hideBarLabels) {
+                if (labelRotate) {
+                    const lbl = svgEl('text', {
+                        x: cx, y: PT + cH + 8,
+                        'text-anchor': 'end', 'font-size': 9.5, fill: '#6e7681',
+                        transform: `rotate(-38 ${cx} ${PT + cH + 8})`,
+                    });
+                    lbl.textContent = item.label;
+                    svg.appendChild(lbl);
+                } else {
+                    const lbl = svgEl('text', {
+                        x: cx, y: PT + cH + 15,
+                        'text-anchor': 'middle', 'font-size': 10, fill: '#6e7681',
+                    });
+                    lbl.textContent = item.label;
+                    svg.appendChild(lbl);
+                }
             }
 
             /* Tooltip */
@@ -1254,6 +1276,10 @@ quepasa_api_messages_sent_total 32
         setText('rabbitmqConnectionsEstablished', fmt(getMetricValue(metrics, 'quepasa_rabbitmq_connections_established_total')));
         setText('rabbitmqReconnectionAttempts',   fmt(getMetricValue(metrics, 'quepasa_rabbitmq_reconnection_attempts_total')));
         setText('rabbitmqConnectionsLost',        fmt(getMetricValue(metrics, 'quepasa_rabbitmq_connections_lost_total')));
+        setText('rabbitmqCacheSizeCurrent',       fmt(getMetricValue(metrics, 'quepasa_rabbitmq_cache_size_current')));
+        setText('rabbitmqCacheDropped',           fmt(getMetricValue(metrics, 'quepasa_rabbitmq_messages_cache_dropped_total')));
+        const backoff = getMetricValue(metrics, 'quepasa_rabbitmq_reconnection_backoff_seconds');
+        setText('rabbitmqReconnectionBackoff', backoff > 0 ? backoff.toFixed(1) : '0');
         setBar('rabbitmqSuccessBar', rmqRate);
 
         /* Webhook */
@@ -1298,7 +1324,7 @@ quepasa_api_messages_sent_total 32
         const items = entries.map(([type, val]) => ({
             label: type, value: val, color: colorForType(type),
         }));
-        renderBarChart('messageTypesChart', items, { height: 210, labelRotate: entries.length > 6 });
+        renderBarChart('messageTypesChart', items, { height: 210, hideBarLabels: true });
 
         /* Legend */
         const legend = document.getElementById('messageTypesLegend');

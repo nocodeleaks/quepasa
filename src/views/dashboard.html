@@ -157,6 +157,131 @@
         }
         .ctrl-btn:hover { border-color: var(--border2); color: var(--text); transform: rotate(90deg); }
 
+        .ctrl-btn-dev {
+            background: var(--surface2);
+            border: 1px solid var(--orange);
+            color: var(--orange);
+            border-radius: var(--radius-sm);
+            height: 32px;
+            padding: 0 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: .04em;
+            transition: all .2s;
+        }
+        .ctrl-btn-dev:hover { background: var(--orange-dim); color: var(--text); }
+
+        /* ── Dev Modal ───────────────────────────────────────── */
+        .dev-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .dev-overlay.open { display: flex; }
+        .dev-modal {
+            background: var(--surface);
+            border: 1px solid var(--orange);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 780px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(0,0,0,.6);
+        }
+        .dev-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .dev-modal-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--orange);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dev-modal-hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        .dev-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 6px;
+        }
+        .dev-modal-close:hover { color: var(--text); }
+        .dev-modal-body {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .dev-textarea {
+            flex: 1;
+            background: var(--bg);
+            border: none;
+            color: #a8d8a8;
+            font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            padding: 16px 20px;
+            resize: none;
+            outline: none;
+            min-height: 340px;
+        }
+        .dev-textarea::placeholder { color: var(--text-dim); }
+        .dev-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            gap: 10px;
+        }
+        .dev-info { font-size: 0.73rem; color: var(--text-dim); }
+        .dev-actions { display: flex; gap: 8px; }
+        .dev-btn {
+            border-radius: var(--radius-sm);
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all .2s;
+        }
+        .dev-btn-apply {
+            background: var(--orange);
+            border-color: var(--orange);
+            color: #000;
+        }
+        .dev-btn-apply:hover { opacity: .85; }
+        .dev-btn-clear {
+            background: transparent;
+            border-color: var(--border2);
+            color: var(--text-muted);
+        }
+        .dev-btn-clear:hover { border-color: var(--red); color: var(--red); }
+
         /* ── Main layout ─────────────────────────────────────── */
         .app-main {
             max-width: 1440px;
@@ -497,6 +622,7 @@
     </div>
 
     <div class="header-controls">
+        <button class="ctrl-btn-dev" onclick="openDevModal()" title="Colar métricas do Prometheus para testar">⚗ Dev</button>
         <select class="ctrl-select" id="refreshIntervalSelector" title="Intervalo de atualização">
             <option value="5">5s</option>
             <option value="10">10s</option>
@@ -507,6 +633,33 @@
         <button class="ctrl-btn" onclick="refreshData()" title="Atualizar agora">↻</button>
     </div>
 </header>
+
+<!-- ── Dev Modal ────────────────────────────────────────────── -->
+<div class="dev-overlay" id="devOverlay" onclick="closeDevOnBackdrop(event)">
+    <div class="dev-modal">
+        <div class="dev-modal-header">
+            <div>
+                <div class="dev-modal-title">⚗ Modo Dev · Métricas manuais</div>
+                <div class="dev-modal-hint">Cole o output do endpoint <code>/metrics</code> (formato Prometheus) e clique em Aplicar</div>
+            </div>
+            <button class="dev-modal-close" onclick="closeDevModal()">✕</button>
+        </div>
+        <div class="dev-modal-body">
+            <textarea class="dev-textarea" id="devMetricsInput"
+                placeholder="# HELP quepasa_whatsmeow_messages_received_total ...
+quepasa_whatsmeow_messages_received_total 140
+quepasa_api_messages_sent_total 32
+..."></textarea>
+        </div>
+        <div class="dev-modal-footer">
+            <span class="dev-info" id="devInfo">Nenhum dado carregado</span>
+            <div class="dev-actions">
+                <button class="dev-btn dev-btn-clear" onclick="clearDevModal()">Limpar</button>
+                <button class="dev-btn dev-btn-apply" onclick="applyDevMetrics()">▶ Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ── Main ────────────────────────────────────────────────── -->
 <main class="app-main" id="appMain">
@@ -1291,6 +1444,54 @@
     }
 
     function refreshData() { fetchMetrics(); }
+
+    /* ── Dev Modal ───────────────────────────────────────────── */
+    function openDevModal() {
+        document.getElementById('devOverlay').classList.add('open');
+        document.getElementById('devMetricsInput').focus();
+    }
+    function closeDevModal() {
+        document.getElementById('devOverlay').classList.remove('open');
+    }
+    function closeDevOnBackdrop(e) {
+        if (e.target === document.getElementById('devOverlay')) closeDevModal();
+    }
+    function clearDevModal() {
+        document.getElementById('devMetricsInput').value = '';
+        document.getElementById('devInfo').textContent = 'Nenhum dado carregado';
+    }
+    function applyDevMetrics() {
+        const raw = document.getElementById('devMetricsInput').value.trim();
+        if (!raw) return;
+        try {
+            const metrics = parsePrometheusMetrics(raw);
+            const count = Object.keys(metrics).length;
+            updateDashboard(metrics);
+            document.getElementById('devInfo').textContent =
+                `✓ ${count} métricas carregadas · ${new Date().toLocaleTimeString('pt-BR')}`;
+
+            // pause auto-refresh while in dev mode
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+            document.getElementById('refreshIntervalSelector').value = '0';
+
+            // mark status as dev
+            const dot  = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            dot.className = 'status-dot';
+            dot.style.background = 'var(--orange)';
+            dot.style.boxShadow  = '0 0 6px var(--orange)';
+            text.textContent = 'modo dev';
+
+            closeDevModal();
+        } catch (err) {
+            document.getElementById('devInfo').textContent = '✗ Erro ao parsear: ' + err.message;
+        }
+    }
+    // ESC fecha o modal
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeDevModal();
+    });
 
     /* ── Init ────────────────────────────────────────────────── */
     function init() {

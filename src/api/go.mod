@@ -37,6 +37,7 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
@@ -74,7 +75,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
-	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
 	github.com/philippseith/signalr v0.6.3 // indirect
@@ -92,7 +92,7 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.6 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20260327181659-02ec817e7cf4 // indirect
+	go.mau.fi/whatsmeow v0.0.0-20260410162419-b95d92207080 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
 	golang.org/x/net v0.50.0 // indirect

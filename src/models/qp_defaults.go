@@ -9,7 +9,7 @@ import (
 
 // quepasa build version format has 4 sections only: 3.YY.MMDD.HHMM
 // stable versions are identified when HHMM last digit is 0
-const QpVersion = "3.26.0406.1825"
+const QpVersion = "3.26.0414.0915"
 
 const QpLogLevel = log.InfoLevel
 

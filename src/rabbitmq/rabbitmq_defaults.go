@@ -1,7 +1,6 @@
 package rabbitmq
 
 import (
-	"log"
 	"sync"
 	"time"
 )
@@ -18,24 +17,16 @@ const (
 	QuePasaRoutingKeyEvents  = "events"
 )
 
-// RabbitMQQueueDefault is the default queue name used for RabbitMQ operations
-// if a specific queue name is not provided.
-var RabbitMQQueueDefault = "Q-QUEPASA" // Fila padrão atualizada!
-
-// RabbitMQClientInstance is the global, singleton instance of the RabbitMQClient.
-// It should be accessed via GetRabbitMQClientInstance function.
-var RabbitMQClientInstance *RabbitMQClient // Public (exported) variable
-
-// clientOnce ensures that the RabbitMQClientInstance is initialized only once.
-var clientOnce sync.Once
-
-// Connection manager for multiple RabbitMQ connections
+// clientManager holds all active RabbitMQ clients keyed by connection string.
 var (
 	clientManager = make(map[string]*RabbitMQClient)
 	clientMutex   sync.RWMutex
 )
 
-// GetRabbitMQClient returns or creates a RabbitMQ client for the specified connection string
+// GetRabbitMQClient returns an existing RabbitMQ client for the given connection string,
+// or creates a new one with an unlimited in-memory cache.
+// On first creation it waits up to 15 seconds for the connection and then ensures
+// the QuePasa exchange and queues exist.
 func GetRabbitMQClient(connectionString string) *RabbitMQClient {
 	if connectionString == "" {
 		return nil
@@ -49,40 +40,29 @@ func GetRabbitMQClient(connectionString string) *RabbitMQClient {
 		return client
 	}
 
-	// Create new client if it doesn't exist
+	// Create new client — double-check under write lock.
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
-	// Double-check in case another goroutine created it while we were waiting for the lock
-	if client, exists := clientManager[connectionString]; exists {
+	if client, exists = clientManager[connectionString]; exists {
 		return client
 	}
 
-	// Create new client with default cache size
-	client = NewRabbitMQClient(connectionString, 0) // 0 means unlimited cache
+	client = NewRabbitMQClient(connectionString, 0) // 0 = unlimited cache (100 000 default)
 	clientManager[connectionString] = client
 
-	// SYNCHRONOUSLY initialize Exchange and Queues immediately
-	// This ensures the structure is ready when the connection is configured
-	log.Printf("Waiting for RabbitMQ connection to be ready: %s", connectionString)
-
-	// Wait for connection to be ready (max 15 seconds)
+	// Initialise Exchange and Queues synchronously so they are ready for the first publish.
 	if client.WaitForConnection(15 * time.Second) {
-		log.Printf("Connection ready, initializing Exchange and Queues for: %s", connectionString)
-		err := client.EnsureExchangeAndQueues()
-		if err != nil {
-			log.Printf("ERROR: Failed to initialize Exchange and Queues for connection %s: %v", connectionString, err)
-		} else {
-			log.Printf("SUCCESS: Exchange and Queues initialized for connection: %s", connectionString)
+		if err := client.EnsureExchangeAndQueues(); err != nil {
+			// Non-fatal: processCache will retry on every reconnection cycle.
+			_ = err
 		}
-	} else {
-		log.Printf("WARNING: Connection not ready after timeout for %s. Exchange and Queues will be initialized on first message.", connectionString)
 	}
 
 	return client
 }
 
-// CloseRabbitMQClient closes and removes a specific RabbitMQ client
+// CloseRabbitMQClient closes and removes the client for the given connection string.
 func CloseRabbitMQClient(connectionString string) {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
@@ -93,7 +73,7 @@ func CloseRabbitMQClient(connectionString string) {
 	}
 }
 
-// CloseAllRabbitMQClients closes all RabbitMQ clients
+// CloseAllRabbitMQClients closes all active RabbitMQ clients.
 func CloseAllRabbitMQClients() {
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
@@ -102,15 +82,4 @@ func CloseAllRabbitMQClients() {
 		client.Close()
 		delete(clientManager, connectionString)
 	}
-}
-
-// InitializeRabbitMQClient connects to RabbitMQ and sets up the global client instance.
-// It uses environment variables for connection string and queue name.
-// Errors during connection or setup are logged and will likely cause the application to panic or exit.
-// This function doesn't return a value as its purpose is to initialize a global state.
-func InitializeRabbitMQClient(connURI string, maxCacheSize uint64) {
-	clientOnce.Do(func() {
-		// Initialize the global instance using the NewRabbitMQClient constructor.
-		RabbitMQClientInstance = NewRabbitMQClient(connURI, maxCacheSize)
-	})
 }

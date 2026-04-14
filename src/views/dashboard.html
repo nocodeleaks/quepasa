@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuePasa Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon-dark.svg">
+    <link rel="alternate icon" href="/assets/favicon.png">
     <style>
         /* ── Tokens ─────────────────────────────────────────── */
         :root {
@@ -85,13 +87,15 @@
         .header-brand-logo {
             width: 28px;
             height: 28px;
-            background: linear-gradient(135deg, var(--green) 0%, var(--blue) 100%);
-            border-radius: var(--radius-sm);
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 15px;
-            flex-shrink: 0;
+        }
+        .header-brand-logo img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
         }
 
         .header-status {
@@ -213,7 +217,7 @@
             top: 14px;
             right: 16px;
             font-size: 1.4rem;
-            opacity: .25;
+            opacity: .65;
         }
 
         /* ── Section ─────────────────────────────────────────── */
@@ -314,7 +318,7 @@
             top: 10px;
             right: 12px;
             font-size: 1.1rem;
-            opacity: .3;
+            opacity: .65;
         }
 
         /* Progress bar */
@@ -478,8 +482,11 @@
 <!-- ── Header ──────────────────────────────────────────────── -->
 <header class="app-header">
     <div class="header-brand">
-        <div class="header-brand-logo">Q</div>
-        QuePasa
+        <div class="header-brand-logo">
+            <img src="/assets/images/quepasa-dark.svg" alt="QuePasa" onerror="this.outerHTML='<svg width=\'28\' height=\'28\' viewBox=\'0 0 32 32\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M0 0 C4.11989655 2.7465977 6.16260367 5.87888984 7.6875 10.5625 C7.8125 12.875 7.8125 12.875 5.8125 15.875 C5.29300781 15.30910156 4.77351563 14.74320313 4.23828125 14.16015625 C3.54089844 13.42667969 2.84351562 12.69320313 2.125 11.9375 C1.44050781 11.20660156 0.75601562 10.47570312 0.05078125 9.72265625 C-2.45226735 7.65643986 -3.98581038 7.15982906 -7.1875 6.875 C-9.50499122 7.28369252 -9.50499122 7.28369252 -11.1875 8.875 C-12.63383779 11.5338432 -12.63383779 11.5338432 -12.1875 14.875 C-10.61032107 17.14219471 -8.87361816 19.06392108 -6.94921875 21.04296875 C-5.1875 22.875 -5.1875 22.875 -3.1875 25.875 C-6.67159637 27.03636546 -8.19724143 26.87175286 -11.75 25.6875 C-16.12912754 23.37850548 -18.60723272 21.61580184 -20.1875 16.875 C-20.72888857 12.2155082 -20.61817041 8.76946932 -18.5625 4.5 C-13.27440854 -1.34473267 -7.41470183 -2.61695359 0 0 Z\' fill=\'#8E3DFF\' transform=\'translate(22.1875,3.125)\'/><path d=\'M0 0 C4.7622073 1.40064921 8.09591184 4.02393298 11 8 C11.4375 10.8125 11.4375 10.8125 11 13 C10 14 10 14 7.875 14.5 C3.36901033 13.71634962 0.7037284 10.57589885 -2 7 C-2.79296875 4.875 -2.79296875 4.875 -3 3 C-1.5625 1.25 -1.5625 1.25 0 0 Z\' fill=\'#8A3DFF\' transform=\'translate(19,16)\'/></svg>'"
+            />
+        </div>
+        QuePasa - Dashboard
     </div>
 
     <div class="header-status">

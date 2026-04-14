@@ -2004,7 +2004,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n- Contact (field \"contact\") — send contact with phone/name in the \"contact\" object\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n- contact: JSON object with contact data (phone, name, vcard)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nContact object fields:\n- phone (string, required): Contact phone number\n- name (string, required): Contact display name\n- vcard (string, optional): Full vCard string (auto-generated if not provided)\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nContact:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"contact\": {\n\"phone\": \"5511999999999\",\n\"name\": \"John Doe\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `",
+                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n- Contact (field \"contact\") — send contact with phone/name in the \"contact\" object\n- Sticker (field \"sticker\") — send a sticker; any image/video is auto-converted to WebP\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n- contact: JSON object with contact data (phone, name, vcard)\n- sticker: JSON object with sticker data (url or content)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nContact object fields:\n- phone (string, required): Contact phone number\n- name (string, required): Contact display name\n- vcard (string, optional): Full vCard string (auto-generated if not provided)\n\nSticker object fields:\n- url (string, optional): Remote URL of the image or video to use as sticker\n- content (string, optional): Base64 data URI of the image or video (e.g.: data:image/png;base64,...)\nNote: provide either \"url\" or \"content\". Any format (PNG, JPG, GIF, MP4, WebM, etc.) is accepted\nand automatically converted to WebP. Animated stickers are generated from video/GIF sources.\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nContact:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"contact\": {\n\"phone\": \"5511999999999\",\n\"name\": \"John Doe\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nSticker by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"sticker\": {\n\"url\": \"https://example.com/image.png\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nSticker by base64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"sticker\": {\n\"content\": \"data:image/png;base64,....\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -2014,10 +2014,10 @@ const docTemplate = `{
                 "tags": [
                     "Send"
                 ],
-                "summary": "Send any type of message (text, file, poll, base64 content, location, contact)",
+                "summary": "Send any type of message (text, file, poll, base64 content, location, contact, sticker)",
                 "parameters": [
                     {
-                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object.",
+                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object, or 'sticker' for sticker object.",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -2082,6 +2082,17 @@ const docTemplate = `{
                                         },
                                         "selections": {
                                             "type": "integer"
+                                        }
+                                    }
+                                },
+                                "sticker": {
+                                    "type": "object",
+                                    "properties": {
+                                        "content": {
+                                            "type": "string"
+                                        },
+                                        "url": {
+                                            "type": "string"
                                         }
                                     }
                                 },
@@ -4432,7 +4443,8 @@ const docTemplate = `{
                 10,
                 11,
                 12,
-                13
+                13,
+                14
             ],
             "x-enum-varnames": [
                 "UnhandledMessageType",
@@ -4448,7 +4460,8 @@ const docTemplate = `{
                 "SystemMessageType",
                 "GroupMessageType",
                 "RevokeMessageType",
-                "PollMessageType"
+                "PollMessageType",
+                "StickerMessageType"
             ]
         },
         "whatsapp.WhatsappMessageUrl": {

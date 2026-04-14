@@ -17,7 +17,7 @@ import (
 
 // SendAPIHandler renders route "/send" and "/sendencoded"
 //
-//	@Summary		Send any type of message (text, file, poll, base64 content, location, contact)
+//	@Summary		Send any type of message (text, file, poll, base64 content, location, contact, sticker)
 //	@Description	Endpoint to send messages via WhatsApp. Accepts sending of:
 //	@Description	- Plain text (field "text")
 //	@Description	- Files by URL (field "url") — server will download and send as attachment
@@ -25,6 +25,7 @@ import (
 //	@Description	- Polls (field "poll") — send the poll JSON in the "poll" field
 //	@Description	- Location (field "location") — send location with latitude/longitude in the "location" object
 //	@Description	- Contact (field "contact") — send contact with phone/name in the "contact" object
+//	@Description	- Sticker (field "sticker") — send a sticker; any image/video is auto-converted to WebP
 //	@Description
 //	@Description	Main fields:
 //	@Description	- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -35,6 +36,7 @@ import (
 //	@Description	- poll: JSON object with the poll (question, options, selections)
 //	@Description	- location: JSON object with location data (latitude, longitude, name, address, url)
 //	@Description	- contact: JSON object with contact data (phone, name, vcard)
+//	@Description	- sticker: JSON object with sticker data (url or content)
 //	@Description
 //	@Description	Location object fields:
 //	@Description	- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -47,6 +49,12 @@ import (
 //	@Description	- phone (string, required): Contact phone number
 //	@Description	- name (string, required): Contact display name
 //	@Description	- vcard (string, optional): Full vCard string (auto-generated if not provided)
+//	@Description
+//	@Description	Sticker object fields:
+//	@Description	- url (string, optional): Remote URL of the image or video to use as sticker
+//	@Description	- content (string, optional): Base64 data URI of the image or video (e.g.: data:image/png;base64,...)
+//	@Description	Note: provide either "url" or "content". Any format (PNG, JPG, GIF, MP4, WebM, etc.) is accepted
+//	@Description	and automatically converted to WebP. Animated stickers are generated from video/GIF sources.
 //	@Description
 //	@Description	Examples:
 //	@Description	Text:
@@ -102,10 +110,28 @@ import (
 //	@Description	"url": "https://example.com/path/to/file.jpg"
 //	@Description	}
 //	@Description	```
+//	@Description	Sticker by URL:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"sticker": {
+//	@Description	"url": "https://example.com/image.png"
+//	@Description	}
+//	@Description	}
+//	@Description	```
+//	@Description	Sticker by base64:
+//	@Description	```json
+//	@Description	{
+//	@Description	"chatId": "5511999999999@s.whatsapp.net",
+//	@Description	"sticker": {
+//	@Description	"content": "data:image/png;base64,...."
+//	@Description	}
+//	@Description	}
+//	@Description	```
 //	@Tags			Send
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
+//	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string},sticker=object{url=string,content=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object, or 'sticker' for sticker object."
 //	@Success		200		{object}	models.QpSendResponse
 //	@Failure		400		{object}	models.QpSendResponse
 //	@Security		ApiKeyAuth

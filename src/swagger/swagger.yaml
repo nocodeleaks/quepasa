@@ -1270,6 +1270,7 @@ definitions:
     - 11
     - 12
     - 13
+    - 14
     type: integer
     x-enum-varnames:
     - UnhandledMessageType
@@ -1286,6 +1287,7 @@ definitions:
     - GroupMessageType
     - RevokeMessageType
     - PollMessageType
+    - StickerMessageType
   whatsapp.WhatsappMessageUrl:
     properties:
       description:
@@ -2596,6 +2598,7 @@ paths:
         - Polls (field "poll") — send the poll JSON in the "poll" field
         - Location (field "location") — send location with latitude/longitude in the "location" object
         - Contact (field "contact") — send contact with phone/name in the "contact" object
+        - Sticker (field "sticker") — send a sticker; any image/video is auto-converted to WebP
 
         Main fields:
         - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -2606,6 +2609,7 @@ paths:
         - poll: JSON object with the poll (question, options, selections)
         - location: JSON object with location data (latitude, longitude, name, address, url)
         - contact: JSON object with contact data (phone, name, vcard)
+        - sticker: JSON object with sticker data (url or content)
 
         Location object fields:
         - latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -2618,6 +2622,12 @@ paths:
         - phone (string, required): Contact phone number
         - name (string, required): Contact display name
         - vcard (string, optional): Full vCard string (auto-generated if not provided)
+
+        Sticker object fields:
+        - url (string, optional): Remote URL of the image or video to use as sticker
+        - content (string, optional): Base64 data URI of the image or video (e.g.: data:image/png;base64,...)
+        Note: provide either "url" or "content". Any format (PNG, JPG, GIF, MP4, WebM, etc.) is accepted
+        and automatically converted to WebP. Animated stickers are generated from video/GIF sources.
 
         Examples:
         Text:
@@ -2673,10 +2683,28 @@ paths:
         "url": "https://example.com/path/to/file.jpg"
         }
         ```
+        Sticker by URL:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "sticker": {
+        "url": "https://example.com/image.png"
+        }
+        }
+        ```
+        Sticker by base64:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "sticker": {
+        "content": "data:image/png;base64,...."
+        }
+        }
+        ```
       parameters:
       - description: Request body. Use 'content' for base64, 'url' for remote files,
-          'poll' for poll JSON, 'location' for location object, or 'contact' for contact
-          object.
+          'poll' for poll JSON, 'location' for location object, 'contact' for contact
+          object, or 'sticker' for sticker object.
         in: body
         name: request
         schema:
@@ -2722,6 +2750,13 @@ paths:
                 selections:
                   type: integer
               type: object
+            sticker:
+              properties:
+                content:
+                  type: string
+                url:
+                  type: string
+              type: object
             text:
               type: string
             url:
@@ -2741,7 +2776,7 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Send any type of message (text, file, poll, base64 content, location,
-        contact)
+        contact, sticker)
       tags:
       - Send
   /senddocument:

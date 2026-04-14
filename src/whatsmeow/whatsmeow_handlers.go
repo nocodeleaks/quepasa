@@ -1087,6 +1087,11 @@ func (handler *WhatsmeowHandlers) sendConnectionDispatching(event string) {
 
 // OnOfflineSyncPreview handles the start of offline synchronization
 func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPreview) {
+	// Always update state flags regardless of HistorySyncDisabled,
+	// so isHistoryMessage() works correctly for real-time messages
+	handler.offlineSyncStarted = true
+	handler.offlineSyncCompleted = false
+
 	if handler.GetServiceOptions().HistorySyncDisabled {
 		return
 	}
@@ -1094,10 +1099,6 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPre
 	logentry := handler.GetLogger()
 	logentry.Infof("offline sync preview started - Total: %d, Messages: %d, Notifications: %d, Receipts: %d",
 		evt.Total, evt.Messages, evt.Notifications, evt.Receipts)
-
-	// Mark the start of offline sync period (reset flags in case already set by connection)
-	handler.offlineSyncStarted = true
-	handler.offlineSyncCompleted = false
 
 	// Send sync preview dispatching
 	handler.sendSyncDispatching("sync_preview", map[string]interface{}{
@@ -1112,16 +1113,17 @@ func (handler *WhatsmeowHandlers) OnOfflineSyncPreview(evt events.OfflineSyncPre
 
 // OnOfflineSyncCompleted handles the completion of offline synchronization
 func (handler *WhatsmeowHandlers) OnOfflineSyncCompleted(evt events.OfflineSyncCompleted) {
+	// Always update state flags regardless of HistorySyncDisabled,
+	// so isHistoryMessage() correctly treats subsequent messages as real-time
+	handler.offlineSyncCompleted = true
+	handler.offlineSyncStarted = false
+
 	if handler.GetServiceOptions().HistorySyncDisabled {
 		return
 	}
 
 	logentry := handler.GetLogger()
 	logentry.Infof("offline sync completed - Count: %d", evt.Count)
-
-	// Mark the end of offline sync period
-	handler.offlineSyncCompleted = true
-	handler.offlineSyncStarted = false
 
 	// Send sync completed dispatching
 	handler.sendSyncDispatching("sync_completed", map[string]interface{}{

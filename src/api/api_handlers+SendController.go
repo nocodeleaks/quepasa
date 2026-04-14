@@ -191,6 +191,21 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
+	// Resolve sticker content (download/decode + convert to WebP)
+	if request.Sticker != nil {
+		attach, stickerErr := ResolveStickerAttachment(request.Sticker)
+		if stickerErr != nil {
+			MessageSendErrors.Inc()
+			response.ParseError(fmt.Errorf("sticker error: %v", stickerErr))
+			RespondInterface(w, response)
+			return
+		}
+		content := *attach.GetContent()
+		request.QpSendRequest.Content = content
+		request.QpSendRequest.Mimetype = attach.Mimetype
+		request.QpSendRequest.FileLength = attach.FileLength
+	}
+
 	SendRequest(w, r, &request.QpSendRequest, server)
 }
 
@@ -221,7 +236,7 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 		}
 	}
 
-	if request.Poll == nil && request.Location == nil && request.Contact == nil && att.Attach == nil && len(request.Text) == 0 {
+	if request.Poll == nil && request.Location == nil && request.Contact == nil && request.Sticker == nil && att.Attach == nil && len(request.Text) == 0 {
 		MessageSendErrors.Inc()
 		err = fmt.Errorf("text not found, do not send empty messages")
 		response.ParseError(err)
@@ -278,12 +293,14 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 
 	if attach != nil {
 		waMsg.Attachment = attach
-		if messageType == whatsapp.UnhandledMessageType {
+		if messageType != whatsapp.UnhandledMessageType {
+			waMsg.Type = messageType
+			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		} else if waMsg.Type == whatsapp.UnhandledMessageType {
 			waMsg.Type = whatsapp.GetMessageType(attach)
 			logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 		} else {
-			waMsg.Type = messageType
-			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+			logentry.Debugf("send attachment of type: %v (from request), mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 		}
 	} else {
 		// Only set text type if type was not already set (e.g., by Poll or Location)

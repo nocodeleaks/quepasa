@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"sync"
 	"time"
 
@@ -15,9 +16,11 @@ type RabbitMQClient struct {
 	connURI string
 	conn    *amqp.Connection
 	channel *amqp.Channel
-	mu      sync.RWMutex // Mutex to protect access to the channel during reconnection
+	mu      sync.RWMutex // Protects conn and channel
 
-	notify chan *amqp.Error // Channel for AMQP connection/channel close notifications
+	publishMu sync.Mutex // Serializes all channel.Publish calls (amqp.Channel is not goroutine-safe)
+
+	notify chan *amqp.Error // Channel for AMQP channel close notifications
 	closed chan struct{}    // Signals that the client should stop
 	wg     sync.WaitGroup   // To wait for goroutines to finish
 
@@ -34,26 +37,20 @@ type RabbitMQClient struct {
 // maxCacheSize defines the maximum number of messages that can be cached in memory.
 // If maxCacheSize is 0, the cache capacity is set to a large, but manageable, default.
 func NewRabbitMQClient(connURI string, maxCacheSize uint64) *RabbitMQClient {
-	actualCacheSize := int(maxCacheSize) // Converte uint64 para int
+	actualCacheSize := int(maxCacheSize)
 
-	// Define uma capacidade padrão para o "cache ilimitado"
-	const DefaultUnlimitedCacheCapacity = 100000 // Exemplo: 100.000 mensagens
+	const DefaultUnlimitedCacheCapacity = 100000
 
-	// Se maxCacheSize for 0 (indicando cache "ilimitado"), usa a capacidade padrão.
 	if maxCacheSize == 0 {
 		actualCacheSize = DefaultUnlimitedCacheCapacity
 		log.Printf("maxCacheSize is 0, setting cache capacity to effectively unlimited (default: %d).", actualCacheSize)
 	}
-	// A condição 'else if actualCacheSize <= 0' foi removida porque uint64 já garante valores não-negativos.
-	// Se maxCacheSize (uint64) for um número muito grande que excede math.MaxInt, Go causará um panic
-	// na conversão para int, mas isso é um caso extremo que não está ligado ao zero ou negativo.
 
 	client := &RabbitMQClient{
 		connURI:      connURI,
-		mu:           sync.RWMutex{},
 		closed:       make(chan struct{}),
-		messageCache: make(chan RabbitMQMessage, actualCacheSize), // Usa o tamanho determinado
-		maxCacheSize: actualCacheSize,                             // Armazena o tamanho real configurado
+		messageCache: make(chan RabbitMQMessage, actualCacheSize),
+		maxCacheSize: actualCacheSize,
 	}
 	client.wg.Add(1)
 	go client.monitorConnection()
@@ -61,85 +58,117 @@ func NewRabbitMQClient(connURI string, maxCacheSize uint64) *RabbitMQClient {
 	return client
 }
 
-// connect establishes a new connection and channel with RabbitMQ.
-func (r *RabbitMQClient) connect() error {
-	var err error
+const (
+	dialTimeout    = 10 * time.Second // TCP connection timeout per attempt
+	amqpHeartbeat  = 10 * time.Second // AMQP heartbeat — detects dead connections within ~20s
+	initialBackoff = 5 * time.Second
+	maxBackoff     = 60 * time.Second
+)
 
-	// Connect to RabbitMQ
-	r.conn, err = amqp.Dial(r.connURI)
+// connect establishes a new connection and channel with RabbitMQ.
+// Uses an explicit dial timeout and AMQP heartbeat for fast failure detection.
+// Slow I/O (Dial, Channel) happens outside the mutex; fields are set under lock.
+func (r *RabbitMQClient) connect() error {
+	conn, err := amqp.DialConfig(r.connURI, amqp.Config{
+		Heartbeat: amqpHeartbeat,
+		Dial: func(network, addr string) (net.Conn, error) {
+			return net.DialTimeout(network, addr, dialTimeout)
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
 
-	// Open a channel
-	r.channel, err = r.conn.Channel()
+	ch, err := conn.Channel()
 	if err != nil {
-		r.conn.Close() // Close the connection if the channel cannot be opened
+		conn.Close()
 		return fmt.Errorf("failed to open a channel: %w", err)
 	}
 
-	// Configure the channel for close notifications
-	r.notify = make(chan *amqp.Error)
-	r.channel.NotifyClose(r.notify)
+	// Prepare notification channel before exposing the new channel to other goroutines.
+	notify := make(chan *amqp.Error, 1)
+	ch.NotifyClose(notify)
 
-	// Reset setup flag since we have a new connection
+	// Hold lock only while updating shared fields.
+	r.mu.Lock()
+	r.conn = conn
+	r.channel = ch
+	r.mu.Unlock()
+
+	// notify is only read by monitorConnection (same goroutine), so no lock needed.
+	r.notify = notify
+
+	// Reset setup flag for the new connection.
 	r.setupMutex.Lock()
 	r.quepasaSetupDone = false
 	r.setupMutex.Unlock()
 
 	log.Println("RabbitMQ connection and channel established successfully.")
 
-	// Start cache processing only once after a successful connection
+	// Start cache processing only once across the client lifetime.
 	r.cacheProcessing.Do(func() {
-		r.wg.Add(1) // Add one goroutine for cache processing
+		r.wg.Add(1)
 		go r.processCache()
 	})
 
 	ConnectionsEstablished.Inc()
-
 	return nil
 }
 
 // monitorConnection monitors the connection state and attempts to reconnect on failure.
+// Uses exponential backoff (5s → 10s → 20s … cap 60s) to avoid overwhelming the broker.
+// Backoff resets to the initial value after every successful connection.
 func (r *RabbitMQClient) monitorConnection() {
 	defer r.wg.Done()
 
+	backoff := initialBackoff
+
 	for {
-		// Try to connect if there's no active connection
+		// Attempt connection if no active channel.
 		r.mu.RLock()
 		channelAvailable := r.channel != nil
 		r.mu.RUnlock()
 
 		if !channelAvailable {
-			log.Println("Attempting to connect to RabbitMQ...")
+			log.Printf("Attempting to connect to RabbitMQ (backoff: %v)...", backoff)
 			err := r.connect()
 			if err != nil {
-				log.Printf("Error connecting: %v. Retrying in 5 seconds...", err)
+				log.Printf("Error connecting: %v. Retrying in %v...", err, backoff)
 				ReconnectionAttempts.Inc()
+				ReconnectionBackoff.Set(backoff.Seconds())
 				select {
-				case <-time.After(5 * time.Second):
-					continue
-				case <-r.closed: // Exit if the client is closed
+				case <-time.After(backoff):
+				case <-r.closed:
 					return
 				}
+				// Double the backoff for next failure, capped at maxBackoff.
+				if backoff *= 2; backoff > maxBackoff {
+					backoff = maxBackoff
+				}
+				continue
 			}
+			// Successful connection — reset backoff.
+			backoff = initialBackoff
+			ReconnectionBackoff.Set(0)
 		}
 
+		// Wait for channel close notification or shutdown signal.
 		select {
 		case err := <-r.notify:
 			if err != nil {
 				log.Printf("RabbitMQ connection closed unexpectedly: %v. Attempting to reconnect...", err)
-				ConnectionsLost.Inc()
-				ReconnectionAttempts.Inc()
 			} else {
 				log.Println("RabbitMQ connection closed (clean disconnect). Attempting to reconnect...")
 			}
-			r.mu.Lock()     // Lock the mutex to prevent using the invalid channel
-			r.channel = nil // Mark the channel as invalid
-			r.conn = nil    // Mark the connection as invalid
-			r.mu.Unlock()   // Release the mutex
-			// Loop to attempt immediate reconnection
+			// Count every disconnect and the upcoming reconnect attempt.
+			ConnectionsLost.Inc()
+
+			r.mu.Lock()
+			r.channel = nil
+			r.conn = nil
+			r.mu.Unlock()
 			continue
+
 		case <-r.closed:
 			log.Println("RabbitMQ connection monitor shutting down.")
 			return
@@ -148,44 +177,42 @@ func (r *RabbitMQClient) monitorConnection() {
 }
 
 // GetChannel returns the active channel for publishing. It blocks until a channel is available.
+// For internal use where a timeout is not required. External callers should prefer
+// IsConnectionReady() + a retry loop with a deadline.
 func (r *RabbitMQClient) GetChannel() *amqp.Channel {
 	for {
-		r.mu.RLock() // Read lock
-		channel := r.channel
+		r.mu.RLock()
+		ch := r.channel
 		r.mu.RUnlock()
 
-		if channel != nil {
-			return channel
+		if ch != nil {
+			return ch
 		}
-		// If the channel is nil, wait a bit and try again
-		time.Sleep(100 * time.Millisecond) // Small delay to avoid consuming CPU in a tight loop
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 // AddToCache adds a message to the in-memory cache if the cache is not full.
-// Returns true if added to cache, false if cache is full.
+// Returns true if added, false if the cache is full.
 func (r *RabbitMQClient) AddToCache(msg RabbitMQMessage) bool {
 	select {
 	case r.messageCache <- msg:
-		// Convert payload to string for logging if it's a simple type, otherwise log type
+		size := len(r.messageCache)
 		payloadStr := fmt.Sprintf("%v", msg.Payload)
-		if len(payloadStr) > 50 { // Truncate for cleaner logs
+		if len(payloadStr) > 50 {
 			payloadStr = payloadStr[:47] + "..."
 		}
-		log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, len(r.messageCache), r.maxCacheSize)
+		log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, size, r.maxCacheSize)
+		CacheSizeCurrent.Set(float64(size))
 		return true
 	default:
-		// Se o cache for "ilimitado" (capacidade math.MaxInt), esta condição 'default:'
-		// só será atingida em situações de extrema escassez de memória, ou se o canal
-		// for fechado indevidamente por alguma razão externa (o que não deveria acontecer
-		// se a lógica de reconnection estiver correta).
-		// Para o propósito de 0 = ilimitado, a ideia é que ele *quase* nunca falhe aqui por "cache cheio".
 		log.Printf("Cache is full, dropping message: ID=%s. Max cache size: %d", msg.ID, r.maxCacheSize)
+		MessagesCacheDropped.Inc()
 		return false
 	}
 }
 
-// processCache attempts to publish messages from the cache when a connection is available.
+// processCache drains the in-memory cache by publishing messages whenever a connection is available.
 func (r *RabbitMQClient) processCache() {
 	defer r.wg.Done()
 	log.Println("RabbitMQ cache processor started.")
@@ -195,63 +222,78 @@ func (r *RabbitMQClient) processCache() {
 		case <-r.closed:
 			log.Println("RabbitMQ cache processor shutting down.")
 			return
-		case <-time.After(500 * time.Millisecond): // Periodically check for messages in cache
-			ch := r.channel // Read directly as this goroutine needs to react fast
+
+		case <-time.After(500 * time.Millisecond):
+			r.mu.RLock()
+			ch := r.channel
+			r.mu.RUnlock()
+
 			if ch == nil {
+				continue
+			}
+
+			// Ensure exchange and queues exist before draining the cache.
+			if err := r.EnsureExchangeAndQueues(); err != nil {
+				log.Printf("processCache: exchange/queue setup not ready: %v", err)
 				continue
 			}
 
 			for {
 				select {
-				case msg := <-r.messageCache: // Get a message from cache
+				case msg := <-r.messageCache:
 					log.Printf("Attempting to publish cached message: %s", msg.ID)
+
 					body, err := json.Marshal(msg)
 					if err != nil {
-						log.Printf("Error marshaling cached message ID %s to JSON: %v", msg.ID, err)
+						log.Printf("Error marshaling cached message ID %s: %v. Discarding.", msg.ID, err)
 						continue
 					}
 
-					currentChannel := r.GetChannel()
+					// Re-read channel under lock; it may have changed since the outer check.
+					r.mu.RLock()
+					currentChannel := r.channel
+					r.mu.RUnlock()
+
 					if currentChannel == nil {
-						log.Printf("Channel became unavailable while processing cache. Putting message %s back to cache.", msg.ID)
+						log.Printf("Channel became unavailable while processing cache. Putting message %s back.", msg.ID)
 						select {
 						case r.messageCache <- msg:
-							break // Break inner loop to re-evaluate channel
 						default:
 							log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
 						}
-						break
+						goto CACHE_LOOP_END
 					}
 
-					// QuePasa always uses exchange routing
+					r.publishMu.Lock()
 					err = currentChannel.Publish(
-						msg.Exchange,   // exchange
-						msg.RoutingKey, // routing key
-						false,          // mandatory
-						false,          // immediate
+						msg.Exchange,
+						msg.RoutingKey,
+						false,
+						false,
 						amqp.Publishing{
 							ContentType:  "application/json",
 							Body:         body,
 							DeliveryMode: amqp.Persistent,
 						})
+					r.publishMu.Unlock()
 
 					if err != nil {
-						log.Printf("Failed to publish cached message ID %s to exchange '%s' with routing key '%s': %v. Putting message back to cache.", msg.ID, msg.Exchange, msg.RoutingKey, err)
+						log.Printf("Failed to publish cached message ID %s to exchange '%s' routing key '%s': %v. Putting back.", msg.ID, msg.Exchange, msg.RoutingKey, err)
 						select {
 						case r.messageCache <- msg:
 						default:
 							log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
 						}
-						goto CACHE_LOOP_END // Exit inner loop to check channel status
+						goto CACHE_LOOP_END
 					}
-					log.Printf("Cached message ID %s published successfully to exchange '%s' with routing key '%s'. Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, len(r.messageCache), r.maxCacheSize)
+
+					size := len(r.messageCache)
+					log.Printf("Cached message ID %s published successfully (exchange '%s', routing key '%s'). Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, size, r.maxCacheSize)
 					MessagesCacheProcessed.Inc()
+					CacheSizeCurrent.Set(float64(size))
 
 				default:
-					goto CACHE_LOOP_END // No more messages in cache
-				}
-				if len(r.messageCache) == 0 {
-					goto CACHE_LOOP_END // Cache is empty
+					goto CACHE_LOOP_END
 				}
 			}
 		CACHE_LOOP_END:
@@ -259,7 +301,7 @@ func (r *RabbitMQClient) processCache() {
 	}
 }
 
-// Close closes the RabbitMQ connection and channel and stops the reconnection monitor and cache processor.
+// Close closes the RabbitMQ connection and channel and stops all goroutines.
 func (r *RabbitMQClient) Close() {
 	log.Println("Closing RabbitMQ client...")
 	close(r.closed)
@@ -285,10 +327,10 @@ func (r *RabbitMQClient) Close() {
 	log.Println("RabbitMQ client fully closed.")
 }
 
-// PublishMessageToExchange publishes a JSON message to a RabbitMQ exchange with routing key.
-// It accepts any Go type as messageContent, which will be marshaled into the 'payload' field of RabbitMQMessage.
-// If the connection is unavailable, it caches the message. This method provides exchange-based routing.
-func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey string, messageContent any) {
+// PublishMessageToExchange publishes a JSON message to a RabbitMQ exchange with a routing key.
+// Returns true if the message was published directly, false if it was added to the cache.
+// The channel mutex ensures concurrent callers do not corrupt the AMQP protocol framing.
+func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey string, messageContent any) bool {
 	msg := RabbitMQMessage{
 		ID:         fmt.Sprintf("msg-%d", time.Now().UnixNano()),
 		Payload:    messageContent,
@@ -297,170 +339,135 @@ func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey strin
 		RoutingKey: routingKey,
 	}
 
+	r.mu.RLock()
 	ch := r.channel
+	r.mu.RUnlock()
+
 	if ch == nil {
-		log.Printf("Connection is down. Attempting to cache message ID %s for exchange '%s' with routing key '%s'", msg.ID, exchangeName, routingKey)
+		log.Printf("Connection is down. Caching message ID %s for exchange '%s' routing key '%s'", msg.ID, exchangeName, routingKey)
 		if r.AddToCache(msg) {
-			payloadStr := fmt.Sprintf("%v", msg.Payload)
-			if len(payloadStr) > 50 {
-				payloadStr = payloadStr[:47] + "..."
-			}
-			log.Printf("Message ID %s with payload '%s' successfully added to cache for exchange '%s' with routing key '%s'.", msg.ID, payloadStr, exchangeName, routingKey)
 			MessagesCached.Inc()
 		}
-		return
+		return false
 	}
-
-	log.Printf("Connection is active. Attempting to publish message ID %s to exchange '%s' with routing key '%s'", msg.ID, exchangeName, routingKey)
-
-	// Exchange should already be declared via EnsureExchangeAndQueues()
-	// No need to declare it again here
 
 	body, err := json.Marshal(msg)
-	handleError(err, fmt.Sprintf("Failed to convert RabbitMQMessage ID %s to JSON for exchange '%s'", msg.ID, exchangeName))
 	if err != nil {
-		log.Printf("Failed to marshal message ID %s (payload type %T). Not caching (invalid format or unmarshalable payload). Error: %v", msg.ID, msg.Payload, err)
-		return
+		log.Printf("Failed to marshal message ID %s (payload type %T): %v. Not caching (invalid format).", msg.ID, msg.Payload, err)
+		return false
 	}
 
-	log.Printf("JSON message created for exchange '%s' with routing key '%s': %s\n", exchangeName, routingKey, string(body))
+	log.Printf("Publishing message ID %s to exchange '%s' routing key '%s'", msg.ID, exchangeName, routingKey)
 
+	r.publishMu.Lock()
 	err = ch.Publish(
-		exchangeName, // exchange
-		routingKey,   // routing key
-		false,        // mandatory
-		false,        // immediate
+		exchangeName,
+		routingKey,
+		false,
+		false,
 		amqp.Publishing{
 			ContentType:  "application/json",
 			Body:         body,
 			DeliveryMode: amqp.Persistent,
 		})
+	r.publishMu.Unlock()
 
 	if err != nil {
-		log.Printf("Failed to publish message ID %s to exchange '%s' with routing key '%s': %v. Attempting to cache.", msg.ID, exchangeName, routingKey, err)
+		log.Printf("Failed to publish message ID %s to exchange '%s' routing key '%s': %v. Caching.", msg.ID, exchangeName, routingKey, err)
 		MessagePublishErrors.Inc()
 		if r.AddToCache(msg) {
-			payloadStr := fmt.Sprintf("%v", msg.Payload)
-			if len(payloadStr) > 50 {
-				payloadStr = payloadStr[:47] + "..."
-			}
-			log.Printf("Message ID %s with payload '%s' successfully added to cache after publish failure for exchange '%s' with routing key '%s'.", msg.ID, payloadStr, exchangeName, routingKey)
 			MessagesCached.Inc()
 		}
-		return
+		return false
 	}
-	log.Printf("JSON message ID %s published successfully to exchange '%s' with routing key '%s'!", msg.ID, exchangeName, routingKey)
+
+	log.Printf("Message ID %s published successfully to exchange '%s' routing key '%s'.", msg.ID, exchangeName, routingKey)
 	MessagesPublished.Inc()
+	return true
 }
 
-// EnsureExchangeAndQueues ensures that the QuePasa standard exchange and queues exist
-// All bots use the same fixed Exchange and Queue names
-// This method only runs once per connection to avoid repeated declarations
+// EnsureExchangeAndQueues ensures the QuePasa standard exchange and queues exist.
+// Runs at most once per connection.
 func (r *RabbitMQClient) EnsureExchangeAndQueues() error {
-	// Check if already set up for this connection
 	r.setupMutex.Lock()
 	if r.quepasaSetupDone {
 		r.setupMutex.Unlock()
-		return nil // Already set up, no need to do it again
+		return nil
 	}
 	defer r.setupMutex.Unlock()
 
+	r.mu.RLock()
 	ch := r.channel
+	r.mu.RUnlock()
+
 	if ch == nil {
 		return fmt.Errorf("rabbitmq channel not available")
 	}
 
-	// Declare the QuePasa standard exchange
 	err := ch.ExchangeDeclare(
 		QuePasaExchangeName,
-		"direct", // exchange type - direct for routing keys
-		true,     // durable
-		false,    // auto-delete
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
+		"direct",
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to declare exchange '%s': %v", QuePasaExchangeName, err)
 	}
 	log.Printf("Exchange '%s' declared successfully", QuePasaExchangeName)
 
-	// Define the standard QuePasa queues
 	queues := map[string]string{
-		QuePasaQueueProd:    QuePasaRoutingKeyProd,    // Production messages
-		QuePasaQueueHistory: QuePasaRoutingKeyHistory, // History sync messages
-		QuePasaQueueEvents:  QuePasaRoutingKeyEvents,  // Debug, contacts, read receipts, etc.
+		QuePasaQueueProd:    QuePasaRoutingKeyProd,
+		QuePasaQueueHistory: QuePasaRoutingKeyHistory,
+		QuePasaQueueEvents:  QuePasaRoutingKeyEvents,
 	}
 
-	// Declare each queue and bind to exchange
 	for queueName, routingKey := range queues {
-		// Declare queue
-		q, err := ch.QueueDeclare(
-			queueName,
-			true,  // durable
-			false, // delete when unused
-			false, // exclusive
-			false, // no-wait
-			nil,   // arguments
-		)
+		q, err := ch.QueueDeclare(queueName, true, false, false, false, nil)
 		if err != nil {
 			return fmt.Errorf("failed to declare queue '%s': %v", queueName, err)
 		}
-		log.Printf("Queue '%s' declared successfully. Consumers: %d, Messages: %d", q.Name, q.Consumers, q.Messages)
+		log.Printf("Queue '%s' declared (consumers: %d, messages: %d)", q.Name, q.Consumers, q.Messages)
 
-		// Bind queue to exchange with routing key
-		err = ch.QueueBind(
-			queueName,           // queue name
-			routingKey,          // routing key
-			QuePasaExchangeName, // exchange
-			false,               // no-wait
-			nil,                 // arguments
-		)
+		err = ch.QueueBind(queueName, routingKey, QuePasaExchangeName, false, nil)
 		if err != nil {
-			return fmt.Errorf("failed to bind queue '%s' to exchange '%s' with routing key '%s': %v", queueName, QuePasaExchangeName, routingKey, err)
+			return fmt.Errorf("failed to bind queue '%s' to exchange '%s' routing key '%s': %v", queueName, QuePasaExchangeName, routingKey, err)
 		}
-		log.Printf("Queue '%s' bound to exchange '%s' with routing key '%s'", queueName, QuePasaExchangeName, routingKey)
+		log.Printf("Queue '%s' bound to exchange '%s' routing key '%s'", queueName, QuePasaExchangeName, routingKey)
 	}
 
-	// Mark as set up
 	r.quepasaSetupDone = true
-	log.Printf("QuePasa Exchange and Queues setup completed successfully for this connection")
-
+	log.Printf("QuePasa Exchange and Queues setup completed successfully")
 	return nil
 }
 
-// EnsureExchangeAndQueuesWithRetry tries to ensure Exchange and Queues with retry logic
+// EnsureExchangeAndQueuesWithRetry tries to ensure Exchange and Queues with a short retry.
 func (r *RabbitMQClient) EnsureExchangeAndQueuesWithRetry() error {
-	// Try immediate setup first
-	err := r.EnsureExchangeAndQueues()
-	if err == nil {
+	if err := r.EnsureExchangeAndQueues(); err == nil {
 		return nil
 	}
-
-	// If failed, wait a bit for connection to be ready
 	if r.WaitForConnection(5 * time.Second) {
 		return r.EnsureExchangeAndQueues()
 	}
-
 	return fmt.Errorf("connection not ready after timeout")
 }
 
-// PublishQuePasaMessage publishes a message to the standard QuePasa Exchange and routes it to the appropriate queue
-// based on the routing key. This method uses the fixed QuePasa Exchange name and routing keys.
-// All bots use this method to ensure messages go to the same standard queues.
-func (r *RabbitMQClient) PublishQuePasaMessage(routingKey string, messageContent any) {
-	// Always use the fixed QuePasa Exchange
-	r.PublishMessageToExchange(QuePasaExchangeName, routingKey, messageContent)
+// PublishQuePasaMessage publishes a message to the standard QuePasa Exchange.
+// Returns true if published directly, false if cached.
+func (r *RabbitMQClient) PublishQuePasaMessage(routingKey string, messageContent any) bool {
+	return r.PublishMessageToExchange(QuePasaExchangeName, routingKey, messageContent)
 }
 
-// IsConnectionReady checks if the RabbitMQ connection and channel are ready
+// IsConnectionReady checks if the RabbitMQ connection and channel are ready.
 func (r *RabbitMQClient) IsConnectionReady() bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.channel != nil
 }
 
-// WaitForConnection waits for the RabbitMQ connection to be ready with timeout
+// WaitForConnection waits for the RabbitMQ connection to be ready with a timeout.
 func (r *RabbitMQClient) WaitForConnection(timeout time.Duration) bool {
 	start := time.Now()
 	for time.Since(start) < timeout {
@@ -473,8 +480,6 @@ func (r *RabbitMQClient) WaitForConnection(timeout time.Duration) bool {
 }
 
 // handleError is a helper function to log errors.
-// It's defined within the rabbitmq package, but not as a method of RabbitMQClient,
-// as it's a generic logging helper.
 func handleError(err error, msg string) {
 	if err != nil {
 		log.Printf("%s: %s", msg, err)

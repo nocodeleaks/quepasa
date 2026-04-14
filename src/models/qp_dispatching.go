@@ -268,14 +268,6 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	}
 	logentry := source.LogWithField(LogFields.MessageId, messageIdForLog)
 
-	// Safely derive message type string to avoid nil pointer dereference
-	// var messageType string - removed as no longer used after metrics refactoring
-	if message != nil {
-		// messageType = message.Type.String() - removed
-	} else {
-		// messageType = "unknown" - removed
-	}
-
 	// Determine the routing key based on message type
 	routingKey := source.DetermineRoutingKey(message)
 
@@ -313,60 +305,37 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		return err
 	}
 
-	// Try to ensure QuePasa Exchange and Queues exist
-	// If channel not ready, message will be cached automatically
-	err = client.EnsureExchangeAndQueuesWithRetry()
-	if err != nil {
-		logentry.Warnf("QuePasa setup not ready yet, message will be cached: %s", err.Error())
-		// Don't return error - let the publish method handle caching
-		// Record as warning but not as error since message will be cached
-		rabbitmq.MessagePublishErrors.Inc()
+	// Try to ensure QuePasa Exchange and Queues exist.
+	// On failure we continue — PublishQuePasaMessage will cache the message automatically.
+	if err = client.EnsureExchangeAndQueuesWithRetry(); err != nil {
+		logentry.Warnf("QuePasa setup not ready, message will be cached: %s", err.Error())
 	}
 
-	// Publish to QuePasa Exchange with routing key
-	// This will cache the message if connection is not ready
-	client.PublishQuePasaMessage(routingKey, payload)
+	// Publish returns true if delivered directly, false if cached.
+	published := client.PublishQuePasaMessage(routingKey, payload)
 
-	// Check if connection is still ready after publish attempt
-	// If not ready, it means message was cached and we should mark as failure
-	if !client.IsConnectionReady() {
-		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached", source.ConnectionString)
+	duration := time.Since(startTime)
+	currentTime := time.Now().UTC()
 
-		// Record RabbitMQ publish error - connection lost/cached
+	if !published {
+		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached (duration: %v, size: %.0f bytes)", source.ConnectionString, duration, payloadSizeBytes)
+
 		rabbitmq.MessagePublishErrors.Inc()
 
-		// Mark as failure even though message was cached
-		currentTime := time.Now().UTC()
 		source.Failure = &currentTime
 		source.Success = nil
 
-		// Mark exceptions on message
 		if message != nil {
 			message.MarkExceptionsWithMessage("RabbitMQ connection lost - message cached")
 		}
 
-		// Still record metrics since message was processed
-		rabbitmq.MessagesPublished.Inc()
-		duration := time.Since(startTime)
-		// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
-
-		logentry.Infof("message cached for QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes) - marked as failure due to connection issue", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 		return errors.New("rabbitmq connection not available, message cached")
 	}
 
-	// Always increment RabbitMQ messages published counter
-	rabbitmq.MessagesPublished.Inc()
-
-	// Record publish duration
-	duration := time.Since(startTime)
-	// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
-
-	// Mark as success only if connection is ready and message was truly published
-	currentTime := time.Now().UTC()
+	// Message was actually delivered to the broker.
 	source.Failure = nil
 	source.Success = &currentTime
 
-	// Clear exceptions on message
 	if message != nil {
 		message.ClearExceptions()
 	}

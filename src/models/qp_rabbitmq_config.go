@@ -137,48 +137,44 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		payloadSizeBytes = float64(len(payloadJson))
 	}
 
-	// Get or create RabbitMQ client for this specific connection string
+	// Get or create RabbitMQ client for this specific connection string.
 	client := rabbitmq.GetRabbitMQClient(source.ConnectionString)
-	if client != nil {
-		// Ensure QuePasa Exchange and Queues exist
-		err = client.EnsureExchangeAndQueues()
-		if err != nil {
-			logentry.Errorf("failed to ensure QuePasa exchange and queues: %s", err.Error())
-
-			// Record RabbitMQ publish error
-			rabbitmq.MessagePublishErrors.Inc()
-			return err
-		}
-
-		// Determine routing key based on message type
-		routingKey := source.DetermineRoutingKey(message)
-		client.PublishQuePasaMessage(routingKey, payload)
-
-		// Always increment RabbitMQ messages published counter
-		rabbitmq.MessagesPublished.Inc()
-
-		// Record publish duration
-		duration := time.Since(startTime)
-		// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
-
-		currentTime := time.Now().UTC()
-		source.Failure = nil
-		source.Success = &currentTime
-
-		logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
-	} else {
+	if client == nil {
 		err = errors.New("failed to get rabbitmq client for connection: " + source.ConnectionString)
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
-
-		// Record RabbitMQ publish error
 		rabbitmq.MessagePublishErrors.Inc()
-
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
+		return
 	}
 
+	// Try to ensure exchange/queues; on failure continue so the message is cached by the publish call.
+	if setupErr := client.EnsureExchangeAndQueues(); setupErr != nil {
+		logentry.Warnf("exchange setup not ready, message will be cached: %s", setupErr.Error())
+	}
+
+	routingKey := source.DetermineRoutingKey(message)
+
+	// published == true: delivered to broker. false: message was cached for later retry.
+	published := client.PublishQuePasaMessage(routingKey, payload)
+
+	duration := time.Since(startTime)
+	currentTime := time.Now().UTC()
+
+	if !published {
+		rabbitmq.MessagePublishErrors.Inc()
+		source.Failure = &currentTime
+		source.Success = nil
+		logentry.Warnf("message cached for QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes) - connection unavailable", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
+		err = errors.New("rabbitmq connection not available, message cached")
+		return
+	}
+
+	source.Failure = nil
+	source.Success = &currentTime
+	logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 	return
 }
 

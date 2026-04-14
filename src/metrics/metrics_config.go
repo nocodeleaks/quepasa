@@ -280,3 +280,46 @@ func CreateCounterRecorder(name, help string) CounterRecorder {
 	}
 	return &NoOpCounterRecorder{}
 }
+
+// SetGaugeRecorder for gauge metrics that support Set and Add (e.g., current queue size)
+type SetGaugeRecorder interface {
+	Set(float64)
+	Add(float64)
+}
+
+// AsyncSetGauge wraps a prometheus Gauge with async execution
+type AsyncSetGauge struct {
+	recorder prometheus.Gauge
+	enabled  bool
+}
+
+func (a *AsyncSetGauge) Set(value float64) {
+	if a.enabled {
+		go a.recorder.Set(value)
+	}
+}
+
+func (a *AsyncSetGauge) Add(value float64) {
+	if a.enabled {
+		go a.recorder.Add(value)
+	}
+}
+
+// NoOpSetGauge is a no-operation set gauge
+type NoOpSetGauge struct{}
+
+func (n *NoOpSetGauge) Set(float64) {}
+func (n *NoOpSetGauge) Add(float64) {}
+
+// CreateSetGaugeRecorder creates a gauge recorder that supports both Set and Add.
+// Use this for metrics representing a current value (e.g., cache size).
+func CreateSetGaugeRecorder(name, help string) SetGaugeRecorder {
+	if MetricsEnabled {
+		gauge := promauto.NewGauge(prometheus.GaugeOpts{
+			Name: name,
+			Help: help,
+		})
+		return &AsyncSetGauge{recorder: gauge, enabled: MetricsEnabled}
+	}
+	return &NoOpSetGauge{}
+}

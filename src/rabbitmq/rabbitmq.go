@@ -4,16 +4,15 @@ import (
 	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
-// Automatically registers the RabbitMQ configuration
+// init pre-warms the RabbitMQ client for the connection string configured via
+// RABBITMQ_CONNECTIONSTRING, if present. This is optional — bots that configure
+// their own connection string via the API will create their clients on demand.
+// The pre-warm runs in a goroutine so it never blocks application startup.
 func init() {
-	rabbitmq_connection_string := environment.Settings.RabbitMQ.ConnectionString
-	if len(rabbitmq_connection_string) > 0 {
-		rabbitmq_queue := environment.Settings.RabbitMQ.Queue
-		if len(rabbitmq_queue) > 0 {
-			RabbitMQQueueDefault = rabbitmq_queue
-		}
-
-		cachelength := environment.Settings.RabbitMQ.CacheLength
-		InitializeRabbitMQClient(rabbitmq_connection_string, cachelength)
+	connStr := environment.Settings.RabbitMQ.ConnectionString
+	if connStr == "" {
+		return
 	}
+
+	go GetRabbitMQClient(connStr)
 }

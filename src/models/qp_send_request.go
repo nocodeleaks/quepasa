@@ -48,6 +48,7 @@ type QpSendRequest struct {
 	Poll     *whatsapp.WhatsappPoll     `json:"poll,omitempty"`     // Poll if exists
 	Location *whatsapp.WhatsappLocation `json:"location,omitempty"` // Location if exists
 	Contact  *whatsapp.WhatsappContact  `json:"contact,omitempty"`  // Contact if exists
+	Sticker  *whatsapp.WhatsappSticker  `json:"sticker,omitempty"`  // Sticker if exists
 }
 
 // get default log entry, never nil
@@ -111,6 +112,12 @@ func (source *QpSendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage,
 	}
 
 	msg.Poll = source.Poll
+
+	// Check if this is a sticker message (content resolved in send flow)
+	if source.Sticker != nil {
+		msg.Type = whatsapp.StickerMessageType
+		return
+	}
 
 	// Check if this is a contact message
 	if source.Contact != nil {

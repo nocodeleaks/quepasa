@@ -344,100 +344,92 @@
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 14px 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: border-color .2s;
+        }
+        .chart-card:hover { border-color: var(--border2); }
+
+        .chart-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
         }
         .chart-card-title {
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: .06em;
-            margin-bottom: 14px;
+            letter-spacing: .07em;
+            line-height: 1.3;
         }
-        .chart-area {
-            height: 160px;
+        .chart-card-kpi {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .chart-legend {
             display: flex;
-            align-items: flex-end;
-            gap: 6px;
-            overflow-x: auto;
-            padding-bottom: 24px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
+            flex-wrap: wrap;
+            gap: 6px 12px;
         }
-
-        /* Bar */
-        .bar {
-            flex: 0 0 auto;
-            min-width: 24px;
-            border-radius: 3px 3px 0 0;
-            position: relative;
-            transition: opacity .2s;
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
             cursor: default;
         }
-        .bar:hover { opacity: .85; }
-        .bar-val {
-            position: absolute;
-            top: -18px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-        .bar-lbl {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.62rem;
-            color: var(--text-dim);
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            max-width: 60px;
-            text-align: center;
+        .chart-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
-        /* Histogram bar */
-        .hbar {
-            flex: 0 0 auto;
-            min-width: 18px;
-            border-radius: 3px 3px 0 0;
+        .chart-wrap {
+            width: 100%;
             position: relative;
-            transition: opacity .2s;
-            cursor: default;
         }
-        .hbar:hover { opacity: .8; }
-        .hbar-val {
-            position: absolute;
-            top: -17px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.6rem;
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-        .hbar-lbl {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%) rotate(-30deg);
-            transform-origin: top center;
-            font-size: 0.58rem;
-            color: var(--text-dim);
-            white-space: nowrap;
-        }
+        .chart-wrap svg { display: block; width: 100%; overflow: visible; }
 
         .no-data {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            height: 180px;
             color: var(--text-dim);
             font-size: 0.8rem;
             font-style: italic;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
         }
+
+        /* ── Performance strip ───────────────────────────────── */
+        .perf-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .perf-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .perf-card-label { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
+        .perf-card-value { font-size: 1.3rem; font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; margin-top: 2px; }
+        .perf-card-meta  { font-size: 0.64rem; color: var(--text-dim); margin-top: 2px; }
 
         /* ── Go metrics grid ─────────────────────────────────── */
         .go-grid {
@@ -445,25 +437,6 @@
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 10px;
         }
-
-        /* ── Performance summary ─────────────────────────────── */
-        .perf-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .perf-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-size: 0.82rem;
-        }
-        .perf-lbl { color: var(--text-muted); }
-        .perf-val { font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; }
 
         /* ── Loading ─────────────────────────────────────────── */
         .app-main.loading { opacity: .6; pointer-events: none; }
@@ -479,16 +452,24 @@
         }
 
         /* ── Responsive ──────────────────────────────────────── */
+        @media (max-width: 1100px) {
+            .charts-grid      { grid-template-columns: 1fr 1fr; }
+            .charts-grid .chart-card[style*="span 2"] { grid-column: span 2; }
+            .charts-grid .chart-card[style*="span 3"] { grid-column: span 2; }
+            .perf-strip       { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (max-width: 900px) {
             .kpi-strip        { grid-template-columns: repeat(2, 1fr); }
-            .charts-grid      { grid-template-columns: 1fr 1fr; }
+            .charts-grid      { grid-template-columns: 1fr; }
+            .charts-grid .chart-card[style*="span 2"],
+            .charts-grid .chart-card[style*="span 3"] { grid-column: span 1; }
         }
         @media (max-width: 600px) {
             .app-main         { padding: 16px 12px 40px; }
             .kpi-strip        { grid-template-columns: 1fr 1fr; }
-            .charts-grid      { grid-template-columns: 1fr; }
             .stat-grid        { grid-template-columns: 1fr 1fr; }
             .kpi-value        { font-size: 1.5rem; }
+            .perf-strip       { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -754,60 +735,73 @@
             <span class="section-title">Gráficos</span>
         </div>
         <div class="charts-grid">
-            <div class="chart-card">
-                <div class="chart-card-title">Mensagens por Tipo (WhatsMeow)</div>
-                <div class="chart-area" id="messageTypesChart"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-card-title">RabbitMQ · Saúde</div>
-                <div class="chart-area" id="rabbitmqHealthChart"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-card-title">API · Histograma de Latência</div>
-                <div class="chart-area" id="apiRequestDurationHistogram"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-card-title">Webhooks · Status</div>
-                <div class="chart-area" id="webhooksChart">
-                    <div class="bar" style="min-width:40px">
-                        <div class="bar-val" id="webhooksSent">0</div>
-                        <div class="bar-lbl">Enviados</div>
-                    </div>
-                    <div class="bar" style="min-width:40px">
-                        <div class="bar-val" id="webhookSuccess">0</div>
-                        <div class="bar-lbl">Sucesso</div>
-                    </div>
-                    <div class="bar" style="min-width:40px">
-                        <div class="bar-val" id="webhookErrors">0</div>
-                        <div class="bar-lbl">Erros</div>
-                    </div>
-                    <div class="bar" style="min-width:40px">
-                        <div class="bar-val" id="webhookTimeouts">0</div>
-                        <div class="bar-lbl">Timeouts</div>
-                    </div>
-                </div>
-            </div>
+
+            <!-- Mensagens por Tipo: span 2 -->
             <div class="chart-card" style="grid-column: span 2">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-card-title">Mensagens por Tipo · WhatsMeow</div>
+                    </div>
+                </div>
+                <div class="chart-wrap" id="messageTypesChart"></div>
+                <div class="chart-legend" id="messageTypesLegend"></div>
+            </div>
+
+            <!-- RabbitMQ Saúde -->
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">RabbitMQ · Saúde</div>
+                    <div class="chart-card-kpi" id="rabbitmqHealthKpi">–</div>
+                </div>
+                <div class="chart-wrap" id="rabbitmqHealthChart"></div>
+            </div>
+
+            <!-- API Latência: span 2 -->
+            <div class="chart-card" style="grid-column: span 2">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-card-title">API · Distribuição de Latência de Requests</div>
+                    </div>
+                    <div class="chart-card-kpi" id="apiLatencyKpi">–</div>
+                </div>
+                <div class="chart-wrap" id="apiRequestDurationHistogram"></div>
+            </div>
+
+            <!-- Webhooks -->
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">Webhooks · Status</div>
+                </div>
+                <div class="chart-wrap" id="webhooksChart"></div>
+            </div>
+
+            <!-- Performance strip: span 3 -->
+            <div class="chart-card" style="grid-column: span 3">
                 <div class="chart-card-title">Resumo de Performance</div>
-                <div class="perf-list">
-                    <div class="perf-row">
-                        <span class="perf-lbl">API · Latência Média</span>
-                        <span class="perf-val" id="avgAPIRequestDuration">–</span>
+                <div class="perf-strip">
+                    <div class="perf-card">
+                        <div class="perf-card-label">API · Latência Média</div>
+                        <div class="perf-card-value" id="avgAPIRequestDuration">–</div>
+                        <div class="perf-card-meta">request_duration_seconds avg</div>
                     </div>
-                    <div class="perf-row">
-                        <span class="perf-lbl">RabbitMQ · Taxa de Sucesso</span>
-                        <span class="perf-val" id="perfRabbitmqSuccessRate">–</span>
+                    <div class="perf-card">
+                        <div class="perf-card-label">RabbitMQ · Taxa de Sucesso</div>
+                        <div class="perf-card-value" id="perfRabbitmqSuccessRate">–</div>
+                        <div class="perf-card-meta">published / (published + errors)</div>
                     </div>
-                    <div class="perf-row">
-                        <span class="perf-lbl">Total Recebido (WhatsMeow)</span>
-                        <span class="perf-val" id="perfTotalReceived">–</span>
+                    <div class="perf-card">
+                        <div class="perf-card-label">Total Recebido</div>
+                        <div class="perf-card-value" id="perfTotalReceived">–</div>
+                        <div class="perf-card-meta">whatsmeow_messages_received_total</div>
                     </div>
-                    <div class="perf-row">
-                        <span class="perf-lbl">Total Publicado (RabbitMQ)</span>
-                        <span class="perf-val" id="perfTotalPublished">–</span>
+                    <div class="perf-card">
+                        <div class="perf-card-label">Total Publicado</div>
+                        <div class="perf-card-value" id="perfTotalPublished">–</div>
+                        <div class="perf-card-meta">rabbitmq_messages_published_total</div>
                     </div>
                 </div>
             </div>
+
         </div>
     </section>
 
@@ -928,35 +922,138 @@
         return `hsl(${Math.abs(h) % 360}, 60%, 55%)`;
     }
 
-    function darken(hex, amount = 0.3) {
-        const n = parseInt(hex.replace('#',''), 16);
-        const r = Math.max(0, Math.round(((n >> 16) & 255) * (1 - amount)));
-        const g = Math.max(0, Math.round(((n >> 8) & 255) * (1 - amount)));
-        const b = Math.max(0, Math.round((n & 255) * (1 - amount)));
-        return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+    /* ── SVG chart engine ───────────────────────────────────── */
+    function svgEl(tag, attrs = {}) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+        return el;
     }
 
-    /* ── Chart helpers ──────────────────────────────────────── */
-    function makeBar(value, maxValue, color, label, isHistogram = false) {
-        const pct = Math.max((value / maxValue) * 140, 4);
-        const el = document.createElement('div');
-        el.className = isHistogram ? 'hbar' : 'bar';
-        el.style.height = pct + 'px';
-        el.style.background = `linear-gradient(to top, ${color}, ${darken(color, 0.2)})`;
-        el.style.minWidth = isHistogram ? '20px' : '28px';
-        el.title = `${label}: ${value.toLocaleString()}`;
+    /**
+     * Render an animated SVG bar chart into a container element.
+     * items: [{ label, value, color }]
+     * opts: { height, gridLines, labelRotate, singleColor }
+     */
+    function renderBarChart(containerId, items, opts = {}) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-        const valEl = document.createElement('div');
-        valEl.className = isHistogram ? 'hbar-val' : 'bar-val';
-        valEl.textContent = value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value.toLocaleString();
+        if (!items.length) {
+            container.innerHTML = '<div class="no-data">Sem dados</div>';
+            return;
+        }
 
-        const lblEl = document.createElement('div');
-        lblEl.className = isHistogram ? 'hbar-lbl' : 'bar-lbl';
-        lblEl.textContent = label;
+        const {
+            height      = 220,
+            gridLines   = 4,
+            labelRotate = false,
+            singleColor = null,
+        } = opts;
 
-        el.appendChild(valEl);
-        el.appendChild(lblEl);
-        return el;
+        const W  = container.clientWidth || 420;
+        const H  = height;
+        const PT = 28, PR = 8, PB = labelRotate ? 56 : 38, PL = 8;
+        const cW = W - PL - PR;
+        const cH = H - PT - PB;
+
+        const maxVal = Math.max(...items.map(i => i.value), 1);
+        const n = items.length;
+        const barW = Math.min(52, Math.max(12, (cW * 0.72) / n));
+        const gap  = (cW - barW * n) / (n + 1);
+
+        const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'xMidYMid meet' });
+
+        /* Grid lines */
+        for (let g = 1; g <= gridLines; g++) {
+            const gy = PT + cH * (1 - g / gridLines);
+            svg.appendChild(svgEl('line', {
+                x1: PL, y1: gy, x2: W - PR, y2: gy,
+                stroke: '#30363d', 'stroke-width': 1, 'stroke-dasharray': '4 3',
+            }));
+            const glv = Math.round(maxVal * g / gridLines);
+            const glText = svgEl('text', {
+                x: PL, y: gy - 3,
+                'font-size': 9, fill: '#4a5568', 'text-anchor': 'start',
+            });
+            glText.textContent = glv >= 1000 ? (glv / 1000).toFixed(1) + 'k' : glv;
+            svg.appendChild(glText);
+        }
+
+        /* Baseline */
+        svg.appendChild(svgEl('line', {
+            x1: PL, y1: PT + cH, x2: W - PR, y2: PT + cH,
+            stroke: '#484f58', 'stroke-width': 1,
+        }));
+
+        /* Bars */
+        items.forEach((item, i) => {
+            const color = singleColor || item.color;
+            const x     = PL + gap + i * (barW + gap);
+            const bH    = Math.max((item.value / maxVal) * cH, 2);
+            const finalY = PT + cH - bH;
+            const cx    = x + barW / 2;
+
+            /* Bar with gradient */
+            const gradId = `g${containerId}${i}`;
+            const defs   = svgEl('defs');
+            const grad   = svgEl('linearGradient', { id: gradId, x1: '0', y1: '0', x2: '0', y2: '1' });
+            const s1 = svgEl('stop', { offset: '0%' });
+            s1.style.stopColor = color; s1.style.stopOpacity = '1';
+            const s2 = svgEl('stop', { offset: '100%' });
+            s2.style.stopColor = color; s2.style.stopOpacity = '0.55';
+            grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad);
+            svg.appendChild(defs);
+
+            const rect = svgEl('rect', {
+                x, y: PT + cH, width: barW, height: 0, rx: 3,
+                fill: `url(#${gradId})`,
+            });
+            rect.style.transition = 'y .55s cubic-bezier(.4,0,.2,1), height .55s cubic-bezier(.4,0,.2,1)';
+            svg.appendChild(rect);
+
+            /* Value label */
+            const valText = svgEl('text', {
+                x: cx, y: finalY - 5,
+                'text-anchor': 'middle', 'font-size': 10.5,
+                fill: color, 'font-weight': '700',
+            });
+            valText.textContent = item.value >= 1000
+                ? (item.value / 1000).toFixed(1) + 'k'
+                : item.value.toLocaleString('pt-BR');
+            svg.appendChild(valText);
+
+            /* X-axis label */
+            if (labelRotate) {
+                const lbl = svgEl('text', {
+                    x: cx, y: PT + cH + 8,
+                    'text-anchor': 'end', 'font-size': 9.5, fill: '#6e7681',
+                    transform: `rotate(-38 ${cx} ${PT + cH + 8})`,
+                });
+                lbl.textContent = item.label;
+                svg.appendChild(lbl);
+            } else {
+                const lbl = svgEl('text', {
+                    x: cx, y: PT + cH + 15,
+                    'text-anchor': 'middle', 'font-size': 10, fill: '#6e7681',
+                });
+                lbl.textContent = item.label;
+                svg.appendChild(lbl);
+            }
+
+            /* Tooltip */
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            title.textContent = `${item.label}: ${item.value.toLocaleString('pt-BR')}`;
+            rect.appendChild(title);
+
+            /* Animate in */
+            setTimeout(() => {
+                rect.setAttribute('y', finalY);
+                rect.setAttribute('height', bH);
+            }, 16);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(svg);
     }
 
     /* ── Dashboard update ───────────────────────────────────── */
@@ -1011,11 +1108,6 @@
         setText('webhookTimeoutsTotal', fmt(whTimeout));
         setText('webhookSuccessRate',   whSent > 0 ? whRate.toFixed(1) + '%' : '–');
         setBar('webhookSuccessBar', whRate);
-        /* chart value nodes */
-        setText('webhooksSent',   fmt(whSent));
-        setText('webhookSuccess', fmt(whSuccess));
-        setText('webhookErrors',  fmt(whErrors));
-        setText('webhookTimeouts',fmt(whTimeout));
 
         /* Charts */
         updateMessageTypesChart(metrics);
@@ -1038,41 +1130,56 @@
 
     /* ── Chart renderers ────────────────────────────────────── */
     function updateMessageTypesChart(metrics) {
-        const chart = document.getElementById('messageTypesChart');
-        chart.innerHTML = '';
         const data = {};
         (metrics['quepasa_whatsmeow_messages_by_type_total'] || []).forEach(m => {
             data[m.labels.type || 'unknown'] = m.value;
         });
         const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
-        if (!entries.length) { chart.innerHTML = '<div class="no-data">Sem dados</div>'; return; }
-        const max = Math.max(...entries.map(e => e[1]), 1);
-        entries.forEach(([type, val]) => {
-            chart.appendChild(makeBar(val, max, colorForType(type), type));
-        });
+        const items = entries.map(([type, val]) => ({
+            label: type, value: val, color: colorForType(type),
+        }));
+        renderBarChart('messageTypesChart', items, { height: 210, labelRotate: entries.length > 6 });
+
+        /* Legend */
+        const legend = document.getElementById('messageTypesLegend');
+        if (legend) {
+            legend.innerHTML = '';
+            entries.forEach(([type, val]) => {
+                const li = document.createElement('div');
+                li.className = 'chart-legend-item';
+                li.title = `${type}: ${val.toLocaleString('pt-BR')}`;
+                li.innerHTML = `<span class="chart-legend-dot" style="background:${colorForType(type)}"></span>${type}`;
+                legend.appendChild(li);
+            });
+        }
     }
 
     function updateRabbitMQHealthChart(metrics, published, errors) {
-        const chart = document.getElementById('rabbitmqHealthChart');
-        chart.innerHTML = '';
         const cached       = getMetricValue(metrics, 'quepasa_rabbitmq_messages_cached_total');
         const reconnections= getMetricValue(metrics, 'quepasa_rabbitmq_reconnection_attempts_total');
         const items = [
-            { label: 'Publicados',   value: published,    color: '#3fb950' },
-            { label: 'Erros',        value: errors,       color: '#f85149' },
-            { label: 'Cached',       value: cached,       color: '#d29922' },
-            { label: 'Reconexões',   value: reconnections,color: '#a371f7' },
+            { label: 'Publicados', value: published,    color: '#3fb950' },
+            { label: 'Erros',      value: errors,       color: '#f85149' },
+            { label: 'Cached',     value: cached,       color: '#d29922' },
+            { label: 'Reconexões', value: reconnections, color: '#a371f7' },
         ];
-        const max = Math.max(...items.map(i => i.value), 1);
-        items.forEach(i => chart.appendChild(makeBar(i.value, max, i.color, i.label)));
+        renderBarChart('rabbitmqHealthChart', items, { height: 200 });
+
+        /* KPI badge = success rate */
+        const total = published + errors;
+        const rate  = total > 0 ? (published / total * 100).toFixed(1) + '%' : '–';
+        setText('rabbitmqHealthKpi', rate);
     }
 
     function updateAPIRequestDurationHistogram(metrics) {
-        const chart = document.getElementById('apiRequestDurationHistogram');
-        chart.innerHTML = '';
         const raw = metrics['quepasa_api_request_duration_seconds_bucket'];
-        if (!raw) { chart.innerHTML = '<div class="no-data">Sem dados</div>'; return; }
+        if (!raw) {
+            const el = document.getElementById('apiRequestDurationHistogram');
+            if (el) el.innerHTML = '<div class="no-data">Sem dados</div>';
+            return;
+        }
 
+        /* Aggregate across all label combos */
         const bucketMap = {};
         raw.forEach(m => {
             const le = m.labels.le;
@@ -1083,25 +1190,33 @@
             .sort((a, b) => a.le - b.le);
         const perBucket = sorted.map((b, i) => ({
             le: b.le,
-            count: i === 0 ? b.v : b.v - sorted[i - 1].v,
+            count: Math.round(i === 0 ? b.v : b.v - sorted[i - 1].v),
         }));
-        if (!perBucket.length) { chart.innerHTML = '<div class="no-data">Sem dados</div>'; return; }
-        const max = Math.max(...perBucket.map(b => b.count), 1);
-        perBucket.forEach(b => {
-            const lbl = b.le >= 1 ? b.le.toFixed(1) + 's' : (b.le * 1000).toFixed(0) + 'ms';
-            chart.appendChild(makeBar(Math.round(b.count), max, '#388bfd', lbl, true));
+
+        const items = perBucket.map(b => ({
+            label: b.le >= 1 ? b.le.toFixed(1) + 's' : (b.le * 1000).toFixed(0) + 'ms',
+            value: b.count,
+            color: '#388bfd',
+        }));
+        renderBarChart('apiRequestDurationHistogram', items, {
+            height: 210, singleColor: '#388bfd', labelRotate: true,
         });
+
+        /* KPI = avg latency */
+        const apiSum   = getMetricValue(metrics, 'quepasa_api_request_duration_seconds_sum');
+        const apiCount = getMetricValue(metrics, 'quepasa_api_request_duration_seconds_count');
+        const avg = apiCount > 0 ? (apiSum / apiCount * 1000).toFixed(0) + ' ms avg' : '–';
+        setText('apiLatencyKpi', avg);
     }
 
-    function updateWebhookChart(sent, success, errors, timeouts) {
-        const bars = document.querySelectorAll('#webhooksChart .bar');
-        const vals = [sent, success, errors, timeouts];
-        const colors = ['#388bfd', '#3fb950', '#f85149', '#d29922'];
-        const max = Math.max(...vals, 1);
-        bars.forEach((bar, i) => {
-            bar.style.height = Math.max((vals[i] / max) * 140, 4) + 'px';
-            bar.style.background = `linear-gradient(to top, ${colors[i]}, ${darken(colors[i], 0.2)})`;
-        });
+    function updateWebhookChart(whSent, whSuccess, whErrors, whTimeout) {
+        const items = [
+            { label: 'Enviados', value: whSent,    color: '#388bfd' },
+            { label: 'Sucesso',  value: whSuccess,  color: '#3fb950' },
+            { label: 'Erros',    value: whErrors,   color: '#f85149' },
+            { label: 'Timeouts', value: whTimeout,  color: '#d29922' },
+        ];
+        renderBarChart('webhooksChart', items, { height: 200 });
     }
 
     /* ── Go metrics ─────────────────────────────────────────── */

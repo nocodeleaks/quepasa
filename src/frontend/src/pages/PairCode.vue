@@ -152,7 +152,7 @@
 import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import cableService from '@/services/cable'
+import { useCableSubscription } from '@/composables/useCableSubscription'
 
 export default defineComponent({
   setup() {
@@ -169,7 +169,6 @@ export default defineComponent({
 
     let pollInterval: any = null
     let pollCount = 0
-    let unsubscribeCable: (() => void) | null = null
     const MAX_POLL_COUNT = 60 // 3 minutes at 3s intervals
 
     const formattedCode = computed(() => {
@@ -286,37 +285,36 @@ export default defineComponent({
       }
     }
 
-    onMounted(() => {
-      void cableService.connect()
-        .then(() => cableService.subscribeToken(token))
-        .catch(() => {
+    useCableSubscription(
+      [
+        {
+          event: 'server.connected',
+          handler: (payload: any) => {
+            if (payload?.token !== token) {
+              return
+            }
+
+            connected.value = true
+            error.value = ''
+            stopPolling()
+          },
+        },
+      ],
+      {
+        token,
+        subscribeToken: true,
+        onConnectError: () => {
           // Keep HTTP fallback active if websocket auth fails.
-        })
+        },
+      },
+    )
 
-      unsubscribeCable = cableService.onEvent('server.connected', (payload: any) => {
-        if (payload?.token !== token) {
-          return
-        }
-
-        connected.value = true
-        error.value = ''
-        stopPolling()
-      })
+    onMounted(() => {
+      // Keep lifecycle hook for page-local state if needed later.
     })
 
     onUnmounted(() => {
       stopPolling()
-
-      if (unsubscribeCable) {
-        unsubscribeCable()
-        unsubscribeCable = null
-      }
-
-      void cableService.unsubscribeToken(token).catch(() => {
-        // ignore unsubscribe failures during teardown
-      }).finally(() => {
-        void cableService.disconnect()
-      })
     })
 
     return { 

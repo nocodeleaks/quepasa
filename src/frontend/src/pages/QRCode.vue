@@ -83,7 +83,7 @@
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import cableService from '@/services/cable'
+import { useCableSubscription } from '@/composables/useCableSubscription'
 
 export default defineComponent({
   setup() {
@@ -96,7 +96,6 @@ export default defineComponent({
     const connected = ref(false)
 
     let pollInterval: any = null
-    let unsubscribeCable: (() => void) | null = null
 
     async function generateQR() {
       loading.value = true
@@ -150,40 +149,37 @@ export default defineComponent({
       }
     }
 
+    useCableSubscription(
+      [
+        {
+          event: 'server.connected',
+          handler: (payload: any) => {
+            if (payload?.token !== token) {
+              return
+            }
+
+            connected.value = true
+            error.value = ''
+            stopPolling()
+          },
+        },
+      ],
+      {
+        token,
+        subscribeToken: true,
+        onConnectError: () => {
+          // Keep HTTP fallback active if websocket auth fails.
+        },
+      },
+    )
+
     onMounted(() => {
       // Auto-generate QR on mount
       generateQR()
-
-      void cableService.connect()
-        .then(() => cableService.subscribeToken(token))
-        .catch(() => {
-          // Keep HTTP fallback active if websocket auth fails.
-        })
-
-      unsubscribeCable = cableService.onEvent('server.connected', (payload: any) => {
-        if (payload?.token !== token) {
-          return
-        }
-
-        connected.value = true
-        error.value = ''
-        stopPolling()
-      })
     })
 
     onUnmounted(() => {
       stopPolling()
-
-      if (unsubscribeCable) {
-        unsubscribeCable()
-        unsubscribeCable = null
-      }
-
-      void cableService.unsubscribeToken(token).catch(() => {
-        // ignore unsubscribe failures during teardown
-      }).finally(() => {
-        void cableService.disconnect()
-      })
     })
 
     return { token, loading, error, qrImage, connected, generateQR }

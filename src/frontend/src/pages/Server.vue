@@ -292,7 +292,7 @@
 import { computed, defineComponent, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
-import cableService from '@/services/cable'
+import { useCableSubscription } from '@/composables/useCableSubscription'
 import { pushToast } from '@/services/toast'
 import TriStateToggle from '@/components/TriStateToggle.vue'
 
@@ -437,49 +437,58 @@ export default defineComponent({
       }
     }
 
-    const lifecycleEvents = [
-      'server.connected',
-      'server.disconnected',
-      'server.stopped',
-      'server.logged_out',
-      'server.deleted',
-    ]
-    let cableListeners: Array<() => void> = []
+    useCableSubscription(
+      [
+        {
+          event: 'server.connected',
+          handler: async (payload: any) => {
+            if (payload?.token !== token) return
+            try { await load() } catch {}
+          },
+        },
+        {
+          event: 'server.disconnected',
+          handler: async (payload: any) => {
+            if (payload?.token !== token) return
+            try { await load() } catch {}
+          },
+        },
+        {
+          event: 'server.stopped',
+          handler: async (payload: any) => {
+            if (payload?.token !== token) return
+            try { await load() } catch {}
+          },
+        },
+        {
+          event: 'server.logged_out',
+          handler: async (payload: any) => {
+            if (payload?.token !== token) return
+            try { await load() } catch {}
+          },
+        },
+        {
+          event: 'server.deleted',
+          handler: (payload: any) => {
+            if (payload?.token !== token) return
+            pushToast('Servidor removido', 'info')
+            router.push('/')
+          },
+        },
+      ],
+      {
+        onConnectError: () => {
+          // The detail page can still rely on manual refresh if websocket auth fails.
+        },
+      },
+    )
 
     onMounted(() => {
       load()
-
-      void cableService.connect().catch(() => {
-        // The detail page can still rely on manual refresh if websocket auth fails.
-      })
-
-      cableListeners = lifecycleEvents.map((eventName) =>
-        cableService.onEvent(eventName, async (payload: any) => {
-          if (payload?.token !== token) {
-            return
-          }
-
-          if (eventName === 'server.deleted') {
-            pushToast('Servidor removido', 'info')
-            router.push('/')
-            return
-          }
-
-          try {
-            await load()
-          } catch {
-            // Keep the previous state visible if the realtime refresh fails.
-          }
-        }),
-      )
     })
 
     onUnmounted(() => {
-      for (const unsubscribe of cableListeners) {
-        unsubscribe()
-      }
-      cableListeners = []
-      void cableService.disconnect()
+      // local timers/watchers only
     })
 
     return {

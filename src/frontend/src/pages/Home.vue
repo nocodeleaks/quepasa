@@ -529,7 +529,7 @@
 import { defineComponent, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
-import cableService from '@/services/cable'
+import { useCableSubscription } from '@/composables/useCableSubscription'
 import { pushToast } from '@/services/toast'
 
 export default defineComponent({
@@ -899,39 +899,27 @@ export default defineComponent({
       }
     }
 
-    const lifecycleEvents = [
-      'server.connected',
-      'server.disconnected',
-      'server.stopped',
-      'server.logged_out',
-      'server.deleted',
-    ]
-    let cableListeners: Array<() => void> = []
+    useCableSubscription(
+      [
+        { event: 'server.connected', handler: async () => { try { await refreshCurrentView() } catch {} } },
+        { event: 'server.disconnected', handler: async () => { try { await refreshCurrentView() } catch {} } },
+        { event: 'server.stopped', handler: async () => { try { await refreshCurrentView() } catch {} } },
+        { event: 'server.logged_out', handler: async () => { try { await refreshCurrentView() } catch {} } },
+        { event: 'server.deleted', handler: async () => { try { await refreshCurrentView() } catch {} } },
+      ],
+      {
+        onConnectError: () => {
+          // The page still works with manual refresh if websocket auth is unavailable.
+        },
+      },
+    )
 
     onMounted(() => {
       load()
-
-      void cableService.connect().catch(() => {
-        // The page still works with manual refresh if websocket auth is unavailable.
-      })
-
-      cableListeners = lifecycleEvents.map((eventName) =>
-        cableService.onEvent(eventName, async () => {
-          try {
-            await refreshCurrentView()
-          } catch {
-            // Keep the last rendered state if the refresh fails.
-          }
-        }),
-      )
     })
 
     onUnmounted(() => {
-      for (const unsubscribe of cableListeners) {
-        unsubscribe()
-      }
-      cableListeners = []
-      void cableService.disconnect()
+      // local timers/watchers only
     })
 
     return { 

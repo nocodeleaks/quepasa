@@ -364,7 +364,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, onUnmounted, reactive } from 'vue'
-import cableService from '../services/cable'
+import { useCableSubscription } from '@/composables/useCableSubscription'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
@@ -819,72 +819,67 @@ export default defineComponent({
       // otherwise use chat display (group title or contact name)
       return getChatDisplayName(m)
     }
-
-    let unsubscribeCable: (() => void) | null = null
     let wsStatusInterval: ReturnType<typeof setInterval> | null = null
+
+    const cable = useCableSubscription(
+      [
+        {
+          event: 'server.message',
+          handler: (payload: any) => {
+            if (payload?.token !== token || !payload?.message?.id) {
+              return
+            }
+
+            const incoming = payload.message
+            const exists = messages.value.some(m => m.id === incoming.id)
+            if (!exists) {
+              messages.value.unshift(incoming)
+
+              if (totalMessages.value !== null) {
+                totalMessages.value++
+              }
+
+              const chatId = incoming.chat?.id
+              if (chatId && !contactPicMap[chatId]) {
+                api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(chatId)}`)
+                  .then(res => {
+                    if (res?.data?.info?.url) {
+                      contactPicMap[chatId] = res.data.info.url
+                    }
+                  }).catch(() => {
+                    // ignore errors
+                  })
+              }
+
+              const sender = incoming.chat?.title || incoming.from || 'Novo'
+              pushToast(`Nova mensagem de ${sender}`, 'info')
+            }
+          },
+        },
+      ],
+      {
+        token,
+        subscribeToken: true,
+        onConnectError: (err) => {
+          console.error('Messages: cable connection error', err)
+          wsConnected.value = false
+        },
+      },
+    )
 
     onMounted(() => {
       loadMessages()
 
-      cableService.connect().then(async () => {
-        await cableService.subscribeToken(token)
-        wsConnected.value = cableService.isConnected()
-      }).catch((err) => {
-        console.error('Messages: cable connection error', err)
-        wsConnected.value = false
-      })
-
       wsStatusInterval = setInterval(() => {
-        wsConnected.value = cableService.isConnected()
+        wsConnected.value = cable.isConnected()
       }, 2000)
-
-      unsubscribeCable = cableService.onEvent('server.message', (payload: any) => {
-        if (payload?.token !== token || !payload?.message?.id) {
-          return
-        }
-
-        const incoming = payload.message
-        const exists = messages.value.some(m => m.id === incoming.id)
-        if (!exists) {
-          messages.value.unshift(incoming)
-
-          if (totalMessages.value !== null) {
-            totalMessages.value++
-          }
-
-          const chatId = incoming.chat?.id
-          if (chatId && !contactPicMap[chatId]) {
-            api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(chatId)}`)
-              .then(res => {
-                if (res?.data?.info?.url) {
-                  contactPicMap[chatId] = res.data.info.url
-                }
-              }).catch(() => {
-                // ignore errors
-              })
-          }
-
-          const sender = incoming.chat?.title || incoming.from || 'Novo'
-          pushToast(`Nova mensagem de ${sender}`, 'info')
-        }
-      })
     })
 
     onUnmounted(() => {
-      if (unsubscribeCable) {
-        unsubscribeCable()
-        unsubscribeCable = null
-      }
       if (wsStatusInterval) {
         clearInterval(wsStatusInterval)
         wsStatusInterval = null
       }
-
-      void cableService.unsubscribeToken(token).catch(() => {
-        // ignore unsubscribe failures during teardown
-      }).finally(() => {
-        void cableService.disconnect()
-      })
     })
 
     return {

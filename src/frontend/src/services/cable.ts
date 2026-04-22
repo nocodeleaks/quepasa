@@ -23,9 +23,45 @@ class CableService {
   private shouldReconnect = false
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private releaseTimer: ReturnType<typeof setTimeout> | null = null
+  private consumerCount = 0
+  private readonly disconnectGraceMs = 1500
   private eventHandlers = new Map<string, Set<EventHandler>>()
   private responseWaiters = new Map<string, { resolve: (frame: CableFrame) => void; reject: (error: Error) => void }>()
   private subscriptions = new Set<string>()
+
+  retain() {
+    this.consumerCount += 1
+    this.shouldReconnect = true
+
+    if (this.releaseTimer) {
+      clearTimeout(this.releaseTimer)
+      this.releaseTimer = null
+    }
+  }
+
+  release() {
+    if (this.consumerCount > 0) {
+      this.consumerCount -= 1
+    }
+
+    if (this.consumerCount > 0) {
+      return
+    }
+
+    this.shouldReconnect = false
+
+    if (this.releaseTimer) {
+      clearTimeout(this.releaseTimer)
+    }
+
+    this.releaseTimer = setTimeout(() => {
+      this.releaseTimer = null
+      if (this.consumerCount === 0) {
+        void this.disconnect()
+      }
+    }, this.disconnectGraceMs)
+  }
 
   async connect(): Promise<void> {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -53,6 +89,10 @@ class CableService {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
+    }
+    if (this.releaseTimer) {
+      clearTimeout(this.releaseTimer)
+      this.releaseTimer = null
     }
 
     this.rejectPending(new Error('cable disconnected'))

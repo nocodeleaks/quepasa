@@ -135,7 +135,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 	response := &apiModels.SendResponse{}
 
 	// Declare a new request struct.
-	request := &models.QpSendAnyRequest{}
+	request := &apiModels.SendAnyRequest{}
 
 	if r.ContentLength > 0 && r.Method == http.MethodPost {
 		// Try to decode the request body into the struct. If there is an error,
@@ -192,7 +192,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
-	SendRequest(w, r, &request.QpSendRequest, server)
+	SendRequest(w, r, &request.SendRequest, server)
 }
 
 //endregion
@@ -200,7 +200,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 // -------------------------- INTERNAL METHODS
 
 // Send a request already validated with chatid and server
-func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendRequest, server *models.QpWhatsappServer) {
+func SendRequest(w http.ResponseWriter, r *http.Request, request *apiModels.SendRequest, server *models.QpWhatsappServer) {
 	response := &apiModels.SendResponse{}
 	var err error
 
@@ -240,13 +240,13 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 }
 
 // finally sends to the whatsapp server
-func Send(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+func Send(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *apiModels.SendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
 	SendWithMessageType(server, response, request, w, attach, whatsapp.UnhandledMessageType)
 }
 
 // SendWithMessageType sends to the whatsapp server with specified message type
 // If messageType is UnhandledMessageType, it will auto-detect the type
-func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
+func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *apiModels.SendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
 	waMsg, err := request.ToWhatsappMessage()
 
 	if err != nil {

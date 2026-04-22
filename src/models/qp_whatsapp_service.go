@@ -331,25 +331,3 @@ func (source *QPWhatsappService) GetUser(username string, password string) (user
 	logger.Debugf("finding user: %s", username)
 	return source.DB.Users.Check(username, password)
 }
-
-//region CONTROLLER - HEALTH
-
-func (source *QPWhatsappService) GetHealth() (items []QpHealthResponseItem) {
-	for _, server := range source.Servers {
-		item := ToHealthReponseItem(server)
-		items = append(items, item)
-	}
-	return items
-}
-
-func ToHealthReponseItem(server *QpWhatsappServer) QpHealthResponseItem {
-	state := server.GetState()
-	return QpHealthResponseItem{
-		Token:     server.Token,
-		Wid:       server.Wid,
-		State:     state,
-		StateCode: int(state),
-	}
-}
-
-//endregion

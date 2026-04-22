@@ -259,6 +259,8 @@ Status:
 - continued in this turn for API-only response DTOs
 - completed for the first batch of API response DTOs by moving them into
   `src/api/models` and deleting their duplicated definitions from `src/models`
+- continued by moving the HTTP send request contracts into `src/api/models`
+- continued by moving the health response item projection into `src/api/models`
 
 ### Phase 2: Isolate persistence
 
@@ -370,9 +372,6 @@ next safest move is:
 
 Priority candidates:
 
-- `qp_health_response_item.go`
-- `qp_send_request*.go`
-
 This keeps the transport boundary moving in the right direction before touching
 the heavier runtime/persistence split.
 
@@ -403,3 +402,6 @@ Progress note:
 - the websocket `message.send` flow now uses a cable-local request contract
   instead of reusing `models.QpSendAnyRequest`
 - obsolete `v1`/`v2` compatibility files were removed from `src/models`
+- `QpSendRequest` and `QpSendAnyRequest` were replaced by API-local request
+  contracts in `src/api/models`
+- `QpHealthResponseItem` was replaced by an API-local health item projection

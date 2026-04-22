@@ -21,8 +21,8 @@ type HealthResponse struct {
 	State *whatsapp.WhatsappConnectionState `json:"state,omitempty"`
 
 	// -- multiple items fields
-	Items []models.QpHealthResponseItem `json:"items,omitempty"`
-	Stats *HealthStats                  `json:"stats,omitempty"`
+	Items []HealthResponseItem `json:"items,omitempty"`
+	Stats *HealthStats         `json:"stats,omitempty"`
 }
 
 // MarshalJSON customizes JSON serialization to include computed state_code

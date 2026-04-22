@@ -83,7 +83,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 
 	// Handle master key authentication first (higher priority)
 	if master {
-		healthItems := models.WhatsappService.GetHealth()
+		healthItems := collectHealthItems(models.WhatsappService.Servers)
 		response.Items = healthItems
 
 		// Calculate statistics
@@ -113,10 +113,10 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Get all servers for this user
-		var userServers []models.QpHealthResponseItem
+		var userServers []api.HealthResponseItem
 		for _, server := range models.WhatsappService.Servers {
 			if server.User == user.Username {
-				userServers = append(userServers, models.ToHealthReponseItem(server))
+				userServers = append(userServers, api.NewHealthResponseItem(server))
 			}
 		}
 
@@ -177,7 +177,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 }
 
 // calculateHealthStats calculates statistics for all servers
-func calculateHealthStats(items []models.QpHealthResponseItem) api.HealthStats {
+func calculateHealthStats(items []api.HealthResponseItem) api.HealthStats {
 	stats := api.HealthStats{
 		Total: len(items),
 	}
@@ -195,6 +195,16 @@ func calculateHealthStats(items []models.QpHealthResponseItem) api.HealthStats {
 	}
 
 	return stats
+}
+
+// collectHealthItems projects a server collection into API health items without
+// leaking transport DTOs into the shared runtime layer.
+func collectHealthItems(servers map[string]*models.QpWhatsappServer) []api.HealthResponseItem {
+	items := make([]api.HealthResponseItem, 0, len(servers))
+	for _, server := range servers {
+		items = append(items, api.NewHealthResponseItem(server))
+	}
+	return items
 }
 
 //endregion

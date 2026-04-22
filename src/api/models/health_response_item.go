@@ -18,6 +18,9 @@ type HealthResponseItem struct {
 
 	// Numeric representation of the connection state.
 	StateCode int `json:"state_code,omitempty"`
+
+	// Optional connection diagnostic details for the server.
+	Diagnostic *models.QpConnectionDiagnostic `json:"diagnostic,omitempty"`
 }
 
 // GetHealth reports whether the represented server is currently healthy.
@@ -29,9 +32,10 @@ func (source HealthResponseItem) GetHealth() bool {
 func NewHealthResponseItem(server *models.QpWhatsappServer) HealthResponseItem {
 	state := server.GetState()
 	return HealthResponseItem{
-		Token:     server.Token,
-		Wid:       server.Wid,
-		State:     state,
-		StateCode: int(state),
+		Token:      server.Token,
+		Wid:        server.Wid,
+		State:      state,
+		StateCode:  int(state),
+		Diagnostic: server.ConnectionDiagnostic(),
 	}
 }

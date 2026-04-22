@@ -689,6 +689,58 @@ func (server *QpWhatsappServer) MarkVerified(value bool) (err error) {
 	return nil
 }
 
+func (server *QpWhatsappServer) ClearConnectionIssue(reason string) error {
+	if server == nil {
+		return nil
+	}
+
+	server.RemoveMetadataValue(connectionDiagnosticMetadataKey)
+
+	if reason == "" {
+		reason = "clear connection issue"
+	}
+
+	return server.Save(reason)
+}
+
+func (server *QpWhatsappServer) RecordDisconnect(cause, details string) error {
+	if server == nil {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	server.SetMetadataValue(connectionDiagnosticMetadataKey, &QpConnectionDiagnostic{
+		Code:              deriveDisconnectIssueCode(cause),
+		Message:           buildDisconnectIssueMessage(cause, details),
+		OccurredAt:        &now,
+		RequiresReauth:    false,
+		DisconnectCause:   cause,
+		DisconnectDetails: details,
+	})
+
+	return server.Save(fmt.Sprintf("record disconnect: %s", cause))
+}
+
+func (server *QpWhatsappServer) RecordLogout(reason string) error {
+	if server == nil {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	server.Verified = false
+	server.SetMetadataValue(connectionDiagnosticMetadataKey, &QpConnectionDiagnostic{
+		Code:              deriveLogoutIssueCode(reason),
+		Message:           buildLogoutIssueMessage(reason),
+		OccurredAt:        &now,
+		RequiresReauth:    true,
+		DisconnectCause:   "logged_out",
+		DisconnectDetails: reason,
+		LogoutReason:      reason,
+	})
+
+	return server.Save(fmt.Sprintf("record logout: %s", reason))
+}
+
 func (source *QpWhatsappServer) ToggleDevel() (handle bool, err error) {
 	source.Devel = !source.Devel
 

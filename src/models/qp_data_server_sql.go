@@ -50,7 +50,11 @@ func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err
 }
 
 func (source QpDataServerSql) Add(element *QpServer) error {
-	query := `INSERT INTO servers (token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user) VALUES (:token, :wid, :verified, :devel, :groups, :broadcasts, :readreceipts, :calls, :readupdate, :user)`
+	query := `INSERT INTO servers (
+		token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata
+	) VALUES (
+		:token, :wid, :verified, :devel, :groups, :broadcasts, :readreceipts, :calls, :readupdate, :user, :metadata
+	)`
 	params := map[string]any{
 		"token":        element.Token,
 		"wid":          nil,
@@ -62,6 +66,7 @@ func (source QpDataServerSql) Add(element *QpServer) error {
 		"calls":        element.Calls,
 		"readupdate":   element.ReadUpdate,
 		"user":         element.User,
+		"metadata":     element.Metadata,
 	}
 	if len(element.Wid) > 0 {
 		params["wid"] = element.Wid
@@ -71,7 +76,18 @@ func (source QpDataServerSql) Add(element *QpServer) error {
 }
 
 func (source QpDataServerSql) Update(element *QpServer) error {
-	query := `UPDATE servers SET wid = :wid, verified = :verified, devel = :devel, groups = :groups, broadcasts = :broadcasts, readreceipts = :readreceipts, calls = :calls, readupdate = :readupdate, user = :user WHERE token = :token`
+	query := `UPDATE servers SET
+		wid = :wid,
+		verified = :verified,
+		devel = :devel,
+		groups = :groups,
+		broadcasts = :broadcasts,
+		readreceipts = :readreceipts,
+		calls = :calls,
+		readupdate = :readupdate,
+		user = :user,
+		metadata = :metadata
+	WHERE token = :token`
 	params := map[string]any{
 		"token":        element.Token,
 		"wid":          nil,
@@ -83,6 +99,7 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		"calls":        element.Calls,
 		"readupdate":   element.ReadUpdate,
 		"user":         element.User,
+		"metadata":     element.Metadata,
 	}
 	if len(element.Wid) > 0 {
 		params["wid"] = element.Wid

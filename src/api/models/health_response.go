@@ -17,8 +17,9 @@ type HealthResponse struct {
 	Uptime    *library.Duration `json:"uptime,omitempty" swaggertype:"object"`
 
 	// -- single item fields
-	Wid   string                            `json:"wid,omitempty"`
-	State *whatsapp.WhatsappConnectionState `json:"state,omitempty"`
+	Wid        string                            `json:"wid,omitempty"`
+	State      *whatsapp.WhatsappConnectionState `json:"state,omitempty"`
+	Diagnostic *models.QpConnectionDiagnostic    `json:"diagnostic,omitempty"`
 
 	// -- multiple items fields
 	Items []HealthResponseItem `json:"items,omitempty"`

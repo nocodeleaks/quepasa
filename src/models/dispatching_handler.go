@@ -141,8 +141,9 @@ func (source *DispatchingHandler) LoggedOut(reason string) {
 		logger := source.GetLogger()
 		logger.Warn(msg)
 
-		// marking unverified and wait for more analyses
-		source.server.MarkVerified(false)
+		// Persist a diagnostic so the frontend can explain why the session is
+		// now unverified instead of only showing the generic state.
+		source.server.RecordLogout(reason)
 
 		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 			Kind:      "logged_out",
@@ -180,7 +181,11 @@ func (source *DispatchingHandler) OnConnected() {
 			logger := source.server.GetLogger()
 			logger.Errorf("error on mark verified after connected: %s", err.Error())
 		}
-
+		err = source.server.ClearConnectionIssue("connected and cleared connection issue")
+		if err != nil {
+			logger := source.server.GetLogger()
+			logger.Errorf("error clearing connection issue after connected: %s", err.Error())
+		}
 		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 			Kind:      "connected",
 			Token:     source.server.Token,
@@ -209,6 +214,10 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 
 	logger := source.GetLogger()
 	logger.Infof("dispatching server disconnect event: %s - %s", cause, details)
+
+	if err := source.server.RecordDisconnect(cause, details); err != nil {
+		logger.Errorf("failed to persist disconnect diagnostic: %s", err.Error())
+	}
 
 	// Get phone number and wid from server
 	phone := source.server.GetNumber()

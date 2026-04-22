@@ -56,6 +56,7 @@ func createTestSchema(db *sqlx.DB) error {
 			user TEXT NOT NULL,
 			verified BOOLEAN DEFAULT 0,
 			devel BOOLEAN DEFAULT 0,
+			metadata TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			groups INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,

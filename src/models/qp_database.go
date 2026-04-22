@@ -229,6 +229,7 @@ func GetBase() migrate.SqlxMigration {
 		"wid" VARCHAR (255) UNIQUE,
 		"verified" BOOLEAN NOT NULL DEFAULT FALSE,
 		"devel" BOOLEAN NOT NULL DEFAULT FALSE,
+		"metadata" TEXT DEFAULT NULL,
 		"groups" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
   		"readreceipts" INT(1) NOT NULL DEFAULT 0,
@@ -266,7 +267,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202403141920'),
 	  ('202512151400'),
 	  ('202512231500'),
-	  ('202602241200');
+	  ('202602241200'),
+	  ('202604221930');
 	  `, "")
 	return migration
 }

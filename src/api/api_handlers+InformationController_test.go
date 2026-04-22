@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	api "github.com/nocodeleaks/quepasa/api/models"
 )
@@ -68,6 +69,17 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 
 	CreateTestUser(t, testUser, testPassword)
 	server := CreateTestServer(t, testToken, testUser)
+	occurredAt := time.Date(2026, time.April, 22, 18, 55, 16, 0, time.UTC)
+	server.SetMetadataValue("connection_diagnostic", map[string]any{
+		"code":               "logged_out_another_device",
+		"message":            "WhatsApp removed this session because another device took over the connection.",
+		"occurred_at":        occurredAt,
+		"requires_reauth":    true,
+		"suggested_action":   "Scan the QR code or request a new pairing code to connect the WhatsApp account again.",
+		"logout_reason":      "401: logged out from another device",
+		"disconnect_cause":   "logged_out",
+		"disconnect_details": "401: logged out from another device",
+	})
 
 	// Create request with bot token in header
 	req := httptest.NewRequest(http.MethodGet, "/info", nil)
@@ -110,6 +122,15 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 		}
 		t.Logf("Server info: Token=%s, User=%s, Connected=%v",
 			response.Server.Token, response.Server.User, response.Server.GetStatus())
+	}
+	if response.Diagnostic == nil {
+		t.Fatal("Expected diagnostic field in info response")
+	}
+	if response.Diagnostic.Code != "logged_out_another_device" {
+		t.Errorf("Expected diagnostic code logged_out_another_device, got %s", response.Diagnostic.Code)
+	}
+	if response.Diagnostic.OccurredAt == nil || !response.Diagnostic.OccurredAt.Equal(occurredAt) {
+		t.Errorf("Expected diagnostic occurred_at %s, got %+v", occurredAt, response.Diagnostic.OccurredAt)
 	}
 
 	t.Log("Bot token correctly returns base information")

@@ -159,6 +159,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 
 		response.State = &state
 		response.Wid = server.Wid
+		response.Diagnostic = server.ConnectionDiagnostic()
 
 		// Add server uptime
 		if !server.Timestamps.Start.IsZero() {

@@ -27,9 +27,10 @@ type QpServer struct {
 	Token string `db:"token" json:"token" validate:"max=100"`
 
 	// Whatsapp session id
-	Wid      string `db:"wid" json:"wid" validate:"max=255"`
-	Verified bool   `db:"verified" json:"verified"`
-	Devel    bool   `db:"devel" json:"devel"`
+	Wid      string     `db:"wid" json:"wid" validate:"max=255"`
+	Verified bool       `db:"verified" json:"verified"`
+	Devel    bool       `db:"devel" json:"devel"`
+	Metadata QpMetadata `db:"metadata" json:"metadata,omitempty"`
 
 	User      string    `db:"user" json:"user,omitempty" validate:"max=36"`
 	Timestamp time.Time `db:"timestamp" json:"timestamp,omitempty"`

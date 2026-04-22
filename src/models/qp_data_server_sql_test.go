@@ -23,25 +23,27 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 		wid TEXT,
 		verified BOOLEAN,
 		devel BOOLEAN,
+		metadata TEXT,
 		groups INTEGER,
 		broadcasts INTEGER,
 		readreceipts INTEGER,
 		calls INTEGER,
 		readupdate INTEGER,
 		user TEXT,
-		timestamp DATETIME
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
 	if _, err := db.Exec(schema); err != nil {
 		t.Fatalf("create schema: %v", err)
 	}
 
 	if _, err := db.Exec(
-		`INSERT INTO servers (token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO servers (token, wid, verified, devel, metadata, groups, broadcasts, readreceipts, calls, readupdate, user)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		"token-1",
 		"5511999999999@s.whatsapp.net",
 		true,
 		false,
+		nil,
 		int(whatsapp.TrueBooleanType),
 		int(whatsapp.FalseBooleanType),
 		int(whatsapp.UnSetBooleanType),

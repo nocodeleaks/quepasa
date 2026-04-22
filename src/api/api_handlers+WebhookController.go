@@ -31,15 +31,20 @@ func WebhookController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &apiModels.WebhookResponse{}
-
 	server, err := GetServer(r)
 	if err != nil {
+		response := &apiModels.WebhookResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	WebhookWithServer(w, r, server)
+}
+
+// WebhookWithServer applies the current webhook CRUD behavior to a resolved server.
+func WebhookWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
+	response := &apiModels.WebhookResponse{}
 	logger := server.GetLogger()
 
 	// reading body to avoid converting to json if empty

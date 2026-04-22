@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -63,6 +64,42 @@ func FindSPALiveServer(token string) *models.QpWhatsappServer {
 		return nil
 	}
 	return server
+}
+
+// GetSPAOwnedLiveServer returns the in-memory server instance only after the user
+// has been authorized against the persisted server record.
+func GetSPAOwnedLiveServer(user *models.QpUser, token string) (*models.QpWhatsappServer, error) {
+	if _, err := GetSPAOwnedServerRecord(user, token); err != nil {
+		return nil, err
+	}
+
+	server := FindSPALiveServer(token)
+	if server == nil {
+		return nil, fmt.Errorf("server is not active in memory")
+	}
+
+	return server, nil
+}
+
+// EnsureSPAServerReady validates that the live server can serve realtime/message operations.
+func EnsureSPAServerReady(server *models.QpWhatsappServer) error {
+	if server == nil {
+		return fmt.Errorf("server is not active in memory")
+	}
+
+	if server.GetStatus() != whatsapp.Ready {
+		return &ApiServerNotReadyException{Wid: server.GetWId(), Status: server.GetStatus()}
+	}
+
+	if server.Handler == nil {
+		return fmt.Errorf("handlers not attached")
+	}
+
+	if _, err := server.GetValidConnection(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CountSPADispatchingForServer counts dispatching rows from the current live server

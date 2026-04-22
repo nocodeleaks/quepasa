@@ -8,6 +8,7 @@ import (
 
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
 
 type subscriptionCommandData struct {
@@ -47,6 +48,28 @@ type sendCommandData struct {
 	Contact        *whatsapp.WhatsappContact  `json:"contact,omitempty"`
 }
 
+type messageMutationCommandData struct {
+	Token     string `json:"token"`
+	MessageID string `json:"messageId,omitempty"`
+	MessageId string `json:"messageid,omitempty"`
+	Content   string `json:"content,omitempty"`
+}
+
+type chatArchiveCommandData struct {
+	Token   string `json:"token"`
+	ChatID  string `json:"chatId,omitempty"`
+	ChatId  string `json:"chatid,omitempty"`
+	Archive bool   `json:"archive"`
+}
+
+type chatPresenceCommandData struct {
+	Token    string                            `json:"token"`
+	ChatID   string                            `json:"chatId,omitempty"`
+	ChatId   string                            `json:"chatid,omitempty"`
+	Type     whatsapp.WhatsappChatPresenceType `json:"type"`
+	Duration uint                              `json:"duration,omitempty"`
+}
+
 func (hub *Hub) registerDefaultCommands() {
 	hub.commands["ping"] = hub.handlePing
 	hub.commands["subscribe"] = hub.handleSubscribe
@@ -54,6 +77,10 @@ func (hub *Hub) registerDefaultCommands() {
 	hub.commands["server.enable"] = hub.handleServerEnable
 	hub.commands["server.disable"] = hub.handleServerDisable
 	hub.commands["message.send"] = hub.handleMessageSend
+	hub.commands["message.edit"] = hub.handleMessageEdit
+	hub.commands["message.revoke"] = hub.handleMessageRevoke
+	hub.commands["chat.archive"] = hub.handleChatArchive
+	hub.commands["chat.presence"] = hub.handleChatPresence
 }
 
 func (hub *Hub) handleCommand(client *Client, command ClientCommand) {
@@ -175,6 +202,148 @@ func (hub *Hub) handleMessageSend(client *Client, command ClientCommand) (interf
 	return sendMessageThroughServer(server, command.ID, &data)
 }
 
+func (hub *Hub) handleMessageEdit(client *Client, command ClientCommand) (interface{}, error) {
+	var data messageMutationCommandData
+	if err := decodeCommandData(command.Data, &data); err != nil {
+		return nil, err
+	}
+
+	server, err := getOwnedReadyServerForToken(client.user, data.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	messageID := normalizeMessageID(data.MessageID, data.MessageId)
+	if messageID == "" {
+		return nil, fmt.Errorf("missing messageId")
+	}
+
+	content := strings.TrimSpace(data.Content)
+	if content == "" {
+		return nil, fmt.Errorf("content is required")
+	}
+
+	if err := server.Edit(messageID, content); err != nil {
+		return nil, err
+	}
+
+	return MessageMutationResponsePayload{
+		Token:     server.Token,
+		WID:       server.GetWId(),
+		MessageID: messageID,
+		Action:    "edited",
+	}, nil
+}
+
+func (hub *Hub) handleMessageRevoke(client *Client, command ClientCommand) (interface{}, error) {
+	var data messageMutationCommandData
+	if err := decodeCommandData(command.Data, &data); err != nil {
+		return nil, err
+	}
+
+	server, err := getOwnedReadyServerForToken(client.user, data.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	messageID := normalizeMessageID(data.MessageID, data.MessageId)
+	if messageID == "" {
+		return nil, fmt.Errorf("missing messageId")
+	}
+
+	if err := server.Revoke(messageID); err != nil {
+		return nil, err
+	}
+
+	return MessageMutationResponsePayload{
+		Token:     server.Token,
+		WID:       server.GetWId(),
+		MessageID: messageID,
+		Action:    "revoked",
+	}, nil
+}
+
+func (hub *Hub) handleChatArchive(client *Client, command ClientCommand) (interface{}, error) {
+	var data chatArchiveCommandData
+	if err := decodeCommandData(command.Data, &data); err != nil {
+		return nil, err
+	}
+
+	server, err := getOwnedReadyServerForToken(client.user, data.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	chatID, err := normalizeChatID(data.ChatID, data.ChatId)
+	if err != nil {
+		return nil, err
+	}
+
+	rawConn, err := server.GetValidConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	conn, ok := rawConn.(*whatsmeow.WhatsmeowConnection)
+	if !ok {
+		return nil, fmt.Errorf("unsupported connection type for archive")
+	}
+
+	if err := whatsmeow.ArchiveChat(conn, chatID, data.Archive); err != nil {
+		action := "archive"
+		if !data.Archive {
+			action = "unarchive"
+		}
+		return nil, fmt.Errorf("failed to %s chat: %s", action, err.Error())
+	}
+
+	action := "archived"
+	if !data.Archive {
+		action = "unarchived"
+	}
+
+	return ChatMutationResponsePayload{
+		Token:  server.Token,
+		WID:    server.GetWId(),
+		ChatID: chatID,
+		Action: action,
+	}, nil
+}
+
+func (hub *Hub) handleChatPresence(client *Client, command ClientCommand) (interface{}, error) {
+	var data chatPresenceCommandData
+	if err := decodeCommandData(command.Data, &data); err != nil {
+		return nil, err
+	}
+
+	server, err := getOwnedReadyServerForToken(client.user, data.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	chatID, err := normalizeChatID(data.ChatID, data.ChatId)
+	if err != nil {
+		return nil, err
+	}
+
+	previous := cablePresenceRequests.Cancel(chatID)
+	if err := server.SendChatPresence(chatID, data.Type); err != nil {
+		return nil, fmt.Errorf("failed to send presence update: %s", err.Error())
+	}
+
+	if data.Type != whatsapp.WhatsappChatPresenceTypePaused {
+		cablePresenceRequests.Append(chatID, data.Type, data.Duration, server)
+	}
+
+	return ChatMutationResponsePayload{
+		Token:    server.Token,
+		WID:      server.GetWId(),
+		ChatID:   chatID,
+		Action:   fmt.Sprintf("presence:%s", data.Type.String()),
+		Previous: previous,
+	}, nil
+}
+
 func decodeCommandData(raw json.RawMessage, out interface{}) error {
 	if len(raw) == 0 {
 		return nil
@@ -233,6 +402,36 @@ func getOwnedLiveServerForCommand(user *models.QpUser, raw json.RawMessage, crea
 	}
 
 	return models.WhatsappService.FindByToken(token)
+}
+
+func getOwnedReadyServerForToken(user *models.QpUser, token string) (*models.QpWhatsappServer, error) {
+	token = normalizeToken(token)
+	if token == "" {
+		return nil, fmt.Errorf("missing token")
+	}
+
+	if _, err := getOwnedServerRecord(user, token); err != nil {
+		return nil, err
+	}
+
+	server, err := models.WhatsappService.FindByToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if status := server.GetStatus(); status != whatsapp.Ready {
+		return nil, fmt.Errorf("server not ready: %s", status.String())
+	}
+
+	if server.Handler == nil {
+		return nil, fmt.Errorf("handlers not attached")
+	}
+
+	if _, err := server.GetValidConnection(); err != nil {
+		return nil, err
+	}
+
+	return server, nil
 }
 
 func getOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, error) {
@@ -328,4 +527,17 @@ func firstNonZero(values ...uint64) uint64 {
 		}
 	}
 	return 0
+}
+
+func normalizeMessageID(values ...string) string {
+	return firstNonEmpty(values...)
+}
+
+func normalizeChatID(values ...string) (string, error) {
+	chatID := firstNonEmpty(values...)
+	if chatID == "" {
+		return "", fmt.Errorf("chatId is required")
+	}
+
+	return whatsapp.FormatEndpoint(chatID)
 }

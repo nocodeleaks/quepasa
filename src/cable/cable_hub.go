@@ -108,6 +108,10 @@ func (hub *Hub) ServeWS(w http.ResponseWriter, r *http.Request, user *models.QpU
 			"server.enable",
 			"server.disable",
 			"message.send",
+			"message.edit",
+			"message.revoke",
+			"chat.archive",
+			"chat.presence",
 		},
 	})
 

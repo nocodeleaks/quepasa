@@ -46,6 +46,23 @@ type SendMessageResponsePayload struct {
 	Token   string `json:"token"`
 }
 
+// MessageMutationResponsePayload is returned after edit/revoke commands.
+type MessageMutationResponsePayload struct {
+	Token     string `json:"token"`
+	WID       string `json:"wid"`
+	MessageID string `json:"messageId"`
+	Action    string `json:"action"`
+}
+
+// ChatMutationResponsePayload is returned after archive/presence commands.
+type ChatMutationResponsePayload struct {
+	Token    string `json:"token"`
+	WID      string `json:"wid"`
+	ChatID   string `json:"chatId"`
+	Action   string `json:"action"`
+	Previous bool   `json:"previous,omitempty"`
+}
+
 // ServerMessageEventPayload is the push event delivered to subscribers whenever
 // a server emits a message through the realtime publisher bridge.
 type ServerMessageEventPayload struct {

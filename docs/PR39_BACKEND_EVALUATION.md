@@ -23,6 +23,14 @@ Current extraction status:
 
 - first backend slice integrated into local `develop`
 - second backend read slice integrated into local `develop`
+- third backend message slice integrated into local `develop`
+- SPA send wrapper integrated into local `develop`
+- SPA archive/presence wrappers integrated into local `develop`
+- cable realtime command surface expanded beyond the PR websocket scope
+- SPA webhook/rabbitmq wrappers integrated into local `develop`
+- explicit SPA server debug/option toggles integrated into local `develop`
+- SPA server create/update/delete wrappers integrated into local `develop`
+- remaining PR `environment` and user-mutation handlers intentionally deferred
 - dedicated websocket cable module implemented locally outside PR `#39`
 - no model-layer changes imported from PR `#39`
 - no frontend files imported yet
@@ -383,6 +391,12 @@ The following backend ideas from PR `#39` have now been integrated locally, with
 - public `login/config` endpoint
 - authenticated SPA route registration scaffold
 - authenticated SPA read endpoints under `/spa`
+- authenticated SPA message routes under `/spa`
+- authenticated SPA send route under `/spa`
+- authenticated SPA chat archive/presence routes under `/spa`
+- authenticated SPA webhook/rabbitmq routes under `/spa`
+- authenticated SPA server debug/option toggle routes under `/spa`
+- authenticated SPA server create/update/delete routes under `/spa`
 - SPA server enable endpoint
 - SPA server disable endpoint
 - SPA history-sync media download endpoint
@@ -393,11 +407,13 @@ Files added or updated locally for this first slice:
 - `src/api/api_handlers+LoginController.go`
 - `src/api/api_handlers+ServerEnableDisableController.go`
 - `src/api/api_handlers+HistoryDownloadController.go`
+- `src/api/api_handlers+SPAMessageController.go`
 - `src/api/api_handlers+SPAReadController.go`
 - `src/api/api_spa_routes.go`
 - `src/api/api_spa_utils.go`
 - `src/api/api.go`
 - `src/api/api_handlers.go`
+- `src/api/models/receive_response.go`
 - `src/webserver/webserver.go`
 - `src/cable/*`
 - `src/models/realtime_publishers.go`
@@ -432,11 +448,45 @@ The current `/spa` read surface includes:
 - `GET /spa/server/{token}/contacts`
 - `GET /spa/server/{token}/groups`
 
+The current `/spa` message and media surface includes:
+
+- `POST /spa/server/{token}/send`
+- `POST /spa/server/{token}/chat/archive`
+- `POST /spa/server/{token}/chat/presence`
+- `GET /spa/server/{token}/messages`
+- `PUT /spa/server/{token}/message/{messageid}/edit`
+- `DELETE /spa/server/{token}/message/{messageid}`
+- `GET /spa/server/{token}/download/{messageid}`
+- `POST /spa/server/{token}/messages/{messageid}/history/download`
+- `POST /spa/server/{token}/enable`
+- `POST /spa/server/{token}/disable`
+
+The current `/spa` dispatching/config surface includes:
+
+- `POST /spa/server/create`
+- `PATCH /spa/server/{token}`
+- `DELETE /spa/server/{token}`
+- `POST /spa/server/{token}/debug/toggle`
+- `POST /spa/server/{token}/option/{option}/toggle`
+- `GET /spa/server/{token}/webhooks`
+- `POST /spa/server/{token}/webhooks`
+- `DELETE /spa/server/{token}/webhooks`
+- `GET /spa/server/{token}/rabbitmq`
+- `POST /spa/server/{token}/rabbitmq`
+- `DELETE /spa/server/{token}/rabbitmq`
+
 Read-path behavior notes:
 
 - server listing uses persisted DB records so disconnected servers still appear
 - live-only endpoints such as contacts/groups still require the server to exist in memory
 - ownership checks are done against persisted server records before live access
+- SPA send reuses the current `SendAnyWithServer` flow instead of the PR's reduced text-only payload
+- SPA archive/presence reuse the current `develop` controller behavior, including validation and typing-duration handling
+- SPA webhook/rabbitmq routes reuse the current dispatching CRUD behavior from `develop` instead of the older PR-specific handlers
+- SPA debug/option toggles use explicit per-route actions instead of reviving the PR's generic `/toggle` endpoint
+- SPA server create/update/delete reuse the current `develop` information/service primitives instead of the PR's separate mutation handlers
+- SPA message listing reuses the current receive filters and adds SPA-only pagination
+- SPA media downloads keep the current attachment behavior by default and only switch to inline disposition when requested explicitly
 
 ### Validation Result
 
@@ -449,6 +499,110 @@ Result:
 
 - passed locally
 - only existing `sqlite3` compiler warnings were observed
+
+## Medium-Risk Handler Review
+
+Review focus completed for the medium-risk handlers previously identified inside `src/api/api_handlers+SPAController.go`.
+
+### Worth Extracting With Adaptation
+
+- `SPAServerMessagesController`
+  - useful because SPA pagination is real product value that the current legacy `/receive` route does not provide
+  - should **not** be copied as-is:
+    - it authenticates through `GetFormUserFromRequest` instead of the new SPA JWT helper path
+    - it resolves the server only through `models.GetServerFromToken`, which assumes live in-memory state
+    - it only supports `timestamp`, `exceptions`, `page`, and `limit`, which is narrower than the current receive filter surface
+  - preferred extraction:
+    - keep the SPA route shape
+    - reuse the current receive filtering helpers
+    - add pagination on top of the already-adapted `/spa` ownership/live-server lookup path
+
+- `SPAServerEditMessageController`
+  - route shape is useful for SPA UX because the message id sits in the path
+  - implementation is only a thin wrapper around current `server.Edit(...)`
+  - should be adapted to use SPA auth/ownership helpers rather than imported directly
+
+- `SPAServerRevokeMessageController`
+  - same general conclusion as edit
+  - worth exposing on `/spa`, but as a compatibility wrapper over current revoke behavior instead of a raw PR import
+
+- `SPAServerDownloadMediaController`
+  - useful for SPA media preview/download flows
+  - close to current legacy `DownloadController`, but changes behavior in notable ways:
+    - forces `cache=false`
+    - returns `inline` disposition instead of `attachment`
+    - skips the current filename fallback logic based on MIME type
+  - preferred extraction:
+    - keep SPA route
+    - reuse current download logic
+    - make disposition/cache behavior an explicit SPA choice instead of silently importing the PR behavior
+
+### Do Not Import As-Is
+
+- `SPAServerSendController`
+  - lower value than it first appears because current `develop` already has a richer send surface and a cable `message.send` command
+  - PR version only supports:
+    - `recipient`
+    - plain text `message`
+    - optional `id`
+  - it drops current capabilities such as attachments, polls, locations, contacts, richer request validation, and cable-oriented send flows
+  - conclusion: do not import; if SPA needs HTTP send, build it from the current send request model instead
+
+- `SPAServerArchiveChatController`
+  - redundant with the existing `ArchiveChatController`
+  - PR version is weaker than current `develop`:
+    - no explicit ready-state guard
+    - less detailed validation/response handling
+    - direct type assertion on the connection path
+  - conclusion: do not import directly; expose SPA access later by delegating to the current archive implementation
+
+- `SPAServerPresenceController`
+  - redundant with the existing `ChatPresenceController`
+  - PR version is materially worse:
+    - string parsing instead of the typed request model
+    - ignores the current async duration handling for typing indicators
+    - narrower response and validation behavior
+  - conclusion: do not import directly
+
+- `SPAVerifyWebSocketController`
+  - no longer fits the architecture direction
+  - it is tied to the PR's QR verification websocket path, while local `develop` now has a dedicated `cable` module for authenticated realtime commands/events
+  - conclusion: keep the current cable direction and do not reuse the PR websocket implementation
+
+### Recommended Third Backend Slice
+
+If we continue extracting backend value from PR `#39`, the next slice should be:
+
+- `GET /spa/server/{token}/messages`
+- `PUT /spa/server/{token}/message/{messageid}/edit`
+- `DELETE /spa/server/{token}/message/{messageid}`
+- `GET /spa/server/{token}/download/{messageid}`
+
+Implementation rule for that slice:
+
+- preserve the SPA route ergonomics from PR `#39`
+- do **not** import the handler bodies verbatim
+- adapt them onto current `develop` helpers and controller logic
+- leave SPA send/archive/presence on the existing legacy or cable surfaces until we introduce shared internal service helpers
+
+## Deferred High-Risk Scope
+
+The remaining backend endpoints from PR `#39` that are still intentionally not imported are:
+
+- `SPAEnvironmentController`
+- `SPAUserController`
+- `SPAUserDeleteController`
+
+Current decision:
+
+- do not extract them yet
+
+Reasoning:
+
+- no local frontend or workspace reference currently requires dedicated SPA wrappers for those flows
+- `SPAEnvironmentController` still needs a security review because the legacy `/environment` endpoint has explicit master-key semantics that should not be bypassed accidentally
+- user mutation is narrower product value than the server/message/dispatching work already integrated
+- the current `/spa` + `cable` surface is now broad enough to support the backend half of the SPA without adding those higher-risk endpoints prematurely
 
 ## Explicit Non-Goals For The First Backend Pass
 
@@ -480,17 +634,49 @@ Result:
   - QR/pair code reads
   - contacts/groups reads
   - `/spa` auth/ownership helpers
+- Reviewed the PR medium-risk SPA handlers:
+  - keep messages/edit/revoke/download as extraction candidates with adaptation
+  - reject direct import of send/archive/presence/verify websocket handlers
 - Preserved current `develop` semantics for model-layer delete, webhook, WID, and dispatching behavior.
+- Integrated the third backend SPA message slice locally:
+  - paginated SPA message listing
+  - SPA edit wrapper
+  - SPA revoke wrapper
+  - SPA media download wrapper
+  - shared SPA live/ready server helpers
+- Integrated SPA send as a wrapper over the current send request model:
+  - preserves current send capabilities for text, attachments, URLs, base64 content, polls, locations, and contacts
+  - intentionally does **not** import the PR's reduced send payload directly
+- Integrated SPA archive/presence as wrappers over shared `develop` helpers:
+  - archive keeps current ready-state and chat-id validation behavior
+  - presence keeps current typed request handling and async duration cancellation semantics
+- Expanded `cable` instead of reviving the PR websocket verification path:
+  - added realtime commands for `message.edit`
+  - added realtime commands for `message.revoke`
+  - added realtime commands for `chat.archive`
+  - added realtime commands for `chat.presence`
+  - kept the command/event bus as the preferred websocket direction instead of the PR's QR-only socket
+- Integrated SPA webhook/rabbitmq wrappers over shared `develop` helpers:
+  - webhook CRUD now reuses the current dispatching controller behavior
+  - rabbitmq CRUD now reuses the current dispatching controller behavior
+  - we still do **not** import the older PR CRUD handlers directly
+- Integrated explicit SPA server toggles over current `develop` primitives:
+  - `debug` uses `ToggleDevel`
+  - `groups`, `broadcasts`, `readreceipts`, `calls`, and `readupdate` use explicit toggle routes
+  - we still do **not** import the PR's generic `/toggle` handler directly
+- Integrated SPA server create/update/delete over current `develop` primitives:
+  - `create` uses `AppendNewServer` plus the current persisted info model
+  - `update` uses `updateServerConfiguration`
+  - `delete` uses `WhatsappService.Delete`
+  - we still do **not** import the PR mutation handlers directly
+- Deferred the remaining high-risk backend scope:
+  - no local consumer currently justifies SPA environment or user-mutation wrappers
+  - keep the legacy `/environment` semantics unchanged until there is a concrete requirement and review
 
 ## Next Step
 
 Next review slice:
 
-- inspect `src/api/api_handlers+SPAController.go`
-- move to medium-risk SPA handlers:
-  - messages listing
-  - message edit/revoke
-  - chat archive/presence
-  - media download
-- grow the new cable protocol around those same operations instead of importing the PR websocket code
-- still avoid mutation-heavy server/webhook/rabbitmq/environment handlers until read-only and medium-risk paths are stable
+- backend extraction from PR `#39` is now sufficient for the current SPA baseline
+- if we continue this PR evaluation, move to the frontend/import side as a separate stage
+- keep rejecting direct import of PR environment/user mutation handlers unless a concrete frontend requirement appears

@@ -248,6 +248,93 @@ Rules:
 - URL and embedded base64 content are converted using the same model helpers used
   by the HTTP send flow
 
+### `message.edit`
+
+Purpose:
+
+- edit a cached message through the realtime channel
+
+Payload:
+
+```json
+{
+  "token": "server-token",
+  "messageId": "ABCD",
+  "content": "updated text"
+}
+```
+
+Rules:
+
+- ownership is validated first
+- the server must be in `ready` state
+- the command reuses the current message edit semantics from `develop`
+
+### `message.revoke`
+
+Purpose:
+
+- revoke a cached message through the realtime channel
+
+Payload:
+
+```json
+{
+  "token": "server-token",
+  "messageId": "ABCD"
+}
+```
+
+Rules:
+
+- ownership is validated first
+- the server must be in `ready` state
+
+### `chat.archive`
+
+Purpose:
+
+- archive or unarchive a chat through the realtime channel
+
+Payload:
+
+```json
+{
+  "token": "server-token",
+  "chatId": "5511999999999@s.whatsapp.net",
+  "archive": true
+}
+```
+
+Rules:
+
+- ownership is validated first
+- the server must be in `ready` state
+- the command uses the same archive logic as the current HTTP API
+
+### `chat.presence`
+
+Purpose:
+
+- send typing/presence updates through the realtime channel
+
+Payload:
+
+```json
+{
+  "token": "server-token",
+  "chatId": "5511999999999@s.whatsapp.net",
+  "type": "text",
+  "duration": 3000
+}
+```
+
+Rules:
+
+- ownership is validated first
+- the server must be in `ready` state
+- non-paused presence keeps the same timeout-based auto-pause behavior used by the backend
+
 ## Events
 
 ### `session.ready`
@@ -330,8 +417,8 @@ Reasons:
 This first version is intentionally narrow:
 
 - it does not replace the legacy SignalR path yet
-- it does not yet expose every HTTP mutation via websocket commands
-- it focuses on the server lifecycle and message send path first
+- it still does not expose every HTTP mutation via websocket commands
+- it currently focuses on server lifecycle plus the main message/chat actions needed by the SPA
 
 That is deliberate. The protocol is now stable enough to expand without another
 transport rewrite.

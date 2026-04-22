@@ -34,15 +34,20 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &apiModels.RabbitMQResponse{}
-
 	server, err := GetServer(r)
 	if err != nil {
+		response := &apiModels.RabbitMQResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	RabbitMQWithServer(w, r, server)
+}
+
+// RabbitMQWithServer applies the current RabbitMQ CRUD behavior to a resolved server.
+func RabbitMQWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
+	response := &apiModels.RabbitMQResponse{}
 	logger := server.GetLogger()
 
 	// reading body to avoid converting to json if empty

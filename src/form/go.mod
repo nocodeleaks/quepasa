@@ -1,5 +1,7 @@
 module github.com/nocodeleaks/quepasa/form
 
+replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.42
+
 replace github.com/nocodeleaks/quepasa/media => ../media
 
 replace github.com/nocodeleaks/quepasa/library => ../library
@@ -56,7 +58,6 @@ require (
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
-	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

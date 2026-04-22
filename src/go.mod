@@ -1,5 +1,7 @@
 module github.com/nocodeleaks/quepasa/main
 
+replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.42
+
 replace github.com/nocodeleaks/quepasa/media => ./media
 
 replace github.com/nocodeleaks/quepasa/api => ./api
@@ -20,6 +22,8 @@ replace github.com/nocodeleaks/quepasa/webserver => ./webserver
 
 replace github.com/nocodeleaks/quepasa/form => ./form
 
+replace github.com/nocodeleaks/quepasa/cable => ./cable
+
 replace github.com/nocodeleaks/quepasa/sipproxy => ./sipproxy
 
 replace github.com/nocodeleaks/quepasa/environment => ./environment
@@ -35,6 +39,7 @@ go 1.25.0
 require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/cable v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000

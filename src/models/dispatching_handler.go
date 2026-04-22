@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
-	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -144,6 +143,18 @@ func (source *DispatchingHandler) LoggedOut(reason string) {
 
 		// marking unverified and wait for more analyses
 		source.server.MarkVerified(false)
+
+		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+			Kind:      "logged_out",
+			Token:     source.server.Token,
+			User:      source.server.User,
+			Wid:       source.server.GetWId(),
+			Phone:     source.server.GetNumber(),
+			State:     source.server.GetState().String(),
+			Verified:  source.server.Verified,
+			Cause:     reason,
+			Timestamp: time.Now().UTC(),
+		})
 	}
 }
 
@@ -169,6 +180,17 @@ func (source *DispatchingHandler) OnConnected() {
 			logger := source.server.GetLogger()
 			logger.Errorf("error on mark verified after connected: %s", err.Error())
 		}
+
+		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+			Kind:      "connected",
+			Token:     source.server.Token,
+			User:      source.server.User,
+			Wid:       source.server.GetWId(),
+			Phone:     source.server.GetNumber(),
+			State:     source.server.GetState().String(),
+			Verified:  source.server.Verified,
+			Timestamp: time.Now().UTC(),
+		})
 	}
 }
 
@@ -220,6 +242,19 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "disconnected")
+
+	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+		Kind:      "disconnected",
+		Token:     source.server.Token,
+		User:      source.server.User,
+		Wid:       wid,
+		Phone:     phone,
+		State:     source.server.GetState().String(),
+		Verified:  source.server.Verified,
+		Cause:     cause,
+		Details:   details,
+		Timestamp: time.Now().UTC(),
+	})
 }
 
 /*
@@ -266,6 +301,18 @@ func (source *DispatchingHandler) OnStopped(cause string) {
 
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "stopped")
+
+	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+		Kind:      "stopped",
+		Token:     source.server.Token,
+		User:      source.server.User,
+		Wid:       wid,
+		Phone:     phone,
+		State:     source.server.GetState().String(),
+		Verified:  source.server.Verified,
+		Cause:     cause,
+		Timestamp: time.Now().UTC(),
+	})
 }
 
 /*
@@ -288,6 +335,18 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "deleted")
+
+	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+		Kind:      "deleted",
+		Token:     source.server.Token,
+		User:      source.server.User,
+		Wid:       source.server.GetWId(),
+		Phone:     source.server.GetNumber(),
+		State:     source.server.GetState().String(),
+		Verified:  source.server.Verified,
+		Cause:     cause,
+		Timestamp: time.Now().UTC(),
+	})
 }
 
 //#endregion
@@ -359,7 +418,7 @@ func (source *DispatchingHandler) Trigger(payload *whatsapp.WhatsappMessage) {
 
 	if source.server != nil {
 		payload.Wid = source.GetWId()
-		go signalr.SignalRHub.Dispatch(source.server.Token, payload)
+		PublishRealtimeServerMessage(source.server, payload)
 	}
 
 	for _, handler := range source.aeh {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -118,7 +119,7 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 		MessageSendErrors.Inc()
 		ObserveAPIRequestDuration(r.Method, "/send", "400", time.Since(startTime).Seconds())
 
-		response := &models.QpSendResponse{}
+		response := &apiModels.SendResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -131,7 +132,7 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
-	response := &models.QpSendResponse{}
+	response := &apiModels.SendResponse{}
 
 	// Declare a new request struct.
 	request := &models.QpSendAnyRequest{}
@@ -200,7 +201,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 
 // Send a request already validated with chatid and server
 func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendRequest, server *models.QpWhatsappServer) {
-	response := &models.QpSendResponse{}
+	response := &apiModels.SendResponse{}
 	var err error
 
 	att := request.ToWhatsappAttachment()
@@ -239,13 +240,13 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 }
 
 // finally sends to the whatsapp server
-func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+func Send(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
 	SendWithMessageType(server, response, request, w, attach, whatsapp.UnhandledMessageType)
 }
 
 // SendWithMessageType sends to the whatsapp server with specified message type
 // If messageType is UnhandledMessageType, it will auto-detect the type
-func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
+func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
 	waMsg, err := request.ToWhatsappMessage()
 
 	if err != nil {
@@ -337,7 +338,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 				logentry.Infof("successfully sent message directly to LID: %s", originalChatId)
 				MessagesSent.Inc()
 
-				result := &models.QpSendResponseMessage{}
+				result := &apiModels.SendResponseMessage{}
 				result.Wid = server.GetWId()
 				result.Id = sendResponse.GetId()
 				result.ChatId = originalChatId
@@ -376,7 +377,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 	// success
 	MessagesSent.Inc()
 
-	result := &models.QpSendResponseMessage{}
+	result := &apiModels.SendResponseMessage{}
 	result.Wid = server.GetWId()
 	result.Id = sendResponse.GetId()
 	result.ChatId = waMsg.Chat.Id

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -29,7 +30,7 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpMessageResponse{}
+	response := &apiModels.MessageResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

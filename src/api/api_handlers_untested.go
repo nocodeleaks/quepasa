@@ -3,12 +3,13 @@ package api
 import (
 	"net/http"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
 // SendDocumentFromBinary sends a document from binary data in the request body
 func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpSendResponse{}
+	response := &apiModels.SendResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

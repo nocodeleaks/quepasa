@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -30,7 +31,7 @@ func WebhookController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpWebhookResponse{}
+	response := &apiModels.WebhookResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

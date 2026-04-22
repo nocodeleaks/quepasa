@@ -3,7 +3,10 @@ package webserver
 import (
 	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,15 +18,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// RouterConfigurator é uma função que pode configurar rotas adicionais no router
+// RouterConfigurator lets feature packages attach routes to the main router
+// without coupling the webserver package to specific modules.
 type RouterConfigurator func(r chi.Router)
 
-// configurators armazena as funções de configuração adicionais que serão executadas
-// durante a criação do router. Módulos externos podem registrar suas configurações aqui.
+// configurators stores all route registration hooks collected during package init.
 var configurators []RouterConfigurator
 
-// RegisterRouterConfigurator permite que módulos externos registrem funções
-// para configurar rotas adicionais no router principal
+// RegisterRouterConfigurator appends a route configuration hook to the main router.
 func RegisterRouterConfigurator(configurator RouterConfigurator) {
 	configurators = append(configurators, configurator)
 }
@@ -67,9 +69,11 @@ func newRouter() chi.Router {
 	// so adding Recoverer last makes it the outermost wrapper.
 	r.Use(middleware.Recoverer)
 
-	// Form and SignalR routes are now configured automatically via configurators
+	// Install SPA fallback behavior before feature routes. This only affects
+	// unresolved paths because chi executes NotFound after normal route matching.
+	ServeSPA(r)
 
-	// Execute registered configurators (e.g., Swagger, custom modules)
+	// Execute feature-level route registration hooks (API, Form, Swagger, etc.).
 	for _, configurator := range configurators {
 		configurator(r)
 	}
@@ -77,12 +81,156 @@ func newRouter() chi.Router {
 	return r
 }
 
+// ServeSPA configures SPA fallback behavior without interfering with existing matched routes.
+// In development it can proxy to a local Vite server; in production it serves assets/frontend
+// when a built SPA is present on disk.
+func ServeSPA(r chi.Router) {
+	if useFrontendDevProxy() {
+		proxy := NewReverseProxy(frontendDevTarget())
+		r.NotFound(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			// Keep explicit API-like namespaces out of the SPA proxy so transport
+			// failures still surface as ordinary 404 responses.
+			if !shouldServeSPAPath(req.URL.Path) {
+				http.NotFound(w, req)
+				return
+			}
+			proxy.ServeHTTP(w, req)
+		}))
+		return
+	}
+
+	workDir, _ := os.Getwd()
+	frontendDir := filepath.Join(workDir, "assets", "frontend")
+	indexPath := filepath.Join(frontendDir, "index.html")
+	if _, err := os.Stat(indexPath); err != nil {
+		return
+	}
+
+	fs := http.FileServer(http.Dir(frontendDir))
+	r.NotFound(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != http.MethodGet || !shouldServeSPAPath(req.URL.Path) {
+			http.NotFound(w, req)
+			return
+		}
+
+		// Serve concrete built files directly before falling back to index.html.
+		relativePath := strings.TrimPrefix(path.Clean(req.URL.Path), "/")
+		staticPath := filepath.Join(frontendDir, filepath.FromSlash(relativePath))
+		if info, err := os.Stat(staticPath); err == nil && !info.IsDir() {
+			fs.ServeHTTP(w, req)
+			return
+		}
+
+		http.ServeFile(w, req, indexPath)
+	}))
+}
+
+// useFrontendDevProxy enables the Vite reverse proxy explicitly for local SPA work.
+func useFrontendDevProxy() bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv("QUEPASA_DEV_FRONTEND")))
+	return value == "1" || value == "true"
+}
+
+// frontendDevTarget resolves the Vite dev-server origin used by the reverse proxy.
+func frontendDevTarget() string {
+	host := strings.TrimSpace(os.Getenv("QUEPASA_FRONTEND_HOST"))
+	if host == "" {
+		host = "http://127.0.0.1"
+	}
+
+	port := strings.TrimSpace(os.Getenv("QUEPASA_FRONTEND_DEV_PORT"))
+	if port == "" {
+		port = "5173"
+	}
+
+	return host + ":" + port
+}
+
+// shouldServeSPAPath filters requests that may be safely handled by the SPA
+// fallback without shadowing API, static, form, or other transport routes.
+func shouldServeSPAPath(requestPath string) bool {
+	if requestPath == "" {
+		return true
+	}
+
+	if requestPath == "/" {
+		return true
+	}
+
+	if strings.HasPrefix(requestPath, "/api") ||
+		strings.HasPrefix(requestPath, "/cable") ||
+		strings.HasPrefix(requestPath, "/spa") ||
+		strings.HasPrefix(requestPath, "/assets") ||
+		strings.HasPrefix(requestPath, "/form") ||
+		strings.HasPrefix(requestPath, "/mcp") ||
+		strings.HasPrefix(requestPath, "/swagger") ||
+		isLegacyAPIPath(requestPath) {
+		return false
+	}
+
+	return true
+}
+
+// isLegacyAPIPath marks historical root-level API prefixes that must never be
+// interpreted as SPA navigation routes.
+func isLegacyAPIPath(requestPath string) bool {
+	legacyPrefixes := []string{
+		"/health",
+		"/healthapi",
+		"/current/",
+		"/v3/",
+		"/v4/",
+		"/scan",
+		"/paircode",
+		"/command",
+		"/message",
+		"/send",
+		"/receive",
+		"/download",
+		"/webhook",
+		"/picinfo",
+		"/picdata",
+		"/contact",
+		"/contacts",
+		"/invite",
+		"/isonwhatsapp",
+		"/useridentifier",
+		"/getphone",
+		"/userinfo",
+		"/spam",
+	}
+
+	for _, prefix := range legacyPrefixes {
+		if strings.HasPrefix(requestPath, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// NewReverseProxy creates a reverse proxy to a target (http://host:port).
+// Forwarded host headers are preserved so the dev frontend can inspect origin data.
+func NewReverseProxy(target string) *httputil.ReverseProxy {
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		targetURL, _ = url.Parse("http://127.0.0.1:5173")
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+	originalDirector := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		originalDirector(req)
+		req.Header.Set("X-Forwarded-Host", req.Host)
+		req.Header.Set("X-Origin-Host", targetURL.Host)
+	}
+
+	return proxy
+}
+
 func ServeStaticContent(r chi.Router) {
-
-	// setting group
 	r.Group(func(r chi.Router) {
-
-		// static files
+		// Serve shared static assets from the project assets directory.
 		workDir, _ := os.Getwd()
 		assetsDir := filepath.Join(workDir, "assets")
 		root := http.Dir(assetsDir)
@@ -102,6 +250,5 @@ func ServeStaticContent(r chi.Router) {
 		r.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fs.ServeHTTP(w, r)
 		}))
-
 	})
 }

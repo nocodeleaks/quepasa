@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	api "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
+	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	models "github.com/nocodeleaks/quepasa/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -36,7 +37,7 @@ func RegisterFormControllers(r chi.Router) {
 
 // LoginFormHandler renders route GET "/login"
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormLoginData{PageTitle: "Login - Quepasa", Version: models.QpVersion}
+	data := viewmodel.LoginPageData{PageTitle: "Login - Quepasa", Version: models.QpVersion}
 
 	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("login.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)

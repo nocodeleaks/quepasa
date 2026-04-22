@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -31,7 +32,7 @@ func ContactSearchController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpContactsResponse{}
+	response := &apiModels.ContactsResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

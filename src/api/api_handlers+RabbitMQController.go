@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 )
@@ -33,7 +34,7 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpRabbitMQResponse{}
+	response := &apiModels.RabbitMQResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

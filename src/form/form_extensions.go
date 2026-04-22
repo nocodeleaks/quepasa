@@ -13,6 +13,7 @@ import (
 
 	api "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
+	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
@@ -213,7 +214,7 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 
 // VerifyFormHandler renders route GET "/bot/verify" ?mode={sd|md}
 func VerifyFormHandler(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormVerifyData{
+	data := viewmodel.VerifyPageData{
 		PageTitle:   "Verify To Add or Update - Quepasa",
 		Protocol:    WebSocketProtocol(),
 		Host:        r.Host,

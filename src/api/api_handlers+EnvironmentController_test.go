@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	api "github.com/nocodeleaks/quepasa/api/models"
-	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
 // Helper function to mask sensitive strings
@@ -40,11 +39,20 @@ func TestEnvironmentEndpoint_NoAuthentication(t *testing.T) {
 		t.Errorf("Expected status 200 without authentication (preview mode), got %d", resp.StatusCode)
 	}
 
-	// Parse as EnvironmentSettingsPreview
-	var preview environment.EnvironmentSettingsPreview
-	if err := json.NewDecoder(resp.Body).Decode(&preview); err != nil {
+	// The endpoint always returns the standard environment response envelope.
+	var response api.EnvironmentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode preview response: %v", err)
 	}
+
+	if !response.Success {
+		t.Fatalf("Expected success=true for preview response, got: %+v", response)
+	}
+	if response.Preview == nil {
+		t.Fatalf("Expected preview payload, got: %+v", response)
+	}
+
+	preview := response.Preview
 
 	// Should have preview fields
 	if preview.Groups == "" {
@@ -95,11 +103,18 @@ func TestEnvironmentEndpoint_WithBotToken(t *testing.T) {
 		t.Errorf("Expected status 200 with bot token (preview mode), got %d", resp.StatusCode)
 	}
 
-	// Parse as EnvironmentSettingsPreview
-	var preview environment.EnvironmentSettingsPreview
-	if err := json.NewDecoder(resp.Body).Decode(&preview); err != nil {
+	var response api.EnvironmentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode preview response: %v", err)
 	}
+	if !response.Success {
+		t.Fatalf("Expected success=true for preview response, got: %+v", response)
+	}
+	if response.Preview == nil {
+		t.Fatalf("Expected preview payload, got: %+v", response)
+	}
+
+	preview := response.Preview
 
 	// Should have preview fields (not full settings)
 	if preview.Groups == "" {
@@ -235,11 +250,18 @@ func TestEnvironmentEndpoint_InvalidMasterKey(t *testing.T) {
 		t.Errorf("Expected status 200 with invalid master key (preview mode), got %d", resp.StatusCode)
 	}
 
-	// Parse as EnvironmentSettingsPreview
-	var preview environment.EnvironmentSettingsPreview
-	if err := json.NewDecoder(resp.Body).Decode(&preview); err != nil {
+	var response api.EnvironmentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode preview response: %v", err)
 	}
+	if !response.Success {
+		t.Fatalf("Expected success=true for preview response, got: %+v", response)
+	}
+	if response.Preview == nil {
+		t.Fatalf("Expected preview payload, got: %+v", response)
+	}
+
+	preview := response.Preview
 
 	// Should have preview fields (not full settings)
 	if preview.Groups == "" {

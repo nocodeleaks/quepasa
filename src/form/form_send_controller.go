@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -25,7 +26,7 @@ func FormSendController(w http.ResponseWriter, r *http.Request) {
 
 // Renders route GET "/bot/{token}/send"
 func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormSendData{PageTitle: "Send - Quepasa"}
+	data := viewmodel.SendPageData{PageTitle: "Send - Quepasa"}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {
@@ -42,7 +43,7 @@ func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
 // Renders route POST "/bot/{token}/send"
 // Vindo do formulário de testes
 func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormSendData{PageTitle: "Send - Quepasa"}
+	data := viewmodel.SendPageData{PageTitle: "Send - Quepasa"}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {
@@ -141,7 +142,7 @@ func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *wh
 	return
 }
 
-func renderSendForm(w http.ResponseWriter, data models.QPFormSendData) {
+func renderSendForm(w http.ResponseWriter, data viewmodel.SendPageData) {
 	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("bot/send.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)
 }

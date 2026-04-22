@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 )
 
 //region CONTROLLER - CONTACTS
@@ -28,7 +28,7 @@ func IsOnWhatsappController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpIsOnWhatsappResponse{}
+	response := &apiModels.IsOnWhatsAppResponse{}
 
 	// reading body to avoid converting to json if empty
 	body, err := io.ReadAll(r.Body)

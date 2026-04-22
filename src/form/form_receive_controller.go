@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	api "github.com/nocodeleaks/quepasa/api"
-	models "github.com/nocodeleaks/quepasa/models"
+	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -18,7 +18,7 @@ func SafeURL(url string) template.URL {
 
 // FormReceiveController renders route GET "/form/server/{token}/receive"
 func FormReceiveController(w http.ResponseWriter, r *http.Request) {
-	data := models.QPFormReceiveData{PageTitle: "Receive - Quepasa", FormAccountEndpoint: FormAccountEndpoint}
+	data := viewmodel.ReceivePageData{PageTitle: "Receive - Quepasa", FormAccountEndpoint: FormAccountEndpoint}
 
 	server, err := GetServerFromRequest(r)
 	if err != nil {

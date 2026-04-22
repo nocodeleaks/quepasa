@@ -7,15 +7,15 @@ import (
 	"net/http"
 	"strings"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
-	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 // InformationController renders route GET "/{version}/bot/{token}"
 func PictureController(w http.ResponseWriter, r *http.Request) {
 
-	response := &models.QpPictureResponse{}
+	response := &apiModels.PictureResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

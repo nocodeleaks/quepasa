@@ -8,7 +8,6 @@ REST API endpoints for QuePasa WhatsApp bot platform.
 
 ### API Versions
 
-- **v1**: Legacy endpoints (deprecated)
 - **v3**: Latest stable version
 - **latest**: Non-versioned routes (current development)
 
@@ -67,6 +66,7 @@ For AI agent-specific instructions, check `/.github/instructions/` and use the f
 ### Key Patterns
 
 - Latest routes in files without version suffix (e.g., `api_handlers.go`)
+- Legacy `v1`/`v2` compatibility contracts have been removed from the backend
 - Use centralized `environment.Settings` for configuration
 - Follow controller naming conventions
 - Document all endpoints with Swagger comments

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -32,7 +32,7 @@ import (
 //	@Security		ApiKeyAuth
 //	@Router			/receive [get]
 func ReceiveAPIHandler(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpReceiveResponse{}
+	response := &apiModels.ReceiveResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 
 	api "github.com/nocodeleaks/quepasa/api"
 	environment "github.com/nocodeleaks/quepasa/environment"
+	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	signalr "github.com/nocodeleaks/quepasa/signalr"
@@ -86,7 +87,7 @@ func FormAccountController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := models.QPFormAccountData{
+	data := viewmodel.AccountPageData{
 		PageTitle: "Account - Quepasa",
 		User:      *user,
 		Options:   whatsapp.Options,
@@ -118,7 +119,7 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := models.QPFormWebHooksData{PageTitle: "WebHooks - Quepasa"}
+	data := viewmodel.WebHooksPageData{PageTitle: "WebHooks - Quepasa"}
 
 	token := library.GetRequestParameter(r, "token")
 	if len(token) > 0 {

@@ -10,13 +10,19 @@ import (
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
+// CurrentAPIVersion is the latest versioned alias exposed by the legacy HTTP API.
 const CurrentAPIVersion string = "v4"
 
+// RegisterAPIControllers wires the legacy/public HTTP API.
+//
+// The route set is intentionally registered under multiple aliases to preserve
+// compatibility with existing clients while newer surfaces are introduced.
 func RegisterAPIControllers(r chi.Router) {
 
 	// Basic health check route without authentication
 	r.Get("/healthapi", BasicHealthController)
 
+	// Keep the unversioned root, /current, and explicit version aliases in sync.
 	aliases := []string{"/current", "", "/" + CurrentAPIVersion}
 	for _, endpoint := range aliases {
 
@@ -25,6 +31,9 @@ func RegisterAPIControllers(r chi.Router) {
 
 		// Environment settings (master key only)
 		r.Get(endpoint+"/environment", EnvironmentController)
+
+		// Public login/bootstrap configuration
+		r.Get(endpoint+"/login/config", LoginConfigController)
 
 		r.Post(endpoint+"/account", AccountController)
 
@@ -221,7 +230,7 @@ func RegisterAPIControllers(r chi.Router) {
 	}
 }
 
-// CommandController manages bot server commands
+// CommandController manages bot server commands.
 //
 //	@Summary		Execute bot commands
 //	@Description	Execute control commands for the bot server (start, stop, restart)
@@ -234,7 +243,6 @@ func RegisterAPIControllers(r chi.Router) {
 //	@Security		ApiKeyAuth
 //	@Router			/command [get]
 func CommandController(w http.ResponseWriter, r *http.Request) {
-	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
 	response := &models.QpResponse{}
@@ -266,6 +274,8 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 	case "status":
 		err = fmt.Errorf("status command has been removed, please use /health endpoint instead")
 	case "groups":
+		// These toggles remain part of the current command surface until the SPA
+		// fully owns configuration through explicit endpoints.
 		err := models.ToggleGroups(server)
 		if err == nil {
 			message := "groups toggled: " + server.Groups.String()

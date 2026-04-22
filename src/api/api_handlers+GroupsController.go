@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -32,7 +33,7 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {
@@ -79,7 +80,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpGroupsResponse{}
+	response := &apiModels.GroupsResponse{}
 
 	// Get the server from the request
 	server, err := GetServer(r)
@@ -124,7 +125,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	// Get server
 	server, err := GetServer(r)
@@ -203,7 +204,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	type setGroupNameStruct struct {
 		GroupJID string `json:"group_jid"`
@@ -382,7 +383,7 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 //	@Router			/groups/participants [put]
 func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	response := &models.QpParticipantResponse{}
+	response := &apiModels.ParticipantResponse{}
 
 	type participantUpdate struct {
 		GroupJID     string   `json:"group_jid"`
@@ -461,7 +462,7 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 //	@Router			/groups/requests [post]
 func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	response := &models.QpRequestResponse{}
+	response := &apiModels.RequestResponse{}
 
 	type membershipRequest struct {
 		GroupJID     string   `json:"group_jid"`
@@ -557,7 +558,7 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	type setGroupTopicStruct struct {
 		GroupJID string `json:"group_jid"`

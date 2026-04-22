@@ -1,5 +1,7 @@
 module github.com/nocodeleaks/quepasa/models
 
+replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.42
+
 replace github.com/nocodeleaks/quepasa/media => ../media
 
 replace github.com/nocodeleaks/quepasa/library => ../library

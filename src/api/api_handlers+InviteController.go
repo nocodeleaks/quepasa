@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
-	models "github.com/nocodeleaks/quepasa/models"
 )
 
 //region CONTROLLER - INVITE
@@ -30,7 +30,7 @@ func InviteController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpInviteResponse{}
+	response := &apiModels.InviteResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

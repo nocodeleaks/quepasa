@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 )
 
 // -------------------------- PUBLIC METHODS
@@ -27,7 +27,7 @@ func Spam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		MessageSendErrors.Inc()
 
-		response := &models.QpSendResponse{}
+		response := &apiModels.SendResponse{}
 		response.ParseError(err)
 		RespondInterfaceCode(w, response, http.StatusLocked)
 		return

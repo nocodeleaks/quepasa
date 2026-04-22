@@ -9,12 +9,11 @@ import (
 )
 
 func init() {
-	// Automatically registers the Swagger configuration in the webserver
-	// This allows Swagger to be configured without the webserver module
-	// needing to know specifically about Swagger
+	// Register API routes as a webserver configurator so the webserver package does
+	// not need direct knowledge about API concerns.
 	webserver.RegisterRouterConfigurator(Configure)
 
-	// Log API prefix configuration
+	// Log prefix resolution once at startup to make route shape explicit in logs.
 	apiPrefix := environment.Settings.API.Prefix
 	if apiPrefix == "" {
 		log.Info("API routes initialized: prefix=/ (root)")
@@ -29,11 +28,10 @@ func init() {
 func Configure(r chi.Router) {
 	apiPrefix := environment.Settings.API.Prefix
 
-	// setting group
 	r.Group(func(r chi.Router) {
 		timeout := environment.Settings.API.GetAPITimeout()
 
-		// setting timeout for the group
+		// Apply one timeout policy to all HTTP API routes, including SPA endpoints.
 		r.Use(middleware.Timeout(timeout))
 
 		/* CORS TESTING
@@ -53,6 +51,19 @@ func Configure(r chi.Router) {
 		r.Route("/"+apiPrefix, func(r chi.Router) {
 			r.Group(RegisterAPIControllers)
 			r.Group(RegisterAPIV3Controllers)
+		})
+
+		// Preserve legacy root-level routes when API_PREFIX is configured so older
+		// clients keep working while newer clients can migrate to the prefixed API.
+		if apiPrefix != "" {
+			r.Group(RegisterAPIControllers)
+			r.Group(RegisterAPIV3Controllers)
+		}
+
+		// SPA-only endpoints live under /spa so they stay clearly separated from the
+		// shared/public API surface and can evolve with frontend-specific contracts.
+		r.Route("/spa", func(r chi.Router) {
+			r.Group(RegisterSPAControllers)
 		})
 	})
 }

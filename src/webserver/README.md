@@ -1,11 +1,8 @@
 # WebServer Module
 
 ## Overview
-HTTP server module for QuePasa, handli## Integration
-- Uses centralized `environment.Settings.WebServer` for configuration
-- HTTP logging controlled by `environment.Settings.WebServer.Logs`
-- Integrates with metrics for Prometheus monitoring
-- Supports multiple API versions (v1, v2, v3, latest)eb interface, API endpoints, and WebSocket connections.
+HTTP server module for QuePasa, handling the web interface, API endpoints, and
+WebSocket connections.
 
 ## Configuration
 
@@ -78,7 +75,7 @@ swag init -g main.go --output ./swagger
 ## Integration
 - Uses centralized `environment.Settings.WebServer` for configuration
 - Integrates with metrics module for Prometheus monitoring
-- Supports multiple API versions (v1, v2, v3, latest)
+- Supports the current API surfaces (`v3` and the non-versioned latest routes)
 
 ## Development
 - Check `/.github/instructions/` for AI agent-specific guidelines

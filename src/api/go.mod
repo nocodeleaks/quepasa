@@ -1,5 +1,7 @@
 module github.com/nocodeleaks/quepasa/api
 
+replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.42
+
 replace github.com/nocodeleaks/quepasa/media => ../media
 
 replace github.com/nocodeleaks/quepasa/library => ../library
@@ -32,6 +34,7 @@ go 1.25.0
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/jwtauth v4.0.4+incompatible
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
@@ -45,6 +48,8 @@ require (
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	go.mau.fi/whatsmeow v0.0.0-20260219150138-7ae702b1eed4
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -55,7 +60,9 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
+	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -92,12 +99,10 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.6 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20260219150138-7ae702b1eed4 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )

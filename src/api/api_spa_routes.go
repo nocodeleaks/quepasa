@@ -23,6 +23,7 @@ func GetSPATokenAuth() *jwtauth.JWTAuth {
 // reachable before authentication, such as the login screen configuration.
 func RegisterSPAPublicControllers(r chi.Router) {
 	r.Get("/login/config", LoginConfigController)
+	r.Post("/users", SPAPublicUserCreateController)
 }
 
 // SPAAuthenticatorHandler validates JWT-based SPA requests after the jwtauth verifier
@@ -59,6 +60,7 @@ func RegisterSPAControllers(r chi.Router) {
 	r.Post("/servers/search", SPAServersSearchController)
 	r.Get("/account", SPAAccountController)
 	r.Get("/account/masterkey", SPAMasterKeyController)
+	r.Get("/environment", SPAEnvironmentController)
 	r.Post("/server/create", SPAServerCreateController)
 	r.Get("/server/{token}/info", SPAServerInfoController)
 	r.Get("/server/{token}/qrcode", SPAServerQRCodeController)
@@ -77,6 +79,7 @@ func RegisterSPAControllers(r chi.Router) {
 	r.Post("/server/{token}/rabbitmq", SPARabbitMQController)
 	r.Delete("/server/{token}/rabbitmq", SPARabbitMQController)
 	r.Get("/users", SPAUsersListController)
+	r.Delete("/user/{username}", SPAUserDeleteController)
 	r.Get("/server/{token}/contacts", SPAServerContactsController)
 	r.Get("/server/{token}/groups", SPAServerGroupsController)
 	r.Get("/server/{token}/picinfo/{chatid}/{pictureid}", SPAPictureInfoController)

@@ -346,15 +346,31 @@ func SPAUsersListController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	users, err := models.WhatsappService.DB.Users.FindAll()
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	items := make([]map[string]interface{}, 0, len(users))
+	for _, current := range users {
+		if current == nil {
+			continue
+		}
+
+		isSelf := strings.EqualFold(current.Username, user.Username)
+		items = append(items, map[string]interface{}{
+			"username":   current.Username,
+			"createdBy":  "",
+			"created_by": "",
+			"timestamp":  current.Timestamp.Format(time.RFC3339),
+			"isSelf":     isSelf,
+			"is_self":    isSelf,
+		})
+	}
+
 	RespondSuccess(w, map[string]interface{}{
-		"users": []map[string]interface{}{
-			{
-				"username":  user.Username,
-				"createdBy": "",
-				"timestamp": user.Timestamp.Format(time.RFC3339),
-				"isSelf":    true,
-			},
-		},
+		"users": items,
 	})
 }
 

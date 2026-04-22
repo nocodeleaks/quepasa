@@ -1,6 +1,5 @@
 <template>
   <div class="users-page">
-    <!-- Header -->
     <div class="page-header">
       <div class="header-content">
         <h1>
@@ -17,20 +16,17 @@
       </div>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner-large"></div>
       <p>Loading users...</p>
     </div>
 
-    <!-- Error -->
     <div v-if="error" class="error-box">
       <i class="fa fa-exclamation-triangle"></i>
       <span>{{ error }}</span>
       <button @click="load" class="retry-btn">Retry</button>
     </div>
 
-    <!-- Empty state -->
     <div v-else-if="!loading && users.length === 0" class="empty-state">
       <div class="empty-icon">
         <i class="fa fa-users fa-4x"></i>
@@ -43,7 +39,6 @@
       </router-link>
     </div>
 
-    <!-- Users List -->
     <div v-else class="users-list">
       <div v-for="user in users" :key="user.username" class="user-card" :class="{ 'user-self': user.is_self }">
         <div class="user-info">
@@ -59,9 +54,9 @@
           </div>
         </div>
         <div class="user-actions">
-          <button 
+          <button
             v-if="!user.is_self"
-            class="btn-danger-small" 
+            class="btn-danger-small"
             @click="confirmDelete(user)"
             :disabled="deleting === user.username"
           >
@@ -72,7 +67,6 @@
       </div>
     </div>
 
-    <!-- Delete Modal -->
     <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
       <div class="modal-content">
         <div class="modal-icon danger">
@@ -99,6 +93,7 @@ interface User {
   created_by?: string
   timestamp?: string
   is_self?: boolean
+  isSelf?: boolean
 }
 
 export default defineComponent({
@@ -114,8 +109,11 @@ export default defineComponent({
       loading.value = true
       error.value = ''
       try {
-        const res = await api.get('/api/users')
-        users.value = res.data.users || []
+        const res = await api.get('/spa/users')
+        users.value = (res.data.users || []).map((user: User) => ({
+          ...user,
+          is_self: user.is_self ?? user.isSelf ?? false
+        }))
       } catch (err: any) {
         error.value = err?.response?.data?.result || 'Failed to load users'
       } finally {
@@ -138,14 +136,12 @@ export default defineComponent({
 
     async function deleteUser() {
       if (!userToDelete.value) return
-      
+
       deleting.value = userToDelete.value.username
       showDeleteModal.value = false
-      
+
       try {
-        await api.delete('/api/user', { 
-          data: { username: userToDelete.value.username } 
-        })
+        await api.delete(`/spa/user/${encodeURIComponent(userToDelete.value.username)}`)
         pushToast('User deleted successfully', 'success')
         await load()
       } catch (err: any) {
@@ -391,7 +387,6 @@ export default defineComponent({
   cursor: not-allowed;
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -473,7 +468,6 @@ export default defineComponent({
   background: #b91c1c;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .hide-mobile {
     display: none !important;

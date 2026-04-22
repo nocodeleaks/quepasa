@@ -1,6 +1,5 @@
 <template>
   <div class="account-page">
-    <!-- Header -->
     <div class="page-header">
       <div class="header-content">
         <h1>
@@ -11,21 +10,17 @@
       </div>
     </div>
 
-    <!-- Error -->
     <div v-if="error" class="error-box">
       <i class="fa fa-exclamation-triangle"></i>
       <span>{{ error }}</span>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Carregando...</p>
     </div>
 
-    <!-- Content -->
     <div v-else-if="user" class="account-content">
-      <!-- User Info Card -->
       <div class="info-card">
         <div class="card-header">
           <i class="fa fa-id-card"></i>
@@ -39,15 +34,12 @@
           <div class="info-row">
             <span class="info-label">Nível:</span>
             <span class="info-value">
-              <span class="badge" :class="user.level === 'admin' ? 'badge-admin' : 'badge-user'">
-                {{ user.level || 'user' }}
-              </span>
+              <span class="badge badge-user">{{ user.level || 'user' }}</span>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- System Info Card -->
       <div class="info-card">
         <div class="card-header">
           <i class="fa fa-cog"></i>
@@ -60,19 +52,18 @@
               <code>{{ version }}</code>
             </span>
           </div>
-          <div class="info-row" v-if="branding">
+          <div v-if="branding" class="info-row">
             <span class="info-label">Título da Aplicação:</span>
             <span class="info-value">{{ branding.title || 'QuePasa' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">View Mode:</span>
-            <span class="info-value">{{ serversViewMode || 'card' }}</span>
+            <span class="info-label">Servidores:</span>
+            <span class="info-value">{{ serverCount }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Branding Preview Card -->
-      <div class="info-card" v-if="branding">
+      <div v-if="branding" class="info-card">
         <div class="card-header">
           <i class="fa fa-palette"></i>
           <h2>Branding</h2>
@@ -89,7 +80,7 @@
               <span>Accent</span>
             </div>
           </div>
-          <div class="info-row" v-if="branding.logo">
+          <div v-if="branding.logo" class="info-row">
             <span class="info-label">Logo:</span>
             <span class="info-value">
               <img :src="branding.logo" alt="Logo" class="logo-preview" />
@@ -98,8 +89,7 @@
         </div>
       </div>
 
-      <!-- Master Key Card (if available) -->
-      <div class="info-card" v-if="hasMasterKey">
+      <div v-if="hasMasterKey" class="info-card">
         <div class="card-header">
           <i class="fa fa-key"></i>
           <h2>API Master Key</h2>
@@ -111,7 +101,7 @@
               <span class="badge badge-success">Configurada</span>
             </span>
           </div>
-          <div class="info-row" v-if="masterKey">
+          <div v-if="masterKey" class="info-row">
             <span class="info-label">Chave:</span>
             <code class="master-key" @click="copyMasterKey">
               {{ showMasterKey ? masterKey : '••••••••••••••••' }}
@@ -127,8 +117,15 @@
         </div>
       </div>
 
-      <!-- Actions -->
       <div class="actions-section">
+        <router-link class="btn-secondary" to="/users">
+          <i class="fa fa-users"></i>
+          Usuários
+        </router-link>
+        <router-link class="btn-secondary" to="/environment">
+          <i class="fa fa-sliders-h"></i>
+          Ambiente
+        </router-link>
         <button class="btn-primary" @click="reload">
           <i class="fa fa-sync-alt"></i>
           Recarregar
@@ -141,7 +138,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from 'vue'
 import api from '@/services/api'
-import wsService from '@/services/ws'
 import { pushToast } from '@/services/toast'
 
 export default defineComponent({
@@ -151,7 +147,7 @@ export default defineComponent({
     const error = ref('')
     const loading = ref(true)
     const branding = ref<any>(null)
-    const serversViewMode = ref('')
+    const serverCount = ref(0)
     const hasMasterKey = ref(false)
     const masterKey = ref('')
     const showMasterKey = ref(false)
@@ -160,18 +156,18 @@ export default defineComponent({
       try {
         loading.value = true
         error.value = ''
-        const res = await api.get('/api/session')
-        user.value = res.data.user
-        version.value = res.data.version
-        branding.value = res.data.branding
-        serversViewMode.value = res.data.serversViewMode
-        
-        // Check if master key is available
-        const accountRes = await api.get('/api/account')
+
+        const [sessionRes, accountRes, configRes] = await Promise.all([
+          api.get('/spa/session'),
+          api.get('/spa/account'),
+          api.get('/spa/login/config')
+        ])
+
+        user.value = accountRes.data?.user || sessionRes.data?.user
+        version.value = accountRes.data?.version || sessionRes.data?.version || ''
+        branding.value = configRes.data?.branding || null
+        serverCount.value = accountRes.data?.serverCount || 0
         hasMasterKey.value = accountRes.data?.hasMasterKey || false
-        
-        // Start websocket connection
-        wsService.connect('/api/verify/ws')
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao carregar conta'
       } finally {
@@ -181,7 +177,7 @@ export default defineComponent({
 
     async function loadMasterKey() {
       try {
-        const res = await api.get('/api/account/masterkey')
+        const res = await api.get('/spa/account/masterkey')
         masterKey.value = res.data?.masterKey || ''
         showMasterKey.value = true
       } catch (err: any) {
@@ -207,8 +203,8 @@ export default defineComponent({
       load()
     })
 
-    return { 
-      user, version, error, loading, branding, serversViewMode,
+    return {
+      user, version, error, loading, branding, serverCount,
       hasMasterKey, masterKey, showMasterKey,
       reload, loadMasterKey, copyMasterKey
     }
@@ -353,11 +349,6 @@ export default defineComponent({
   text-transform: uppercase;
 }
 
-.badge-admin {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
 .badge-user {
   background: #f5efff;
   color: var(--branding-secondary, #5B21B6);
@@ -385,7 +376,7 @@ export default defineComponent({
   color: white;
   font-size: 10px;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .logo-preview {
@@ -422,6 +413,7 @@ export default defineComponent({
   gap: 12px;
   justify-content: flex-end;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
@@ -455,6 +447,7 @@ export default defineComponent({
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
   transition: all 0.2s;
 }

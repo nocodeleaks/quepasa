@@ -7,8 +7,7 @@
             <img v-if="branding.logo" :src="branding.logo" alt="Logo" class="navbar-logo me-2" />
             {{ branding.title || 'QuePasa' }}
           </RouterLink>
-          
-          <!-- Mobile: Offcanvas Toggle -->
+
           <button
             class="navbar-toggler"
             type="button"
@@ -20,7 +19,6 @@
             <span class="navbar-toggler-icon"></span>
           </button>
 
-          <!-- Desktop Navbar Collapse -->
           <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarNav">
             <ul class="navbar-nav me-auto">
               <li class="nav-item">
@@ -29,6 +27,9 @@
               <li class="nav-item">
                 <RouterLink class="nav-link" to="/connect">Connect</RouterLink>
               </li>
+              <li v-if="session.user.value" class="nav-item">
+                <RouterLink class="nav-link" to="/account">Account</RouterLink>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="/form/account">Classic UI</a>
               </li>
@@ -36,13 +37,12 @@
                 <a class="nav-link" href="/swagger/" target="_blank">API Docs</a>
               </li>
             </ul>
-            <div class="d-flex align-items-center text-white" v-if="session.user.value">
+            <div v-if="session.user.value" class="d-flex align-items-center text-white">
               <small class="me-3">{{ session.user.value.username }}</small>
               <button class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
             </div>
           </div>
 
-          <!-- Mobile Offcanvas Menu (hidden on desktop via d-lg-none) -->
           <div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="navbarOffcanvas" aria-labelledby="navbarOffcanvasLabel">
             <div class="offcanvas-header" :style="navbarStyle">
               <h5 class="offcanvas-title text-white" id="navbarOffcanvasLabel">
@@ -63,6 +63,11 @@
                     <i class="fa fa-link me-2"></i> Connect
                   </a>
                 </li>
+                <li v-if="session.user.value" class="nav-item">
+                  <a class="nav-link" href="#" @click.prevent="navigateTo('/account')">
+                    <i class="fa fa-user-circle me-2"></i> Account
+                  </a>
+                </li>
                 <li><hr class="my-2"></li>
                 <li class="nav-item">
                   <a class="nav-link" href="/form/account">
@@ -75,7 +80,7 @@
                   </a>
                 </li>
                 <li><hr class="my-2"></li>
-                <li class="nav-item" v-if="session.user.value">
+                <li v-if="session.user.value" class="nav-item">
                   <div class="nav-link text-muted small">
                     <i class="fa fa-user-circle me-2"></i> {{ session.user.value.username }}
                   </div>
@@ -131,7 +136,7 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const appVersion = ref('0.0.0')
-    
+
     const branding = ref({
       title: 'QuePasa',
       logo: '',
@@ -142,14 +147,14 @@ export default defineComponent({
       companyName: '',
       companyUrl: ''
     })
-    
-    const isLoginPage = computed(() => route.path === '/login')
-    
+
+    const isLoginPage = computed(() => route.path === '/login' || route.path === '/setup')
+
     const containerClass = computed(() => {
       if (isLoginPage.value) return ''
       return 'container py-4'
     })
-    
+
     const navbarStyle = computed(() => ({
       background: `linear-gradient(135deg, ${branding.value.primaryColor}, ${branding.value.secondaryColor})`
     }))
@@ -159,17 +164,14 @@ export default defineComponent({
         const res = await api.get('/spa/login/config')
         if (res.data?.branding) {
           branding.value = { ...branding.value, ...res.data.branding }
-          
-          // Apply CSS variables globally
+
           const root = document.documentElement
           root.style.setProperty('--branding-primary', branding.value.primaryColor)
           root.style.setProperty('--branding-secondary', branding.value.secondaryColor)
           root.style.setProperty('--branding-accent', branding.value.accentColor)
-          
-          // Update document title
+
           document.title = branding.value.title
-          
-          // Update favicon
+
           if (branding.value.favicon) {
             let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement
             if (!favicon) {
@@ -180,8 +182,7 @@ export default defineComponent({
             favicon.href = branding.value.favicon
           }
         }
-        
-        // Get version from response
+
         if (res.data?.version) {
           appVersion.value = res.data.version
         }
@@ -198,24 +199,23 @@ export default defineComponent({
       closeOffcanvas()
       try {
         await api.get('/logout')
-      } catch (_) {
-        /* ignore */
+      } catch {
+        // ignore
       }
       session.clearSession()
       router.push('/login')
     }
-    
+
     const closeOffcanvas = () => {
       const offcanvasEl = document.getElementById('navbarOffcanvas')
       if (offcanvasEl) {
-        // Use Bootstrap's Offcanvas API to close
         const bsOffcanvas = (window as any).bootstrap?.Offcanvas?.getInstance(offcanvasEl)
         if (bsOffcanvas) {
           bsOffcanvas.hide()
         }
       }
     }
-    
+
     const navigateTo = (path: string) => {
       closeOffcanvas()
       router.push(path)
@@ -237,7 +237,6 @@ export default defineComponent({
   width: auto;
 }
 
-/* Footer styles */
 .app-footer {
   margin-top: 2rem;
   padding: 1rem 0;
@@ -285,7 +284,6 @@ export default defineComponent({
   font-weight: 600;
 }
 
-/* Offcanvas styles */
 .offcanvas .nav-link {
   padding: 0.75rem 1rem;
   color: #333;
@@ -296,14 +294,12 @@ export default defineComponent({
   background: #f8f9fa;
 }
 
-/* Mobile offcanvas - full width */
 @media (max-width: 991.98px) {
   .offcanvas {
     width: 100% !important;
   }
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
   #app.container {
     max-width: 100%;

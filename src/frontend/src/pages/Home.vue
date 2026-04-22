@@ -526,9 +526,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, computed, watch } from 'vue'
+import { defineComponent, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import cableService from '@/services/cable'
 import { pushToast } from '@/services/toast'
 
 export default defineComponent({
@@ -678,6 +679,16 @@ export default defineComponent({
       } finally {
         loading.value = false
       }
+    }
+
+    async function refreshCurrentView() {
+      const query = debouncedQuery.value.trim()
+      if (query) {
+        await searchServers(query)
+        return
+      }
+
+      await load()
     }
 
     function getStatusClass(srv: any) {
@@ -888,8 +899,39 @@ export default defineComponent({
       }
     }
 
+    const lifecycleEvents = [
+      'server.connected',
+      'server.disconnected',
+      'server.stopped',
+      'server.logged_out',
+      'server.deleted',
+    ]
+    let cableListeners: Array<() => void> = []
+
     onMounted(() => {
       load()
+
+      void cableService.connect().catch(() => {
+        // The page still works with manual refresh if websocket auth is unavailable.
+      })
+
+      cableListeners = lifecycleEvents.map((eventName) =>
+        cableService.onEvent(eventName, async () => {
+          try {
+            await refreshCurrentView()
+          } catch {
+            // Keep the last rendered state if the refresh fails.
+          }
+        }),
+      )
+    })
+
+    onUnmounted(() => {
+      for (const unsubscribe of cableListeners) {
+        unsubscribe()
+      }
+      cableListeners = []
+      void cableService.disconnect()
     })
 
     return { 

@@ -46,8 +46,7 @@
                 <thead class="table-light">
                   <tr>
                     <th style="width: 30%">Variable</th>
-                    <th style="width: 35%">Value</th>
-                    <th style="width: 35%">Description</th>
+                    <th style="width: 70%">Value</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -57,7 +56,6 @@
                       <code v-if="v.value" class="env-value">{{ v.value }}</code>
                       <span v-else class="text-muted">Not set</span>
                     </td>
-                    <td class="text-muted small">{{ v.description }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -77,7 +75,6 @@ import api from '@/services/api'
 interface EnvVar {
   name: string
   value: string
-  description: string
 }
 
 interface Category {
@@ -93,14 +90,34 @@ export default defineComponent({
     const error = ref('')
     const categories = ref<Category[]>([])
 
+    const formatValue = (value: unknown): string => {
+      if (value === null || value === undefined || value === '') return ''
+      if (typeof value === 'object') return JSON.stringify(value)
+      return String(value)
+    }
+
+    const buildCategories = (source: Record<string, any>): Category[] => {
+      return Object.entries(source)
+        .filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value))
+        .map(([name, value]) => ({
+          name,
+          variables: Object.entries(value as Record<string, any>)
+            .map(([key, entry]) => ({
+              name: key,
+              value: formatValue(entry)
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        }))
+        .filter((category) => category.variables.length > 0)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     const loadEnvironment = async () => {
       try {
-        const res = await api.get('/api/environment')
-        if (res.data?.categories) {
-          categories.value = res.data.categories
-        }
+        const res = await api.get('/spa/environment')
+        categories.value = buildCategories(res.data?.settings || res.data?.preview || {})
       } catch (e: any) {
-        error.value = e.message || 'Failed to load environment variables'
+        error.value = e?.response?.data?.result || e.message || 'Failed to load environment variables'
       } finally {
         loading.value = false
       }
@@ -151,13 +168,13 @@ export default defineComponent({
   border-radius: 4px;
   font-size: 0.85rem;
   word-break: break-all;
+  white-space: pre-wrap;
 }
 
 .table td {
   vertical-align: middle;
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
   .hide-mobile {
     display: none !important;
@@ -165,21 +182,6 @@ export default defineComponent({
 
   .table {
     font-size: 0.85rem;
-  }
-
-  .table th:nth-child(3),
-  .table td:nth-child(3) {
-    display: none;
-  }
-
-  .table th:nth-child(1),
-  .table td:nth-child(1) {
-    width: 40%;
-  }
-
-  .table th:nth-child(2),
-  .table td:nth-child(2) {
-    width: 60%;
   }
 }
 </style>

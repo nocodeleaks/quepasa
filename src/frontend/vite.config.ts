@@ -33,12 +33,6 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           secure: false,
         },
-        '/signalr': {
-          target: backendUrl,
-          changeOrigin: true,
-          secure: false,
-          ws: true,
-        },
         '/logout': {
           target: backendUrl,
           changeOrigin: true,

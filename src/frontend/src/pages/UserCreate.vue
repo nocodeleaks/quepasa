@@ -1,6 +1,5 @@
 <template>
   <div class="user-create-page">
-    <!-- Header -->
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
         <i class="fa fa-arrow-left"></i>
@@ -15,7 +14,6 @@
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="create-card">
       <form @submit.prevent="createUser" class="create-form">
         <div v-if="error" class="error-box">
@@ -33,11 +31,11 @@
             <i class="fa fa-envelope"></i>
             Email
           </label>
-          <input 
+          <input
             id="email"
-            v-model="email" 
-            type="email" 
-            class="form-input" 
+            v-model="email"
+            type="email"
+            class="form-input"
             placeholder="usuario@exemplo.com"
             required
           />
@@ -49,23 +47,19 @@
             Senha
           </label>
           <div class="password-wrapper">
-            <input 
+            <input
               id="password"
-              v-model="password" 
-              :type="showPassword ? 'text' : 'password'" 
-              class="form-input" 
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              class="form-input"
               placeholder="••••••••"
               required
             />
-            <button 
-              type="button" 
-              class="toggle-password" 
-              @click="showPassword = !showPassword"
-            >
+            <button type="button" class="toggle-password" @click="showPassword = !showPassword">
               <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
             </button>
           </div>
-          <div class="password-strength" v-if="password">
+          <div v-if="password" class="password-strength">
             <div class="strength-bar" :class="passwordStrengthClass" :style="{ width: passwordStrength + '%' }"></div>
           </div>
         </div>
@@ -75,11 +69,11 @@
             <i class="fa fa-lock"></i>
             Confirmar Senha
           </label>
-          <input 
+          <input
             id="confirmPassword"
-            v-model="confirmPassword" 
-            type="password" 
-            class="form-input" 
+            v-model="confirmPassword"
+            type="password"
+            class="form-input"
             placeholder="••••••••"
             required
           />
@@ -92,11 +86,7 @@
           <router-link to="/account" class="btn-secondary">
             Cancelar
           </router-link>
-          <button 
-            type="submit" 
-            class="btn-primary" 
-            :disabled="loading || !isFormValid"
-          >
+          <button type="submit" class="btn-primary" :disabled="loading || !isFormValid">
             <i v-if="loading" class="fa fa-spinner fa-spin"></i>
             <i v-else class="fa fa-user-plus"></i>
             {{ loading ? 'Criando...' : 'Criar Usuário' }}
@@ -140,9 +130,9 @@ export default defineComponent({
     })
 
     const isFormValid = computed(() => {
-      return email.value && 
-             password.value && 
-             password.value.length >= 4 && 
+      return email.value &&
+             password.value &&
+             password.value.length >= 4 &&
              password.value === confirmPassword.value
     })
 
@@ -154,14 +144,12 @@ export default defineComponent({
       success.value = ''
 
       try {
-        await api.post('/api/user', {
+        await api.post('/spa/users', {
           email: email.value,
           password: password.value
         })
         success.value = 'Usuário criado com sucesso!'
         pushToast('Usuário criado com sucesso!', 'success')
-        
-        // Clear form
         email.value = ''
         password.value = ''
         confirmPassword.value = ''
@@ -174,7 +162,7 @@ export default defineComponent({
       }
     }
 
-    return { 
+    return {
       email, password, confirmPassword, showPassword, loading, error, success,
       passwordStrength, passwordStrengthClass, isFormValid,
       createUser

@@ -18,15 +18,27 @@ type QpDataUserSql struct {
 
 /*
 	Count() (int, error)
+	FindAll() ([]*QpUser, error)
 	Exists(string) (bool, error)
 	Find(string) (*QpUser, error)
 	Check(string, password string) (*QpUser, error)
 	Create(string, password string) (*QpUser, error)
+	Delete(string) error
 */
 
 func (source QpDataUserSql) Count() (result int, err error) {
 	err = source.db.Get(&result, "SELECT count(*) FROM users")
 	return
+}
+
+func (source QpDataUserSql) FindAll() (result []*QpUser, err error) {
+	users := []*QpUser{}
+	err = source.db.Select(&users, "SELECT username, timestamp FROM users ORDER BY username ASC")
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func (source QpDataUserSql) Exists(username string) (bool, error) {
@@ -125,4 +137,22 @@ func (source QpDataUserSql) UpdatePassword(username string, password string) (er
 	}
 
 	return
+}
+
+func (source QpDataUserSql) Delete(username string) (err error) {
+	result, err := source.db.Exec("DELETE FROM users WHERE username = ?", username)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return fmt.Errorf("user (%s) not found for delete", username)
+	}
+
+	return nil
 }

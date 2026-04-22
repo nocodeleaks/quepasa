@@ -364,7 +364,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, onUnmounted, reactive } from 'vue'
-import signalRService from '../services/signalr'
+import cableService from '../services/cable'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
@@ -820,75 +820,71 @@ export default defineComponent({
       return getChatDisplayName(m)
     }
 
-    // SignalR unsubscribe function
-    let unsubscribeSignalR: (() => void) | null = null
+    let unsubscribeCable: (() => void) | null = null
     let wsStatusInterval: ReturnType<typeof setInterval> | null = null
 
     onMounted(() => {
       loadMessages()
 
-      // Connect to SignalR for real-time message updates
-      signalRService.connect(token).then(() => {
-        console.log('Messages: SignalR connected')
-        wsConnected.value = signalRService.isConnected()
+      cableService.connect().then(async () => {
+        await cableService.subscribeToken(token)
+        wsConnected.value = cableService.isConnected()
       }).catch((err) => {
-        console.error('Messages: SignalR connection error', err)
+        console.error('Messages: cable connection error', err)
         wsConnected.value = false
       })
 
-      // Periodically update connection status
       wsStatusInterval = setInterval(() => {
-        wsConnected.value = signalRService.isConnected()
+        wsConnected.value = cableService.isConnected()
       }, 2000)
 
-      // Listen for new messages
-      unsubscribeSignalR = signalRService.onMessage((payload: any) => {
-        console.log('Messages: Received new message via SignalR', payload)
-        
-        // Add the new message to the beginning of the list
-        if (payload && payload.id) {
-          // Check if message already exists
-          const exists = messages.value.some(m => m.id === payload.id)
-          if (!exists) {
-            messages.value.unshift(payload)
-            
-            // Update total count
-            if (totalMessages.value !== null) {
-              totalMessages.value++
-            }
-            
-            // Fetch profile picture for the new message if needed
-            const chatId = payload.chat?.id
-            if (chatId && !contactPicMap[chatId]) {
-              api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(chatId)}`)
-                .then(res => {
-                  if (res?.data?.info?.url) {
-                    contactPicMap[chatId] = res.data.info.url
-                  }
-                }).catch(() => {
-                  // ignore errors
-                })
-            }
+      unsubscribeCable = cableService.onEvent('server.message', (payload: any) => {
+        if (payload?.token !== token || !payload?.message?.id) {
+          return
+        }
 
-            // Show toast notification for new message
-            const sender = payload.chat?.title || payload.from || 'Novo'
-            pushToast(`Nova mensagem de ${sender}`, 'info')
+        const incoming = payload.message
+        const exists = messages.value.some(m => m.id === incoming.id)
+        if (!exists) {
+          messages.value.unshift(incoming)
+
+          if (totalMessages.value !== null) {
+            totalMessages.value++
           }
+
+          const chatId = incoming.chat?.id
+          if (chatId && !contactPicMap[chatId]) {
+            api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(chatId)}`)
+              .then(res => {
+                if (res?.data?.info?.url) {
+                  contactPicMap[chatId] = res.data.info.url
+                }
+              }).catch(() => {
+                // ignore errors
+              })
+          }
+
+          const sender = incoming.chat?.title || incoming.from || 'Novo'
+          pushToast(`Nova mensagem de ${sender}`, 'info')
         }
       })
     })
 
     onUnmounted(() => {
-      // Disconnect from SignalR when leaving the page
-      if (unsubscribeSignalR) {
-        unsubscribeSignalR()
-        unsubscribeSignalR = null
+      if (unsubscribeCable) {
+        unsubscribeCable()
+        unsubscribeCable = null
       }
       if (wsStatusInterval) {
         clearInterval(wsStatusInterval)
         wsStatusInterval = null
       }
-      signalRService.disconnect()
+
+      void cableService.unsubscribeToken(token).catch(() => {
+        // ignore unsubscribe failures during teardown
+      }).finally(() => {
+        void cableService.disconnect()
+      })
     })
 
     return {

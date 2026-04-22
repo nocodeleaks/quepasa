@@ -1,6 +1,5 @@
 <template>
   <div class="setup-page">
-    <!-- Header -->
     <div class="page-header">
       <div class="header-content">
         <h1>
@@ -11,9 +10,7 @@
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="setup-content">
-      <!-- Create User Card -->
       <div class="setup-card">
         <div class="card-header">
           <i class="fa fa-user-plus"></i>
@@ -36,11 +33,11 @@
                 <i class="fa fa-envelope"></i>
                 Email
               </label>
-              <input 
+              <input
                 id="email"
-                v-model="email" 
-                type="email" 
-                class="form-input" 
+                v-model="email"
+                type="email"
+                class="form-input"
                 placeholder="usuario@exemplo.com"
                 required
               />
@@ -52,23 +49,19 @@
                 Senha
               </label>
               <div class="password-wrapper">
-                <input 
+                <input
                   id="password"
-                  v-model="password" 
-                  :type="showPassword ? 'text' : 'password'" 
-                  class="form-input" 
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  class="form-input"
                   placeholder="••••••••"
                   required
                 />
-                <button 
-                  type="button" 
-                  class="toggle-password" 
-                  @click="showPassword = !showPassword"
-                >
+                <button type="button" class="toggle-password" @click="showPassword = !showPassword">
                   <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
                 </button>
               </div>
-              <div class="password-strength" v-if="password">
+              <div v-if="password" class="password-strength">
                 <div class="strength-bar" :class="passwordStrengthClass" :style="{ width: passwordStrength + '%' }"></div>
               </div>
               <small class="password-hint">Mínimo de 6 caracteres recomendado</small>
@@ -79,11 +72,11 @@
                 <i class="fa fa-lock"></i>
                 Confirmar Senha
               </label>
-              <input 
+              <input
                 id="confirmPassword"
-                v-model="confirmPassword" 
-                type="password" 
-                class="form-input" 
+                v-model="confirmPassword"
+                type="password"
+                class="form-input"
                 placeholder="••••••••"
                 required
               />
@@ -92,11 +85,7 @@
               </small>
             </div>
 
-            <button 
-              type="submit" 
-              class="btn-primary" 
-              :disabled="loading || !isFormValid"
-            >
+            <button type="submit" class="btn-primary" :disabled="loading || !isFormValid || !accountSetup">
               <i v-if="loading" class="fa fa-spinner fa-spin"></i>
               <i v-else class="fa fa-user-plus"></i>
               {{ loading ? 'Criando...' : 'Criar Usuário' }}
@@ -105,7 +94,6 @@
         </div>
       </div>
 
-      <!-- System Info Card -->
       <div class="setup-card">
         <div class="card-header">
           <i class="fa fa-info-circle"></i>
@@ -119,7 +107,9 @@
           <div class="info-row">
             <span class="info-label">Cadastro de Conta:</span>
             <span class="info-value">
-              <span class="badge badge-success">Habilitado</span>
+              <span class="badge" :class="accountSetup ? 'badge-success' : 'badge-disabled'">
+                {{ accountSetup ? 'Habilitado' : 'Desabilitado' }}
+              </span>
             </span>
           </div>
         </div>
@@ -143,6 +133,7 @@ export default defineComponent({
     const error = ref('')
     const success = ref('')
     const version = ref('')
+    const accountSetup = ref(true)
 
     const passwordStrength = computed(() => {
       const pwd = password.value
@@ -162,37 +153,36 @@ export default defineComponent({
     })
 
     const isFormValid = computed(() => {
-      return email.value && 
-             password.value && 
-             password.value.length >= 4 && 
+      return email.value &&
+             password.value &&
+             password.value.length >= 4 &&
              password.value === confirmPassword.value
     })
 
-    async function loadVersion() {
+    async function loadConfig() {
       try {
-        const res = await api.get('/api/session')
+        const res = await api.get('/spa/login/config')
         version.value = res.data?.version || ''
+        accountSetup.value = res.data?.accountSetup !== false
       } catch {
         // ignore
       }
     }
 
     async function createUser() {
-      if (!isFormValid.value) return
+      if (!isFormValid.value || !accountSetup.value) return
 
       loading.value = true
       error.value = ''
       success.value = ''
 
       try {
-        await api.post('/api/user', {
+        await api.post('/spa/users', {
           email: email.value,
           password: password.value
         })
         success.value = 'Usuário criado com sucesso!'
         pushToast('Usuário criado com sucesso!', 'success')
-        
-        // Clear form
         email.value = ''
         password.value = ''
         confirmPassword.value = ''
@@ -206,11 +196,11 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      loadVersion()
+      loadConfig()
     })
 
-    return { 
-      email, password, confirmPassword, showPassword, loading, error, success, version,
+    return {
+      email, password, confirmPassword, showPassword, loading, error, success, version, accountSetup,
       passwordStrength, passwordStrengthClass, isFormValid,
       createUser
     }
@@ -468,5 +458,10 @@ export default defineComponent({
 .badge-success {
   background: #dcfce7;
   color: #16a34a;
+}
+
+.badge-disabled {
+  background: #fee2e2;
+  color: #dc2626;
 }
 </style>

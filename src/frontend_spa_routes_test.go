@@ -19,27 +19,54 @@ func TestFrontendBetaCorePagesUseSPAEndpoints(t *testing.T) {
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Login.vue"), "/spa/login/config")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Login.vue"), "/api/login/config")
 
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Account.vue"), "/spa/session")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Account.vue"), "/spa/account")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Account.vue"), "/spa/account/masterkey")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Account.vue"), "/api/account")
+
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Environment.vue"), "/spa/environment")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Environment.vue"), "/api/environment")
+
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Users.vue"), "/spa/users")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Users.vue"), "/spa/user/")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Users.vue"), "/api/users")
+
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "UserCreate.vue"), "/spa/users")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "UserCreate.vue"), "/api/user")
+
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Setup.vue"), "/spa/login/config")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Setup.vue"), "/spa/users")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Setup.vue"), "/api/session")
+
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Home.vue"), "/spa/servers")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Home.vue"), "/spa/servers/search")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Home.vue"), "/spa/server/create")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Home.vue"), "@/services/cable")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Home.vue"), "/api/servers")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Home.vue"), "signalr")
 
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Connect.vue"), "/spa/server/create")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Connect.vue"), "/api/server/create")
 
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "QRCode.vue"), "/spa/server/${token}/qrcode")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "QRCode.vue"), "/spa/server/${token}/info")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "QRCode.vue"), "@/services/cable")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "QRCode.vue"), "/api/server/${token}/qrcode")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "QRCode.vue"), "signalr")
 
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "PairCode.vue"), "/spa/server/${token}/paircode")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "PairCode.vue"), "/spa/server/${token}/info")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "PairCode.vue"), "@/services/cable")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "PairCode.vue"), "/api/server/${token}/paircode")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "PairCode.vue"), "signalr")
 
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "/spa/server/${token}/info")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "/spa/server/${token}/${endpoint}")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "/spa/server/${token}")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "@/services/cable")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "/api/server/")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "/api/command")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Server.vue"), "signalr")
 
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "SendMessage.vue"), "/spa/server/${token}/contacts")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "SendMessage.vue"), "/spa/server/${token}/send")
@@ -74,8 +101,13 @@ func TestFrontendBetaCorePagesUseSPAEndpoints(t *testing.T) {
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "/spa/server/${token}/contacts")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "/spa/server/${token}/picinfo/")
 	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "/spa/server/${token}/messages/${m.id}/history/download")
+	assertFileContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "../services/cable")
+	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "../services/signalr")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "/api/server/")
 	assertFileNotContains(t, filepath.Join("frontend", "src", "pages", "Messages.vue"), "/api/picinfo/")
+
+	assertFileContains(t, filepath.Join("frontend", "src", "services", "cable.ts"), "/cable")
+	assertFileContains(t, filepath.Join("frontend", "src", "services", "cable.ts"), "'subscribe'")
 }
 
 func assertFileContains(t *testing.T, path string, want string) {

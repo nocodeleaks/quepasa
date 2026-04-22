@@ -1,0 +1,15 @@
+:root{
+  --primary-color: #00034B;
+}
+
+body{
+  background: #f8f9fa;
+}
+
+.navbar.bg-primary{
+  background: var(--primary-color) !important;
+}
+
+.container{
+  max-width: 1100px;
+}

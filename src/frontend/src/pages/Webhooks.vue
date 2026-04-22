@@ -1,6 +1,5 @@
 <template>
   <div class="webhooks-page">
-    <!-- Header -->
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
         <i class="fa fa-arrow-left"></i>
@@ -11,19 +10,16 @@
           <i class="fa fa-globe"></i>
           Webhooks
         </h1>
-        <p v-if="data?.server?.wid">Servidor: {{ data.server.wid }}</p>
-        <p v-else-if="data?.server?.token">Token: {{ truncateToken(data.server.token) }}</p>
+        <p v-if="currentToken">Servidor: {{ truncateToken(currentToken) }}</p>
         <p v-else>Gerencie as integrações de webhook</p>
       </div>
     </div>
 
-    <!-- Error -->
     <div v-if="error" class="error-box">
       <i class="fa fa-exclamation-triangle"></i>
       <span>{{ error }}</span>
     </div>
 
-    <!-- No Token Warning -->
     <div v-else-if="!hasToken && !loading" class="no-token-warning">
       <div class="warning-icon">
         <i class="fa fa-exclamation-circle"></i>
@@ -36,15 +32,12 @@
       </router-link>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Carregando...</p>
     </div>
 
-    <!-- Content -->
     <div v-else-if="data" class="webhooks-content">
-      <!-- Add New Form -->
       <div class="add-card">
         <div class="card-header">
           <i class="fa fa-plus-circle"></i>
@@ -55,22 +48,34 @@
             <div class="form-row">
               <div class="form-group flex-grow">
                 <label>URL do Webhook</label>
-                <input 
-                  v-model="newUrl" 
-                  type="url" 
-                  class="form-input" 
+                <input
+                  v-model="newUrl"
+                  type="url"
+                  class="form-input"
                   placeholder="https://example.com/webhook"
                   required
                 />
               </div>
               <div class="form-group">
                 <label>Track ID</label>
-                <input 
-                  v-model="newTrackId" 
-                  type="text" 
-                  class="form-input" 
+                <input
+                  v-model="newTrackId"
+                  type="text"
+                  class="form-input"
                   placeholder="Opcional"
                 />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-grow">
+                <label>Extra (JSON)</label>
+                <textarea
+                  v-model="newExtra"
+                  class="form-input extra-textarea"
+                  rows="3"
+                  placeholder='{"source":"crm"}'
+                ></textarea>
               </div>
             </div>
 
@@ -100,94 +105,92 @@
             <button type="submit" class="btn-primary" :disabled="!newUrl || creating">
               <i v-if="creating" class="fa fa-spinner fa-spin"></i>
               <i v-else class="fa fa-plus"></i>
-              {{ creating ? 'Adicionando...' : 'Adicionar' }}
+              {{ creating ? "Adicionando..." : "Adicionar" }}
             </button>
           </form>
         </div>
       </div>
 
-      <!-- List -->
       <div class="list-card">
         <div class="card-header">
           <i class="fa fa-list"></i>
           <h2>Webhooks Ativos</h2>
-          <span class="count-badge">{{ data.webhooks?.length || 0 }}</span>
+          <span class="count-badge">{{ data.webhooks.length }}</span>
         </div>
         <div class="card-body">
-          <div v-if="!data.webhooks || data.webhooks.length === 0" class="empty-state">
+          <div v-if="data.webhooks.length === 0" class="empty-state">
             <i class="fa fa-inbox"></i>
             <p>Nenhum webhook configurado</p>
           </div>
 
           <div v-else class="webhook-list">
-            <div v-for="w in data.webhooks" :key="w.url" class="webhook-item">
+            <div v-for="webhook in data.webhooks" :key="webhook.url" class="webhook-item">
               <div class="item-header">
                 <div class="item-info">
                   <div class="item-main">
-                    <strong class="webhook-url">{{ w.url }}</strong>
-                    <span v-if="w.trackid" class="track-id">Track: {{ w.trackid }}</span>
+                    <strong class="webhook-url">{{ webhook.url }}</strong>
+                    <span v-if="webhook.trackid" class="track-id">Track: {{ webhook.trackid }}</span>
                   </div>
                   <div class="item-status">
-                    <span class="status-indicator" :class="{ success: !w.failure, error: w.failure }">
-                      <i :class="w.failure ? 'fa fa-times-circle' : 'fa fa-check-circle'"></i>
-                      {{ w.failure ? 'Falha' : 'OK' }}
+                    <span class="status-indicator" :class="{ success: !webhook.failure, error: !!webhook.failure }">
+                      <i :class="webhook.failure ? 'fa fa-times-circle' : 'fa fa-check-circle'"></i>
+                      {{ webhook.failure ? "Falha" : "OK" }}
                     </span>
                   </div>
                 </div>
 
                 <div class="item-actions">
-                  <button class="btn-edit" @click="startEdit(w)" title="Editar">
+                  <button class="btn-edit" @click="startEdit(webhook)" title="Editar">
                     <i class="fa fa-edit"></i>
                   </button>
-                  <button class="btn-delete" @click="confirmDelete(w.url)" title="Remover">
+                  <button class="btn-delete" @click="confirmDelete(webhook.url)" title="Remover">
                     <i class="fa fa-trash"></i>
                   </button>
                 </div>
               </div>
 
-              <!-- Extra data display -->
-              <div v-if="w.extra" class="item-extra">
+              <div v-if="webhook.extra" class="item-extra">
                 <span class="extra-label">Extra:</span>
-                <code class="extra-value">{{ formatExtra(w.extra) }}</code>
+                <code class="extra-value">{{ formatExtra(webhook.extra) }}</code>
               </div>
 
               <div class="item-flags">
-                <button 
-                  class="flag-btn" 
-                  :class="getTriStateClass(w.forwardinternal ? 1 : -1)" 
-                  @click="toggleWebhookFlag(w.url, 'webhook-forwardinternal')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.forwardinternal ? 1 : -1)"
+                  @click="toggleWebhookFlag(webhook, 'forwardinternal')"
                   title="Forward Internal"
                 >
                   <i class="fa fa-share"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="getTriStateClass(w.broadcasts)" 
-                  @click="toggleWebhookFlag(w.url, 'webhook-broadcasts')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.broadcasts)"
+                  @click="toggleWebhookFlag(webhook, 'broadcasts')"
                   title="Broadcasts"
                 >
                   <i class="fa fa-bullhorn"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="getTriStateClass(w.groups)" 
-                  @click="toggleWebhookFlag(w.url, 'webhook-groups')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.groups)"
+                  @click="toggleWebhookFlag(webhook, 'groups')"
                   title="Grupos"
                 >
                   <i class="fa fa-users"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="getTriStateClass(w.readreceipts)" 
-                  @click="toggleWebhookFlag(w.url, 'webhook-readreceipts')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.readreceipts)"
+                  @click="toggleWebhookFlag(webhook, 'readreceipts')"
                   title="Confirmações de Leitura"
                 >
                   <i class="fa fa-check-double"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="getTriStateClass(w.calls)" 
-                  @click="toggleWebhookFlag(w.url, 'webhook-calls')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.calls)"
+                  @click="toggleWebhookFlag(webhook, 'calls')"
                   title="Chamadas"
                 >
                   <i class="fa fa-phone"></i>
@@ -199,18 +202,16 @@
       </div>
     </div>
 
-    <!-- Confirm Modal -->
-    <ConfirmModal 
-      :show="showConfirm" 
-      title="Remover Webhook" 
-      message="Tem certeza que deseja remover este webhook?" 
-      @confirm="doDeleteWebhook" 
-      @cancel="showConfirm = false" 
-      confirmLabel="Remover" 
-      cancelLabel="Cancelar" 
+    <ConfirmModal
+      :show="showConfirm"
+      title="Remover Webhook"
+      message="Tem certeza que deseja remover este webhook?"
+      @confirm="doDeleteWebhook"
+      @cancel="showConfirm = false"
+      confirmLabel="Remover"
+      cancelLabel="Cancelar"
     />
 
-    <!-- Edit Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
       <div class="modal-content edit-modal">
         <div class="modal-header">
@@ -223,10 +224,10 @@
           <form @submit.prevent="saveEdit">
             <div class="form-group">
               <label>URL do Webhook</label>
-              <input 
-                v-model="editData.url" 
-                type="url" 
-                class="form-input" 
+              <input
+                v-model="editData.url"
+                type="url"
+                class="form-input"
                 placeholder="https://example.com/webhook"
                 required
               />
@@ -234,28 +235,28 @@
 
             <div class="form-group">
               <label>Track ID</label>
-              <input 
-                v-model="editData.trackId" 
-                type="text" 
-                class="form-input" 
+              <input
+                v-model="editData.trackid"
+                type="text"
+                class="form-input"
                 placeholder="Identificador para evitar loop"
               />
             </div>
 
             <div class="form-group">
               <label>Extra (JSON)</label>
-              <textarea 
-                v-model="editData.extraStr" 
-                class="form-input extra-textarea" 
-                placeholder='{"chave": "valor"}'
+              <textarea
+                v-model="editData.extraStr"
+                class="form-input extra-textarea"
                 rows="4"
+                placeholder='{"chave":"valor"}'
               ></textarea>
-              <small class="form-hint">Dados JSON extras que serão enviados junto com o payload</small>
+              <small class="form-hint">Dados JSON extras enviados junto com o payload.</small>
             </div>
 
             <div class="form-group">
               <label class="checkbox-label">
-                <input type="checkbox" v-model="editData.forwardInternal" />
+                <input type="checkbox" v-model="editData.forwardinternal" />
                 <span>Forward Internal</span>
               </label>
             </div>
@@ -271,7 +272,7 @@
               </div>
               <div class="option-item">
                 <label>Confirmações</label>
-                <TriStateToggle v-model="editData.readReceipts" />
+                <TriStateToggle v-model="editData.readreceipts" />
               </div>
               <div class="option-item">
                 <label>Chamadas</label>
@@ -286,7 +287,7 @@
               <button type="submit" class="btn-primary" :disabled="saving">
                 <i v-if="saving" class="fa fa-spinner fa-spin"></i>
                 <i v-else class="fa fa-save"></i>
-                {{ saving ? 'Salvando...' : 'Salvar' }}
+                {{ saving ? "Salvando..." : "Salvar" }}
               </button>
             </div>
           </form>
@@ -297,77 +298,39 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, reactive } from 'vue'
-import api from '@/services/api'
+import { computed, defineComponent, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import TriStateToggle from '@/components/TriStateToggle.vue'
+import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+
+type WebhookItem = {
+  url: string
+  trackid?: string
+  forwardinternal?: boolean
+  broadcasts?: number | boolean | null
+  groups?: number | boolean | null
+  readreceipts?: number | boolean | null
+  calls?: number | boolean | null
+  extra?: unknown
+  failure?: string | null
+}
 
 export default defineComponent({
   components: { ConfirmModal, TriStateToggle },
   setup() {
-    const data = ref<any>(null)
+    const route = useRoute()
+    const data = ref<{ server: { token: string }; webhooks: WebhookItem[] } | null>(null)
     const error = ref('')
     const loading = ref(true)
     const creating = ref(false)
-    const route = useRoute()
     const hasToken = ref(true)
+    const showConfirm = ref(false)
+    const confirmUrl = ref('')
+    const showEditModal = ref(false)
+    const saving = ref(false)
 
-    function truncateToken(token: string) {
-      if (!token) return ''
-      if (token.length <= 16) return token
-      return token.substring(0, 8) + '...' + token.substring(token.length - 4)
-    }
-
-    // Tri-state helper: returns CSS class based on value (-1, 0, 1)
-    function getTriStateClass(val: number | boolean | null | undefined): string {
-      if (val === 1 || val === true) return 'state-on'
-      if (val === -1 || val === false) return 'state-off'
-      return 'state-unset'
-    }
-
-    // Format extra field for display
-    function formatExtra(extra: any): string {
-      if (!extra) return ''
-      if (typeof extra === 'string') return extra
-      try {
-        return JSON.stringify(extra, null, 2)
-      } catch {
-        return String(extra)
-      }
-    }
-
-    // Convert API value to tri-state number
-    function toTriState(val: any): number {
-      if (val === 1 || val === true) return 1
-      if (val === -1 || val === false) return -1
-      return 0
-    }
-
-    async function load() {
-      try {
-        loading.value = true
-        error.value = ''
-        const token = (route.query.token as string) || ''
-        
-        if (!token) {
-          hasToken.value = false
-          loading.value = false
-          return
-        }
-        
-        hasToken.value = true
-        const res = await api.get('/api/webhooks', { params: { token } })
-        data.value = res.data
-      } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar webhooks'
-      } finally {
-        loading.value = false
-      }
-    }
-
-    // create webhook
     const newUrl = ref('')
     const newTrackId = ref('')
     const newForwardInternal = ref(false)
@@ -377,32 +340,121 @@ export default defineComponent({
     const newCalls = ref(false)
     const newExtra = ref('')
 
+    const editData = reactive({
+      originalUrl: '',
+      url: '',
+      trackid: '',
+      extraStr: '',
+      forwardinternal: false,
+      broadcasts: 0,
+      groups: 0,
+      readreceipts: 0,
+      calls: 0,
+    })
+
+    const currentToken = computed(() => String(route.query.token || ''))
+
+    function truncateToken(token: string) {
+      if (!token) return ''
+      if (token.length <= 16) return token
+      return `${token.substring(0, 8)}...${token.substring(token.length - 4)}`
+    }
+
+    function getTriStateClass(value: number | boolean | null | undefined) {
+      if (value === 1 || value === true) return 'state-on'
+      if (value === -1 || value === false) return 'state-off'
+      return 'state-unset'
+    }
+
+    function toTriState(value: any): number {
+      if (value === 1 || value === true) return 1
+      if (value === -1 || value === false) return -1
+      return 0
+    }
+
+    function nextTriState(value: number | boolean | null | undefined): number {
+      const normalized = toTriState(value)
+      if (normalized === 0) return 1
+      if (normalized === 1) return -1
+      return 0
+    }
+
+    function formatExtra(extra: unknown): string {
+      if (!extra) return ''
+      if (typeof extra === 'string') return extra
+      try {
+        return JSON.stringify(extra, null, 2)
+      } catch {
+        return String(extra)
+      }
+    }
+
+    function parseExtra(extraText: string) {
+      if (!extraText.trim()) return null
+      return JSON.parse(extraText)
+    }
+
+    function buildWebhookPayload(webhook: Partial<WebhookItem>) {
+      return {
+        url: webhook.url || '',
+        trackid: webhook.trackid || '',
+        forwardinternal: webhook.forwardinternal === true,
+        broadcasts: toTriState(webhook.broadcasts),
+        groups: toTriState(webhook.groups),
+        readreceipts: toTriState(webhook.readreceipts),
+        calls: toTriState(webhook.calls),
+        extra: webhook.extra ?? null,
+      }
+    }
+
+    async function load() {
+      loading.value = true
+      error.value = ''
+
+      try {
+        if (!currentToken.value) {
+          hasToken.value = false
+          data.value = null
+          return
+        }
+
+        hasToken.value = true
+        const res = await api.get(`/spa/server/${currentToken.value}/webhooks`)
+        data.value = {
+          server: { token: currentToken.value },
+          webhooks: res.data?.webhooks || [],
+        }
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar webhooks'
+      } finally {
+        loading.value = false
+      }
+    }
+
+    async function upsertWebhook(payload: ReturnType<typeof buildWebhookPayload>) {
+      await api.post(`/spa/server/${currentToken.value}/webhooks`, payload)
+    }
+
     async function createWebhook() {
-      if (!newUrl.value) return
+      if (!newUrl.value || !currentToken.value) return
 
       creating.value = true
+      error.value = ''
+
       try {
-        const token = (route.query.token as string) || (data.value?.server?.token || '')
-        if (!token) throw new Error('Token não encontrado')
-        
-        let extraParsed = null
-        if (newExtra.value) extraParsed = JSON.parse(newExtra.value)
-        
-        await api.post('/api/webhooks', {
-          token,
+        await upsertWebhook({
           url: newUrl.value,
-          trackId: newTrackId.value,
-          forwardInternal: newForwardInternal.value,
+          trackid: newTrackId.value,
+          forwardinternal: newForwardInternal.value,
           broadcasts: newBroadcasts.value,
           groups: newGroups.value,
-          readReceipts: newReadReceipts.value,
+          readreceipts: newReadReceipts.value,
           calls: newCalls.value,
-          extra: extraParsed,
+          extra: parseExtra(newExtra.value),
         })
-        
+
         await load()
-        
-        // Clear fields
+
         newUrl.value = ''
         newTrackId.value = ''
         newForwardInternal.value = false
@@ -411,20 +463,16 @@ export default defineComponent({
         newReadReceipts.value = false
         newCalls.value = false
         newExtra.value = ''
-        
+
         pushToast('Webhook criado com sucesso', 'success')
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao criar webhook'
-        error.value = msg
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao criar webhook'
+        error.value = message
+        pushToast(message, 'error')
       } finally {
         creating.value = false
       }
     }
-
-    // confirmation flow
-    const showConfirm = ref(false)
-    const confirmUrl = ref('')
 
     function confirmDelete(url: string) {
       confirmUrl.value = url
@@ -432,118 +480,83 @@ export default defineComponent({
     }
 
     async function doDeleteWebhook() {
+      if (!currentToken.value) return
+
       try {
-        const token = (route.query.token as string) || (data.value?.server?.token || '')
-        if (!token) throw new Error('Token não encontrado')
-        
-        await api.delete('/api/webhooks', { 
-          params: { token }, 
-          data: { url: confirmUrl.value } 
+        await api.delete(`/spa/server/${currentToken.value}/webhooks`, {
+          data: { url: confirmUrl.value },
         })
-        
+
         showConfirm.value = false
         confirmUrl.value = ''
-        
         await load()
         pushToast('Webhook removido', 'success')
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao remover'
-        error.value = msg
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao remover webhook'
+        error.value = message
+        pushToast(message, 'error')
       }
     }
 
-    async function toggleWebhookFlag(url: string, key: string) {
+    async function toggleWebhookFlag(webhook: WebhookItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls') {
       try {
-        const token = (route.query.token as string) || (data.value?.server?.token || '')
-        if (!token) throw new Error('Token não encontrado')
-        
-        await api.post('/api/toggle', { token, key, url })
+        const payload = buildWebhookPayload(webhook)
+
+        if (key === 'forwardinternal') {
+          payload.forwardinternal = !payload.forwardinternal
+        } else {
+          payload[key] = nextTriState(payload[key])
+        }
+
+        await upsertWebhook(payload)
         await load()
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao alternar'
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao alternar webhook'
+        pushToast(message, 'error')
       }
     }
 
-    // Edit webhook
-    const showEditModal = ref(false)
-    const saving = ref(false)
-    const editData = reactive({
-      originalUrl: '',
-      url: '',
-      trackId: '',
-      extraStr: '',
-      forwardInternal: false,
-      broadcasts: 0,
-      groups: 0,
-      readReceipts: 0,
-      calls: 0
-    })
-
-    function startEdit(webhook: any) {
+    function startEdit(webhook: WebhookItem) {
       editData.originalUrl = webhook.url || ''
       editData.url = webhook.url || ''
-      editData.trackId = webhook.trackid || ''
-      editData.forwardInternal = webhook.forwardinternal || false
+      editData.trackid = webhook.trackid || ''
+      editData.forwardinternal = webhook.forwardinternal === true
       editData.broadcasts = toTriState(webhook.broadcasts)
       editData.groups = toTriState(webhook.groups)
-      editData.readReceipts = toTriState(webhook.readreceipts)
+      editData.readreceipts = toTriState(webhook.readreceipts)
       editData.calls = toTriState(webhook.calls)
-      
-      // Format extra as JSON string for editing
-      if (webhook.extra) {
-        try {
-          editData.extraStr = typeof webhook.extra === 'string' 
-            ? webhook.extra 
-            : JSON.stringify(webhook.extra, null, 2)
-        } catch {
-          editData.extraStr = ''
-        }
-      } else {
-        editData.extraStr = ''
-      }
-      
+      editData.extraStr = webhook.extra ? formatExtra(webhook.extra) : ''
       showEditModal.value = true
     }
 
     async function saveEdit() {
+      if (!currentToken.value) return
+
       saving.value = true
       try {
-        const token = (route.query.token as string) || (data.value?.server?.token || '')
-        if (!token) throw new Error('Token não encontrado')
-
-        // Parse extra JSON
-        let extraParsed = null
-        if (editData.extraStr.trim()) {
-          try {
-            extraParsed = JSON.parse(editData.extraStr)
-          } catch (e) {
-            pushToast('Extra deve ser um JSON válido', 'error')
-            saving.value = false
-            return
-          }
+        if (editData.originalUrl && editData.originalUrl !== editData.url) {
+          await api.delete(`/spa/server/${currentToken.value}/webhooks`, {
+            data: { url: editData.originalUrl },
+          })
         }
 
-        await api.put('/api/webhooks', {
-          token,
-          originalUrl: editData.originalUrl,
+        await upsertWebhook({
           url: editData.url,
-          trackId: editData.trackId,
-          forwardInternal: editData.forwardInternal,
+          trackid: editData.trackid,
+          forwardinternal: editData.forwardinternal,
           broadcasts: editData.broadcasts,
           groups: editData.groups,
-          readReceipts: editData.readReceipts,
+          readreceipts: editData.readreceipts,
           calls: editData.calls,
-          extra: extraParsed
+          extra: parseExtra(editData.extraStr),
         })
 
         showEditModal.value = false
         await load()
         pushToast('Webhook atualizado com sucesso', 'success')
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao atualizar webhook'
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao atualizar webhook'
+        pushToast(message, 'error')
       } finally {
         saving.value = false
       }
@@ -553,14 +566,36 @@ export default defineComponent({
       load()
     })
 
-    return { 
-      data, error, loading, creating,
-      newUrl, newTrackId, newForwardInternal, newBroadcasts, newGroups, newReadReceipts, newCalls, newExtra, 
-      createWebhook, showConfirm, confirmDelete, doDeleteWebhook, toggleWebhookFlag,
-      truncateToken, hasToken, getTriStateClass, formatExtra,
-      showEditModal, saving, editData, startEdit, saveEdit
+    return {
+      confirmDelete,
+      createWebhook,
+      creating,
+      currentToken,
+      data,
+      doDeleteWebhook,
+      editData,
+      error,
+      formatExtra,
+      getTriStateClass,
+      hasToken,
+      loading,
+      newBroadcasts,
+      newCalls,
+      newExtra,
+      newForwardInternal,
+      newGroups,
+      newReadReceipts,
+      newTrackId,
+      newUrl,
+      saveEdit,
+      saving,
+      showConfirm,
+      showEditModal,
+      startEdit,
+      toggleWebhookFlag,
+      truncateToken,
     }
-  }
+  },
 })
 </script>
 
@@ -599,7 +634,7 @@ export default defineComponent({
 }
 
 .page-header h1 i {
-  color: var(--branding-primary, #7C3AED);
+  color: var(--branding-primary, #7c3aed);
 }
 
 .page-header p {
@@ -660,7 +695,7 @@ export default defineComponent({
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
+  background: linear-gradient(135deg, var(--branding-primary, #7c3aed), var(--branding-secondary, #5b21b6));
   color: white;
   border-radius: 10px;
   text-decoration: none;
@@ -676,14 +711,16 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   border: 4px solid #e5e7eb;
-  border-top-color: var(--branding-primary, #7C3AED);
+  border-top-color: var(--branding-primary, #7c3aed);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .webhooks-content {
@@ -692,7 +729,8 @@ export default defineComponent({
   gap: 24px;
 }
 
-.add-card, .list-card {
+.add-card,
+.list-card {
   background: white;
   border-radius: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -709,7 +747,7 @@ export default defineComponent({
 }
 
 .card-header i {
-  color: var(--branding-primary, #7C3AED);
+  color: var(--branding-primary, #7c3aed);
 }
 
 .card-header h2 {
@@ -721,7 +759,7 @@ export default defineComponent({
 
 .count-badge {
   margin-left: auto;
-  background: var(--branding-primary, #7C3AED);
+  background: var(--branding-primary, #7c3aed);
   color: white;
   padding: 2px 10px;
   border-radius: 12px;
@@ -770,8 +808,14 @@ export default defineComponent({
 
 .form-input:focus {
   outline: none;
-  border-color: var(--branding-primary, #7C3AED);
+  border-color: var(--branding-primary, #7c3aed);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.extra-textarea {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  resize: vertical;
 }
 
 .options-row {
@@ -788,10 +832,10 @@ export default defineComponent({
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: var(--branding-primary, #7C3AED);
+  accent-color: var(--branding-primary, #7c3aed);
 }
 
 .btn-primary {
@@ -800,7 +844,7 @@ export default defineComponent({
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
+  background: linear-gradient(135deg, var(--branding-primary, #7c3aed), var(--branding-secondary, #5b21b6));
   color: white;
   border: none;
   border-radius: 10px;
@@ -927,30 +971,6 @@ export default defineComponent({
   background: #d1d5db;
 }
 
-.flag-btn.active {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
-}
-
-.btn-delete {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: #fef2f2;
-  border-radius: 8px;
-  color: #dc2626;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-delete:hover {
-  background: #fecaca;
-}
-
-/* Tri-state classes for flag buttons */
 .flag-btn.state-unset {
   background: #f3f4f6;
   color: #9ca3af;
@@ -966,13 +986,13 @@ export default defineComponent({
   color: #16a34a;
 }
 
-/* Item actions */
 .item-actions {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
 }
 
+.btn-delete,
 .btn-edit {
   width: 36px;
   height: 36px;
@@ -980,18 +1000,29 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   border: none;
-  background: #e0e7ff;
   border-radius: 8px;
-  color: #4f46e5;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.btn-delete {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.btn-delete:hover {
+  background: #fecaca;
+}
+
+.btn-edit {
+  background: #e0e7ff;
+  color: #4f46e5;
 }
 
 .btn-edit:hover {
   background: #c7d2fe;
 }
 
-/* Extra data display */
 .item-extra {
   display: flex;
   gap: 8px;
@@ -1017,7 +1048,6 @@ export default defineComponent({
   overflow-y: auto;
 }
 
-/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1060,7 +1090,7 @@ export default defineComponent({
 }
 
 .modal-header h3 i {
-  color: var(--branding-primary, #7C3AED);
+  color: var(--branding-primary, #7c3aed);
 }
 
 .modal-close {
@@ -1092,12 +1122,6 @@ export default defineComponent({
 
 .modal-body .form-input {
   width: 100%;
-}
-
-.extra-textarea {
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 13px;
-  resize: vertical;
 }
 
 .form-hint {
@@ -1159,8 +1183,8 @@ export default defineComponent({
   }
 
   .webhook-item {
-    flex-direction: column;
-    align-items: stretch;
+    position: relative;
+    padding-right: 56px;
   }
 
   .item-flags {
@@ -1174,11 +1198,6 @@ export default defineComponent({
     position: absolute;
     top: 12px;
     right: 12px;
-  }
-
-  .webhook-item {
-    position: relative;
-    padding-right: 56px;
   }
 }
 </style>

@@ -500,7 +500,7 @@ export default defineComponent({
       loading.value = true
       error.value = ''
       try {
-        const res = await api.get(`/api/server/${token}/messages`, {
+        const res = await api.get(`/spa/server/${token}/messages`, {
           params: {
             page: currentPage.value,
             limit: messagesPerPage.value,
@@ -514,7 +514,7 @@ export default defineComponent({
 
         // Try to fetch contacts as a fallback for participant names
         try {
-          const c = await api.get(`/api/server/${token}/contacts`)
+          const c = await api.get(`/spa/server/${token}/contacts`)
           contacts.value = c.data?.contacts || []
           // build map (by id, phone and lid)
           for (const ct of contacts.value) {
@@ -534,7 +534,7 @@ export default defineComponent({
           for (const id of uniqueIds) {
             // do not fetch if already present
             if (contactPicMap[id]) continue
-            const p = api.get(`/api/picinfo/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`)
+            const p = api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(id)}`)
               .then(res => {
                 if (res && res.data && res.data.info && res.data.info.url) {
                   contactPicMap[id] = res.data.info.url
@@ -597,7 +597,7 @@ export default defineComponent({
         return msg.attachment.url || msg.attachment.Url
       }
       // Use SPA download endpoint with token in path
-      return `/api/server/${encodeURIComponent(token.trim())}/download/${encodeURIComponent(msg.id)}`
+      return `/spa/server/${encodeURIComponent(token.trim())}/download/${encodeURIComponent(msg.id)}`
     }
 
 
@@ -691,7 +691,7 @@ export default defineComponent({
       if (!m || !m.id) return
       fetchingDownload[m.id] = true
       try {
-        await api.post(`/api/server/${token}/messages/${m.id}/history/download`)
+        await api.post(`/spa/server/${token}/messages/${m.id}/history/download`)
         // on success reload messages to reflect new attachment
         await loadMessages()
         pushToast('Mídia do histórico baixada', 'success')
@@ -736,7 +736,7 @@ export default defineComponent({
         return
       }
       try {
-        await api.put(`/api/server/${encodeURIComponent(token.trim())}/message/${encodeURIComponent(m.id)}/edit`, { content: newText })
+        await api.put(`/spa/server/${encodeURIComponent(token.trim())}/message/${encodeURIComponent(m.id)}/edit`, { content: newText })
         editing[m.id] = false
         await loadMessages()
         pushToast('Mensagem editada', 'success')
@@ -750,7 +750,7 @@ export default defineComponent({
       if (!m || !m.id) return
       if (!confirm('Deseja realmente revogar esta mensagem?')) return
       try {
-        await api.delete(`/api/server/${encodeURIComponent(token.trim())}/message/${encodeURIComponent(m.id)}`)
+        await api.delete(`/spa/server/${encodeURIComponent(token.trim())}/message/${encodeURIComponent(m.id)}`)
         await loadMessages()
         pushToast('Mensagem revogada', 'success')
       } catch (e: any) {
@@ -764,7 +764,7 @@ export default defineComponent({
       if (!confirm('Deseja arquivar esta conversa?')) return
       archiving[m.chat.id] = true
       try {
-        await api.post(`/api/server/${encodeURIComponent(token.trim())}/chat/archive`, { chatid: m.chat.id, archive: true })
+        await api.post(`/spa/server/${encodeURIComponent(token.trim())}/chat/archive`, { chatid: m.chat.id, archive: true })
         pushToast('Conversa arquivada', 'success')
         await loadMessages()
       } catch (e: any) {
@@ -779,7 +779,7 @@ export default defineComponent({
       if (!m || !m.chat || !m.chat.id) return
       presenceLoading[m.chat.id] = true
       try {
-        await api.post(`/api/server/${encodeURIComponent(token.trim())}/chat/presence`, { chatid: m.chat.id, type: 'composing' })
+        await api.post(`/spa/server/${encodeURIComponent(token.trim())}/chat/presence`, { chatid: m.chat.id, type: 'composing' })
         pushToast('Indicador de presença enviado', 'success')
       } catch (e: any) {
         pushToast(e?.response?.data?.result || e?.message || 'Erro ao enviar presença', 'error')
@@ -860,7 +860,7 @@ export default defineComponent({
             // Fetch profile picture for the new message if needed
             const chatId = payload.chat?.id
             if (chatId && !contactPicMap[chatId]) {
-              api.get(`/api/picinfo/${encodeURIComponent(chatId)}?token=${encodeURIComponent(token)}`)
+              api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(chatId)}`)
                 .then(res => {
                   if (res?.data?.info?.url) {
                     contactPicMap[chatId] = res.data.info.url

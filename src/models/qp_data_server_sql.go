@@ -13,7 +13,11 @@ type QpDataServerSql struct {
 }
 
 func (source QpDataServerSql) FindForUser(token string, user string) (response *QpServer, err error) {
-	err = source.db.Get(&response, "SELECT * FROM servers WHERE token = ? AND user = ?", token, user)
+	response = &QpServer{}
+	err = source.db.Get(response, "SELECT * FROM servers WHERE token = ? AND user = ?", token, user)
+	if err != nil {
+		response = nil
+	}
 	return
 }
 
@@ -37,7 +41,11 @@ func (source QpDataServerSql) Exists(token string) (bool, error) {
 }
 
 func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err error) {
-	err = source.db.Get(&response, "SELECT * FROM servers WHERE token = ?", token)
+	response = &QpServer{}
+	err = source.db.Get(response, "SELECT * FROM servers WHERE token = ?", token)
+	if err != nil {
+		response = nil
+	}
 	return
 }
 

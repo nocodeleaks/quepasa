@@ -27,18 +27,13 @@
                 <RouterLink class="nav-link" to="/">Home</RouterLink>
               </li>
               <li class="nav-item">
-                <RouterLink class="nav-link" to="/account">Account</RouterLink>
+                <RouterLink class="nav-link" to="/connect">Connect</RouterLink>
               </li>
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="manageMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Manage</a>
-                <ul class="dropdown-menu" aria-labelledby="manageMenu">
-                  <li><RouterLink class="dropdown-item" to="/users">Users</RouterLink></li>
-                  <li><RouterLink class="dropdown-item" to="/users/create">Create User</RouterLink></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><RouterLink class="dropdown-item" to="/environment">Environment</RouterLink></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="/swagger/" target="_blank">API Docs (Swagger)</a></li>
-                </ul>
+              <li class="nav-item">
+                <a class="nav-link" href="/form/account">Classic UI</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/swagger/" target="_blank">API Docs</a>
               </li>
             </ul>
             <div class="d-flex align-items-center text-white" v-if="session.user.value">
@@ -64,30 +59,14 @@
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#" @click.prevent="navigateTo('/account')">
-                    <i class="fa fa-user me-2"></i> Account
+                  <a class="nav-link" href="#" @click.prevent="navigateTo('/connect')">
+                    <i class="fa fa-link me-2"></i> Connect
                   </a>
                 </li>
                 <li><hr class="my-2"></li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#" @click.prevent="navigateTo('/setup')">
-                    <i class="fa fa-cog me-2"></i> Setup
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#" @click.prevent="navigateTo('/users')">
-                    <i class="fa fa-users me-2"></i> Users
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#" @click.prevent="navigateTo('/users/create')">
-                    <i class="fa fa-user-plus me-2"></i> Create User
-                  </a>
-                </li>
-                <li><hr class="my-2"></li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#" @click.prevent="navigateTo('/environment')">
-                    <i class="fa fa-cog me-2"></i> Environment
+                  <a class="nav-link" href="/form/account">
+                    <i class="fa fa-columns me-2"></i> Classic UI
                   </a>
                 </li>
                 <li class="nav-item">
@@ -177,7 +156,7 @@ export default defineComponent({
 
     const loadBranding = async () => {
       try {
-        const res = await api.get('/api/login/config')
+        const res = await api.get('/spa/login/config')
         if (res.data?.branding) {
           branding.value = { ...branding.value, ...res.data.branding }
           

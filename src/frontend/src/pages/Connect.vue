@@ -90,10 +90,11 @@ export default defineComponent({
       
       try {
         // Create a new server first
-        const response = await api.post('/api/server/create', {})
-        
-        if (response.data && response.data.token) {
-          const token = response.data.token
+        const response = await api.post('/spa/server/create', {})
+        const createdServer = response.data?.server || response.data
+
+        if (createdServer?.token) {
+          const token = createdServer.token
           pushToast('Servidor criado com sucesso!', 'success')
           
           // Navigate to the chosen connection method
@@ -107,7 +108,7 @@ export default defineComponent({
         }
       } catch (err: any) {
         console.error('Error creating server:', err)
-        error.value = err.response?.data?.message || err.message || 'Erro ao criar servidor'
+        error.value = err.response?.data?.result || err.response?.data?.message || err.message || 'Erro ao criar servidor'
         pushToast(error.value, 'error')
       } finally {
         loading.value = false

@@ -63,6 +63,7 @@ func Configure(r chi.Router) {
 		// SPA-only endpoints live under /spa so they stay clearly separated from the
 		// shared/public API surface and can evolve with frontend-specific contracts.
 		r.Route("/spa", func(r chi.Router) {
+			r.Group(RegisterSPAPublicControllers)
 			r.Group(RegisterSPAControllers)
 		})
 	})

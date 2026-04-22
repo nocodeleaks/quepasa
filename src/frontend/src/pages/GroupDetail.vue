@@ -1,67 +1,67 @@
 <template>
   <div class="group-detail-page">
-    <!-- Loading -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Carregando grupo...</p>
     </div>
 
-    <!-- Error -->
     <div v-else-if="error" class="error-container">
       <i class="fa fa-exclamation-triangle"></i>
       <p>{{ error }}</p>
       <router-link :to="`/server/${token}/groups`" class="btn-back">Voltar aos grupos</router-link>
     </div>
 
-    <!-- Content -->
     <div v-else class="group-layout">
-      <!-- Messages column (left) -->
       <div class="messages-column">
         <div class="messages-header">
           <div>
-            <p class="eyebrow">Histórico recente</p>
+            <p class="eyebrow">Historico recente</p>
             <h2>Mensagens</h2>
           </div>
           <small v-if="totalMessages">{{ visibleMessages.length }} de {{ totalMessages }} mensagens</small>
         </div>
+
         <div
           class="messages-list"
           v-if="visibleMessages.length"
           ref="messagesListRef"
           @scroll.passive="onMessagesScroll"
         >
-          <div v-for="m in visibleMessages" :key="m.id" class="message-item">
+          <div v-for="message in visibleMessages" :key="message.id" class="message-item">
             <div class="message-avatar">
-              <img v-if="participantPictures[m.participant?.phone || m.participant?.id]" :src="participantPictures[m.participant?.phone || m.participant?.id]" />
+              <img
+                v-if="participantPictures[message.participant?.phone || message.participant?.id]"
+                :src="participantPictures[message.participant?.phone || message.participant?.id]"
+              />
               <div v-else class="avatar-placeholder-small"><i class="fa fa-user"></i></div>
             </div>
             <div class="message-content">
               <div class="message-meta">
-                <span class="message-sender">{{ m.participant?.title || formatPhone(m.participant?.phone || m.participant?.id) }}</span>
-                <span class="message-time">{{ formatTime(m.timestamp) }}</span>
+                <span class="message-sender">
+                  {{ message.participant?.title || formatPhone(message.participant?.phone || message.participant?.id) }}
+                </span>
+                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
               </div>
-              <div class="message-text">{{ messagePreview(m) }}</div>
+              <div class="message-text">{{ messagePreview(message) }}</div>
             </div>
           </div>
+
           <div class="load-more-state" v-if="isLoadingMore">Carregando mais mensagens...</div>
           <div class="load-more-state" v-else-if="hasMoreMessages">
             <button class="load-more-btn" type="button" @click="loadMoreMessages">Carregar mais 50</button>
           </div>
-          <div class="load-more-state muted" v-else>
-            Você chegou ao início do histórico
-          </div>
+          <div class="load-more-state muted" v-else>Voce chegou ao inicio do historico</div>
         </div>
+
         <div v-else class="empty-messages">Nenhuma mensagem recente</div>
       </div>
 
-      <!-- Details column (right) -->
       <div class="details-column">
-        <!-- Header with group photo -->
         <div class="group-header">
           <router-link :to="`/server/${token}/groups`" class="back-btn">
             <i class="fa fa-arrow-left"></i>
           </router-link>
-          
+
           <div class="group-photo-container">
             <img v-if="groupPicture" :src="groupPicture" :alt="group.Name" class="group-photo" />
             <div v-else class="group-photo-placeholder">
@@ -78,29 +78,23 @@
               <i class="fa fa-pencil"></i>
             </button>
           </h1>
-          
-          <p class="group-meta">
-            Grupo · {{ group.Participants?.length || 0 }} membros
-          </p>
+
+          <p class="group-meta">Grupo · {{ group.Participants?.length || 0 }} membros</p>
         </div>
 
-        <!-- Description -->
         <div class="section" v-if="group.Topic || isAdmin">
           <div class="section-header">
             <i class="fa fa-info-circle"></i>
-            <span>Descrição</span>
-            <button v-if="isAdmin" @click="setGroupTopic" class="edit-btn" title="Alterar descrição">
+            <span>Descricao</span>
+            <button v-if="isAdmin" @click="setGroupTopic" class="edit-btn" title="Alterar descricao">
               <i class="fa fa-pencil"></i>
             </button>
           </div>
           <p class="description-text" v-if="group.Topic">{{ group.Topic }}</p>
-          <p class="description-empty" v-else>Nenhuma descrição definida</p>
-          <p class="description-meta" v-if="group.TopicSetAt">
-            Criada em {{ formatDate(group.TopicSetAt) }}
-          </p>
+          <p class="description-empty" v-else>Nenhuma descricao definida</p>
+          <p class="description-meta" v-if="group.TopicSetAt">Criada em {{ formatDate(group.TopicSetAt) }}</p>
         </div>
 
-        <!-- Quick Actions -->
         <div class="section actions-section">
           <button class="action-btn" @click="getInvite">
             <i class="fa fa-link"></i>
@@ -116,57 +110,52 @@
           </button>
         </div>
 
-        <!-- Participants -->
         <div class="section">
           <div class="section-header">
             <i class="fa fa-users"></i>
             <span>{{ group.Participants?.length || 0 }} membros</span>
           </div>
-          
-          <!-- Search box -->
+
           <div class="search-box" v-if="showSearch">
-            <input 
-              v-model="participantSearch" 
-              type="text" 
+            <input
+              v-model="participantSearch"
+              type="text"
               placeholder="Pesquisar membros..."
               class="search-input"
             />
           </div>
 
           <div class="participants-list">
-            <div 
-              v-for="p in filteredParticipants" 
-              :key="p.JID" 
-              class="participant-item"
-            >
+            <div v-for="participant in filteredParticipants" :key="participant.JID" class="participant-item">
               <div class="participant-avatar">
-                <img 
-                  v-if="participantPictures[p.PhoneNumber || p.JID]" 
-                  :src="participantPictures[p.PhoneNumber || p.JID]" 
-                  :alt="p.DisplayName"
+                <img
+                  v-if="participantPictures[participant.PhoneNumber || participant.JID]"
+                  :src="participantPictures[participant.PhoneNumber || participant.JID]"
+                  :alt="participant.DisplayName"
                 />
                 <div v-else class="avatar-placeholder">
                   <i class="fa fa-user"></i>
                 </div>
               </div>
+
               <div class="participant-info">
                 <div class="participant-name">
-                  <span v-if="p.DisplayName">~ {{ p.DisplayName }}</span>
-                  <span v-else>{{ formatPhone(p.PhoneNumber || p.JID) }}</span>
+                  <span v-if="participant.DisplayName">~ {{ participant.DisplayName }}</span>
+                  <span v-else>{{ formatPhone(participant.PhoneNumber || participant.JID) }}</span>
                 </div>
-                <div class="participant-phone" v-if="p.DisplayName && p.PhoneNumber">
-                  {{ formatPhone(p.PhoneNumber) }}
+                <div class="participant-phone" v-if="participant.DisplayName && participant.PhoneNumber">
+                  {{ formatPhone(participant.PhoneNumber) }}
                 </div>
               </div>
+
               <div class="participant-badges">
-                <span v-if="p.IsSuperAdmin" class="badge badge-owner">Criador</span>
-                <span v-else-if="p.IsAdmin" class="badge badge-admin">Admin</span>
+                <span v-if="participant.IsSuperAdmin" class="badge badge-owner">Criador</span>
+                <span v-else-if="participant.IsAdmin" class="badge badge-admin">Admin</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Leave Group -->
         <div class="section danger-section">
           <button class="danger-btn" @click="leaveGroup">
             <i class="fa fa-sign-out"></i>
@@ -179,7 +168,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted } from 'vue'
+import { computed, defineComponent, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
@@ -199,9 +188,10 @@ export default defineComponent({
     const router = useRouter()
     const token = route.params.token as string
     const groupid = route.params.id as string
+    const encodedGroupId = encodeURIComponent(groupid)
 
     const group = ref<any>({})
-    const groupPicture = ref<string>('')
+    const groupPicture = ref('')
     const participantPictures = ref<Record<string, string>>({})
     const messages = ref<any[]>([])
     const visibleMessages = ref<any[]>([])
@@ -209,62 +199,74 @@ export default defineComponent({
     const error = ref('')
     const showSearch = ref(false)
     const participantSearch = ref('')
-    const myPhone = ref<string>('')
+    const myPhone = ref('')
     const messagesListRef = ref<HTMLElement | null>(null)
     const isLoadingMore = ref(false)
 
-    const PAGE_SIZE = 50
+    const pageSize = 50
 
     const totalMessages = computed(() => messages.value.length)
     const hasMoreMessages = computed(() => visibleMessages.value.length < messages.value.length)
 
-    // Check if current user is admin
     const isAdmin = computed(() => {
       if (!group.value.Participants || !myPhone.value) return false
-      const me = group.value.Participants.find((p: Participant) => 
-        p.PhoneNumber?.includes(myPhone.value) || p.JID?.includes(myPhone.value)
-      )
+      const me = group.value.Participants.find((participant: Participant) => {
+        return participant.PhoneNumber?.includes(myPhone.value) || participant.JID?.includes(myPhone.value)
+      })
       return me?.IsAdmin || me?.IsSuperAdmin || false
     })
 
-    // Filter participants by search
     const filteredParticipants = computed(() => {
       const participants = group.value.Participants || []
       if (!participantSearch.value) return participants
-      
+
       const query = participantSearch.value.toLowerCase()
-      return participants.filter((p: Participant) => 
-        p.DisplayName?.toLowerCase().includes(query) ||
-        p.PhoneNumber?.includes(query) ||
-        p.JID?.includes(query)
-      )
+      return participants.filter((participant: Participant) => {
+        return (
+          participant.DisplayName?.toLowerCase().includes(query) ||
+          participant.PhoneNumber?.includes(query) ||
+          participant.JID?.includes(query)
+        )
+      })
     })
+
+    function buildMessagePreview(message: any) {
+      let preview = message.text || ''
+
+      if (message.attachment) {
+        const mime = message.attachment.mimetype || ''
+
+        if (mime.startsWith('image/')) preview = preview ? `[IMG] ${preview}` : '[IMG] Imagem'
+        else if (mime.startsWith('video/')) preview = preview ? `[VID] ${preview}` : '[VID] Video'
+        else if (mime.startsWith('audio/') || message.type === 'ptt') preview = preview ? `[AUD] ${preview}` : '[AUD] Audio'
+        else if (mime.includes('pdf')) preview = preview ? `[PDF] ${preview}` : '[PDF] PDF'
+        else preview = preview ? `[ARQ] ${preview}` : '[ARQ] Arquivo'
+      }
+
+      if (!preview && message.inreply) preview = '[RPL] Resposta'
+      return preview
+    }
 
     async function load() {
       loading.value = true
       error.value = ''
       messages.value = []
       visibleMessages.value = []
+
       try {
-        // Get group info
-        const res = await api.get(`/api/groups/get?token=${encodeURIComponent(token)}&groupid=${encodeURIComponent(groupid)}`)
+        const res = await api.get(`/spa/server/${token}/group/${encodedGroupId}`)
         group.value = res.data?.groupinfo || {}
 
-        // Get group picture
-        loadGroupPicture()
+        await loadGroupPicture()
 
-        // Get server info to find my phone
-        const serverRes = await api.get(`/api/server/${token}/info`)
-        const wid = serverRes.data?.wid || ''
+        const serverRes = await api.get(`/spa/server/${token}/info`)
+        const wid = serverRes.data?.server?.wid || ''
         myPhone.value = wid.replace('@s.whatsapp.net', '').replace('@lid', '')
 
-        // Load some participant pictures (first 10 for performance)
         await loadParticipantPictures()
-
-        // Load recent messages for this group
         await loadMessages()
-      } catch (e: any) {
-        error.value = e?.response?.data?.result || e?.message || 'Erro ao carregar grupo'
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err?.message || 'Erro ao carregar grupo'
       } finally {
         loading.value = false
       }
@@ -272,36 +274,35 @@ export default defineComponent({
 
     async function loadGroupPicture() {
       try {
-        const res = await api.get(`/api/picinfo/${encodeURIComponent(groupid)}?token=${encodeURIComponent(token)}`)
+        const res = await api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(groupid)}`)
         if (res.data?.url) {
           groupPicture.value = res.data.url
         }
       } catch {
-        // Silently ignore
+        // ignore picture failures
       }
     }
 
     async function loadParticipantPictures() {
       const participants = (group.value.Participants || []).slice(0, 10)
-      for (const p of participants) {
-        const id = p.PhoneNumber || p.JID
+      for (const participant of participants) {
+        const id = participant.PhoneNumber || participant.JID
         if (!id) continue
+
         try {
-          const res = await api.get(`/api/picinfo/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`)
+          const res = await api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(id)}`)
           if (res.data?.url) {
             participantPictures.value[id] = res.data.url
           }
         } catch {
-          // Silently ignore
+          // ignore picture failures
         }
       }
     }
 
-    function formatPhone(phone: string): string {
+    function formatPhone(phone: string) {
       if (!phone) return ''
-      // Remove @s.whatsapp.net or @lid
       let clean = phone.replace('@s.whatsapp.net', '').replace('@lid', '')
-      // Format as +55 11 99999-9999
       if (clean.length >= 12) {
         const country = clean.slice(0, 2)
         const ddd = clean.slice(2, 4)
@@ -312,76 +313,65 @@ export default defineComponent({
       return clean
     }
 
-    function formatDate(dateStr: string): string {
+    function formatDate(dateStr: string) {
       if (!dateStr) return ''
       const date = new Date(dateStr)
-      return date.toLocaleDateString('pt-BR', { 
-        day: '2-digit', 
-        month: '2-digit', 
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       })
     }
 
-    function formatTime(timestamp: string): string {
+    function formatTime(timestamp: string) {
       if (!timestamp) return ''
+
       const date = new Date(timestamp)
       const now = new Date()
       const diff = now.getTime() - date.getTime()
       const oneDay = 24 * 60 * 60 * 1000
+
       if (diff < oneDay && date.getDate() === now.getDate()) {
         return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      } else if (diff < 2 * oneDay) {
-        return 'Ontem'
-      } else if (diff < 7 * oneDay) {
-        return date.toLocaleDateString('pt-BR', { weekday: 'short' })
-      } else {
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
       }
+      if (diff < 2 * oneDay) return 'Ontem'
+      if (diff < 7 * oneDay) return date.toLocaleDateString('pt-BR', { weekday: 'short' })
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     }
 
     async function loadMessages() {
       try {
-        const res = await api.get(`/api/server/${token}/messages`)
-        const msgs = res.data?.messages || []
-        const groupMsgs: any[] = []
-        for (const msg of msgs) {
-          const chatId = msg.chat?.id
+        const res = await api.get(`/spa/server/${token}/messages`)
+        const rawMessages = res.data?.messages || []
+        const groupMessages: any[] = []
+
+        for (const message of rawMessages) {
+          const chatId = message.chat?.id
           if (!chatId || chatId !== groupid) continue
-          if (msg.type === 'unhandled' || msg.type === 'revoked' || msg.type === 'system') continue
-          if (msg.debug?.reason === 'discard') continue
-          // Accept if has text, attachment, or inreply
-          if (!msg.text && !msg.attachment && !msg.inreply) continue
+          if (message.type === 'unhandled' || message.type === 'revoked' || message.type === 'system') continue
+          if (message.debug?.reason === 'discard') continue
+          if (!message.text && !message.attachment && !message.inreply) continue
 
-          let preview = msg.text || ''
-          if (msg.attachment) {
-            const mime = msg.attachment.mimetype || ''
-            if (mime.startsWith('image/')) preview = preview ? `📷 ${preview}` : '📷 Imagem'
-            else if (mime.startsWith('video/')) preview = preview ? `🎥 ${preview}` : '🎥 Vídeo'
-            else if (mime.startsWith('audio/') || msg.type === 'ptt') preview = preview ? `🎵 ${preview}` : '🎵 Áudio'
-            else if (mime.includes('pdf')) preview = preview ? `📄 ${preview}` : '📄 PDF'
-            else preview = preview ? `📎 ${preview}` : '📎 Arquivo'
-          }
-
-          if (!preview && msg.inreply) preview = '↩️ Resposta'
+          const preview = buildMessagePreview(message)
           if (!preview) continue
 
-          groupMsgs.push({ ...msg, text: preview })
+          groupMessages.push({ ...message, text: preview })
         }
-        // Sort by timestamp desc
-        groupMsgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        messages.value = groupMsgs
-        visibleMessages.value = groupMsgs.slice(0, PAGE_SIZE)
-      } catch (e) {
-        // ignore
+
+        groupMessages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        messages.value = groupMessages
+        visibleMessages.value = groupMessages.slice(0, pageSize)
+      } catch {
+        // messages are optional enrichment
       }
     }
 
     function loadMoreMessages() {
       if (!hasMoreMessages.value || isLoadingMore.value) return
       isLoadingMore.value = true
-      const nextSlice = messages.value.slice(visibleMessages.value.length, visibleMessages.value.length + PAGE_SIZE)
+      const nextSlice = messages.value.slice(visibleMessages.value.length, visibleMessages.value.length + pageSize)
       visibleMessages.value = visibleMessages.value.concat(nextSlice)
       requestAnimationFrame(() => {
         isLoadingMore.value = false
@@ -391,135 +381,146 @@ export default defineComponent({
     function onMessagesScroll() {
       const el = messagesListRef.value
       if (!el || isLoadingMore.value || !hasMoreMessages.value) return
+
       const distanceToBottom = el.scrollHeight - (el.scrollTop + el.clientHeight)
       if (distanceToBottom < 160) {
         loadMoreMessages()
       }
     }
 
-    function messagePreview(m: any, maxLength = 120) {
-      const t = m.text || ''
-      if (t.length <= maxLength) return t
-      return t.substring(0, maxLength) + '...'
+    function messagePreview(message: any, maxLength = 120) {
+      const text = message.text || ''
+      if (text.length <= maxLength) return text
+      return `${text.substring(0, maxLength)}...`
     }
 
     function searchParticipants() {
       showSearch.value = !showSearch.value
-      if (!showSearch.value) {
-        participantSearch.value = ''
-      }
+      if (!showSearch.value) participantSearch.value = ''
     }
 
     async function leaveGroup() {
       if (!confirm('Deseja realmente sair do grupo?')) return
+
       try {
-        await api.post('/api/groups/leave', { token, group_jid: groupid })
-        pushToast('Saída do grupo solicitada', 'success')
+        await api.post(`/spa/server/${token}/group/${encodedGroupId}/leave`)
+        pushToast('Saida do grupo solicitada', 'success')
         router.push(`/server/${token}/groups`)
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao sair do grupo', 'error')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao sair do grupo', 'error')
       }
     }
 
     async function setGroupName() {
       const name = prompt('Novo nome do grupo (<=25 caracteres):', group.value.Name || '')
       if (!name) return
+
       try {
-        await api.put('/api/groups/name', { token, group_jid: groupid, name })
+        await api.put(`/spa/server/${token}/group/${encodedGroupId}/name`, { name })
         pushToast('Nome do grupo atualizado', 'success')
         await load()
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao atualizar nome', 'error')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao atualizar nome', 'error')
       }
     }
 
     async function setGroupTopic() {
-      const topic = prompt('Nova descrição do grupo:', group.value.Topic || '')
+      const topic = prompt('Nova descricao do grupo:', group.value.Topic || '')
       if (topic == null) return
+
       try {
-        await api.put('/api/groups/description', { token, group_jid: groupid, topic })
-        pushToast('Descrição atualizada', 'success')
+        await api.put(`/spa/server/${token}/group/${encodedGroupId}/description`, { topic })
+        pushToast('Descricao atualizada', 'success')
         await load()
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao atualizar descrição', 'error')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao atualizar descricao', 'error')
       }
     }
 
     async function addParticipant() {
-      const phones = prompt('Telefone(s) para adicionar (separados por vírgula):')
+      const phones = prompt('Telefone(s) para adicionar (separados por virgula):')
       if (!phones) return
-      const participants = phones.split(',').map((s: string) => s.trim()).filter(Boolean)
+
+      const participants = phones.split(',').map((value: string) => value.trim()).filter(Boolean)
+
       try {
-        await api.put('/api/groups/participants', { token, group_jid: groupid, participants })
+        await api.put(`/spa/server/${token}/group/${encodedGroupId}/participants`, {
+          action: 'add',
+          participants,
+        })
         pushToast('Participantes adicionados', 'success')
         await load()
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao adicionar participante', 'error')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao adicionar participante', 'error')
       }
     }
 
     async function setGroupPhoto() {
       const url = prompt('URL da imagem do grupo (ou vazio para cancelar):')
       if (!url) return
+
       try {
-        await api.put('/api/groups/photo', { token, group_jid: groupid, image_url: url })
+        await api.put(`/spa/server/${token}/group/${encodedGroupId}/photo`, { image_url: url })
         pushToast('Foto do grupo atualizada', 'success')
         await load()
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao alterar foto', 'error')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao alterar foto', 'error')
       }
     }
 
     async function getInvite() {
       try {
-        const res = await api.get(`/api/invite?chatid=${encodeURIComponent(groupid)}&token=${encodeURIComponent(token)}`)
+        const res = await api.get(`/spa/server/${token}/group/${encodedGroupId}/invite`)
         const url = res.data?.url
-        if (url) {
-          // Copy to clipboard
-          await navigator.clipboard.writeText(url)
-          pushToast('Link copiado para a área de transferência!', 'success')
-        } else {
-          pushToast('Nenhum link de convite disponível', 'error')
+
+        if (!url) {
+          pushToast('Nenhum link de convite disponivel', 'error')
+          return
         }
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao obter link', 'error')
+
+        await navigator.clipboard.writeText(url)
+        pushToast('Link copiado para a area de transferencia', 'success')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao obter link', 'error')
       }
     }
 
-    onMounted(() => { load() })
+    onMounted(() => {
+      load()
+    })
 
     return {
-      token,
+      addParticipant,
+      error,
+      filteredParticipants,
+      formatDate,
+      formatPhone,
+      formatTime,
+      getInvite,
       group,
       groupPicture,
-      participantPictures,
-      messages,
-      visibleMessages,
-      loading,
-      error,
-      isAdmin,
-      showSearch,
-      participantSearch,
-      totalMessages,
       hasMoreMessages,
+      isAdmin,
       isLoadingMore,
-      messagesListRef,
-      filteredParticipants,
-      formatPhone,
-      formatDate,
-      formatTime,
-      messagePreview,
-      loadMoreMessages,
-      onMessagesScroll,
-      searchParticipants,
       leaveGroup,
+      loadMoreMessages,
+      loading,
+      messagePreview,
+      messages,
+      messagesListRef,
+      onMessagesScroll,
+      participantPictures,
+      participantSearch,
+      searchParticipants,
       setGroupName,
-      setGroupTopic,
       setGroupPhoto,
-      addParticipant,
-      getInvite
+      setGroupTopic,
+      showSearch,
+      token,
+      totalMessages,
+      visibleMessages,
     }
-  }
+  },
 })
 </script>
 
@@ -682,7 +683,6 @@ export default defineComponent({
   }
 }
 
-/* Loading */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -696,17 +696,18 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #00034B;
+  border-top-color: #00034b;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Error */
 .error-container {
   display: flex;
   flex-direction: column;
@@ -725,13 +726,12 @@ export default defineComponent({
 .btn-back {
   margin-top: 20px;
   padding: 10px 20px;
-  background: #00034B;
+  background: #00034b;
   color: white;
   border-radius: 8px;
   text-decoration: none;
 }
 
-/* Header */
 .group-header {
   text-align: center;
   padding: 20px 0 30px;
@@ -749,13 +749,13 @@ export default defineComponent({
   height: 40px;
   border-radius: 50%;
   background: #e5e7eb;
-  color: #00034B;
+  color: #00034b;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .back-btn:hover {
-  background: #00034B;
+  background: #00034b;
   color: white;
 }
 
@@ -777,7 +777,7 @@ export default defineComponent({
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00034B, #000266);
+  background: linear-gradient(135deg, #00034b, #000266);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -792,7 +792,7 @@ export default defineComponent({
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #00034B;
+  background: #00034b;
   color: white;
   border: 3px solid white;
   cursor: pointer;
@@ -828,7 +828,7 @@ export default defineComponent({
 
 .edit-btn:hover {
   background: #e5e7eb;
-  color: #00034B;
+  color: #00034b;
 }
 
 .group-meta {
@@ -837,7 +837,6 @@ export default defineComponent({
   font-size: 0.9rem;
 }
 
-/* Sections */
 .section {
   background: white;
   border: 1px solid #e5e7eb;
@@ -856,7 +855,7 @@ export default defineComponent({
 }
 
 .section-header i {
-  color: #00034B;
+  color: #00034b;
 }
 
 .description-text {
@@ -878,7 +877,6 @@ export default defineComponent({
   color: #9ca3af;
 }
 
-/* Actions */
 .actions-section {
   display: flex;
   justify-content: space-around;
@@ -893,7 +891,7 @@ export default defineComponent({
   padding: 12px 20px;
   background: transparent;
   border: none;
-  color: #00034B;
+  color: #00034b;
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
@@ -911,7 +909,6 @@ export default defineComponent({
   font-size: 0.8rem;
 }
 
-/* Search */
 .search-box {
   margin-bottom: 12px;
 }
@@ -927,10 +924,9 @@ export default defineComponent({
 }
 
 .search-input:focus {
-  border-color: #00034B;
+  border-color: #00034b;
 }
 
-/* Participants */
 .participants-list {
   max-height: 400px;
   overflow-y: auto;
@@ -998,7 +994,7 @@ export default defineComponent({
 
 .badge-owner {
   background: rgba(0, 3, 75, 0.1);
-  color: #00034B;
+  color: #00034b;
 }
 
 .badge-admin {
@@ -1006,7 +1002,6 @@ export default defineComponent({
   color: #059669;
 }
 
-/* Danger Section */
 .danger-section {
   background: #fef2f2;
   border-color: #fecaca;
@@ -1032,13 +1027,13 @@ export default defineComponent({
   background: #fee2e2;
 }
 
-/* Responsive */
 @media (max-width: 640px) {
   .group-detail-page {
     padding: 15px;
   }
 
-  .group-photo, .group-photo-placeholder {
+  .group-photo,
+  .group-photo-placeholder {
     width: 100px;
     height: 100px;
   }

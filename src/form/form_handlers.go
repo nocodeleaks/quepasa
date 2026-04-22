@@ -4,6 +4,8 @@ import (
 	"errors"
 	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -38,6 +40,11 @@ func RegisterFormControllers(r chi.Router) {
 // LoginFormHandler renders route GET "/login"
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
 	data := viewmodel.LoginPageData{PageTitle: "Login - Quepasa", Version: models.QpVersion}
+	workDir, _ := os.Getwd()
+	altFrontendIndex := filepath.Join(workDir, "assets", "frontend-alt", "index.html")
+	if _, err := os.Stat(altFrontendIndex); err == nil {
+		data.AlternativeFrontendURL = "/spa-app/login"
+	}
 
 	templates := template.Must(template.ParseFiles(GetViewPath("layouts/main.tmpl"), GetViewPath("login.tmpl")))
 	templates.ExecuteTemplate(w, "main", data)

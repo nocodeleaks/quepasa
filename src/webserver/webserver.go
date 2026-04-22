@@ -85,6 +85,12 @@ func newRouter() chi.Router {
 // In development it can proxy to a local Vite server; in production it serves assets/frontend
 // when a built SPA is present on disk.
 func ServeSPA(r chi.Router) {
+	workDir, _ := os.Getwd()
+
+	// Mount the imported PR frontend as an explicit alternate app so it does not
+	// interfere with the classic UI or the primary SPA fallback.
+	ServeBuiltSPAAtPrefix(r, "/spa-app", filepath.Join(workDir, "assets", "frontend-alt"))
+
 	if useFrontendDevProxy() {
 		proxy := NewReverseProxy(frontendDevTarget())
 		r.NotFound(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -99,7 +105,6 @@ func ServeSPA(r chi.Router) {
 		return
 	}
 
-	workDir, _ := os.Getwd()
 	frontendDir := filepath.Join(workDir, "assets", "frontend")
 	indexPath := filepath.Join(frontendDir, "index.html")
 	if _, err := os.Stat(indexPath); err != nil {
@@ -123,6 +128,45 @@ func ServeSPA(r chi.Router) {
 
 		http.ServeFile(w, req, indexPath)
 	}))
+}
+
+// ServeBuiltSPAAtPrefix mounts a prebuilt SPA bundle under an explicit URL
+// prefix and falls back to its index.html for client-side navigation.
+func ServeBuiltSPAAtPrefix(r chi.Router, prefix string, spaDir string) {
+	indexPath := filepath.Join(spaDir, "index.html")
+	if _, err := os.Stat(indexPath); err != nil {
+		return
+	}
+
+	serve := func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != http.MethodGet {
+			http.NotFound(w, req)
+			return
+		}
+
+		requestPath := path.Clean(req.URL.Path)
+		if requestPath == "." {
+			requestPath = "/"
+		}
+
+		if requestPath == prefix || requestPath == prefix+"/" {
+			http.ServeFile(w, req, indexPath)
+			return
+		}
+
+		relativePath := strings.TrimPrefix(requestPath, prefix+"/")
+		staticPath := filepath.Join(spaDir, filepath.FromSlash(relativePath))
+		if info, err := os.Stat(staticPath); err == nil && !info.IsDir() {
+			http.ServeFile(w, req, staticPath)
+			return
+		}
+
+		http.ServeFile(w, req, indexPath)
+	}
+
+	r.Get(prefix, serve)
+	r.Get(prefix+"/", serve)
+	r.Get(prefix+"/*", serve)
 }
 
 // useFrontendDevProxy enables the Vite reverse proxy explicitly for local SPA work.

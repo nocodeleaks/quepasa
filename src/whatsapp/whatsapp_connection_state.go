@@ -100,7 +100,7 @@ func (s WhatsappConnectionState) EnumIndex() int {
 }
 
 func (s WhatsappConnectionState) String() string {
-	return [...]string{
+	names := [...]string{
 		"Unknown",
 		"UnPrepared",
 		"UnVerified",
@@ -116,7 +116,13 @@ func (s WhatsappConnectionState) String() string {
 		"Halting",
 		"Disconnected",
 		"Failed",
-	}[s]
+	}
+
+	if int(s) < 0 || int(s) >= len(names) {
+		return "Unknown"
+	}
+
+	return names[s]
 }
 
 // IsHealthy reports whether the server is in an operationally acceptable state for

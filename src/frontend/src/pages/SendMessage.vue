@@ -499,8 +499,18 @@ export default defineComponent({
       contactSearchLoading.value = true
       contactSearchError.value = ''
       try {
-        const res = await api.post('/api/contact/search', { query: contactSearchQuery.value })
-        contactSearchResults.value = res.data?.contacts || []
+        const res = await api.get(`/spa/server/${token}/contacts`)
+        const query = contactSearchQuery.value.toLowerCase()
+        const contacts = res.data?.contacts || []
+        contactSearchResults.value = contacts
+          .filter((ct: any) => {
+            const title = (ct.title || '').toLowerCase()
+            const phone = (ct.phone || '').toLowerCase()
+            const id = (ct.id || '').toLowerCase()
+            const lid = (ct.lid || ct.LId || '').toLowerCase()
+            return title.includes(query) || phone.includes(query) || id.includes(query) || lid.includes(query)
+          })
+          .slice(0, 20)
         if (!contactSearchResults.value.length) pushToast('Nenhum contato encontrado', 'info')
       } catch (e: any) {
         contactSearchError.value = e?.response?.data?.result || e?.message || 'Erro ao buscar contatos'
@@ -642,10 +652,10 @@ export default defineComponent({
         if (msgType.value === 'text') {
           // Use SPA endpoint for text messages
           const payload = {
-            recipient: recipient.value,
-            message: text.value
+            chatId: recipient.value,
+            text: text.value
           }
-          await api.post(`/api/server/${token}/send`, payload)
+          await api.post(`/spa/server/${token}/send`, payload)
         } else {
           // For media types, use the bot API
           const hasFile = selectedFile.value || audioBlob.value

@@ -14,7 +14,7 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     plugins: [vue()],
-    base: command === 'serve' ? '/' : '/assets/frontend/',
+    base: '/spa-app/',
     server: {
       port: Number(env.VITE_DEV_PORT || 5173),
       proxy: {
@@ -33,6 +33,12 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/signalr': {
+          target: backendUrl,
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
         '/logout': {
           target: backendUrl,
           changeOrigin: true,
@@ -46,7 +52,7 @@ export default defineConfig(({ command, mode }) => {
       }
     },
     build: {
-      outDir: path.resolve(__dirname, '../assets/frontend'),
+      outDir: path.resolve(__dirname, '../assets/frontend-alt'),
       emptyOutDir: true,
       rollupOptions: {
         output: {

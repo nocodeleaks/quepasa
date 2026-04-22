@@ -149,7 +149,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue'
+import { defineComponent, ref, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 
@@ -188,18 +188,18 @@ export default defineComponent({
       error.value = ''
 
       try {
-        const res = await api.get(`/api/server/${token}/paircode`, {
+        const res = await api.get(`/spa/server/${token}/paircode`, {
           params: { phone: phone.value }
         })
 
         
-        if (res.data?.connected || res.data?.state === 'Ready') {
+        if (res.data?.connected || res.data?.server?.state === 'Ready' || res.data?.server?.stateCode === 11) {
           connected.value = true
           return
         }
 
-        if (res.data?.paircode) {
-          pairCode.value = res.data.paircode
+        if (res.data?.pairCode || res.data?.paircode || res.data?.formatted) {
+          pairCode.value = res.data?.pairCode || res.data?.paircode || res.data?.formatted
           startPolling()
         } else {
           error.value = res.data?.result || 'Erro ao gerar código'
@@ -230,11 +230,10 @@ export default defineComponent({
 
     async function checkConnection() {
       try {
-        const res = await api.get(`/api/server/${token}/info`)
+        const res = await api.get(`/spa/server/${token}/info`)
 
         // Check the explicit connected field or state
-        const isConnected = res.data?.connected === true || res.data?.state === 'Ready'
-        const wid = res.data?.wid || res.data?.server?.wid
+        const isConnected = res.data?.server?.state === 'Ready' || res.data?.server?.stateCode === 11
         
         if (isConnected) {
           connected.value = true

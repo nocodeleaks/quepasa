@@ -1,6 +1,5 @@
 <template>
   <div class="rabbitmq-page">
-    <!-- Header -->
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
         <i class="fa fa-arrow-left"></i>
@@ -11,19 +10,16 @@
           <i class="fa fa-server"></i>
           Configurações RabbitMQ
         </h1>
-        <p v-if="data?.server?.Wid">Servidor: {{ data.server.Wid }}</p>
-        <p v-else-if="data?.server?.Token">Token: {{ truncateToken(data.server.Token) }}</p>
+        <p v-if="currentToken">Servidor: {{ truncateToken(currentToken) }}</p>
         <p v-else>Gerencie as integrações RabbitMQ</p>
       </div>
     </div>
 
-    <!-- Error -->
     <div v-if="error" class="error-box">
       <i class="fa fa-exclamation-triangle"></i>
       <span>{{ error }}</span>
     </div>
 
-    <!-- No Token Warning -->
     <div v-else-if="!hasToken && !loading" class="no-token-warning">
       <div class="warning-icon">
         <i class="fa fa-exclamation-circle"></i>
@@ -36,15 +32,12 @@
       </router-link>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Carregando...</p>
     </div>
 
-    <!-- Content -->
     <div v-else-if="data" class="rabbitmq-content">
-      <!-- Add New Form -->
       <div class="add-card">
         <div class="card-header">
           <i class="fa fa-plus-circle"></i>
@@ -55,26 +48,42 @@
             <div class="form-row">
               <div class="form-group flex-grow">
                 <label>Connection String</label>
-                <input 
-                  v-model="newConnectionString" 
-                  type="text" 
-                  class="form-input" 
+                <input
+                  v-model="newConnectionString"
+                  type="text"
+                  class="form-input"
                   placeholder="amqp://user:pass@host:5672/vhost"
                   required
                 />
               </div>
               <div class="form-group">
                 <label>Track ID</label>
-                <input 
-                  v-model="newTrackId" 
-                  type="text" 
-                  class="form-input" 
+                <input
+                  v-model="newTrackId"
+                  type="text"
+                  class="form-input"
                   placeholder="Opcional"
                 />
               </div>
             </div>
 
+            <div class="form-row">
+              <div class="form-group flex-grow">
+                <label>Extra (JSON)</label>
+                <textarea
+                  v-model="newExtra"
+                  class="form-input extra-textarea"
+                  rows="3"
+                  placeholder='{"tenant":"prod"}'
+                ></textarea>
+              </div>
+            </div>
+
             <div class="form-row options-row">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="newForwardInternal" />
+                <span>Forward Internal</span>
+              </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newBroadcasts" />
                 <span>Broadcasts</span>
@@ -87,87 +96,94 @@
                 <input type="checkbox" v-model="newReadReceipts" />
                 <span>Confirmações</span>
               </label>
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="newCalls" />
+                <span>Chamadas</span>
+              </label>
             </div>
 
             <button type="submit" class="btn-primary" :disabled="!newConnectionString || creating">
               <i v-if="creating" class="fa fa-spinner fa-spin"></i>
               <i v-else class="fa fa-plus"></i>
-              {{ creating ? 'Adicionando...' : 'Adicionar' }}
+              {{ creating ? "Adicionando..." : "Adicionar" }}
             </button>
           </form>
         </div>
       </div>
 
-      <!-- List -->
       <div class="list-card">
         <div class="card-header">
           <i class="fa fa-list"></i>
           <h2>Configurações Ativas</h2>
-          <span class="count-badge">{{ data.rabbitmq?.length || 0 }}</span>
+          <span class="count-badge">{{ data.rabbitmq.length }}</span>
         </div>
         <div class="card-body">
-          <div v-if="!data.rabbitmq || data.rabbitmq.length === 0" class="empty-state">
+          <div v-if="data.rabbitmq.length === 0" class="empty-state">
             <i class="fa fa-inbox"></i>
             <p>Nenhuma configuração RabbitMQ</p>
           </div>
 
           <div v-else class="rabbitmq-list">
-            <div v-for="r in data.rabbitmq" :key="r.ConnectionString" class="rabbitmq-item">
+            <div v-for="item in data.rabbitmq" :key="item.connection_string" class="rabbitmq-item">
               <div class="item-info">
                 <div class="item-main">
-                  <strong class="connection-string">{{ r.ConnectionString }}</strong>
-                  <span v-if="r.TrackId" class="track-id">Track: {{ r.TrackId }}</span>
+                  <strong class="connection-string">{{ item.connection_string }}</strong>
+                  <span v-if="item.trackid" class="track-id">Track: {{ item.trackid }}</span>
                 </div>
                 <div class="item-meta">
-                  <span v-if="r.Exchange"><i class="fa fa-exchange-alt"></i> {{ r.Exchange }}</span>
-                  <span v-if="r.Queue"><i class="fa fa-stream"></i> {{ r.Queue }}</span>
+                  <span v-if="item.exchange_name"><i class="fa fa-exchange-alt"></i> {{ item.exchange_name }}</span>
+                  <span v-if="item.routing_key"><i class="fa fa-stream"></i> {{ item.routing_key }}</span>
+                </div>
+                <div v-if="item.extra" class="item-extra">
+                  <span class="extra-label">Extra:</span>
+                  <code class="extra-value">{{ formatExtra(item.extra) }}</code>
                 </div>
               </div>
 
               <div class="item-flags">
-                <button 
-                  class="flag-btn" 
-                  :class="{ active: r.ForwardInternal }" 
-                  @click="toggleRabbitFlag(r.ConnectionString, 'rabbitmq-forwardinternal')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.forwardinternal ? 1 : -1)"
+                  @click="toggleRabbitFlag(item, 'forwardinternal')"
                   title="Forward Internal"
                 >
                   <i class="fa fa-share"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="{ active: r.Broadcasts }" 
-                  @click="toggleRabbitFlag(r.ConnectionString, 'rabbitmq-broadcasts')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.broadcasts)"
+                  @click="toggleRabbitFlag(item, 'broadcasts')"
                   title="Broadcasts"
                 >
                   <i class="fa fa-bullhorn"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="{ active: r.Groups }" 
-                  @click="toggleRabbitFlag(r.ConnectionString, 'rabbitmq-groups')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.groups)"
+                  @click="toggleRabbitFlag(item, 'groups')"
                   title="Grupos"
                 >
                   <i class="fa fa-users"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="{ active: r.ReadReceipts }" 
-                  @click="toggleRabbitFlag(r.ConnectionString, 'rabbitmq-readreceipts')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.readreceipts)"
+                  @click="toggleRabbitFlag(item, 'readreceipts')"
                   title="Confirmações de Leitura"
                 >
                   <i class="fa fa-check-double"></i>
                 </button>
-                <button 
-                  class="flag-btn" 
-                  :class="{ active: r.Calls }" 
-                  @click="toggleRabbitFlag(r.ConnectionString, 'rabbitmq-calls')"
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.calls)"
+                  @click="toggleRabbitFlag(item, 'calls')"
                   title="Chamadas"
                 >
                   <i class="fa fa-phone"></i>
                 </button>
               </div>
 
-              <button class="btn-delete" @click="confirmDelete(r.ConnectionString)" title="Remover">
+              <button class="btn-delete" @click="confirmDelete(item.connection_string)" title="Remover">
                 <i class="fa fa-trash"></i>
               </button>
             </div>
@@ -176,57 +192,131 @@
       </div>
     </div>
 
-    <!-- Confirm Modal -->
-    <ConfirmModal 
-      :show="showConfirm" 
-      title="Remover Configuração" 
-      message="Tem certeza que deseja remover esta configuração RabbitMQ?" 
-      @confirm="doDelete" 
-      @cancel="showConfirm = false" 
-      confirmLabel="Remover" 
-      cancelLabel="Cancelar" 
+    <ConfirmModal
+      :show="showConfirm"
+      title="Remover Configuração"
+      message="Tem certeza que deseja remover esta configuração RabbitMQ?"
+      @confirm="doDelete"
+      @cancel="showConfirm = false"
+      confirmLabel="Remover"
+      cancelLabel="Cancelar"
     />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
-import api from '@/services/api'
+import { computed, defineComponent, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import ConfirmModal from '@/components/ConfirmModal.vue'
+import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+
+type RabbitItem = {
+  connection_string: string
+  exchange_name?: string
+  routing_key?: string
+  trackid?: string
+  forwardinternal?: boolean
+  broadcasts?: number | boolean | null
+  groups?: number | boolean | null
+  readreceipts?: number | boolean | null
+  calls?: number | boolean | null
+  extra?: unknown
+}
 
 export default defineComponent({
   components: { ConfirmModal },
   setup() {
-    const data = ref<any>(null)
+    const route = useRoute()
+    const data = ref<{ server: { token: string }; rabbitmq: RabbitItem[] } | null>(null)
     const error = ref('')
     const loading = ref(true)
     const creating = ref(false)
-    const route = useRoute()
     const hasToken = ref(true)
+    const showConfirm = ref(false)
+    const confirmConnectionString = ref('')
+
+    const newConnectionString = ref('')
+    const newTrackId = ref('')
+    const newForwardInternal = ref(false)
+    const newBroadcasts = ref(true)
+    const newGroups = ref(true)
+    const newReadReceipts = ref(false)
+    const newCalls = ref(false)
+    const newExtra = ref('')
+
+    const currentToken = computed(() => String(route.query.token || ''))
 
     function truncateToken(token: string) {
       if (!token) return ''
       if (token.length <= 16) return token
-      return token.substring(0, 8) + '...' + token.substring(token.length - 4)
+      return `${token.substring(0, 8)}...${token.substring(token.length - 4)}`
+    }
+
+    function getTriStateClass(value: number | boolean | null | undefined) {
+      if (value === 1 || value === true) return 'state-on'
+      if (value === -1 || value === false) return 'state-off'
+      return 'state-unset'
+    }
+
+    function toTriState(value: any): number {
+      if (value === 1 || value === true) return 1
+      if (value === -1 || value === false) return -1
+      return 0
+    }
+
+    function nextTriState(value: number | boolean | null | undefined): number {
+      const normalized = toTriState(value)
+      if (normalized === 0) return 1
+      if (normalized === 1) return -1
+      return 0
+    }
+
+    function parseExtra(extraText: string) {
+      if (!extraText.trim()) return null
+      return JSON.parse(extraText)
+    }
+
+    function formatExtra(extra: unknown): string {
+      if (!extra) return ''
+      if (typeof extra === 'string') return extra
+      try {
+        return JSON.stringify(extra, null, 2)
+      } catch {
+        return String(extra)
+      }
+    }
+
+    function buildRabbitPayload(item: Partial<RabbitItem>) {
+      return {
+        connection_string: item.connection_string || '',
+        trackid: item.trackid || '',
+        forwardinternal: item.forwardinternal === true,
+        broadcasts: toTriState(item.broadcasts),
+        groups: toTriState(item.groups),
+        readreceipts: toTriState(item.readreceipts),
+        calls: toTriState(item.calls),
+        extra: item.extra ?? null,
+      }
     }
 
     async function load() {
+      loading.value = true
+      error.value = ''
+
       try {
-        loading.value = true
-        error.value = ''
-        const token = (route.query.token as string) || ''
-        
-        if (!token) {
+        if (!currentToken.value) {
           hasToken.value = false
-          loading.value = false
+          data.value = null
           return
         }
-        
+
         hasToken.value = true
-        const res = await api.get('/api/rabbitmq', { params: { token } })
-        data.value = res.data
+        const res = await api.get(`/spa/server/${currentToken.value}/rabbitmq`)
+        data.value = {
+          server: { token: currentToken.value },
+          rabbitmq: res.data?.rabbitmq || [],
+        }
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao carregar RabbitMQ'
       } finally {
@@ -234,96 +324,88 @@ export default defineComponent({
       }
     }
 
-    // create rabbitmq
-    const newConnectionString = ref('')
-    const newTrackId = ref('')
-    const newBroadcasts = ref(true)
-    const newGroups = ref(true)
-    const newReadReceipts = ref(false)
-    const newExtra = ref('')
+    async function upsertRabbit(payload: ReturnType<typeof buildRabbitPayload>) {
+      await api.post(`/spa/server/${currentToken.value}/rabbitmq`, payload)
+    }
 
     async function createRabbit() {
-      if (!newConnectionString.value) return
+      if (!newConnectionString.value || !currentToken.value) return
 
       creating.value = true
+      error.value = ''
+
       try {
-        const token = (route.query.token as string) || (data.value?.server?.Token || '')
-        if (!token) throw new Error('Token não encontrado')
-        
-        let extraParsed = null
-        if (newExtra.value) extraParsed = JSON.parse(newExtra.value)
-        
-        await api.post('/api/rabbitmq', {
-          token,
-          connectionString: newConnectionString.value,
-          trackId: newTrackId.value,
+        await upsertRabbit({
+          connection_string: newConnectionString.value,
+          trackid: newTrackId.value,
+          forwardinternal: newForwardInternal.value,
           broadcasts: newBroadcasts.value,
           groups: newGroups.value,
-          readReceipts: newReadReceipts.value,
-          extra: extraParsed,
+          readreceipts: newReadReceipts.value,
+          calls: newCalls.value,
+          extra: parseExtra(newExtra.value),
         })
-        
+
         await load()
-        
-        // Clear form
+
         newConnectionString.value = ''
         newTrackId.value = ''
+        newForwardInternal.value = false
         newBroadcasts.value = true
         newGroups.value = true
         newReadReceipts.value = false
+        newCalls.value = false
         newExtra.value = ''
-        
+
         pushToast('Configuração RabbitMQ criada', 'success')
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao criar RabbitMQ'
-        error.value = msg
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao criar RabbitMQ'
+        error.value = message
+        pushToast(message, 'error')
       } finally {
         creating.value = false
       }
     }
 
-    // confirmation flow
-    const showConfirm = ref(false)
-    const confirmCs = ref('')
-
-    function confirmDelete(cs: string) {
-      confirmCs.value = cs
+    function confirmDelete(connectionString: string) {
+      confirmConnectionString.value = connectionString
       showConfirm.value = true
     }
 
     async function doDelete() {
+      if (!currentToken.value) return
+
       try {
-        const token = (route.query.token as string) || (data.value?.server?.Token || '')
-        if (!token) throw new Error('Token não encontrado')
-        
-        await api.delete('/api/rabbitmq', { 
-          params: { token }, 
-          data: { connectionString: confirmCs.value } 
+        await api.delete(`/spa/server/${currentToken.value}/rabbitmq`, {
+          data: { connection_string: confirmConnectionString.value },
         })
-        
+
         showConfirm.value = false
-        confirmCs.value = ''
-        
+        confirmConnectionString.value = ''
         await load()
         pushToast('Configuração RabbitMQ removida', 'success')
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao remover'
-        error.value = msg
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao remover RabbitMQ'
+        error.value = message
+        pushToast(message, 'error')
       }
     }
 
-    async function toggleRabbitFlag(connectionString: string, key: string) {
+    async function toggleRabbitFlag(item: RabbitItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls') {
       try {
-        const token = (route.query.token as string) || (data.value?.server?.Token || '')
-        if (!token) throw new Error('Token não encontrado')
-        
-        await api.post('/api/toggle', { token, key, connectionString })
+        const payload = buildRabbitPayload(item)
+
+        if (key === 'forwardinternal') {
+          payload.forwardinternal = !payload.forwardinternal
+        } else {
+          payload[key] = nextTriState(payload[key])
+        }
+
+        await upsertRabbit(payload)
         await load()
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao alternar'
-        pushToast(msg, 'error')
+        const message = err?.response?.data?.result || err.message || 'Erro ao alternar RabbitMQ'
+        pushToast(message, 'error')
       }
     }
 
@@ -331,13 +413,31 @@ export default defineComponent({
       load()
     })
 
-    return { 
-      data, error, loading, creating, hasToken,
-      newConnectionString, newTrackId, newBroadcasts, newGroups, newReadReceipts, newExtra, 
-      createRabbit, showConfirm, confirmDelete, doDelete, toggleRabbitFlag,
-      truncateToken
+    return {
+      confirmDelete,
+      createRabbit,
+      creating,
+      currentToken,
+      data,
+      doDelete,
+      error,
+      formatExtra,
+      getTriStateClass,
+      hasToken,
+      loading,
+      newBroadcasts,
+      newCalls,
+      newConnectionString,
+      newExtra,
+      newForwardInternal,
+      newGroups,
+      newReadReceipts,
+      newTrackId,
+      showConfirm,
+      toggleRabbitFlag,
+      truncateToken,
     }
-  }
+  },
 })
 </script>
 
@@ -376,7 +476,7 @@ export default defineComponent({
 }
 
 .page-header h1 i {
-  color: var(--branding-primary, #7C3AED);
+  color: var(--branding-primary, #7c3aed);
 }
 
 .page-header p {
@@ -437,7 +537,7 @@ export default defineComponent({
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
+  background: linear-gradient(135deg, var(--branding-primary, #7c3aed), var(--branding-secondary, #5b21b6));
   color: white;
   border-radius: 10px;
   text-decoration: none;
@@ -453,14 +553,16 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   border: 4px solid #e5e7eb;
-  border-top-color: var(--branding-primary, #7C3AED);
+  border-top-color: var(--branding-primary, #7c3aed);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .rabbitmq-content {
@@ -469,7 +571,8 @@ export default defineComponent({
   gap: 24px;
 }
 
-.add-card, .list-card {
+.add-card,
+.list-card {
   background: white;
   border-radius: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -486,7 +589,7 @@ export default defineComponent({
 }
 
 .card-header i {
-  color: var(--branding-primary, #7C3AED);
+  color: var(--branding-primary, #7c3aed);
 }
 
 .card-header h2 {
@@ -498,7 +601,7 @@ export default defineComponent({
 
 .count-badge {
   margin-left: auto;
-  background: var(--branding-primary, #7C3AED);
+  background: var(--branding-primary, #7c3aed);
   color: white;
   padding: 2px 10px;
   border-radius: 12px;
@@ -547,12 +650,19 @@ export default defineComponent({
 
 .form-input:focus {
   outline: none;
-  border-color: var(--branding-primary, #7C3AED);
+  border-color: var(--branding-primary, #7c3aed);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.extra-textarea {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  resize: vertical;
 }
 
 .options-row {
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .checkbox-label {
@@ -564,10 +674,10 @@ export default defineComponent({
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: var(--branding-primary, #7C3AED);
+  accent-color: var(--branding-primary, #7c3aed);
 }
 
 .btn-primary {
@@ -576,7 +686,7 @@ export default defineComponent({
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
+  background: linear-gradient(135deg, var(--branding-primary, #7c3aed), var(--branding-secondary, #5b21b6));
   color: white;
   border: none;
   border-radius: 10px;
@@ -663,6 +773,30 @@ export default defineComponent({
   margin-right: 4px;
 }
 
+.item-extra {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.extra-label {
+  color: #6b7280;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.extra-value {
+  color: #374151;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .item-flags {
   display: flex;
   gap: 6px;
@@ -686,9 +820,19 @@ export default defineComponent({
   background: #d1d5db;
 }
 
-.flag-btn.active {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
+.flag-btn.state-unset {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.flag-btn.state-off {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.flag-btn.state-on {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .btn-delete {
@@ -715,8 +859,10 @@ export default defineComponent({
   }
 
   .rabbitmq-item {
+    position: relative;
     flex-direction: column;
     align-items: stretch;
+    padding-right: 56px;
   }
 
   .item-flags {
@@ -730,11 +876,6 @@ export default defineComponent({
     position: absolute;
     top: 12px;
     right: 12px;
-  }
-
-  .rabbitmq-item {
-    position: relative;
-    padding-right: 56px;
   }
 }
 </style>

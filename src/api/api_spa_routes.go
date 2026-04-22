@@ -19,6 +19,12 @@ func GetSPATokenAuth() *jwtauth.JWTAuth {
 	return spaTokenAuth
 }
 
+// RegisterSPAPublicControllers exposes SPA bootstrap routes that must stay
+// reachable before authentication, such as the login screen configuration.
+func RegisterSPAPublicControllers(r chi.Router) {
+	r.Get("/login/config", LoginConfigController)
+}
+
 // SPAAuthenticatorHandler validates JWT-based SPA requests after the jwtauth verifier
 // has extracted the token from the request context.
 func SPAAuthenticatorHandler(next http.Handler) http.Handler {
@@ -73,6 +79,16 @@ func RegisterSPAControllers(r chi.Router) {
 	r.Get("/users", SPAUsersListController)
 	r.Get("/server/{token}/contacts", SPAServerContactsController)
 	r.Get("/server/{token}/groups", SPAServerGroupsController)
+	r.Get("/server/{token}/picinfo/{chatid}/{pictureid}", SPAPictureInfoController)
+	r.Get("/server/{token}/picinfo/{chatid}", SPAPictureInfoController)
+	r.Post("/server/{token}/groups/create", SPAGroupsCreateController)
+	r.Get("/server/{token}/group/{groupid}", SPAGroupInfoController)
+	r.Post("/server/{token}/group/{groupid}/leave", SPAGroupLeaveController)
+	r.Put("/server/{token}/group/{groupid}/name", SPAGroupNameController)
+	r.Put("/server/{token}/group/{groupid}/description", SPAGroupDescriptionController)
+	r.Put("/server/{token}/group/{groupid}/participants", SPAGroupParticipantsController)
+	r.Put("/server/{token}/group/{groupid}/photo", SPAGroupPhotoController)
+	r.Get("/server/{token}/group/{groupid}/invite", SPAGroupInviteController)
 
 	// Current extracted SPA message/lifecycle/media actions.
 	r.Get("/server/{token}/messages", SPAServerMessagesController)

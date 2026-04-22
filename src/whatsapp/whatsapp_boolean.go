@@ -55,16 +55,9 @@ func (source *WhatsappBoolean) UnmarshalJSON(b []byte) (err error) {
 	return
 }
 
-// converts to boolean, panic if invalid
+// converts to boolean, falling back to false for unset or invalid legacy values
 func (source WhatsappBoolean) Boolean() bool {
-	switch source {
-	case FalseBooleanType:
-		return false
-	case TrueBooleanType:
-		return true
-	default:
-		panic("invalid boolean value")
-	}
+	return source.ToBoolean(false)
 }
 
 // converts to boolean passing default value for unknown option

@@ -69,6 +69,12 @@
                 <div class="has-text-centered mt-3">
                   <p class="is-size-7 has-text-grey">Don't have an account? <a href="/setup">Create one</a></p>
                 </div>
+
+                {{ if .AlternativeFrontendURL }}
+                <div class="has-text-centered mt-3">
+                  <p class="is-size-7 has-text-grey">Want to try the new interface? <a href="{{ .AlternativeFrontendURL }}">Open the beta frontend</a></p>
+                </div>
+                {{ end }}
               </form>
             </div>
           </div>

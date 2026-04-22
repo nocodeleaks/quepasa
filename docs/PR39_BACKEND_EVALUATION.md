@@ -32,8 +32,9 @@ Current extraction status:
 - SPA server create/update/delete wrappers integrated into local `develop`
 - remaining PR `environment` and user-mutation handlers intentionally deferred
 - dedicated websocket cable module implemented locally outside PR `#39`
+- PR frontend imported as an alternate bundle under `/spa-app`
+- classic login now exposes the alternate frontend behind a separate link
 - no model-layer changes imported from PR `#39`
-- no frontend files imported yet
 
 ## Backend Scope In PR 39
 
@@ -678,5 +679,6 @@ Reasoning:
 Next review slice:
 
 - backend extraction from PR `#39` is now sufficient for the current SPA baseline
-- if we continue this PR evaluation, move to the frontend/import side as a separate stage
+- frontend import now ships as an isolated beta entrypoint at `/spa-app`
+- keep the beta focused on server/message flows already covered by current backend work
 - keep rejecting direct import of PR environment/user mutation handlers unless a concrete frontend requirement appears

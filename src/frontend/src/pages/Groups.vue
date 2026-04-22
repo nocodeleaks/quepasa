@@ -1,6 +1,5 @@
 <template>
   <div class="groups-page">
-    <!-- Header -->
     <div class="page-header">
       <div class="header-left">
         <router-link :to="`/server/${token}`" class="back-btn">
@@ -10,17 +9,16 @@
         <span class="group-count" v-if="groups.length > 0">({{ groups.length }})</span>
       </div>
       <div class="header-actions">
-        <!-- View Mode Toggle -->
         <div class="view-toggle">
-          <button 
-            :class="['toggle-btn', { active: viewMode === 'card' }]" 
+          <button
+            :class="['toggle-btn', { active: viewMode === 'card' }]"
             @click="viewMode = 'card'"
             title="Modo Card"
           >
             <i class="fa fa-th-large"></i>
           </button>
-          <button 
-            :class="['toggle-btn', { active: viewMode === 'list' }]" 
+          <button
+            :class="['toggle-btn', { active: viewMode === 'list' }]"
             @click="viewMode = 'list'"
             title="Modo Lista"
           >
@@ -36,13 +34,12 @@
       </div>
     </div>
 
-    <!-- Search -->
     <div class="search-bar">
       <i class="fa fa-search"></i>
-      <input 
-        v-model="searchQuery" 
-        type="text" 
-        placeholder="Pesquisar grupos..." 
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Pesquisar grupos..."
         class="search-input"
       />
       <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
@@ -50,7 +47,6 @@
       </button>
     </div>
 
-    <!-- Pagination Controls -->
     <div v-if="groups.length > 0" class="pagination-controls">
       <button @click="goToPage(1)" :disabled="currentPage === 1 || loading" class="btn-page">
         <i class="fa fa-angle-double-left"></i>
@@ -58,7 +54,7 @@
       <button @click="prevPage" :disabled="currentPage === 1 || loading" class="btn-page">
         <i class="fa fa-angle-left"></i>
       </button>
-      <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      <span class="page-info">Pagina {{ currentPage }} de {{ totalPages }}</span>
       <button @click="nextPage" :disabled="currentPage >= totalPages || loading" class="btn-page">
         <i class="fa fa-angle-right"></i>
       </button>
@@ -66,49 +62,45 @@
         <i class="fa fa-angle-double-right"></i>
       </button>
       <select v-model.number="pageSize" class="page-size-select" :disabled="loading">
-        <option :value="5">5 por página</option>
-        <option :value="10">10 por página</option>
-        <option :value="15">15 por página</option>
-        <option :value="25">25 por página</option>
-        <option :value="50">50 por página</option>
-        <option :value="100">100 por página</option>
-        <option :value="200">200 por página</option>
+        <option :value="5">5 por pagina</option>
+        <option :value="10">10 por pagina</option>
+        <option :value="15">15 por pagina</option>
+        <option :value="25">25 por pagina</option>
+        <option :value="50">50 por pagina</option>
+        <option :value="100">100 por pagina</option>
+        <option :value="200">200 por pagina</option>
       </select>
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Carregando grupos...</p>
     </div>
 
-    <!-- Error -->
     <div v-else-if="error" class="error-box">
       <i class="fa fa-exclamation-triangle"></i>
       {{ error }}
     </div>
 
-    <!-- Empty State -->
     <div v-else-if="filteredGroups.length === 0" class="empty-state">
       <i class="fa fa-users"></i>
       <p v-if="searchQuery">Nenhum grupo encontrado para "{{ searchQuery }}"</p>
       <p v-else>Nenhum grupo encontrado</p>
     </div>
 
-    <!-- Card View (Default) -->
     <div v-else-if="viewMode === 'card'" class="groups-grid">
-      <div 
-        v-for="g in displayGroups" 
-        :key="g.JID" 
+      <div
+        v-for="group in displayGroups"
+        :key="group.JID"
         class="group-card"
-        @click="goToGroup(g.JID)"
+        @click="goToGroup(group.JID)"
       >
         <div class="card-avatar">
-          <img 
-            v-if="groupPictures[g.JID]" 
-            :src="groupPictures[g.JID]" 
-            :alt="g.Name"
-            @error="handleImageError(g.JID)"
+          <img
+            v-if="groupPictures[group.JID]"
+            :src="groupPictures[group.JID]"
+            :alt="group.Name"
+            @error="handleImageError(group.JID)"
           />
           <div v-else class="avatar-placeholder">
             <i class="fa fa-users"></i>
@@ -116,13 +108,13 @@
         </div>
         <div class="card-content">
           <div class="card-header">
-            <h3 class="group-name">{{ g.Name || 'Grupo sem nome' }}</h3>
-            <span class="message-time" v-if="g.lastMessage">{{ formatTime(g.lastMessage.timestamp) }}</span>
+            <h3 class="group-name">{{ group.Name || 'Grupo sem nome' }}</h3>
+            <span class="message-time" v-if="group.lastMessage">{{ formatTime(group.lastMessage.timestamp) }}</span>
           </div>
           <div class="card-body">
-            <p class="last-message" v-if="g.lastMessage">
-              <span class="sender-name">{{ g.lastMessage.senderName }}:</span>
-              {{ truncateMessage(g.lastMessage.text) }}
+            <p class="last-message" v-if="group.lastMessage">
+              <span class="sender-name">{{ group.lastMessage.senderName }}:</span>
+              {{ truncateMessage(group.lastMessage.text) }}
             </p>
             <p class="last-message empty" v-else>
               <i class="fa fa-comment-o me-1"></i>Sem mensagens recentes
@@ -130,12 +122,12 @@
           </div>
           <div class="card-footer">
             <span class="participants-count">
-              <i class="fa fa-user me-1"></i>{{ g.Participants?.length || 0 }}
+              <i class="fa fa-user me-1"></i>{{ group.Participants?.length || 0 }}
             </span>
-            <span v-if="g.IsAnnounce" class="badge badge-announce" title="Apenas admins podem enviar">
+            <span v-if="group.IsAnnounce" class="badge badge-announce" title="Apenas admins podem enviar">
               <i class="fa fa-bullhorn"></i>
             </span>
-            <span v-if="g.IsParent" class="badge badge-community" title="Comunidade">
+            <span v-if="group.IsParent" class="badge badge-community" title="Comunidade">
               <i class="fa fa-sitemap"></i>
             </span>
           </div>
@@ -143,20 +135,19 @@
       </div>
     </div>
 
-    <!-- List View -->
     <div v-else class="groups-list">
-      <div 
-        v-for="g in displayGroups" 
-        :key="g.JID" 
+      <div
+        v-for="group in displayGroups"
+        :key="group.JID"
         class="group-item"
-        @click="goToGroup(g.JID)"
+        @click="goToGroup(group.JID)"
       >
         <div class="item-avatar">
-          <img 
-            v-if="groupPictures[g.JID]" 
-            :src="groupPictures[g.JID]" 
-            :alt="g.Name"
-            @error="handleImageError(g.JID)"
+          <img
+            v-if="groupPictures[group.JID]"
+            :src="groupPictures[group.JID]"
+            :alt="group.Name"
+            @error="handleImageError(group.JID)"
           />
           <div v-else class="avatar-placeholder">
             <i class="fa fa-users"></i>
@@ -164,33 +155,32 @@
         </div>
         <div class="item-content">
           <div class="item-header">
-            <h3 class="group-name">{{ g.Name || 'Grupo sem nome' }}</h3>
-            <span class="message-time" v-if="g.lastMessage">{{ formatTime(g.lastMessage.timestamp) }}</span>
+            <h3 class="group-name">{{ group.Name || 'Grupo sem nome' }}</h3>
+            <span class="message-time" v-if="group.lastMessage">{{ formatTime(group.lastMessage.timestamp) }}</span>
           </div>
           <div class="item-body">
-            <p class="last-message" v-if="g.lastMessage">
-              <span class="sender-name">{{ g.lastMessage.senderName }}:</span>
-              {{ truncateMessage(g.lastMessage.text) }}
+            <p class="last-message" v-if="group.lastMessage">
+              <span class="sender-name">{{ group.lastMessage.senderName }}:</span>
+              {{ truncateMessage(group.lastMessage.text) }}
             </p>
             <p class="last-message empty" v-else>
               <span class="participants-info">
-                <i class="fa fa-user me-1"></i>{{ g.Participants?.length || 0 }} participantes
+                <i class="fa fa-user me-1"></i>{{ group.Participants?.length || 0 }} participantes
               </span>
             </p>
           </div>
         </div>
         <div class="item-badges">
-          <span v-if="g.IsAnnounce" class="badge badge-announce" title="Apenas admins podem enviar">
+          <span v-if="group.IsAnnounce" class="badge badge-announce" title="Apenas admins podem enviar">
             <i class="fa fa-bullhorn"></i>
           </span>
-          <span v-if="g.IsParent" class="badge badge-community" title="Comunidade">
+          <span v-if="group.IsParent" class="badge badge-community" title="Comunidade">
             <i class="fa fa-sitemap"></i>
           </span>
         </div>
       </div>
     </div>
 
-    
     <div v-if="totalPages > 1" class="pagination-controls">
       <button @click="goToPage(1)" :disabled="currentPage === 1 || loading" class="btn-page">
         <i class="fa fa-angle-double-left"></i>
@@ -198,7 +188,7 @@
       <button @click="prevPage" :disabled="currentPage === 1 || loading" class="btn-page">
         <i class="fa fa-angle-left"></i>
       </button>
-      <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      <span class="page-info">Pagina {{ currentPage }} de {{ totalPages }}</span>
       <button @click="nextPage" :disabled="currentPage >= totalPages || loading" class="btn-page">
         <i class="fa fa-angle-right"></i>
       </button>
@@ -206,20 +196,20 @@
         <i class="fa fa-angle-double-right"></i>
       </button>
       <select v-model.number="pageSize" class="page-size-select" :disabled="loading">
-        <option :value="5">5 por página</option>
-        <option :value="10">10 por página</option>
-        <option :value="15">15 por página</option>
-        <option :value="25">25 por página</option>
-        <option :value="50">50 por página</option>
-        <option :value="100">100 por página</option>
-        <option :value="200">200 por página</option>
+        <option :value="5">5 por pagina</option>
+        <option :value="10">10 por pagina</option>
+        <option :value="15">15 por pagina</option>
+        <option :value="25">25 por pagina</option>
+        <option :value="50">50 por pagina</option>
+        <option :value="100">100 por pagina</option>
+        <option :value="200">200 por pagina</option>
       </select>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, watch } from 'vue'
+import { computed, defineComponent, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
@@ -254,49 +244,36 @@ export default defineComponent({
     const currentPage = ref(1)
     const pageSize = ref(24)
 
-    // Filter groups by search query
     const filteredGroups = computed(() => {
       if (!searchQuery.value) return groups.value
       const query = searchQuery.value.toLowerCase()
-      return groups.value.filter(g => 
-        g.Name?.toLowerCase().includes(query) ||
-        g.JID.toLowerCase().includes(query)
-      )
+      return groups.value.filter((group) => {
+        return group.Name?.toLowerCase().includes(query) || group.JID.toLowerCase().includes(query)
+      })
     })
 
-    const totalPages = computed(() => {
-      return Math.ceil(filteredGroups.value.length / pageSize.value) || 1
-    })
+    const totalPages = computed(() => Math.ceil(filteredGroups.value.length / pageSize.value) || 1)
 
     const displayGroups = computed(() => {
       const start = (currentPage.value - 1) * pageSize.value
-      const end = start + pageSize.value
-      return filteredGroups.value.slice(start, end)
+      return filteredGroups.value.slice(start, start + pageSize.value)
     })
 
     async function load() {
       loading.value = true
       error.value = ''
+
       try {
-        const res = await api.get(`/api/groups/getall?token=${encodeURIComponent(token)}`)
-        const rawGroups = res.data?.groups || []
-        
-        // Sort by name
-        rawGroups.sort((a: Group, b: Group) => {
-          const nameA = a.Name || ''
-          const nameB = b.Name || ''
-          return nameA.localeCompare(nameB)
-        })
-        
+        const res = await api.get(`/spa/server/${token}/groups`)
+        const rawGroups = (res.data?.groups || []) as Group[]
+
+        rawGroups.sort((a, b) => (a.Name || '').localeCompare(b.Name || ''))
         groups.value = rawGroups
-        
-        // Load pictures in background (first 20 for performance)
-        loadGroupPictures(rawGroups.slice(0, 20))
-        
-        // Try to get last messages
-        loadLastMessages()
-      } catch (e: any) {
-        error.value = e?.response?.data?.result || e?.message || 'Erro ao carregar grupos'
+
+        void loadGroupPictures(rawGroups.slice(0, 20))
+        await loadLastMessages()
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err?.message || 'Erro ao carregar grupos'
       } finally {
         loading.value = false
       }
@@ -307,12 +284,8 @@ export default defineComponent({
     })
 
     watch([filteredGroups, totalPages], () => {
-      if (currentPage.value > totalPages.value) {
-        currentPage.value = totalPages.value
-      }
-      if (currentPage.value < 1) {
-        currentPage.value = 1
-      }
+      if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+      if (currentPage.value < 1) currentPage.value = 1
     })
 
     function goToPage(page: number) {
@@ -322,113 +295,90 @@ export default defineComponent({
     }
 
     function nextPage() {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++
-      }
+      if (currentPage.value < totalPages.value) currentPage.value += 1
     }
 
     function prevPage() {
-      if (currentPage.value > 1) {
-        currentPage.value--
-      }
+      if (currentPage.value > 1) currentPage.value -= 1
     }
 
     async function loadGroupPictures(groupList: Group[]) {
-      for (const g of groupList) {
+      for (const group of groupList) {
         try {
-          const res = await api.get(`/api/picinfo/${encodeURIComponent(g.JID)}?token=${encodeURIComponent(token)}`)
+          const res = await api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(group.JID)}`)
           if (res.data?.url) {
-            groupPictures.value[g.JID] = res.data.url
+            groupPictures.value[group.JID] = res.data.url
           }
         } catch {
-          // Silently ignore - will show placeholder
+          // ignore picture failures
         }
       }
+    }
+
+    function buildPreview(msg: any): string {
+      let previewText = msg.text || ''
+
+      if (msg.attachment) {
+        const mime = msg.attachment.mimetype || ''
+
+        if (mime.startsWith('image/')) previewText = previewText ? `[IMG] ${previewText}` : '[IMG] Imagem'
+        else if (mime.startsWith('video/')) previewText = previewText ? `[VID] ${previewText}` : '[VID] Video'
+        else if (mime.startsWith('audio/') || msg.type === 'ptt') previewText = previewText ? `[AUD] ${previewText}` : '[AUD] Audio'
+        else if (mime.includes('pdf')) previewText = previewText ? `[PDF] ${previewText}` : '[PDF] PDF'
+        else previewText = previewText ? `[ARQ] ${previewText}` : '[ARQ] Arquivo'
+      }
+
+      if (msg.type === 'sticker') {
+        previewText = '[STK] Sticker'
+      }
+
+      if (!previewText && msg.inreply) {
+        previewText = '[RPL] Resposta'
+      }
+
+      return previewText
     }
 
     async function loadLastMessages() {
       try {
-        const res = await api.get(`/api/server/${token}/messages`)
+        const res = await api.get(`/spa/server/${token}/messages`)
         const messages = res.data?.messages || []
-        
-        // Group messages by chat ID and get the last one for each group
         const lastMessages: Record<string, LastMessage> = {}
-        
+
         for (const msg of messages) {
           const chatId = msg.chat?.id
           if (!chatId || !chatId.endsWith('@g.us')) continue
-          
-          // Skip unhandled/system messages
           if (msg.type === 'unhandled' || msg.type === 'revoked' || msg.type === 'system') continue
-          
-          // Skip protocol messages (SenderKeyDistribution, etc)
           if (msg.debug?.reason === 'discard') continue
-          
-          // Must have some content: text, attachment, or be a reply
           if (!msg.text && !msg.attachment && !msg.inreply) continue
-          
+
+          const previewText = buildPreview(msg)
+          if (!previewText) continue
+
           if (!lastMessages[chatId] || new Date(msg.timestamp) > new Date(lastMessages[chatId].timestamp)) {
-            // Determine message preview text
-            let previewText = msg.text || ''
-            
-            // Handle attachments with emojis
-            if (msg.attachment) {
-              const mime = msg.attachment.mimetype || ''
-              let mediaPrefix = ''
-              if (mime.startsWith('image/')) mediaPrefix = '📷 '
-              else if (mime.startsWith('video/')) mediaPrefix = '🎥 '
-              else if (mime.startsWith('audio/') || msg.type === 'ptt') mediaPrefix = '🎵 '
-              else if (mime.includes('pdf')) mediaPrefix = '📄 '
-              else mediaPrefix = '📎 '
-              
-              if (previewText) {
-                previewText = mediaPrefix + previewText
-              } else {
-                if (mime.startsWith('image/')) previewText = '📷 Imagem'
-                else if (mime.startsWith('video/')) previewText = '🎥 Vídeo'
-                else if (mime.startsWith('audio/') || msg.type === 'ptt') previewText = '🎵 Áudio'
-                else if (mime.includes('pdf')) previewText = '📄 PDF'
-                else previewText = '📎 Arquivo'
-              }
-            }
-            
-            // Handle stickers
-            if (msg.type === 'sticker') {
-              previewText = '🏷️ Sticker'
-            }
-            
-            // Handle replies without text
-            if (!previewText && msg.inreply) {
-              previewText = '↩️ Resposta'
-            }
-            
-            if (!previewText) continue // Skip if still no content
-            
             lastMessages[chatId] = {
               timestamp: msg.timestamp,
               senderName: msg.participant?.title || msg.participant?.phone || 'Desconhecido',
-              text: previewText
+              text: previewText,
             }
           }
         }
-        
-        // Assign last messages to groups
-        groups.value = groups.value.map(g => ({
-          ...g,
-          lastMessage: lastMessages[g.JID]
-        }))
-        
-        // Re-sort by last message time (most recent first)
-        groups.value.sort((a, b) => {
-          if (a.lastMessage && b.lastMessage) {
-            return new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
-          }
-          if (a.lastMessage) return -1
-          if (b.lastMessage) return 1
-          return (a.Name || '').localeCompare(b.Name || '')
-        })
+
+        groups.value = groups.value
+          .map((group) => ({
+            ...group,
+            lastMessage: lastMessages[group.JID],
+          }))
+          .sort((a, b) => {
+            if (a.lastMessage && b.lastMessage) {
+              return new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
+            }
+            if (a.lastMessage) return -1
+            if (b.lastMessage) return 1
+            return (a.Name || '').localeCompare(b.Name || '')
+          })
       } catch {
-        // Silently ignore - messages are optional
+        // optional enrichment
       }
     }
 
@@ -436,28 +386,26 @@ export default defineComponent({
       delete groupPictures.value[jid]
     }
 
-    function formatTime(timestamp: string): string {
+    function formatTime(timestamp: string) {
       if (!timestamp) return ''
+
       const date = new Date(timestamp)
       const now = new Date()
       const diff = now.getTime() - date.getTime()
       const oneDay = 24 * 60 * 60 * 1000
-      
+
       if (diff < oneDay && date.getDate() === now.getDate()) {
         return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      } else if (diff < 2 * oneDay) {
-        return 'Ontem'
-      } else if (diff < 7 * oneDay) {
-        return date.toLocaleDateString('pt-BR', { weekday: 'short' })
-      } else {
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
       }
+      if (diff < 2 * oneDay) return 'Ontem'
+      if (diff < 7 * oneDay) return date.toLocaleDateString('pt-BR', { weekday: 'short' })
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     }
 
-    function truncateMessage(text: string, maxLength: number = 50): string {
+    function truncateMessage(text: string, maxLength = 50) {
       if (!text) return ''
       if (text.length <= maxLength) return text
-      return text.substring(0, maxLength) + '...'
+      return `${text.substring(0, maxLength)}...`
     }
 
     function goToGroup(jid: string) {
@@ -467,44 +415,49 @@ export default defineComponent({
     async function createGroup() {
       const title = prompt('Nome do grupo (<=25 caracteres):')
       if (!title) return
-      const participantsRaw = prompt('Participantes (telefone separados por vírgula):')
+
+      const participantsRaw = prompt('Participantes (telefones separados por virgula):')
       if (!participantsRaw) return
-      const participants = participantsRaw.split(',').map(s => s.trim()).filter(Boolean)
+
+      const participants = participantsRaw.split(',').map((value) => value.trim()).filter(Boolean)
+
       try {
-        await api.post('/api/groups/create', { title, participants, token })
+        await api.post(`/spa/server/${token}/groups/create`, { title, participants })
         pushToast('Grupo criado', 'success')
         await load()
-      } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao criar grupo', 'error')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || err?.message || 'Erro ao criar grupo', 'error')
       }
     }
 
-    onMounted(() => { load() })
+    onMounted(() => {
+      load()
+    })
 
-    return { 
-      token, 
-      groups, 
-      groupPictures,
-      loading, 
-      error, 
-      searchQuery,
-      viewMode,
-      filteredGroups,
-      displayGroups,
-      currentPage,
-      totalPages,
-      pageSize,
+    return {
       createGroup,
-      load,
+      currentPage,
+      displayGroups,
+      error,
+      filteredGroups,
+      formatTime,
       goToGroup,
       goToPage,
-      nextPage,
-      prevPage,
+      groupPictures,
+      groups,
       handleImageError,
-      formatTime,
-      truncateMessage
+      load,
+      loading,
+      nextPage,
+      pageSize,
+      prevPage,
+      searchQuery,
+      token,
+      totalPages,
+      truncateMessage,
+      viewMode,
     }
-  }
+  },
 })
 </script>
 
@@ -515,7 +468,6 @@ export default defineComponent({
   margin: 0 auto;
 }
 
-/* Header */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -539,13 +491,13 @@ export default defineComponent({
   height: 40px;
   border-radius: 50%;
   background: #e5e7eb;
-  color: #00034B;
+  color: #00034b;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .back-btn:hover {
-  background: #00034B;
+  background: #00034b;
   color: white;
 }
 
@@ -583,7 +535,7 @@ export default defineComponent({
 }
 
 .toggle-btn.active {
-  background: #00034B;
+  background: #00034b;
   color: white;
 }
 
@@ -597,13 +549,13 @@ export default defineComponent({
   border-radius: 50%;
   border: none;
   background: #e5e7eb;
-  color: #00034B;
+  color: #00034b;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-icon:hover {
-  background: #00034B;
+  background: #00034b;
   color: white;
 }
 
@@ -611,7 +563,7 @@ export default defineComponent({
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background: #00034B;
+  background: #00034b;
   color: white;
   font-weight: 500;
   cursor: pointer;
@@ -623,7 +575,6 @@ export default defineComponent({
   transform: translateY(-1px);
 }
 
-/* Search Bar */
 .search-bar {
   display: flex;
   align-items: center;
@@ -663,7 +614,6 @@ export default defineComponent({
   color: #111827;
 }
 
-/* Pagination */
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -681,7 +631,7 @@ export default defineComponent({
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   background: white;
-  color: #00034B;
+  color: #00034b;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -692,7 +642,7 @@ export default defineComponent({
 }
 
 .btn-page:hover:not(:disabled) {
-  background: #00034B;
+  background: #00034b;
   color: white;
 }
 
@@ -711,7 +661,6 @@ export default defineComponent({
   color: #111827;
 }
 
-/* Loading */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -725,17 +674,18 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #00034B;
+  border-top-color: #00034b;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 15px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Error */
 .error-box {
   display: flex;
   align-items: center;
@@ -747,7 +697,6 @@ export default defineComponent({
   color: #dc3545;
 }
 
-/* Empty State */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -763,7 +712,6 @@ export default defineComponent({
   opacity: 0.5;
 }
 
-/* Card View */
 .groups-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -783,16 +731,18 @@ export default defineComponent({
 }
 
 .group-card:hover {
-  border-color: #00034B;
+  border-color: #00034b;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 3, 75, 0.15);
 }
 
-.card-avatar, .item-avatar {
+.card-avatar,
+.item-avatar {
   flex-shrink: 0;
 }
 
-.card-avatar img, .item-avatar img {
+.card-avatar img,
+.item-avatar img {
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -803,7 +753,7 @@ export default defineComponent({
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00034B, #000266);
+  background: linear-gradient(135deg, #00034b, #000266);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -811,7 +761,8 @@ export default defineComponent({
   font-size: 1.5rem;
 }
 
-.card-content, .item-content {
+.card-content,
+.item-content {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -819,7 +770,8 @@ export default defineComponent({
   gap: 6px;
 }
 
-.card-header, .item-header {
+.card-header,
+.item-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -838,7 +790,7 @@ export default defineComponent({
 
 .message-time {
   font-size: 0.75rem;
-  color: #00034B;
+  color: #00034b;
   white-space: nowrap;
 }
 
@@ -857,7 +809,7 @@ export default defineComponent({
 }
 
 .sender-name {
-  color: #00034B;
+  color: #00034b;
   font-weight: 500;
 }
 
@@ -895,10 +847,9 @@ export default defineComponent({
 
 .badge-community {
   background: rgba(0, 3, 75, 0.1);
-  color: #00034B;
+  color: #00034b;
 }
 
-/* List View */
 .groups-list {
   display: flex;
   flex-direction: column;
@@ -944,7 +895,6 @@ export default defineComponent({
   gap: 5px;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .groups-page {
     padding: 15px;

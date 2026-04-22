@@ -103,7 +103,7 @@ export default defineComponent({
 
       try {
         // Use form endpoint that returns JSON with base64 QR code
-        const res = await api.get(`/api/server/${token}/qrcode`)
+        const res = await api.get(`/spa/server/${token}/qrcode`)
         
         if (res.data?.connected) {
           connected.value = true
@@ -126,8 +126,8 @@ export default defineComponent({
 
     async function checkConnection() {
       try {
-        const res = await api.get(`/api/server/${token}/info`)
-        if (res.data?.connected || res.data?.state === 'Ready') {
+        const res = await api.get(`/spa/server/${token}/info`)
+        if (res.data?.server?.state === 'Ready' || res.data?.server?.stateCode === 11) {
           connected.value = true
           stopPolling()
         }

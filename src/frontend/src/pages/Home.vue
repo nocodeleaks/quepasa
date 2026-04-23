@@ -526,10 +526,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, ref, computed, watch } from 'vue'
+import { defineComponent, onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
-import { useCableSubscription } from '@/composables/useCableSubscription'
+import { useServerLifecycleRefresh } from '@/composables/useServerLifecycleRefresh'
 import { pushToast } from '@/services/toast'
 
 export default defineComponent({
@@ -899,27 +899,15 @@ export default defineComponent({
       }
     }
 
-    useCableSubscription(
-      [
-        { event: 'server.connected', handler: async () => { try { await refreshCurrentView() } catch {} } },
-        { event: 'server.disconnected', handler: async () => { try { await refreshCurrentView() } catch {} } },
-        { event: 'server.stopped', handler: async () => { try { await refreshCurrentView() } catch {} } },
-        { event: 'server.logged_out', handler: async () => { try { await refreshCurrentView() } catch {} } },
-        { event: 'server.deleted', handler: async () => { try { await refreshCurrentView() } catch {} } },
-      ],
-      {
-        onConnectError: () => {
-          // The page still works with manual refresh if websocket auth is unavailable.
-        },
+    useServerLifecycleRefresh({
+      onRefresh: refreshCurrentView,
+      onConnectError: () => {
+        // The page still works with manual refresh if websocket auth is unavailable.
       },
-    )
+    })
 
     onMounted(() => {
       load()
-    })
-
-    onUnmounted(() => {
-      // local timers/watchers only
     })
 
     return { 

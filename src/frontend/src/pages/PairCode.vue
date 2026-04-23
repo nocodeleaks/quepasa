@@ -149,7 +149,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue'
+import { defineComponent, ref, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { useCableSubscription } from '@/composables/useCableSubscription'
@@ -167,9 +167,7 @@ export default defineComponent({
     const copied = ref(false)
     const connected = ref(false)
 
-    let pollInterval: any = null
-    let pollCount = 0
-    const MAX_POLL_COUNT = 60 // 3 minutes at 3s intervals
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null
 
     const formattedCode = computed(() => {
       if (!pairCode.value) return []
@@ -187,6 +185,8 @@ export default defineComponent({
 
       loading.value = true
       error.value = ''
+      connected.value = false
+      stopFallbackCheck()
 
       try {
         const res = await api.get(`/spa/server/${token}/paircode`, {
@@ -201,7 +201,7 @@ export default defineComponent({
 
         if (res.data?.pairCode || res.data?.paircode || res.data?.formatted) {
           pairCode.value = res.data?.pairCode || res.data?.paircode || res.data?.formatted
-          startPolling()
+          scheduleFallbackCheck()
         } else {
           error.value = res.data?.result || 'Erro ao gerar código'
         }
@@ -215,7 +215,7 @@ export default defineComponent({
 
     function resetCode() {
       pairCode.value = ''
-      stopPolling()
+      stopFallbackCheck()
     }
 
     async function copyCode() {
@@ -238,14 +238,8 @@ export default defineComponent({
         
         if (isConnected) {
           connected.value = true
-          stopPolling()
+          stopFallbackCheck()
           return true
-        }
-        
-        // Stop polling after max attempts
-        pollCount++
-        if (pollCount >= MAX_POLL_COUNT) {
-          stopPolling()
         }
       } catch {
         // ignore errors
@@ -272,16 +266,22 @@ export default defineComponent({
       error.value = 'Pareamento ainda não detectado. Certifique-se de ter digitado o código corretamente no WhatsApp.'
     }
 
-    function startPolling() {
-      stopPolling()
-      pollCount = 0
-      pollInterval = setInterval(checkConnection, 3000)
+    function scheduleFallbackCheck(delay = 8000) {
+      stopFallbackCheck()
+      fallbackTimer = setTimeout(async () => {
+        fallbackTimer = null
+        if (connected.value || !pairCode.value) {
+          return
+        }
+
+        await checkConnection()
+      }, delay)
     }
 
-    function stopPolling() {
-      if (pollInterval) {
-        clearInterval(pollInterval)
-        pollInterval = null
+    function stopFallbackCheck() {
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer)
+        fallbackTimer = null
       }
     }
 
@@ -296,7 +296,7 @@ export default defineComponent({
 
             connected.value = true
             error.value = ''
-            stopPolling()
+            stopFallbackCheck()
           },
         },
       ],
@@ -309,12 +309,8 @@ export default defineComponent({
       },
     )
 
-    onMounted(() => {
-      // Keep lifecycle hook for page-local state if needed later.
-    })
-
     onUnmounted(() => {
-      stopPolling()
+      stopFallbackCheck()
     })
 
     return { 

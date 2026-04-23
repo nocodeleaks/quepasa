@@ -289,10 +289,10 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, onUnmounted, ref } from 'vue'
+import { computed, defineComponent, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
-import { useCableSubscription } from '@/composables/useCableSubscription'
+import { useServerLifecycleRefresh } from '@/composables/useServerLifecycleRefresh'
 import { pushToast } from '@/services/toast'
 import TriStateToggle from '@/components/TriStateToggle.vue'
 
@@ -437,58 +437,20 @@ export default defineComponent({
       }
     }
 
-    useCableSubscription(
-      [
-        {
-          event: 'server.connected',
-          handler: async (payload: any) => {
-            if (payload?.token !== token) return
-            try { await load() } catch {}
-          },
-        },
-        {
-          event: 'server.disconnected',
-          handler: async (payload: any) => {
-            if (payload?.token !== token) return
-            try { await load() } catch {}
-          },
-        },
-        {
-          event: 'server.stopped',
-          handler: async (payload: any) => {
-            if (payload?.token !== token) return
-            try { await load() } catch {}
-          },
-        },
-        {
-          event: 'server.logged_out',
-          handler: async (payload: any) => {
-            if (payload?.token !== token) return
-            try { await load() } catch {}
-          },
-        },
-        {
-          event: 'server.deleted',
-          handler: (payload: any) => {
-            if (payload?.token !== token) return
-            pushToast('Servidor removido', 'info')
-            router.push('/')
-          },
-        },
-      ],
-      {
-        onConnectError: () => {
-          // The detail page can still rely on manual refresh if websocket auth fails.
-        },
+    useServerLifecycleRefresh({
+      token,
+      onRefresh: load,
+      onDeleted: () => {
+        pushToast('Servidor removido', 'info')
+        router.push('/')
       },
-    )
+      onConnectError: () => {
+        // The detail page can still rely on manual refresh if websocket auth fails.
+      },
+    })
 
     onMounted(() => {
       load()
-    })
-
-    onUnmounted(() => {
-      // local timers/watchers only
     })
 
     return {

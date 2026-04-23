@@ -95,12 +95,16 @@ export default defineComponent({
     const qrImage = ref('')
     const connected = ref(false)
 
-    let pollInterval: any = null
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null
+    let fallbackChecks = 0
+    const MAX_FALLBACK_CHECKS = 6
 
     async function generateQR() {
       loading.value = true
       error.value = ''
       qrImage.value = ''
+      connected.value = false
+      stopFallbackChecks()
 
       try {
         // Use form endpoint that returns JSON with base64 QR code
@@ -113,8 +117,7 @@ export default defineComponent({
         
         if (res.data?.qrcode) {
           qrImage.value = res.data.qrcode
-          // Start polling to check connection status
-          startPolling()
+          scheduleFallbackCheck()
         } else {
           error.value = 'Nenhum QR Code recebido'
         }
@@ -130,22 +133,40 @@ export default defineComponent({
         const res = await api.get(`/spa/server/${token}/info`)
         if (res.data?.server?.state === 'Ready' || res.data?.server?.stateCode === 11) {
           connected.value = true
-          stopPolling()
+          stopFallbackChecks()
+          return true
         }
       } catch {
         // ignore
       }
+      return false
     }
 
-    function startPolling() {
-      stopPolling()
-      pollInterval = setInterval(checkConnection, 3000)
+    function scheduleFallbackCheck(delay = 5000) {
+      stopFallbackChecks()
+      fallbackTimer = setTimeout(async () => {
+        fallbackTimer = null
+        if (connected.value || !qrImage.value) {
+          return
+        }
+
+        const isConnected = await checkConnection()
+        if (isConnected) {
+          return
+        }
+
+        fallbackChecks += 1
+        if (fallbackChecks < MAX_FALLBACK_CHECKS) {
+          scheduleFallbackCheck(delay)
+        }
+      }, delay)
     }
 
-    function stopPolling() {
-      if (pollInterval) {
-        clearInterval(pollInterval)
-        pollInterval = null
+    function stopFallbackChecks() {
+      fallbackChecks = 0
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer)
+        fallbackTimer = null
       }
     }
 
@@ -160,7 +181,7 @@ export default defineComponent({
 
             connected.value = true
             error.value = ''
-            stopPolling()
+            stopFallbackChecks()
           },
         },
       ],
@@ -179,7 +200,7 @@ export default defineComponent({
     })
 
     onUnmounted(() => {
-      stopPolling()
+      stopFallbackChecks()
     })
 
     return { token, loading, error, qrImage, connected, generateQR }

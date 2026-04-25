@@ -156,6 +156,105 @@ func TestCableSessionSubscribeAndServerMessageEvent(t *testing.T) {
 	}
 }
 
+func TestCableLifecycleEventsReachAuthenticatedUserConnections(t *testing.T) {
+	db := newCableTestDatabase(t)
+	setupCableTestService(t, db)
+	defer cleanupCableTestService(t, db)
+
+	user, err := models.WhatsappService.DB.Users.Create("owner@example.com", "Password123!")
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	serverRecord := &models.QpServer{
+		Token:    "server-token-life",
+		User:     user.Username,
+		Wid:      "5511888888888@s.whatsapp.net",
+		Verified: true,
+	}
+	if err := models.WhatsappService.DB.Servers.Add(serverRecord); err != nil {
+		t.Fatalf("add server record: %v", err)
+	}
+
+	originalHub := CableHub
+	CableHub = NewHub()
+	defer func() {
+		CableHub = originalHub
+	}()
+
+	router := chi.NewRouter()
+	Configure(router)
+
+	httpServer := httptest.NewServer(router)
+	defer httpServer.Close()
+
+	conn := dialCableTestWebsocket(t, httpServer.URL, user.Username)
+	defer conn.Close()
+
+	sessionReady := readCableTestFrame(t, conn)
+	if sessionReady.Type != "event" || sessionReady.Event != "session.ready" {
+		t.Fatalf("expected first frame to be session.ready event, got %+v", sessionReady)
+	}
+
+	CableHub.PublishServerLifecycle(&models.RealtimeLifecycleEvent{
+		Kind:      "connected",
+		Token:     serverRecord.Token,
+		User:      user.Username,
+		Wid:       serverRecord.Wid,
+		Phone:     "5511888888888",
+		State:     "Ready",
+		Verified:  true,
+		Timestamp: time.Now().UTC(),
+	})
+
+	connectedEvent := readCableTestFrame(t, conn)
+	if connectedEvent.Type != "event" || connectedEvent.Event != "server.connected" {
+		t.Fatalf("expected server.connected event, got %+v", connectedEvent)
+	}
+	if connectedEvent.Topic != "" {
+		t.Fatalf("expected user-scoped lifecycle event without topic, got %q", connectedEvent.Topic)
+	}
+
+	var connectedPayload map[string]interface{}
+	if err := json.Unmarshal(connectedEvent.Data, &connectedPayload); err != nil {
+		t.Fatalf("decode connected lifecycle payload: %v", err)
+	}
+	if connectedPayload["token"] != serverRecord.Token {
+		t.Fatalf("expected connected payload token %s, got %#v", serverRecord.Token, connectedPayload["token"])
+	}
+	if connectedPayload["kind"] != "connected" {
+		t.Fatalf("expected connected payload kind, got %#v", connectedPayload["kind"])
+	}
+
+	CableHub.PublishServerLifecycle(&models.RealtimeLifecycleEvent{
+		Kind:      "deleted",
+		Token:     serverRecord.Token,
+		User:      user.Username,
+		Wid:       serverRecord.Wid,
+		Phone:     "5511888888888",
+		State:     "Disconnected",
+		Verified:  false,
+		Cause:     "deleted by test",
+		Timestamp: time.Now().UTC(),
+	})
+
+	deletedEvent := readCableTestFrame(t, conn)
+	if deletedEvent.Type != "event" || deletedEvent.Event != "server.deleted" {
+		t.Fatalf("expected server.deleted event, got %+v", deletedEvent)
+	}
+
+	var deletedPayload map[string]interface{}
+	if err := json.Unmarshal(deletedEvent.Data, &deletedPayload); err != nil {
+		t.Fatalf("decode deleted lifecycle payload: %v", err)
+	}
+	if deletedPayload["token"] != serverRecord.Token {
+		t.Fatalf("expected deleted payload token %s, got %#v", serverRecord.Token, deletedPayload["token"])
+	}
+	if deletedPayload["cause"] != "deleted by test" {
+		t.Fatalf("expected deleted payload cause, got %#v", deletedPayload["cause"])
+	}
+}
+
 func dialCableTestWebsocket(t *testing.T, baseURL string, username string) *websocket.Conn {
 	t.Helper()
 

@@ -57,7 +57,7 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response.ParseSuccess("found")
-		response.Message = msg
+		response.Message = models.CloneAndEnrichMessageForServer(server, msg)
 		RespondSuccess(w, response)
 	}
 }

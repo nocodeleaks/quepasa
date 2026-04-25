@@ -81,6 +81,24 @@ func createTestSchema(db *sqlx.DB) error {
 			calls INTEGER DEFAULT 1,
 			PRIMARY KEY (context, connection_string)
 		);
+
+		CREATE TABLE IF NOT EXISTS conversation_labels (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user TEXT NOT NULL,
+			name TEXT NOT NULL COLLATE NOCASE,
+			color TEXT DEFAULT '',
+			active BOOLEAN DEFAULT 1,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE (user, name)
+		);
+
+		CREATE TABLE IF NOT EXISTS conversation_label_links (
+			server_token TEXT NOT NULL,
+			chat_id TEXT NOT NULL,
+			label_id INTEGER NOT NULL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (server_token, chat_id, label_id)
+		);
 	`
 
 	_, err := db.Exec(schema)
@@ -115,6 +133,9 @@ func SetupTestService(t *testing.T) {
 
 		// Initialize Servers interface
 		models.WhatsappService.DB.Servers = models.NewQpDataServerSql(testDB)
+
+		// Initialize Conversation Labels interface
+		models.WhatsappService.DB.ConversationLabels = models.NewQpDataConversationLabelSql(testDB)
 	}
 }
 

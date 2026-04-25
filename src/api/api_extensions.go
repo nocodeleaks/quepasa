@@ -81,6 +81,7 @@ func StringToTimestamp(timestamp string) (result int64, err error) {
 func GetOrderedMessages(server *models.QpWhatsappServer, timestamp int64) (messages []whatsapp.WhatsappMessage) {
 	searchTime := time.Unix(timestamp, 0)
 	messages = server.GetMessages(searchTime)
+	messages = models.CloneAndEnrichMessagesForServer(server, messages)
 	sort.Sort(sort.Reverse(whatsapp.WhatsappOrderedMessages(messages)))
 	return
 }
@@ -121,6 +122,7 @@ func GetOrderedMessagesWithFilters(server *models.QpWhatsappServer, timestamp in
 		messages = append(messages, msg)
 	}
 
+	messages = models.CloneAndEnrichMessagesForServer(server, messages)
 	sort.Sort(sort.Reverse(whatsapp.WhatsappOrderedMessages(messages)))
 	return
 }

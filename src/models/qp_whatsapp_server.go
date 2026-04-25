@@ -807,7 +807,7 @@ func (server *QpWhatsappServer) Delete(cause string) (err error) {
 
 	if len(dispatchingSnapshot) > 0 {
 		deleteEvent := NewServerDeletedEvent(server, cause, &previousState)
-		dispatchErr := PostToDispatchings(server.GetWId(), dispatchingSnapshot, deleteEvent)
+		dispatchErr := PostToDispatchings(server, dispatchingSnapshot, deleteEvent)
 		if dispatchErr != nil {
 			server.GetLogger().Errorf("error dispatching delete event: %s", dispatchErr.Error())
 		}

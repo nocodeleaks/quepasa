@@ -60,6 +60,8 @@ func PublishRealtimeServerMessage(server *QpWhatsappServer, payload *whatsapp.Wh
 		return
 	}
 
+	payload = CloneAndEnrichMessageForServer(server, payload)
+
 	realtimePublishers.RLock()
 	publishers := append([]RealtimePublisher(nil), realtimePublishers.items...)
 	realtimePublishers.RUnlock()

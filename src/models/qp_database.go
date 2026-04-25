@@ -22,11 +22,12 @@ import (
 )
 
 type QpDatabase struct {
-	Parameters  library.DatabaseParameters `json:"parameters,omitempty"`
-	Connection  *sqlx.DB
-	Users       QpDataUsersInterface
-	Servers     QpDataServersInterface
-	Dispatching QpDataDispatchingInterface
+	Parameters         library.DatabaseParameters `json:"parameters,omitempty"`
+	Connection         *sqlx.DB
+	Users              QpDataUsersInterface
+	Servers            QpDataServersInterface
+	Dispatching        QpDataDispatchingInterface
+	ConversationLabels QpDataConversationLabelsInterface
 }
 
 var (
@@ -70,13 +71,15 @@ func GetDatabase() *QpDatabase {
 	var iusers = QpDataUserSql{db}
 	var iservers = QpDataServerSql{db}
 	var idispatching = QpDataServerDispatchingSql{db}
+	var iconversationlabels = QpDataConversationLabelSql{db}
 
 	return &QpDatabase{
 		dbParameters,
 		db,
 		iusers,
 		iservers,
-		idispatching}
+		idispatching,
+		iconversationlabels}
 }
 
 // NewQpDataUserSql creates a new QpDataUserSql instance with the given database connection
@@ -92,6 +95,11 @@ func NewQpDataServerDispatchingSql(db *sqlx.DB) QpDataDispatchingInterface {
 // NewQpDataServerSql creates a new QpDataServerSql instance with the given database connection
 func NewQpDataServerSql(db *sqlx.DB) QpDataServersInterface {
 	return QpDataServerSql{db}
+}
+
+// NewQpDataConversationLabelSql creates a new QpDataConversationLabelSql instance with the given database connection
+func NewQpDataConversationLabelSql(db *sqlx.DB) QpDataConversationLabelsInterface {
+	return QpDataConversationLabelSql{db}
 }
 
 // MigrateToLatest updates the database to the latest schema
@@ -252,6 +260,26 @@ func GetBase() migrate.SqlxMigration {
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		CONSTRAINT "dispatching_pkey" PRIMARY KEY ("context", "connection_string")
 	  );
+
+	  CREATE TABLE IF NOT EXISTS "conversation_labels" (
+		"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+		"user" CHAR (255) NOT NULL REFERENCES "users"("username"),
+		"name" VARCHAR (100) NOT NULL COLLATE NOCASE,
+		"color" VARCHAR (32) DEFAULT '',
+		"active" BOOLEAN NOT NULL DEFAULT TRUE,
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "conversation_labels_user_name_key" UNIQUE ("user", "name")
+	  );
+
+	  CREATE TABLE IF NOT EXISTS "conversation_label_links" (
+		"server_token" CHAR (100) NOT NULL REFERENCES "servers"("token"),
+		"chat_id" VARCHAR (255) NOT NULL,
+		"label_id" INTEGER NOT NULL REFERENCES "conversation_labels"("id"),
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "conversation_label_links_pkey" PRIMARY KEY ("server_token", "chat_id", "label_id")
+	  );
+
+	  CREATE INDEX IF NOT EXISTS "idx_conversation_label_links_server_chat" ON "conversation_label_links" ("server_token", "chat_id");
 	  
 	  -- IMPORTANT:
 	  -- This seed is only applied on brand-new/empty databases (base migration).
@@ -268,7 +296,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202512151400'),
 	  ('202512231500'),
 	  ('202602241200'),
-	  ('202604221930');
+	  ('202604221930'),
+	  ('202604251130');
 	  `, "")
 	return migration
 }

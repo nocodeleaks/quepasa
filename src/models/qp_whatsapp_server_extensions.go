@@ -17,13 +17,13 @@ func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.Wha
 		return err
 	}
 
-	return PostToDispatchings(server.GetWId(), server.QpDataDispatching.Dispatching, message)
+	return PostToDispatchings(server, server.QpDataDispatching.Dispatching, message)
 }
 
 // PostToDispatchings delivers a message to the provided dispatching targets.
 // It is used by the normal server flow and by deletion flows that need to use
 // a preserved snapshot instead of the server's live dispatching slice.
-func PostToDispatchings(serverWid string, dispatchings []*QpDispatching, message *whatsapp.WhatsappMessage) (err error) {
+func PostToDispatchings(server *QpWhatsappServer, dispatchings []*QpDispatching, message *whatsapp.WhatsappMessage) (err error) {
 	// Webhook headers are built from dispatching.Wid, while some system payloads
 	// already carry the server WID in the message body. This resynchronizes the
 	// in-memory dispatching before every delivery so system events such as
@@ -32,6 +32,12 @@ func PostToDispatchings(serverWid string, dispatchings []*QpDispatching, message
 
 	// ignoring ssl issues
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	serverWid := ""
+	if server != nil {
+		serverWid = server.GetWId()
+		message = CloneAndEnrichMessageForServer(server, message)
+	}
 
 	for _, dispatching := range dispatchings {
 		if dispatching != nil && dispatching.Wid != serverWid {
@@ -139,6 +145,7 @@ func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMe
 
 	// ignoring ssl issues
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	message = CloneAndEnrichMessageForServer(server, message)
 
 	webhookDispatchings := server.GetWebhookDispatchings()
 

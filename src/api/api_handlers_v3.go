@@ -69,6 +69,13 @@ func RegisterAPIV3Controllers(r chi.Router) {
 	r.Post(ControllerPrefixV3+"/webhook", WebhookController)
 	r.Get(ControllerPrefixV3+"/webhook", WebhookController)
 	r.Delete(ControllerPrefixV3+"/webhook", WebhookController)
+	r.Get(ControllerPrefixV3+"/labels", ConversationLabelController)
+	r.Post(ControllerPrefixV3+"/labels", ConversationLabelController)
+	r.Put(ControllerPrefixV3+"/labels", ConversationLabelController)
+	r.Delete(ControllerPrefixV3+"/labels", ConversationLabelController)
+	r.Get(ControllerPrefixV3+"/chat/labels", ConversationChatLabelController)
+	r.Post(ControllerPrefixV3+"/chat/labels", ConversationChatLabelController)
+	r.Delete(ControllerPrefixV3+"/chat/labels", ConversationChatLabelController)
 
 	// INVITE METHODS ************************
 	// ----------------------------------------

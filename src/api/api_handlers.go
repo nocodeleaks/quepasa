@@ -202,11 +202,19 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 		r.Post(endpoint+"/chat/presence", ChatPresenceController)
 
+		r.Get(endpoint+"/labels", ConversationLabelController)
+		r.Post(endpoint+"/labels", ConversationLabelController)
+		r.Put(endpoint+"/labels", ConversationLabelController)
+		r.Delete(endpoint+"/labels", ConversationLabelController)
+
 		// ----------------------------------------
 		// Typing Controller ********************
 
 		// CHAT READ STATUS CONTROLLER **********
 		// ----------------------------------------
+		r.Get(endpoint+"/chat/labels", ConversationChatLabelController)
+		r.Post(endpoint+"/chat/labels", ConversationChatLabelController)
+		r.Delete(endpoint+"/chat/labels", ConversationChatLabelController)
 		r.Post(endpoint+"/chat/markread", MarkChatAsReadController)
 		r.Post(endpoint+"/chat/markunread", MarkChatAsUnreadController)
 

@@ -295,6 +295,8 @@ func (hub *Hub) PublishServerMessage(server *models.QpWhatsappServer, payload *w
 		return
 	}
 
+	payload = models.CloneAndEnrichMessageForServer(server, payload)
+
 	hub.sendEventToServer(server.Token, "server.message", ServerMessageEventPayload{
 		Token:   server.Token,
 		User:    server.User,

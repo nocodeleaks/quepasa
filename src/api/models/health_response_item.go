@@ -33,7 +33,7 @@ func NewHealthResponseItem(server *models.QpWhatsappServer) HealthResponseItem {
 	state := server.GetState()
 	return HealthResponseItem{
 		Token:      server.Token,
-		Wid:        server.Wid,
+		Wid:        server.GetWId(),
 		State:      state,
 		StateCode:  int(state),
 		Diagnostic: server.ConnectionDiagnostic(),

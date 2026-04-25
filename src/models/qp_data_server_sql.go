@@ -68,7 +68,7 @@ func (source QpDataServerSql) Add(element *QpServer) error {
 		"user":         element.User,
 		"metadata":     element.Metadata,
 	}
-	if len(element.Wid) > 0 {
+	if len(element.GetWId()) > 0 {
 		params["wid"] = element.Wid
 	}
 	_, err := source.db.NamedExec(query, params)
@@ -98,11 +98,11 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		"readreceipts": element.ReadReceipts,
 		"calls":        element.Calls,
 		"readupdate":   element.ReadUpdate,
-		"user":         element.User,
+		"user":         element.GetUser(),
 		"metadata":     element.Metadata,
 	}
-	if len(element.Wid) > 0 {
-		params["wid"] = element.Wid
+	if len(element.GetWId()) > 0 {
+		params["wid"] = element.GetWId()
 	}
 	_, err := source.db.NamedExec(query, params)
 	return err

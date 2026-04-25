@@ -189,7 +189,7 @@ func (server *QpWhatsappServer) GetState() whatsapp.WhatsappConnectionState {
 // Returns whatsapp controller id on E164
 // Ex: 5521967609494
 func (server QpWhatsappServer) GetWId() string {
-	return server.QpServer.Wid
+	return server.QpServer.GetWId()
 }
 
 func (source *QpWhatsappServer) DownloadData(id string) ([]byte, error) {
@@ -333,7 +333,7 @@ func (source *QpWhatsappServer) UpdateConnection(connection whatsapp.IWhatsappCo
 
 func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 
-	if len(source.Wid) > 0 && !source.Verified {
+	if len(source.GetWId()) > 0 && !source.Verified {
 		err = fmt.Errorf("not verified")
 		return
 	}
@@ -347,7 +347,7 @@ func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 
 		options := &whatsapp.WhatsappConnectionOptions{
 			WhatsappOptions: &source.WhatsappOptions,
-			Wid:             source.Wid,
+			Wid:             source.GetWId(),
 			Reconnect:       true,
 			LogStruct:       library.LogStruct{LogEntry: logentry},
 			ExternalHandler: source.Handler, // Pass handler to connection
@@ -559,7 +559,7 @@ func (source *QpWhatsappServer) GetChatTitle(wid string) string {
 
 // Usado para exibir os servidores/bots de cada usuario em suas respectivas telas
 func (server *QpWhatsappServer) GetOwnerID() string {
-	return server.User
+	return server.GetUser()
 }
 
 //region QP BOT EXTENSIONS
@@ -591,12 +591,12 @@ func (server *QpWhatsappServer) GetStatusString() string {
 }
 
 func (server *QpWhatsappServer) ID() string {
-	return server.Wid
+	return server.GetWId()
 }
 
 // Traduz o Wid para um número de telefone em formato E164
 func (server *QpWhatsappServer) GetNumber() string {
-	return library.GetPhoneByWId(server.Wid)
+	return library.GetPhoneByWId(server.GetWId())
 }
 
 func (server *QpWhatsappServer) GetTimestamp() time.Time {

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"reflect"
 	"time"
 
@@ -27,13 +28,13 @@ type QpServer struct {
 	Token string `db:"token" json:"token" validate:"max=100"`
 
 	// Whatsapp session id
-	Wid      string     `db:"wid" json:"wid" validate:"max=255"`
-	Verified bool       `db:"verified" json:"verified"`
-	Devel    bool       `db:"devel" json:"devel"`
-	Metadata QpMetadata `db:"metadata" json:"metadata,omitempty"`
+	Wid      sql.NullString `db:"wid" json:"wid" validate:"max=255"`
+	Verified bool           `db:"verified" json:"verified"`
+	Devel    bool           `db:"devel" json:"devel"`
+	Metadata QpMetadata     `db:"metadata" json:"metadata,omitempty"`
 
-	User      string    `db:"user" json:"user,omitempty" validate:"max=36"`
-	Timestamp time.Time `db:"timestamp" json:"timestamp,omitempty"`
+	User      sql.NullString `db:"user" json:"user,omitempty" validate:"max=36"`
+	Timestamp time.Time      `db:"timestamp" json:"timestamp,omitempty"`
 }
 
 // custom log entry with fields: wid
@@ -44,7 +45,11 @@ func (source *QpServer) GetLogger() *log.Entry {
 
 	logentry := library.NewLogEntry(source)
 	if source != nil {
-		logentry = logentry.WithField(LogFields.WId, source.Wid)
+		widStr := ""
+		if source.Wid.Valid {
+			widStr = source.Wid.String
+		}
+		logentry = logentry.WithField(LogFields.WId, widStr)
 		logentry = logentry.WithField(LogFields.Token, source.Token)
 		source.LogEntry = logentry
 	}
@@ -56,7 +61,42 @@ func (source *QpServer) GetLogger() *log.Entry {
 }
 
 func (source *QpServer) GetWId() string {
-	return source.Wid
+	if source == nil || !source.Wid.Valid {
+		return ""
+	}
+	return source.Wid.String
+}
+
+// SetWId sets the Wid field
+func (source *QpServer) SetWId(wid string) {
+	if source == nil {
+		return
+	}
+	if len(wid) == 0 {
+		source.Wid = sql.NullString{}
+	} else {
+		source.Wid = sql.NullString{String: wid, Valid: true}
+	}
+}
+
+// GetUser returns user as string, handling sql.NullString
+func (source *QpServer) GetUser() string {
+	if source == nil || !source.User.Valid {
+		return ""
+	}
+	return source.User.String
+}
+
+// SetUser sets the User field
+func (source *QpServer) SetUser(user string) {
+	if source == nil {
+		return
+	}
+	if len(user) == 0 {
+		source.User = sql.NullString{}
+	} else {
+		source.User = sql.NullString{String: user, Valid: true}
+	}
 }
 
 // used for view

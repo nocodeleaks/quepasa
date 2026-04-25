@@ -66,7 +66,7 @@ func UserController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server.User = request.Username
+	server.QpServer.SetUser(request.Username)
 	err = server.Save("updating username")
 	if err != nil {
 		response.ParseError(err)

@@ -115,7 +115,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		// Get all servers for this user
 		var userServers []api.HealthResponseItem
 		for _, server := range models.WhatsappService.Servers {
-			if server.User == user.Username {
+			if server.GetUser() == user.Username {
 				userServers = append(userServers, api.NewHealthResponseItem(server))
 			}
 		}
@@ -158,7 +158,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		response.Status = fmt.Sprintf("server state is %s", state.String())
 
 		response.State = &state
-		response.Wid = server.Wid
+		response.Wid = server.GetWId()
 		response.Diagnostic = server.ConnectionDiagnostic()
 
 		// Add server uptime

@@ -50,7 +50,7 @@ func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServe
 		return nil, err
 	}
 
-	if server.User != user.Username {
+	if server.GetUser() != user.Username {
 		return nil, errors.New("server token not owned by user")
 	}
 

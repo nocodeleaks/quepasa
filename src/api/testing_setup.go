@@ -173,8 +173,8 @@ func CreateTestServer(t *testing.T, token, username string) *models.QpWhatsappSe
 
 	serverInfo := &models.QpServer{
 		Token: token,
-		User:  username,
 	}
+	serverInfo.SetUser(username)
 
 	server, err := models.WhatsappService.AppendNewServer(serverInfo)
 	if err != nil {

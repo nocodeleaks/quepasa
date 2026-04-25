@@ -77,7 +77,7 @@ func WebhookWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 	}
 
 	// updating wid for logging and response headers
-	webhook.Wid = server.Wid
+	webhook.Wid = server.GetWId()
 
 	switch os := r.Method; os {
 	case http.MethodPost:

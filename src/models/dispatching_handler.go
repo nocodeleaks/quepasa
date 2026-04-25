@@ -148,7 +148,7 @@ func (source *DispatchingHandler) LoggedOut(reason string) {
 		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 			Kind:      "logged_out",
 			Token:     source.server.Token,
-			User:      source.server.User,
+			User:      source.server.GetUser(),
 			Wid:       source.server.GetWId(),
 			Phone:     source.server.GetNumber(),
 			State:     source.server.GetState().String(),
@@ -189,7 +189,7 @@ func (source *DispatchingHandler) OnConnected() {
 		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 			Kind:      "connected",
 			Token:     source.server.Token,
-			User:      source.server.User,
+			User:      source.server.GetUser(),
 			Wid:       source.server.GetWId(),
 			Phone:     source.server.GetNumber(),
 			State:     source.server.GetState().String(),
@@ -255,7 +255,7 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 		Kind:      "disconnected",
 		Token:     source.server.Token,
-		User:      source.server.User,
+		User:      source.server.GetUser(),
 		Wid:       wid,
 		Phone:     phone,
 		State:     source.server.GetState().String(),
@@ -314,7 +314,7 @@ func (source *DispatchingHandler) OnStopped(cause string) {
 	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 		Kind:      "stopped",
 		Token:     source.server.Token,
-		User:      source.server.User,
+		User:      source.server.GetUser(),
 		Wid:       wid,
 		Phone:     phone,
 		State:     source.server.GetState().String(),
@@ -348,7 +348,7 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
 		Kind:      "deleted",
 		Token:     source.server.Token,
-		User:      source.server.User,
+		User:      source.server.GetUser(),
 		Wid:       source.server.GetWId(),
 		Phone:     source.server.GetNumber(),
 		State:     source.server.GetState().String(),

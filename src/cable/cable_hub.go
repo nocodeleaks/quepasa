@@ -299,7 +299,7 @@ func (hub *Hub) PublishServerMessage(server *models.QpWhatsappServer, payload *w
 
 	hub.sendEventToServer(server.Token, "server.message", ServerMessageEventPayload{
 		Token:   server.Token,
-		User:    server.User,
+		User:    server.GetUser(),
 		WID:     server.GetWId(),
 		State:   server.GetState().String(),
 		Message: payload,

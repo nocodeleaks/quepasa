@@ -32,7 +32,7 @@ func (source *QpDataDispatching) DispatchingFill(info *QpServer, db QpDataDispat
 		dispatchingLogEntry := logentry.WithField(LogFields.Url, element.ConnectionString)
 		element.LogEntry = dispatchingLogEntry
 
-		element.Wid = info.Wid
+		element.Wid = info.GetWId()
 		dispatching = append(dispatching, element.QpDispatching)
 	}
 

@@ -41,8 +41,8 @@ func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
 
 	info := &models.QpServer{
 		Token: uuid.NewString(),
-		User:  user.Username,
 	}
+	info.SetUser(user.Username)
 
 	if request != nil {
 		if request.Groups != nil {

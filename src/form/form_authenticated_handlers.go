@@ -127,7 +127,7 @@ func FormWebHooksController(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			data.ErrorMessage = "server not found"
 		} else {
-			if server.User != user.Username {
+			if server.GetUser() != user.Username {
 				data.ErrorMessage = "server token not found or dont owned by you"
 			} else {
 				data.Server = server
@@ -169,7 +169,7 @@ func FormRabbitMQController(w http.ResponseWriter, r *http.Request) {
 			server, err := models.GetServerFromToken(token)
 			if err != nil {
 				data.ErrorMessage = "server token not found: " + err.Error()
-			} else if server.User != user.Username {
+			} else if server.GetUser() != user.Username {
 				data.ErrorMessage = "server token not found or dont owned by you"
 			} else {
 				data.Server = server

@@ -440,7 +440,7 @@ func getOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, 
 		return nil, err
 	}
 
-	if server.User != user.Username {
+	if server.GetUser() != user.Username {
 		return nil, fmt.Errorf("server token not owned by user")
 	}
 
@@ -450,7 +450,7 @@ func getOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, 
 func buildServerResult(server *models.QpWhatsappServer) ServerStatePayload {
 	return ServerStatePayload{
 		Token:    server.Token,
-		User:     server.User,
+		User:     server.GetUser(),
 		WID:      server.GetWId(),
 		State:    server.GetState().String(),
 		Verified: server.Verified,

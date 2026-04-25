@@ -235,6 +235,22 @@ func RegisterAPIControllers(r chi.Router) {
 		// ----------------------------------------
 		// MESSAGE EDITING CONTROLLER ***********
 
+		// RESTORE CONTROLLER (master only) *****
+		// ----------------------------------------
+
+		// GET  /restore        - read-only diagnosis: lists orphan whatsmeow devices
+		//                        and unlinked QuePasa servers (no data is changed).
+		// POST /restore/auto   - automatic restore: links orphans to unlinked servers
+		//                        by phone number or by one-to-one fallback.
+		// POST /restore/manual - manual restore: links a specific token to a specific
+		//                        whatsmeow JID supplied in the request body.
+		r.Get(endpoint+"/restore", RestoreDiagnoseController)
+		r.Post(endpoint+"/restore/auto", RestoreAutoController)
+		r.Post(endpoint+"/restore/manual", RestoreManualController)
+
+		// ----------------------------------------
+		// RESTORE CONTROLLER (master only) *****
+
 	}
 }
 

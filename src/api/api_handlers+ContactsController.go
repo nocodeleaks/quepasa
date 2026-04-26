@@ -16,7 +16,7 @@ import (
 //	@Tags			Contacts
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	models.QpContactsResponse
+//	@Success		200	{object}	api.ContactsResponse
 //	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/contacts [get]

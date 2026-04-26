@@ -66,19 +66,19 @@ func (source *QPWhatsappService) AppendNewServer(info *QpServer) (server *QpWhat
 	server, ok := source.Servers[info.Token]
 	if !ok {
 		// adding to cache
-		logentry.Infof("adding new server on cache: %s, wid: %s", info.Token, info.Wid)
+		logentry.Infof("adding new server on cache: %s, wid: %s", info.Token, info.GetWId())
 
 		// Creating a new instance
 		server, err = source.NewQpWhatsappServer(info)
 		if err != nil {
-			logentry.Errorf("error on append new server: %s, :: %s", info.Wid, err.Error())
+			logentry.Errorf("error on append new server: %s, :: %s", info.GetWId(), err.Error())
 			return
 		}
 
 		source.Servers[info.Token] = server
 	} else {
 		// updating cached item
-		logentry.Infof("updating new server on cache: %s, wid: %s", info.Token, info.Wid)
+		logentry.Infof("updating new server on cache: %s, wid: %s", info.Token, info.GetWId())
 
 		server.QpServer = info
 	}
@@ -94,22 +94,23 @@ func (source *QPWhatsappService) AppendPaired(paired *QpWhatsappPairing) (server
 		// adding to cache
 		logger.Infof("adding paired server on cache: %s, wid: %s", paired.Token, paired.Wid)
 
-		info := &QpServer{Token: paired.Token, Wid: paired.Wid}
+		info := &QpServer{Token: paired.Token}
+		info.SetWId(paired.Wid)
 
 		// Creating a new instance
 		server, err = source.NewQpWhatsappServer(info)
 		if err != nil {
-			logger.Errorf("error on append new server: %s, :: %s", info.Wid, err.Error())
+			logger.Errorf("error on append new server: %s, :: %s", info.GetWId(), err.Error())
 			return
 		}
 
 		source.Servers[info.Token] = server
 	} else {
 		server.Token = paired.Token
-		server.Wid = paired.Wid
+		server.QpServer.SetWId(paired.Wid)
 
 		// updating cached item
-		logger.Infof("updating paired server on cache: %s, old wid: %s, new wid: %s", server.Token, server.Wid, paired.Wid)
+		logger.Infof("updating paired server on cache: %s, old wid: %s, new wid: %s", server.Token, server.GetWId(), paired.Wid)
 	}
 
 	server.connection = paired.conn
@@ -117,7 +118,7 @@ func (source *QPWhatsappService) AppendPaired(paired *QpWhatsappPairing) (server
 
 	// checking user
 	if len(paired.Username) > 0 {
-		server.User = paired.Username
+		server.QpServer.SetUser(paired.Username)
 	}
 
 	err = server.Save("server paired")
@@ -164,7 +165,7 @@ func (source *QPWhatsappService) NewQpWhatsappServer(info *QpServer) (server *Qp
 	serverLogEntry := library.NewLogEntry(server)
 	serverLogEntry = serverLogEntry.WithField(LogFields.Token, info.Token)
 
-	if len(info.Wid) > 0 {
+	if len(info.GetWId()) > 0 {
 		serverLogEntry = serverLogEntry.WithField(LogFields.WId, info.Wid)
 	}
 
@@ -232,7 +233,7 @@ func (service *QPWhatsappService) GetOrCreateServer(user string, wid string) (re
 	for _, item := range servers {
 		if item.GetNumber() == phone {
 			server = item
-			server.Wid = wid
+			server.QpServer.SetWId(wid)
 			break
 		}
 	}
@@ -242,9 +243,9 @@ func (service *QPWhatsappService) GetOrCreateServer(user string, wid string) (re
 		log.Infof("creating new server with token: %s", token)
 		info := &QpServer{
 			Token: token,
-			User:  user,
-			Wid:   wid,
 		}
+		info.SetUser(user)
+		info.SetWId(wid)
 
 		server, err = service.AppendNewServer(info)
 		if err != nil {

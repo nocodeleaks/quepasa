@@ -14,7 +14,7 @@ type QpDataServerSql struct {
 
 func (source QpDataServerSql) FindForUser(token string, user string) (response *QpServer, err error) {
 	response = &QpServer{}
-	err = source.db.Get(response, "SELECT token, COALESCE(wid, '') AS wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ? AND user = ?", token, user)
+	err = source.db.Get(response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ? AND user = ?", token, user)
 	if err != nil {
 		response = nil
 	}
@@ -22,7 +22,7 @@ func (source QpDataServerSql) FindForUser(token string, user string) (response *
 }
 
 func (source QpDataServerSql) FindAll() (response []*QpServer) {
-	_ = source.db.Select(&response, "SELECT token, COALESCE(wid, '') AS wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers")
+	_ = source.db.Select(&response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers")
 	return
 }
 
@@ -42,7 +42,7 @@ func (source QpDataServerSql) Exists(token string) (bool, error) {
 
 func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err error) {
 	response = &QpServer{}
-	err = source.db.Get(response, "SELECT token, COALESCE(wid, '') AS wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ?", token)
+	err = source.db.Get(response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ?", token)
 	if err != nil {
 		response = nil
 	}

@@ -7,8 +7,21 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/nocodeleaks/quepasa/api/models"
+	models "github.com/nocodeleaks/quepasa/models"
 )
+
+type infoResponseServer struct {
+	Token string `json:"token"`
+	User  string `json:"user,omitempty"`
+	State string `json:"state,omitempty"`
+}
+
+type infoResponse struct {
+	Success    bool                           `json:"success"`
+	Version    string                         `json:"version,omitempty"`
+	Server     *infoResponseServer            `json:"server,omitempty"`
+	Diagnostic *models.QpConnectionDiagnostic `json:"diagnostic,omitempty"`
+}
 
 // TestInfoEndpoint_NoAuthentication tests /info endpoint without authentication
 func TestInfoEndpoint_NoAuthentication(t *testing.T) {
@@ -33,7 +46,7 @@ func TestInfoEndpoint_NoAuthentication(t *testing.T) {
 	}
 
 	// Parse response
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -98,7 +111,7 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 	}
 
 	// Parse response
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -121,7 +134,7 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 			t.Errorf("Expected token %s, got %s", testToken, response.Server.Token)
 		}
 		t.Logf("Server info: Token=%s, User=%s, Connected=%v",
-			response.Server.Token, response.Server.User, response.Server.GetStatus())
+			response.Server.Token, response.Server.User, response.Server.State)
 	}
 	if response.Diagnostic == nil {
 		t.Fatal("Expected diagnostic field in info response")
@@ -176,7 +189,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 			t.Errorf("Expected status 200 with master key, got %d", resp.StatusCode)
 		}
 
-		var response api.InformationResponse
+		var response infoResponse
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
@@ -212,7 +225,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 			t.Errorf("Expected status 200 with master key in query, got %d", resp.StatusCode)
 		}
 
-		var response api.InformationResponse
+		var response infoResponse
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
@@ -283,7 +296,7 @@ func TestInfoPost_AllowsMultiplePlaceholderServersWithEmptyWid(t *testing.T) {
 	}
 
 	// Basic response validation
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp2.Result().Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -326,7 +339,7 @@ func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 		t.Errorf("Expected status 200 with both credentials, got %d", resp.StatusCode)
 	}
 
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}

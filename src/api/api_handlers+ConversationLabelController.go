@@ -51,7 +51,7 @@ func ConversationLabelController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handleConversationLabelCatalog(w, r, strings.TrimSpace(serverRecord.User))
+	handleConversationLabelCatalog(w, r, strings.TrimSpace(serverRecord.GetUser()))
 }
 
 // ConversationChatLabelController manages label bindings for one conversation on the current bot token.
@@ -79,7 +79,7 @@ func ConversationChatLabelController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handleConversationChatLabels(w, r, strings.TrimSpace(serverRecord.User), strings.TrimSpace(serverRecord.Token))
+	handleConversationChatLabels(w, r, strings.TrimSpace(serverRecord.GetUser()), strings.TrimSpace(serverRecord.Token))
 }
 
 // SPAConversationLabelController exposes the label catalog through SPA authentication.

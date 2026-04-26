@@ -22,12 +22,12 @@ func TestBuildSPAFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	now := time.Now().UTC()
 	server := &models.QpServer{
 		Token:     "server-token",
-		Wid:       "5511999999999@s.whatsapp.net",
 		Verified:  true,
 		Devel:     true,
-		User:      "tester@example.com",
 		Timestamp: now,
 	}
+	server.SetWId("5511999999999@s.whatsapp.net")
+	server.SetUser("tester@example.com")
 
 	summary := buildSPAFallbackServerSummary(server, spaServerRuntimeSnapshot{
 		state:         whatsapp.Disconnected,
@@ -48,7 +48,7 @@ func TestBuildSPAFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	if summary["hasDispatching"] != true {
 		t.Fatalf("expected hasDispatching true, got %#v", summary["hasDispatching"])
 	}
-	if summary["user"] != server.User {
-		t.Fatalf("expected user %q, got %#v", server.User, summary["user"])
+	if summary["user"] != server.GetUser() {
+		t.Fatalf("expected user %q, got %#v", server.GetUser(), summary["user"])
 	}
 }

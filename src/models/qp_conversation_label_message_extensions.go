@@ -46,7 +46,7 @@ func CloneAndEnrichMessagesForServer(server *QpWhatsappServer, messages []whatsa
 
 	labelsByChatID := map[string][]*QpConversationLabel{}
 	if store, ok := getConversationLabelStore(); ok && server != nil {
-		user := strings.TrimSpace(server.User)
+		user := strings.TrimSpace(server.GetUser())
 		token := strings.TrimSpace(server.Token)
 		if user != "" && token != "" {
 			if loaded, err := store.FindConversationLabelsMap(token, user, chatIDs); err == nil {
@@ -76,7 +76,7 @@ func applyConversationLabelsToMessage(server *QpWhatsappServer, message *whatsap
 	if preloaded != nil {
 		labels = preloaded[chatID]
 	} else if store, ok := getConversationLabelStore(); ok {
-		user := strings.TrimSpace(server.User)
+		user := strings.TrimSpace(server.GetUser())
 		token := strings.TrimSpace(server.Token)
 		if user == "" || token == "" {
 			return

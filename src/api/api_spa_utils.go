@@ -50,7 +50,7 @@ func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServe
 		return nil, err
 	}
 
-	if server.User != user.Username {
+	if server.GetUser() != user.Username {
 		return nil, errors.New("server token not owned by user")
 	}
 
@@ -192,12 +192,12 @@ func buildSPAFallbackServerSummary(dbServer *models.QpServer, runtime spaServerR
 
 	return map[string]interface{}{
 		"token":          dbServer.Token,
-		"wid":            dbServer.Wid,
+		"wid":            dbServer.GetWId(),
 		"state":          runtime.state.String(),
 		"stateCode":      runtime.state.EnumIndex(),
 		"verified":       dbServer.Verified,
 		"devel":          dbServer.Devel,
-		"user":           dbServer.User,
+		"user":           dbServer.GetUser(),
 		"timestamp":      dbServer.Timestamp,
 		"startTime":      runtime.timestamps.Start,
 		"lastUpdate":     runtime.timestamps.Update,
@@ -227,8 +227,8 @@ func BuildSPAServerSummary(dbServer *models.QpServer, liveServer *models.QpWhats
 	fields := log.Fields{}
 	if dbServer != nil {
 		fields["token"] = dbServer.Token
-		fields["wid"] = dbServer.Wid
-		fields["user"] = dbServer.User
+		fields["wid"] = dbServer.GetWId()
+		fields["user"] = dbServer.GetUser()
 	}
 
 	runtime := recoverSPAValue(fallbackRuntime, "BuildSPAServerSummary runtime snapshot", fields, func() spaServerRuntimeSnapshot {

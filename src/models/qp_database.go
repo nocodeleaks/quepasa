@@ -351,7 +351,7 @@ func MigrationHandler_202303011900(id string) {
 	db := GetDatabase()
 	servers := db.Servers.FindAll()
 	for _, server := range servers {
-		oldWid := server.Wid
+		oldWid := server.GetWId()
 		if strings.HasSuffix(oldWid, "@migrated") {
 			phone := library.GetPhoneByWId(oldWid)
 			store, err := whatsmeow.WhatsmeowService.GetStoreForMigrated(phone)
@@ -360,7 +360,7 @@ func MigrationHandler_202303011900(id string) {
 				continue
 			}
 
-			server.Wid = store.ID.String()
+			server.SetWId(store.ID.String())
 			err = db.Servers.Update(server)
 			if err != nil {
 				log.Fatalf("error at update server: %s", err.Error())

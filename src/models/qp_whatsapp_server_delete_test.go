@@ -63,7 +63,6 @@ func TestDeleteDispatchesDeletedWebhookWithStoppingState(t *testing.T) {
 	server := &QpWhatsappServer{
 		QpServer: &QpServer{
 			Token:    "delete-token",
-			Wid:      "5511999999999@s.whatsapp.net",
 			Verified: true,
 		},
 		QpDataDispatching: QpDataDispatching{
@@ -74,6 +73,7 @@ func TestDeleteDispatchesDeletedWebhookWithStoppingState(t *testing.T) {
 		},
 		db: store,
 	}
+	server.QpServer.SetWId("5511999999999@s.whatsapp.net")
 
 	if err := server.Delete("api"); err != nil {
 		t.Fatalf("expected delete to succeed, got: %v", err)

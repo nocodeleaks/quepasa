@@ -66,8 +66,8 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 	if byToken.Token != "token-1" {
 		t.Fatalf("expected token token-1, got %q", byToken.Token)
 	}
-	if byToken.User != "tester@example.com" {
-		t.Fatalf("expected user tester@example.com, got %q", byToken.User)
+	if byToken.GetUser() != "tester@example.com" {
+		t.Fatalf("expected user tester@example.com, got %q", byToken.GetUser())
 	}
 
 	byUser, err := store.FindForUser("token-1", "tester@example.com")
@@ -77,7 +77,7 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 	if byUser == nil {
 		t.Fatal("FindForUser returned nil server")
 	}
-	if byUser.Wid != "5511999999999@s.whatsapp.net" {
-		t.Fatalf("expected wid to be loaded, got %q", byUser.Wid)
+	if byUser.GetWId() != "5511999999999@s.whatsapp.net" {
+		t.Fatalf("expected wid to be loaded, got %q", byUser.GetWId())
 	}
 }

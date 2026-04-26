@@ -24,7 +24,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			groupId	query		string	true	"Group ID"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/get [get]
@@ -72,7 +72,7 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Groups
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	models.QpGroupsResponse
+//	@Success		200	{object}	api.GroupsResponse
 //	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/getall [get]
@@ -117,7 +117,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{title=string,participants=[]string}	true	"Group creation request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/create [post]
@@ -197,7 +197,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,name=string}	true	"Group name update request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/name [put]
@@ -263,7 +263,7 @@ func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,remove_img=boolean}	true	"Group photo update request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/photo [put]
@@ -377,7 +377,7 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,participants=[]string,action=string}	true	"Participants update request"
-//	@Success		200		{object}	models.QpParticipantResponse
+//	@Success		200		{object}	api.ParticipantResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/participants [put]
@@ -455,7 +455,7 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			request		body		object{group_jid=string,participants=[]string,action=string}	true	"Membership request"
 //	@Param			group_jid	query		string															false	"Group JID (for GET requests)"
-//	@Success		200			{object}	models.QpRequestResponse
+//	@Success		200			{object}	api.RequestResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/requests [get]
@@ -551,7 +551,7 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,topic=string}	true	"Group topic update request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/description [put]

@@ -80,7 +80,7 @@ func RabbitMQWithServer(w http.ResponseWriter, r *http.Request, server *models.Q
 	}
 
 	// updating wid for logging and response headers
-	rabbitmqConfig.Wid = server.Wid
+	rabbitmqConfig.Wid = server.GetWId()
 
 	switch os := r.Method; os {
 	case http.MethodPost:

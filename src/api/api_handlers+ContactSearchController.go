@@ -23,7 +23,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body		models.QpContactsSearchRequest	true	"Search criteria"
-//	@Success		200		{object}	models.QpContactsResponse
+//	@Success		200		{object}	api.ContactsResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/contact/search [post]

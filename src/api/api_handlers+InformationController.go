@@ -84,14 +84,14 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 	update := ""
 
 	// Update user if provided and different
-	if len(username) > 0 && server.User != username {
+	if len(username) > 0 && server.QpServer.GetUser() != username {
 		// Validate user exists in database
 		_, err := models.WhatsappService.DB.Users.Find(username)
 		if err != nil {
 			return "", fmt.Errorf("user not found: %v", err.Error())
 		}
 
-		server.User = username
+		server.QpServer.SetUser(username)
 		update += fmt.Sprintf("user to: {%s}; ", username)
 	}
 
@@ -231,8 +231,8 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 		// CREATE: Server doesn't exist, create new one
 		info := &models.QpServer{
 			Token: token,
-			User:  username,
 		}
+		info.SetUser(username)
 
 		// Apply configuration from request
 		if request != nil {

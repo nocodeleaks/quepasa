@@ -150,7 +150,6 @@ func TestPostToDispatchingFromServerUsesCurrentServerWid(t *testing.T) {
 	whatsappServer := &QpWhatsappServer{
 		QpServer: &QpServer{
 			Token: "test-token",
-			Wid:   "current@whatsapp",
 		},
 		QpDataDispatching: QpDataDispatching{
 			Dispatching: []*QpDispatching{{
@@ -160,6 +159,7 @@ func TestPostToDispatchingFromServerUsesCurrentServerWid(t *testing.T) {
 			}},
 		},
 	}
+	whatsappServer.QpServer.SetWId("current@whatsapp")
 
 	message := &whatsapp.WhatsappMessage{
 		Id:   "test-message-id",

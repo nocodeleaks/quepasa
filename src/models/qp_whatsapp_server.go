@@ -44,7 +44,14 @@ type QpWhatsappServer struct {
 func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 	// Create a custom struct to control serialization
 	type CustomServer struct {
-		*QpServer
+		whatsapp.WhatsappOptions
+		Token       string           `json:"token"`
+		Wid         string           `json:"wid,omitempty"`
+		Verified    bool             `json:"verified"`
+		Devel       bool             `json:"devel"`
+		Metadata    QpMetadata       `json:"metadata,omitempty"`
+		User        string           `json:"user,omitempty"`
+		Timestamp   time.Time        `json:"timestamp,omitempty"`
 		Reconnect   bool             `json:"reconnect"`
 		StartTime   time.Time        `json:"starttime,omitempty"`
 		Timestamps  QpTimestamps     `json:"timestamps"`
@@ -70,12 +77,19 @@ func (source QpWhatsappServer) MarshalJSON() ([]byte, error) {
 	}
 
 	custom := CustomServer{
-		QpServer:    source.QpServer,
-		Reconnect:   source.Reconnect,
-		StartTime:   timestamps.Start,
-		Timestamps:  timestamps,
-		Dispatching: dispatchingData,
-		Uptime:      library.Duration(uptime),
+		WhatsappOptions: source.WhatsappOptions,
+		Token:           source.Token,
+		Wid:             source.GetWId(),
+		Verified:        source.Verified,
+		Devel:           source.Devel,
+		Metadata:        source.Metadata,
+		User:            source.GetUser(),
+		Timestamp:       source.Timestamp,
+		Reconnect:       source.Reconnect,
+		StartTime:       timestamps.Start,
+		Timestamps:      timestamps,
+		Dispatching:     dispatchingData,
+		Uptime:          library.Duration(uptime),
 	}
 
 	return json.Marshal(custom)
@@ -189,7 +203,7 @@ func (server *QpWhatsappServer) GetState() whatsapp.WhatsappConnectionState {
 // Returns whatsapp controller id on E164
 // Ex: 5521967609494
 func (server QpWhatsappServer) GetWId() string {
-	return server.QpServer.Wid
+	return server.QpServer.GetWId()
 }
 
 func (source *QpWhatsappServer) DownloadData(id string) ([]byte, error) {
@@ -333,7 +347,7 @@ func (source *QpWhatsappServer) UpdateConnection(connection whatsapp.IWhatsappCo
 
 func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 
-	if len(source.Wid) > 0 && !source.Verified {
+	if len(source.GetWId()) > 0 && !source.Verified {
 		err = fmt.Errorf("not verified")
 		return
 	}
@@ -347,7 +361,7 @@ func (source *QpWhatsappServer) EnsureUnderlying() (err error) {
 
 		options := &whatsapp.WhatsappConnectionOptions{
 			WhatsappOptions: &source.WhatsappOptions,
-			Wid:             source.Wid,
+			Wid:             source.GetWId(),
 			Reconnect:       true,
 			LogStruct:       library.LogStruct{LogEntry: logentry},
 			ExternalHandler: source.Handler, // Pass handler to connection
@@ -559,7 +573,7 @@ func (source *QpWhatsappServer) GetChatTitle(wid string) string {
 
 // Usado para exibir os servidores/bots de cada usuario em suas respectivas telas
 func (server *QpWhatsappServer) GetOwnerID() string {
-	return server.User
+	return server.GetUser()
 }
 
 //region QP BOT EXTENSIONS
@@ -591,12 +605,12 @@ func (server *QpWhatsappServer) GetStatusString() string {
 }
 
 func (server *QpWhatsappServer) ID() string {
-	return server.Wid
+	return server.GetWId()
 }
 
 // Traduz o Wid para um número de telefone em formato E164
 func (server *QpWhatsappServer) GetNumber() string {
-	return library.GetPhoneByWId(server.Wid)
+	return library.GetPhoneByWId(server.GetWId())
 }
 
 func (server *QpWhatsappServer) GetTimestamp() time.Time {
@@ -666,14 +680,14 @@ func (source *QpWhatsappServer) Save(reason string) (err error) {
 		logger.Debugf("updating server info: %+v", source)
 		err = source.db.Update(source.QpServer)
 		if err != nil {
-			logger.Errorf("failed to update server in database (token=%s wid=%s): %v", source.Token, source.Wid, err)
+			logger.Errorf("failed to update server in database (token=%s wid=%s): %v", source.Token, source.GetWId(), err)
 		}
 		return err
 	} else {
 		logger.Debugf("adding server info: %+v", source)
 		err = source.db.Add(source.QpServer)
 		if err != nil {
-			logger.Errorf("failed to insert server in database (token=%s wid=%s): %v", source.Token, source.Wid, err)
+			logger.Errorf("failed to insert server in database (token=%s wid=%s): %v", source.Token, source.GetWId(), err)
 		}
 		return err
 	}

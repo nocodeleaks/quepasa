@@ -94,7 +94,7 @@ func GetServerFromID(source string) (server *QpWhatsappServer, err error) {
 }
 
 func GetServerFromBot(source QPBot) (server *QpWhatsappServer, err error) {
-	return GetServerFromID(source.Wid)
+	return GetServerFromID(source.GetWId())
 }
 
 // insecure

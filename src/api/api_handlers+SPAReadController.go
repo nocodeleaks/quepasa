@@ -45,7 +45,7 @@ func SPAServersController(w http.ResponseWriter, r *http.Request) {
 	dbServers := models.WhatsappService.DB.Servers.FindAll()
 	items := make([]map[string]interface{}, 0, len(dbServers))
 	for _, dbServer := range dbServers {
-		if dbServer == nil || dbServer.User != user.Username {
+		if dbServer == nil || dbServer.GetUser() != user.Username {
 			continue
 		}
 
@@ -94,7 +94,7 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 	dbServers := models.WhatsappService.DB.Servers.FindAll()
 	items := make([]map[string]interface{}, 0, len(dbServers))
 	for _, dbServer := range dbServers {
-		if dbServer == nil || dbServer.User != user.Username {
+		if dbServer == nil || dbServer.GetUser() != user.Username {
 			continue
 		}
 
@@ -102,7 +102,7 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 		summary := BuildSPAServerSummary(dbServer, liveServer)
 
 		tokenValue := strings.ToLower(dbServer.Token)
-		widValue := strings.ToLower(dbServer.Wid)
+		widValue := strings.ToLower(dbServer.GetWId())
 		stateValue := strings.ToLower(summary["state"].(string))
 
 		match := true

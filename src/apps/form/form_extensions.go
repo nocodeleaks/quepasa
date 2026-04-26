@@ -12,14 +12,18 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
+func loginRedirectEndpointForRequest(r *http.Request) string {
+	return CanonicalFormLoginEndpoint
+}
+
 func RedirectToLogin(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, FormLoginEndpoint, http.StatusFound)
+	http.Redirect(w, r, loginRedirectEndpointForRequest(r), http.StatusFound)
 }
 
 // Google chrome bloqueou wss, portanto retornaremos sempre ws apatir de agora
@@ -37,7 +41,7 @@ func WebSocketProtocol() string {
 func FormDebugController(w http.ResponseWriter, r *http.Request) {
 	_, server, err := GetUserAndServer(w, r)
 	if err != nil {
-		// retorno já tratado pela funcao
+		// return already handled by the function
 		return
 	}
 

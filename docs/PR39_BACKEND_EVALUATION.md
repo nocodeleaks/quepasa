@@ -32,7 +32,7 @@ Current extraction status:
 - SPA server create/update/delete wrappers integrated into local `develop`
 - remaining PR `environment` and user-mutation handlers intentionally deferred
 - dedicated websocket cable module implemented locally outside PR `#39`
-- PR frontend imported as an alternate bundle under `/spa-app`
+- PR frontend imported as an alternate bundle under a dedicated app slug
 - classic login now exposes the alternate frontend behind a separate link
 - no model-layer changes imported from PR `#39`
 
@@ -431,7 +431,7 @@ Files added or updated locally for this first slice:
 - We created a dedicated `cable` module with a stable command/event protocol under `GET /cable`.
 - SPA fallback in `webserver` only activates when:
   - frontend dev proxy is explicitly enabled, or
-  - `assets/frontend/index.html` exists
+  - `apps/vuejs/dist/index.html` exists
 
 ### SPA Read Endpoints Integrated
 
@@ -679,6 +679,6 @@ Reasoning:
 Next review slice:
 
 - backend extraction from PR `#39` is now sufficient for the current SPA baseline
-- frontend import now ships as an isolated beta entrypoint at `/spa-app`
+- frontend import now ships as an isolated beta entrypoint under `/apps/<slug>`
 - keep the beta focused on server/message flows already covered by current backend work
 - keep rejecting direct import of PR environment/user mutation handlers unless a concrete frontend requirement appears

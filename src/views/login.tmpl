@@ -20,7 +20,7 @@
               <h2 class="title is-5 has-text-grey-dark">Please sign in</h2>
               <p class="subtitle is-6 has-text-danger">This project is under development and not secure.</p>
 
-              <form class="login" method="post" action="/login" novalidate>
+              <form class="login" method="post" action="/apps/form/login" novalidate>
 
                 <div class="field">
                   <label class="label is-sr-only" for="email">Email</label>
@@ -67,12 +67,15 @@
                 </div>
 
                 <div class="has-text-centered mt-3">
-                  <p class="is-size-7 has-text-grey">Don't have an account? <a href="/setup">Create one</a></p>
+                  <p class="is-size-7 has-text-grey">Don't have an account? <a href="/apps/form/setup">Create one</a></p>
                 </div>
 
-                {{ if .AlternativeFrontendURL }}
+                {{ if .Apps }}
                 <div class="has-text-centered mt-3">
-                  <p class="is-size-7 has-text-grey">Want to try the new interface? <a href="{{ .AlternativeFrontendURL }}">Open the beta frontend</a></p>
+                  <p class="is-size-7 has-text-grey">Available frontend apps:</p>
+                  {{ range .Apps }}
+                  <p class="is-size-7"><a href="{{ .URLPath }}/">{{ .Slug }}</a></p>
+                  {{ end }}
                 </div>
                 {{ end }}
               </form>

@@ -4,7 +4,7 @@ use (
 	.
 	./api
 	./environment
-	./form
+	./apps/form
 	./library
 	./mcp
 	./media

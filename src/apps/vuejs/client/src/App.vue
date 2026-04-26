@@ -191,10 +191,6 @@ export default defineComponent({
       }
     }
 
-    const checkSession = async () => {
-      await session.loadSession()
-    }
-
     const logout = async () => {
       closeOffcanvas()
       try {
@@ -223,7 +219,6 @@ export default defineComponent({
 
     onMounted(() => {
       loadBranding()
-      checkSession()
     })
 
     return { year, session, logout, isLoginPage, branding, navbarStyle, containerClass, appVersion, navigateTo }

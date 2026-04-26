@@ -883,8 +883,9 @@ export default defineComponent({
       creating.value = true
       try {
         const response = await api.post('/spa/server/create', {})
-        if (response.data && response.data.token) {
-          const token = response.data.token
+        const createdServer = response.data?.server || response.data
+        if (createdServer?.token) {
+          const token = createdServer.token
           pushToast('Servidor criado com sucesso!', 'success')
           router.push(`/server/${token}`)
         } else {

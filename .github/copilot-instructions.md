@@ -11,6 +11,7 @@
 - Message flow: WhatsmeowHandlers → QPWhatsappHandlers → Webhook/RabbitMQ/Dispatching
 - Multi-layered APIs: v1, v2, v3 + non-versioned (latest) routes
 - Modular packages in src/ subdirectories
+- Each directory in `src/apps/<slug>` is an independent frontend app for the same QuePasa API; keep apps isolated by slug with no implicit aliasing, fallback, or semantic coupling between apps
 
 ## Core Components
 1. Connection: whatsmeow/WhatsmeowConnection

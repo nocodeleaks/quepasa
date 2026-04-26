@@ -494,6 +494,18 @@ export default defineComponent({
       return result
     })
 
+    function canLoadProfilePicture(id: any) {
+      const value = String(id || '').trim()
+      if (!value) return false
+
+      const normalized = value.toLowerCase()
+      if (normalized === 'system' || normalized === 'readreceipt') {
+        return false
+      }
+
+      return true
+    }
+
     async function loadMessages() {
       // reset fetching state map when reloading messages
       for (const k in fetchingDownload) delete fetchingDownload[k]
@@ -526,8 +538,8 @@ export default defineComponent({
           // Fetch profile pictures for unique chat and participant ids
           const uniqueIds = new Set<string>()
           for (const m of messages.value) {
-            if (m.chat && m.chat.id) uniqueIds.add(m.chat.id)
-            if (m.participant && (m.participant.id || m.participant.phone)) uniqueIds.add(m.participant.id || m.participant.phone)
+            if (canLoadProfilePicture(m.chat?.id)) uniqueIds.add(m.chat.id)
+            if (canLoadProfilePicture(m.participant?.id || m.participant?.phone)) uniqueIds.add(m.participant.id || m.participant.phone)
           }
 
           const picPromises: Array<Promise<void>> = []
@@ -840,7 +852,7 @@ export default defineComponent({
               }
 
               const chatId = incoming.chat?.id
-              if (chatId && !contactPicMap[chatId]) {
+              if (canLoadProfilePicture(chatId) && !contactPicMap[chatId]) {
                 api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(chatId)}`)
                   .then(res => {
                     if (res?.data?.info?.url) {

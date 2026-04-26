@@ -2,7 +2,7 @@ module github.com/nocodeleaks/quepasa/sipproxy
 
 replace github.com/nocodeleaks/quepasa/api => ../api
 
-replace github.com/nocodeleaks/quepasa/form => ../form
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
 
 replace github.com/nocodeleaks/quepasa/media => ../media
 

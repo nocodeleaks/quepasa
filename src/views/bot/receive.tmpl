@@ -1,4 +1,4 @@
-{{ define "content" }}
+﻿{{ define "content" }}
   {{ $DOWNLOADPREFIX := .DownloadPrefix }}
   {{ if .ErrorMessage }}
     <div class="notification is-warning">
@@ -26,7 +26,7 @@
         </span>
       </summary>
 
-      <form method="get" action="/form/server/{{ .Token }}/receive" class="receive-filters-body">
+      <form method="get" action="/apps/form/server/{{ .Token }}/receive" class="receive-filters-body">
         <div class="field">
           <label class="label" for="search">Search (id, text, chat, participant, exceptions)</label>
           <div class="control">
@@ -136,7 +136,7 @@
             <button type="submit" class="button is-info">Apply Filters</button>
           </div>
           <div class="control">
-            <a class="button is-light" href="/form/server/{{ .Token }}/receive">Clear</a>
+            <a class="button is-light" href="/apps/form/server/{{ .Token }}/receive">Clear</a>
           </div>
         </div>
       </form>
@@ -155,7 +155,7 @@
         </pre>
         {{ if .HasExceptions }}
         <div class="dispatch-errors" style="background-color: #ffebee; border: 1px solid #f44336; border-radius: 4px; padding: 10px; margin: 5px 0;">
-          <div style="color: #c62828; font-weight: bold; margin-bottom: 5px;">🚨 Dispatch Errors:</div>
+          <div style="color: #c62828; font-weight: bold; margin-bottom: 5px;">ðŸš¨ Dispatch Errors:</div>
           <ul style="color: #d32f2f; margin: 0; padding-left: 20px;">
             {{ range .Exceptions }}
             <li>{{ . }}</li>
@@ -189,7 +189,7 @@
       </div>
       {{ end }}
     </div>
-    <a style="padding: 2rem;" href="/form/account">Back</a>
+    <a style="padding: 2rem;" href="/apps/form/account">Back</a>
   </div>
   <link href="/assets/css/container-receive.css" rel="stylesheet">
 {{ end }}

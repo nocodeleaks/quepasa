@@ -1,4 +1,4 @@
-{{ define "content" }}
+﻿{{ define "content" }}
 {{ if .ErrorMessage}}
 <div class="notification is-warning">
   {{ .ErrorMessage }}
@@ -11,7 +11,7 @@
 </div>
 {{ end }}
 
-<form enctype="multipart/form-data" class="" method="post" action="/form/server/{{ .Server.Token }}/send">
+<form enctype="multipart/form-data" class="" method="post" action="/apps/form/server/{{ .Server.Token }}/send">
   <div class="field">
     <label class="label" for="recipient">Recipient:</label>
     <div class="control">
@@ -43,5 +43,5 @@
   <button class="button is-block is-info is-large is-fullwidth">Send</button>
 </form>
 
-<a href="/form/account">Back</a>
+<a href="/apps/form/account">Back</a>
 {{ end }}

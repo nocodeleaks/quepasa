@@ -38,6 +38,10 @@ func Configure(r chi.Router) {
 		workDir, _ := os.Getwd()
 		viewsBasePath = filepath.Join(workDir, "views")
 
+		// Register as a backend-managed app so it appears in /apps/ listing
+		// without static-file or SPA-fallback interference.
+		webserver.RegisterBackendApp("form", "/apps/form")
+
 		// Form routes, extra content
 		ServeForms(r)
 	}

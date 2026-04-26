@@ -149,6 +149,67 @@ func TestSPAUsersLifecycleAndEnvironment(t *testing.T) {
 	}
 }
 
+func TestSPAServerCreateThenInfoReturnsCreatedServer(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	CreateTestUser(t, "owner@example.com", "Password123!")
+
+	router := newSPATestRouter()
+
+	createReq := newSPAAuthRequest(t, http.MethodPost, "/spa/server/create", []byte(`{}`), "owner@example.com")
+	createRec := httptest.NewRecorder()
+	router.ServeHTTP(createRec, createReq)
+
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected create server to return 201, got %d with body %s", createRec.Code, createRec.Body.String())
+	}
+
+	var createPayload struct {
+		Server struct {
+			Token string `json:"token"`
+			User  string `json:"user"`
+		} `json:"server"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createPayload); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+
+	if createPayload.Server.Token == "" {
+		t.Fatalf("expected create response to contain server token, got %s", createRec.Body.String())
+	}
+
+	if createPayload.Server.User != "owner@example.com" {
+		t.Fatalf("expected created server user to be owner@example.com, got %q", createPayload.Server.User)
+	}
+
+	infoReq := newSPAAuthRequest(t, http.MethodGet, "/spa/server/"+createPayload.Server.Token+"/info", nil, "owner@example.com")
+	infoRec := httptest.NewRecorder()
+	router.ServeHTTP(infoRec, infoReq)
+
+	if infoRec.Code != http.StatusOK {
+		t.Fatalf("expected info for created server to return 200, got %d with body %s", infoRec.Code, infoRec.Body.String())
+	}
+
+	var infoPayload struct {
+		Server struct {
+			Token string `json:"token"`
+			User  string `json:"user"`
+		} `json:"server"`
+	}
+	if err := json.Unmarshal(infoRec.Body.Bytes(), &infoPayload); err != nil {
+		t.Fatalf("decode info response: %v", err)
+	}
+
+	if infoPayload.Server.Token != createPayload.Server.Token {
+		t.Fatalf("expected info token %q, got %q", createPayload.Server.Token, infoPayload.Server.Token)
+	}
+
+	if infoPayload.Server.User != "owner@example.com" {
+		t.Fatalf("expected info user to be owner@example.com, got %q", infoPayload.Server.User)
+	}
+}
+
 func newSPATestRouter() chi.Router {
 	router := chi.NewRouter()
 	router.Route("/spa", func(r chi.Router) {

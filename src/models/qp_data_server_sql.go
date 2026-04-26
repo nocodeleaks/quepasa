@@ -14,7 +14,7 @@ type QpDataServerSql struct {
 
 func (source QpDataServerSql) FindForUser(token string, user string) (response *QpServer, err error) {
 	response = &QpServer{}
-	err = source.db.Get(response, "SELECT * FROM servers WHERE token = ? AND user = ?", token, user)
+	err = source.db.Get(response, "SELECT token, COALESCE(wid, '') AS wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ? AND user = ?", token, user)
 	if err != nil {
 		response = nil
 	}
@@ -22,7 +22,7 @@ func (source QpDataServerSql) FindForUser(token string, user string) (response *
 }
 
 func (source QpDataServerSql) FindAll() (response []*QpServer) {
-	_ = source.db.Select(&response, "SELECT * FROM servers")
+	_ = source.db.Select(&response, "SELECT token, COALESCE(wid, '') AS wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers")
 	return
 }
 
@@ -42,7 +42,7 @@ func (source QpDataServerSql) Exists(token string) (bool, error) {
 
 func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err error) {
 	response = &QpServer{}
-	err = source.db.Get(response, "SELECT * FROM servers WHERE token = ?", token)
+	err = source.db.Get(response, "SELECT token, COALESCE(wid, '') AS wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ?", token)
 	if err != nil {
 		response = nil
 	}
@@ -57,7 +57,7 @@ func (source QpDataServerSql) Add(element *QpServer) error {
 	)`
 	params := map[string]any{
 		"token":        element.Token,
-		"wid":          nil,
+		"wid":          element.Wid,
 		"verified":     element.Verified,
 		"devel":        element.Devel,
 		"groups":       element.Groups,
@@ -67,9 +67,6 @@ func (source QpDataServerSql) Add(element *QpServer) error {
 		"readupdate":   element.ReadUpdate,
 		"user":         element.User,
 		"metadata":     element.Metadata,
-	}
-	if len(element.Wid) > 0 {
-		params["wid"] = element.Wid
 	}
 	_, err := source.db.NamedExec(query, params)
 	return err
@@ -90,7 +87,7 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 	WHERE token = :token`
 	params := map[string]any{
 		"token":        element.Token,
-		"wid":          nil,
+		"wid":          element.Wid,
 		"verified":     element.Verified,
 		"devel":        element.Devel,
 		"groups":       element.Groups,
@@ -100,9 +97,6 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		"readupdate":   element.ReadUpdate,
 		"user":         element.User,
 		"metadata":     element.Metadata,
-	}
-	if len(element.Wid) > 0 {
-		params["wid"] = element.Wid
 	}
 	_, err := source.db.NamedExec(query, params)
 	return err

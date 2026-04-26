@@ -94,7 +94,7 @@
         </div>
 
         <div v-if="config.accountSetup" class="setup-link">
-          <a href="/spa-app/setup" class="setup-link-text">
+          <a href="/setup" class="setup-link-text">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M19 13H5v-2h14v2zm-7 8l-1.41-1.41L15.17 15H4v-2h11.17l-4.58-4.59L12 7l7 7-7 7z"/>
             </svg>

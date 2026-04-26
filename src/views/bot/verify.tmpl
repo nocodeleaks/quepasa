@@ -1,4 +1,4 @@
-{{ define "content" }}
+﻿{{ define "content" }}
 {{ if .ErrorMessage}}
 <div class="notification is-warning">
   {{ .ErrorMessage}}
@@ -6,11 +6,11 @@
 {{ end }}
 <div class="is-block is-large is-fullwidth container" style="text-align: center;">
   <hr />
-  <div class="notification is-warning">CASO O QR CODE NÃO APARECER POR FAVOR VERIFIQUE SE  A VARIAVEL EM /src/.env ESTA DE FORMA WEBSOCKETSSL=true</div>
+  <div class="notification is-warning">CASO O QR CODE NÃƒO APARECER POR FAVOR VERIFIQUE SE  A VARIAVEL EM /src/.env ESTA DE FORMA WEBSOCKETSSL=true</div>
   <label class="label">Scan this QR code in the next 20 seconds:</label>
   <img id="qrcode" src="">
   <hr />
-  <a href="/form/account">Back</a>
+  <a href="/apps/form/account">Back</a>
 </div>
 <script type="text/javascript" defer>
   const queryString = window.location.search;
@@ -25,7 +25,7 @@
   function GetQRCode() {
     loadQrCode();
     if (myWebSocket === undefined || (myWebSocket && myWebSocket.readyState === 3)) {
-      myWebSocket = new WebSocket("{{ .Protocol }}://{{ .Host }}/form/verify/ws");
+      myWebSocket = new WebSocket("{{ .Protocol }}://{{ .Host }}/apps/form/verify/ws");
       myWebSocket.onopen = onWebSocketOpen;
       myWebSocket.onmessage = onWebSocketMessage;
       myWebSocket.onclose = onWebSocketClose;

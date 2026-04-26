@@ -5,16 +5,19 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+const clientRoot = path.resolve(__dirname, 'client')
+const appBase = '/apps/vuejs/'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   // load .env variables for current mode
   const env = loadEnv(mode, process.cwd(), '')
   const backendUrl = env.VITE_BACKEND_URL || `http://127.0.0.1:${env.VITE_BACKEND_PORT || process.env.WEBAPIPORT || '32000'}`
 
   return {
+    root: clientRoot,
     plugins: [vue()],
-    base: '/spa-app/',
+    base: appBase,
     server: {
       port: Number(env.VITE_DEV_PORT || 5173),
       proxy: {
@@ -46,7 +49,7 @@ export default defineConfig(({ command, mode }) => {
       }
     },
     build: {
-      outDir: path.resolve(__dirname, '../assets/frontend-alt'),
+      outDir: path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
       rollupOptions: {
         output: {
@@ -63,7 +66,7 @@ export default defineConfig(({ command, mode }) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src')
+        '@': path.resolve(clientRoot, 'src')
       }
     }
   }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	api "github.com/nocodeleaks/quepasa/api"
-	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
+	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 

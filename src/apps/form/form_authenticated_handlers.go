@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/jwtauth"
 
 	api "github.com/nocodeleaks/quepasa/api"
+	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	signalr "github.com/nocodeleaks/quepasa/signalr"
@@ -31,6 +31,7 @@ func GetFormEndpointPrefix() string {
 // Prefix on forms endpoints to avoid conflict with api
 var FormEndpointPrefix string = GetFormEndpointPrefix()
 var LegacyFormEndpointPrefix string = "/form"
+var CanonicalFormEndpointPrefix string = "/apps/form"
 
 var FormWebsocketEndpoint string = FormEndpointPrefix + "/verify/ws"
 var FormAccountEndpoint string = FormEndpointPrefix + "/account"
@@ -50,6 +51,10 @@ func RegisterFormAuthenticatedControllers(r chi.Router) {
 
 	if FormEndpointPrefix != LegacyFormEndpointPrefix {
 		registerFormAuthenticatedRoutesForPrefix(r, LegacyFormEndpointPrefix)
+	}
+
+	if FormEndpointPrefix != CanonicalFormEndpointPrefix && LegacyFormEndpointPrefix != CanonicalFormEndpointPrefix {
+		registerFormAuthenticatedRoutesForPrefix(r, CanonicalFormEndpointPrefix)
 	}
 }
 
@@ -77,12 +82,12 @@ func HttpAuthenticatorHandler(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 
 		if err != nil {
-			http.Redirect(w, r, FormLoginEndpoint, http.StatusFound)
+			http.Redirect(w, r, loginRedirectEndpointForRequest(r), http.StatusFound)
 			return
 		}
 
 		if token == nil || !token.Valid {
-			http.Redirect(w, r, FormLoginEndpoint, http.StatusFound)
+			http.Redirect(w, r, loginRedirectEndpointForRequest(r), http.StatusFound)
 			return
 		}
 

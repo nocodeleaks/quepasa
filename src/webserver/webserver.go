@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,12 +23,38 @@ import (
 // without coupling the webserver package to specific modules.
 type RouterConfigurator func(r chi.Router)
 
+// FrontendApp describes one auto-discovered frontend mounted under /apps/<slug>.
+type FrontendApp struct {
+	Slug      string
+	Path      string
+	URLPath   string
+	IndexFile string
+	// BackendManaged marks apps whose routes are handled by Go code.
+	// They appear in the apps listing but are excluded from static/SPA file serving.
+	BackendManaged bool
+}
+
 // configurators stores all route registration hooks collected during package init.
 var configurators []RouterConfigurator
 
 // RegisterRouterConfigurator appends a route configuration hook to the main router.
 func RegisterRouterConfigurator(configurator RouterConfigurator) {
 	configurators = append(configurators, configurator)
+}
+
+// backendApps holds apps registered programmatically as backend-managed
+// (i.e., routes handled by Go, not by static file serving).
+var backendApps []FrontendApp
+
+// RegisterBackendApp registers an app that should appear in the /apps/ listing
+// but whose paths are fully handled by Go route handlers.
+// No static file serving or SPA fallback will be applied to this app.
+func RegisterBackendApp(slug, urlPath string) {
+	backendApps = append(backendApps, FrontendApp{
+		Slug:           slug,
+		URLPath:        urlPath,
+		BackendManaged: true,
+	})
 }
 
 func WebServerStart(logentry *log.Entry) error {
@@ -69,34 +96,30 @@ func newRouter() chi.Router {
 	// so adding Recoverer last makes it the outermost wrapper.
 	r.Use(middleware.Recoverer)
 
-	// Install SPA fallback behavior before feature routes. This only affects
-	// unresolved paths because chi executes NotFound after normal route matching.
-	ServeSPA(r)
-
 	// Execute feature-level route registration hooks (API, Form, Swagger, etc.).
 	for _, configurator := range configurators {
 		configurator(r)
 	}
 
+	// Install apps fallback behavior after feature routes so explicit handlers
+	// like /apps/form/login are matched first and the wildcard only handles
+	// unresolved app bundle paths.
+	ServeApps(r)
+
 	return r
 }
 
-// ServeSPA configures SPA fallback behavior without interfering with existing matched routes.
-// In development it can proxy to a local Vite server; in production it serves assets/frontend
-// when a built SPA is present on disk.
-func ServeSPA(r chi.Router) {
-	workDir, _ := os.Getwd()
-
-	// Mount the imported PR frontend as an explicit alternate app so it does not
-	// interfere with the classic UI or the primary SPA fallback.
-	ServeBuiltSPAAtPrefix(r, "/spa-app", filepath.Join(workDir, "assets", "frontend-alt"))
+// ServeApps configures apps fallback behavior without interfering with existing matched routes.
+// App bundles are served from ./apps/<slug>.
+func ServeApps(r chi.Router) {
+	ServeDiscoveredApps(r)
 
 	if useFrontendDevProxy() {
 		proxy := NewReverseProxy(frontendDevTarget())
 		r.NotFound(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			// Keep explicit API-like namespaces out of the SPA proxy so transport
 			// failures still surface as ordinary 404 responses.
-			if !shouldServeSPAPath(req.URL.Path) {
+			if !shouldServeAppsPath(req.URL.Path) {
 				http.NotFound(w, req)
 				return
 			}
@@ -104,69 +127,133 @@ func ServeSPA(r chi.Router) {
 		}))
 		return
 	}
-
-	frontendDir := filepath.Join(workDir, "assets", "frontend")
-	indexPath := filepath.Join(frontendDir, "index.html")
-	if _, err := os.Stat(indexPath); err != nil {
-		return
-	}
-
-	fs := http.FileServer(http.Dir(frontendDir))
-	r.NotFound(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != http.MethodGet || !shouldServeSPAPath(req.URL.Path) {
-			http.NotFound(w, req)
-			return
-		}
-
-		// Serve concrete built files directly before falling back to index.html.
-		relativePath := strings.TrimPrefix(path.Clean(req.URL.Path), "/")
-		staticPath := filepath.Join(frontendDir, filepath.FromSlash(relativePath))
-		if info, err := os.Stat(staticPath); err == nil && !info.IsDir() {
-			fs.ServeHTTP(w, req)
-			return
-		}
-
-		http.ServeFile(w, req, indexPath)
-	}))
 }
 
-// ServeBuiltSPAAtPrefix mounts a prebuilt SPA bundle under an explicit URL
-// prefix and falls back to its index.html for client-side navigation.
-func ServeBuiltSPAAtPrefix(r chi.Router, prefix string, spaDir string) {
-	indexPath := filepath.Join(spaDir, "index.html")
-	if _, err := os.Stat(indexPath); err != nil {
+// DiscoverFrontendApps scans ./apps and returns every subdirectory that exposes a
+// browser-loadable index file directly at its root (index.html, index.htm, etc.).
+func DiscoverFrontendApps() []FrontendApp {
+	appsDir := filepath.Join(resolveFrontendContentDir(), "apps")
+
+	entries, err := os.ReadDir(appsDir)
+	if err != nil {
+		return nil
+	}
+
+	apps := make([]FrontendApp, 0, len(entries))
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		slug := strings.TrimSpace(entry.Name())
+		if slug == "" {
+			continue
+		}
+
+		appDir := filepath.Join(appsDir, slug)
+		publicDir, indexPath, ok := findFrontendAppPublicDir(appDir)
+		if !ok {
+			continue
+		}
+
+		urlPath := "/apps/" + slug
+		apps = append(apps, FrontendApp{
+			Slug:      slug,
+			Path:      publicDir,
+			URLPath:   urlPath,
+			IndexFile: indexPath,
+		})
+	}
+
+	sort.Slice(apps, func(i, j int) bool {
+		return strings.ToLower(apps[i].Slug) < strings.ToLower(apps[j].Slug)
+	})
+
+	// Merge backend-managed apps, keeping sort order.
+	for _, ba := range backendApps {
+		if _, found := findExactFrontendAppBySlug(apps, ba.Slug); !found {
+			apps = append(apps, ba)
+		}
+	}
+	sort.Slice(apps, func(i, j int) bool {
+		return strings.ToLower(apps[i].Slug) < strings.ToLower(apps[j].Slug)
+	})
+
+	return apps
+}
+
+// ServeDiscoveredApps mounts /apps/<slug> for every auto-discovered app folder.
+func ServeDiscoveredApps(r chi.Router) {
+	r.Get("/apps", ServeFrontendAppsIndex)
+	r.Get("/apps/", ServeFrontendAppsIndex)
+	r.Get("/apps/*", ServeDiscoveredAppRequest)
+}
+
+// ServeFrontendAppsIndex lists discovered frontend apps in a minimal HTML page.
+func ServeFrontendAppsIndex(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.NotFound(w, r)
 		return
 	}
 
-	serve := func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != http.MethodGet {
-			http.NotFound(w, req)
-			return
-		}
+	apps := DiscoverFrontendApps()
+	if len(apps) == 0 {
+		http.NotFound(w, r)
+		return
+	}
 
-		requestPath := path.Clean(req.URL.Path)
-		if requestPath == "." {
-			requestPath = "/"
-		}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte("<!doctype html><html><head><meta charset=\"utf-8\"><title>QuePasa Apps</title></head><body><h1>QuePasa Apps</h1><ul>"))
+	for _, app := range apps {
+		_, _ = w.Write([]byte(fmt.Sprintf("<li><a href=\"%s/\">%s</a></li>", app.URLPath, app.Slug)))
+	}
+	_, _ = w.Write([]byte("</ul></body></html>"))
+}
 
-		if requestPath == prefix || requestPath == prefix+"/" {
+// ServeDiscoveredAppRequest serves one discovered app under /apps/<slug>.
+func ServeDiscoveredAppRequest(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.NotFound(w, req)
+		return
+	}
+
+	app, relativePath, ok := resolveFrontendAppRequest(req.URL.Path)
+	if !ok {
+		http.NotFound(w, req)
+		return
+	}
+
+	// Backend-managed apps have their routes handled entirely by Go handlers.
+	// Passing the request through here would bypass them, so return 404 and let
+	// chi continue to the explicit routes registered by those packages.
+	if app.BackendManaged {
+		http.NotFound(w, req)
+		return
+	}
+
+	if useFrontendDevProxy() {
+		proxyFrontendAppRequest(w, req, app, relativePath)
+		return
+	}
+
+	if relativePath == "" || relativePath == "/" {
+		http.ServeFile(w, req, app.IndexFile)
+		return
+	}
+
+	staticPath := filepath.Join(app.Path, filepath.FromSlash(strings.TrimPrefix(relativePath, "/")))
+	if info, err := os.Stat(staticPath); err == nil && !info.IsDir() {
+		http.ServeFile(w, req, staticPath)
+		return
+	}
+	if info, err := os.Stat(staticPath); err == nil && info.IsDir() {
+		if indexPath, ok := findIndexFileInDir(staticPath); ok {
 			http.ServeFile(w, req, indexPath)
 			return
 		}
-
-		relativePath := strings.TrimPrefix(requestPath, prefix+"/")
-		staticPath := filepath.Join(spaDir, filepath.FromSlash(relativePath))
-		if info, err := os.Stat(staticPath); err == nil && !info.IsDir() {
-			http.ServeFile(w, req, staticPath)
-			return
-		}
-
-		http.ServeFile(w, req, indexPath)
 	}
 
-	r.Get(prefix, serve)
-	r.Get(prefix+"/", serve)
-	r.Get(prefix+"/*", serve)
+	http.ServeFile(w, req, app.IndexFile)
 }
 
 // useFrontendDevProxy enables the Vite reverse proxy explicitly for local SPA work.
@@ -190,9 +277,9 @@ func frontendDevTarget() string {
 	return host + ":" + port
 }
 
-// shouldServeSPAPath filters requests that may be safely handled by the SPA
+// shouldServeAppsPath filters requests that may be safely handled by the apps
 // fallback without shadowing API, static, form, or other transport routes.
-func shouldServeSPAPath(requestPath string) bool {
+func shouldServeAppsPath(requestPath string) bool {
 	if requestPath == "" {
 		return true
 	}
@@ -203,6 +290,7 @@ func shouldServeSPAPath(requestPath string) bool {
 
 	if strings.HasPrefix(requestPath, "/api") ||
 		strings.HasPrefix(requestPath, "/cable") ||
+		strings.HasPrefix(requestPath, "/apps") ||
 		strings.HasPrefix(requestPath, "/spa") ||
 		strings.HasPrefix(requestPath, "/assets") ||
 		strings.HasPrefix(requestPath, "/form") ||
@@ -213,6 +301,161 @@ func shouldServeSPAPath(requestPath string) bool {
 	}
 
 	return true
+}
+
+func resolveFrontendAppRequest(requestPath string) (FrontendApp, string, bool) {
+	cleaned := path.Clean(requestPath)
+	if cleaned == "." {
+		cleaned = "/"
+	}
+
+	if !strings.HasPrefix(cleaned, "/apps/") {
+		return FrontendApp{}, "", false
+	}
+
+	trimmed := strings.TrimPrefix(cleaned, "/apps/")
+	parts := strings.SplitN(trimmed, "/", 2)
+	slug := strings.TrimSpace(parts[0])
+	if slug == "" {
+		return FrontendApp{}, "", false
+	}
+
+	apps := DiscoverFrontendApps()
+	app, found := findExactFrontendAppBySlug(apps, slug)
+	if found {
+		relativePath := "/"
+		if len(parts) == 2 {
+			relativePath = "/" + parts[1]
+		}
+		return app, relativePath, true
+	}
+
+	return FrontendApp{}, "", false
+}
+
+func findExactFrontendAppBySlug(apps []FrontendApp, slug string) (FrontendApp, bool) {
+	for _, app := range apps {
+		if app.Slug == slug {
+			return app, true
+		}
+	}
+
+	return FrontendApp{}, false
+}
+
+func resolveFrontendContentDir() string {
+	candidates := make([]string, 0, 5)
+	if workDir, err := os.Getwd(); err == nil {
+		candidates = append(candidates, workDir, filepath.Join(workDir, "src"))
+	}
+
+	if executablePath, err := os.Executable(); err == nil {
+		executableDir := filepath.Dir(executablePath)
+		candidates = append(candidates,
+			executableDir,
+			filepath.Join(executableDir, "src"),
+			filepath.Join(executableDir, "..", "src"),
+		)
+	}
+
+	for _, candidate := range candidates {
+		if isFrontendContentDir(candidate) {
+			return filepath.Clean(candidate)
+		}
+	}
+
+	if len(candidates) > 0 {
+		return filepath.Clean(candidates[0])
+	}
+
+	return "."
+}
+
+func isFrontendContentDir(dir string) bool {
+	if dir == "" {
+		return false
+	}
+
+	if info, err := os.Stat(filepath.Join(dir, "apps")); err != nil || !info.IsDir() {
+		return false
+	}
+
+	if info, err := os.Stat(filepath.Join(dir, "assets")); err != nil || !info.IsDir() {
+		return false
+	}
+
+	return true
+}
+
+func findFrontendAppPublicDir(appDir string) (string, string, bool) {
+	distDir := filepath.Join(appDir, "dist")
+	if indexPath, ok := findIndexFileInDir(distDir); ok {
+		return distDir, indexPath, true
+	}
+
+	if isLegacyFrontendBundleDir(appDir) {
+		if indexPath, ok := findIndexFileInDir(appDir); ok {
+			return appDir, indexPath, true
+		}
+	}
+
+	if useFrontendDevProxy() {
+		clientDir := filepath.Join(appDir, "client")
+		if indexPath, ok := findIndexFileInDir(clientDir); ok {
+			return appDir, indexPath, true
+		}
+	}
+
+	return "", "", false
+}
+
+func findIndexFileInDir(dir string) (string, bool) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", false
+	}
+
+	indexCandidates := make([]string, 0)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := strings.ToLower(strings.TrimSpace(entry.Name()))
+		if !strings.HasPrefix(name, "index.") {
+			continue
+		}
+
+		indexCandidates = append(indexCandidates, filepath.Join(dir, entry.Name()))
+	}
+
+	if len(indexCandidates) == 0 {
+		return "", false
+	}
+
+	sort.Strings(indexCandidates)
+	return indexCandidates[0], true
+}
+
+func isLegacyFrontendBundleDir(appDir string) bool {
+	if _, err := os.Stat(filepath.Join(appDir, "package.json")); err == nil {
+		return false
+	}
+
+	return true
+}
+
+func proxyFrontendAppRequest(w http.ResponseWriter, req *http.Request, app FrontendApp, relativePath string) {
+	proxy := NewReverseProxy(frontendDevTarget())
+	proxyReq := req.Clone(req.Context())
+	proxyReq.URL.Path = app.URLPath
+	if relativePath != "" && relativePath != "/" {
+		proxyReq.URL.Path += relativePath
+	} else {
+		proxyReq.URL.Path += "/"
+	}
+	proxyReq.URL.RawPath = proxyReq.URL.Path
+	proxy.ServeHTTP(w, proxyReq)
 }
 
 // isLegacyAPIPath marks historical root-level API prefixes that must never be
@@ -274,9 +517,14 @@ func NewReverseProxy(target string) *httputil.ReverseProxy {
 
 func ServeStaticContent(r chi.Router) {
 	r.Group(func(r chi.Router) {
+		contentDir := resolveFrontendContentDir()
+		faviconPath := filepath.Join(contentDir, "assets", "favicon-32x32.png")
+		r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, faviconPath)
+		})
+
 		// Serve shared static assets from the project assets directory.
-		workDir, _ := os.Getwd()
-		assetsDir := filepath.Join(workDir, "assets")
+		assetsDir := filepath.Join(contentDir, "assets")
 		root := http.Dir(assetsDir)
 
 		path := "/assets"

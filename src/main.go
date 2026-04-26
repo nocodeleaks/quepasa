@@ -2,9 +2,9 @@ package main
 
 import (
 	_ "github.com/nocodeleaks/quepasa/api"
+	_ "github.com/nocodeleaks/quepasa/apps/form"
 	_ "github.com/nocodeleaks/quepasa/cable"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	_ "github.com/nocodeleaks/quepasa/form"
 	library "github.com/nocodeleaks/quepasa/library"
 	_ "github.com/nocodeleaks/quepasa/mcp"
 	_ "github.com/nocodeleaks/quepasa/metrics"
@@ -82,8 +82,7 @@ func main() {
 		}
 	}
 
-	// Inicializando serviço de controle do whatsapp
-	// De forma assíncrona
+	// Starting WhatsApp control service asynchronously
 	err = models.QPWhatsappStart(logentry)
 	if err != nil {
 		logentry.Fatalf("whatsapp service starting error: %s", err.Error())

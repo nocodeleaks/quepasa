@@ -16,6 +16,10 @@ import UserCreatePage from '@/pages/UserCreate.vue'
 import SetupPage from '@/pages/Setup.vue'
 import { useSessionStore } from '@/stores/session'
 
+function hasSessionCookie() {
+  return document.cookie.split(';').some((entry) => entry.trim().startsWith('jwt='))
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -42,11 +46,16 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const session = useSessionStore()
-  if (session.loading.value) {
-    await session.loadSession()
+  const requiresAuth = Boolean(to.meta.requiresAuth)
+  const shouldProbeSession = requiresAuth || ((to.name === 'login' || to.name === 'setup') && hasSessionCookie())
+
+  if (session.loading.value && shouldProbeSession) {
+    await session.loadSession({ allowUnauthorized: true })
+  } else if (session.loading.value) {
+    session.resolveUnauthenticated()
   }
 
-  if (to.meta.requiresAuth && !session.user.value) {
+  if (requiresAuth && !session.user.value) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 

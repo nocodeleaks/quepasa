@@ -8,7 +8,7 @@ replace github.com/nocodeleaks/quepasa/metrics => ../metrics
 
 replace github.com/nocodeleaks/quepasa/models => ../models
 
-replace github.com/nocodeleaks/quepasa/form => ../form
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
 
 replace github.com/nocodeleaks/quepasa/api => ../api
 

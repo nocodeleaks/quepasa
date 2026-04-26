@@ -90,7 +90,7 @@ require (
 
 replace github.com/nocodeleaks/quepasa/api => ../api
 
-replace github.com/nocodeleaks/quepasa/form => ../form
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
 
 replace github.com/nocodeleaks/quepasa/signalr => ../signalr
 

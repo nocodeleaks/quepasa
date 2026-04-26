@@ -11,8 +11,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 	api "github.com/nocodeleaks/quepasa/api"
+	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
 	models "github.com/nocodeleaks/quepasa/models"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	log "github.com/sirupsen/logrus"
@@ -28,17 +28,28 @@ var FormSetupEndpoint string = buildFormPublicEndpoint("/setup")
 var FormLogoutEndpoint string = buildFormPublicEndpoint("/logout")
 var FormDownloadEndpoint string = buildFormPublicEndpoint("/download")
 
+var CanonicalFormLoginEndpoint string = "/apps/form/login"
+var CanonicalFormSetupEndpoint string = "/apps/form/setup"
+var CanonicalFormLogoutEndpoint string = "/apps/form/logout"
+
 var LegacyFormLoginEndpoint string = "/login"
 var LegacyFormSetupEndpoint string = "/setup"
 var LegacyFormLogoutEndpoint string = "/logout"
 
 func RegisterFormControllers(r chi.Router) {
 
+	r.Get(FormEndpointPrefix, IndexHandler)
+	r.Get(FormEndpointPrefix+"/", IndexHandler)
+	r.Get(CanonicalFormEndpointPrefix, IndexHandler)
+	r.Get(CanonicalFormEndpointPrefix+"/", IndexHandler)
 	r.Get("/", IndexHandler)
-	r.Get(FormLoginEndpoint, LoginFormHandler)
+	r.With(jwtauth.Verifier(GetTokenAuth())).Get(FormLoginEndpoint, LoginFormHandler)
 	r.Post(FormLoginEndpoint, LoginHandler)
+	r.With(jwtauth.Verifier(GetTokenAuth())).Get(CanonicalFormLoginEndpoint, LoginFormHandler)
+	r.Post(CanonicalFormLoginEndpoint, LoginHandler)
 	r.Get(FormLogoutEndpoint, LogoutHandler)
-	r.Get(LegacyFormLoginEndpoint, LoginFormHandler)
+	r.Get(CanonicalFormLogoutEndpoint, LogoutHandler)
+	r.With(jwtauth.Verifier(GetTokenAuth())).Get(LegacyFormLoginEndpoint, LoginFormHandler)
 	r.Post(LegacyFormLoginEndpoint, LoginHandler)
 	r.Get(LegacyFormLogoutEndpoint, LogoutHandler)
 
@@ -46,6 +57,8 @@ func RegisterFormControllers(r chi.Router) {
 	if environment.Settings.General.AccountSetup {
 		r.Get(FormSetupEndpoint, SetupFormHandler)
 		r.Post(FormSetupEndpoint, SetupHandler)
+		r.Get(CanonicalFormSetupEndpoint, SetupFormHandler)
+		r.Post(CanonicalFormSetupEndpoint, SetupHandler)
 		r.Get(LegacyFormSetupEndpoint, SetupFormHandler)
 		r.Post(LegacyFormSetupEndpoint, SetupHandler)
 	}
@@ -53,6 +66,12 @@ func RegisterFormControllers(r chi.Router) {
 
 // LoginFormHandler renders route GET "/apps/form/login"
 func LoginFormHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := GetFormUser(r)
+	if err == nil && user != nil {
+		http.Redirect(w, r, FormAccountEndpoint, http.StatusFound)
+		return
+	}
+
 	data := viewmodel.LoginPageData{
 		PageTitle: "Login - Quepasa",
 		Version:   models.QpVersion,

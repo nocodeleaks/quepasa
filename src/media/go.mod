@@ -4,7 +4,7 @@ replace github.com/nocodeleaks/quepasa/api => ../api
 
 replace github.com/nocodeleaks/quepasa/environment => ../environment
 
-replace github.com/nocodeleaks/quepasa/form => ../form
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
 
 replace github.com/nocodeleaks/quepasa/media => ../media
 
@@ -24,11 +24,11 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 
-go 1.25.0 // Ou a sua versão do Go
+go 1.25.0 // Ou a sua versÃƒÂ£o do Go
 
 require (
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427
-	github.com/gopxl/beep/v2 v2.1.1 // A versão que você quer usar
+	github.com/gopxl/beep/v2 v2.1.1 // A versÃƒÂ£o que vocÃƒÂª quer usar
 	github.com/mattetti/audio v0.0.0-20240411020228-c5379f9b5b61
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
@@ -51,5 +51,5 @@ replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
 
 replace github.com/nocodeleaks/quepasa/library => ../library
 
-// Adicione esta seção de "replace"
+// Adicione esta seÃƒÂ§ÃƒÂ£o de "replace"
 replace github.com/gopxl/beep v1.4.1 => github.com/gopxl/beep/v2 v2.1.1

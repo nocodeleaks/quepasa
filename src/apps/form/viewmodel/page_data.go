@@ -2,6 +2,7 @@ package viewmodel
 
 import (
 	models "github.com/nocodeleaks/quepasa/models"
+	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
@@ -10,9 +11,9 @@ import (
 // Keeping form page data in the form module avoids leaking HTML/view concerns
 // into the shared domain package.
 type LoginPageData struct {
-	PageTitle              string
-	Version                string
-	AlternativeFrontendURL string
+	PageTitle string
+	Version   string
+	Apps      []webserver.FrontendApp
 }
 
 // AccountPageData is the template model for the authenticated account screen.

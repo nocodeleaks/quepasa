@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	api "github.com/nocodeleaks/quepasa/api"
-	viewmodel "github.com/nocodeleaks/quepasa/form/viewmodel"
+	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -41,7 +41,7 @@ func controllerHttpGet(w http.ResponseWriter, r *http.Request) {
 }
 
 // Renders route POST "/bot/{token}/send"
-// Vindo do formulário de testes
+// Coming from the test form
 func controllerHttpPost(w http.ResponseWriter, r *http.Request) {
 	data := viewmodel.SendPageData{PageTitle: "Send - Quepasa"}
 

@@ -19,7 +19,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{phones=[]string}	true	"Phone numbers to check"
-//	@Success		200		{object}	models.QpIsOnWhatsappResponse
+//	@Success		200		{object}	api.IsOnWhatsAppResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/isonwhatsapp [post]

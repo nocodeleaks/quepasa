@@ -18,8 +18,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{chatId=string,text=string}	true	"Spam message request"
-//	@Success		200		{object}	models.QpSendResponse
-//	@Failure		423		{object}	models.QpSendResponse	"No server available"
+//	@Success		200		{object}	api.SendResponse
+//	@Failure		423		{object}	api.SendResponse	"No server available"
 //	@Security		ApiKeyAuth
 //	@Router			/spam [post]
 func Spam(w http.ResponseWriter, r *http.Request) {

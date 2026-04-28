@@ -27,7 +27,7 @@ import (
 //	@Param			chatid		query		string	false	"Filter by chat id (contains)"
 //	@Param			messageid	query		string	false	"Filter by message id (contains)"
 //	@Param			trackid		query		string	false	"Filter by track id (contains)"
-//	@Success		200			{object}	models.QpReceiveResponse
+//	@Success		200			{object}	api.ReceiveResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/receive [get]

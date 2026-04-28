@@ -33,7 +33,7 @@ func FormReceiveController(w http.ResponseWriter, r *http.Request) {
 		// Evitando tentativa de download de anexos sem o bot estar devidamente sincronizado
 		status := server.GetStatus()
 		if status != whatsapp.Ready {
-			data.ErrorMessage = fmt.Sprintf("server (%s) not ready yet ! current status: %s; %s", server.Wid, status.String(), data.ErrorMessage)
+			data.ErrorMessage = fmt.Sprintf("server (%s) not ready yet ! current status: %s; %s", server.Wid.String, status.String(), data.ErrorMessage)
 		}
 
 		timestamp, err := api.GetTimestamp(r)

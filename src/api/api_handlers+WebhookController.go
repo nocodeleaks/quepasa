@@ -20,7 +20,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{url=string,bearer_token=string,method=string,failure_url=string,failure_bearer_token=string,failure_method=string}	false	"Webhook config (for POST/DELETE)"
-//	@Success		200		{object}	models.QpWebhookResponse
+//	@Success		200		{object}	api.WebhookResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/webhook [get]

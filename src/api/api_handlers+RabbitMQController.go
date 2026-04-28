@@ -23,7 +23,7 @@ import (
 //	@Produce		json
 //	@Param			request				body		object{connection_string=string,exchange=string,routing_key=string}	false	"RabbitMQ config (for POST)"
 //	@Param			connection_string	query		string																false	"Connection string (for DELETE)"
-//	@Success		200					{object}	models.QpRabbitMQResponse
+//	@Success		200					{object}	api.RabbitMQResponse
 //	@Failure		400					{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/rabbitmq [get]

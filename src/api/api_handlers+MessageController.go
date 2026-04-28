@@ -21,7 +21,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			messageid	path		string	true	"Message ID"
-//	@Success		200			{object}	models.QpMessageResponse
+//	@Success		200			{object}	api.MessageResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/message/{messageid} [get]
@@ -70,7 +70,7 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			messageid	path		string	true	"Message ID"
-//	@Success		200			{object}	models.QpMessageResponse
+//	@Success		200			{object}	api.MessageResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/message/{messageid} [delete]

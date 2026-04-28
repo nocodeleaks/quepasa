@@ -38,8 +38,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string}	false	"Request body"
-//	@Success		200		{object}	models.QpSendResponse
-//	@Failure		400		{object}	models.QpSendResponse
+//	@Success		200		{object}	api.SendResponse
+//	@Failure		400		{object}	api.SendResponse
 //	@Security		ApiKeyAuth
 //	@Router			/senddocument [post]
 func SendDocument(w http.ResponseWriter, r *http.Request) {

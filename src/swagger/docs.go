@@ -126,6 +126,179 @@ const docTemplate = `{
                 }
             }
         },
+        "/chat/labels": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List, apply or remove labels from a specific conversation identified by chatid",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage labels on one conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Conversation chat id",
+                        "name": "chatid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Conversation label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "chatid": {
+                                    "type": "string"
+                                },
+                                "labelid": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List, apply or remove labels from a specific conversation identified by chatid",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage labels on one conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Conversation chat id",
+                        "name": "chatid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Conversation label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "chatid": {
+                                    "type": "string"
+                                },
+                                "labelid": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List, apply or remove labels from a specific conversation identified by chatid",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage labels on one conversation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Conversation chat id",
+                        "name": "chatid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Conversation label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "chatid": {
+                                    "type": "string"
+                                },
+                                "labelid": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/chat/markread": {
             "post": {
                 "security": [
@@ -354,7 +527,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpContactsResponse"
+                            "$ref": "#/definitions/api.ContactsResponse"
                         }
                     },
                     "400": {
@@ -388,7 +561,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpContactsResponse"
+                            "$ref": "#/definitions/api.ContactsResponse"
                         }
                     },
                     "400": {
@@ -582,7 +755,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSingleGroupResponse"
+                            "$ref": "#/definitions/api.SingleGroupResponse"
                         }
                     },
                     "400": {
@@ -635,7 +808,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSingleGroupResponse"
+                            "$ref": "#/definitions/api.SingleGroupResponse"
                         }
                     },
                     "400": {
@@ -678,7 +851,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSingleGroupResponse"
+                            "$ref": "#/definitions/api.SingleGroupResponse"
                         }
                     },
                     "400": {
@@ -712,7 +885,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpGroupsResponse"
+                            "$ref": "#/definitions/api.GroupsResponse"
                         }
                     },
                     "400": {
@@ -815,7 +988,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSingleGroupResponse"
+                            "$ref": "#/definitions/api.SingleGroupResponse"
                         }
                     },
                     "400": {
@@ -874,7 +1047,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpParticipantResponse"
+                            "$ref": "#/definitions/api.ParticipantResponse"
                         }
                     },
                     "400": {
@@ -927,7 +1100,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSingleGroupResponse"
+                            "$ref": "#/definitions/api.SingleGroupResponse"
                         }
                     },
                     "400": {
@@ -992,7 +1165,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpRequestResponse"
+                            "$ref": "#/definitions/api.RequestResponse"
                         }
                     },
                     "400": {
@@ -1055,7 +1228,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpRequestResponse"
+                            "$ref": "#/definitions/api.RequestResponse"
                         }
                     },
                     "400": {
@@ -1293,7 +1466,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInviteResponse"
+                            "$ref": "#/definitions/api.InviteResponse"
                         }
                     },
                     "400": {
@@ -1341,7 +1514,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpInviteResponse"
+                            "$ref": "#/definitions/api.InviteResponse"
                         }
                     },
                     "400": {
@@ -1394,7 +1567,233 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpIsOnWhatsappResponse"
+                            "$ref": "#/definitions/api.IsOnWhatsAppResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/labels": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create, list, update and delete reusable conversation labels for the current bot owner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage conversation labels",
+                "parameters": [
+                    {
+                        "description": "Label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "active": {
+                                    "type": "boolean"
+                                },
+                                "color": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create, list, update and delete reusable conversation labels for the current bot owner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage conversation labels",
+                "parameters": [
+                    {
+                        "description": "Label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "active": {
+                                    "type": "boolean"
+                                },
+                                "color": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create, list, update and delete reusable conversation labels for the current bot owner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage conversation labels",
+                "parameters": [
+                    {
+                        "description": "Label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "active": {
+                                    "type": "boolean"
+                                },
+                                "color": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create, list, update and delete reusable conversation labels for the current bot owner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Manage conversation labels",
+                "parameters": [
+                    {
+                        "description": "Label payload",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "active": {
+                                    "type": "boolean"
+                                },
+                                "color": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ConversationLabelsResponse"
                         }
                     },
                     "400": {
@@ -1437,7 +1836,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpMessageResponse"
+                            "$ref": "#/definitions/api.MessageResponse"
                         }
                     },
                     "400": {
@@ -1478,7 +1877,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpMessageResponse"
+                            "$ref": "#/definitions/api.MessageResponse"
                         }
                     },
                     "400": {
@@ -1585,7 +1984,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpRabbitMQResponse"
+                            "$ref": "#/definitions/api.RabbitMQResponse"
                         }
                     },
                     "400": {
@@ -1644,7 +2043,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpRabbitMQResponse"
+                            "$ref": "#/definitions/api.RabbitMQResponse"
                         }
                     },
                     "400": {
@@ -1703,7 +2102,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpRabbitMQResponse"
+                            "$ref": "#/definitions/api.RabbitMQResponse"
                         }
                     },
                     "400": {
@@ -1770,7 +2169,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves pending messages from WhatsApp with optional timestamp filtering and exceptions error filtering",
+                "description": "Retrieves pending messages from WhatsApp with optional cache filters",
                 "consumes": [
                     "application/json"
                 ],
@@ -1793,13 +2192,61 @@ const docTemplate = `{
                         "description": "Filter by exceptions error status: 'true' for messages with exceptions errors, 'false' for messages without exceptions errors, omit for all messages",
                         "name": "exceptions",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message type (supports comma-separated list)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category: sent, received, sync, unhandled, events",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text in id, chat, text, trackid, participant and exceptions",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromme boolean: true or false",
+                        "name": "fromme",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by fromhistory boolean: true or false",
+                        "name": "fromhistory",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by chat id (contains)",
+                        "name": "chatid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by message id (contains)",
+                        "name": "messageid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by track id (contains)",
+                        "name": "trackid",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpReceiveResponse"
+                            "$ref": "#/definitions/api.ReceiveResponse"
                         }
                     },
                     "400": {
@@ -1853,6 +2300,156 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/restore": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Lists orphan whatsmeow device sessions and unlinked QuePasa servers without modifying data",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Restore"
+                ],
+                "summary": "Diagnose orphan WhatsApp sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.RestoreReport"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/restore/auto": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Links one orphan whatsmeow session to one unlinked QuePasa server when the mapping is unambiguous",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Restore"
+                ],
+                "summary": "Automatically restore one unambiguous orphan session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.RestoreReport"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/restore/manual": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Links a specific QuePasa token to a specific whatsmeow JID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Restore"
+                ],
+                "summary": "Manually restore one session link",
+                "parameters": [
+                    {
+                        "description": "Manual restore payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "jid": {
+                                    "type": "string"
+                                },
+                                "token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "jid": {
+                                    "type": "string"
+                                },
+                                "result": {
+                                    "type": "string"
+                                },
+                                "token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.QpResponse"
                         }
@@ -1993,13 +2590,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
+                            "$ref": "#/definitions/api.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
+                            "$ref": "#/definitions/api.SendResponse"
                         }
                     }
                 }
@@ -2054,13 +2651,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
+                            "$ref": "#/definitions/api.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
+                            "$ref": "#/definitions/api.SendResponse"
                         }
                     }
                 }
@@ -2107,13 +2704,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
+                            "$ref": "#/definitions/api.SendResponse"
                         }
                     },
                     "423": {
                         "description": "No server available",
                         "schema": {
-                            "$ref": "#/definitions/models.QpSendResponse"
+                            "$ref": "#/definitions/api.SendResponse"
                         }
                     }
                 }
@@ -2264,7 +2861,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpWebhookResponse"
+                            "$ref": "#/definitions/api.WebhookResponse"
                         }
                     },
                     "400": {
@@ -2326,7 +2923,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpWebhookResponse"
+                            "$ref": "#/definitions/api.WebhookResponse"
                         }
                     },
                     "400": {
@@ -2388,7 +2985,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.QpWebhookResponse"
+                            "$ref": "#/definitions/api.WebhookResponse"
                         }
                     },
                     "400": {
@@ -2445,6 +3042,66 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ContactsResponse": {
+            "type": "object",
+            "properties": {
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/whatsapp.WhatsappChat"
+                    }
+                },
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.ConversationLabelsResponse": {
+            "type": "object",
+            "properties": {
+                "affected": {
+                    "type": "integer"
+                },
+                "chatid": {
+                    "type": "string"
+                },
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "label": {
+                    "$ref": "#/definitions/models.QpConversationLabel"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.QpConversationLabel"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
         "api.EnvironmentResponse": {
             "type": "object",
             "properties": {
@@ -2469,6 +3126,31 @@ const docTemplate = `{
                 }
             }
         },
+        "api.GroupsResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {}
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.HealthResponse": {
             "type": "object",
             "properties": {
@@ -2479,11 +3161,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "diagnostic": {
+                    "$ref": "#/definitions/models.QpConnectionDiagnostic"
+                },
                 "items": {
                     "description": "-- multiple items fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.QpHealthResponseItem"
+                        "$ref": "#/definitions/api.HealthResponseItem"
                     }
                 },
                 "state": {
@@ -2507,6 +3192,39 @@ const docTemplate = `{
                 },
                 "wid": {
                     "description": "-- single item fields",
+                    "type": "string"
+                }
+            }
+        },
+        "api.HealthResponseItem": {
+            "type": "object",
+            "properties": {
+                "diagnostic": {
+                    "description": "Optional connection diagnostic details for the server.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.QpConnectionDiagnostic"
+                        }
+                    ]
+                },
+                "state": {
+                    "description": "Current connection state.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
+                        }
+                    ]
+                },
+                "state_code": {
+                    "description": "Numeric representation of the connection state.",
+                    "type": "integer"
+                },
+                "token": {
+                    "description": "Public token.",
+                    "type": "string"
+                },
+                "wid": {
+                    "description": "WhatsApp session id.",
                     "type": "string"
                 }
             }
@@ -2587,6 +3305,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "diagnostic": {
+                    "$ref": "#/definitions/models.QpConnectionDiagnostic"
+                },
                 "server": {
                     "$ref": "#/definitions/models.QpWhatsappServer"
                 },
@@ -2598,6 +3319,54 @@ const docTemplate = `{
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "api.InviteResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.IsOnWhatsAppResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "registered": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -2622,6 +3391,203 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "$ref": "#/definitions/whatsapp.WhatsappMessage"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.ParticipantResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {}
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.RabbitMQResponse": {
+            "type": "object",
+            "properties": {
+                "affected": {
+                    "type": "integer"
+                },
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rabbitmq": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.QpRabbitMQConfig"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.ReceiveResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/whatsapp.WhatsappMessage"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "server": {
+                    "$ref": "#/definitions/models.QpServer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.RequestResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "requests": {
+                    "type": "array",
+                    "items": {}
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.SendResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "$ref": "#/definitions/api.SendResponseMessage"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.SendResponseMessage": {
+            "type": "object",
+            "properties": {
+                "chatId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "trackId": {
+                    "type": "string"
+                },
+                "wid": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SingleGroupResponse": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "groupinfo": {},
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -2661,10 +3627,41 @@ const docTemplate = `{
                 }
             }
         },
+        "api.WebhookResponse": {
+            "type": "object",
+            "properties": {
+                "affected": {
+                    "type": "integer"
+                },
+                "debug": {
+                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "webhooks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.QpWebhook"
+                    }
+                }
+            }
+        },
         "environment.APISettings": {
             "type": "object",
             "properties": {
                 "master_key": {
+                    "type": "string"
+                },
+                "password": {
+                    "description": "default password for database seeding",
                     "type": "string"
                 },
                 "prefix": {
@@ -2679,6 +3676,10 @@ const docTemplate = `{
                 },
                 "use_ssl_websocket": {
                     "type": "boolean"
+                },
+                "user": {
+                    "description": "default user for database seeding",
+                    "type": "string"
                 },
                 "webhook_timeout": {
                     "description": "webhook timeout in milliseconds",
@@ -2799,6 +3800,9 @@ const docTemplate = `{
                 "read_update": {
                     "type": "string"
                 },
+                "retry_message_store": {
+                    "type": "string"
+                },
                 "wakeup_duration": {
                     "type": "string"
                 },
@@ -2840,6 +3844,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "convert_wave_to_ogg": {
+                    "type": "boolean"
+                },
+                "force_audio_as_ptt": {
                     "type": "boolean"
                 },
                 "log_level": {
@@ -3019,33 +4026,38 @@ const docTemplate = `{
                 },
                 "whatsmeow_log_level": {
                     "type": "string"
+                },
+                "whatsmeow_use_retry_message_store": {
+                    "type": "boolean"
                 }
             }
         },
-        "models.QpContactsResponse": {
+        "models.QpConnectionDiagnostic": {
             "type": "object",
             "properties": {
-                "contacts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/whatsapp.WhatsappChat"
-                    }
-                },
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
+                "code": {
                     "type": "string"
                 },
-                "success": {
+                "disconnect_cause": {
+                    "type": "string"
+                },
+                "disconnect_details": {
+                    "type": "string"
+                },
+                "logout_reason": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "requires_reauth": {
                     "type": "boolean"
                 },
-                "total": {
-                    "type": "integer"
+                "suggested_action": {
+                    "type": "string"
                 }
             }
         },
@@ -3067,6 +4079,32 @@ const docTemplate = `{
                 "query": {
                     "description": "Search in title and phone (optional)",
                     "type": "string"
+                }
+            }
+        },
+        "models.QpConversationLabel": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },
@@ -3145,150 +4183,9 @@ const docTemplate = `{
                 }
             }
         },
-        "models.QpGroupsResponse": {
+        "models.QpMetadata": {
             "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "groups": {
-                    "type": "array",
-                    "items": {}
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.QpHealthResponseItem": {
-            "type": "object",
-            "properties": {
-                "state": {
-                    "description": "Calculated current State of the connection",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/whatsapp.WhatsappConnectionState"
-                        }
-                    ]
-                },
-                "state_code": {
-                    "description": "State code as integer",
-                    "type": "integer"
-                },
-                "token": {
-                    "description": "Public token",
-                    "type": "string"
-                },
-                "wid": {
-                    "description": "Whatsapp session id",
-                    "type": "string"
-                }
-            }
-        },
-        "models.QpInviteResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "url": {
-                    "description": "invite public link",
-                    "type": "string"
-                }
-            }
-        },
-        "models.QpIsOnWhatsappResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "registered": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.QpMessageResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "message": {
-                    "$ref": "#/definitions/whatsapp.WhatsappMessage"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "models.QpParticipantResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {}
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
+            "additionalProperties": {}
         },
         "models.QpRabbitMQConfig": {
             "type": "object",
@@ -3373,90 +4270,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.QpRabbitMQResponse": {
-            "type": "object",
-            "properties": {
-                "affected": {
-                    "description": "items affected",
-                    "type": "integer"
-                },
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "rabbitmq": {
-                    "description": "current rabbitmq items",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.QpRabbitMQConfig"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "models.QpReceiveResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/whatsapp.WhatsappMessage"
-                    }
-                },
-                "server": {
-                    "$ref": "#/definitions/models.QpServer"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.QpRequestResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "requests": {
-                    "type": "array",
-                    "items": {}
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
         "models.QpResponse": {
             "type": "object",
             "properties": {
@@ -3472,44 +4285,6 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
-                }
-            }
-        },
-        "models.QpSendResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "message": {
-                    "$ref": "#/definitions/models.QpSendResponseMessage"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "models.QpSendResponseMessage": {
-            "type": "object",
-            "properties": {
-                "chatId": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "trackId": {
-                    "type": "string"
-                },
-                "wid": {
-                    "type": "string"
                 }
             }
         },
@@ -3542,6 +4317,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
                         }
                     ]
+                },
+                "metadata": {
+                    "$ref": "#/definitions/models.QpMetadata"
                 },
                 "readreceipts": {
                     "description": "should emit read receipts",
@@ -3578,28 +4356,6 @@ const docTemplate = `{
                     "description": "Whatsapp session id",
                     "type": "string",
                     "maxLength": 255
-                }
-            }
-        },
-        "models.QpSingleGroupResponse": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "groupinfo": {},
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -3695,35 +4451,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.QpWebhookResponse": {
-            "type": "object",
-            "properties": {
-                "affected": {
-                    "description": "items affected",
-                    "type": "integer"
-                },
-                "debug": {
-                    "description": "Extra interface{} ` + "`" + `json:\"extra,omitempty\"` + "`" + `",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
-                },
-                "webhooks": {
-                    "description": "current items",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.QpWebhook"
-                    }
-                }
-            }
-        },
         "models.QpWhatsappServer": {
             "type": "object",
             "properties": {
@@ -3759,6 +4486,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
                         }
                     ]
+                },
+                "metadata": {
+                    "$ref": "#/definitions/models.QpMetadata"
                 },
                 "readreceipts": {
                     "description": "should emit read receipts",
@@ -3802,6 +4532,87 @@ const docTemplate = `{
                     "description": "Whatsapp session id",
                     "type": "string",
                     "maxLength": 255
+                }
+            }
+        },
+        "models.RestoreError": {
+            "type": "object",
+            "properties": {
+                "jid": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RestoreReport": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "description": "Errors contains token→error pairs for any linking attempt that failed.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.RestoreError"
+                    }
+                },
+                "orphan_devices": {
+                    "description": "OrphanDevices holds whatsmeow device sessions that have no matching\nQuePasa server with a non-empty wid pointing to them.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.WhatsmeowOrphanDevice"
+                    }
+                },
+                "restored": {
+                    "description": "Restored contains the token→JID pairs that were successfully linked\nduring an actual restore (empty during a dry-run).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.RestoreResult"
+                    }
+                },
+                "unlinked_servers": {
+                    "description": "UnlinkedServers holds QuePasa server tokens whose wid field is empty,\nmeaning the session has never been paired or was cleared.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.RestoreResult": {
+            "type": "object",
+            "properties": {
+                "jid": {
+                    "description": "JID is the whatsmeow device JID that was associated with the token.",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "Token is the QuePasa server token that was linked.",
+                    "type": "string"
+                }
+            }
+        },
+        "models.WhatsmeowOrphanDevice": {
+            "type": "object",
+            "properties": {
+                "jid": {
+                    "description": "JID is the full WhatsApp identifier of the device session,\ne.g. \"553176011595:18@s.whatsapp.net\".",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "Phone is the international phone number extracted from the JID,\ne.g. \"553176011595\". Useful for matching against existing tokens.",
+                    "type": "string"
+                },
+                "platform": {
+                    "description": "Platform is the device platform string reported by WhatsApp,\ne.g. \"android\", \"ios\". May be empty for desktop sessions.",
+                    "type": "string"
+                },
+                "push_name": {
+                    "description": "PushName is the display name the user set on WhatsApp (may be empty).",
+                    "type": "string"
                 }
             }
         },
@@ -3889,6 +4700,12 @@ const docTemplate = `{
                     "description": "(Identifier) whatsapp contact id, based on phone number or timestamp",
                     "type": "string"
                 },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/whatsapp.WhatsappChatLabel"
+                    }
+                },
                 "lid": {
                     "description": "(Local Identifier) new whatsapp unique contact id",
                     "type": "string"
@@ -3898,6 +4715,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "whatsapp.WhatsappChatLabel": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }

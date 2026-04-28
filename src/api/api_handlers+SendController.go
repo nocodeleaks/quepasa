@@ -107,8 +107,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
-//	@Success		200		{object}	models.QpSendResponse
-//	@Failure		400		{object}	models.QpSendResponse
+//	@Success		200		{object}	api.SendResponse
+//	@Failure		400		{object}	api.SendResponse
 //	@Security		ApiKeyAuth
 //	@Router			/send [post]
 func SendAny(w http.ResponseWriter, r *http.Request) {

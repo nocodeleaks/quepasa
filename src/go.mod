@@ -6,6 +6,8 @@ replace github.com/nocodeleaks/quepasa/media => ./media
 
 replace github.com/nocodeleaks/quepasa/api => ./api
 
+replace github.com/nocodeleaks/quepasa/cache => ./cache
+
 replace github.com/nocodeleaks/quepasa/library => ./library
 
 replace github.com/nocodeleaks/quepasa/metrics => ./metrics
@@ -39,6 +41,7 @@ go 1.25.0
 require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/cable v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/apps/form v0.0.0-00010101000000-000000000000

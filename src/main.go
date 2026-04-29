@@ -9,6 +9,7 @@ import (
 	_ "github.com/nocodeleaks/quepasa/mcp"
 	_ "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
+	_ "github.com/nocodeleaks/quepasa/rabbitmq" // Initialize RabbitMQ client
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
@@ -43,6 +44,12 @@ func main() {
 	err := models.MigrateToLatest(logentry)
 	if err != nil {
 		logentry.Fatalf("database migration error: %s", err.Error())
+	}
+
+	// Initialize centralized cache service (must be before starting services)
+	err = models.InitializeCacheService()
+	if err != nil {
+		logentry.Fatalf("cache service initialization error: %s", err.Error())
 	}
 
 	// should became before whatsmeow start

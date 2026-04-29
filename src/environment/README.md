@@ -115,6 +115,17 @@ Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `R
 - **`ACCOUNTSETUP`** - Enable account creation (default: `true`)
 - **`TESTING`** - Testing mode (default: `false`)
 
+## 🗃️ Cache Backend Configuration
+
+- **`CACHE_BACKEND`** - Message cache backend implementation: `memory`, `disk`, or `redis` (default: `memory`)
+- **`CACHE_DISK_PATH`** - Base path for the disk cache backend (default fallback: `.dist/cache/messages`)
+- **`CACHE_INIT_FALLBACK`** - Fallback to local memory if configured backend initialization fails (default: `true`)
+
+The message cache now uses a modular backend selected by environment:
+- `memory` keeps the current in-process behavior
+- `disk` persists cached messages on the local filesystem
+- `redis` stores cached messages in Redis for distributed/shared runtimes
+
 ## 📋 Form/Web Interface Configuration
 
 - **`FORM`** - Enable/disable web form interface (default: `true`)
@@ -131,7 +142,33 @@ Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `R
 
 - **`RABBITMQ_QUEUE`** - RabbitMQ queue name
 - **`RABBITMQ_CONNECTIONSTRING`** - RabbitMQ connection string
-- **`RABBITMQ_CACHELENGTH`** - RabbitMQ cache length (default: `0`)
+- **`RABBITMQ_CACHELENGTH`** - RabbitMQ retry cache length (default: `0`)
+- **`RABBITMQ_CACHE_BACKEND`** - Retry cache backend for reconnection buffering: `memory`, `disk`, or `redis` (default: `memory`)
+- **`RABBITMQ_CACHE_DISK_PATH`** - Base path for the disk retry backend (default fallback: `.dist/cache/rabbitmq`)
+- **`RABBITMQ_CACHE_QUEUE_KEY`** - Queue namespace/key used by the Redis retry backend (default: `rabbitmq_retry`)
+
+The RabbitMQ reconnect buffer now uses the same modular cache approach:
+- `memory` keeps retry items in-process
+- `disk` persists retry items locally on disk
+- `redis` stores retry items in Redis for shared/distributed runtimes
+
+## 🔴 Redis Configuration
+
+- **`REDIS_HOST`** - Redis hostname or IP address
+- **`REDIS_PORT`** - Redis TCP port (default: `6379`)
+- **`REDIS_USERNAME`** - Redis ACL username
+- **`REDIS_PASSWORD`** - Redis ACL password
+- **`REDIS_DATABASE`** - Redis database index (default: `0`)
+- **`REDIS_KEY_PREFIX`** - Key namespace prefix used by QuePasa (default: `quepasa`)
+- **`REDIS_POOL_SIZE`** - Redis client pool size (default: `10`)
+- **`REDIS_MAX_RETRIES`** - Redis command retry limit (default: `3`)
+- **`REDIS_DIAL_TIMEOUT_SECONDS`** - Redis dial timeout in seconds (default: `5`)
+- **`REDIS_READ_TIMEOUT_SECONDS`** - Redis read timeout in seconds (default: `3`)
+- **`REDIS_WRITE_TIMEOUT_SECONDS`** - Redis write timeout in seconds (default: `3`)
+
+Enable distributed cache by combining:
+- `CACHE_BACKEND=redis`
+- `REDIS_HOST=<your redis host>`
 
 ## 📖 Swagger Configuration
 

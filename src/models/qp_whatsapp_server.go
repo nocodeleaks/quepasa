@@ -140,6 +140,9 @@ func (server *QpWhatsappServer) HandlerEnsure() {
 		// logging
 		handler.LogEntry = logentry
 
+		// Inject cache backend from centralized cache service
+		InjectCacheBackendIntoHandler(handler)
+
 		// updating
 		server.Handler = handler
 	}

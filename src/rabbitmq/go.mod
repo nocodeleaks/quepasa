@@ -2,6 +2,8 @@ module github.com/nocodeleaks/quepasa/rabbitmq
 
 replace github.com/nocodeleaks/quepasa/api => ../api
 
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
 replace github.com/nocodeleaks/quepasa/environment => ../environment
 
 replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
@@ -31,6 +33,7 @@ replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 go 1.25.0
 
 require (
+	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/rabbitmq/amqp091-go v1.10.0

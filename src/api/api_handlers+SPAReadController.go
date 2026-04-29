@@ -159,7 +159,7 @@ func SPAAccountController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAMasterKeyController returns the configured master key for authenticated users.
+// SPAMasterKeyController keeps the legacy SPA route but never returns the master key secret.
 func SPAMasterKeyController(w http.ResponseWriter, r *http.Request) {
 	_, err := GetSPAUser(r)
 	if err != nil {
@@ -167,13 +167,7 @@ func SPAMasterKeyController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	masterKey := strings.TrimSpace(models.ENV.MasterKey())
-	if masterKey == "" {
-		RespondErrorCode(w, errors.New("master key not configured"), http.StatusNotFound)
-		return
-	}
-
-	RespondSuccess(w, map[string]interface{}{"masterKey": masterKey})
+	RespondSuccess(w, buildMasterKeyStatusResponse(strings.TrimSpace(models.ENV.MasterKey())))
 }
 
 // SPAServerInfoController returns server information for a token owned by the user.

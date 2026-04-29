@@ -499,7 +499,7 @@ export default defineComponent({
       contactSearchLoading.value = true
       contactSearchError.value = ''
       try {
-        const res = await api.get(`/spa/server/${token}/contacts`)
+        const res = await api.get('/api/contacts', { params: { token } })
         const query = contactSearchQuery.value.toLowerCase()
         const contacts = res.data?.contacts || []
         contactSearchResults.value = contacts
@@ -655,7 +655,7 @@ export default defineComponent({
             chatId: recipient.value,
             text: text.value
           }
-          await api.post(`/spa/server/${token}/send`, payload)
+          await api.post('/api/messages', { token, ...payload })
         } else {
           // For media types, use the bot API
           const hasFile = selectedFile.value || audioBlob.value

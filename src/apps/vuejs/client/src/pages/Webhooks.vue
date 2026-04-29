@@ -419,7 +419,7 @@ export default defineComponent({
         }
 
         hasToken.value = true
-        const res = await api.get(`/spa/server/${currentToken.value}/webhooks`)
+        const res = await api.get('/api/dispatches/webhooks', { params: { token: currentToken.value } })
         data.value = {
           server: { token: currentToken.value },
           webhooks: res.data?.webhooks || [],
@@ -432,7 +432,7 @@ export default defineComponent({
     }
 
     async function upsertWebhook(payload: ReturnType<typeof buildWebhookPayload>) {
-      await api.post(`/spa/server/${currentToken.value}/webhooks`, payload)
+      await api.post('/api/dispatches/webhooks', { token: currentToken.value, ...payload })
     }
 
     async function createWebhook() {
@@ -483,8 +483,8 @@ export default defineComponent({
       if (!currentToken.value) return
 
       try {
-        await api.delete(`/spa/server/${currentToken.value}/webhooks`, {
-          data: { url: confirmUrl.value },
+        await api.delete('/api/dispatches/webhooks', {
+          data: { token: currentToken.value, url: confirmUrl.value },
         })
 
         showConfirm.value = false
@@ -535,8 +535,8 @@ export default defineComponent({
       saving.value = true
       try {
         if (editData.originalUrl && editData.originalUrl !== editData.url) {
-          await api.delete(`/spa/server/${currentToken.value}/webhooks`, {
-            data: { url: editData.originalUrl },
+          await api.delete('/api/dispatches/webhooks', {
+            data: { token: currentToken.value, url: editData.originalUrl },
           })
         }
 

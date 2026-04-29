@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <div v-if="hasMasterKey" class="info-card">
+      <div v-if="masterKeyConfigured" class="info-card">
         <div class="card-header">
           <i class="fa fa-key"></i>
           <h2>API Master Key</h2>
@@ -101,19 +101,10 @@
               <span class="badge badge-success">Configurada</span>
             </span>
           </div>
-          <div v-if="masterKey" class="info-row">
-            <span class="info-label">Chave:</span>
-            <code class="master-key" @click="copyMasterKey">
-              {{ showMasterKey ? masterKey : '••••••••••••••••' }}
-              <button class="toggle-btn" @click.stop="showMasterKey = !showMasterKey">
-                <i :class="showMasterKey ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
-              </button>
-            </code>
+          <div class="info-row">
+            <span class="info-label">Exibição:</span>
+            <span class="info-value">O segredo não é exposto pela API.</span>
           </div>
-          <button v-if="!masterKey" class="btn-secondary" @click="loadMasterKey">
-            <i class="fa fa-download"></i>
-            Carregar Master Key
-          </button>
         </div>
       </div>
 
@@ -138,7 +129,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from 'vue'
 import api from '@/services/api'
-import { pushToast } from '@/services/toast'
 
 export default defineComponent({
   setup() {
@@ -148,50 +138,29 @@ export default defineComponent({
     const loading = ref(true)
     const branding = ref<any>(null)
     const serverCount = ref(0)
-    const hasMasterKey = ref(false)
-    const masterKey = ref('')
-    const showMasterKey = ref(false)
+    const masterKeyConfigured = ref(false)
 
     async function load() {
       try {
         loading.value = true
         error.value = ''
 
-        const [sessionRes, accountRes, configRes] = await Promise.all([
-          api.get('/spa/session'),
-          api.get('/spa/account'),
-          api.get('/spa/login/config')
+        const [sessionRes, accountRes, configRes, masterKeyRes] = await Promise.all([
+          api.get('/api/auth/session'),
+          api.get('/api/auth/account'),
+          api.get('/api/auth/config'),
+          api.get('/api/auth/masterkey/status')
         ])
 
         user.value = accountRes.data?.user || sessionRes.data?.user
         version.value = accountRes.data?.version || sessionRes.data?.version || ''
         branding.value = configRes.data?.branding || null
         serverCount.value = accountRes.data?.serverCount || 0
-        hasMasterKey.value = accountRes.data?.hasMasterKey || false
+        masterKeyConfigured.value = masterKeyRes.data?.configured === true
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao carregar conta'
       } finally {
         loading.value = false
-      }
-    }
-
-    async function loadMasterKey() {
-      try {
-        const res = await api.get('/spa/account/masterkey')
-        masterKey.value = res.data?.masterKey || ''
-        showMasterKey.value = true
-      } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao carregar master key', 'error')
-      }
-    }
-
-    async function copyMasterKey() {
-      if (!masterKey.value) return
-      try {
-        await navigator.clipboard.writeText(masterKey.value)
-        pushToast('Master Key copiada!', 'success')
-      } catch {
-        pushToast('Erro ao copiar', 'error')
       }
     }
 
@@ -205,8 +174,8 @@ export default defineComponent({
 
     return {
       user, version, error, loading, branding, serverCount,
-      hasMasterKey, masterKey, showMasterKey,
-      reload, loadMasterKey, copyMasterKey
+      masterKeyConfigured,
+      reload
     }
   }
 })

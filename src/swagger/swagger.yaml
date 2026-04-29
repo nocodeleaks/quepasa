@@ -75,6 +75,8 @@ definitions:
         items:
           type: string
         type: array
+      masterKeyConfigured:
+        type: boolean
       preview:
         $ref: '#/definitions/environment.EnvironmentSettingsPreview'
       settings:
@@ -452,6 +454,15 @@ definitions:
         description: webhook timeout in milliseconds
         type: integer
     type: object
+  environment.CacheSettings:
+    properties:
+      backend:
+        type: string
+      disk_path:
+        type: string
+      init_fallback:
+        type: boolean
+    type: object
   environment.DashboardSettings:
     properties:
       enabled:
@@ -480,6 +491,8 @@ definitions:
     properties:
       api:
         $ref: '#/definitions/environment.APISettings'
+      cache:
+        $ref: '#/definitions/environment.CacheSettings'
       database:
         allOf:
         - $ref: '#/definitions/environment.DatabaseSettings'
@@ -495,6 +508,8 @@ definitions:
         $ref: '#/definitions/environment.MetricsSettings'
       rabbitMQ:
         $ref: '#/definitions/environment.RabbitMQSettings'
+      redis:
+        $ref: '#/definitions/environment.RedisSettings'
       sipproxy:
         $ref: '#/definitions/environment.SIPProxySettings'
       swagger:
@@ -587,12 +602,43 @@ definitions:
     type: object
   environment.RabbitMQSettings:
     properties:
+      cache_backend:
+        type: string
+      cache_disk_path:
+        type: string
       cache_length:
         type: integer
+      cache_queue_key:
+        type: string
       connection_string:
         type: string
       queue:
         type: string
+    type: object
+  environment.RedisSettings:
+    properties:
+      database:
+        type: integer
+      dial_timeout_seconds:
+        type: integer
+      host:
+        type: string
+      key_prefix:
+        type: string
+      max_retries:
+        type: integer
+      password:
+        type: string
+      pool_size:
+        type: integer
+      port:
+        type: integer
+      read_timeout_seconds:
+        type: integer
+      username:
+        type: string
+      write_timeout_seconds:
+        type: integer
     type: object
   environment.SIPProxySettings:
     properties:
@@ -748,7 +794,7 @@ definitions:
       extra:
         description: extra info to append on payload
       failure:
-        description: first failure timestamp
+        description: first failure timestamp in the current failure streak
         type: string
       forwardinternal:
         description: forward internal msg from api

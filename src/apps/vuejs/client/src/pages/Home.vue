@@ -651,7 +651,7 @@ export default defineComponent({
       try {
         loading.value = true
         error.value = ''
-        const res = await api.get('/spa/servers')
+        const res = await api.get('/api/sessions')
         servers.value = res.data.servers || []
         // Update allServersCount only on full load (not search)
         allServersCount.value = servers.value.length
@@ -671,7 +671,7 @@ export default defineComponent({
         loading.value = true
         error.value = ''
         const body = { query: query, page: 1, limit: 50 }
-        const res = await api.post('/spa/servers/search', body)
+        const res = await api.post('/api/sessions/search', body)
         // Replace servers with response
         servers.value = res.data.servers || []
       } catch (err: any) {
@@ -775,7 +775,7 @@ export default defineComponent({
       try {
         toggling.value = srv.token
         const endpoint = isConnected(srv) ? 'disable' : 'enable'
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/${endpoint}`, {})
+        await api.post(`/api/session/${endpoint}`, { token: srv.token })
         await load()
         pushToast('Servidor atualizado', 'success')
       } catch (err: any) {
@@ -789,7 +789,7 @@ export default defineComponent({
       if (!confirm('Deseja realmente desconectar este servidor?')) return
       try {
         toggling.value = srv.token
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/disable`, {})
+        await api.post('/api/session/disable', { token: srv.token })
         await load()
         pushToast('Servidor desconectado', 'success')
       } catch (err: any) {
@@ -802,7 +802,7 @@ export default defineComponent({
     async function toggleDebug(srv: any) {
       try {
         toggling.value = srv.token
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/debug/toggle`, {})
+        await api.post('/api/session/debug', { token: srv.token })
         await load()
         pushToast('Debug atualizado', 'success')
       } catch (err: any) {
@@ -815,7 +815,7 @@ export default defineComponent({
     async function toggleGroups(srv: any) {
       try {
         toggling.value = srv.token
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/option/groups/toggle`, {})
+        await api.post('/api/session/option', { token: srv.token, option: 'groups' })
         await load()
         pushToast('Grupos atualizado', 'success')
       } catch (err: any) {
@@ -828,7 +828,7 @@ export default defineComponent({
     async function toggleBroadcasts(srv: any) {
       try {
         toggling.value = srv.token
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/option/broadcasts/toggle`, {})
+        await api.post('/api/session/option', { token: srv.token, option: 'broadcasts' })
         await load()
         pushToast('Broadcasts atualizado', 'success')
       } catch (err: any) {
@@ -841,7 +841,7 @@ export default defineComponent({
     async function toggleReadReceipts(srv: any) {
       try {
         toggling.value = srv.token
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/option/readreceipts/toggle`, {})
+        await api.post('/api/session/option', { token: srv.token, option: 'readreceipts' })
         await load()
         pushToast('Confirmações de leitura atualizado', 'success')
       } catch (err: any) {
@@ -854,7 +854,7 @@ export default defineComponent({
     async function toggleCalls(srv: any) {
       try {
         toggling.value = srv.token
-        await api.post(`/spa/server/${encodeURIComponent(srv.token)}/option/calls/toggle`, {})
+        await api.post('/api/session/option', { token: srv.token, option: 'calls' })
         await load()
         pushToast('Ligações atualizado', 'success')
       } catch (err: any) {
@@ -868,7 +868,7 @@ export default defineComponent({
       if (!confirm('Deseja realmente REMOVER este servidor? Esta ação não pode ser desfeita.')) return
       try {
         toggling.value = srv.token
-        await api.delete(`/spa/server/${encodeURIComponent(srv.token)}`)
+        await api.delete('/api/sessions', { data: { token: srv.token } })
         await load()
         pushToast('Servidor removido', 'success')
       } catch (err: any) {
@@ -882,7 +882,7 @@ export default defineComponent({
       if (creating.value) return
       creating.value = true
       try {
-        const response = await api.post('/spa/server/create', {})
+        const response = await api.post('/api/sessions', {})
         const createdServer = response.data?.server || response.data
         if (createdServer?.token) {
           const token = createdServer.token

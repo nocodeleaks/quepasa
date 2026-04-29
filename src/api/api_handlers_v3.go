@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	legacy "github.com/nocodeleaks/quepasa/api/legacy"
 
 	api "github.com/nocodeleaks/quepasa/api/models"
 )
@@ -14,76 +15,7 @@ const APIVersion3 string = "v3"
 var ControllerPrefixV3 string = fmt.Sprintf("/%s/bot/{token}", APIVersion3)
 
 func RegisterAPIV3Controllers(r chi.Router) {
-
-	r.Get(ControllerPrefixV3, InformationControllerV3)
-
-	// SENDING MSG ----------------------------
-	// ----------------------------------------
-
-	// used to send alert msgs via url, triggers on monitor systems like zabbix
-	r.Get(ControllerPrefixV3+"/send", SendAny)
-
-	r.Post(ControllerPrefixV3+"/send", SendAny)
-	r.Post(ControllerPrefixV3+"/send/{chatid}", SendAny)
-
-	// obsolete, marked for remove (2024/10/22)
-	r.Post(ControllerPrefixV3+"/sendtext", SendAny)
-	r.Post(ControllerPrefixV3+"/sendtext/{chatid}", SendAny)
-
-	// SENDING MSG ATTACH ---------------------
-
-	// deprecated, discard/remove on next version
-	r.Post(ControllerPrefixV3+"/senddocument", SendDocument)
-
-	r.Post(ControllerPrefixV3+"/sendurl", SendAny)
-	r.Post(ControllerPrefixV3+"/sendbinary/{chatid}/{filename}/{text}", SendDocumentFromBinary)
-	r.Post(ControllerPrefixV3+"/sendbinary/{chatid}/{filename}", SendDocumentFromBinary)
-	r.Post(ControllerPrefixV3+"/sendbinary/{chatid}", SendDocumentFromBinary)
-	r.Post(ControllerPrefixV3+"/sendbinary", SendDocumentFromBinary)
-	r.Post(ControllerPrefixV3+"/sendencoded", SendAny)
-
-	// ----------------------------------------
-	// SENDING MSG ----------------------------
-
-	r.Get(ControllerPrefixV3+"/receive", ReceiveAPIHandler)
-
-	r.Get(ControllerPrefixV3+"/download/{messageid}", DownloadController)
-	r.Get(ControllerPrefixV3+"/download", DownloadController)
-
-	// PICTURE INFO | DATA --------------------
-	// ----------------------------------------
-
-	r.Post(ControllerPrefixV3+"/picinfo", PictureController)
-	r.Get(ControllerPrefixV3+"/picinfo/{chatid}/{pictureid}", PictureController)
-	r.Get(ControllerPrefixV3+"/picinfo/{chatid}", PictureController)
-	r.Get(ControllerPrefixV3+"/picinfo", PictureController)
-
-	r.Post(ControllerPrefixV3+"/picdata", PictureController)
-	r.Get(ControllerPrefixV3+"/picdata/{chatid}/{pictureid}", PictureController)
-	r.Get(ControllerPrefixV3+"/picdata/{chatid}", PictureController)
-	r.Get(ControllerPrefixV3+"/picdata", PictureController)
-
-	// ----------------------------------------
-	// PICTURE INFO | DATA --------------------
-
-	r.Post(ControllerPrefixV3+"/webhook", WebhookController)
-	r.Get(ControllerPrefixV3+"/webhook", WebhookController)
-	r.Delete(ControllerPrefixV3+"/webhook", WebhookController)
-	r.Get(ControllerPrefixV3+"/labels", ConversationLabelController)
-	r.Post(ControllerPrefixV3+"/labels", ConversationLabelController)
-	r.Put(ControllerPrefixV3+"/labels", ConversationLabelController)
-	r.Delete(ControllerPrefixV3+"/labels", ConversationLabelController)
-	r.Get(ControllerPrefixV3+"/chat/labels", ConversationChatLabelController)
-	r.Post(ControllerPrefixV3+"/chat/labels", ConversationChatLabelController)
-	r.Delete(ControllerPrefixV3+"/chat/labels", ConversationChatLabelController)
-
-	// INVITE METHODS ************************
-	// ----------------------------------------
-
-	r.Get(ControllerPrefixV3+"/invite/{chatid}", InviteController)
-
-	// ----------------------------------------
-	// INVITE METHODS ************************
+	legacy.RegisterAPIV3Controllers(r, legacy.Config{APIVersion3: APIVersion3}, legacyHandlers())
 }
 
 //region CONTROLLER - INFORMATION

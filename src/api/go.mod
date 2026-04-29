@@ -18,6 +18,8 @@ replace github.com/nocodeleaks/quepasa/rabbitmq => ../rabbitmq
 
 replace github.com/nocodeleaks/quepasa/environment => ../environment
 
+replace github.com/nocodeleaks/quepasa/events => ../events
+
 replace github.com/nocodeleaks/quepasa/api => ../api
 
 replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
@@ -39,6 +41,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000

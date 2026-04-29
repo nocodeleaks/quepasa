@@ -167,7 +167,7 @@
               </svg>
               <span class="option-title">Sincronização de Histórico</span>
             </div>
-            <p class="option-desc">Essa configuração ainda não está exposta na API `/spa`. Use a interface clássica se precisar alterar esse valor.</p>
+            <p class="option-desc">Essa configuração ainda não está exposta na API canônica. Use a interface clássica se precisar alterar esse valor.</p>
           </div>
           <span class="readonly-badge">Somente leitura</span>
         </div>
@@ -365,7 +365,7 @@ export default defineComponent({
       error.value = ''
 
       try {
-        const res = await api.get(`/spa/server/${encodedToken.value}/info`)
+        const res = await api.post('/api/sessions/get', { token: encodedToken.value })
         const summary = res.data?.server || {}
 
         server.value = summary
@@ -391,7 +391,7 @@ export default defineComponent({
         const payload: Record<string, number> = {}
         payload[optionName] = value
 
-        await api.patch(`/spa/server/${encodedToken.value}`, payload)
+        await api.patch('/api/sessions', { token: encodedToken.value, ...payload })
         await load()
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao alterar opção'
@@ -421,7 +421,7 @@ export default defineComponent({
       deleting.value = true
 
       try {
-        await api.delete(`/spa/server/${encodedToken.value}`)
+        await api.delete('/api/sessions', { data: { token: encodedToken.value } })
         router.push('/')
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao excluir servidor'
@@ -436,7 +436,7 @@ export default defineComponent({
 
       try {
         const endpoint = isServerActive.value ? 'disable' : 'enable'
-        await api.post(`/spa/server/${encodedToken.value}/${endpoint}`)
+        await api.post(`/api/session/${endpoint}`, { token: encodedToken.value })
         await load()
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao alterar estado do servidor'

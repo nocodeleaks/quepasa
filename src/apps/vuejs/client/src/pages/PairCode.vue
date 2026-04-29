@@ -189,8 +189,8 @@ export default defineComponent({
       stopFallbackCheck()
 
       try {
-        const res = await api.get(`/spa/server/${token}/paircode`, {
-          params: { phone: phone.value }
+        const res = await api.get('/api/session/paircode', {
+          params: { token, phone: phone.value }
         })
 
         
@@ -231,7 +231,7 @@ export default defineComponent({
 
     async function checkConnection() {
       try {
-        const res = await api.get(`/spa/server/${token}/info`)
+        const res = await api.post('/api/sessions/get', { token })
 
         // Check the explicit connected field or state
         const isConnected = res.data?.server?.state === 'Ready' || res.data?.server?.stateCode === 11

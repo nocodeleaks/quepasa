@@ -163,7 +163,7 @@ export default defineComponent({
 
     onMounted(async () => {
       try {
-        const res = await api.get('/spa/login/config')
+        const res = await api.get('/api/auth/config')
         config.value = res.data || {}
 
         // Set branding title

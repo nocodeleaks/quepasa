@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
+	events "github.com/nocodeleaks/quepasa/events"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -32,16 +33,32 @@ func SPAAuthenticatorHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, _, err := jwtauth.FromContext(r.Context())
 		if err != nil {
+			publishSPAAuthenticationEvent(r, "unauthorized", "jwt_context_error")
 			RespondErrorCode(w, err, http.StatusUnauthorized)
 			return
 		}
 
 		if token == nil || !token.Valid {
+			publishSPAAuthenticationEvent(r, "unauthorized", "invalid_token")
 			RespondErrorCode(w, models.ErrFormUnauthenticated, http.StatusUnauthorized)
 			return
 		}
 
+		publishSPAAuthenticationEvent(r, "success", "validated")
+
 		next.ServeHTTP(w, r)
+	})
+}
+
+func publishSPAAuthenticationEvent(r *http.Request, status string, reason string) {
+	events.Publish(events.Event{
+		Name:   "api.spa.authentication",
+		Source: "api.spa_authenticator",
+		Status: status,
+		Attributes: map[string]string{
+			"reason": reason,
+			"route":  resolveRoutePattern(r),
+		},
 	})
 }
 

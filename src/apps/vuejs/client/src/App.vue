@@ -161,7 +161,7 @@ export default defineComponent({
 
     const loadBranding = async () => {
       try {
-        const res = await api.get('/spa/login/config')
+        const res = await api.get('/api/auth/config')
         if (res.data?.branding) {
           branding.value = { ...branding.value, ...res.data.branding }
 

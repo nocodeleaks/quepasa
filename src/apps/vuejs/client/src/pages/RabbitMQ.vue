@@ -312,7 +312,7 @@ export default defineComponent({
         }
 
         hasToken.value = true
-        const res = await api.get(`/spa/server/${currentToken.value}/rabbitmq`)
+        const res = await api.get('/api/dispatches/rabbitmq', { params: { token: currentToken.value } })
         data.value = {
           server: { token: currentToken.value },
           rabbitmq: res.data?.rabbitmq || [],
@@ -325,7 +325,7 @@ export default defineComponent({
     }
 
     async function upsertRabbit(payload: ReturnType<typeof buildRabbitPayload>) {
-      await api.post(`/spa/server/${currentToken.value}/rabbitmq`, payload)
+      await api.post('/api/dispatches/rabbitmq', { token: currentToken.value, ...payload })
     }
 
     async function createRabbit() {
@@ -376,8 +376,8 @@ export default defineComponent({
       if (!currentToken.value) return
 
       try {
-        await api.delete(`/spa/server/${currentToken.value}/rabbitmq`, {
-          data: { connection_string: confirmConnectionString.value },
+        await api.delete('/api/dispatches/rabbitmq', {
+          data: { token: currentToken.value, connection_string: confirmConnectionString.value },
         })
 
         showConfirm.value = false

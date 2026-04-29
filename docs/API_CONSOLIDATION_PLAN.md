@@ -787,6 +787,26 @@ The migration is not considered complete for a slice until the relevant unit tes
 
 ## Migration Plan
 
+## Current Execution Status
+
+- [x] Phase 1 canonical vocabulary defined around `v5`, family names, and `session`
+- [x] Initial canonical `v5` routes mounted under both `/api` and `/api/v5`
+- [x] Canonical family-based route registration moved into `src/api/v5/` with a root compatibility bridge
+- [x] Master key canonical contract changed to status-only and never returns the secret value
+- [x] Legacy SPA master key compatibility route changed to status-only and environment output sanitizes the secret
+- [x] Internal asynchronous event bus introduced with metrics as the first subscriber
+- [x] Initial event producers added for API requests, SPA authentication, runtime dispatch, transport dispatch, and session lifecycle
+- [x] Canonical route registration split into one file per family
+- [x] Legacy mixed route set moved into `src/api/legacy/`
+- [x] Canonical controllers extracted from SPA-oriented compatibility handlers where contracts still differ
+- [x] Initial Vue auth/bootstrap/account consumers migrated from `/spa` to canonical `/api` auth and user routes
+- [x] Initial Vue session/server consumers migrated from `/spa` to canonical `/api` session routes
+- [x] Initial Vue environment/user-admin consumers migrated from `/spa` to canonical `/api` system and user routes
+- [x] Initial Vue dispatch consumers migrated from `/spa` to canonical `/api` dispatch routes
+- [x] Initial Vue messages/groups/send consumers migrated from `/spa` to canonical `/api` family routes
+- [x] Vue frontend no longer consumes `/spa`; the classic console app is not an active product surface and does not block retirement
+- [x] `/spa` retired from router mounting after parity validation of the active Vue frontend
+
 ## Phase 1 - Define Canonical Vocabulary
 
 1. adopt `session` as the canonical API name for the current `server` resource

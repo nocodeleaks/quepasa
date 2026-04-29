@@ -185,8 +185,11 @@ func TestEnvironmentEndpoint_WithMasterKey(t *testing.T) {
 			if response.Settings.Database.Driver == "" {
 				t.Error("Expected Database settings to be populated")
 			}
-			if response.Settings.API.MasterKey == "" {
-				t.Error("Expected API settings to be populated")
+			if response.Settings.API.MasterKey != "" {
+				t.Error("Expected API master key to be sanitized from environment response")
+			}
+			if response.MasterKeyConfigured == nil || !*response.MasterKeyConfigured {
+				t.Errorf("Expected masterKeyConfigured=true, got %v", response.MasterKeyConfigured)
 			}
 		}
 	})
@@ -218,6 +221,12 @@ func TestEnvironmentEndpoint_WithMasterKey(t *testing.T) {
 		if response.Settings == nil {
 			t.Error("Expected environment settings with master key in query")
 		} else {
+			if response.Settings.API.MasterKey != "" {
+				t.Error("Expected API master key to be sanitized from environment response")
+			}
+			if response.MasterKeyConfigured == nil || !*response.MasterKeyConfigured {
+				t.Errorf("Expected masterKeyConfigured=true, got %v", response.MasterKeyConfigured)
+			}
 			t.Log("Environment settings correctly present with master key query parameter")
 		}
 
@@ -319,6 +328,12 @@ func TestEnvironmentEndpoint_AuthenticationPriority(t *testing.T) {
 	if response.Settings == nil {
 		t.Error("Expected environment settings when master key is present")
 	} else {
+		if response.Settings.API.MasterKey != "" {
+			t.Error("Expected API master key to be sanitized from environment response")
+		}
+		if response.MasterKeyConfigured == nil || !*response.MasterKeyConfigured {
+			t.Errorf("Expected masterKeyConfigured=true, got %v", response.MasterKeyConfigured)
+		}
 		t.Log("Environment settings correctly shown when master key present")
 	}
 

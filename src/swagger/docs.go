@@ -3112,6 +3112,9 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "masterKeyConfigured": {
+                    "type": "boolean"
+                },
                 "preview": {
                     "$ref": "#/definitions/environment.EnvironmentSettingsPreview"
                 },
@@ -3687,6 +3690,20 @@ const docTemplate = `{
                 }
             }
         },
+        "environment.CacheSettings": {
+            "type": "object",
+            "properties": {
+                "backend": {
+                    "type": "string"
+                },
+                "disk_path": {
+                    "type": "string"
+                },
+                "init_fallback": {
+                    "type": "boolean"
+                }
+            }
+        },
         "environment.DashboardSettings": {
             "type": "object",
             "properties": {
@@ -3730,6 +3747,9 @@ const docTemplate = `{
                 "api": {
                     "$ref": "#/definitions/environment.APISettings"
                 },
+                "cache": {
+                    "$ref": "#/definitions/environment.CacheSettings"
+                },
                 "database": {
                     "description": "Embedded structs for organized access to different environment categories",
                     "allOf": [
@@ -3752,6 +3772,9 @@ const docTemplate = `{
                 },
                 "rabbitMQ": {
                     "$ref": "#/definitions/environment.RabbitMQSettings"
+                },
+                "redis": {
+                    "$ref": "#/definitions/environment.RedisSettings"
                 },
                 "sipproxy": {
                     "$ref": "#/definitions/environment.SIPProxySettings"
@@ -3894,14 +3917,61 @@ const docTemplate = `{
         "environment.RabbitMQSettings": {
             "type": "object",
             "properties": {
+                "cache_backend": {
+                    "type": "string"
+                },
+                "cache_disk_path": {
+                    "type": "string"
+                },
                 "cache_length": {
                     "type": "integer"
+                },
+                "cache_queue_key": {
+                    "type": "string"
                 },
                 "connection_string": {
                     "type": "string"
                 },
                 "queue": {
                     "type": "string"
+                }
+            }
+        },
+        "environment.RedisSettings": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "type": "integer"
+                },
+                "dial_timeout_seconds": {
+                    "type": "integer"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "key_prefix": {
+                    "type": "string"
+                },
+                "max_retries": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "pool_size": {
+                    "type": "integer"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "read_timeout_seconds": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "write_timeout_seconds": {
+                    "type": "integer"
                 }
             }
         },
@@ -4135,7 +4205,7 @@ const docTemplate = `{
                     "description": "extra info to append on payload"
                 },
                 "failure": {
-                    "description": "first failure timestamp",
+                    "description": "first failure timestamp in the current failure streak",
                     "type": "string"
                 },
                 "forwardinternal": {

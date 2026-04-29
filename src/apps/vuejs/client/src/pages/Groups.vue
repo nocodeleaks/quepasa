@@ -264,7 +264,7 @@ export default defineComponent({
       error.value = ''
 
       try {
-        const res = await api.get(`/spa/server/${token}/groups`)
+        const res = await api.get('/api/groups', { params: { token } })
         const rawGroups = (res.data?.groups || []) as Group[]
 
         rawGroups.sort((a, b) => (a.Name || '').localeCompare(b.Name || ''))
@@ -305,9 +305,9 @@ export default defineComponent({
     async function loadGroupPictures(groupList: Group[]) {
       for (const group of groupList) {
         try {
-          const res = await api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(group.JID)}`)
-          if (res.data?.url) {
-            groupPictures.value[group.JID] = res.data.url
+          const res = await api.post('/api/media/pictures/info', { token, chatId: group.JID })
+          if (res.data?.info?.url) {
+            groupPictures.value[group.JID] = res.data.info.url
           }
         } catch {
           // ignore picture failures
@@ -341,7 +341,7 @@ export default defineComponent({
 
     async function loadLastMessages() {
       try {
-        const res = await api.get(`/spa/server/${token}/messages`)
+        const res = await api.get('/api/messages', { params: { token } })
         const messages = res.data?.messages || []
         const lastMessages: Record<string, LastMessage> = {}
 
@@ -422,7 +422,7 @@ export default defineComponent({
       const participants = participantsRaw.split(',').map((value) => value.trim()).filter(Boolean)
 
       try {
-        await api.post(`/spa/server/${token}/groups/create`, { title, participants })
+        await api.post('/api/groups', { token, title, participants })
         pushToast('Grupo criado', 'success')
         await load()
       } catch (err: any) {

@@ -14,7 +14,7 @@ async function loadSession(options: LoadSessionOptions = {}) {
   try {
     loading.value = true
     error.value = ''
-    const res = await api.get('/spa/session')
+    const res = await api.get('/api/auth/session')
     user.value = res.data.user
     version.value = res.data.version
   } catch (err: any) {

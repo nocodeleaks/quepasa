@@ -13,63 +13,63 @@ import (
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
-func TestSPALoginConfigIsPublicButSessionRemainsProtected(t *testing.T) {
+func TestCanonicalAuthConfigIsPublicButSessionRemainsProtected(t *testing.T) {
 	SetupTestService(t)
 	defer CleanupTestDatabase(t)
 
-	router := newSPATestRouter()
+	router := newCanonicalTestRouter()
 
-	loginReq := httptest.NewRequest(http.MethodGet, "/spa/login/config", nil)
+	loginReq := httptest.NewRequest(http.MethodGet, "/api/auth/config", nil)
 	loginRec := httptest.NewRecorder()
 	router.ServeHTTP(loginRec, loginReq)
 
 	if loginRec.Code != http.StatusOK {
-		t.Fatalf("expected /spa/login/config to return 200, got %d", loginRec.Code)
+		t.Fatalf("expected /api/auth/config to return 200, got %d", loginRec.Code)
 	}
 
 	var loginConfig map[string]any
 	if err := json.Unmarshal(loginRec.Body.Bytes(), &loginConfig); err != nil {
-		t.Fatalf("decode /spa/login/config response: %v", err)
+		t.Fatalf("decode /api/auth/config response: %v", err)
 	}
 
 	if _, ok := loginConfig["version"]; !ok {
-		t.Fatalf("expected login config to expose version, got %v", loginConfig)
+		t.Fatalf("expected auth config to expose version, got %v", loginConfig)
 	}
 
-	sessionReq := httptest.NewRequest(http.MethodGet, "/spa/session", nil)
+	sessionReq := httptest.NewRequest(http.MethodGet, "/api/auth/session", nil)
 	sessionRec := httptest.NewRecorder()
 	router.ServeHTTP(sessionRec, sessionReq)
 
 	if sessionRec.Code != http.StatusUnauthorized {
-		t.Fatalf("expected /spa/session to require auth and return 401, got %d", sessionRec.Code)
+		t.Fatalf("expected /api/auth/session to require auth and return 401, got %d", sessionRec.Code)
 	}
 }
 
-func TestSPAUsersLifecycleAndEnvironment(t *testing.T) {
+func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 	SetupTestService(t)
 	defer CleanupTestDatabase(t)
 
-	restore := setSPAAccountSetupEnv(t, "true")
+	restore := setCanonicalAccountSetupEnv(t, "true")
 	defer restore()
 
 	CreateTestUser(t, "owner@example.com", "Password123!")
 	CreateTestUser(t, "other@example.com", "Password123!")
 
-	router := newSPATestRouter()
+	router := newCanonicalTestRouter()
 
-	usersReq := newSPAAuthRequest(t, http.MethodGet, "/spa/users", nil, "owner@example.com")
+	usersReq := newCanonicalAuthRequest(t, http.MethodGet, "/api/users", nil, "owner@example.com")
 	usersRec := httptest.NewRecorder()
 	router.ServeHTTP(usersRec, usersReq)
 
 	if usersRec.Code != http.StatusOK {
-		t.Fatalf("expected /spa/users to return 200, got %d", usersRec.Code)
+		t.Fatalf("expected /api/users to return 200, got %d", usersRec.Code)
 	}
 
 	var usersPayload struct {
 		Users []map[string]any `json:"users"`
 	}
 	if err := json.Unmarshal(usersRec.Body.Bytes(), &usersPayload); err != nil {
-		t.Fatalf("decode /spa/users response: %v", err)
+		t.Fatalf("decode /api/users response: %v", err)
 	}
 
 	if len(usersPayload.Users) != 2 {
@@ -86,24 +86,26 @@ func TestSPAUsersLifecycleAndEnvironment(t *testing.T) {
 		t.Fatalf("expected authenticated user to be marked as self: %+v", usersPayload.Users)
 	}
 
-	envReq := newSPAAuthRequest(t, http.MethodGet, "/spa/environment", nil, "owner@example.com")
+	envReq := newCanonicalAuthRequest(t, http.MethodGet, "/api/system/environment", nil, "owner@example.com")
 	envRec := httptest.NewRecorder()
 	router.ServeHTTP(envRec, envReq)
 
 	if envRec.Code != http.StatusOK {
-		t.Fatalf("expected /spa/environment to return 200, got %d", envRec.Code)
+		t.Fatalf("expected /api/system/environment to return 200, got %d", envRec.Code)
 	}
 
 	var envPayload map[string]any
 	if err := json.Unmarshal(envRec.Body.Bytes(), &envPayload); err != nil {
-		t.Fatalf("decode /spa/environment response: %v", err)
+		t.Fatalf("decode /api/system/environment response: %v", err)
 	}
 
-	if _, ok := envPayload["settings"]; !ok {
-		t.Fatalf("expected /spa/environment to include settings, got %v", envPayload)
+	if _, hasSettings := envPayload["settings"]; !hasSettings {
+		if _, hasPreview := envPayload["preview"]; !hasPreview {
+			t.Fatalf("expected /api/system/environment to include settings or preview, got %v", envPayload)
+		}
 	}
 
-	deleteSelfReq := newSPAAuthRequest(t, http.MethodDelete, "/spa/user/owner@example.com", nil, "owner@example.com")
+	deleteSelfReq := newCanonicalAuthRequest(t, http.MethodDelete, "/api/users", []byte(`{"username":"owner@example.com"}`), "owner@example.com")
 	deleteSelfRec := httptest.NewRecorder()
 	router.ServeHTTP(deleteSelfRec, deleteSelfReq)
 
@@ -111,7 +113,7 @@ func TestSPAUsersLifecycleAndEnvironment(t *testing.T) {
 		t.Fatalf("expected deleting self to return 400, got %d", deleteSelfRec.Code)
 	}
 
-	deleteOtherReq := newSPAAuthRequest(t, http.MethodDelete, "/spa/user/other@example.com", nil, "owner@example.com")
+	deleteOtherReq := newCanonicalAuthRequest(t, http.MethodDelete, "/api/users", []byte(`{"username":"other@example.com"}`), "owner@example.com")
 	deleteOtherRec := httptest.NewRecorder()
 	router.ServeHTTP(deleteOtherRec, deleteOtherReq)
 
@@ -120,28 +122,28 @@ func TestSPAUsersLifecycleAndEnvironment(t *testing.T) {
 	}
 
 	body := []byte(`{"email":"created@example.com","password":"CorrectHorseBatteryStaple!2026"}`)
-	createReq := httptest.NewRequest(http.MethodPost, "/spa/users", bytes.NewReader(body))
+	createReq := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(body))
 	createReq.Header.Set("Content-Type", "application/json")
 	createRec := httptest.NewRecorder()
 	router.ServeHTTP(createRec, createReq)
 
 	if createRec.Code != http.StatusOK {
-		t.Fatalf("expected public /spa/users create to return 200, got %d with body %s", createRec.Code, createRec.Body.String())
+		t.Fatalf("expected public /api/users create to return 200, got %d with body %s", createRec.Code, createRec.Body.String())
 	}
 
-	finalUsersReq := newSPAAuthRequest(t, http.MethodGet, "/spa/users", nil, "owner@example.com")
+	finalUsersReq := newCanonicalAuthRequest(t, http.MethodGet, "/api/users", nil, "owner@example.com")
 	finalUsersRec := httptest.NewRecorder()
 	router.ServeHTTP(finalUsersRec, finalUsersReq)
 
 	if finalUsersRec.Code != http.StatusOK {
-		t.Fatalf("expected final /spa/users to return 200, got %d", finalUsersRec.Code)
+		t.Fatalf("expected final /api/users to return 200, got %d", finalUsersRec.Code)
 	}
 
 	var finalUsersPayload struct {
 		Users []map[string]any `json:"users"`
 	}
 	if err := json.Unmarshal(finalUsersRec.Body.Bytes(), &finalUsersPayload); err != nil {
-		t.Fatalf("decode final /spa/users response: %v", err)
+		t.Fatalf("decode final /api/users response: %v", err)
 	}
 
 	if len(finalUsersPayload.Users) != 2 {
@@ -149,20 +151,20 @@ func TestSPAUsersLifecycleAndEnvironment(t *testing.T) {
 	}
 }
 
-func TestSPAServerCreateThenInfoReturnsCreatedServer(t *testing.T) {
+func TestCanonicalSessionCreateThenGetReturnsCreatedServer(t *testing.T) {
 	SetupTestService(t)
 	defer CleanupTestDatabase(t)
 
 	CreateTestUser(t, "owner@example.com", "Password123!")
 
-	router := newSPATestRouter()
+	router := newCanonicalTestRouter()
 
-	createReq := newSPAAuthRequest(t, http.MethodPost, "/spa/server/create", []byte(`{}`), "owner@example.com")
+	createReq := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
 	createRec := httptest.NewRecorder()
 	router.ServeHTTP(createRec, createReq)
 
 	if createRec.Code != http.StatusCreated {
-		t.Fatalf("expected create server to return 201, got %d with body %s", createRec.Code, createRec.Body.String())
+		t.Fatalf("expected create session to return 201, got %d with body %s", createRec.Code, createRec.Body.String())
 	}
 
 	var createPayload struct {
@@ -183,12 +185,12 @@ func TestSPAServerCreateThenInfoReturnsCreatedServer(t *testing.T) {
 		t.Fatalf("expected created server user to be owner@example.com, got %q", createPayload.Server.User)
 	}
 
-	infoReq := newSPAAuthRequest(t, http.MethodGet, "/spa/server/"+createPayload.Server.Token+"/info", nil, "owner@example.com")
+	infoReq := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions/get", []byte(`{"token":"`+createPayload.Server.Token+`"}`), "owner@example.com")
 	infoRec := httptest.NewRecorder()
 	router.ServeHTTP(infoRec, infoReq)
 
 	if infoRec.Code != http.StatusOK {
-		t.Fatalf("expected info for created server to return 200, got %d with body %s", infoRec.Code, infoRec.Body.String())
+		t.Fatalf("expected session get for created server to return 200, got %d with body %s", infoRec.Code, infoRec.Body.String())
 	}
 
 	var infoPayload struct {
@@ -198,28 +200,27 @@ func TestSPAServerCreateThenInfoReturnsCreatedServer(t *testing.T) {
 		} `json:"server"`
 	}
 	if err := json.Unmarshal(infoRec.Body.Bytes(), &infoPayload); err != nil {
-		t.Fatalf("decode info response: %v", err)
+		t.Fatalf("decode get response: %v", err)
 	}
 
 	if infoPayload.Server.Token != createPayload.Server.Token {
-		t.Fatalf("expected info token %q, got %q", createPayload.Server.Token, infoPayload.Server.Token)
+		t.Fatalf("expected get token %q, got %q", createPayload.Server.Token, infoPayload.Server.Token)
 	}
 
 	if infoPayload.Server.User != "owner@example.com" {
-		t.Fatalf("expected info user to be owner@example.com, got %q", infoPayload.Server.User)
+		t.Fatalf("expected get user to be owner@example.com, got %q", infoPayload.Server.User)
 	}
 }
 
-func newSPATestRouter() chi.Router {
+func newCanonicalTestRouter() chi.Router {
 	router := chi.NewRouter()
-	router.Route("/spa", func(r chi.Router) {
-		r.Group(RegisterSPAPublicControllers)
-		r.Group(RegisterSPAControllers)
+	router.Route("/api", func(r chi.Router) {
+		r.Group(RegisterAPIV5Controllers)
 	})
 	return router
 }
 
-func newSPAAuthRequest(t *testing.T, method string, target string, body []byte, username string) *http.Request {
+func newCanonicalAuthRequest(t *testing.T, method string, target string, body []byte, username string) *http.Request {
 	t.Helper()
 
 	req := httptest.NewRequest(method, target, bytes.NewReader(body))
@@ -229,14 +230,14 @@ func newSPAAuthRequest(t *testing.T, method string, target string, body []byte, 
 
 	_, tokenString, err := GetSPATokenAuth().Encode(jwt.MapClaims{"user_id": username})
 	if err != nil {
-		t.Fatalf("encode spa auth token: %v", err)
+		t.Fatalf("encode canonical auth token: %v", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+tokenString)
 	return req
 }
 
-func setSPAAccountSetupEnv(t *testing.T, value string) func() {
+func setCanonicalAccountSetupEnv(t *testing.T, value string) func() {
 	t.Helper()
 
 	oldValue, hadValue := os.LookupEnv(models.ENV_ACCOUNTSETUP)

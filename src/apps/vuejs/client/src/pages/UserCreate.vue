@@ -144,7 +144,7 @@ export default defineComponent({
       success.value = ''
 
       try {
-        await api.post('/spa/users', {
+        await api.post('/api/users', {
           email: email.value,
           password: password.value
         })

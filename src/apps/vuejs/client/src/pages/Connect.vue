@@ -90,7 +90,7 @@ export default defineComponent({
       
       try {
         // Create a new server first
-        const response = await api.post('/spa/server/create', {})
+        const response = await api.post('/api/sessions', {})
         const createdServer = response.data?.server || response.data
 
         if (createdServer?.token) {

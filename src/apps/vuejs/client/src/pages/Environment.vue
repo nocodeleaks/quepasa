@@ -114,7 +114,7 @@ export default defineComponent({
 
     const loadEnvironment = async () => {
       try {
-        const res = await api.get('/spa/environment')
+        const res = await api.get('/api/system/environment')
         categories.value = buildCategories(res.data?.settings || res.data?.preview || {})
       } catch (e: any) {
         error.value = e?.response?.data?.result || e.message || 'Failed to load environment variables'

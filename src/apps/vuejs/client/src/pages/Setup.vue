@@ -161,7 +161,7 @@ export default defineComponent({
 
     async function loadConfig() {
       try {
-        const res = await api.get('/spa/login/config')
+        const res = await api.get('/api/auth/config')
         version.value = res.data?.version || ''
         accountSetup.value = res.data?.accountSetup !== false
       } catch {
@@ -177,7 +177,7 @@ export default defineComponent({
       success.value = ''
 
       try {
-        await api.post('/spa/users', {
+        await api.post('/api/users', {
           email: email.value,
           password: password.value
         })

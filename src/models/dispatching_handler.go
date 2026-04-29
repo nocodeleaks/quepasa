@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
+	events "github.com/nocodeleaks/quepasa/events"
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -197,6 +198,10 @@ func (source *DispatchingHandler) OnConnected() {
 			Verified:  source.server.Verified,
 			Timestamp: time.Now().UTC(),
 		})
+		source.publishLifecycleEvent("session.lifecycle.connected", "success", map[string]string{
+			"state":    source.server.GetState().String(),
+			"verified": formatLifecycleBool(source.server.Verified),
+		})
 	}
 }
 
@@ -265,6 +270,11 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 		Details:   details,
 		Timestamp: time.Now().UTC(),
 	})
+	source.publishLifecycleEvent("session.lifecycle.disconnected", "success", map[string]string{
+		"cause":    cause,
+		"state":    source.server.GetState().String(),
+		"verified": formatLifecycleBool(source.server.Verified),
+	})
 }
 
 /*
@@ -323,6 +333,11 @@ func (source *DispatchingHandler) OnStopped(cause string) {
 		Cause:     cause,
 		Timestamp: time.Now().UTC(),
 	})
+	source.publishLifecycleEvent("session.lifecycle.stopped", "success", map[string]string{
+		"cause":    cause,
+		"state":    source.server.GetState().String(),
+		"verified": formatLifecycleBool(source.server.Verified),
+	})
 }
 
 /*
@@ -357,6 +372,36 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 		Cause:     cause,
 		Timestamp: time.Now().UTC(),
 	})
+	source.publishLifecycleEvent("session.lifecycle.deleted", "success", map[string]string{
+		"cause":    cause,
+		"state":    source.server.GetState().String(),
+		"verified": formatLifecycleBool(source.server.Verified),
+	})
+}
+
+func (source *DispatchingHandler) publishLifecycleEvent(name string, status string, attributes map[string]string) {
+	if source == nil || source.server == nil {
+		return
+	}
+
+	if attributes == nil {
+		attributes = map[string]string{}
+	}
+	attributes["wid"] = source.server.GetWId()
+
+	events.Publish(events.Event{
+		Name:       name,
+		Source:     "models.dispatching_handler",
+		Status:     status,
+		Attributes: attributes,
+	})
+}
+
+func formatLifecycleBool(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
 }
 
 //#endregion

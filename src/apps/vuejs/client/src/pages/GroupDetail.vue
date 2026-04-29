@@ -254,12 +254,12 @@ export default defineComponent({
       visibleMessages.value = []
 
       try {
-        const res = await api.get(`/spa/server/${token}/group/${encodedGroupId}`)
+        const res = await api.post('/api/groups/get', { token, groupId: groupid })
         group.value = res.data?.groupinfo || {}
 
         await loadGroupPicture()
 
-        const serverRes = await api.get(`/spa/server/${token}/info`)
+        const serverRes = await api.post('/api/sessions/get', { token })
         const wid = serverRes.data?.server?.wid || ''
         myPhone.value = wid.replace('@s.whatsapp.net', '').replace('@lid', '')
 
@@ -274,9 +274,9 @@ export default defineComponent({
 
     async function loadGroupPicture() {
       try {
-        const res = await api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(groupid)}`)
-        if (res.data?.url) {
-          groupPicture.value = res.data.url
+        const res = await api.post('/api/media/pictures/info', { token, chatId: groupid })
+        if (res.data?.info?.url) {
+          groupPicture.value = res.data.info.url
         }
       } catch {
         // ignore picture failures
@@ -290,9 +290,9 @@ export default defineComponent({
         if (!id) continue
 
         try {
-          const res = await api.get(`/spa/server/${token}/picinfo/${encodeURIComponent(id)}`)
-          if (res.data?.url) {
-            participantPictures.value[id] = res.data.url
+          const res = await api.post('/api/media/pictures/info', { token, chatId: id })
+          if (res.data?.info?.url) {
+            participantPictures.value[id] = res.data.info.url
           }
         } catch {
           // ignore picture failures
@@ -343,7 +343,7 @@ export default defineComponent({
 
     async function loadMessages() {
       try {
-        const res = await api.get(`/spa/server/${token}/messages`)
+        const res = await api.get('/api/messages', { params: { token } })
         const rawMessages = res.data?.messages || []
         const groupMessages: any[] = []
 
@@ -403,7 +403,7 @@ export default defineComponent({
       if (!confirm('Deseja realmente sair do grupo?')) return
 
       try {
-        await api.post(`/spa/server/${token}/group/${encodedGroupId}/leave`)
+        await api.post('/api/groups/leave', { token, groupId: groupid })
         pushToast('Saida do grupo solicitada', 'success')
         router.push(`/server/${token}/groups`)
       } catch (err: any) {
@@ -416,7 +416,7 @@ export default defineComponent({
       if (!name) return
 
       try {
-        await api.put(`/spa/server/${token}/group/${encodedGroupId}/name`, { name })
+        await api.patch('/api/groups', { token, groupId: groupid, name })
         pushToast('Nome do grupo atualizado', 'success')
         await load()
       } catch (err: any) {
@@ -429,7 +429,7 @@ export default defineComponent({
       if (topic == null) return
 
       try {
-        await api.put(`/spa/server/${token}/group/${encodedGroupId}/description`, { topic })
+        await api.patch('/api/groups', { token, groupId: groupid, topic })
         pushToast('Descricao atualizada', 'success')
         await load()
       } catch (err: any) {
@@ -444,7 +444,9 @@ export default defineComponent({
       const participants = phones.split(',').map((value: string) => value.trim()).filter(Boolean)
 
       try {
-        await api.put(`/spa/server/${token}/group/${encodedGroupId}/participants`, {
+        await api.put('/api/groups/participants', {
+          token,
+          groupId: groupid,
           action: 'add',
           participants,
         })
@@ -460,7 +462,7 @@ export default defineComponent({
       if (!url) return
 
       try {
-        await api.put(`/spa/server/${token}/group/${encodedGroupId}/photo`, { image_url: url })
+        await api.put('/api/groups/photo', { token, groupId: groupid, image_url: url })
         pushToast('Foto do grupo atualizada', 'success')
         await load()
       } catch (err: any) {
@@ -470,7 +472,7 @@ export default defineComponent({
 
     async function getInvite() {
       try {
-        const res = await api.get(`/spa/server/${token}/group/${encodedGroupId}/invite`)
+        const res = await api.post('/api/groups/invite', { token, groupId: groupid })
         const url = res.data?.url
 
         if (!url) {

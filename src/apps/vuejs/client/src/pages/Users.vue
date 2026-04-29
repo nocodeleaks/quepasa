@@ -109,7 +109,7 @@ export default defineComponent({
       loading.value = true
       error.value = ''
       try {
-        const res = await api.get('/spa/users')
+        const res = await api.get('/api/users')
         users.value = (res.data.users || []).map((user: User) => ({
           ...user,
           is_self: user.is_self ?? user.isSelf ?? false
@@ -141,7 +141,7 @@ export default defineComponent({
       showDeleteModal.value = false
 
       try {
-        await api.delete(`/spa/user/${encodeURIComponent(userToDelete.value.username)}`)
+        await api.delete('/api/users', { data: { username: userToDelete.value.username } })
         pushToast('User deleted successfully', 'success')
         await load()
       } catch (err: any) {

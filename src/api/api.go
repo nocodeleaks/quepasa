@@ -31,8 +31,9 @@ func Configure(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		timeout := environment.Settings.API.GetAPITimeout()
 
-		// Apply one timeout policy to all HTTP API routes, including SPA endpoints.
+		// Apply one timeout policy to all HTTP API routes.
 		r.Use(middleware.Timeout(timeout))
+		r.Use(APIEventMiddleware)
 
 		/* CORS TESTING
 		r.Use(cors.Handler(cors.Options{
@@ -49,6 +50,7 @@ func Configure(r chi.Router) {
 
 		// Mount API routes under the configured prefix
 		r.Route("/"+apiPrefix, func(r chi.Router) {
+			r.Group(RegisterAPIV5Controllers)
 			r.Group(RegisterAPIControllers)
 			r.Group(RegisterAPIV3Controllers)
 		})
@@ -59,12 +61,5 @@ func Configure(r chi.Router) {
 			r.Group(RegisterAPIControllers)
 			r.Group(RegisterAPIV3Controllers)
 		}
-
-		// SPA-only endpoints live under /spa so they stay clearly separated from the
-		// shared/public API surface and can evolve with frontend-specific contracts.
-		r.Route("/spa", func(r chi.Router) {
-			r.Group(RegisterSPAPublicControllers)
-			r.Group(RegisterSPAControllers)
-		})
 	})
 }

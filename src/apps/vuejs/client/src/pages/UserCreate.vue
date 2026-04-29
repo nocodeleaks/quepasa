@@ -8,9 +8,9 @@
       <div class="header-content">
         <h1>
           <i class="fa fa-user-plus"></i>
-          Criar Usuário
+          {{ t('user_create_title') }}
         </h1>
-        <p>Adicione um novo usuário ao sistema</p>
+        <p>{{ t('user_create_subtitle') }}</p>
       </div>
     </div>
 
@@ -29,7 +29,7 @@
         <div class="form-group">
           <label for="email">
             <i class="fa fa-envelope"></i>
-            Email
+            {{ t('email_label') }}
           </label>
           <input
             id="email"
@@ -44,7 +44,7 @@
         <div class="form-group">
           <label for="password">
             <i class="fa fa-lock"></i>
-            Senha
+            {{ t('password_label') }}
           </label>
           <div class="password-wrapper">
             <input
@@ -67,7 +67,7 @@
         <div class="form-group">
           <label for="confirmPassword">
             <i class="fa fa-lock"></i>
-            Confirmar Senha
+            {{ t('confirm_password_label') }}
           </label>
           <input
             id="confirmPassword"
@@ -78,18 +78,18 @@
             required
           />
           <small v-if="confirmPassword && password !== confirmPassword" class="error-hint">
-            As senhas não coincidem
+            {{ t('passwords_mismatch') }}
           </small>
         </div>
 
         <div class="form-actions">
           <router-link to="/account" class="btn-secondary">
-            Cancelar
+            {{ t('cancel') }}
           </router-link>
           <button type="submit" class="btn-primary" :disabled="loading || !isFormValid">
             <i v-if="loading" class="fa fa-spinner fa-spin"></i>
             <i v-else class="fa fa-user-plus"></i>
-            {{ loading ? 'Criando...' : 'Criar Usuário' }}
+            {{ loading ? t('btn_creating') : t('user_create_title') }}
           </button>
         </div>
       </form>
@@ -101,9 +101,11 @@
 import { defineComponent, ref, computed } from 'vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
+    const { t } = useLocale()
     const email = ref('')
     const password = ref('')
     const confirmPassword = ref('')
@@ -148,13 +150,13 @@ export default defineComponent({
           email: email.value,
           password: password.value
         })
-        success.value = 'Usuário criado com sucesso!'
-        pushToast('Usuário criado com sucesso!', 'success')
+        success.value = t('user_created_success')
+        pushToast(t('user_created_success'), 'success')
         email.value = ''
         password.value = ''
         confirmPassword.value = ''
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao criar usuário'
+        const msg = err?.response?.data?.result || err.message || t('error_create_user')
         error.value = msg
         pushToast(msg, 'error')
       } finally {
@@ -165,7 +167,7 @@ export default defineComponent({
     return {
       email, password, confirmPassword, showPassword, loading, error, success,
       passwordStrength, passwordStrengthClass, isFormValid,
-      createUser
+      createUser, t
     }
   }
 })

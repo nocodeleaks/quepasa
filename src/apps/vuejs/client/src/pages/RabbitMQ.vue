@@ -10,8 +10,8 @@
           <i class="fa fa-server"></i>
           Configurações RabbitMQ
         </h1>
-        <p v-if="currentToken">Servidor: {{ truncateToken(currentToken) }}</p>
-        <p v-else>Gerencie as integrações RabbitMQ</p>
+        <p v-if="currentToken">{{ t('rabbitmq_server_label', [truncateToken(currentToken)]) }}</p>
+        <p v-else>{{ t('rabbitmq_manage') }}</p>
       </div>
     </div>
 
@@ -24,30 +24,30 @@
       <div class="warning-icon">
         <i class="fa fa-exclamation-circle"></i>
       </div>
-      <h2>Servidor não selecionado</h2>
-      <p>Para gerenciar RabbitMQ, acesse através de um servidor específico.</p>
+      <h2>{{ t('rabbitmq_no_token_title') }}</h2>
+      <p>{{ t('rabbitmq_no_token_desc') }}</p>
       <router-link to="/" class="btn-primary">
         <i class="fa fa-arrow-left"></i>
-        Voltar para Servidores
+        {{ t('rabbitmq_back_to_servers') }}
       </router-link>
     </div>
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Carregando...</p>
+      <p>{{ t('rabbitmq_loading') }}</p>
     </div>
 
     <div v-else-if="data" class="rabbitmq-content">
       <div class="add-card">
         <div class="card-header">
           <i class="fa fa-plus-circle"></i>
-          <h2>Adicionar Configuração</h2>
+          <h2>{{ t('rabbitmq_add_title') }}</h2>
         </div>
         <div class="card-body">
           <form @submit.prevent="createRabbit" class="add-form">
             <div class="form-row">
               <div class="form-group flex-grow">
-                <label>Connection String</label>
+                <label>{{ t('rabbitmq_connection_string_label') }}</label>
                 <input
                   v-model="newConnectionString"
                   type="text"
@@ -57,19 +57,19 @@
                 />
               </div>
               <div class="form-group">
-                <label>Track ID</label>
+                <label>{{ t('webhooks_track_id_label') }}</label>
                 <input
                   v-model="newTrackId"
                   type="text"
                   class="form-input"
-                  placeholder="Opcional"
+                  :placeholder="t('optional')"
                 />
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group flex-grow">
-                <label>Extra (JSON)</label>
+                <label>{{ t('webhooks_extra_label') }}</label>
                 <textarea
                   v-model="newExtra"
                   class="form-input extra-textarea"
@@ -90,22 +90,22 @@
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newGroups" />
-                <span>Grupos</span>
+                <span>{{ t('webhooks_groups') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newReadReceipts" />
-                <span>Confirmações</span>
+                <span>{{ t('webhooks_confirmations') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newCalls" />
-                <span>Chamadas</span>
+                <span>{{ t('webhooks_calls') }}</span>
               </label>
             </div>
 
             <button type="submit" class="btn-primary" :disabled="!newConnectionString || creating">
               <i v-if="creating" class="fa fa-spinner fa-spin"></i>
               <i v-else class="fa fa-plus"></i>
-              {{ creating ? "Adicionando..." : "Adicionar" }}
+              {{ creating ? t('rabbitmq_adding') : t('rabbitmq_add_btn') }}
             </button>
           </form>
         </div>
@@ -114,13 +114,13 @@
       <div class="list-card">
         <div class="card-header">
           <i class="fa fa-list"></i>
-          <h2>Configurações Ativas</h2>
+          <h2>{{ t('rabbitmq_active_title') }}</h2>
           <span class="count-badge">{{ data.rabbitmq.length }}</span>
         </div>
         <div class="card-body">
           <div v-if="data.rabbitmq.length === 0" class="empty-state">
             <i class="fa fa-inbox"></i>
-            <p>Nenhuma configuração RabbitMQ</p>
+            <p>{{ t('rabbitmq_empty') }}</p>
           </div>
 
           <div v-else class="rabbitmq-list">
@@ -161,7 +161,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(item.groups)"
                   @click="toggleRabbitFlag(item, 'groups')"
-                  title="Grupos"
+                  :title="t('webhooks_groups')"
                 >
                   <i class="fa fa-users"></i>
                 </button>
@@ -169,7 +169,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(item.readreceipts)"
                   @click="toggleRabbitFlag(item, 'readreceipts')"
-                  title="Confirmações de Leitura"
+                  :title="t('webhooks_confirmations')"
                 >
                   <i class="fa fa-check-double"></i>
                 </button>
@@ -177,7 +177,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(item.calls)"
                   @click="toggleRabbitFlag(item, 'calls')"
-                  title="Chamadas"
+                  :title="t('webhooks_calls')"
                 >
                   <i class="fa fa-phone"></i>
                 </button>
@@ -194,12 +194,12 @@
 
     <ConfirmModal
       :show="showConfirm"
-      title="Remover Configuração"
-      message="Tem certeza que deseja remover esta configuração RabbitMQ?"
+      :title="t('rabbitmq_confirm_delete_title')"
+      :message="t('rabbitmq_confirm_delete_msg')"
       @confirm="doDelete"
       @cancel="showConfirm = false"
-      confirmLabel="Remover"
-      cancelLabel="Cancelar"
+      :confirmLabel="t('remove')"
+      :cancelLabel="t('cancel')"
     />
   </div>
 </template>
@@ -210,6 +210,7 @@ import { useRoute } from 'vue-router'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 type RabbitItem = {
   connection_string: string
@@ -227,6 +228,7 @@ type RabbitItem = {
 export default defineComponent({
   components: { ConfirmModal },
   setup() {
+    const { t } = useLocale()
     const route = useRoute()
     const data = ref<{ server: { token: string }; rabbitmq: RabbitItem[] } | null>(null)
     const error = ref('')
@@ -318,7 +320,7 @@ export default defineComponent({
           rabbitmq: res.data?.rabbitmq || [],
         }
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar RabbitMQ'
+        error.value = err?.response?.data?.result || err.message || t('rabbitmq_error_load')
       } finally {
         loading.value = false
       }
@@ -339,10 +341,10 @@ export default defineComponent({
           connection_string: newConnectionString.value,
           trackid: newTrackId.value,
           forwardinternal: newForwardInternal.value,
-          broadcasts: newBroadcasts.value,
-          groups: newGroups.value,
-          readreceipts: newReadReceipts.value,
-          calls: newCalls.value,
+          broadcasts: toTriState(newBroadcasts.value),
+          groups: toTriState(newGroups.value),
+          readreceipts: toTriState(newReadReceipts.value),
+          calls: toTriState(newCalls.value),
           extra: parseExtra(newExtra.value),
         })
 
@@ -357,9 +359,9 @@ export default defineComponent({
         newCalls.value = false
         newExtra.value = ''
 
-        pushToast('Configuração RabbitMQ criada', 'success')
+        pushToast(t('rabbitmq_created'), 'success')
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao criar RabbitMQ'
+        const message = err?.response?.data?.result || err.message || t('rabbitmq_error_create')
         error.value = message
         pushToast(message, 'error')
       } finally {
@@ -383,9 +385,9 @@ export default defineComponent({
         showConfirm.value = false
         confirmConnectionString.value = ''
         await load()
-        pushToast('Configuração RabbitMQ removida', 'success')
+        pushToast(t('rabbitmq_deleted'), 'success')
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao remover RabbitMQ'
+        const message = err?.response?.data?.result || err.message || t('rabbitmq_error_delete')
         error.value = message
         pushToast(message, 'error')
       }
@@ -404,7 +406,7 @@ export default defineComponent({
         await upsertRabbit(payload)
         await load()
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao alternar RabbitMQ'
+        const message = err?.response?.data?.result || err.message || t('rabbitmq_error_toggle')
         pushToast(message, 'error')
       }
     }
@@ -414,6 +416,7 @@ export default defineComponent({
     })
 
     return {
+      t,
       confirmDelete,
       createRabbit,
       creating,

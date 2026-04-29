@@ -6,10 +6,10 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
           </svg>
-          Voltar
+          {{ t('back') }}
         </button>
-        <h1>Conectar WhatsApp</h1>
-        <p>Escaneie o QR Code com seu WhatsApp</p>
+        <h1>{{ t('qrcode_title') }}</h1>
+        <p>{{ t('qrcode_subtitle') }}</p>
       </div>
     </div>
 
@@ -24,17 +24,17 @@
       <div class="qr-container">
         <div v-if="loading" class="qr-loading">
           <div class="spinner-large"></div>
-          <p>Gerando QR Code...</p>
+          <p>{{ t('qrcode_loading') }}</p>
         </div>
 
         <div v-else-if="connected" class="qr-success">
           <svg viewBox="0 0 24 24" width="80" height="80" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L18 9l-9 9z"/>
           </svg>
-          <h3>Conectado com Sucesso!</h3>
-          <p>Seu WhatsApp está pareado.</p>
+          <h3>{{ t('qrcode_connected_title') }}</h3>
+          <p>{{ t('qrcode_connected_desc') }}</p>
           <router-link :to="`/server/${token}`" class="btn-success">
-            Ir para o Servidor
+            {{ t('qrcode_go_server') }}
           </router-link>
         </div>
 
@@ -44,7 +44,7 @@
             <svg viewBox="0 0 24 24" width="60" height="60" fill="currentColor">
               <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm2 2h2v2h-2zm0-4h2v2h-2zm2-2h2v2h-2z"/>
             </svg>
-            <p>Clique em "Gerar QR Code"</p>
+            <p>{{ t('qrcode_placeholder') }}</p>
           </div>
         </div>
 
@@ -53,26 +53,26 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
             </svg>
-            {{ loading ? 'Gerando...' : 'Gerar QR Code' }}
+            {{ loading ? t('qrcode_generating') : t('qrcode_generate') }}
           </button>
         </div>
 
         <div class="qr-instructions">
-          <h4>Como conectar:</h4>
+          <h4>{{ t('qrcode_how_title') }}</h4>
           <ol>
-            <li>Abra o WhatsApp no seu celular</li>
-            <li>Toque em <strong>Menu</strong> ou <strong>Configurações</strong></li>
-            <li>Toque em <strong>Aparelhos Conectados</strong></li>
-            <li>Toque em <strong>Conectar um aparelho</strong></li>
-            <li>Aponte a câmera para o QR Code</li>
+            <li>{{ t('qrcode_step1') }}</li>
+            <li>{{ t('qrcode_step2') }}</li>
+            <li>{{ t('qrcode_step3') }}</li>
+            <li>{{ t('qrcode_step4') }}</li>
+            <li>{{ t('qrcode_step5') }}</li>
           </ol>
         </div>
       </div>
 
       <div class="alt-method">
-        <p>Prefere usar código numérico?</p>
+        <p>{{ t('qrcode_alt_method') }}</p>
         <router-link :to="`/server/${token}/paircode`" class="link-primary">
-          Conectar com Código de Pareamento
+          {{ t('qrcode_pair_link') }}
         </router-link>
       </div>
     </div>
@@ -84,11 +84,13 @@ import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { useCableSubscription } from '@/composables/useCableSubscription'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
     const token = route.params.token as string
+    const { t } = useLocale()
 
     const loading = ref(false)
     const error = ref('')
@@ -119,10 +121,10 @@ export default defineComponent({
           qrImage.value = res.data.qrcode
           scheduleFallbackCheck()
         } else {
-          error.value = 'Nenhum QR Code recebido'
+          error.value = t('qrcode_loading')
         }
       } catch (err: any) {
-        error.value = err.response?.data?.result || err.response?.data?.message || err.message || 'Erro ao gerar QR Code'
+        error.value = err.response?.data?.result || err.response?.data?.message || err.message || t('qrcode_loading')
       } finally {
         loading.value = false
       }
@@ -203,7 +205,7 @@ export default defineComponent({
       stopFallbackChecks()
     })
 
-    return { token, loading, error, qrImage, connected, generateQR }
+    return { token, loading, error, qrImage, connected, generateQR, t }
   }
 })
 </script>

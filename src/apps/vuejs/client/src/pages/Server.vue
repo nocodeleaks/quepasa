@@ -12,7 +12,7 @@
 
       <div v-if="loading" class="loading-placeholder">
         <div class="spinner"></div>
-        <span>Carregando servidor...</span>
+        <span>{{ t('server_loading') }}</span>
       </div>
 
       <div v-else-if="server" class="server-info">
@@ -22,10 +22,10 @@
           </svg>
         </div>
         <div class="server-details">
-          <h1>{{ formatWid(serverWid) || formatWid(server?.wid) || "Não conectado" }}</h1>
+          <h1>{{ formatWid(serverWid) || formatWid(server?.wid) || t('not_connected') }}</h1>
           <div class="server-meta">
-            Status
-            <span class="status-badge" :class="statusClass">{{ serverState || "Desconhecido" }}</span>
+            {{ t('server_status_label') }}
+            <span class="status-badge" :class="statusClass">{{ serverState || t('unknown') }}</span>
           </div>
         </div>
       </div>
@@ -58,8 +58,8 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">Código de Pareamento</span>
-          <span class="action-desc">Conectar com código numérico</span>
+          <span class="action-title">{{ t('server_paircode_title') }}</span>
+          <span class="action-desc">{{ t('server_paircode_desc') }}</span>
         </div>
       </router-link>
     </div>
@@ -72,8 +72,8 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">Enviar Mensagem</span>
-          <span class="action-desc">Envie texto, imagens e documentos</span>
+          <span class="action-title">{{ t('send_message') }}</span>
+          <span class="action-desc">{{ t('server_send_desc') }}</span>
         </div>
       </router-link>
 
@@ -84,8 +84,8 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">Mensagens</span>
-          <span class="action-desc">Ver mensagens recebidas</span>
+          <span class="action-title">{{ t('server_messages_title') }}</span>
+          <span class="action-desc">{{ t('server_messages_desc') }}</span>
         </div>
       </router-link>
 
@@ -97,7 +97,7 @@
         </div>
         <div class="action-info">
           <span class="action-title">Webhooks</span>
-          <span class="action-desc">Gerenciar integrações HTTP</span>
+          <span class="action-desc">{{ t('server_webhooks_desc') }}</span>
         </div>
       </router-link>
 
@@ -109,7 +109,7 @@
         </div>
         <div class="action-info">
           <span class="action-title">RabbitMQ</span>
-          <span class="action-desc">Gerenciar integrações AMQP</span>
+          <span class="action-desc">{{ t('server_rabbitmq_desc') }}</span>
         </div>
       </router-link>
     </div>
@@ -139,12 +139,12 @@
         </div>
 
         <div class="detail-card">
-          <span class="detail-label">WhatsApp ID</span>
+          <span class="detail-label">{{ t('server_wid_label') }}</span>
           <span class="detail-value">{{ formatWid(serverWid) || formatWid(server?.wid) || "-" }}</span>
         </div>
 
         <div class="detail-card">
-          <span class="detail-label">Despachos Ativos</span>
+          <span class="detail-label">{{ t('server_dispatch_label') }}</span>
           <span class="detail-value">{{ server.dispatchCount ?? 0 }}</span>
         </div>
       </div>
@@ -155,7 +155,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
         </svg>
-        Opções do Servidor
+        {{ t('server_options_title') }}
       </h2>
 
       <div class="options-list">
@@ -165,11 +165,11 @@
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
               </svg>
-              <span class="option-title">Sincronização de Histórico</span>
+              <span class="option-title">{{ t('server_history_sync_title') }}</span>
             </div>
-            <p class="option-desc">Essa configuração ainda não está exposta na API canônica. Use a interface clássica se precisar alterar esse valor.</p>
+            <p class="option-desc">{{ t('server_history_sync_desc') }}</p>
           </div>
-          <span class="readonly-badge">Somente leitura</span>
+          <span class="readonly-badge">{{ t('server_readonly') }}</span>
         </div>
 
         <div class="option-card">
@@ -178,9 +178,9 @@
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
               </svg>
-              <span class="option-title">Mensagens de Broadcast</span>
+              <span class="option-title">{{ t('server_broadcasts_title') }}</span>
             </div>
-            <p class="option-desc">Receber mensagens enviadas para listas de transmissão. Quando ativo, mensagens de broadcast aparecem no webhook.</p>
+            <p class="option-desc">{{ t('server_broadcasts_desc') }}</p>
           </div>
           <TriStateToggle
             v-model="options.broadcasts"
@@ -195,9 +195,9 @@
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
               </svg>
-              <span class="option-title">Mensagens de Grupos</span>
+              <span class="option-title">{{ t('server_groups_title') }}</span>
             </div>
-            <p class="option-desc">Receber mensagens de grupos. Quando ativo, todas as mensagens de grupos serão entregues via webhook.</p>
+            <p class="option-desc">{{ t('server_groups_desc') }}</p>
           </div>
           <TriStateToggle
             v-model="options.groups"
@@ -212,9 +212,9 @@
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
               </svg>
-              <span class="option-title">Confirmação de Leitura</span>
+              <span class="option-title">{{ t('server_readreceipts_title') }}</span>
             </div>
-            <p class="option-desc">Enviar confirmação de leitura automaticamente. Quando ativo, o visto azul é enviado ao receber mensagens.</p>
+            <p class="option-desc">{{ t('server_readreceipts_desc') }}</p>
           </div>
           <TriStateToggle
             v-model="options.readreceipts"
@@ -229,9 +229,9 @@
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
               </svg>
-              <span class="option-title">Notificação de Chamadas</span>
+              <span class="option-title">{{ t('server_calls_title') }}</span>
             </div>
-            <p class="option-desc">Receber notificações de chamadas via webhook. Quando ativo, você será notificado sobre chamadas recebidas.</p>
+            <p class="option-desc">{{ t('server_calls_desc') }}</p>
           </div>
           <TriStateToggle
             v-model="options.calls"
@@ -258,14 +258,14 @@
           <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
           </svg>
-          {{ togglingServer ? "Processando..." : isServerActive ? "Desativar Servidor" : "Ativar Servidor" }}
+          {{ togglingServer ? t('processing') : isServerActive ? t('server_deactivate') : t('server_activate') }}
         </button>
 
         <button @click="confirmDelete" class="btn-danger" :disabled="deleting">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
           </svg>
-          {{ deleting ? "Excluindo..." : "Excluir Servidor" }}
+          {{ deleting ? t('deleting') : t('server_delete') }}
         </button>
       </div>
     </div>
@@ -277,11 +277,11 @@
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
           </svg>
         </div>
-        <h3>Excluir Servidor?</h3>
-        <p>Esta ação não pode ser desfeita. O servidor e todas as configurações serão removidos permanentemente.</p>
+        <h3>{{ t('server_confirm_delete_title') }}</h3>
+        <p>{{ t('server_confirm_delete_msg') }}</p>
         <div class="modal-actions">
-          <button @click="showDeleteModal = false" class="btn-secondary">Cancelar</button>
-          <button @click="deleteServer" class="btn-danger">Excluir</button>
+          <button @click="showDeleteModal = false" class="btn-secondary">{{ t('cancel') }}</button>
+          <button @click="deleteServer" class="btn-danger">{{ t('server_delete_btn') }}</button>
         </div>
       </div>
     </div>
@@ -295,12 +295,14 @@ import api from '@/services/api'
 import { useServerLifecycleRefresh } from '@/composables/useServerLifecycleRefresh'
 import { pushToast } from '@/services/toast'
 import TriStateToggle from '@/components/TriStateToggle.vue'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   components: {
     TriStateToggle,
   },
   setup() {
+    const { t } = useLocale()
     const route = useRoute()
     const router = useRouter()
     const token = computed(() => {
@@ -378,7 +380,7 @@ export default defineComponent({
         options.value.readreceipts = toTriState(summary.readReceipts ?? summary.readreceipts)
         options.value.calls = toTriState(summary.calls)
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar servidor'
+        error.value = err?.response?.data?.result || err.message || t('server_error_load')
       } finally {
         loading.value = false
       }
@@ -394,7 +396,7 @@ export default defineComponent({
         await api.patch('/api/sessions', { token: encodedToken.value, ...payload })
         await load()
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao alterar opção'
+        error.value = err?.response?.data?.result || err.message || t('server_option_error')
         await load()
       } finally {
         togglingOption.value = ''
@@ -424,7 +426,7 @@ export default defineComponent({
         await api.delete('/api/sessions', { data: { token: encodedToken.value } })
         router.push('/')
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao excluir servidor'
+        error.value = err?.response?.data?.result || err.message || t('server_error_delete')
       } finally {
         deleting.value = false
         showDeleteModal.value = false
@@ -439,7 +441,7 @@ export default defineComponent({
         await api.post(`/api/session/${endpoint}`, { token: encodedToken.value })
         await load()
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao alterar estado do servidor'
+        error.value = err?.response?.data?.result || err.message || t('server_error_toggle')
       } finally {
         togglingServer.value = false
       }
@@ -449,7 +451,7 @@ export default defineComponent({
       token: token.value,
       onRefresh: load,
       onDeleted: () => {
-        pushToast('Servidor removido', 'info')
+        pushToast(t('server_deleted'), 'info')
         router.push('/')
       },
       onConnectError: () => {
@@ -462,6 +464,7 @@ export default defineComponent({
     })
 
     return {
+      t,
       confirmDelete,
       copyToken,
       deleteServer,

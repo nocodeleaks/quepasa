@@ -6,7 +6,7 @@
           <i class="fa fa-cog"></i>
           Configuração
         </h1>
-        <p>Configure o sistema e crie usuários</p>
+        <p>{{ t('setup_subtitle') }}</p>
       </div>
     </div>
 
@@ -14,7 +14,7 @@
       <div class="setup-card">
         <div class="card-header">
           <i class="fa fa-user-plus"></i>
-          <h2>Criar Usuário</h2>
+          <h2>{{ t('setup_create_user_card') }}</h2>
         </div>
         <div class="card-body">
           <form @submit.prevent="createUser" class="setup-form">
@@ -31,7 +31,7 @@
             <div class="form-group">
               <label for="email">
                 <i class="fa fa-envelope"></i>
-                Email
+                {{ t('email_label') }}
               </label>
               <input
                 id="email"
@@ -46,7 +46,7 @@
             <div class="form-group">
               <label for="password">
                 <i class="fa fa-lock"></i>
-                Senha
+                {{ t('password_label') }}
               </label>
               <div class="password-wrapper">
                 <input
@@ -64,13 +64,13 @@
               <div v-if="password" class="password-strength">
                 <div class="strength-bar" :class="passwordStrengthClass" :style="{ width: passwordStrength + '%' }"></div>
               </div>
-              <small class="password-hint">Mínimo de 6 caracteres recomendado</small>
+              <small class="password-hint">{{ t('min_chars_hint') }}</small>
             </div>
 
             <div class="form-group">
               <label for="confirmPassword">
                 <i class="fa fa-lock"></i>
-                Confirmar Senha
+                {{ t('confirm_password_label') }}
               </label>
               <input
                 id="confirmPassword"
@@ -81,14 +81,14 @@
                 required
               />
               <small v-if="confirmPassword && password !== confirmPassword" class="error-hint">
-                As senhas não coincidem
+                {{ t('passwords_mismatch') }}
               </small>
             </div>
 
             <button type="submit" class="btn-primary" :disabled="loading || !isFormValid || !accountSetup">
               <i v-if="loading" class="fa fa-spinner fa-spin"></i>
               <i v-else class="fa fa-user-plus"></i>
-              {{ loading ? 'Criando...' : 'Criar Usuário' }}
+              {{ loading ? t('btn_creating') : t('setup_create_user_card') }}
             </button>
           </form>
         </div>
@@ -97,18 +97,18 @@
       <div class="setup-card">
         <div class="card-header">
           <i class="fa fa-info-circle"></i>
-          <h2>Informações do Sistema</h2>
+          <h2>{{ t('setup_sys_info') }}</h2>
         </div>
         <div class="card-body">
           <div class="info-row">
-            <span class="info-label">Versão:</span>
-            <code class="info-value">{{ version || 'Carregando...' }}</code>
+            <span class="info-label">{{ t('setup_version_label') }}</span>
+            <code class="info-value">{{ version || t('btn_loading') }}</code>
           </div>
           <div class="info-row">
-            <span class="info-label">Cadastro de Conta:</span>
+            <span class="info-label">{{ t('setup_account_setup_label') }}</span>
             <span class="info-value">
               <span class="badge" :class="accountSetup ? 'badge-success' : 'badge-disabled'">
-                {{ accountSetup ? 'Habilitado' : 'Desabilitado' }}
+                {{ accountSetup ? t('enabled') : t('disabled') }}
               </span>
             </span>
           </div>
@@ -122,9 +122,11 @@
 import { defineComponent, ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
+    const { t } = useLocale()
     const email = ref('')
     const password = ref('')
     const confirmPassword = ref('')
@@ -181,13 +183,13 @@ export default defineComponent({
           email: email.value,
           password: password.value
         })
-        success.value = 'Usuário criado com sucesso!'
-        pushToast('Usuário criado com sucesso!', 'success')
+        success.value = t('user_created_success')
+        pushToast(t('user_created_success'), 'success')
         email.value = ''
         password.value = ''
         confirmPassword.value = ''
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err.message || 'Erro ao criar usuário'
+        const msg = err?.response?.data?.result || err.message || t('error_create_user')
         error.value = msg
         pushToast(msg, 'error')
       } finally {
@@ -202,7 +204,7 @@ export default defineComponent({
     return {
       email, password, confirmPassword, showPassword, loading, error, success, version, accountSetup,
       passwordStrength, passwordStrengthClass, isFormValid,
-      createUser
+      createUser, t
     }
   }
 })

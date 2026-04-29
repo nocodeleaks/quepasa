@@ -10,8 +10,8 @@
           <i class="fa fa-globe"></i>
           Webhooks
         </h1>
-        <p v-if="currentToken">Servidor: {{ truncateToken(currentToken) }}</p>
-        <p v-else>Gerencie as integrações de webhook</p>
+        <p v-if="currentToken">{{ t('webhooks_server_label', [truncateToken(currentToken)]) }}</p>
+        <p v-else>{{ t('webhooks_manage') }}</p>
       </div>
     </div>
 
@@ -24,30 +24,30 @@
       <div class="warning-icon">
         <i class="fa fa-exclamation-circle"></i>
       </div>
-      <h2>Servidor não selecionado</h2>
-      <p>Para gerenciar webhooks, acesse através de um servidor específico.</p>
+      <h2>{{ t('webhooks_no_token_title') }}</h2>
+      <p>{{ t('webhooks_no_token_desc') }}</p>
       <router-link to="/" class="btn-primary">
         <i class="fa fa-arrow-left"></i>
-        Voltar para Servidores
+        {{ t('webhooks_back_to_servers') }}
       </router-link>
     </div>
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Carregando...</p>
+      <p>{{ t('webhooks_loading') }}</p>
     </div>
 
     <div v-else-if="data" class="webhooks-content">
       <div class="add-card">
         <div class="card-header">
           <i class="fa fa-plus-circle"></i>
-          <h2>Adicionar Webhook</h2>
+          <h2>{{ t('webhooks_add_title') }}</h2>
         </div>
         <div class="card-body">
           <form @submit.prevent="createWebhook" class="add-form">
             <div class="form-row">
               <div class="form-group flex-grow">
-                <label>URL do Webhook</label>
+                <label>{{ t('webhooks_url_label') }}</label>
                 <input
                   v-model="newUrl"
                   type="url"
@@ -57,19 +57,19 @@
                 />
               </div>
               <div class="form-group">
-                <label>Track ID</label>
+                <label>{{ t('webhooks_track_id_label') }}</label>
                 <input
                   v-model="newTrackId"
                   type="text"
                   class="form-input"
-                  placeholder="Opcional"
+                  :placeholder="t('optional')"
                 />
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group flex-grow">
-                <label>Extra (JSON)</label>
+                <label>{{ t('webhooks_extra_label') }}</label>
                 <textarea
                   v-model="newExtra"
                   class="form-input extra-textarea"
@@ -90,22 +90,22 @@
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newGroups" />
-                <span>Grupos</span>
+                <span>{{ t('webhooks_groups') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newReadReceipts" />
-                <span>Confirmações</span>
+                <span>{{ t('webhooks_confirmations') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newCalls" />
-                <span>Chamadas</span>
+                <span>{{ t('webhooks_calls') }}</span>
               </label>
             </div>
 
             <button type="submit" class="btn-primary" :disabled="!newUrl || creating">
               <i v-if="creating" class="fa fa-spinner fa-spin"></i>
               <i v-else class="fa fa-plus"></i>
-              {{ creating ? "Adicionando..." : "Adicionar" }}
+              {{ creating ? t('webhooks_adding') : t('webhooks_add_btn') }}
             </button>
           </form>
         </div>
@@ -114,13 +114,13 @@
       <div class="list-card">
         <div class="card-header">
           <i class="fa fa-list"></i>
-          <h2>Webhooks Ativos</h2>
+          <h2>{{ t('webhooks_active_title') }}</h2>
           <span class="count-badge">{{ data.webhooks.length }}</span>
         </div>
         <div class="card-body">
           <div v-if="data.webhooks.length === 0" class="empty-state">
             <i class="fa fa-inbox"></i>
-            <p>Nenhum webhook configurado</p>
+            <p>{{ t('webhooks_empty') }}</p>
           </div>
 
           <div v-else class="webhook-list">
@@ -134,7 +134,7 @@
                   <div class="item-status">
                     <span class="status-indicator" :class="{ success: !webhook.failure, error: !!webhook.failure }">
                       <i :class="webhook.failure ? 'fa fa-times-circle' : 'fa fa-check-circle'"></i>
-                      {{ webhook.failure ? "Falha" : "OK" }}
+                      {{ webhook.failure ? t('webhooks_failure') : t('webhooks_ok') }}
                     </span>
                   </div>
                 </div>
@@ -175,7 +175,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(webhook.groups)"
                   @click="toggleWebhookFlag(webhook, 'groups')"
-                  title="Grupos"
+                  :title="t('webhooks_groups')"
                 >
                   <i class="fa fa-users"></i>
                 </button>
@@ -183,7 +183,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(webhook.readreceipts)"
                   @click="toggleWebhookFlag(webhook, 'readreceipts')"
-                  title="Confirmações de Leitura"
+                  :title="t('webhooks_confirmations')"
                 >
                   <i class="fa fa-check-double"></i>
                 </button>
@@ -191,7 +191,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(webhook.calls)"
                   @click="toggleWebhookFlag(webhook, 'calls')"
-                  title="Chamadas"
+                  :title="t('webhooks_calls')"
                 >
                   <i class="fa fa-phone"></i>
                 </button>
@@ -204,18 +204,18 @@
 
     <ConfirmModal
       :show="showConfirm"
-      title="Remover Webhook"
-      message="Tem certeza que deseja remover este webhook?"
+      :title="t('webhooks_confirm_delete_title')"
+      :message="t('webhooks_confirm_delete_msg')"
       @confirm="doDeleteWebhook"
       @cancel="showConfirm = false"
-      confirmLabel="Remover"
-      cancelLabel="Cancelar"
+      :confirmLabel="t('remove')"
+      :cancelLabel="t('cancel')"
     />
 
     <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
       <div class="modal-content edit-modal">
         <div class="modal-header">
-          <h3><i class="fa fa-edit"></i> Editar Webhook</h3>
+          <h3><i class="fa fa-edit"></i> {{ t('webhooks_edit_title') }}</h3>
           <button class="modal-close" @click="showEditModal = false">
             <i class="fa fa-times"></i>
           </button>
@@ -223,7 +223,7 @@
         <div class="modal-body">
           <form @submit.prevent="saveEdit">
             <div class="form-group">
-              <label>URL do Webhook</label>
+              <label>{{ t('webhooks_url_label') }}</label>
               <input
                 v-model="editData.url"
                 type="url"
@@ -244,14 +244,14 @@
             </div>
 
             <div class="form-group">
-              <label>Extra (JSON)</label>
+              <label>{{ t('webhooks_extra_label') }}</label>
               <textarea
                 v-model="editData.extraStr"
                 class="form-input extra-textarea"
                 rows="4"
                 placeholder='{"chave":"valor"}'
               ></textarea>
-              <small class="form-hint">Dados JSON extras enviados junto com o payload.</small>
+              <small class="form-hint">{{ t('webhooks_edit_hint') }}</small>
             </div>
 
             <div class="form-group">
@@ -267,27 +267,27 @@
                 <TriStateToggle v-model="editData.broadcasts" />
               </div>
               <div class="option-item">
-                <label>Grupos</label>
+                <label>{{ t('webhooks_groups') }}</label>
                 <TriStateToggle v-model="editData.groups" />
               </div>
               <div class="option-item">
-                <label>Confirmações</label>
+                <label>{{ t('webhooks_confirmations') }}</label>
                 <TriStateToggle v-model="editData.readreceipts" />
               </div>
               <div class="option-item">
-                <label>Chamadas</label>
+                <label>{{ t('webhooks_calls') }}</label>
                 <TriStateToggle v-model="editData.calls" />
               </div>
             </div>
 
             <div class="modal-actions">
               <button type="button" class="btn-secondary" @click="showEditModal = false">
-                Cancelar
+                {{ t('cancel') }}
               </button>
               <button type="submit" class="btn-primary" :disabled="saving">
                 <i v-if="saving" class="fa fa-spinner fa-spin"></i>
                 <i v-else class="fa fa-save"></i>
-                {{ saving ? "Salvando..." : "Salvar" }}
+                {{ saving ? t('webhooks_saving') : t('webhooks_save') }}
               </button>
             </div>
           </form>
@@ -304,6 +304,7 @@ import ConfirmModal from '@/components/ConfirmModal.vue'
 import TriStateToggle from '@/components/TriStateToggle.vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 type WebhookItem = {
   url: string
@@ -320,6 +321,7 @@ type WebhookItem = {
 export default defineComponent({
   components: { ConfirmModal, TriStateToggle },
   setup() {
+    const { t } = useLocale()
     const route = useRoute()
     const data = ref<{ server: { token: string }; webhooks: WebhookItem[] } | null>(null)
     const error = ref('')
@@ -425,7 +427,7 @@ export default defineComponent({
           webhooks: res.data?.webhooks || [],
         }
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar webhooks'
+        error.value = err?.response?.data?.result || err.message || t('webhooks_error_load')
       } finally {
         loading.value = false
       }
@@ -446,10 +448,10 @@ export default defineComponent({
           url: newUrl.value,
           trackid: newTrackId.value,
           forwardinternal: newForwardInternal.value,
-          broadcasts: newBroadcasts.value,
-          groups: newGroups.value,
-          readreceipts: newReadReceipts.value,
-          calls: newCalls.value,
+          broadcasts: toTriState(newBroadcasts.value),
+          groups: toTriState(newGroups.value),
+          readreceipts: toTriState(newReadReceipts.value),
+          calls: toTriState(newCalls.value),
           extra: parseExtra(newExtra.value),
         })
 
@@ -464,9 +466,9 @@ export default defineComponent({
         newCalls.value = false
         newExtra.value = ''
 
-        pushToast('Webhook criado com sucesso', 'success')
+        pushToast(t('webhooks_created'), 'success')
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao criar webhook'
+        const message = err?.response?.data?.result || err.message || t('webhooks_error_create')
         error.value = message
         pushToast(message, 'error')
       } finally {
@@ -490,9 +492,9 @@ export default defineComponent({
         showConfirm.value = false
         confirmUrl.value = ''
         await load()
-        pushToast('Webhook removido', 'success')
+        pushToast(t('webhooks_deleted'), 'success')
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao remover webhook'
+        const message = err?.response?.data?.result || err.message || t('webhooks_error_delete')
         error.value = message
         pushToast(message, 'error')
       }
@@ -511,7 +513,7 @@ export default defineComponent({
         await upsertWebhook(payload)
         await load()
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao alternar webhook'
+        const message = err?.response?.data?.result || err.message || t('webhooks_error_toggle')
         pushToast(message, 'error')
       }
     }
@@ -553,9 +555,9 @@ export default defineComponent({
 
         showEditModal.value = false
         await load()
-        pushToast('Webhook atualizado com sucesso', 'success')
+        pushToast(t('webhooks_updated'), 'success')
       } catch (err: any) {
-        const message = err?.response?.data?.result || err.message || 'Erro ao atualizar webhook'
+        const message = err?.response?.data?.result || err.message || t('webhooks_error_update')
         pushToast(message, 'error')
       } finally {
         saving.value = false
@@ -567,6 +569,7 @@ export default defineComponent({
     })
 
     return {
+      t,
       confirmDelete,
       createWebhook,
       creating,

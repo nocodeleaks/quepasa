@@ -6,10 +6,10 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
           </svg>
-          Voltar
+          {{ t('back') }}
         </button>
-        <h1>Código de Pareamento</h1>
-        <p>Conecte usando um código numérico</p>
+        <h1>{{ t('paircode_title') }}</h1>
+        <p>{{ t('paircode_subtitle') }}</p>
       </div>
     </div>
 
@@ -27,10 +27,10 @@
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L18 9l-9 9z"/>
           </svg>
         </div>
-        <h3>Conectado com Sucesso!</h3>
-        <p>Seu WhatsApp está pareado.</p>
+        <h3>{{ t('paircode_connected_title') }}</h3>
+        <p>{{ t('paircode_connected_desc') }}</p>
         <router-link :to="`/server/${token}`" class="btn-success">
-          Ir para o Servidor
+          {{ t('paircode_go_server') }}
         </router-link>
       </div>
 
@@ -40,8 +40,8 @@
           <div class="step-header">
             <div class="step-number">1</div>
             <div class="step-info">
-              <h3>Informe o número do WhatsApp</h3>
-              <p>Digite o número com código do país (ex: 5511999999999)</p>
+              <h3>{{ t('paircode_step1_title') }}</h3>
+              <p>{{ t('paircode_step1_desc') }}</p>
             </div>
           </div>
 
@@ -58,7 +58,7 @@
             </div>
             <button @click="generateCode" class="btn-primary" :disabled="loading || !phone">
               <span v-if="loading" class="spinner"></span>
-              <span v-else>Gerar Código</span>
+              <span v-else>{{ t('paircode_generate') }}</span>
             </button>
           </div>
         </div>
@@ -68,8 +68,8 @@
           <div class="step-header">
             <div class="step-number completed">✓</div>
             <div class="step-info">
-              <h3>Número: +{{ phone }}</h3>
-              <button @click="resetCode" class="btn-link">Alterar número</button>
+              <h3>{{ t('paircode_step2_number_prefix') }}+{{ phone }}</h3>
+              <button @click="resetCode" class="btn-link">{{ t('paircode_change_number') }}</button>
             </div>
           </div>
         </div>
@@ -78,8 +78,8 @@
           <div class="step-header">
             <div class="step-number">2</div>
             <div class="step-info">
-              <h3>Digite este código no WhatsApp</h3>
-              <p>Acesse Aparelhos Conectados → Conectar com número</p>
+              <h3>{{ t('paircode_step2_title') }}</h3>
+              <p>{{ t('paircode_step2_desc') }}</p>
             </div>
           </div>
 
@@ -96,7 +96,7 @@
               <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
               </svg>
-              {{ copied ? 'Copiado!' : 'Copiar' }}
+              {{ copied ? t('paircode_copied') : t('paircode_copy') }}
             </button>
           </div>
 
@@ -104,7 +104,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
             </svg>
-            <span>O código expira em alguns minutos</span>
+            <span>{{ t('paircode_expires') }}</span>
           </div>
 
           <div class="action-buttons">
@@ -113,14 +113,14 @@
               <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
               </svg>
-              {{ checking ? 'Verificando...' : 'Já digitei o código' }}
+              {{ checking ? t('paircode_checking') : t('paircode_already_done') }}
             </button>
 
             <button @click="generateCode" class="btn-secondary">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
               </svg>
-              Gerar Novo Código
+              {{ t('paircode_new_code') }}
             </button>
           </div>
         </div>
@@ -138,9 +138,9 @@
         </div>
 
         <div class="alt-method">
-          <p>Prefere escanear QR Code?</p>
+          <p>{{ t('paircode_alt_qr') }}</p>
           <router-link :to="`/server/${token}/qrcode`" class="link-primary">
-            Conectar com QR Code
+            {{ t('paircode_qr_link') }}
           </router-link>
         </div>
       </div>
@@ -153,11 +153,13 @@ import { defineComponent, ref, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { useCableSubscription } from '@/composables/useCableSubscription'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
     const token = route.params.token as string
+    const { t } = useLocale()
 
     const phone = ref('')
     const pairCode = ref('')
@@ -203,10 +205,10 @@ export default defineComponent({
           pairCode.value = res.data?.pairCode || res.data?.paircode || res.data?.formatted
           scheduleFallbackCheck()
         } else {
-          error.value = res.data?.result || 'Erro ao gerar código'
+          error.value = res.data?.result || t('qrcode_loading')
         }
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err?.response?.data?.message || err.message || 'Erro ao gerar código'
+        const msg = err?.response?.data?.result || err?.response?.data?.message || err.message || t('qrcode_loading')
         error.value = msg
       } finally {
         loading.value = false
@@ -263,7 +265,7 @@ export default defineComponent({
       }
       
       checking.value = false
-      error.value = 'Pareamento ainda não detectado. Certifique-se de ter digitado o código corretamente no WhatsApp.'
+      error.value = t('paircode_checking')
     }
 
     function scheduleFallbackCheck(delay = 8000) {
@@ -315,7 +317,7 @@ export default defineComponent({
 
     return { 
       token, phone, pairCode, loading, checking, error, copied, connected,
-      formattedCode, generateCode, resetCode, copyCode, confirmPairing
+      formattedCode, generateCode, resetCode, copyCode, confirmPairing, t
     }
   }
 })

@@ -1,8 +1,8 @@
-# SPA Cable
+# Cable
 
 ## Objective
 
-Define the main realtime transport for the SPA as a websocket cable focused on a
+Define the main realtime transport as a websocket cable focused on a
 simple pair of concepts:
 
 - commands sent by the client
@@ -16,8 +16,7 @@ older integration constraints into the new channel.
 
 - `GET /cable`
 
-The transport is intentionally exposed outside the SPA namespace because the
-command/event bus is a backend capability, not just a frontend detail.
+The transport is a backend capability independent of any specific frontend app.
 
 There is only one official route:
 
@@ -25,8 +24,8 @@ There is only one official route:
 
 ## Authentication
 
-The cable endpoint reuses the same JWT already used by the form and `/spa`
-routes:
+The cable endpoint reuses the same JWT already used by the form and frontend
+app routes:
 
 - cookie `jwt`
 - or `Authorization: BEARER <token>`
@@ -408,8 +407,8 @@ Reasons:
 
 - it is centered on QR/verification flow, not on a durable command/event bus
 - it does not define a stable protocol for server commands
-- it is not structured for multiple concurrent user connections as the main SPA
-  transport
+- it is not structured for multiple concurrent user connections as the main
+  realtime transport
 - it would need deep adaptation anyway, so a dedicated module is cleaner
 
 ## Current Limits
@@ -418,7 +417,7 @@ This first version is intentionally narrow:
 
 - it does not replace the legacy SignalR path yet
 - it still does not expose every HTTP mutation via websocket commands
-- it currently focuses on server lifecycle plus the main message/chat actions needed by the SPA
+- it currently focuses on server lifecycle plus the main message/chat actions
 
 That is deliberate. The protocol is now stable enough to expand without another
 transport rewrite.

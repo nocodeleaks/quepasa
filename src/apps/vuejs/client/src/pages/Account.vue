@@ -4,9 +4,9 @@
       <div class="header-content">
         <h1>
           <i class="fa fa-user-circle"></i>
-          Minha Conta
+          {{ t('account_title') }}
         </h1>
-        <p>Gerencie suas informações e configurações</p>
+        <p>{{ t('account_subtitle') }}</p>
       </div>
     </div>
 
@@ -17,22 +17,22 @@
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Carregando...</p>
+      <p>{{ t('loading_generic') }}</p>
     </div>
 
     <div v-else-if="user" class="account-content">
       <div class="info-card">
         <div class="card-header">
           <i class="fa fa-id-card"></i>
-          <h2>Informações do Usuário</h2>
+          <h2>{{ t('account_user_info') }}</h2>
         </div>
         <div class="card-body">
           <div class="info-row">
-            <span class="info-label">Email/Usuário:</span>
+            <span class="info-label">{{ t('account_email_user') }}</span>
             <span class="info-value">{{ user.username }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Nível:</span>
+            <span class="info-label">{{ t('account_level') }}</span>
             <span class="info-value">
               <span class="badge badge-user">{{ user.level || 'user' }}</span>
             </span>
@@ -43,21 +43,21 @@
       <div class="info-card">
         <div class="card-header">
           <i class="fa fa-cog"></i>
-          <h2>Informações do Sistema</h2>
+          <h2>{{ t('account_system_info') }}</h2>
         </div>
         <div class="card-body">
           <div class="info-row">
-            <span class="info-label">Versão:</span>
+            <span class="info-label">{{ t('account_version') }}</span>
             <span class="info-value">
               <code>{{ version }}</code>
             </span>
           </div>
           <div v-if="branding" class="info-row">
-            <span class="info-label">Título da Aplicação:</span>
+            <span class="info-label">{{ t('account_app_title') }}</span>
             <span class="info-value">{{ branding.title || 'QuePasa' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Servidores:</span>
+            <span class="info-label">{{ t('account_servers') }}</span>
             <span class="info-value">{{ serverCount }}</span>
           </div>
         </div>
@@ -66,7 +66,7 @@
       <div v-if="branding" class="info-card">
         <div class="card-header">
           <i class="fa fa-palette"></i>
-          <h2>Branding</h2>
+          <h2>{{ t('account_branding') }}</h2>
         </div>
         <div class="card-body">
           <div class="branding-preview">
@@ -81,7 +81,7 @@
             </div>
           </div>
           <div v-if="branding.logo" class="info-row">
-            <span class="info-label">Logo:</span>
+            <span class="info-label">{{ t('account_logo') }}</span>
             <span class="info-value">
               <img :src="branding.logo" alt="Logo" class="logo-preview" />
             </span>
@@ -92,18 +92,18 @@
       <div v-if="masterKeyConfigured" class="info-card">
         <div class="card-header">
           <i class="fa fa-key"></i>
-          <h2>API Master Key</h2>
+          <h2>{{ t('account_master_key') }}</h2>
         </div>
         <div class="card-body">
           <div class="info-row">
-            <span class="info-label">Status:</span>
+            <span class="info-label">{{ t('account_status') }}</span>
             <span class="info-value">
-              <span class="badge badge-success">Configurada</span>
+              <span class="badge badge-success">{{ t('account_configured') }}</span>
             </span>
           </div>
           <div class="info-row">
-            <span class="info-label">Exibição:</span>
-            <span class="info-value">O segredo não é exposto pela API.</span>
+            <span class="info-label">{{ t('account_visibility') }}</span>
+            <span class="info-value">{{ t('account_secret_hidden') }}</span>
           </div>
         </div>
       </div>
@@ -111,15 +111,15 @@
       <div class="actions-section">
         <router-link class="btn-secondary" to="/users">
           <i class="fa fa-users"></i>
-          Usuários
+          {{ t('account_users') }}
         </router-link>
         <router-link class="btn-secondary" to="/environment">
           <i class="fa fa-sliders-h"></i>
-          Ambiente
+          {{ t('account_environment') }}
         </router-link>
         <button class="btn-primary" @click="reload">
           <i class="fa fa-sync-alt"></i>
-          Recarregar
+          {{ t('account_reload') }}
         </button>
       </div>
     </div>
@@ -129,6 +129,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from 'vue'
 import api from '@/services/api'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
@@ -139,6 +140,7 @@ export default defineComponent({
     const branding = ref<any>(null)
     const serverCount = ref(0)
     const masterKeyConfigured = ref(false)
+    const { t } = useLocale()
 
     async function load() {
       try {
@@ -158,7 +160,7 @@ export default defineComponent({
         serverCount.value = accountRes.data?.serverCount || 0
         masterKeyConfigured.value = masterKeyRes.data?.configured === true
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar conta'
+        error.value = err?.response?.data?.result || err.message || t('account_error_load')
       } finally {
         loading.value = false
       }
@@ -175,7 +177,8 @@ export default defineComponent({
     return {
       user, version, error, loading, branding, serverCount,
       masterKeyConfigured,
-      reload
+      reload,
+      t
     }
   }
 })

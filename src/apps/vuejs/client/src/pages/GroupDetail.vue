@@ -2,23 +2,23 @@
   <div class="group-detail-page">
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
-      <p>Carregando grupo...</p>
+      <p>{{ t('group_detail_loading') }}</p>
     </div>
 
     <div v-else-if="error" class="error-container">
       <i class="fa fa-exclamation-triangle"></i>
       <p>{{ error }}</p>
-      <router-link :to="`/server/${token}/groups`" class="btn-back">Voltar aos grupos</router-link>
+      <router-link :to="`/server/${token}/groups`" class="btn-back">{{ t('group_detail_back_to_groups') }}</router-link>
     </div>
 
     <div v-else class="group-layout">
       <div class="messages-column">
         <div class="messages-header">
           <div>
-            <p class="eyebrow">Historico recente</p>
-            <h2>Mensagens</h2>
+            <p class="eyebrow">{{ t('group_detail_recent_history') }}</p>
+            <h2>{{ t('messages') }}</h2>
           </div>
-          <small v-if="totalMessages">{{ visibleMessages.length }} de {{ totalMessages }} mensagens</small>
+          <small v-if="totalMessages">{{ t('group_detail_messages_count', String(visibleMessages.length), String(totalMessages)) }}</small>
         </div>
 
         <div
@@ -46,14 +46,14 @@
             </div>
           </div>
 
-          <div class="load-more-state" v-if="isLoadingMore">Carregando mais mensagens...</div>
+          <div class="load-more-state" v-if="isLoadingMore">{{ t('group_detail_loading_more') }}</div>
           <div class="load-more-state" v-else-if="hasMoreMessages">
-            <button class="load-more-btn" type="button" @click="loadMoreMessages">Carregar mais 50</button>
+            <button class="load-more-btn" type="button" @click="loadMoreMessages">{{ t('group_detail_load_more_50') }}</button>
           </div>
-          <div class="load-more-state muted" v-else>Voce chegou ao inicio do historico</div>
+          <div class="load-more-state muted" v-else>{{ t('group_detail_history_start') }}</div>
         </div>
 
-        <div v-else class="empty-messages">Nenhuma mensagem recente</div>
+        <div v-else class="empty-messages">{{ t('groups_no_recent_messages') }}</div>
       </div>
 
       <div class="details-column">
@@ -67,60 +67,60 @@
             <div v-else class="group-photo-placeholder">
               <i class="fa fa-users"></i>
             </div>
-            <button v-if="isAdmin" @click="setGroupPhoto" class="edit-photo-btn" title="Alterar foto">
+            <button v-if="isAdmin" @click="setGroupPhoto" class="edit-photo-btn" :title="t('group_detail_change_photo')">
               <i class="fa fa-camera"></i>
             </button>
           </div>
 
           <h1 class="group-name">
-            {{ group.Name || 'Grupo sem nome' }}
-            <button v-if="isAdmin" @click="setGroupName" class="edit-btn" title="Alterar nome">
+            {{ group.Name || t('groups_unnamed') }}
+            <button v-if="isAdmin" @click="setGroupName" class="edit-btn" :title="t('group_detail_change_name')">
               <i class="fa fa-pencil"></i>
             </button>
           </h1>
 
-          <p class="group-meta">Grupo · {{ group.Participants?.length || 0 }} membros</p>
+          <p class="group-meta">{{ t('group_detail_meta', String(group.Participants?.length || 0)) }}</p>
         </div>
 
         <div class="section" v-if="group.Topic || isAdmin">
           <div class="section-header">
             <i class="fa fa-info-circle"></i>
-            <span>Descricao</span>
-            <button v-if="isAdmin" @click="setGroupTopic" class="edit-btn" title="Alterar descricao">
+            <span>{{ t('group_detail_description') }}</span>
+            <button v-if="isAdmin" @click="setGroupTopic" class="edit-btn" :title="t('group_detail_change_description')">
               <i class="fa fa-pencil"></i>
             </button>
           </div>
           <p class="description-text" v-if="group.Topic">{{ group.Topic }}</p>
-          <p class="description-empty" v-else>Nenhuma descricao definida</p>
-          <p class="description-meta" v-if="group.TopicSetAt">Criada em {{ formatDate(group.TopicSetAt) }}</p>
+          <p class="description-empty" v-else>{{ t('group_detail_no_description') }}</p>
+          <p class="description-meta" v-if="group.TopicSetAt">{{ t('group_detail_created_at', formatDate(group.TopicSetAt)) }}</p>
         </div>
 
         <div class="section actions-section">
           <button class="action-btn" @click="getInvite">
             <i class="fa fa-link"></i>
-            <span>Link de convite</span>
+            <span>{{ t('group_detail_invite_link') }}</span>
           </button>
           <button v-if="isAdmin" class="action-btn" @click="addParticipant">
             <i class="fa fa-user-plus"></i>
-            <span>Adicionar</span>
+            <span>{{ t('group_detail_add') }}</span>
           </button>
           <button class="action-btn" @click="searchParticipants">
             <i class="fa fa-search"></i>
-            <span>Pesquisar</span>
+            <span>{{ t('group_detail_search') }}</span>
           </button>
         </div>
 
         <div class="section">
           <div class="section-header">
             <i class="fa fa-users"></i>
-            <span>{{ group.Participants?.length || 0 }} membros</span>
+            <span>{{ t('group_detail_members_count', String(group.Participants?.length || 0)) }}</span>
           </div>
 
           <div class="search-box" v-if="showSearch">
             <input
               v-model="participantSearch"
               type="text"
-              placeholder="Pesquisar membros..."
+              :placeholder="t('group_detail_search_members')"
               class="search-input"
             />
           </div>
@@ -149,8 +149,8 @@
               </div>
 
               <div class="participant-badges">
-                <span v-if="participant.IsSuperAdmin" class="badge badge-owner">Criador</span>
-                <span v-else-if="participant.IsAdmin" class="badge badge-admin">Admin</span>
+                <span v-if="participant.IsSuperAdmin" class="badge badge-owner">{{ t('group_detail_owner') }}</span>
+                <span v-else-if="participant.IsAdmin" class="badge badge-admin">{{ t('group_detail_admin') }}</span>
               </div>
             </div>
           </div>
@@ -159,7 +159,7 @@
         <div class="section danger-section">
           <button class="danger-btn" @click="leaveGroup">
             <i class="fa fa-sign-out"></i>
-            <span>Sair do grupo</span>
+            <span>{{ t('group_detail_leave_group') }}</span>
           </button>
         </div>
       </div>
@@ -172,6 +172,7 @@ import { computed, defineComponent, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 interface Participant {
   JID: string
@@ -199,6 +200,7 @@ export default defineComponent({
     const error = ref('')
     const showSearch = ref(false)
     const participantSearch = ref('')
+    const { t, locale } = useLocale()
     const myPhone = ref('')
     const messagesListRef = ref<HTMLElement | null>(null)
     const isLoadingMore = ref(false)
@@ -266,7 +268,7 @@ export default defineComponent({
         await loadParticipantPictures()
         await loadMessages()
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err?.message || 'Erro ao carregar grupo'
+        error.value = err?.response?.data?.result || err?.message || t('group_detail_error_load')
       } finally {
         loading.value = false
       }
@@ -316,7 +318,7 @@ export default defineComponent({
     function formatDate(dateStr: string) {
       if (!dateStr) return ''
       const date = new Date(dateStr)
-      return date.toLocaleDateString('pt-BR', {
+      return date.toLocaleDateString(locale.value, {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -334,11 +336,11 @@ export default defineComponent({
       const oneDay = 24 * 60 * 60 * 1000
 
       if (diff < oneDay && date.getDate() === now.getDate()) {
-        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        return date.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
       }
-      if (diff < 2 * oneDay) return 'Ontem'
-      if (diff < 7 * oneDay) return date.toLocaleDateString('pt-BR', { weekday: 'short' })
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      if (diff < 2 * oneDay) return t('time_yesterday')
+      if (diff < 7 * oneDay) return date.toLocaleDateString(locale.value, { weekday: 'short' })
+      return date.toLocaleDateString(locale.value, { day: '2-digit', month: '2-digit' })
     }
 
     async function loadMessages() {
@@ -400,45 +402,45 @@ export default defineComponent({
     }
 
     async function leaveGroup() {
-      if (!confirm('Deseja realmente sair do grupo?')) return
+      if (!confirm(t('group_detail_confirm_leave'))) return
 
       try {
         await api.post('/api/groups/leave', { token, groupId: groupid })
-        pushToast('Saida do grupo solicitada', 'success')
+        pushToast(t('group_detail_leave_requested'), 'success')
         router.push(`/server/${token}/groups`)
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao sair do grupo', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('group_detail_error_leave'), 'error')
       }
     }
 
     async function setGroupName() {
-      const name = prompt('Novo nome do grupo (<=25 caracteres):', group.value.Name || '')
+      const name = prompt(t('group_detail_prompt_name'), group.value.Name || '')
       if (!name) return
 
       try {
         await api.patch('/api/groups', { token, groupId: groupid, name })
-        pushToast('Nome do grupo atualizado', 'success')
+        pushToast(t('group_detail_name_updated'), 'success')
         await load()
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao atualizar nome', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('group_detail_error_name'), 'error')
       }
     }
 
     async function setGroupTopic() {
-      const topic = prompt('Nova descricao do grupo:', group.value.Topic || '')
+      const topic = prompt(t('group_detail_prompt_description'), group.value.Topic || '')
       if (topic == null) return
 
       try {
         await api.patch('/api/groups', { token, groupId: groupid, topic })
-        pushToast('Descricao atualizada', 'success')
+        pushToast(t('group_detail_description_updated'), 'success')
         await load()
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao atualizar descricao', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('group_detail_error_description'), 'error')
       }
     }
 
     async function addParticipant() {
-      const phones = prompt('Telefone(s) para adicionar (separados por virgula):')
+      const phones = prompt(t('group_detail_prompt_add_participants'))
       if (!phones) return
 
       const participants = phones.split(',').map((value: string) => value.trim()).filter(Boolean)
@@ -450,23 +452,23 @@ export default defineComponent({
           action: 'add',
           participants,
         })
-        pushToast('Participantes adicionados', 'success')
+        pushToast(t('group_detail_participants_added'), 'success')
         await load()
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao adicionar participante', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('group_detail_error_add_participant'), 'error')
       }
     }
 
     async function setGroupPhoto() {
-      const url = prompt('URL da imagem do grupo (ou vazio para cancelar):')
+      const url = prompt(t('group_detail_prompt_photo_url'))
       if (!url) return
 
       try {
         await api.put('/api/groups/photo', { token, groupId: groupid, image_url: url })
-        pushToast('Foto do grupo atualizada', 'success')
+        pushToast(t('group_detail_photo_updated'), 'success')
         await load()
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao alterar foto', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('group_detail_error_photo'), 'error')
       }
     }
 
@@ -476,14 +478,14 @@ export default defineComponent({
         const url = res.data?.url
 
         if (!url) {
-          pushToast('Nenhum link de convite disponivel', 'error')
+          pushToast(t('group_detail_no_invite_link'), 'error')
           return
         }
 
         await navigator.clipboard.writeText(url)
-        pushToast('Link copiado para a area de transferencia', 'success')
+        pushToast(t('group_detail_invite_copied'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao obter link', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('group_detail_error_invite'), 'error')
       }
     }
 
@@ -520,6 +522,7 @@ export default defineComponent({
       showSearch,
       token,
       totalMessages,
+      t,
       visibleMessages,
     }
   },

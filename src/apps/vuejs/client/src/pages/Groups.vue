@@ -5,7 +5,7 @@
         <router-link :to="`/server/${token}`" class="back-btn">
           <i class="fa fa-arrow-left"></i>
         </router-link>
-        <h1>Grupos</h1>
+        <h1>{{ t('groups_title') }}</h1>
         <span class="group-count" v-if="groups.length > 0">({{ groups.length }})</span>
       </div>
       <div class="header-actions">
@@ -13,23 +13,23 @@
           <button
             :class="['toggle-btn', { active: viewMode === 'card' }]"
             @click="viewMode = 'card'"
-            title="Modo Card"
+            :title="t('card_view')"
           >
             <i class="fa fa-th-large"></i>
           </button>
           <button
             :class="['toggle-btn', { active: viewMode === 'list' }]"
             @click="viewMode = 'list'"
-            title="Modo Lista"
+            :title="t('table_view')"
           >
             <i class="fa fa-list"></i>
           </button>
         </div>
-        <button @click="load" class="btn-icon" title="Atualizar">
+        <button @click="load" class="btn-icon" :title="t('groups_refresh')">
           <i class="fa fa-refresh" :class="{ 'fa-spin': loading }"></i>
         </button>
         <button @click="createGroup" class="btn-primary">
-          <i class="fa fa-plus me-2"></i>Criar grupo
+          <i class="fa fa-plus me-2"></i>{{ t('groups_create') }}
         </button>
       </div>
     </div>
@@ -39,7 +39,7 @@
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Pesquisar grupos..."
+        :placeholder="t('groups_search_placeholder')"
         class="search-input"
       />
       <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">
@@ -54,7 +54,7 @@
       <button @click="prevPage" :disabled="currentPage === 1 || loading" class="btn-page">
         <i class="fa fa-angle-left"></i>
       </button>
-      <span class="page-info">Pagina {{ currentPage }} de {{ totalPages }}</span>
+      <span class="page-info">{{ t('page_indicator', String(currentPage), String(totalPages)) }}</span>
       <button @click="nextPage" :disabled="currentPage >= totalPages || loading" class="btn-page">
         <i class="fa fa-angle-right"></i>
       </button>
@@ -62,19 +62,19 @@
         <i class="fa fa-angle-double-right"></i>
       </button>
       <select v-model.number="pageSize" class="page-size-select" :disabled="loading">
-        <option :value="5">5 por pagina</option>
-        <option :value="10">10 por pagina</option>
-        <option :value="15">15 por pagina</option>
-        <option :value="25">25 por pagina</option>
-        <option :value="50">50 por pagina</option>
-        <option :value="100">100 por pagina</option>
-        <option :value="200">200 por pagina</option>
+        <option :value="5">{{ t('groups_per_page_option', '5') }}</option>
+        <option :value="10">{{ t('groups_per_page_option', '10') }}</option>
+        <option :value="15">{{ t('groups_per_page_option', '15') }}</option>
+        <option :value="25">{{ t('groups_per_page_option', '25') }}</option>
+        <option :value="50">{{ t('groups_per_page_option', '50') }}</option>
+        <option :value="100">{{ t('groups_per_page_option', '100') }}</option>
+        <option :value="200">{{ t('groups_per_page_option', '200') }}</option>
       </select>
     </div>
 
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
-      <p>Carregando grupos...</p>
+      <p>{{ t('groups_loading') }}</p>
     </div>
 
     <div v-else-if="error" class="error-box">
@@ -84,8 +84,8 @@
 
     <div v-else-if="filteredGroups.length === 0" class="empty-state">
       <i class="fa fa-users"></i>
-      <p v-if="searchQuery">Nenhum grupo encontrado para "{{ searchQuery }}"</p>
-      <p v-else>Nenhum grupo encontrado</p>
+      <p v-if="searchQuery">{{ t('groups_empty_for_query', searchQuery) }}</p>
+      <p v-else>{{ t('groups_empty') }}</p>
     </div>
 
     <div v-else-if="viewMode === 'card'" class="groups-grid">
@@ -108,7 +108,7 @@
         </div>
         <div class="card-content">
           <div class="card-header">
-            <h3 class="group-name">{{ group.Name || 'Grupo sem nome' }}</h3>
+            <h3 class="group-name">{{ group.Name || t('groups_unnamed') }}</h3>
             <span class="message-time" v-if="group.lastMessage">{{ formatTime(group.lastMessage.timestamp) }}</span>
           </div>
           <div class="card-body">
@@ -117,17 +117,17 @@
               {{ truncateMessage(group.lastMessage.text) }}
             </p>
             <p class="last-message empty" v-else>
-              <i class="fa fa-comment-o me-1"></i>Sem mensagens recentes
+              <i class="fa fa-comment-o me-1"></i>{{ t('groups_no_recent_messages') }}
             </p>
           </div>
           <div class="card-footer">
             <span class="participants-count">
               <i class="fa fa-user me-1"></i>{{ group.Participants?.length || 0 }}
             </span>
-            <span v-if="group.IsAnnounce" class="badge badge-announce" title="Apenas admins podem enviar">
+            <span v-if="group.IsAnnounce" class="badge badge-announce" :title="t('groups_only_admins_send')">
               <i class="fa fa-bullhorn"></i>
             </span>
-            <span v-if="group.IsParent" class="badge badge-community" title="Comunidade">
+            <span v-if="group.IsParent" class="badge badge-community" :title="t('groups_community')">
               <i class="fa fa-sitemap"></i>
             </span>
           </div>
@@ -155,7 +155,7 @@
         </div>
         <div class="item-content">
           <div class="item-header">
-            <h3 class="group-name">{{ group.Name || 'Grupo sem nome' }}</h3>
+            <h3 class="group-name">{{ group.Name || t('groups_unnamed') }}</h3>
             <span class="message-time" v-if="group.lastMessage">{{ formatTime(group.lastMessage.timestamp) }}</span>
           </div>
           <div class="item-body">
@@ -165,16 +165,16 @@
             </p>
             <p class="last-message empty" v-else>
               <span class="participants-info">
-                <i class="fa fa-user me-1"></i>{{ group.Participants?.length || 0 }} participantes
+                <i class="fa fa-user me-1"></i>{{ t('groups_participants_count', String(group.Participants?.length || 0)) }}
               </span>
             </p>
           </div>
         </div>
         <div class="item-badges">
-          <span v-if="group.IsAnnounce" class="badge badge-announce" title="Apenas admins podem enviar">
+          <span v-if="group.IsAnnounce" class="badge badge-announce" :title="t('groups_only_admins_send')">
             <i class="fa fa-bullhorn"></i>
           </span>
-          <span v-if="group.IsParent" class="badge badge-community" title="Comunidade">
+          <span v-if="group.IsParent" class="badge badge-community" :title="t('groups_community')">
             <i class="fa fa-sitemap"></i>
           </span>
         </div>
@@ -188,7 +188,7 @@
       <button @click="prevPage" :disabled="currentPage === 1 || loading" class="btn-page">
         <i class="fa fa-angle-left"></i>
       </button>
-      <span class="page-info">Pagina {{ currentPage }} de {{ totalPages }}</span>
+      <span class="page-info">{{ t('page_indicator', String(currentPage), String(totalPages)) }}</span>
       <button @click="nextPage" :disabled="currentPage >= totalPages || loading" class="btn-page">
         <i class="fa fa-angle-right"></i>
       </button>
@@ -196,13 +196,13 @@
         <i class="fa fa-angle-double-right"></i>
       </button>
       <select v-model.number="pageSize" class="page-size-select" :disabled="loading">
-        <option :value="5">5 por pagina</option>
-        <option :value="10">10 por pagina</option>
-        <option :value="15">15 por pagina</option>
-        <option :value="25">25 por pagina</option>
-        <option :value="50">50 por pagina</option>
-        <option :value="100">100 por pagina</option>
-        <option :value="200">200 por pagina</option>
+        <option :value="5">{{ t('groups_per_page_option', '5') }}</option>
+        <option :value="10">{{ t('groups_per_page_option', '10') }}</option>
+        <option :value="15">{{ t('groups_per_page_option', '15') }}</option>
+        <option :value="25">{{ t('groups_per_page_option', '25') }}</option>
+        <option :value="50">{{ t('groups_per_page_option', '50') }}</option>
+        <option :value="100">{{ t('groups_per_page_option', '100') }}</option>
+        <option :value="200">{{ t('groups_per_page_option', '200') }}</option>
       </select>
     </div>
   </div>
@@ -213,6 +213,7 @@ import { computed, defineComponent, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 interface LastMessage {
   timestamp: string
@@ -240,6 +241,7 @@ export default defineComponent({
     const loading = ref(false)
     const error = ref('')
     const searchQuery = ref('')
+    const { t, locale } = useLocale()
     const viewMode = ref<'card' | 'list'>('card')
     const currentPage = ref(1)
     const pageSize = ref(24)
@@ -273,7 +275,7 @@ export default defineComponent({
         void loadGroupPictures(rawGroups.slice(0, 20))
         await loadLastMessages()
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err?.message || 'Erro ao carregar grupos'
+        error.value = err?.response?.data?.result || err?.message || t('groups_error_load')
       } finally {
         loading.value = false
       }
@@ -321,19 +323,19 @@ export default defineComponent({
       if (msg.attachment) {
         const mime = msg.attachment.mimetype || ''
 
-        if (mime.startsWith('image/')) previewText = previewText ? `[IMG] ${previewText}` : '[IMG] Imagem'
+        if (mime.startsWith('image/')) previewText = previewText ? `[IMG] ${previewText}` : `[IMG] ${t('media_image')}`
         else if (mime.startsWith('video/')) previewText = previewText ? `[VID] ${previewText}` : '[VID] Video'
         else if (mime.startsWith('audio/') || msg.type === 'ptt') previewText = previewText ? `[AUD] ${previewText}` : '[AUD] Audio'
         else if (mime.includes('pdf')) previewText = previewText ? `[PDF] ${previewText}` : '[PDF] PDF'
-        else previewText = previewText ? `[ARQ] ${previewText}` : '[ARQ] Arquivo'
+        else previewText = previewText ? `[ARQ] ${previewText}` : `[ARQ] ${t('media_file')}`
       }
 
       if (msg.type === 'sticker') {
-        previewText = '[STK] Sticker'
+        previewText = `[STK] ${t('media_sticker')}`
       }
 
       if (!previewText && msg.inreply) {
-        previewText = '[RPL] Resposta'
+        previewText = `[RPL] ${t('media_reply')}`
       }
 
       return previewText
@@ -358,7 +360,7 @@ export default defineComponent({
           if (!lastMessages[chatId] || new Date(msg.timestamp) > new Date(lastMessages[chatId].timestamp)) {
             lastMessages[chatId] = {
               timestamp: msg.timestamp,
-              senderName: msg.participant?.title || msg.participant?.phone || 'Desconhecido',
+              senderName: msg.participant?.title || msg.participant?.phone || t('unknown'),
               text: previewText,
             }
           }
@@ -395,11 +397,11 @@ export default defineComponent({
       const oneDay = 24 * 60 * 60 * 1000
 
       if (diff < oneDay && date.getDate() === now.getDate()) {
-        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        return date.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
       }
-      if (diff < 2 * oneDay) return 'Ontem'
-      if (diff < 7 * oneDay) return date.toLocaleDateString('pt-BR', { weekday: 'short' })
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      if (diff < 2 * oneDay) return t('time_yesterday')
+      if (diff < 7 * oneDay) return date.toLocaleDateString(locale.value, { weekday: 'short' })
+      return date.toLocaleDateString(locale.value, { day: '2-digit', month: '2-digit' })
     }
 
     function truncateMessage(text: string, maxLength = 50) {
@@ -413,20 +415,20 @@ export default defineComponent({
     }
 
     async function createGroup() {
-      const title = prompt('Nome do grupo (<=25 caracteres):')
+      const title = prompt(t('groups_prompt_name'))
       if (!title) return
 
-      const participantsRaw = prompt('Participantes (telefones separados por virgula):')
+      const participantsRaw = prompt(t('groups_prompt_participants'))
       if (!participantsRaw) return
 
       const participants = participantsRaw.split(',').map((value) => value.trim()).filter(Boolean)
 
       try {
         await api.post('/api/groups', { token, title, participants })
-        pushToast('Grupo criado', 'success')
+        pushToast(t('groups_created'), 'success')
         await load()
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || err?.message || 'Erro ao criar grupo', 'error')
+        pushToast(err?.response?.data?.result || err?.message || t('groups_error_create'), 'error')
       }
     }
 
@@ -452,6 +454,7 @@ export default defineComponent({
       pageSize,
       prevPage,
       searchQuery,
+      t,
       token,
       totalPages,
       truncateMessage,

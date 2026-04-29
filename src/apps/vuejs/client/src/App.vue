@@ -89,7 +89,7 @@
             <div class="sheet-title" id="mobileMenuSheetLabel">{{ branding.title || 'QuePasa' }}</div>
             <div class="sheet-subtitle">{{ t('nav_more') }}</div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" :aria-label="t('close')"></button>
         </div>
         <div class="offcanvas-body">
           <div v-if="session.user.value" class="sheet-user-pill">

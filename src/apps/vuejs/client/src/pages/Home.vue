@@ -114,7 +114,7 @@
                 <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                 <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? '(ON)' : '(OFF)' }}</button></li>
+                <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? t('state_on_short') : t('state_off_short') }}</button></li>
                 <li><button class="dropdown-item text-warning" @click="disconnectServer(srv)"><i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}</button></li>
               </template>
               <li><hr class="dropdown-divider"></li>
@@ -180,14 +180,14 @@
                 <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                 <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? '(ON)' : '(OFF)' }}</button></li>
+                <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? t('state_on_short') : t('state_off_short') }}</button></li>
                 <li><button class="dropdown-item text-warning" @click="disconnectServer(srv)"><i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}</button></li>
               </template>
               <li><hr class="dropdown-divider"></li>
-              <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }} {{ srv.groups ? '(ON)' : '(OFF)' }}</button></li>
-              <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }} {{ srv.broadcasts ? '(ON)' : '(OFF)' }}</button></li>
-              <li><button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.read_receipts ? '(ON)' : '(OFF)' }}</button></li>
-              <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }} {{ srv.calls ? '(ON)' : '(OFF)' }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }} {{ srv.groups ? t('state_on_short') : t('state_off_short') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }} {{ srv.broadcasts ? t('state_on_short') : t('state_off_short') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.read_receipts ? t('state_on_short') : t('state_off_short') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }} {{ srv.calls ? t('state_on_short') : t('state_off_short') }}</button></li>
               <li><hr class="dropdown-divider"></li>
               <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
               <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
@@ -414,9 +414,9 @@ export default defineComponent({
 
     // Tri-state title helper
     function getTriStateTitle(name: string, val: number | boolean | null | undefined): string {
-      if (val === 1 || val === true) return `${name}: ON (forçado)`
-      if (val === -1 || val === false) return `${name}: OFF (forçado)`
-      return `${name}: Padrão do sistema`
+      if (val === 1 || val === true) return t('tristate_on', name)
+      if (val === -1 || val === false) return t('tristate_off', name)
+      return t('tristate_default', name)
     }
 
     // Token truncation is handled via CSS (class .truncated) to allow copy and selectable text
@@ -890,14 +890,17 @@ export default defineComponent({
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 0.75rem;
+  overflow: visible;
 }
 .scard {
   background: #fff;
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
+  position: relative;
+  isolation: isolate;
   transition: box-shadow 0.18s, transform 0.18s;
 }
 .scard:hover {
@@ -996,6 +999,13 @@ export default defineComponent({
   padding: 0.45rem 0.7rem;
   border-top: 1px solid rgba(148,163,184,0.08);
   margin-top: auto;
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+}
+
+.scard-actions .dropdown-menu {
+  z-index: 1085;
 }
 .scard-btn {
   display: inline-flex;

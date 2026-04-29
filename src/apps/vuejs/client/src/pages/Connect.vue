@@ -5,15 +5,15 @@
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
           <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
         </svg>
-        Voltar
+        {{ t('back') }}
       </button>
-      <h1>Conectar WhatsApp</h1>
-      <p class="subtitle">Escolha o método de conexão</p>
+      <h1>{{ t('connect_page_title') }}</h1>
+      <p class="subtitle">{{ t('connect_page_subtitle') }}</p>
     </div>
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Criando servidor...</p>
+      <p>{{ t('creating') }}</p>
     </div>
 
     <div v-else-if="error" class="error-state">
@@ -21,7 +21,7 @@
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
       </svg>
       <p>{{ error }}</p>
-      <button @click="error = ''" class="btn-retry">Tentar novamente</button>
+      <button @click="error = ''" class="btn-retry">{{ t('error_retry') }}</button>
     </div>
 
     <div v-else class="connection-methods">
@@ -31,14 +31,14 @@
             <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2zM17 17h2v2h-2zM15 19h2v2h-2zM19 19h2v2h-2z"/>
           </svg>
         </div>
-        <h3>QR Code</h3>
-        <p>Escaneie o código QR com seu WhatsApp</p>
+        <h3>{{ t('connect_method_qr_title') }}</h3>
+        <p>{{ t('connect_method_qr_desc') }}</p>
         <ul class="method-features">
-          <li>✓ Conexão rápida</li>
-          <li>✓ Use a câmera do celular</li>
-          <li>✓ Método tradicional</li>
+          <li>✓ {{ t('connect_qr_feature_1') }}</li>
+          <li>✓ {{ t('connect_qr_feature_2') }}</li>
+          <li>✓ {{ t('connect_qr_feature_3') }}</li>
         </ul>
-        <span class="method-action">Escanear QR Code →</span>
+        <span class="method-action">{{ t('connect_qr_action') }} →</span>
       </div>
 
       <div class="method-card" @click="connectWith('paircode')">
@@ -47,25 +47,25 @@
             <path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z"/>
           </svg>
         </div>
-        <h3>Pair Code</h3>
-        <p>Digite o código de 8 dígitos no WhatsApp</p>
+        <h3>{{ t('connect_method_pair_title') }}</h3>
+        <p>{{ t('connect_method_pair_desc') }}</p>
         <ul class="method-features">
-          <li>✓ Sem necessidade de câmera</li>
-          <li>✓ Use o teclado</li>
-          <li>✓ Método alternativo</li>
+          <li>✓ {{ t('connect_pair_feature_1') }}</li>
+          <li>✓ {{ t('connect_pair_feature_2') }}</li>
+          <li>✓ {{ t('connect_pair_feature_3') }}</li>
         </ul>
-        <span class="method-action">Usar Pair Code →</span>
+        <span class="method-action">{{ t('connect_pair_action') }} →</span>
       </div>
     </div>
 
     <div class="help-section">
-      <h4>Como conectar?</h4>
+      <h4>{{ t('connect_help_title') }}</h4>
       <ol>
-        <li>Escolha um método acima</li>
-        <li>Abra o WhatsApp no seu celular</li>
-        <li>Vá em <strong>Configurações → Aparelhos conectados</strong></li>
-        <li>Toque em <strong>Conectar um aparelho</strong></li>
-        <li>Escaneie o QR Code ou digite o Pair Code</li>
+        <li>{{ t('connect_help_step_1') }}</li>
+        <li>{{ t('connect_help_step_2') }}</li>
+        <li>{{ t('connect_help_step_3') }}</li>
+        <li>{{ t('connect_help_step_4') }}</li>
+        <li>{{ t('connect_help_step_5') }}</li>
       </ol>
     </div>
   </div>
@@ -76,6 +76,7 @@ import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   name: 'Connect',
@@ -83,6 +84,7 @@ export default defineComponent({
     const router = useRouter()
     const loading = ref(false)
     const error = ref('')
+    const { t } = useLocale()
 
     const connectWith = async (method: 'qrcode' | 'paircode') => {
       loading.value = true
@@ -95,7 +97,7 @@ export default defineComponent({
 
         if (createdServer?.token) {
           const token = createdServer.token
-          pushToast('Servidor criado com sucesso!', 'success')
+          pushToast(t('session_created'), 'success')
           
           // Navigate to the chosen connection method
           if (method === 'qrcode') {
@@ -104,18 +106,18 @@ export default defineComponent({
             router.push(`/server/${token}/paircode`)
           }
         } else {
-          throw new Error('Token não recebido do servidor')
+          throw new Error(t('error_token_not_received'))
         }
       } catch (err: any) {
         console.error('Error creating server:', err)
-        error.value = err.response?.data?.result || err.response?.data?.message || err.message || 'Erro ao criar servidor'
+        error.value = err.response?.data?.result || err.response?.data?.message || err.message || t('error_create_session')
         pushToast(error.value, 'error')
       } finally {
         loading.value = false
       }
     }
 
-    return { loading, error, connectWith }
+    return { loading, error, connectWith, t }
   }
 })
 </script>

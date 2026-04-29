@@ -5,7 +5,7 @@
       :class="{ active: modelValue === -1 }" 
       @click="setValue(-1)"
       :disabled="disabled"
-      title="OFF (forçado)"
+      :title="t('tristate_off_short')"
     >
       <i class="fa fa-times"></i>
     </button>
@@ -14,7 +14,7 @@
       :class="{ active: modelValue === 0 }" 
       @click="setValue(0)"
       :disabled="disabled"
-      title="Padrão do sistema"
+      :title="t('tristate_default_short')"
     >
       <i class="fa fa-minus"></i>
     </button>
@@ -23,7 +23,7 @@
       :class="{ active: modelValue === 1 }" 
       @click="setValue(1)"
       :disabled="disabled"
-      title="ON (forçado)"
+      :title="t('tristate_on_short')"
     >
       <i class="fa fa-check"></i>
     </button>
@@ -32,6 +32,7 @@
 
 <script lang="ts">
 import { defineComponent, computed } from 'vue'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   name: 'TriStateToggle',
@@ -48,6 +49,8 @@ export default defineComponent({
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
+    const { t } = useLocale()
+
     const stateClass = computed(() => {
       if (props.disabled) return 'disabled'
       if (props.modelValue === -1) return 'state-off'
@@ -60,7 +63,7 @@ export default defineComponent({
       emit('update:modelValue', val)
       emit('change', val)
     }
-    return { setValue, stateClass }
+    return { setValue, stateClass, t }
   }
 })
 </script>

@@ -652,12 +652,12 @@ export default defineComponent({
         if (msgType.value === 'text') {
           // Use SPA endpoint for text messages
           const payload = {
-            chatId: recipient.value,
+            chatid: recipient.value,
             text: text.value
           }
           await api.post('/api/messages', { token, ...payload })
         } else {
-          // For media types, use the bot API
+          // For media types, use the canonical SPA messages endpoint
           const hasFile = selectedFile.value || audioBlob.value
           
           if (mediaSource.value !== 'url' && hasFile) {
@@ -674,8 +674,9 @@ export default defineComponent({
             if (text.value) formData.append('text', text.value)
             if (filename.value) formData.append('filename', filename.value)
 
-            await api.post(`/bot/${token}/sendattach`, formData, {
-              headers: { 
+            await api.post('/api/messages', formData, {
+              params: { token },
+              headers: {
                 'X-QUEPASA-TOKEN': token,
                 'Content-Type': 'multipart/form-data'
               }
@@ -683,15 +684,14 @@ export default defineComponent({
           } else {
             // Use URL
             const mediaPayload: any = {
+              token,
               chatid: recipient.value,
               url: attachmentUrl.value
             }
             if (text.value) mediaPayload.text = text.value
             if (filename.value) mediaPayload.filename = filename.value
 
-            await api.post(`/bot/${token}/send`, mediaPayload, {
-              headers: { 'X-QUEPASA-TOKEN': token }
-            })
+            await api.post('/api/messages', mediaPayload)
           }
         }
 

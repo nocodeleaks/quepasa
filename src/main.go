@@ -9,7 +9,9 @@ import (
 	_ "github.com/nocodeleaks/quepasa/mcp"
 	_ "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
-	_ "github.com/nocodeleaks/quepasa/rabbitmq" // Initialize RabbitMQ client
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
@@ -81,6 +83,28 @@ func main() {
 
 	dbParameters := environment.Settings.Database.GetDBParameters()
 	whatsmeow.Start(options, dbParameters, logentry)
+
+	// Inject realtime presence adapter so models remain transport-agnostic.
+	models.GlobalRealtimePresenceChecker = signalr.SignalRHub
+	models.GlobalDispatchingLifecyclePublisher = runtime.NewDispatchingLifecyclePublisher()
+	models.GlobalRabbitMQGetClient = func(connectionString string) models.RabbitMQPublisherClient {
+		return rabbitmq.GetRabbitMQClient(connectionString)
+	}
+	models.GlobalRabbitMQCloseClient = rabbitmq.CloseRabbitMQClient
+	models.GlobalRabbitMQInjectQueueBackend = func() {
+		if rabbitmq.RabbitMQClientInstance != nil {
+			rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
+		}
+	}
+	models.GlobalRabbitMQExchangeName = rabbitmq.QuePasaExchangeName
+	models.GlobalRabbitMQRoutingKeyProd = rabbitmq.QuePasaRoutingKeyProd
+	models.GlobalRabbitMQRoutingKeyHistory = rabbitmq.QuePasaRoutingKeyHistory
+	models.GlobalRabbitMQRoutingKeyEvents = rabbitmq.QuePasaRoutingKeyEvents
+	models.GlobalRabbitMQMessagesPublishedInc = func() { rabbitmq.MessagesPublished.Inc() }
+	models.GlobalRabbitMQMessagePublishErrorsInc = func() { rabbitmq.MessagePublishErrors.Inc() }
+	models.GlobalRabbitMQClientResolver = func(connectionString string) bool {
+		return rabbitmq.GetRabbitMQClient(connectionString) != nil
+	}
 
 	// must execute after whatsmeow started
 	for _, element := range models.Running {

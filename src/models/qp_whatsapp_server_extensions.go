@@ -10,14 +10,14 @@ import (
 
 // handle message deliver to individual dispatching distribution
 func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
-	return dispatchOutboundFromServer(server, message)
+	return DispatchOutboundFromServer(server, message)
 }
 
 // PostToDispatchings delivers a message to the provided dispatching targets.
 // It is used by the normal server flow and by deletion flows that need to use
 // a preserved snapshot instead of the server's live dispatching slice.
 func PostToDispatchings(server *QpWhatsappServer, dispatchings []*QpDispatching, message *whatsapp.WhatsappMessage) (err error) {
-	return dispatchOutboundToTargets(server, dispatchings, message)
+	return DispatchOutboundToTargets(server, dispatchings, message)
 }
 
 // region FIND|SEARCH WHATSAPP SERVER
@@ -82,7 +82,7 @@ func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMe
 		return err
 	}
 
-	return dispatchOutboundToTargets(server, server.GetWebhookDispatchings(), message)
+	return DispatchOutboundToTargets(server, server.GetWebhookDispatchings(), message)
 }
 
 //endregion

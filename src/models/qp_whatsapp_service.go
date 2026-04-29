@@ -175,7 +175,6 @@ func (source *QPWhatsappService) NewQpWhatsappServer(info *QpServer) (server *Qp
 	logentry.Trace("server created ...")
 
 	server.HandlerEnsure()
-	server.DispatchingEnsure()
 	server.DispatchingFill(info, source.DB.Dispatching)
 	return
 }

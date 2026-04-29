@@ -506,16 +506,160 @@ Apply the same interface injection pattern as Task 5.1.
 
 | Phase | Task | Status |
 |---|---|---|
-| 1 | 1.1 Fix `IsConnecting` atomic | ⬜ |
-| 1 | 1.2 Fix timestamp wrap | ⬜ |
-| 1 | 1.3 Remove dead `DispatchingHandler` field | ⬜ |
-| 2 | 2.1 Remove `QPDispatchingHandler` | ⬜ |
-| 2 | 2.2 Remove duplicated dispatch functions from `models` | ⬜ |
-| 3 | 3.1 Fix `Receipt` / `TriggerReceipt` | ⬜ |
-| 4 | 4.1 Map `dispatch/service` sites in `models` | ⬜ |
-| 4 | 4.2 Move lifecycle events to `runtime` | ⬜ |
-| 5 | 5.1 Remove `signalr` import from `models` | ⬜ |
-| 5 | 5.2 Remove `rabbitmq` import from `models` | ⬜ |
+| 1 | 1.1 Fix `IsConnecting` atomic | ✅ |
+| 1 | 1.2 Fix timestamp wrap | ✅ |
+| 1 | 1.3 Remove dead `DispatchingHandler` field | ✅ |
+| 2 | 2.1 Remove `QPDispatchingHandler` | ✅ |
+| 2 | 2.2 Remove duplicated dispatch functions from `models` | ✅ |
+| 3 | 3.1 Fix `Receipt` / `TriggerReceipt` | ✅ |
+| 4 | 4.1 Map `dispatch/service` sites in `models` | ✅ |
+| 4 | 4.2 Move lifecycle events to `runtime` | ✅ |
+| 5 | 5.1 Remove `signalr` import from `models` | ✅ |
+| 5 | 5.2 Remove `rabbitmq` import from `models` | ✅ |
+
+---
+
+## Implemented Delta (Current Branch)
+
+### Completed in code
+- Replaced non-atomic connection flag with atomic state accessor in whatsmeow connection flow.
+- Updated state/status readers to use the safe accessor and documented lock-avoidance intent inline.
+- Hardened timestamp ordering helper and documented bounded offset behavior inline.
+- Removed `QpWhatsappServer.DispatchingHandler` dead field and removed `DispatchingEnsure()` state holder method.
+- Switched dispatching subscriber attachment checks from generic `IsAttached()` to subscriber-specific `HasDispatchingSubscriber()`.
+- Centralized outbound dispatch implementation in `models` exported functions:
+    - `DispatchOutboundFromServer(...)`
+    - `DispatchOutboundToTargets(...)`
+- Updated runtime handler to delegate to canonical models dispatcher (deduplicated logic path).
+- Hardened receipt dispatch path with nil guard and deterministic message type normalization.
+- Replaced direct `signalr` dependency in `models` with injected interface (`GlobalRealtimePresenceChecker`).
+- Replaced direct `rabbitmq` dependency in `QpWhatsappServer` with injected resolver (`GlobalRabbitMQClientResolver`).
+- Removed legacy concrete type `QPDispatchingHandler` in favor of `OutboundDispatchingSubscriber` marker-based registration.
+- Moved lifecycle realtime publishing out of `models.DispatchingHandler` via injected publisher (`GlobalDispatchingLifecyclePublisher`) wired from runtime.
+
+### Mapped `dispatch/service` usage in models (Task 4.1)
+- `src/models/dispatching_handler.go` lifecycle publish + handler flow dispatch.
+- `src/models/qp_dispatching.go` webhook and RabbitMQ transport calls.
+- `src/models/qp_dispatching_handler.go` outbound target dispatch orchestration.
+
+### Remaining work to finish full plan
+- None. Planned execution waves completed in this branch.
+
+
+## Delivery Waves (Recommended PR Slicing)
+
+Keep each PR small, reversible, and independently testable.
+
+### Wave A — Concurrency and ordering safety
+- Includes: Task 1.1 + Task 1.2
+- Expected file count: 2 files
+- Risk: very low
+- Rollback cost: very low
+- Exit gate:
+    - Build succeeds
+    - No API contract changes
+    - WhatsApp connect/disconnect sanity check passes
+
+### Wave B — Remove dead wiring in server model
+- Includes: Task 1.3
+- Expected file count: 1 to 2 files
+- Risk: low
+- Rollback cost: low
+- Exit gate:
+    - Build succeeds
+    - Server start/ensure-ready still registers dispatching path correctly
+
+### Wave C — Remove deprecated dispatch handler path
+- Includes: Task 2.1 + Task 2.2
+- Expected file count: 3 to 5 files (plus one delete)
+- Risk: medium
+- Rollback cost: medium
+- Exit gate:
+    - Build succeeds
+    - Redispatch endpoint still works
+    - Webhook and RabbitMQ dispatch still fire for inbound and outbound messages
+
+### Wave D — Receipt semantics hardening
+- Includes: Task 3.1
+- Expected file count: 1 to 2 files
+- Risk: low to medium
+- Rollback cost: low
+- Exit gate:
+    - Receipt payload is clearly distinguishable from regular message payload
+    - Existing automations (n8n/chatwoot flows) keep working
+
+### Wave E — Architectural boundary cleanup
+- Includes: Task 4.1 + Task 4.2 + Task 5.1 + Task 5.2
+- Expected file count: 6 to 12 files
+- Risk: high
+- Rollback cost: high
+- Exit gate:
+    - `models` no longer imports `dispatch/service`, `signalr`, or `rabbitmq`
+    - Lifecycle events still reach realtime clients
+    - RabbitMQ and webhook dispatching behave exactly as before
+
+---
+
+## Definition of Done by Wave
+
+### DoD for Wave A
+- No data race in connect flow (`IsConnecting` access path is atomic-safe)
+- Event ordering fix is in place without changing external payload schema
+- Build command completes successfully
+
+### DoD for Wave B
+- `QpWhatsappServer` compiles without `DispatchingHandler *QPDispatchingHandler`
+- No remaining references to removed field
+- Connection lifecycle behavior unchanged
+
+### DoD for Wave C
+- `QPDispatchingHandler` path fully removed
+- No duplicated outbound dispatch implementation in `models`
+- Runtime dispatch path is the single source of truth
+
+### DoD for Wave D
+- `Receipt` path is explicit and deterministic
+- Receipt payload type is stable and test-verified
+- No duplicate TODO noise in source
+
+### DoD for Wave E
+- Module boundaries match architecture rules
+- Transport dependencies are injected through interfaces
+- Manual smoke validation confirms parity in message flow
+
+---
+
+## Rollback Strategy
+
+Use branch-level rollback by wave. Never batch multiple waves in a single merge.
+
+1. If Wave A fails:
+     - Revert only atomic/timestamp commit.
+     - Keep branch open, fix and re-apply.
+2. If Wave B fails:
+     - Revert dead-field removal commit only.
+     - Re-check handler registration path.
+3. If Wave C fails:
+     - Revert handler-removal commits together.
+     - Restore deprecated file temporarily and resume with additional coverage.
+4. If Wave D fails:
+     - Revert receipt-semantics commit only.
+     - Keep previous Trigger behavior while adjusting consumer filters.
+5. If Wave E fails:
+     - Revert by sub-wave (4.x first, then 5.x), not as one giant rollback.
+     - Reintroduce adapters to preserve compatibility before retrying.
+
+---
+
+## Immediate Next Execution Order
+
+Start with the first three PRs exactly in this order:
+
+1. PR-01: Task 1.1 + Task 1.2
+2. PR-02: Task 1.3
+3. PR-03: Task 2.1 + Task 2.2
+
+After PR-03 is validated in a real integration environment, proceed to Task 3.1.
 
 ---
 

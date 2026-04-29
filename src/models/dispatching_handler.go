@@ -26,6 +26,38 @@ type DispatchingHandler struct {
 	aeh []QpDispatchingHandlerInterface
 }
 
+type dispatchingSubscriber interface {
+	QpDispatchingHandlerInterface
+	isDispatchingSubscriber()
+}
+
+// DispatchingLifecycleEvent defines transport-agnostic lifecycle payload emitted by models.
+type DispatchingLifecycleEvent struct {
+	Kind      string
+	Token     string
+	User      string
+	Wid       string
+	Phone     string
+	State     string
+	Verified  bool
+	Cause     string
+	Details   string
+	Timestamp time.Time
+}
+
+// DispatchingLifecyclePublisher sends lifecycle events to transport adapters.
+type DispatchingLifecyclePublisher interface {
+	PublishLifecycle(event *DispatchingLifecycleEvent)
+}
+
+type noopDispatchingLifecyclePublisher struct{}
+
+func (noopDispatchingLifecyclePublisher) PublishLifecycle(event *DispatchingLifecycleEvent) {}
+
+// GlobalDispatchingLifecyclePublisher is injected by runtime/bootstrap to keep
+// models independent from concrete lifecycle transport implementations.
+var GlobalDispatchingLifecyclePublisher DispatchingLifecyclePublisher = noopDispatchingLifecyclePublisher{}
+
 // Returns whatsapp controller id on E164
 // Ex: 5521967609494
 func (source *DispatchingHandler) GetWId() string {
@@ -107,11 +139,14 @@ func (source *DispatchingHandler) Message(msg *whatsapp.WhatsappMessage, from st
 
 // does not cache msg, only update status and webhook dispatch
 func (source *DispatchingHandler) Receipt(msg *whatsapp.WhatsappMessage) {
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
+	if msg == nil {
+		return
+	}
+
+	// Receipt payloads must remain distinguishable from regular inbound messages.
+	if msg.Type == whatsapp.UnhandledMessageType {
+		msg.Type = whatsapp.SystemMessageType
+	}
 
 	// triggering external publishers
 	source.Trigger(msg)
@@ -147,17 +182,7 @@ func (source *DispatchingHandler) LoggedOut(reason string) {
 		// now unverified instead of only showing the generic state.
 		source.server.RecordLogout(reason)
 
-		dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
-			Kind:      "logged_out",
-			Token:     source.server.Token,
-			User:      source.server.GetUser(),
-			Wid:       source.server.GetWId(),
-			Phone:     source.server.GetNumber(),
-			State:     source.server.GetState().String(),
-			Verified:  source.server.Verified,
-			Cause:     reason,
-			Timestamp: time.Now().UTC(),
-		})
+		source.publishRealtimeLifecycle("logged_out", reason, "")
 	}
 }
 
@@ -188,16 +213,7 @@ func (source *DispatchingHandler) OnConnected() {
 			logger := source.server.GetLogger()
 			logger.Errorf("error clearing connection issue after connected: %s", err.Error())
 		}
-		dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
-			Kind:      "connected",
-			Token:     source.server.Token,
-			User:      source.server.GetUser(),
-			Wid:       source.server.GetWId(),
-			Phone:     source.server.GetNumber(),
-			State:     source.server.GetState().String(),
-			Verified:  source.server.Verified,
-			Timestamp: time.Now().UTC(),
-		})
+		source.publishRealtimeLifecycle("connected", "", "")
 		source.publishLifecycleEvent("session.lifecycle.connected", "success", map[string]string{
 			"state":    source.server.GetState().String(),
 			"verified": formatLifecycleBool(source.server.Verified),
@@ -258,18 +274,7 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "disconnected")
 
-	dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
-		Kind:      "disconnected",
-		Token:     source.server.Token,
-		User:      source.server.GetUser(),
-		Wid:       wid,
-		Phone:     phone,
-		State:     source.server.GetState().String(),
-		Verified:  source.server.Verified,
-		Cause:     cause,
-		Details:   details,
-		Timestamp: time.Now().UTC(),
-	})
+	source.publishRealtimeLifecycle("disconnected", cause, details)
 	source.publishLifecycleEvent("session.lifecycle.disconnected", "success", map[string]string{
 		"cause":    cause,
 		"state":    source.server.GetState().String(),
@@ -322,17 +327,7 @@ func (source *DispatchingHandler) OnStopped(cause string) {
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "stopped")
 
-	dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
-		Kind:      "stopped",
-		Token:     source.server.Token,
-		User:      source.server.GetUser(),
-		Wid:       wid,
-		Phone:     phone,
-		State:     source.server.GetState().String(),
-		Verified:  source.server.Verified,
-		Cause:     cause,
-		Timestamp: time.Now().UTC(),
-	})
+	source.publishRealtimeLifecycle("stopped", cause, "")
 	source.publishLifecycleEvent("session.lifecycle.stopped", "success", map[string]string{
 		"cause":    cause,
 		"state":    source.server.GetState().String(),
@@ -361,17 +356,7 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "deleted")
 
-	dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
-		Kind:      "deleted",
-		Token:     source.server.Token,
-		User:      source.server.GetUser(),
-		Wid:       source.server.GetWId(),
-		Phone:     source.server.GetNumber(),
-		State:     source.server.GetState().String(),
-		Verified:  source.server.Verified,
-		Cause:     cause,
-		Timestamp: time.Now().UTC(),
-	})
+	source.publishRealtimeLifecycle("deleted", cause, "")
 	source.publishLifecycleEvent("session.lifecycle.deleted", "success", map[string]string{
 		"cause":    cause,
 		"state":    source.server.GetState().String(),
@@ -394,6 +379,25 @@ func (source *DispatchingHandler) publishLifecycleEvent(name string, status stri
 		Source:     "models.dispatching_handler",
 		Status:     status,
 		Attributes: attributes,
+	})
+}
+
+func (source *DispatchingHandler) publishRealtimeLifecycle(kind string, cause string, details string) {
+	if source == nil || source.server == nil {
+		return
+	}
+
+	GlobalDispatchingLifecyclePublisher.PublishLifecycle(&DispatchingLifecycleEvent{
+		Kind:      kind,
+		Token:     source.server.Token,
+		User:      source.server.GetUser(),
+		Wid:       source.server.GetWId(),
+		Phone:     source.server.GetNumber(),
+		State:     source.server.GetState().String(),
+		Verified:  source.server.Verified,
+		Cause:     cause,
+		Details:   details,
+		Timestamp: time.Now().UTC(),
 	})
 }
 
@@ -540,6 +544,18 @@ func (handler *DispatchingHandler) IsAttached() bool {
 func (handler *DispatchingHandler) IsRegistered(evt interface{}) bool {
 	for _, v := range handler.aeh {
 		if v == evt {
+			return true
+		}
+	}
+
+	return false
+}
+
+// HasDispatchingSubscriber reports whether the default outbound dispatching
+// subscriber is already attached to this server handler.
+func (handler *DispatchingHandler) HasDispatchingSubscriber() bool {
+	for _, subscriber := range handler.aeh {
+		if _, ok := subscriber.(dispatchingSubscriber); ok {
 			return true
 		}
 	}

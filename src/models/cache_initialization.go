@@ -4,7 +4,6 @@ import (
 	"log"
 
 	cacheservice "github.com/nocodeleaks/quepasa/cache/service"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 )
 
 // InitializeCacheService initializes the global cache service and injects backends
@@ -22,11 +21,9 @@ func InitializeCacheService() error {
 	log.Printf("Messages backend: initialized")
 	log.Printf("Queue backend: initialized")
 
-	// Inject cache backend into RabbitMQ client if it has been initialized
-	if rabbitmq.RabbitMQClientInstance != nil {
-		log.Println("Injecting queue backend into RabbitMQ client...")
-		rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
-	}
+	// Delegate queue-backend injection to transport wiring.
+	log.Println("Injecting queue backend into RabbitMQ client...")
+	GlobalRabbitMQInjectQueueBackend()
 
 	return nil
 }

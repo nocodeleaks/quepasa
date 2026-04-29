@@ -48,7 +48,11 @@ func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions,
 	}
 }
 
-// getTimestamp returns a timestamp with high precision using sequential counter
+// getTimestamp returns a UTC timestamp with a tiny monotonic offset.
+//
+// We keep the offset bounded to microsecond scale so we avoid wrap behavior from
+// large modulo values while still preserving deterministic ordering for bursts
+// of events that land in the same base timestamp.
 func (handler *WhatsmeowHandlers) getTimestamp() time.Time {
 	if handler == nil {
 		return time.Now().UTC()
@@ -60,9 +64,8 @@ func (handler *WhatsmeowHandlers) getTimestamp() time.Time {
 	// Get current time with nanosecond precision
 	now := time.Now().UTC()
 
-	// Add sequence as nanoseconds to ensure ordering
-	// This gives us microsecond-level precision even with same base timestamp
-	return now.Add(time.Duration(sequence%1000000) * time.Nanosecond)
+	// Keep the offset under 1 microsecond (0..999ns) to avoid timestamp drift.
+	return now.Add(time.Duration(sequence%1000) * time.Nanosecond)
 }
 
 func (source *WhatsmeowHandlers) GetServiceOptions() (options whatsapp.WhatsappOptionsExtended) {

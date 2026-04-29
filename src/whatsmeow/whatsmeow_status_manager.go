@@ -101,7 +101,8 @@ func (sm *WhatsmeowStatusManager) GetResume() *whatsapp.WhatsappConnectionStatus
 		State:        GetStatus(sm.WhatsmeowConnection),
 		IsConnected:  IsConnected(sm.WhatsmeowConnection),
 		FailedToken:  sm.WhatsmeowConnection.failedToken,
-		IsConnecting: sm.WhatsmeowConnection.IsConnecting,
+		// Snapshot the atomic connection-in-progress flag for API consumers.
+		IsConnecting: sm.WhatsmeowConnection.IsConnecting(),
 		// Default values for reconnection fields (can be enhanced later)
 		IsReconnecting:    false,
 		ReconnectAttempts: 0,

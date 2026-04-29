@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	events "github.com/nocodeleaks/quepasa/events"
 	"github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
@@ -57,77 +56,19 @@ func (source *DispatchingHandler) HandleDispatching(payload *whatsapp.WhatsappMe
 	logentry = logentry.WithField(models.LogFields.MessageId, payload.Id)
 	logentry.Level = loglevel
 
-	err := dispatchOutboundFromServer(source.server, payload)
-	if err != nil {
-		logentry.Errorf("error on handle dispatching distributions: %s", err.Error())
-	}
-}
-
-// dispatchOutboundFromServer extracts the server's dispatching configuration
-// and forwards the message to the outbound dispatch service.
-func dispatchOutboundFromServer(server *models.QpWhatsappServer, message *whatsapp.WhatsappMessage) error {
-	if server == nil {
-		return nil
-	}
-
-	return dispatchOutboundToTargets(server, server.QpDataDispatching.Dispatching, message)
-}
-
-// dispatchOutboundToTargets orchestrates the dispatch service call with business rules:
-// - enriches the message with server-specific data
-// - converts domain dispatching configs to dispatch service targets
-// - delegates transport to the dispatch module
-func dispatchOutboundToTargets(server *models.QpWhatsappServer, dispatchings []*models.QpDispatching, message *whatsapp.WhatsappMessage) error {
-	if message == nil {
-		return nil
-	}
-
 	startedAt := time.Now()
-
-	serverWid := ""
-	if server != nil {
-		serverWid = server.GetWId()
+	err := models.DispatchOutboundFromServer(source.server, payload)
+	targetCount := 0
+	if source.server != nil {
+		targetCount = len(source.server.QpDataDispatching.Dispatching)
 	}
-
-	targets := make([]dispatchservice.Target, 0, len(dispatchings))
-	for _, dispatching := range dispatchings {
-		if dispatching == nil {
-			continue
-		}
-		targets = append(targets, dispatching)
-	}
-
-	request := &dispatchservice.OutboundRequest{
-		ServerWid: serverWid,
-		Message:   message,
-		Targets:   targets,
-		Enrich: func(payload *whatsapp.WhatsappMessage) *whatsapp.WhatsappMessage {
-			if server == nil {
-				return payload
-			}
-			return models.CloneAndEnrichMessageForServer(server, payload)
-		},
-	}
-
-	err := dispatchservice.GetInstance().DispatchOutbound(request)
-	if server != nil {
-		if syncErr := server.QpDataDispatching.DispatchingSyncHealth(dispatchings); syncErr != nil {
-			publishRuntimeDispatchEvent("error", time.Since(startedAt), len(targets))
-			if err != nil {
-				return err
-			}
-			return syncErr
-		}
-	}
-
 	if err != nil {
-		publishRuntimeDispatchEvent("error", time.Since(startedAt), len(targets))
-		return err
+		publishRuntimeDispatchEvent("error", time.Since(startedAt), targetCount)
+		logentry.Errorf("error on handle dispatching distributions: %s", err.Error())
+		return
 	}
 
-	publishRuntimeDispatchEvent("success", time.Since(startedAt), len(targets))
-
-	return err
+	publishRuntimeDispatchEvent("success", time.Since(startedAt), targetCount)
 }
 
 func publishRuntimeDispatchEvent(status string, duration time.Duration, targetCount int) {

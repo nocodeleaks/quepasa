@@ -10,10 +10,22 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
-	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
+
+// RealtimePresenceChecker abstracts realtime connection lookup away from models.
+type RealtimePresenceChecker interface {
+	HasActiveConnections(token string) bool
+}
+
+// GlobalRealtimePresenceChecker can be wired at startup by transport modules.
+var GlobalRealtimePresenceChecker RealtimePresenceChecker
+
+// GlobalRabbitMQClientResolver allows transport-layer wiring without importing
+// rabbitmq directly in the models package.
+var GlobalRabbitMQClientResolver = func(connectionString string) bool {
+	return false
+}
 
 type QpWhatsappServer struct {
 	*QpServer
@@ -28,11 +40,10 @@ type QpWhatsappServer struct {
 
 	Timestamps QpTimestamps `json:"timestamps"`
 
-	Handler            *DispatchingHandler   `json:"-"`
-	DispatchingHandler *QPDispatchingHandler `json:"-"`
-	GroupManager       *QpGroupManager       `json:"-"` // composition for group operations
-	StatusManager      *QpStatusManager      `json:"-"` // composition for status operations
-	ContactManager     *QpContactManager     `json:"-"` // composition for contact operations
+	Handler        *DispatchingHandler `json:"-"`
+	GroupManager   *QpGroupManager     `json:"-"` // composition for group operations
+	StatusManager  *QpStatusManager    `json:"-"` // composition for status operations
+	ContactManager *QpContactManager   `json:"-"` // composition for contact operations
 
 	// Stop request token
 	StopRequested   bool                   `json:"-"`
@@ -153,7 +164,11 @@ func (server *QpWhatsappServer) HasSignalRActiveConnections() bool {
 		return false // invalid state
 	}
 
-	return signalr.SignalRHub.HasActiveConnections(server.Token)
+	if GlobalRealtimePresenceChecker == nil {
+		return false
+	}
+
+	return GlobalRealtimePresenceChecker.HasActiveConnections(server.Token)
 }
 
 //region IMPLEMENT OF INTERFACE STATE RECOVERY
@@ -341,10 +356,9 @@ func (source *QpWhatsappServer) UpdateConnection(connection whatsapp.IWhatsappCo
 		source.connection.UpdateHandler(source.Handler)
 	}
 
-	// Registrando webhook
-	dispatchingHandler := &QPDispatchingHandler{server: source}
-	if !source.Handler.IsAttached() {
-		source.Handler.Register(dispatchingHandler)
+	// Keep outbound dispatching subscriber attached once per handler lifecycle.
+	if source.Handler != nil && !source.Handler.HasDispatchingSubscriber() {
+		source.Handler.Register(NewOutboundDispatchingSubscriber(source))
 	}
 }
 
@@ -415,10 +429,10 @@ func (source *QpWhatsappServer) Start() (err error) {
 	// Update start timestamp
 	source.Timestamps.Start = time.Now().UTC()
 
-	if !source.Handler.IsAttached() {
+	if !source.Handler.HasDispatchingSubscriber() {
 
-		// Registrando dispatching handler
-		source.Handler.Register(source.DispatchingHandler)
+		// Ensure outbound dispatching is attached even when other subscribers exist.
+		source.Handler.Register(NewOutboundDispatchingSubscriber(source))
 	}
 
 	// Handler already configured during connection creation via ExternalHandler
@@ -464,11 +478,11 @@ func (source *QpWhatsappServer) EnsureReady() (err error) {
 	// reset stop requested token
 	source.StopRequested = false
 
-	if !source.Handler.IsAttached() {
+	if !source.Handler.HasDispatchingSubscriber() {
 		logger.Info("attaching handlers")
 
-		// Registrando dispatching handler
-		source.Handler.Register(source.DispatchingHandler)
+		// Ensure outbound dispatching is attached even when other subscribers exist.
+		source.Handler.Register(NewOutboundDispatchingSubscriber(source))
 	} else {
 		logger.Debug("handlers already attached")
 	}
@@ -1146,22 +1160,6 @@ func (source *QpWhatsappServer) GetDispatchingByFilter(filter string) (out []*Qp
 	return
 }
 
-// Ensure dispatching handler
-func (server *QpWhatsappServer) DispatchingEnsure() {
-	if server.DispatchingHandler == nil {
-		dispatchingHandler := &QPDispatchingHandler{server: server}
-
-		logentry := server.GetLogger()
-		logentry.Debug("ensuring dispatching handler for server")
-
-		// logging
-		dispatchingHandler.LogEntry = logentry
-
-		// updating
-		server.DispatchingHandler = dispatchingHandler
-	}
-}
-
 // GetWebhookDispatchings returns all webhook configurations as QpDispatching
 func (source *QpWhatsappServer) GetWebhookDispatchings() []*QpDispatching {
 	allDispatchings := source.GetDispatchingByFilter("")
@@ -1199,10 +1197,8 @@ func (source *QpWhatsappServer) InitializeRabbitMQConnections() {
 		if config.ConnectionString != "" {
 			logentry.Infof("initializing RabbitMQ connection: %s", config.ConnectionString)
 
-			// Import rabbitmq package and get client to initialize connection
-			// This will create the connection pool if it doesn't exist
-			client := rabbitmq.GetRabbitMQClient(config.ConnectionString)
-			if client != nil {
+			// Resolver call initializes transport connection pool when available.
+			if GlobalRabbitMQClientResolver(config.ConnectionString) {
 				logentry.Infof("RabbitMQ connection initialized successfully: %s", config.ConnectionString)
 			} else {
 				logentry.Warnf("failed to initialize RabbitMQ connection: %s", config.ConnectionString)

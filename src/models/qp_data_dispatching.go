@@ -1,7 +1,6 @@
 package models
 
 import (
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 )
 
 // Dispatching model
@@ -119,7 +118,7 @@ func (source *QpDataDispatching) DispatchingRemove(connectionString string) (aff
 
 	// Close the RabbitMQ client after removing from memory to avoid race conditions
 	if isRabbitMQ {
-		rabbitmq.CloseRabbitMQClient(connectionString)
+		GlobalRabbitMQCloseClient(connectionString)
 	}
 
 	return
@@ -129,7 +128,7 @@ func (source *QpDataDispatching) DispatchingClear() (err error) {
 	// Close all RabbitMQ clients before clearing
 	for _, element := range source.Dispatching {
 		if element.IsRabbitMQ() {
-			rabbitmq.CloseRabbitMQClient(element.ConnectionString)
+			GlobalRabbitMQCloseClient(element.ConnectionString)
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync/atomic"
 	"strings"
 	"sync"
 	"time"
@@ -35,7 +36,9 @@ type WhatsmeowConnection struct {
 
 	failedToken  bool
 	paired       func(string)
-	IsConnecting bool `json:"isconnecting"` // used to avoid multiple connection attempts
+	// Keep connection-in-progress state atomic because status and connect paths are
+	// touched from different goroutines.
+	isConnecting atomic.Bool
 }
 
 //#region IMPLEMENT WHATSAPP CONNECTION OPTIONS INTERFACE
@@ -74,14 +77,14 @@ func (conn *WhatsmeowConnection) GetChatTitle(wid string) string {
 func (source *WhatsmeowConnection) Connect() (err error) {
 	source.GetLogger().Info("starting whatsmeow connection")
 
-	if source.IsConnecting {
+	if source.IsConnecting() {
 		return
 	}
 
-	source.IsConnecting = true
+	source.isConnecting.Store(true)
 
 	err = source.Client.Connect()
-	source.IsConnecting = false
+	source.isConnecting.Store(false)
 
 	if err != nil {
 		source.failedToken = true
@@ -94,6 +97,15 @@ func (source *WhatsmeowConnection) Connect() (err error) {
 
 	source.failedToken = false
 	return
+}
+
+// IsConnecting returns a concurrency-safe snapshot of current connect attempt.
+func (source *WhatsmeowConnection) IsConnecting() bool {
+	if source == nil {
+		return false
+	}
+
+	return source.isConnecting.Load()
 }
 
 // func (cli *Client) Download(msg DownloadableMessage) (data []byte, err error)

@@ -166,19 +166,30 @@ func SPAServerDeleteController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := &models.QpResponse{}
+
 	token, err := GetSPATokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	serverRecord, err := GetSPAOwnedServerRecord(user, token)
 	if err != nil {
 		respondSPAServerLookupError(w, err)
 		return
 	}
 
-	response := &models.QpResponse{}
+	server := FindSPALiveServer(serverRecord.Token)
+	if server == nil {
+		server, err = models.WhatsappService.AppendNewServer(serverRecord)
+		if err != nil {
+			response.ParseError(err)
+			RespondInterfaceCode(w, response, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if err := models.WhatsappService.Delete(server, "spa"); err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)

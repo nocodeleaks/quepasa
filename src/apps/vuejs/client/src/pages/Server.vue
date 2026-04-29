@@ -39,7 +39,7 @@
     </div>
 
     <div class="quick-actions" v-if="server">
-      <router-link :to="`/server/${token}/qrcode`" class="action-card" :class="{ disabled: isConnected }">
+      <router-link :to="`/server/${encodedToken}/qrcode`" class="action-card" :class="{ disabled: isConnected }">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm2 2h2v2h-2zm0-4h2v2h-2zm2-2h2v2h-2z" />
@@ -51,7 +51,7 @@
         </div>
       </router-link>
 
-      <router-link :to="`/server/${token}/paircode`" class="action-card" :class="{ disabled: isConnected }">
+      <router-link :to="`/server/${encodedToken}/paircode`" class="action-card" :class="{ disabled: isConnected }">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
@@ -65,7 +65,7 @@
     </div>
 
     <div class="quick-actions" v-if="server">
-      <router-link :to="`/server/${token}/send`" class="action-card primary">
+      <router-link :to="`/server/${encodedToken}/send`" class="action-card primary">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
@@ -77,7 +77,7 @@
         </div>
       </router-link>
 
-      <router-link :to="`/server/${token}/messages`" class="action-card">
+      <router-link :to="`/server/${encodedToken}/messages`" class="action-card">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
@@ -89,7 +89,7 @@
         </div>
       </router-link>
 
-      <router-link :to="`/webhooks?token=${token}`" class="action-card">
+      <router-link :to="`/webhooks?token=${encodedToken}`" class="action-card">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm5 14.59L15.59 18 12 14.41 8.41 18 7 16.59 10.59 13 7 9.41 8.41 8 12 11.59 15.59 8 17 9.41 13.41 13 17 16.59z" />
@@ -101,7 +101,7 @@
         </div>
       </router-link>
 
-      <router-link :to="`/rabbitmq?token=${token}`" class="action-card">
+      <router-link :to="`/rabbitmq?token=${encodedToken}`" class="action-card">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
             <path d="M4 4h16v4H4V4zm0 6h10v4H4v-4zm0 6h16v4H4v-4zm12-6h4v4h-4v-4z" />
@@ -303,7 +303,15 @@ export default defineComponent({
   setup() {
     const route = useRoute()
     const router = useRouter()
-    const token = route.params.token as string
+    const token = computed(() => {
+      const rawToken = String(route.params.token ?? '').trim()
+      try {
+        return decodeURIComponent(rawToken)
+      } catch {
+        return rawToken
+      }
+    })
+    const encodedToken = computed(() => encodeURIComponent(token.value))
 
     const server = ref<any>(null)
     const serverState = ref('')
@@ -357,7 +365,7 @@ export default defineComponent({
       error.value = ''
 
       try {
-        const res = await api.get(`/spa/server/${token}/info`)
+        const res = await api.get(`/spa/server/${encodedToken.value}/info`)
         const summary = res.data?.server || {}
 
         server.value = summary
@@ -383,7 +391,7 @@ export default defineComponent({
         const payload: Record<string, number> = {}
         payload[optionName] = value
 
-        await api.patch(`/spa/server/${token}`, payload)
+        await api.patch(`/spa/server/${encodedToken.value}`, payload)
         await load()
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao alterar opção'
@@ -395,7 +403,7 @@ export default defineComponent({
 
     async function copyToken() {
       try {
-        await navigator.clipboard.writeText(token)
+        await navigator.clipboard.writeText(token.value)
         tokenCopied.value = true
         setTimeout(() => {
           tokenCopied.value = false
@@ -413,7 +421,7 @@ export default defineComponent({
       deleting.value = true
 
       try {
-        await api.delete(`/spa/server/${token}`)
+        await api.delete(`/spa/server/${encodedToken.value}`)
         router.push('/')
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao excluir servidor'
@@ -428,7 +436,7 @@ export default defineComponent({
 
       try {
         const endpoint = isServerActive.value ? 'disable' : 'enable'
-        await api.post(`/spa/server/${token}/${endpoint}`)
+        await api.post(`/spa/server/${encodedToken.value}/${endpoint}`)
         await load()
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || 'Erro ao alterar estado do servidor'
@@ -438,7 +446,7 @@ export default defineComponent({
     }
 
     useServerLifecycleRefresh({
-      token,
+      token: token.value,
       onRefresh: load,
       onDeleted: () => {
         pushToast('Servidor removido', 'info')
@@ -471,6 +479,7 @@ export default defineComponent({
       showDeleteModal,
       statusClass,
       deleting,
+      encodedToken,
       token,
       tokenCopied,
       toggleServer,

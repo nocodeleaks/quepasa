@@ -887,7 +887,7 @@ export default defineComponent({
         if (createdServer?.token) {
           const token = createdServer.token
           pushToast('Servidor criado com sucesso!', 'success')
-          router.push(`/server/${token}`)
+          router.push(`/server/${encodeURIComponent(token)}`)
         } else {
           throw new Error('Token não recebido do servidor')
         }

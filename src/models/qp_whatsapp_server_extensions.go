@@ -1,10 +1,8 @@
 package models
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -12,73 +10,14 @@ import (
 
 // handle message deliver to individual dispatching distribution
 func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
-	if server == nil {
-		err = fmt.Errorf("server nil")
-		return err
-	}
-
-	return PostToDispatchings(server, server.QpDataDispatching.Dispatching, message)
+	return dispatchOutboundFromServer(server, message)
 }
 
 // PostToDispatchings delivers a message to the provided dispatching targets.
 // It is used by the normal server flow and by deletion flows that need to use
 // a preserved snapshot instead of the server's live dispatching slice.
 func PostToDispatchings(server *QpWhatsappServer, dispatchings []*QpDispatching, message *whatsapp.WhatsappMessage) (err error) {
-	// Webhook headers are built from dispatching.Wid, while some system payloads
-	// already carry the server WID in the message body. This resynchronizes the
-	// in-memory dispatching before every delivery so system events such as
-	// OnStopped/OnDisconnected do not reach the webhook with an empty
-	// X-QUEPASA-WID header and a populated body wid/info.wid.
-
-	// ignoring ssl issues
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	serverWid := ""
-	if server != nil {
-		serverWid = server.GetWId()
-		message = CloneAndEnrichMessageForServer(server, message)
-	}
-
-	for _, dispatching := range dispatchings {
-		if dispatching != nil && dispatching.Wid != serverWid {
-			dispatching.Wid = serverWid
-		}
-
-		// updating log
-		logentry := dispatching.GetLogger()
-		loglevel := logentry.Level
-		logentry = logentry.WithField(LogFields.MessageId, message.Id)
-		logentry.Level = loglevel
-
-		if message.Id == "readreceipt" && dispatching.IsSetReadReceipts() && !dispatching.ReadReceipts.Boolean() {
-			logentry.Debugf("ignoring read receipt message: %s", message.Text)
-			continue
-		}
-
-		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
-			logentry.Debug("ignoring group message")
-			continue
-		}
-
-		if message.FromBroadcast() && dispatching.IsSetBroadcasts() && !dispatching.Broadcasts.Boolean() {
-			logentry.Debug("ignoring broadcast message")
-			continue
-		}
-
-		if message.Type == whatsapp.CallMessageType && dispatching.IsSetCalls() && !dispatching.Calls.Boolean() {
-			logentry.Debug("ignoring call message")
-			continue
-		}
-
-		if !message.FromInternal || (dispatching.ForwardInternal && (len(dispatching.TrackId) == 0 || dispatching.TrackId != message.TrackId)) {
-			elerr := dispatching.Dispatch(message)
-			if elerr != nil {
-				logentry.Errorf("error on dispatch: %s", elerr.Error())
-			}
-		}
-	}
-
-	return
+	return dispatchOutboundToTargets(server, dispatchings, message)
 }
 
 // region FIND|SEARCH WHATSAPP SERVER
@@ -143,48 +82,7 @@ func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMe
 		return err
 	}
 
-	// ignoring ssl issues
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	message = CloneAndEnrichMessageForServer(server, message)
-
-	webhookDispatchings := server.GetWebhookDispatchings()
-
-	for _, dispatching := range webhookDispatchings {
-		// updating log
-		logentry := dispatching.GetLogger()
-		loglevel := logentry.Level
-		logentry = logentry.WithField(LogFields.MessageId, message.Id)
-		logentry.Level = loglevel
-
-		// Check if should ignore based on message type and dispatching options
-		if message.Id == "readreceipt" && dispatching.IsSetReadReceipts() && !dispatching.ReadReceipts.Boolean() {
-			logentry.Debugf("ignoring read receipt message: %s", message.Text)
-			continue
-		}
-
-		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
-			logentry.Debug("ignoring group message")
-			continue
-		}
-
-		if message.FromBroadcast() && dispatching.IsSetBroadcasts() && !dispatching.Broadcasts.Boolean() {
-			logentry.Debug("ignoring broadcast message")
-			continue
-		}
-
-		if message.Type == whatsapp.CallMessageType && dispatching.IsSetCalls() && !dispatching.Calls.Boolean() {
-			logentry.Debug("ignoring call message")
-			continue
-		}
-
-		// Send the message using the dispatching
-		err = dispatching.PostWebhook(message)
-		if err != nil {
-			logentry.Errorf("error posting to webhook: %s", err.Error())
-		}
-	}
-
-	return err
+	return dispatchOutboundToTargets(server, server.GetWebhookDispatchings(), message)
 }
 
 //endregion

@@ -257,6 +257,8 @@ func GetBase() migrate.SqlxMigration {
   		"groups" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
 		"extra" BLOB DEFAULT NULL,
+		"failure" TIMESTAMP DEFAULT NULL,
+		"success" TIMESTAMP DEFAULT NULL,
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		CONSTRAINT "dispatching_pkey" PRIMARY KEY ("context", "connection_string")
 	  );
@@ -297,7 +299,8 @@ func GetBase() migrate.SqlxMigration {
 	  ('202512231500'),
 	  ('202602241200'),
 	  ('202604221930'),
-	  ('202604251130');
+	  ('202604251130'),
+	  ('202604281430');
 	  `, "")
 	return migration
 }

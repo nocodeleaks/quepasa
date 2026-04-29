@@ -1,6 +1,7 @@
 package cable
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -65,8 +66,8 @@ func TestCableSessionSubscribeAndServerMessageEvent(t *testing.T) {
 
 	serverRecord := &models.QpServer{
 		Token: "server-token-1",
-		User:  user.Username,
-		Wid:   "5511999999999@s.whatsapp.net",
+		User:  sql.NullString{String: user.Username, Valid: true},
+		Wid:   sql.NullString{String: "5511999999999@s.whatsapp.net", Valid: true},
 	}
 	if err := models.WhatsappService.DB.Servers.Add(serverRecord); err != nil {
 		t.Fatalf("add server record: %v", err)
@@ -168,8 +169,8 @@ func TestCableLifecycleEventsReachAuthenticatedUserConnections(t *testing.T) {
 
 	serverRecord := &models.QpServer{
 		Token:    "server-token-life",
-		User:     user.Username,
-		Wid:      "5511888888888@s.whatsapp.net",
+		User:     sql.NullString{String: user.Username, Valid: true},
+		Wid:      sql.NullString{String: "5511888888888@s.whatsapp.net", Valid: true},
 		Verified: true,
 	}
 	if err := models.WhatsappService.DB.Servers.Add(serverRecord); err != nil {
@@ -200,7 +201,7 @@ func TestCableLifecycleEventsReachAuthenticatedUserConnections(t *testing.T) {
 		Kind:      "connected",
 		Token:     serverRecord.Token,
 		User:      user.Username,
-		Wid:       serverRecord.Wid,
+		Wid:       serverRecord.GetWId(),
 		Phone:     "5511888888888",
 		State:     "Ready",
 		Verified:  true,
@@ -230,7 +231,7 @@ func TestCableLifecycleEventsReachAuthenticatedUserConnections(t *testing.T) {
 		Kind:      "deleted",
 		Token:     serverRecord.Token,
 		User:      user.Username,
-		Wid:       serverRecord.Wid,
+		Wid:       serverRecord.GetWId(),
 		Phone:     "5511888888888",
 		State:     "Disconnected",
 		Verified:  false,

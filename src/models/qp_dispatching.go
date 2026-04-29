@@ -1,26 +1,25 @@
 package models
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"reflect"
 	"time"
 
+	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
 
 // Dispatching types
 const (
-	DispatchingTypeWebhook  = "webhook"
-	DispatchingTypeRabbitMQ = "rabbitmq"
+	DispatchingTypeWebhook              = "webhook"
+	DispatchingTypeRabbitMQ             = "rabbitmq"
+	webhookSequentialFailureBlockWindow = 48 * time.Hour
 )
 
 type QpDispatching struct {
@@ -35,8 +34,8 @@ type QpDispatching struct {
 	ForwardInternal  bool        `db:"forwardinternal" json:"forwardinternal,omitempty"`     // forward internal msg from api
 	TrackId          string      `db:"trackid" json:"trackid,omitempty"`                     // identifier of remote system to avoid loop
 	Extra            interface{} `db:"extra" json:"extra,omitempty"`                         // extra info to append on payload
-	Failure          *time.Time  `json:"failure,omitempty"`                                  // first failure timestamp
-	Success          *time.Time  `json:"success,omitempty"`                                  // last success timestamp
+	Failure          *time.Time  `db:"failure" json:"failure,omitempty"`                     // first failure timestamp in the current failure streak
+	Success          *time.Time  `db:"success" json:"success,omitempty"`                     // last success timestamp
 	Timestamp        *time.Time  `db:"timestamp" json:"timestamp,omitempty"`
 
 	// just for logging and response headers
@@ -145,6 +144,41 @@ func (source QpDispatching) IsRabbitMQ() bool {
 	return source.Type == DispatchingTypeRabbitMQ
 }
 
+func (source *QpDispatching) GetDispatchType() string {
+	if source == nil {
+		return ""
+	}
+	return source.Type
+}
+
+func (source *QpDispatching) GetWid() string {
+	if source == nil {
+		return ""
+	}
+	return source.Wid
+}
+
+func (source *QpDispatching) SetWid(wid string) {
+	if source == nil {
+		return
+	}
+	source.Wid = wid
+}
+
+func (source *QpDispatching) IsFromInternalForwardEnabled() bool {
+	if source == nil {
+		return false
+	}
+	return source.ForwardInternal
+}
+
+func (source *QpDispatching) GetTrackId() string {
+	if source == nil {
+		return ""
+	}
+	return source.TrackId
+}
+
 //#endregion
 
 // Dispatch sends the message based on the type
@@ -159,71 +193,85 @@ func (source *QpDispatching) Dispatch(message *whatsapp.WhatsappMessage) (err er
 	}
 }
 
+// IsFailureMoreRecent reports whether the current failure streak is newer than
+// the last success. This is the predicate used to detect sequential failures.
+func (source *QpDispatching) IsFailureMoreRecent() bool {
+	if source == nil || source.Failure == nil {
+		return false
+	}
+
+	if source.Success == nil {
+		return true
+	}
+
+	return source.Failure.After(*source.Success)
+}
+
+// IsWebhookBlockedAt blocks webhook delivery when the same endpoint has been
+// failing continuously for a long time without any newer success.
+func (source *QpDispatching) IsWebhookBlockedAt(now time.Time) bool {
+	if source == nil || !source.IsWebhook() || !source.IsFailureMoreRecent() {
+		return false
+	}
+
+	if now.Before(*source.Failure) {
+		return false
+	}
+
+	return now.Sub(*source.Failure) >= webhookSequentialFailureBlockWindow
+}
+
 // PostWebhook sends message via HTTP webhook
 func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err error) {
-	startTime := time.Now()
-
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
+	currentTime := time.Now().UTC()
+	if source.IsWebhookBlockedAt(currentTime) {
+		logentry.Warnf("webhook dispatch blocked after sequential failures since %s", source.Failure.Format(time.RFC3339))
+		if message != nil {
+			message.MarkExceptionsWithMessage("Webhook dispatch blocked after sequential failures")
+		}
+		return nil
+	}
+
 	logentry.Infof("posting webhook")
 
-	payload := &QpWebhookPayload{
-		WhatsappMessage: message,
-		Extra:           source.Extra,
-	}
-
-	payloadJson, err := json.Marshal(&payload)
-	if err != nil {
-		return
-	}
-
-	// logging webhook payload
-	logentry.Debugf("posting webhook payload: %s", payloadJson)
-
-	req, err := http.NewRequest("POST", source.ConnectionString, bytes.NewBuffer(payloadJson))
-	if err != nil {
-		return
-	}
-
-	req.Header.Set("User-Agent", "Quepasa")
-	req.Header.Set("X-QUEPASA-WID", source.Wid)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
 	timeout := time.Duration(environment.Settings.API.WebhookTimeout) * time.Millisecond
-	client.Timeout = timeout
-	resp, err := client.Do(req)
+	result, err := dispatchservice.SendWebhook(message, &dispatchservice.WebhookRequest{
+		ConnectionString: source.ConnectionString,
+		Wid:              source.Wid,
+		Extra:            source.Extra,
+		Timeout:          timeout,
+	}, logentry)
 
 	// Always increment webhooks sent counter
 	WebhooksSent.Inc()
 
 	// Record latency
-	duration := time.Since(startTime)
-	WebhookLatency.WithLabelValues().Observe(duration.Seconds())
-
-	var statusCode int
-	if resp != nil {
-		statusCode = resp.StatusCode
-		defer resp.Body.Close()
+	duration := time.Duration(0)
+	statusCode := 0
+	if result != nil {
+		duration = result.Duration
+		statusCode = result.StatusCode
 	}
+	WebhookLatency.WithLabelValues().Observe(duration.Seconds())
 
 	if err != nil {
 		logentry.Warnf("error at post webhook: %s", err.Error())
 
 		// Check if it's a timeout error
-		if netErr, ok := err.(interface{ Timeout() bool }); ok && netErr.Timeout() {
+		if result != nil && result.TimedOut {
 			WebhookTimeouts.Inc()
 			logentry.Warnf("webhook timeout after %v", timeout)
 		}
 	}
 
-	if resp != nil && statusCode != 200 {
+	if statusCode > 0 && statusCode != 200 {
 		err = ErrInvalidResponse
 		// Record HTTP error with status code
 		WebhookHTTPErrors.WithLabelValues(fmt.Sprintf("%d", statusCode)).Inc()
 	}
 
-	currentTime := time.Now().UTC()
 	if err != nil {
 		WebhookSendErrors.Inc()
 		if source.Failure == nil {
@@ -251,119 +299,42 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 
 // PublishRabbitMQ sends message via RabbitMQ using QuePasa fixed Exchange and routing key with intelligent routing
 func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) (err error) {
-	startTime := time.Now()
-
 	// updating log
 	var messageIdForLog string
 	if message != nil {
 		messageIdForLog = message.Id
 	}
 	logentry := source.LogWithField(LogFields.MessageId, messageIdForLog)
-
-	// Safely derive message type string to avoid nil pointer dereference
-	// var messageType string - removed as no longer used after metrics refactoring
-	if message != nil {
-		// messageType = message.Type.String() - removed
-	} else {
-		// messageType = "unknown" - removed
-	}
-
-	// Determine the routing key based on message type
-	routingKey := source.DetermineRoutingKey(message)
-
-	logentry.Infof("publishing to QuePasa Exchange: %s with routing key: %s using connection: %s", rabbitmq.QuePasaExchangeName, routingKey, source.ConnectionString)
-
-	payload := &QpRabbitMQPayload{
-		WhatsappMessage: message,
-		Extra:           source.Extra,
-	}
-
-	// Calculate payload size for metrics
-	payloadJson, marshalErr := json.Marshal(&payload)
-	var payloadSizeBytes float64
-	if marshalErr == nil {
-		payloadSizeBytes = float64(len(payloadJson))
-	}
-
-	// Get or create RabbitMQ client for this specific connection string
-	client := rabbitmq.GetRabbitMQClient(source.ConnectionString)
-	if client == nil {
-		err = errors.New("failed to get rabbitmq client for connection: " + source.ConnectionString)
-		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
-
-		// Record RabbitMQ publish error
-		rabbitmq.MessagePublishErrors.Inc()
-
-		currentTime := time.Now().UTC()
-		if source.Failure == nil {
-			source.Failure = &currentTime
-		}
-		// Mark exceptions on message
-		if message != nil {
-			message.MarkExceptionsWithMessage(fmt.Sprintf("RabbitMQ client unavailable for connection %s", source.ConnectionString))
-		}
-		return err
-	}
-
-	// Try to ensure QuePasa Exchange and Queues exist
-	// If channel not ready, message will be cached automatically
-	err = client.EnsureExchangeAndQueuesWithRetry()
-	if err != nil {
-		logentry.Warnf("QuePasa setup not ready yet, message will be cached: %s", err.Error())
-		// Don't return error - let the publish method handle caching
-		// Record as warning but not as error since message will be cached
-		rabbitmq.MessagePublishErrors.Inc()
-	}
-
-	// Publish to QuePasa Exchange with routing key
-	// This will cache the message if connection is not ready
-	client.PublishQuePasaMessage(routingKey, payload)
-
-	// Check if connection is still ready after publish attempt
-	// If not ready, it means message was cached and we should mark as failure
-	if !client.IsConnectionReady() {
-		logentry.Warnf("rabbitmq connection lost during publish for %s, message was cached", source.ConnectionString)
-
-		// Record RabbitMQ publish error - connection lost/cached
-		rabbitmq.MessagePublishErrors.Inc()
-
-		// Mark as failure even though message was cached
-		currentTime := time.Now().UTC()
-		source.Failure = &currentTime
-		source.Success = nil
-
-		// Mark exceptions on message
-		if message != nil {
-			message.MarkExceptionsWithMessage("RabbitMQ connection lost - message cached")
-		}
-
-		// Still record metrics since message was processed
-		rabbitmq.MessagesPublished.Inc()
-		duration := time.Since(startTime)
-		// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
-
-		logentry.Infof("message cached for QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes) - marked as failure due to connection issue", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
-		return errors.New("rabbitmq connection not available, message cached")
-	}
-
-	// Always increment RabbitMQ messages published counter
-	rabbitmq.MessagesPublished.Inc()
-
-	// Record publish duration
-	duration := time.Since(startTime)
-	// Note: Publish duration and message size metrics removed - not implemented in rabbitmq module
+	result, err := dispatchservice.PublishRabbitMQ(message, &dispatchservice.RabbitMQRequest{
+		ConnectionString: source.ConnectionString,
+		Extra:            source.Extra,
+	}, logentry)
 
 	// Mark as success only if connection is ready and message was truly published
 	currentTime := time.Now().UTC()
+	if err != nil {
+		if source.Failure == nil {
+			source.Failure = &currentTime
+		}
+		source.Success = nil
+
+		if message != nil {
+			if result != nil && result.Cached {
+				message.MarkExceptionsWithMessage("RabbitMQ connection lost - message cached")
+			} else {
+				message.MarkExceptionsWithMessage(fmt.Sprintf("RabbitMQ publish failed for connection %s", source.ConnectionString))
+			}
+		}
+
+		return err
+	}
+
 	source.Failure = nil
 	source.Success = &currentTime
 
-	// Clear exceptions on message
 	if message != nil {
 		message.ClearExceptions()
 	}
-
-	logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
 
 	return nil
 }
@@ -371,41 +342,5 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 // DetermineRoutingKey determines the appropriate routing key based on message type and content
 // Returns one of the QuePasa standard routing keys using a rule-based approach for better performance
 func (source *QpDispatching) DetermineRoutingKey(message *whatsapp.WhatsappMessage) string {
-	// Priority 1: History messages always go to history queue
-	if message.FromHistory {
-		return rabbitmq.QuePasaRoutingKeyHistory
-	}
-
-	// Priority 2: Event messages - using lookup map for better performance
-	if source.isEventMessage(message) {
-		return rabbitmq.QuePasaRoutingKeyEvents
-	}
-
-	// Priority 3: Default to production queue for normal messages
-	return rabbitmq.QuePasaRoutingKeyProd
-}
-
-// isEventMessage determines if a message should be routed to the events queue
-// Uses efficient type checking and specific business rules
-func (source *QpDispatching) isEventMessage(message *whatsapp.WhatsappMessage) bool {
-	// Define event message types in a map for O(1) lookup
-	eventTypes := map[whatsapp.WhatsappMessageType]bool{
-		whatsapp.UnhandledMessageType: true,
-	}
-
-	// Check if message type is in event types
-	if eventTypes[message.Type] {
-		return true
-	}
-
-	// Special case: Contact message with specific conditions
-	if message.Type == whatsapp.ContactMessageType {
-		return message.Edited && message.Attachment != nil
-	}
-
-	if message.Id == "readreceipt" {
-		return true
-	}
-
-	return false
+	return dispatchservice.DetermineRoutingKey(message)
 }

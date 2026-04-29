@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	models "github.com/nocodeleaks/quepasa/models"
+	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 )
 
@@ -22,7 +22,7 @@ func init() {
 
 	// Register the hub as a realtime publisher so model-layer events can reach
 	// websocket clients through a transport-neutral callback interface.
-	models.RegisterRealtimePublisher(CableHub)
+	dispatchservice.RegisterRealtimePublisher(CableHub)
 }
 
 // Configure mounts the authenticated websocket cable endpoint.

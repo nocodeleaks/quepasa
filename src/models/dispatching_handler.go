@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -145,7 +146,7 @@ func (source *DispatchingHandler) LoggedOut(reason string) {
 		// now unverified instead of only showing the generic state.
 		source.server.RecordLogout(reason)
 
-		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+		dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
 			Kind:      "logged_out",
 			Token:     source.server.Token,
 			User:      source.server.GetUser(),
@@ -186,7 +187,7 @@ func (source *DispatchingHandler) OnConnected() {
 			logger := source.server.GetLogger()
 			logger.Errorf("error clearing connection issue after connected: %s", err.Error())
 		}
-		PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+		dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
 			Kind:      "connected",
 			Token:     source.server.Token,
 			User:      source.server.GetUser(),
@@ -252,7 +253,7 @@ func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "disconnected")
 
-	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+	dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
 		Kind:      "disconnected",
 		Token:     source.server.Token,
 		User:      source.server.GetUser(),
@@ -311,7 +312,7 @@ func (source *DispatchingHandler) OnStopped(cause string) {
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "stopped")
 
-	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+	dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
 		Kind:      "stopped",
 		Token:     source.server.Token,
 		User:      source.server.GetUser(),
@@ -345,7 +346,7 @@ func (source *DispatchingHandler) OnDeleted(cause string) {
 	// Add to cache and send through dispatchers
 	source.appendMsgToCache(message, "deleted")
 
-	PublishRealtimeLifecycle(&RealtimeLifecycleEvent{
+	dispatchservice.PublishRealtimeLifecycle(&dispatchservice.RealtimeLifecycleEvent{
 		Kind:      "deleted",
 		Token:     source.server.Token,
 		User:      source.server.GetUser(),
@@ -387,52 +388,64 @@ func (source *DispatchingHandler) GetById(id string) (*whatsapp.WhatsappMessage,
 
 // sends the message throw external publishers
 func (source *DispatchingHandler) Trigger(payload *whatsapp.WhatsappMessage) {
-	// If the source is nil, we cannot proceed with dispatching the message.
-	// This is a safeguard to prevent nil pointer dereference errors.
 	if source == nil {
 		return
 	}
 
-	// Validate the message payload. If it's not valid for dispatch,
-	// IsValidForDispatch will return a reason string.
-	reason := IsValidForDispatch(payload)
-	if len(reason) > 0 {
-		logentry := source.GetLogger()
-		logentry.Debug(reason)
-
-		jsonPayload := library.ToJson(payload)
-		logentry.Logger.Debugf("unhandled payload: %s", jsonPayload)
-
-		// If a reason is returned, it means the message should be ignored.
-		// No further action is needed, so we simply return.
-		return
-	}
-
-	// Update last message/event timestamps
-	if source.server != nil {
-		currentTime := time.Now().UTC()
-
-		// Check if this is an event (system messages, unhandled messages, or read receipts)
-		isEvent := payload.Type == whatsapp.UnhandledMessageType ||
-			payload.Type == whatsapp.SystemMessageType ||
-			payload.Id == "readreceipt"
-
-		if isEvent {
-			source.server.Timestamps.Event = &currentTime
-		} else {
-			// Regular message content (text, image, audio, video, etc.) - received messages only
-			source.server.Timestamps.Message = &currentTime
-		}
-	}
-
-	if source.server != nil {
-		payload.Wid = source.GetWId()
-		PublishRealtimeServerMessage(source.server, payload)
-	}
-
+	handlerCallbacks := make([]dispatchservice.HandlerSubscriber, 0, len(source.aeh))
 	for _, handler := range source.aeh {
-		go handler.HandleDispatching(payload)
+		handlerCallbacks = append(handlerCallbacks, handler)
 	}
+
+	request := &dispatchservice.HandlerFlowRequest{
+		Payload: payload,
+		Validate: func(message *whatsapp.WhatsappMessage) string {
+			return IsValidForDispatch(message)
+		},
+		OnInvalid: func(reason string, message *whatsapp.WhatsappMessage) {
+			logentry := source.GetLogger()
+			logentry.Debug(reason)
+
+			jsonPayload := library.ToJson(message)
+			logentry.Logger.Debugf("unhandled payload: %s", jsonPayload)
+		},
+		MarkEventTimestamp: func() {
+			if source.server == nil {
+				return
+			}
+			currentTime := time.Now().UTC()
+			source.server.Timestamps.Event = &currentTime
+		},
+		MarkMessageTimestamp: func() {
+			if source.server == nil {
+				return
+			}
+			currentTime := time.Now().UTC()
+			source.server.Timestamps.Message = &currentTime
+		},
+		SetMessageWid: func(message *whatsapp.WhatsappMessage) {
+			if source.server == nil || message == nil {
+				return
+			}
+			message.Wid = source.GetWId()
+		},
+		PublishRealtime: func(message *whatsapp.WhatsappMessage) {
+			if source.server == nil {
+				return
+			}
+			enriched := CloneAndEnrichMessageForServer(source.server, message)
+			dispatchservice.PublishRealtimeMessage(&dispatchservice.RealtimeServerMessage{
+				Token:   source.server.Token,
+				User:    source.server.GetUser(),
+				WID:     source.server.GetWId(),
+				State:   source.server.GetState().String(),
+				Message: enriched,
+			})
+		},
+		HandlerCallbacks: handlerCallbacks,
+	}
+
+	dispatchservice.GetInstance().DispatchHandlerFlow(request)
 }
 
 // Register an event handler that triggers on a new message received on cache

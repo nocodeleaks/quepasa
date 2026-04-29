@@ -8,6 +8,8 @@ replace github.com/nocodeleaks/quepasa/api => ./api
 
 replace github.com/nocodeleaks/quepasa/cache => ./cache
 
+replace github.com/nocodeleaks/quepasa/dispatch => ./dispatch
+
 replace github.com/nocodeleaks/quepasa/library => ./library
 
 replace github.com/nocodeleaks/quepasa/metrics => ./metrics
@@ -36,6 +38,8 @@ replace github.com/nocodeleaks/quepasa/swagger => ./swagger
 
 replace github.com/nocodeleaks/quepasa/mcp => ./mcp
 
+replace github.com/nocodeleaks/quepasa/runtime => ./runtime
+
 go 1.25.0
 
 require (
@@ -43,7 +47,9 @@ require (
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/cable v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/apps/form v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/mcp v0.0.0-00010101000000-000000000000

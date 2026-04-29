@@ -4,6 +4,7 @@ use (
 	.
 	./api
 	./cache
+	./dispatch
 	./environment
 	./apps/form
 	./library
@@ -12,6 +13,7 @@ use (
 	./metrics
 	./models
 	./rabbitmq
+	./runtime
 	./signalr
 	./sipproxy
 	./swagger

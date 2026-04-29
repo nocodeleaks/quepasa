@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -45,7 +46,29 @@ func GetSPATokenParam(r *http.Request) (string, error) {
 // GetSPAOwnedServerRecord returns the persisted server record for a token and ensures
 // the authenticated user is allowed to access it.
 func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, error) {
-	server, err := models.WhatsappService.DB.Servers.FindByToken(token)
+	resolvedToken := strings.TrimSpace(token)
+	if decodedToken, decodeErr := url.PathUnescape(resolvedToken); decodeErr == nil {
+		decodedToken = strings.TrimSpace(decodedToken)
+		if decodedToken != "" {
+			resolvedToken = decodedToken
+		}
+	}
+
+	server, err := models.WhatsappService.DB.Servers.FindByToken(resolvedToken)
+	if err != nil {
+		for _, candidate := range models.WhatsappService.DB.Servers.FindAll() {
+			if candidate == nil {
+				continue
+			}
+
+			if strings.EqualFold(candidate.Token, resolvedToken) {
+				server = candidate
+				err = nil
+				break
+			}
+		}
+	}
+
 	if err != nil {
 		return nil, err
 	}

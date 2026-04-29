@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
@@ -289,26 +290,26 @@ func (hub *Hub) sendEventToServer(token string, event string, data interface{}) 
 	}
 }
 
-// PublishServerMessage implements models.RealtimePublisher.
-func (hub *Hub) PublishServerMessage(server *models.QpWhatsappServer, payload *whatsapp.WhatsappMessage) {
-	if server == nil || payload == nil {
+// PublishMessage implements dispatchservice.RealtimePublisher.
+func (hub *Hub) PublishMessage(payload interface{}) {
+	event, ok := payload.(*dispatchservice.RealtimeServerMessage)
+	if !ok || event == nil || event.Message == nil {
 		return
 	}
 
-	payload = models.CloneAndEnrichMessageForServer(server, payload)
-
-	hub.sendEventToServer(server.Token, "server.message", ServerMessageEventPayload{
-		Token:   server.Token,
-		User:    server.GetUser(),
-		WID:     server.GetWId(),
-		State:   server.GetState().String(),
-		Message: payload,
+	hub.sendEventToServer(event.Token, "server.message", ServerMessageEventPayload{
+		Token:   event.Token,
+		User:    event.User,
+		WID:     event.WID,
+		State:   event.State,
+		Message: event.Message,
 	})
 }
 
-// PublishServerLifecycle implements models.RealtimePublisher.
-func (hub *Hub) PublishServerLifecycle(event *models.RealtimeLifecycleEvent) {
-	if event == nil {
+// PublishLifecycle implements dispatchservice.RealtimePublisher.
+func (hub *Hub) PublishLifecycle(payload interface{}) {
+	event, ok := payload.(*dispatchservice.RealtimeLifecycleEvent)
+	if !ok || event == nil {
 		return
 	}
 
@@ -319,6 +320,31 @@ func (hub *Hub) PublishServerLifecycle(event *models.RealtimeLifecycleEvent) {
 	if event.Token != "" {
 		hub.sendEventToServer(event.Token, eventName, event)
 	}
+}
+
+// PublishServerMessage keeps compatibility with existing tests/helpers.
+func (hub *Hub) PublishServerMessage(server *models.QpWhatsappServer, payload *whatsapp.WhatsappMessage) {
+	if server == nil || payload == nil {
+		return
+	}
+
+	enriched := models.CloneAndEnrichMessageForServer(server, payload)
+	hub.PublishMessage(&dispatchservice.RealtimeServerMessage{
+		Token:   server.Token,
+		User:    server.GetUser(),
+		WID:     server.GetWId(),
+		State:   server.GetState().String(),
+		Message: enriched,
+	})
+}
+
+// PublishServerLifecycle keeps compatibility with existing tests/helpers.
+func (hub *Hub) PublishServerLifecycle(event *models.RealtimeLifecycleEvent) {
+	if event == nil {
+		return
+	}
+
+	hub.PublishLifecycle((*dispatchservice.RealtimeLifecycleEvent)(event))
 }
 
 func (client *Client) readPump() {

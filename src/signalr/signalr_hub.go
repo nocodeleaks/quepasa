@@ -91,6 +91,12 @@ func (source *QpSignalRHub) Dispatch(token string, payload *whatsapp.WhatsappMes
 	}
 }
 
+func (source *QpSignalRHub) DispatchLifecycle(token string, payload interface{}) {
+	for _, ConnectionId := range source.GetActiveConnections(token) {
+		source.TrySend(ConnectionId, "lifecycle", payload)
+	}
+}
+
 func (source *QpSignalRHub) HasActiveConnections(token string) bool {
 	connections := source.GetActiveConnections(token)
 	return len(connections) > 0

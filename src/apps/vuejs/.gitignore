@@ -11,7 +11,7 @@ lerna-debug.log*
 node_modules
 
 # Build output
-dist
+# dist  - included in repository for quick start (removed from ignore)
 dist-ssr
 
 # Editor directories and files

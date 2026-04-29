@@ -4,6 +4,7 @@ go 1.25
 
 require (
 	github.com/nocodeleaks/quepasa/dispatch v0.0.0
+	github.com/nocodeleaks/quepasa/events v0.0.0
 	github.com/nocodeleaks/quepasa/library v0.0.0
 	github.com/nocodeleaks/quepasa/models v0.0.0
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
@@ -11,6 +12,7 @@ require (
 
 replace (
 	github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+	github.com/nocodeleaks/quepasa/events => ../events
 	github.com/nocodeleaks/quepasa/library => ../library
 	github.com/nocodeleaks/quepasa/models => ../models
 	github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp

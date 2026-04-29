@@ -6,6 +6,7 @@ use (
 	./cache
 	./dispatch
 	./environment
+	./events
 	./apps/form
 	./library
 	./mcp

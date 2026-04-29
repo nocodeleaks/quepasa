@@ -10,6 +10,7 @@ import (
 
 	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	environment "github.com/nocodeleaks/quepasa/environment"
+	events "github.com/nocodeleaks/quepasa/events"
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
@@ -227,6 +228,10 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
 	currentTime := time.Now().UTC()
 	if source.IsWebhookBlockedAt(currentTime) {
+		source.publishDispatchingEvent("dispatch.webhook.blocked", "blocked", 0, map[string]string{
+			"dispatch_type": source.Type,
+			"reason":        "sequential_failures",
+		})
 		logentry.Warnf("webhook dispatch blocked after sequential failures since %s", source.Failure.Format(time.RFC3339))
 		if message != nil {
 			message.MarkExceptionsWithMessage("Webhook dispatch blocked after sequential failures")
@@ -255,6 +260,15 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 		statusCode = result.StatusCode
 	}
 	WebhookLatency.WithLabelValues().Observe(duration.Seconds())
+	eventAttributes := map[string]string{
+		"dispatch_type": source.Type,
+	}
+	if statusCode > 0 {
+		eventAttributes["http_status"] = fmt.Sprintf("%d", statusCode)
+	}
+	if result != nil && result.TimedOut {
+		eventAttributes["timed_out"] = "true"
+	}
 
 	if err != nil {
 		logentry.Warnf("error at post webhook: %s", err.Error())
@@ -277,6 +291,7 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 		if source.Failure == nil {
 			source.Failure = &currentTime
 		}
+		source.publishDispatchingEvent("dispatch.webhook.delivery", "error", duration, eventAttributes)
 		logentry.Errorf("webhook failed with status %d: %s", statusCode, err.Error())
 		// Mark exceptions on message
 		if message != nil {
@@ -287,6 +302,7 @@ func (source *QpDispatching) PostWebhook(message *whatsapp.WhatsappMessage) (err
 		WebhookSuccess.Inc()
 		source.Failure = nil
 		source.Success = &currentTime
+		source.publishDispatchingEvent("dispatch.webhook.delivery", "success", duration, eventAttributes)
 		logentry.Infof("webhook posted successfully (status: %d, duration: %v)", statusCode, duration)
 		// Clear exceptions on message
 		if message != nil {
@@ -318,6 +334,19 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 		}
 		source.Success = nil
 
+		eventAttributes := map[string]string{
+			"dispatch_type": source.Type,
+		}
+		resultDuration := time.Duration(0)
+		if result != nil {
+			eventAttributes["routing_key"] = result.RoutingKey
+			resultDuration = result.Duration
+			if result.Cached {
+				eventAttributes["cached"] = "true"
+			}
+		}
+		source.publishDispatchingEvent("dispatch.rabbitmq.publish", "error", resultDuration, eventAttributes)
+
 		if message != nil {
 			if result != nil && result.Cached {
 				message.MarkExceptionsWithMessage("RabbitMQ connection lost - message cached")
@@ -332,11 +361,38 @@ func (source *QpDispatching) PublishRabbitMQ(message *whatsapp.WhatsappMessage) 
 	source.Failure = nil
 	source.Success = &currentTime
 
+	eventAttributes := map[string]string{
+		"dispatch_type": source.Type,
+	}
+	resultDuration := time.Duration(0)
+	if result != nil {
+		eventAttributes["routing_key"] = result.RoutingKey
+		resultDuration = result.Duration
+		if result.Cached {
+			eventAttributes["cached"] = "true"
+		}
+	}
+	source.publishDispatchingEvent("dispatch.rabbitmq.publish", "success", resultDuration, eventAttributes)
+
 	if message != nil {
 		message.ClearExceptions()
 	}
 
 	return nil
+}
+
+func (source *QpDispatching) publishDispatchingEvent(name string, status string, duration time.Duration, attributes map[string]string) {
+	if source == nil {
+		return
+	}
+
+	events.Publish(events.Event{
+		Name:       name,
+		Source:     "models.qp_dispatching",
+		Status:     status,
+		Duration:   duration,
+		Attributes: attributes,
+	})
 }
 
 // DetermineRoutingKey determines the appropriate routing key based on message type and content

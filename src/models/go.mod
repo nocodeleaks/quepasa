@@ -20,6 +20,8 @@ replace github.com/nocodeleaks/quepasa/models => ./
 
 replace github.com/nocodeleaks/quepasa/environment => ../environment
 
+replace github.com/nocodeleaks/quepasa/events => ../events
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.3.5
@@ -28,6 +30,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000

@@ -1,7 +1,11 @@
 package runtime
 
 import (
+	"strconv"
+	"time"
+
 	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
+	events "github.com/nocodeleaks/quepasa/events"
 	"github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -78,6 +82,8 @@ func dispatchOutboundToTargets(server *models.QpWhatsappServer, dispatchings []*
 		return nil
 	}
 
+	startedAt := time.Now()
+
 	serverWid := ""
 	if server != nil {
 		serverWid = server.GetWId()
@@ -106,6 +112,7 @@ func dispatchOutboundToTargets(server *models.QpWhatsappServer, dispatchings []*
 	err := dispatchservice.GetInstance().DispatchOutbound(request)
 	if server != nil {
 		if syncErr := server.QpDataDispatching.DispatchingSyncHealth(dispatchings); syncErr != nil {
+			publishRuntimeDispatchEvent("error", time.Since(startedAt), len(targets))
 			if err != nil {
 				return err
 			}
@@ -113,7 +120,26 @@ func dispatchOutboundToTargets(server *models.QpWhatsappServer, dispatchings []*
 		}
 	}
 
+	if err != nil {
+		publishRuntimeDispatchEvent("error", time.Since(startedAt), len(targets))
+		return err
+	}
+
+	publishRuntimeDispatchEvent("success", time.Since(startedAt), len(targets))
+
 	return err
+}
+
+func publishRuntimeDispatchEvent(status string, duration time.Duration, targetCount int) {
+	events.Publish(events.Event{
+		Name:     "runtime.dispatch.outbound",
+		Source:   "runtime.dispatching_handler",
+		Status:   status,
+		Duration: duration,
+		Attributes: map[string]string{
+			"target_count": strconv.Itoa(targetCount),
+		},
+	})
 }
 
 // HasDispatching returns true if the server has at least one dispatching target configured.

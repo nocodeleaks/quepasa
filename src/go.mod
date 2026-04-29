@@ -10,6 +10,8 @@ replace github.com/nocodeleaks/quepasa/cache => ./cache
 
 replace github.com/nocodeleaks/quepasa/dispatch => ./dispatch
 
+replace github.com/nocodeleaks/quepasa/events => ./events
+
 replace github.com/nocodeleaks/quepasa/library => ./library
 
 replace github.com/nocodeleaks/quepasa/metrics => ./metrics
@@ -49,6 +51,7 @@ require (
 	github.com/nocodeleaks/quepasa/cable v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/dispatch v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/apps/form v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000

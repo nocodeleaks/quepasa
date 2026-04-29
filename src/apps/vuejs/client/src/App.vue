@@ -22,24 +22,28 @@
           <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarNav">
             <ul class="navbar-nav me-auto">
               <li class="nav-item">
-                <RouterLink class="nav-link" to="/">Home</RouterLink>
+                <RouterLink class="nav-link" to="/">{{ t('nav_home') }}</RouterLink>
               </li>
               <li class="nav-item">
-                <RouterLink class="nav-link" to="/connect">Connect</RouterLink>
+                <RouterLink class="nav-link" to="/connect">{{ t('nav_connect') }}</RouterLink>
               </li>
               <li v-if="session.user.value" class="nav-item">
-                <RouterLink class="nav-link" to="/account">Account</RouterLink>
+                <RouterLink class="nav-link" to="/account">{{ t('nav_account') }}</RouterLink>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/form/account">Classic UI</a>
+                <a class="nav-link" href="/form/account">{{ t('nav_classic_ui') }}</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/swagger/" target="_blank">API Docs</a>
+                <a class="nav-link" href="/swagger/" target="_blank">{{ t('nav_api_docs') }}</a>
               </li>
             </ul>
             <div v-if="session.user.value" class="d-flex align-items-center text-white">
               <small class="me-3">{{ session.user.value.username }}</small>
-              <button class="btn btn-outline-light btn-sm" @click="logout">Logout</button>
+              <div class="lang-switch me-2">
+                <button class="lang-btn" :class="{ active: locale === 'en-US' }" @click="setLocale('en-US')" title="English">EN</button>
+                <button class="lang-btn" :class="{ active: locale === 'pt-BR' }" @click="setLocale('pt-BR')" title="Português">PT</button>
+              </div>
+              <button class="btn btn-outline-light btn-sm" @click="logout">{{ t('logout') }}</button>
             </div>
           </div>
 
@@ -55,28 +59,28 @@
               <ul class="navbar-nav">
                 <li class="nav-item">
                   <a class="nav-link" href="#" @click.prevent="navigateTo('/')">
-                    <i class="fa fa-home me-2"></i> Home
+                    <i class="fa fa-home me-2"></i> {{ t('nav_home') }}
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="#" @click.prevent="navigateTo('/connect')">
-                    <i class="fa fa-link me-2"></i> Connect
+                    <i class="fa fa-link me-2"></i> {{ t('nav_connect') }}
                   </a>
                 </li>
                 <li v-if="session.user.value" class="nav-item">
                   <a class="nav-link" href="#" @click.prevent="navigateTo('/account')">
-                    <i class="fa fa-user-circle me-2"></i> Account
+                    <i class="fa fa-user-circle me-2"></i> {{ t('nav_account') }}
                   </a>
                 </li>
                 <li><hr class="my-2"></li>
                 <li class="nav-item">
                   <a class="nav-link" href="/form/account">
-                    <i class="fa fa-columns me-2"></i> Classic UI
+                    <i class="fa fa-columns me-2"></i> {{ t('nav_classic_ui') }}
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="/swagger/" target="_blank">
-                    <i class="fa fa-book me-2"></i> API Docs
+                    <i class="fa fa-book me-2"></i> {{ t('nav_api_docs') }}
                   </a>
                 </li>
                 <li><hr class="my-2"></li>
@@ -87,7 +91,17 @@
                 </li>
                 <li class="nav-item">
                   <a class="nav-link text-danger" href="#" @click.prevent="logout">
-                    <i class="fa fa-sign-out-alt me-2"></i> Logout
+                    <i class="fa fa-sign-out-alt me-2"></i> {{ t('logout') }}
+                                <li><hr class="my-2"></li>
+                                <li class="nav-item">
+                                  <div class="nav-link">
+                                    <span class="text-muted small me-2">Language:</span>
+                                    <div class="lang-switch d-inline-flex">
+                                      <button class="lang-btn" :class="{ active: locale === 'en-US' }" @click="setLocale('en-US')" title="English">EN</button>
+                                      <button class="lang-btn" :class="{ active: locale === 'pt-BR' }" @click="setLocale('pt-BR')" title="Português">PT</button>
+                                    </div>
+                                  </div>
+                                </li>
                   </a>
                 </li>
               </ul>
@@ -98,7 +112,7 @@
     </header>
 
     <main>
-      <div v-if="session.loading.value" class="text-center py-5">Carregando sessão...</div>
+      <div v-if="session.loading.value" class="text-center py-5">{{ t('loading_session') }}</div>
       <RouterView v-else />
     </main>
 
@@ -127,6 +141,7 @@ import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import api from './services/api'
 import Toaster from '@/components/Toaster.vue'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   components: { RouterLink, RouterView, Toaster },
@@ -136,6 +151,8 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const appVersion = ref('0.0.0')
+
+  const { t, locale, setLocale } = useLocale()
 
     const branding = ref({
       title: 'QuePasa',
@@ -221,7 +238,7 @@ export default defineComponent({
       loadBranding()
     })
 
-    return { year, session, logout, isLoginPage, branding, navbarStyle, containerClass, appVersion, navigateTo }
+    return { year, session, logout, isLoginPage, branding, navbarStyle, containerClass, appVersion, navigateTo, t, locale, setLocale }
   }
 })
 </script>
@@ -277,6 +294,49 @@ export default defineComponent({
   border-radius: 1rem;
   font-size: 0.75rem;
   font-weight: 600;
+
+.lang-switch {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.lang-btn {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+
+.lang-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lang-btn.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+/* Offcanvas lang-switch uses dark text */
+.offcanvas .lang-switch {
+  background: #f3f4f6;
+}
+
+.offcanvas .lang-btn {
+  color: #6b7280;
+}
+
+.offcanvas .lang-btn.active {
+  background: var(--branding-primary, #7C3AED);
+  color: white;
+}
 }
 
 .offcanvas .nav-link {

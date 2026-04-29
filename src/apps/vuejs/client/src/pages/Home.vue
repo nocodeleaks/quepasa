@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1>Seus Servidores</h1>
-        <p class="hide-mobile">Gerencie suas conexões WhatsApp</p>
+        <h1>{{ t('home_title') }}</h1>
+        <p class="hide-mobile">{{ t('home_subtitle') }}</p>
       </div>
       <div class="header-actions">
         <!-- Desktop Controls -->
@@ -16,9 +16,9 @@
               @keyup.enter="applySearch"
               class="search-input"
               type="search"
-              placeholder="Search..."
-              aria-label="Search servers"
-              title="Search servers"
+              :placeholder="t('search_placeholder')"
+              :aria-label="t('search_sessions')"
+              :title="t('search_sessions')"
             />
             <button v-if="searchQuery" class="search-clear" @click="clearSearch" title="Clear search">
               <i class="fa fa-times"></i>
@@ -31,7 +31,7 @@
               class="view-btn" 
               :class="{ active: viewMode === 'card' }" 
               @click="viewMode = 'card'"
-              title="Card view"
+              :title="t('card_view')"
             >
               <i class="fa fa-th-large"></i>
             </button>
@@ -39,7 +39,7 @@
               class="view-btn" 
               :class="{ active: viewMode === 'table' }" 
               @click="viewMode = 'table'"
-              title="Table view"
+              :title="t('table_view')"
             >
               <i class="fa fa-list"></i>
             </button>
@@ -55,7 +55,7 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>
-            <span class="hide-mobile">New Server</span>
+            <span class="hide-mobile">{{ t('new_session') }}</span>
           </template>
         </button>
       </div>
@@ -70,9 +70,9 @@
           @keyup.enter="applySearch"
           class="search-input"
           type="search"
-          placeholder="Search..."
-          aria-label="Search servers"
-          title="Search servers"
+          :placeholder="t('search_placeholder')"
+          :aria-label="t('search_sessions')"
+          :title="t('search_sessions')"
         />
         <button v-if="searchQuery" class="search-clear" @click="clearSearch" title="Clear search">
           <i class="fa fa-times"></i>
@@ -85,7 +85,7 @@
           class="view-btn" 
           :class="{ active: viewMode === 'card' }" 
           @click="viewMode = 'card'"
-          title="Card view"
+          :title="t('card_view')"
         >
           <i class="fa fa-th-large"></i>
         </button>
@@ -93,7 +93,7 @@
           class="view-btn" 
           :class="{ active: viewMode === 'table' }" 
           @click="viewMode = 'table'"
-          title="Table view"
+          :title="t('table_view')"
         >
           <i class="fa fa-list"></i>
         </button>
@@ -116,22 +116,22 @@
     <div class="stats-bar" v-if="!loading && hasServers">
       <div class="stat-item">
         <span class="stat-value">{{ servers.length }}</span>
-        <span class="stat-label">Total</span>
+        <span class="stat-label">{{ t('total') }}</span>
       </div>
       <div class="stat-item connected">
         <span class="stat-value">{{ connectedCount }}</span>
-        <span class="stat-label">Conectados</span>
+        <span class="stat-label">{{ t('connected') }}</span>
       </div>
       <div class="stat-item disconnected">
         <span class="stat-value">{{ disconnectedCount }}</span>
-        <span class="stat-label">Desconectados</span>
+        <span class="stat-label">{{ t('disconnected') }}</span>
       </div>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner-large"></div>
-      <p>Carregando servidores...</p>
+      <p>{{ t('loading_sessions') }}</p>
     </div>
 
     <!-- Error -->
@@ -140,7 +140,7 @@
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
       </svg>
       <span>{{ error }}</span>
-      <button @click="load" class="retry-btn">Tentar novamente</button>
+      <button @click="load" class="retry-btn">{{ t('error_retry') }}</button>
     </div>
 
     <!-- Empty state -->
@@ -150,26 +150,26 @@
           <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z"/>
         </svg>
       </div>
-      <h2>Nenhum servidor configurado</h2>
-      <p>Adicione seu primeiro servidor WhatsApp para começar</p>
+      <h2>{{ t('no_sessions_configured') }}</h2>
+      <p>{{ t('no_sessions_description') }}</p>
       <button @click="createNewServer" class="btn-primary-large" :disabled="creating">
         <template v-if="creating">
           <div class="spinner-small"></div>
-          <span>Criando...</span>
+          <span>{{ t('creating') }}</span>
         </template>
         <template v-else>
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
           </svg>
-          Conectar WhatsApp
+          {{ t('connect_whatsapp') }}
         </template>
       </button>
     </div>
 
     <!-- No results (after search) -->
     <div v-else-if="!loading && servers.length > 0 && displayServers.length === 0" class="no-results">
-      <h3>No servers match your search</h3>
-      <p>Try a different query or clear the search.</p>
+      <h3>{{ t('no_results') }}</h3>
+      <p>{{ t('no_results_hint') }}</p>
     </div>
 
     <!-- Table View -->
@@ -177,12 +177,12 @@
       <table class="servers-table">
         <thead>
           <tr>
-            <th>Active</th>
-            <th>Phone</th>
-            <th>Token</th>
-            <th>Dispatch</th>
-            <th>Connection</th>
-            <th>Actions</th>
+            <th>{{ t('col_active') }}</th>
+            <th>{{ t('col_phone') }}</th>
+            <th>{{ t('col_token') }}</th>
+            <th>{{ t('col_dispatch') }}</th>
+            <th>{{ t('col_connection') }}</th>
+            <th>{{ t('col_actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -190,7 +190,7 @@
             <td class="status-cell">
               <i 
                 :class="srv.verified ? 'fa fa-check-square text-success' : 'fa fa-exclamation-triangle text-warning'"
-                :title="srv.verified ? 'Server active' : 'Server not verified'"
+                :title="srv.verified ? t('session_active') : t('session_not_verified')"
               ></i>
             </td>
             <td class="phone-cell">{{ formatWid(srv.wid) || '—' }}</td>
@@ -230,7 +230,7 @@
                   <!-- View/Open -->
                   <li>
                     <router-link :to="`/server/${srv.token}`" class="dropdown-item">
-                      <i class="fa fa-eye me-2"></i> Open
+                      <i class="fa fa-eye me-2"></i> {{ t('open') }}
                     </router-link>
                   </li>
                   
@@ -238,23 +238,23 @@
                   <template v-if="isConnected(srv)">
                     <li>
                       <router-link :to="`/server/${srv.token}/send`" class="dropdown-item">
-                        <i class="fa fa-paper-plane me-2"></i> Send Message
+                        <i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}
                       </router-link>
                     </li>
                     <li>
                       <router-link :to="`/server/${srv.token}/messages`" class="dropdown-item">
-                        <i class="fa fa-inbox me-2"></i> Messages
+                        <i class="fa fa-inbox me-2"></i> {{ t('messages') }}
                       </router-link>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                       <button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)">
-                        <i class="fa fa-bug me-2"></i> Debug {{ srv.devel ? '(ON)' : '(OFF)' }}
+                        <i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? '(ON)' : '(OFF)' }}
                       </button>
                     </li>
                     <li>
                       <button class="dropdown-item text-warning" @click="disconnectServer(srv)">
-                        <i class="fa fa-unlink me-2"></i> Disconnect
+                        <i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}
                       </button>
                     </li>
                   </template>
@@ -264,22 +264,22 @@
                   <!-- Toggle buttons -->
                   <li>
                     <button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)">
-                      <i class="fa fa-users me-2"></i> Groups {{ srv.groups ? '(ON)' : '(OFF)' }}
+                      <i class="fa fa-users me-2"></i> {{ t('groups') }} {{ srv.groups ? '(ON)' : '(OFF)' }}
                     </button>
                   </li>
                   <li>
                     <button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)">
-                      <i class="fa fa-bullhorn me-2"></i> Broadcasts {{ srv.broadcasts ? '(ON)' : '(OFF)' }}
+                      <i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }} {{ srv.broadcasts ? '(ON)' : '(OFF)' }}
                     </button>
                   </li>
                   <li>
                     <button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)">
-                      <i class="fa fa-check-double me-2"></i> Read Receipts {{ srv.read_receipts ? '(ON)' : '(OFF)' }}
+                      <i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.read_receipts ? '(ON)' : '(OFF)' }}
                     </button>
                   </li>
                   <li>
                     <button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)">
-                      <i class="fa fa-phone me-2"></i> Calls {{ srv.calls ? '(ON)' : '(OFF)' }}
+                      <i class="fa fa-phone me-2"></i> {{ t('calls') }} {{ srv.calls ? '(ON)' : '(OFF)' }}
                     </button>
                   </li>
                   
@@ -288,12 +288,12 @@
                   <!-- Dispatch -->
                   <li>
                     <router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item">
-                      <i class="fa fa-link me-2"></i> Dispatching
+                      <i class="fa fa-link me-2"></i> {{ t('dispatching') }}
                     </router-link>
                   </li>
                   <li>
                     <router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item">
-                      <i class="fa fa-database me-2"></i> RabbitMQ
+                      <i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}
                     </router-link>
                   </li>
                   
@@ -302,22 +302,23 @@
                   <!-- Connect (if not connected) -->
                   <li v-if="!isConnected(srv)">
                     <router-link :to="`/server/${srv.token}/qrcode`" class="dropdown-item text-success">
-                      <i class="fa fa-qrcode me-2"></i> Connect
+                      <i class="fa fa-qrcode me-2"></i> {{ t('connect') }}
                     </router-link>
                   </li>
                   
                   <!-- Enable/Disable -->
-                  <li>
+                  <!-- Enable/Disable: only for sessions that were previously connected (have a wid) -->
+                  <li v-if="srv.wid">
                     <button class="dropdown-item" @click="toggleServer(srv)">
                       <i :class="srv.verified ? 'fa fa-power-off me-2' : 'fa fa-play me-2'"></i>
-                      {{ srv.verified ? 'Disable' : 'Enable' }}
+                      {{ srv.verified ? t('disable') : t('enable') }}
                     </button>
                   </li>
                   
                   <!-- Delete -->
                   <li>
                     <button class="dropdown-item text-danger" @click="deleteServer(srv)">
-                      <i class="fa fa-trash me-2"></i> Remove
+                      <i class="fa fa-trash me-2"></i> {{ t('remove') }}
                     </button>
                   </li>
                 </ul>
@@ -338,7 +339,7 @@
             </svg>
           </div>
           <div class="server-info">
-            <h3>{{ formatWid(srv.wid) || 'Not connected' }}</h3>
+            <h3>{{ formatWid(srv.wid) || t('not_connected') }}</h3>
             <span class="status-badge" :class="getStatusClass(srv)">{{ srv.state || 'Unknown' }}</span>
           </div>
         </div>
@@ -352,11 +353,11 @@
             </code>
           </div>
           <div class="detail-row" v-if="srv.uptime_seconds >= 0">
-            <span class="detail-label">Uptime:</span>
+            <span class="detail-label">{{ t('uptime') }}:</span>
             <span class="detail-value">{{ formatUptime(srv.uptime_seconds) }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Dispatch:</span>
+            <span class="detail-label">{{ t('col_dispatch') }}:</span>
             <span class="detail-value">
               <i v-if="srv.dispatch_count > 0" class="fa fa-bell text-success" title="Dispatch count"></i>
               <span class="ms-1">{{ srv.dispatch_count || 0 }}</span>
@@ -365,18 +366,18 @@
             </span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Status:</span>
+            <span class="detail-label">{{ t('status') }}:</span>
             <div class="flags-row">
-              <span class="flag-badge" :class="getTriStateClass(srv.groups)" :title="getTriStateTitle('Groups', srv.groups)">
+              <span class="flag-badge" :class="getTriStateClass(srv.groups)" :title="getTriStateTitle(t('groups'), srv.groups)">
                 <i class="fa fa-users"></i>
               </span>
-              <span class="flag-badge" :class="getTriStateClass(srv.broadcasts)" :title="getTriStateTitle('Broadcasts', srv.broadcasts)">
+              <span class="flag-badge" :class="getTriStateClass(srv.broadcasts)" :title="getTriStateTitle(t('broadcasts'), srv.broadcasts)">
                 <i class="fa fa-bullhorn"></i>
               </span>
-              <span class="flag-badge" :class="getTriStateClass(srv.readreceipts)" :title="getTriStateTitle('Read Receipts', srv.readreceipts)">
+              <span class="flag-badge" :class="getTriStateClass(srv.readreceipts)" :title="getTriStateTitle(t('read_receipts'), srv.readreceipts)">
                 <i class="fa fa-check-double"></i>
               </span>
-              <span class="flag-badge" :class="getTriStateClass(srv.calls)" :title="getTriStateTitle('Calls', srv.calls)">
+              <span class="flag-badge" :class="getTriStateClass(srv.calls)" :title="getTriStateTitle(t('calls'), srv.calls)">
                 <i class="fa fa-phone"></i>
               </span>
             </div>
@@ -426,7 +427,7 @@
           <!-- Open (always visible) -->
           <router-link :to="`/server/${srv.token}`" class="btn-action">
             <i class="fa fa-eye"></i>
-            Open
+            {{ t('open') }}
           </router-link>
 
           <!-- Not connected: only Connect + Remove -->
@@ -436,64 +437,65 @@
             class="btn-action success"
           >
             <i class="fa fa-qrcode"></i>
-            Connect
+            {{ t('connect') }}
           </router-link>
 
           <button 
             class="btn-action danger" 
             @click="deleteServer(srv)" 
-            title="Remove Server"
+            :title="t('remove')"
             :disabled="toggling === srv.token"
           >
             <i class="fa fa-trash"></i>
-            Remove
+            {{ t('remove') }}
           </button>
 
           <!-- Connected: show full actions -->
           <template v-if="isConnected(srv)">
             <router-link :to="`/server/${srv.token}/send`" class="btn-action">
               <i class="fa fa-paper-plane"></i>
-              Send
+              {{ t('send') }}
             </router-link>
             <router-link :to="`/server/${srv.token}/messages`" class="btn-action">
               <i class="fa fa-inbox"></i>
-              Messages
+              {{ t('messages') }}
             </router-link>
             <router-link :to="`/dispatching?token=${srv.token}`" class="btn-action">
               <i class="fa fa-link"></i>
-              Dispatching
+              {{ t('dispatching') }}
             </router-link>
             <button 
               class="btn-action warning" 
               @click="disconnectServer(srv)" 
-              title="Disconnect"
+              :title="t('disconnect')"
               :disabled="toggling === srv.token"
             >
               <i class="fa fa-unlink"></i>
-              Disconnect
+              {{ t('disconnect') }}
             </button>
             <button 
               class="btn-action" 
               :class="{ active: srv.devel }" 
               @click="toggleDebug(srv)" 
-              title="Toggle Debug"
+              :title="t('debug')"
               :disabled="toggling === srv.token"
             >
               <i class="fa fa-bug"></i>
-              Debug
+              {{ t('debug') }}
             </button>
           </template>
 
-          <!-- Disable Server (always visible) -->
+          <!-- Enable/Disable: only for sessions that were previously connected (have a wid) -->
           <button 
+            v-if="srv.wid"
             class="btn-action" 
             :class="{ warning: srv.verified }" 
             @click="toggleServer(srv)" 
-            :title="srv.verified ? 'Disable Server' : 'Enable Server'"
+            :title="srv.verified ? t('disable') : t('enable')"
             :disabled="toggling === srv.token"
           >
             <i :class="srv.verified ? 'fa fa-power-off' : 'fa fa-play'"></i>
-            {{ srv.verified ? 'Disable' : 'Enable' }}
+            {{ srv.verified ? t('disable') : t('enable') }}
           </button>
         </div>
       </div>
@@ -502,21 +504,21 @@
     <!-- Pagination -->
     <div class="pagination-bar" v-if="!loading && hasServers && filteredServers.length > 0">
       <div class="pagination-info">
-        Showing {{ ((currentPage - 1) * pageSize) + 1 }}-{{ Math.min(currentPage * pageSize, filteredServers.length) }} of {{ filteredServers.length }} servers
+        {{ t('showing') }} {{ ((currentPage - 1) * pageSize) + 1 }}-{{ Math.min(currentPage * pageSize, filteredServers.length) }} {{ t('of') }} {{ filteredServers.length }} {{ t('sessions_label') }}
       </div>
       <div class="pagination-controls">
         <div class="page-size-selector">
-          <label for="pageSize">Per page:</label>
+          <label for="pageSize">{{ t('per_page') }}</label>
           <select id="pageSize" v-model="pageSize">
             <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">{{ opt }}</option>
           </select>
         </div>
         <div class="page-nav">
-          <button class="page-btn" @click="prevPage" :disabled="currentPage <= 1" title="Previous page">
+          <button class="page-btn" @click="prevPage" :disabled="currentPage <= 1" :title="t('prev_page')">
             <i class="fa fa-chevron-left"></i>
           </button>
-          <span class="page-indicator">Page {{ currentPage }} of {{ totalPages }}</span>
-          <button class="page-btn" @click="nextPage" :disabled="currentPage >= totalPages" title="Next page">
+          <span class="page-indicator">{{ t('page_indicator', String(currentPage), String(totalPages)) }}</span>
+          <button class="page-btn" @click="nextPage" :disabled="currentPage >= totalPages" :title="t('next_page')">
             <i class="fa fa-chevron-right"></i>
           </button>
         </div>
@@ -531,6 +533,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useServerLifecycleRefresh } from '@/composables/useServerLifecycleRefresh'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
@@ -542,6 +545,8 @@ export default defineComponent({
     const copiedToken = ref('')
     const toggling = ref('')
     const creating = ref(false)
+
+  const { t, locale, setLocale } = useLocale()
 
     const connectedCount = computed(() => 
       servers.value.filter(s => s.state?.toLowerCase() === 'ready').length
@@ -660,7 +665,7 @@ export default defineComponent({
           viewMode.value = res.data.serversViewMode
         }
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar servidores'
+        error.value = err?.response?.data?.result || err.message || t('error_load_sessions')
       } finally {
         loading.value = false
       }
@@ -675,7 +680,7 @@ export default defineComponent({
         // Replace servers with response
         servers.value = res.data.servers || []
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Error searching servers'
+        error.value = err?.response?.data?.result || err.message || t('error_search_sessions')
       } finally {
         loading.value = false
       }
@@ -752,7 +757,7 @@ export default defineComponent({
     async function copyToken(token: string) {
       const onSuccess = () => {
         copiedToken.value = token
-        pushToast('Token copiado!', 'success')
+        pushToast(t('token_copied'), 'success')
         setTimeout(() => copiedToken.value = '', 2000)
       }
 
@@ -774,26 +779,28 @@ export default defineComponent({
     async function toggleServer(srv: any) {
       try {
         toggling.value = srv.token
-        const endpoint = isConnected(srv) ? 'disable' : 'enable'
+        // Use srv.verified (not connection state) to decide the action:
+        // verified=true means it's active → disable; verified=false means disabled → enable.
+        const endpoint = srv.verified ? 'disable' : 'enable'
         await api.post(`/api/session/${endpoint}`, { token: srv.token })
         await load()
-        pushToast('Servidor atualizado', 'success')
+        pushToast(t('session_updated'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao alterar servidor', 'error')
+        pushToast(err?.response?.data?.result || t('error_update_session'), 'error')
       } finally {
         toggling.value = ''
       }
     }
 
     async function disconnectServer(srv: any) {
-      if (!confirm('Deseja realmente desconectar este servidor?')) return
+      if (!confirm(t('confirm_disconnect'))) return
       try {
         toggling.value = srv.token
         await api.post('/api/session/disable', { token: srv.token })
         await load()
-        pushToast('Servidor desconectado', 'success')
+        pushToast(t('session_disconnected'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao desconectar', 'error')
+        pushToast(err?.response?.data?.result || t('error_disconnect'), 'error')
       } finally {
         toggling.value = ''
       }
@@ -804,9 +811,9 @@ export default defineComponent({
         toggling.value = srv.token
         await api.post('/api/session/debug', { token: srv.token })
         await load()
-        pushToast('Debug atualizado', 'success')
+        pushToast(t('debug_updated'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao alterar debug', 'error')
+        pushToast(err?.response?.data?.result || t('error_update_debug'), 'error')
       } finally {
         toggling.value = ''
       }
@@ -817,9 +824,9 @@ export default defineComponent({
         toggling.value = srv.token
         await api.post('/api/session/option', { token: srv.token, option: 'groups' })
         await load()
-        pushToast('Grupos atualizado', 'success')
+        pushToast(t('groups_updated'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao alterar grupos', 'error')
+        pushToast(err?.response?.data?.result || t('error_update_groups'), 'error')
       } finally {
         toggling.value = ''
       }
@@ -830,9 +837,9 @@ export default defineComponent({
         toggling.value = srv.token
         await api.post('/api/session/option', { token: srv.token, option: 'broadcasts' })
         await load()
-        pushToast('Broadcasts atualizado', 'success')
+        pushToast(t('broadcasts_updated'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao alterar broadcasts', 'error')
+        pushToast(err?.response?.data?.result || t('error_update_broadcasts'), 'error')
       } finally {
         toggling.value = ''
       }
@@ -843,9 +850,9 @@ export default defineComponent({
         toggling.value = srv.token
         await api.post('/api/session/option', { token: srv.token, option: 'readreceipts' })
         await load()
-        pushToast('Confirmações de leitura atualizado', 'success')
+        pushToast(t('read_receipts_updated'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao alterar confirmações', 'error')
+        pushToast(err?.response?.data?.result || t('error_update_read_receipts'), 'error')
       } finally {
         toggling.value = ''
       }
@@ -856,23 +863,23 @@ export default defineComponent({
         toggling.value = srv.token
         await api.post('/api/session/option', { token: srv.token, option: 'calls' })
         await load()
-        pushToast('Ligações atualizado', 'success')
+        pushToast(t('calls_updated'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao alterar ligações', 'error')
+        pushToast(err?.response?.data?.result || t('error_update_calls'), 'error')
       } finally {
         toggling.value = ''
       }
     }
 
     async function deleteServer(srv: any) {
-      if (!confirm('Deseja realmente REMOVER este servidor? Esta ação não pode ser desfeita.')) return
+      if (!confirm(t('confirm_remove'))) return
       try {
         toggling.value = srv.token
         await api.delete('/api/sessions', { data: { token: srv.token } })
         await load()
-        pushToast('Servidor removido', 'success')
+        pushToast(t('session_removed'), 'success')
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Erro ao remover servidor', 'error')
+        pushToast(err?.response?.data?.result || t('error_remove_session'), 'error')
       } finally {
         toggling.value = ''
       }
@@ -886,14 +893,14 @@ export default defineComponent({
         const createdServer = response.data?.server || response.data
         if (createdServer?.token) {
           const token = createdServer.token
-          pushToast('Servidor criado com sucesso!', 'success')
+          pushToast(t('session_created'), 'success')
           router.push(`/server/${encodeURIComponent(token)}`)
         } else {
-          throw new Error('Token não recebido do servidor')
+          throw new Error(t('error_token_not_received'))
         }
       } catch (err: any) {
         console.error('Error creating server:', err)
-        const errorMsg = err.response?.data?.message || err.message || 'Erro ao criar servidor'
+        const errorMsg = err.response?.data?.message || err.message || t('error_create_session')
         pushToast(errorMsg, 'error')
       } finally {
         creating.value = false
@@ -919,7 +926,8 @@ export default defineComponent({
       copyToken, toggleServer, toggleDebug, toggleGroups, toggleBroadcasts, 
       toggleReadReceipts, toggleCalls, disconnectServer, deleteServer,
       applySearch, clearSearch, goToPage, nextPage, prevPage, createNewServer,
-      getTriStateClass, getTriStateTitle
+      getTriStateClass, getTriStateTitle,
+      t, locale, setLocale
     }
   }
 })

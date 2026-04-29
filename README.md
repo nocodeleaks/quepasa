@@ -268,6 +268,55 @@ HISTORYSYNCDAYS=30
 
 📖 **[Environment Variables Reference](src/environment/README.md)** - Complete configuration documentation.
 
+### Cache System Architecture
+
+QuePasa 3.26+ features a centralized cache system with automatic fallback:
+
+```
+┌─────────────────────────────────────────┐
+│  Centralized CacheService (Singleton)   │
+├─────────────────────────────────────────┤
+│                                         │
+│  Messages Backend        Queue Backend  │
+│  ├─ Memory (sync.Map)    ├─ Memory      │
+│  ├─ Disk (JSON)          ├─ Disk        │
+│  └─ Redis (go-redis)     └─ Redis       │
+│                                         │
+│  Auto-Fallback on Failure               │
+│  (Enabled when CACHE_INIT_FALLBACK=true)│
+└─────────────────────────────────────────┘
+```
+
+**Usage Examples:**
+
+```bash
+# Default: In-memory caching (no setup required)
+CACHE_BACKEND=memory
+
+# Persistent disk-based caching
+CACHE_BACKEND=disk
+CACHE_DISK_PATH=/var/cache/quepasa
+
+# Distributed caching with Redis
+CACHE_BACKEND=redis
+REDIS_HOST=redis-server
+REDIS_PORT=6379
+REDIS_PASSWORD=your-password
+
+# Mixed: Memory messages + Redis queue
+CACHE_BACKEND=memory
+RABBITMQ_CACHE_BACKEND=redis
+REDIS_HOST=redis-server
+```
+
+**Key Features:**
+- ✅ Single cache backend for entire system
+- ✅ Pluggable backends (memory/disk/redis)
+- ✅ Automatic fallback to memory on backend failure
+- ✅ Separate queue backend configuration (optional)
+- ✅ Environment-based configuration
+- ✅ Zero external dependencies for default setup
+
 ## 🏗️ Architecture
 
 QuePasa is built with:
@@ -338,11 +387,50 @@ For detailed configuration options, see [docker/.env.example](docker/.env.exampl
 | `CALLS` | Accept incoming calls | `true` |
 | `READUPDATE` | Mark chats as read when sending | `true` |
 
-#### Performance & Caching
+#### Cache System (Centralized)
+
+**New architecture**: Single CacheService with three backend options:
+- **memory**: In-process cache (default, no external dependencies)
+- **disk**: File-based storage (JSON format)
+- **redis**: Distributed cache (for multi-instance deployments)
+
+| Variable | Description | Default | Options |
+|----------|-------------|---------|----------|
+| `CACHE_BACKEND` | Cache backend type | `memory` | `memory`, `disk`, `redis` |
+| `CACHE_DISK_PATH` | Disk storage directory (for disk backend) | `./cache` | *file path* |
+| `CACHE_INIT_FALLBACK` | Auto-fallback to memory on backend failure | `true` | `true`, `false` |
+| `CACHELENGTH` | Max messages in cache | `800` | *number* |
+| `CACHEDAYS` | Days to keep cached messages | `7` | *number* |
+
+**Redis-specific variables** (when `CACHE_BACKEND=redis`):
+
 | Variable | Description | Default |
-|----------|-------------|---------|
-| `CACHELENGTH` | Number of messages in cache | `800` |
-| `CACHEDAYS` | Days to keep messages in cache | `7` |
+|----------|-------------|----------|
+| `REDIS_HOST` | Redis server hostname | `localhost` |
+| `REDIS_PORT` | Redis server port | `6379` |
+| `REDIS_USERNAME` | Redis authentication username | `` |
+| `REDIS_PASSWORD` | Redis authentication password | `` |
+| `REDIS_DATABASE` | Redis database number | `0` |
+| `REDIS_KEY_PREFIX` | Prefix for all Redis keys | `quepasa:` |
+| `REDIS_POOL_SIZE` | Connection pool size | `10` |
+| `REDIS_MAX_RETRIES` | Max reconnection attempts | `3` |
+| `REDIS_DIAL_TIMEOUT` | Connection timeout (seconds) | `5` |
+| `REDIS_READ_TIMEOUT` | Read operation timeout (seconds) | `3` |
+| `REDIS_WRITE_TIMEOUT` | Write operation timeout (seconds) | `3` |
+
+**RabbitMQ Queue Backend** (independent from message cache):
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `RABBITMQ_CACHE_BACKEND` | Queue backend (disk/redis/memory) | *inherits CACHE_BACKEND* |
+| `RABBITMQ_CACHE_DISK_PATH` | Queue disk storage path | *inherits CACHE_DISK_PATH* |
+| `RABBITMQ_CACHE_QUEUE_KEY` | Redis queue namespace | `rabbitmq_retry` |
+| `RABBITMQ_CACHELENGTH` | Max messages in retry queue (legacy) | `100000` | *number* |
+
+#### Performance & Sync
+
+| Variable | Description | Default |
+|----------|-------------|----------|
 | `HISTORYSYNCDAYS` | Days of history to sync on QR scan | `30` |
 | `SYNOPSISLENGTH` | Length for message synopsis | `50` |
 

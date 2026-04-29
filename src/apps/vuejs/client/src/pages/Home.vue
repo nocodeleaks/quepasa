@@ -1,528 +1,217 @@
 <template>
   <div class="home-page">
-    <!-- Header -->
+    <!-- Compact page header -->
     <div class="page-header">
-      <div class="header-content">
-        <h1>{{ t('home_title') }}</h1>
-        <p class="hide-mobile">{{ t('home_subtitle') }}</p>
-      </div>
-      <div class="header-actions">
-        <!-- Desktop Controls -->
-        <div class="desktop-controls" v-if="hasServers">
-          <!-- Search box -->
-          <div class="search-box">
-            <input
-              v-model="searchQuery"
-              @keyup.enter="applySearch"
-              class="search-input"
-              type="search"
-              :placeholder="t('search_placeholder')"
-              :aria-label="t('search_sessions')"
-              :title="t('search_sessions')"
-            />
-            <button v-if="searchQuery" class="search-clear" @click="clearSearch" title="Clear search">
-              <i class="fa fa-times"></i>
-            </button>
-          </div>
-
-          <!-- View Toggle -->
-          <div class="view-toggle">
-            <button 
-              class="view-btn" 
-              :class="{ active: viewMode === 'card' }" 
-              @click="viewMode = 'card'"
-              :title="t('card_view')"
-            >
-              <i class="fa fa-th-large"></i>
-            </button>
-            <button 
-              class="view-btn" 
-              :class="{ active: viewMode === 'table' }" 
-              @click="viewMode = 'table'"
-              :title="t('table_view')"
-            >
-              <i class="fa fa-list"></i>
-            </button>
-          </div>
+      <div class="page-title-row">
+        <h1 class="page-title">{{ t('home_title') }}</h1>
+        <div v-if="!loading && hasServers" class="metric-chips">
+          <span class="mchip mchip-total">{{ servers.length }} {{ t('total') }}</span>
+          <span class="mchip mchip-online">{{ connectedCount }} {{ t('connected') }}</span>
+          <span class="mchip mchip-offline">{{ disconnectedCount }} {{ t('disconnected') }}</span>
         </div>
-
-        <!-- New Server button -->
-        <button @click="createNewServer" class="btn-add" :disabled="creating">
-          <template v-if="creating">
-            <div class="spinner-small"></div>
-          </template>
-          <template v-else>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-            <span class="hide-mobile">{{ t('new_session') }}</span>
-          </template>
-        </button>
       </div>
-    </div>
-
-    <!-- Mobile Controls Row -->
-    <div class="mobile-controls" v-if="hasServers">
-      <!-- Search box -->
-      <div class="search-box">
-        <input
-          v-model="searchQuery"
-          @keyup.enter="applySearch"
-          class="search-input"
-          type="search"
-          :placeholder="t('search_placeholder')"
-          :aria-label="t('search_sessions')"
-          :title="t('search_sessions')"
-        />
-        <button v-if="searchQuery" class="search-clear" @click="clearSearch" title="Clear search">
-          <i class="fa fa-times"></i>
-        </button>
-      </div>
-
-      <!-- View Toggle -->
-      <div class="view-toggle">
-        <button 
-          class="view-btn" 
-          :class="{ active: viewMode === 'card' }" 
-          @click="viewMode = 'card'"
-          :title="t('card_view')"
-        >
-          <i class="fa fa-th-large"></i>
-        </button>
-        <button 
-          class="view-btn" 
-          :class="{ active: viewMode === 'table' }" 
-          @click="viewMode = 'table'"
-          :title="t('table_view')"
-        >
-          <i class="fa fa-list"></i>
-        </button>
-      </div>
-
-      <!-- New Server button (mobile) -->
-      <button @click="createNewServer" class="btn-add-mobile" :disabled="creating">
-        <template v-if="creating">
-          <div class="spinner-small"></div>
-        </template>
-        <template v-else>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-        </template>
+      <button @click="createNewServer" class="btn-new" :disabled="creating">
+        <div v-if="creating" class="spin-xs"></div>
+        <i v-else class="fa fa-plus"></i>
+        <span class="btn-new-label">{{ t('new_session') }}</span>
       </button>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-bar" v-if="!loading && hasServers">
-      <div class="stat-item">
-        <span class="stat-value">{{ servers.length }}</span>
-        <span class="stat-label">{{ t('total') }}</span>
+    <!-- Search + view toggle bar -->
+    <div v-if="hasServers" class="search-row">
+      <div class="search-field">
+        <i class="fa fa-search sf-icon"></i>
+        <input
+          v-model="searchQuery"
+          @keyup.enter="applySearch"
+          class="sf-input"
+          type="search"
+          :placeholder="t('search_placeholder')"
+        />
+        <button v-if="searchQuery" class="sf-clear" @click="clearSearch"><i class="fa fa-times"></i></button>
       </div>
-      <div class="stat-item connected">
-        <span class="stat-value">{{ connectedCount }}</span>
-        <span class="stat-label">{{ t('connected') }}</span>
-      </div>
-      <div class="stat-item disconnected">
-        <span class="stat-value">{{ disconnectedCount }}</span>
-        <span class="stat-label">{{ t('disconnected') }}</span>
+      <div class="view-toggle">
+        <button class="vbtn" :class="{ active: viewMode === 'card' }" @click="viewMode = 'card'" :title="t('card_view')"><i class="fa fa-th-large"></i></button>
+        <button class="vbtn" :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'" :title="t('table_view')"><i class="fa fa-list"></i></button>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner-large"></div>
-      <p>{{ t('loading_sessions') }}</p>
+    <div v-if="loading" class="state-center">
+      <div class="spin-md"></div>
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="error-box">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-      </svg>
+    <div v-if="error" class="alert-error">
+      <i class="fa fa-exclamation-circle"></i>
       <span>{{ error }}</span>
-      <button @click="load" class="retry-btn">{{ t('error_retry') }}</button>
+      <button @click="load" class="link-btn">{{ t('error_retry') }}</button>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="!loading && servers.length === 0" class="empty-state">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24" width="80" height="80" fill="currentColor">
-          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z"/>
-        </svg>
-      </div>
-      <h2>{{ t('no_sessions_configured') }}</h2>
+      <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor" class="empty-icon">
+        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z"/>
+      </svg>
       <p>{{ t('no_sessions_description') }}</p>
-      <button @click="createNewServer" class="btn-primary-large" :disabled="creating">
-        <template v-if="creating">
-          <div class="spinner-small"></div>
-          <span>{{ t('creating') }}</span>
-        </template>
-        <template v-else>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-          {{ t('connect_whatsapp') }}
-        </template>
+      <button @click="createNewServer" class="btn-add-lg" :disabled="creating">
+        <i class="fa fa-plus"></i> {{ t('connect_whatsapp') }}
       </button>
     </div>
 
-    <!-- No results (after search) -->
-    <div v-else-if="!loading && servers.length > 0 && displayServers.length === 0" class="no-results">
-      <h3>{{ t('no_results') }}</h3>
-      <p>{{ t('no_results_hint') }}</p>
+    <!-- No results -->
+    <div v-else-if="!loading && servers.length > 0 && displayServers.length === 0" class="empty-state">
+      <p>{{ t('no_results') }}</p>
+      <button class="link-btn" @click="clearSearch">{{ t('no_results_hint') }}</button>
     </div>
 
-    <!-- Table View -->
-    <div v-else-if="viewMode === 'table'" class="servers-table-wrapper">
-      <table class="servers-table">
-        <thead>
-          <tr>
-            <th>{{ t('col_active') }}</th>
-            <th>{{ t('col_phone') }}</th>
-            <th>{{ t('col_token') }}</th>
-            <th>{{ t('col_dispatch') }}</th>
-            <th>{{ t('col_connection') }}</th>
-            <th>{{ t('col_actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="srv in displayServers" :key="srv.token">
-            <td class="status-cell">
-              <i 
-                :class="srv.verified ? 'fa fa-check-square text-success' : 'fa fa-exclamation-triangle text-warning'"
-                :title="srv.verified ? t('session_active') : t('session_not_verified')"
-              ></i>
-            </td>
-            <td class="phone-cell">{{ formatWid(srv.wid) || '—' }}</td>
-            <td class="token-cell">
-              <code 
-                class="token-code truncated" 
-                @click="copyToken(srv.token)" 
-                :title="srv.token"
-              >
-                {{ srv.token }}
-              </code>
-              <i v-if="copiedToken === srv.token" class="fa fa-check text-success ms-1"></i>
-            </td>
-            <td class="status-cell">
-              <div class="dispatch-cell" title="Total dispatch configurations">
-                <span v-if="srv.dispatch_count > 0" class="dispatch-count">{{ srv.dispatch_count }}</span>
-                <span v-else class="dispatch-count">0</span>
-              </div>
-            </td>
-            <td class="connection-cell">
-              <span class="connection-badge" :class="getConnectionClass(srv)">
-                {{ srv.connection || srv.state || 'Unknown' }}
-              </span>
-            </td>
-            <td class="actions-cell">
-              <div class="dropdown">
-                <button 
-                  class="action-dropdown-btn" 
-                  type="button" 
-                  data-bs-toggle="dropdown" 
-                  aria-expanded="false"
-                  :disabled="toggling === srv.token"
-                >
-                  <i class="fa fa-ellipsis-v"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <!-- View/Open -->
-                  <li>
-                    <router-link :to="`/server/${srv.token}`" class="dropdown-item">
-                      <i class="fa fa-eye me-2"></i> {{ t('open') }}
-                    </router-link>
-                  </li>
-                  
-                  <!-- Connected actions -->
-                  <template v-if="isConnected(srv)">
-                    <li>
-                      <router-link :to="`/server/${srv.token}/send`" class="dropdown-item">
-                        <i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}
-                      </router-link>
-                    </li>
-                    <li>
-                      <router-link :to="`/server/${srv.token}/messages`" class="dropdown-item">
-                        <i class="fa fa-inbox me-2"></i> {{ t('messages') }}
-                      </router-link>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                      <button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)">
-                        <i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? '(ON)' : '(OFF)' }}
-                      </button>
-                    </li>
-                    <li>
-                      <button class="dropdown-item text-warning" @click="disconnectServer(srv)">
-                        <i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}
-                      </button>
-                    </li>
-                  </template>
-                  
-                  <li><hr class="dropdown-divider"></li>
-                  
-                  <!-- Toggle buttons -->
-                  <li>
-                    <button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)">
-                      <i class="fa fa-users me-2"></i> {{ t('groups') }} {{ srv.groups ? '(ON)' : '(OFF)' }}
-                    </button>
-                  </li>
-                  <li>
-                    <button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)">
-                      <i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }} {{ srv.broadcasts ? '(ON)' : '(OFF)' }}
-                    </button>
-                  </li>
-                  <li>
-                    <button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)">
-                      <i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.read_receipts ? '(ON)' : '(OFF)' }}
-                    </button>
-                  </li>
-                  <li>
-                    <button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)">
-                      <i class="fa fa-phone me-2"></i> {{ t('calls') }} {{ srv.calls ? '(ON)' : '(OFF)' }}
-                    </button>
-                  </li>
-                  
-                  <li><hr class="dropdown-divider"></li>
-                  
-                  <!-- Dispatch -->
-                  <li>
-                    <router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item">
-                      <i class="fa fa-link me-2"></i> {{ t('dispatching') }}
-                    </router-link>
-                  </li>
-                  <li>
-                    <router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item">
-                      <i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}
-                    </router-link>
-                  </li>
-                  
-                  <li><hr class="dropdown-divider"></li>
-                  
-                  <!-- Connect (if not connected) -->
-                  <li v-if="!isConnected(srv)">
-                    <router-link :to="`/server/${srv.token}/qrcode`" class="dropdown-item text-success">
-                      <i class="fa fa-qrcode me-2"></i> {{ t('connect') }}
-                    </router-link>
-                  </li>
-                  
-                  <!-- Enable/Disable -->
-                  <!-- Enable/Disable: only for sessions that were previously connected (have a wid) -->
-                  <li v-if="srv.wid">
-                    <button class="dropdown-item" @click="toggleServer(srv)">
-                      <i :class="srv.verified ? 'fa fa-power-off me-2' : 'fa fa-play me-2'"></i>
-                      {{ srv.verified ? t('disable') : t('enable') }}
-                    </button>
-                  </li>
-                  
-                  <!-- Delete -->
-                  <li>
-                    <button class="dropdown-item text-danger" @click="deleteServer(srv)">
-                      <i class="fa fa-trash me-2"></i> {{ t('remove') }}
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Card View (default) -->
-    <div v-else class="servers-grid">
-      <div v-for="srv in displayServers" :key="srv.token" class="server-card" :class="getStatusClass(srv)">
-        <div class="server-header">
-          <div class="server-avatar" :class="getStatusClass(srv)">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+    <!-- Card View: rectangular cards grid (default) -->
+    <div v-else-if="viewMode === 'card'" class="sessions-grid">
+      <div v-for="srv in displayServers" :key="srv.token" class="scard" :class="getStatusClass(srv)">
+        <!-- Card top: avatar + identity -->
+        <div class="scard-head">
+          <div class="scard-avatar" :class="getStatusClass(srv)">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z"/>
             </svg>
           </div>
-          <div class="server-info">
-            <h3>{{ formatWid(srv.wid) || t('not_connected') }}</h3>
-            <span class="status-badge" :class="getStatusClass(srv)">{{ srv.state || 'Unknown' }}</span>
+          <div class="scard-identity">
+            <div class="scard-phone">{{ formatWid(srv.wid) || t('not_connected') }}</div>
+            <span class="scard-badge" :class="getStatusClass(srv)">{{ srv.state || t('unknown') }}</span>
+          </div>
+          <div v-if="srv.dispatch_count > 0" class="scard-dispatch" :title="t('col_dispatch')">
+            <i class="fa fa-bell"></i> {{ srv.dispatch_count }}
           </div>
         </div>
 
-        <div class="server-details">
-          <div class="detail-row">
-            <span class="detail-label">Token:</span>
-            <code class="detail-value token-code truncated" @click="copyToken(srv.token)" :title="srv.token">
-              {{ srv.token }}
-              <i v-if="copiedToken === srv.token" class="fa fa-check text-success ms-1"></i>
+        <!-- Token -->
+        <div class="scard-token-row" @click="copyToken(srv.token)" :title="srv.token">
+          <code class="scard-token">{{ srv.token }}</code>
+          <i v-if="copiedToken === srv.token" class="fa fa-check text-success"></i>
+          <i v-else class="fa fa-copy scard-copy-icon"></i>
+        </div>
+
+        <!-- Feature flags (connected only) -->
+        <div v-if="isConnected(srv)" class="scard-flags">
+          <button class="fltbtn" :class="{ on: srv.groups }" @click.stop="toggleGroups(srv)" :title="t('groups')" :disabled="toggling === srv.token"><i class="fa fa-users"></i></button>
+          <button class="fltbtn" :class="{ on: srv.broadcasts }" @click.stop="toggleBroadcasts(srv)" :title="t('broadcasts')" :disabled="toggling === srv.token"><i class="fa fa-bullhorn"></i></button>
+          <button class="fltbtn" :class="{ on: srv.read_receipts }" @click.stop="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
+          <button class="fltbtn" :class="{ on: srv.calls }" @click.stop="toggleCalls(srv)" :title="t('calls')" :disabled="toggling === srv.token"><i class="fa fa-phone"></i></button>
+        </div>
+
+        <!-- Card actions -->
+        <div class="scard-actions">
+          <router-link v-if="!isConnected(srv)" :to="`/server/${srv.token}/qrcode`" class="scard-btn scard-btn-connect" :title="t('connect')"><i class="fa fa-qrcode"></i> {{ t('connect') }}</router-link>
+          <router-link v-if="isConnected(srv)" :to="`/server/${srv.token}/send`" class="scard-btn" :title="t('send')"><i class="fa fa-paper-plane"></i></router-link>
+          <router-link :to="`/server/${srv.token}`" class="scard-btn" :title="t('open')"><i class="fa fa-eye"></i></router-link>
+          <div class="dropdown">
+            <button class="scard-btn scard-btn-more" type="button" data-bs-toggle="dropdown" aria-expanded="false" :disabled="toggling === srv.token">
+              <i class="fa fa-ellipsis-v"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-eye me-2"></i> {{ t('open') }}</router-link></li>
+              <template v-if="isConnected(srv)">
+                <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
+                <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? '(ON)' : '(OFF)' }}</button></li>
+                <li><button class="dropdown-item text-warning" @click="disconnectServer(srv)"><i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}</button></li>
+              </template>
+              <li><hr class="dropdown-divider"></li>
+              <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }}</button></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
+              <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
+              <li><hr class="dropdown-divider"></li>
+              <li v-if="!isConnected(srv)"><router-link :to="`/server/${srv.token}/qrcode`" class="dropdown-item text-success"><i class="fa fa-qrcode me-2"></i> {{ t('connect') }}</router-link></li>
+              <li v-if="srv.wid"><button class="dropdown-item" @click="toggleServer(srv)"><i :class="srv.verified ? 'fa fa-power-off me-2' : 'fa fa-play me-2'"></i> {{ srv.verified ? t('disable') : t('enable') }}</button></li>
+              <li><button class="dropdown-item text-danger" @click="deleteServer(srv)"><i class="fa fa-trash me-2"></i> {{ t('remove') }}</button></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table View: compact session rows -->
+    <div v-else class="sessions-list">
+      <div v-for="srv in displayServers" :key="srv.token" class="srow" :class="getStatusClass(srv)">
+        <!-- Avatar -->
+        <div class="srow-avatar" :class="getStatusClass(srv)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z"/>
+          </svg>
+        </div>
+        <!-- Main info -->
+        <div class="srow-info">
+          <div class="srow-phone">{{ formatWid(srv.wid) || t('not_connected') }}</div>
+          <div class="srow-sub">
+            <span class="sbadge" :class="getStatusClass(srv)">{{ srv.state || t('unknown') }}</span>
+            <code class="srow-token" @click="copyToken(srv.token)" :title="srv.token">
+              {{ srv.token }}<i v-if="copiedToken === srv.token" class="fa fa-check text-success ms-1"></i>
             </code>
           </div>
-          <div class="detail-row" v-if="srv.uptime_seconds >= 0">
-            <span class="detail-label">{{ t('uptime') }}:</span>
-            <span class="detail-value">{{ formatUptime(srv.uptime_seconds) }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ t('col_dispatch') }}:</span>
-            <span class="detail-value">
-              <i v-if="srv.dispatch_count > 0" class="fa fa-bell text-success" title="Dispatch count"></i>
-              <span class="ms-1">{{ srv.dispatch_count || 0 }}</span>
-              <i v-if="srv.webhook_count > 0" class="fa fa-link text-success ms-2" title="Dispatching: {{ srv.webhook_count }}"></i>
-              <i v-if="srv.rabbitmq_count > 0" class="fa fa-database text-success ms-1" title="RabbitMQ: {{ srv.rabbitmq_count }}"></i>
-            </span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">{{ t('status') }}:</span>
-            <div class="flags-row">
-              <span class="flag-badge" :class="getTriStateClass(srv.groups)" :title="getTriStateTitle(t('groups'), srv.groups)">
-                <i class="fa fa-users"></i>
-              </span>
-              <span class="flag-badge" :class="getTriStateClass(srv.broadcasts)" :title="getTriStateTitle(t('broadcasts'), srv.broadcasts)">
-                <i class="fa fa-bullhorn"></i>
-              </span>
-              <span class="flag-badge" :class="getTriStateClass(srv.readreceipts)" :title="getTriStateTitle(t('read_receipts'), srv.readreceipts)">
-                <i class="fa fa-check-double"></i>
-              </span>
-              <span class="flag-badge" :class="getTriStateClass(srv.calls)" :title="getTriStateTitle(t('calls'), srv.calls)">
-                <i class="fa fa-phone"></i>
-              </span>
-            </div>
-          </div>
         </div>
-        <!-- Quick Toggle Actions (only when connected) -->
-        <div class="quick-toggles" v-if="isConnected(srv)">
-          <button 
-            class="toggle-btn" 
-            :class="{ active: srv.groups }" 
-            @click="toggleGroups(srv)" 
-            title="Groups"
-            :disabled="toggling === srv.token"
-          >
-            <i class="fa fa-users"></i>
-          </button>
-          <button 
-            class="toggle-btn" 
-            :class="{ active: srv.broadcasts }" 
-            @click="toggleBroadcasts(srv)" 
-            title="Broadcasts"
-            :disabled="toggling === srv.token"
-          >
-            <i class="fa fa-bullhorn"></i>
-          </button>
-          <button 
-            class="toggle-btn" 
-            :class="{ active: srv.read_receipts }" 
-            @click="toggleReadReceipts(srv)" 
-            title="Read Receipts"
-            :disabled="toggling === srv.token"
-          >
-            <i class="fa fa-check-double"></i>
-          </button>
-          <button 
-            class="toggle-btn" 
-            :class="{ active: srv.calls }" 
-            @click="toggleCalls(srv)" 
-            title="Calls"
-            :disabled="toggling === srv.token"
-          >
-            <i class="fa fa-phone"></i>
-          </button>
+        <!-- Feature flags (connected only) -->
+        <div class="srow-flags" v-if="isConnected(srv)">
+          <button class="fltbtn" :class="{ on: srv.groups }" @click="toggleGroups(srv)" :title="t('groups')" :disabled="toggling === srv.token"><i class="fa fa-users"></i></button>
+          <button class="fltbtn" :class="{ on: srv.broadcasts }" @click="toggleBroadcasts(srv)" :title="t('broadcasts')" :disabled="toggling === srv.token"><i class="fa fa-bullhorn"></i></button>
+          <button class="fltbtn" :class="{ on: srv.read_receipts }" @click="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
+          <button class="fltbtn" :class="{ on: srv.calls }" @click="toggleCalls(srv)" :title="t('calls')" :disabled="toggling === srv.token"><i class="fa fa-phone"></i></button>
         </div>
-
-        <div class="server-actions">
-          <!-- Open (always visible) -->
-          <router-link :to="`/server/${srv.token}`" class="btn-action">
-            <i class="fa fa-eye"></i>
-            {{ t('open') }}
-          </router-link>
-
-          <!-- Not connected: only Connect + Remove -->
-          <router-link 
-            v-if="!isConnected(srv)" 
-            :to="`/server/${srv.token}/qrcode`" 
-            class="btn-action success"
-          >
-            <i class="fa fa-qrcode"></i>
-            {{ t('connect') }}
-          </router-link>
-
-          <button 
-            class="btn-action danger" 
-            @click="deleteServer(srv)" 
-            :title="t('remove')"
-            :disabled="toggling === srv.token"
-          >
-            <i class="fa fa-trash"></i>
-            {{ t('remove') }}
-          </button>
-
-          <!-- Connected: show full actions -->
-          <template v-if="isConnected(srv)">
-            <router-link :to="`/server/${srv.token}/send`" class="btn-action">
-              <i class="fa fa-paper-plane"></i>
-              {{ t('send') }}
-            </router-link>
-            <router-link :to="`/server/${srv.token}/messages`" class="btn-action">
-              <i class="fa fa-inbox"></i>
-              {{ t('messages') }}
-            </router-link>
-            <router-link :to="`/dispatching?token=${srv.token}`" class="btn-action">
-              <i class="fa fa-link"></i>
-              {{ t('dispatching') }}
-            </router-link>
-            <button 
-              class="btn-action warning" 
-              @click="disconnectServer(srv)" 
-              :title="t('disconnect')"
-              :disabled="toggling === srv.token"
-            >
-              <i class="fa fa-unlink"></i>
-              {{ t('disconnect') }}
+        <!-- Dispatch badge -->
+        <div class="srow-dispatch" v-if="srv.dispatch_count > 0" :title="t('col_dispatch')">
+          <i class="fa fa-bell"></i> {{ srv.dispatch_count }}
+        </div>
+        <!-- Action shortcuts -->
+        <div class="srow-actions">
+          <router-link v-if="!isConnected(srv)" :to="`/server/${srv.token}/qrcode`" class="srow-btn srow-btn-connect" :title="t('connect')"><i class="fa fa-qrcode"></i></router-link>
+          <router-link v-if="isConnected(srv)" :to="`/server/${srv.token}/send`" class="srow-btn" :title="t('send')"><i class="fa fa-paper-plane"></i></router-link>
+          <router-link :to="`/server/${srv.token}`" class="srow-btn" :title="t('open')"><i class="fa fa-eye"></i></router-link>
+          <div class="dropdown">
+            <button class="srow-btn srow-btn-more" type="button" data-bs-toggle="dropdown" aria-expanded="false" :disabled="toggling === srv.token">
+              <i class="fa fa-ellipsis-v"></i>
             </button>
-            <button 
-              class="btn-action" 
-              :class="{ active: srv.devel }" 
-              @click="toggleDebug(srv)" 
-              :title="t('debug')"
-              :disabled="toggling === srv.token"
-            >
-              <i class="fa fa-bug"></i>
-              {{ t('debug') }}
-            </button>
-          </template>
-
-          <!-- Enable/Disable: only for sessions that were previously connected (have a wid) -->
-          <button 
-            v-if="srv.wid"
-            class="btn-action" 
-            :class="{ warning: srv.verified }" 
-            @click="toggleServer(srv)" 
-            :title="srv.verified ? t('disable') : t('enable')"
-            :disabled="toggling === srv.token"
-          >
-            <i :class="srv.verified ? 'fa fa-power-off' : 'fa fa-play'"></i>
-            {{ srv.verified ? t('disable') : t('enable') }}
-          </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-eye me-2"></i> {{ t('open') }}</router-link></li>
+              <template v-if="isConnected(srv)">
+                <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
+                <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? '(ON)' : '(OFF)' }}</button></li>
+                <li><button class="dropdown-item text-warning" @click="disconnectServer(srv)"><i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}</button></li>
+              </template>
+              <li><hr class="dropdown-divider"></li>
+              <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }} {{ srv.groups ? '(ON)' : '(OFF)' }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }} {{ srv.broadcasts ? '(ON)' : '(OFF)' }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.read_receipts ? '(ON)' : '(OFF)' }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }} {{ srv.calls ? '(ON)' : '(OFF)' }}</button></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
+              <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
+              <li><hr class="dropdown-divider"></li>
+              <li v-if="!isConnected(srv)"><router-link :to="`/server/${srv.token}/qrcode`" class="dropdown-item text-success"><i class="fa fa-qrcode me-2"></i> {{ t('connect') }}</router-link></li>
+              <li v-if="srv.wid"><button class="dropdown-item" @click="toggleServer(srv)"><i :class="srv.verified ? 'fa fa-power-off me-2' : 'fa fa-play me-2'"></i> {{ srv.verified ? t('disable') : t('enable') }}</button></li>
+              <li><button class="dropdown-item text-danger" @click="deleteServer(srv)"><i class="fa fa-trash me-2"></i> {{ t('remove') }}</button></li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-bar" v-if="!loading && hasServers && filteredServers.length > 0">
-      <div class="pagination-info">
-        {{ t('showing') }} {{ ((currentPage - 1) * pageSize) + 1 }}-{{ Math.min(currentPage * pageSize, filteredServers.length) }} {{ t('of') }} {{ filteredServers.length }} {{ t('sessions_label') }}
+    <div class="pager" v-if="!loading && hasServers && filteredServers.length > 0">
+      <span class="pager-info">{{ ((currentPage - 1) * pageSize) + 1 }}–{{ Math.min(currentPage * pageSize, filteredServers.length) }} / {{ filteredServers.length }}</span>
+      <div class="pager-nav">
+        <button class="pager-btn" @click="prevPage" :disabled="currentPage <= 1"><i class="fa fa-chevron-left"></i></button>
+        <span class="pager-indicator">{{ currentPage }} / {{ totalPages }}</span>
+        <button class="pager-btn" @click="nextPage" :disabled="currentPage >= totalPages"><i class="fa fa-chevron-right"></i></button>
       </div>
-      <div class="pagination-controls">
-        <div class="page-size-selector">
-          <label for="pageSize">{{ t('per_page') }}</label>
-          <select id="pageSize" v-model="pageSize">
-            <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-        </div>
-        <div class="page-nav">
-          <button class="page-btn" @click="prevPage" :disabled="currentPage <= 1" :title="t('prev_page')">
-            <i class="fa fa-chevron-left"></i>
-          </button>
-          <span class="page-indicator">{{ t('page_indicator', String(currentPage), String(totalPages)) }}</span>
-          <button class="page-btn" @click="nextPage" :disabled="currentPage >= totalPages" :title="t('next_page')">
-            <i class="fa fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
+      <select v-model="pageSize" class="pager-size">
+        <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">{{ opt }}</option>
+      </select>
     </div>
   </div>
 </template>
@@ -934,896 +623,574 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.home-page {
-  max-width: 1400px;
-  margin: 0 auto;
-}
+/* ===== Layout ===== */
+.home-page { max-width: 1100px; margin: 0 auto; }
 
+/* ===== Page Header ===== */
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  padding: 0.65rem 0;
+}
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   flex-wrap: wrap;
-  gap: 16px;
+  min-width: 0;
 }
-
-.header-content h1 {
-  font-size: 28px;
+.page-title {
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #111827;
-  margin: 0 0 4px;
-}
-
-.header-content p {
-  color: #6b7280;
+  color: #1f2937;
   margin: 0;
+  white-space: nowrap;
 }
-
-.header-actions {
+.metric-chips {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.desktop-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  padding: 6px 8px;
-  border-radius: 8px;
-}
-
-.search-input {
-  border: none;
-  outline: none;
-  min-width: 220px;
-}
-
-.search-clear {
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-}
-
-.no-results {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
-}
-
-.view-toggle {
-  display: flex;
-  background: #f3f4f6;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.view-btn {
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.view-btn:hover {
-  background: #e5e7eb;
-}
-
-.view-btn.active {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
-}
-
-.btn-add {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
-  color: white;
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(124, 58, 237, 0.25);
-}
-
-.stats-bar {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 24px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.stat-item.connected .stat-value { color: var(--branding-primary, #7C3AED); }
-.stat-item.disconnected .stat-value { color: #6b7280; }
-
-.loading-state {
-  text-align: center;
-  padding: 60px 0;
-}
-
-.spinner-large {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #e5e7eb;
-  border-top-color: var(--branding-primary, #7C3AED);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
-}
-
-.spinner-small {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-state p {
-  color: #6b7280;
-}
-
-.error-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 20px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  color: #dc2626;
-}
-
-.retry-btn {
-  margin-left: auto;
-  padding: 8px 16px;
-  background: white;
-  border: 1px solid #dc2626;
-  border-radius: 8px;
-  color: #dc2626;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.retry-btn:hover {
-  background: #fef2f2;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.empty-icon {
-  color: #d1d5db;
-  margin-bottom: 20px;
-}
-
-.empty-state h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 8px;
-}
-
-.empty-state p {
-  color: #6b7280;
-  margin: 0 0 24px;
-}
-
-.btn-primary-large {
+.mchip {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 32px;
+  height: 22px;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.mchip-total  { background: rgba(226, 232, 240, 0.7); color: #475569; }
+.mchip-online { background: rgba(187, 247, 208, 0.7); color: #15803d; }
+.mchip-offline{ background: rgba(226, 232, 240, 0.7); color: #6b7280; }
+
+/* ===== New Session Button ===== */
+.btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding: 0 0.8rem;
+  border: none;
+  border-radius: 10px;
   background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
   color: white;
-  border-radius: 14px;
-  text-decoration: none;
-  font-size: 18px;
+  font-size: 0.8rem;
   font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-primary-large:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(124, 58, 237, 0.25);
-}
-
-/* Table View Styles */
-.servers-table-wrapper {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.servers-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.servers-table th {
-  background: #f9fafb;
-  padding: 14px 16px;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.servers-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #f3f4f6;
-  vertical-align: middle;
-}
-
-.servers-table tbody tr:hover {
-  background: #f9fafb;
-}
-
-.status-cell {
-  text-align: center;
-  width: 60px;
-}
-
-.phone-cell {
-  font-weight: 500;
-  color: #111827;
-}
-
-.token-cell {
-  font-family: monospace;
-}
-
-.token-code {
   cursor: pointer;
-  padding: 4px 8px;
-  background: #f3f4f6;
-  border-radius: 6px;
-  font-size: 12px;
-  transition: all 0.2s;
+  transition: opacity 0.18s;
+  white-space: nowrap;
+}
+.btn-new:hover { opacity: 0.88; }
+.btn-new:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 480px) { .btn-new-label { display: none; } }
+
+/* ===== Spinners ===== */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-xs {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.spin-md {
+  width: 32px; height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--branding-primary, #7C3AED);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 40px auto;
+  display: block;
+}
+.state-center { text-align: center; }
+
+/* ===== Alert / Error ===== */
+.alert-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(254, 242, 242, 0.82);
+  border: 1px solid rgba(254, 202, 202, 0.6);
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+.link-btn {
+  background: none; border: none;
+  color: var(--branding-primary, #7C3AED);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: auto;
 }
 
-.token-code:hover {
-  background: #e5e7eb;
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 18px;
+}
+.empty-icon { color: #d1d5db; margin-bottom: 0.75rem; }
+.empty-state p { color: #6b7280; margin: 0 0 1rem; font-size: 0.92rem; }
+.btn-add-lg {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  height: 38px; padding: 0 1.1rem;
+  border: none; border-radius: 10px;
+  background: var(--branding-primary, #7C3AED);
+  color: white; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.btn-add-lg:hover { opacity: 0.88; }
+.btn-add-lg:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== Search Row ===== */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.search-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 38px;
+  padding: 0 0.6rem;
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+.sf-icon { color: #9ca3af; font-size: 0.8rem; flex-shrink: 0; }
+.sf-input {
+  flex: 1; min-width: 0; border: none; outline: none;
+  background: transparent; font-size: 0.875rem; color: #111827;
+}
+.sf-clear {
+  background: none; border: none; color: #9ca3af; cursor: pointer; padding: 0;
+}
+.view-toggle {
+  display: flex;
+  background: rgba(238, 242, 255, 0.72);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+}
+.vbtn {
+  width: 34px; height: 34px;
+  border: none; background: transparent; color: #9ca3af;
+  border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.vbtn.active {
+  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
+  color: white;
 }
 
-/* CSS-based truncation for long tokens */
+/* ===== Table View ===== */
+.servers-table-wrapper {
+  overflow: hidden;
+  background: rgba(255,255,255,0.72);
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  backdrop-filter: blur(10px);
+}
+.servers-table { width: 100%; border-collapse: collapse; }
+.servers-table th {
+  background: rgba(248, 250, 252, 0.7);
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+}
+.servers-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(243, 244, 246, 0.7);
+  vertical-align: middle;
+  font-size: 0.875rem;
+}
+.servers-table tbody tr:hover { background: rgba(250, 247, 255, 0.5); }
+.status-cell { text-align: center; width: 50px; }
+.phone-cell { font-weight: 600; color: #111827; }
+.token-cell { font-family: monospace; }
+.token-code {
+  cursor: pointer; padding: 3px 6px;
+  background: rgba(243, 244, 246, 0.7);
+  border-radius: 5px; font-size: 0.75rem;
+}
+.token-code:hover { background: rgba(229, 231, 235, 0.85); }
 .token-code.truncated {
   display: inline-block;
-  max-width: 140px; /* adjust as needed */
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
 }
-
-.connection-cell {
-  width: 120px;
-}
-
+.connection-cell { width: 110px; }
 .connection-badge {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.connection-badge.ready { background: #f5efff; color: var(--branding-secondary, #5B21B6); }
-.connection-badge.connecting { background: #fef3c7; color: #92400e; }
-.connection-badge.unverified { background: #fef2f2; color: #dc2626; }
-.connection-badge.disconnected { background: #f3f4f6; color: #6b7280; }
-
-.dispatch-cell { display:flex; align-items:center; justify-content:center; gap:6px; }
-.dispatch-count { font-weight:600; }
-
-.actions-cell {
-  width: 80px;
-  text-align: center;
-}
-
-/* Actions Dropdown */
-.action-dropdown-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: #f3f4f6;
-  border-radius: 8px;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-dropdown-btn:hover {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
-}
-
-.action-dropdown-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.dropdown-menu {
-  min-width: 200px;
-  padding: 8px 0;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e5e7eb;
-}
-
-.dropdown-item {
-  padding: 10px 16px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-}
-
-.dropdown-item:hover {
-  background: #f3f4f6;
-}
-
-.dropdown-item.active {
-  background: rgba(124, 58, 237, 0.1);
-  color: var(--branding-primary, #7C3AED);
-}
-
-.dropdown-item i {
-  width: 20px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: #f3f4f6;
-  border-radius: 6px;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-}
-
-.action-btn:hover {
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.action-btn.active {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
-}
-
-.action-btn.success {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.action-btn.success:hover {
-  background: #bbf7d0;
-}
-
-.action-btn.danger {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.action-btn.danger:hover {
-  background: #fecaca;
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Card View Styles */
-.servers-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.server-card {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #e5e7eb;
-  transition: all 0.2s;
-}
-
-.server-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.server-card.connected { border-left-color: var(--branding-primary, #7C3AED); }
-.server-card.connecting { border-left-color: #f59e0b; }
-.server-card.disconnected { border-left-color: #9ca3af; }
-
-.server-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.server-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-.server-avatar.connected { background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6)); }
-.server-avatar.connecting { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.server-avatar.disconnected { background: linear-gradient(135deg, #9ca3af, #6b7280); }
-
-.server-info h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 6px;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.connected { background: #f5efff; color: var(--branding-secondary, #5B21B6); }
-.status-badge.connecting { background: #fef3c7; color: #92400e; }
-.status-badge.disconnected { background: #f3f4f6; color: #6b7280; }
-
-.server-details {
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #f9fafb;
+  padding: 3px 8px;
   border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
+.connection-badge.ready       { background: rgba(245,239,255,0.8); color: var(--branding-secondary, #5B21B6); }
+.connection-badge.connecting  { background: rgba(254,243,199,0.8); color: #92400e; }
+.connection-badge.unverified  { background: rgba(254,242,242,0.8); color: #dc2626; }
+.connection-badge.disconnected{ background: rgba(243,244,246,0.8); color: #6b7280; }
+.dispatch-cell { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.dispatch-count { font-weight: 600; }
+.actions-cell { width: 60px; text-align: center; }
+.action-dropdown-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: rgba(243,244,246,0.8);
+  border-radius: 8px; color: #6b7280; cursor: pointer; transition: all 0.15s;
+}
+.action-dropdown-btn:hover { background: var(--branding-primary, #7C3AED); color: white; }
+.action-dropdown-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.detail-row {
+/* ===== Dropdown Menu ===== */
+.dropdown-menu {
+  min-width: 190px; padding: 5px 0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+  border: 1px solid rgba(229,231,235,0.7);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+}
+.dropdown-item {
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  display: flex; align-items: center;
+}
+.dropdown-item:hover { background: rgba(243,244,246,0.7); }
+.dropdown-item.active { background: rgba(124,58,237,0.08); color: var(--branding-primary, #7C3AED); }
+.dropdown-item i { width: 18px; font-size: 0.8rem; }
+
+/* ===== Cards Grid (default card view) ===== */
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+.scard {
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  overflow: hidden;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.scard:hover {
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.scard.connected  { border-top: 3px solid #22c55e; }
+.scard.connecting { border-top: 3px solid #f59e0b; }
+.scard.disconnected { border-top: 3px solid #e5e7eb; }
+
+.scard-head {
+  display: flex;
   align-items: center;
-  padding: 4px 0;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem 0.5rem;
 }
-
-.detail-label {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.detail-value {
-  font-size: 13px;
-  color: #111827;
-  font-weight: 500;
-}
-
-.flags-row {
-  display: flex;
-  gap: 4px;
-}
-
-.flag-badge {
-  width: 24px;
-  height: 24px;
+.scard-avatar {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #fff;
+}
+.scard-avatar.connected    { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.scard-avatar.connecting   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.scard-avatar.disconnected { background: linear-gradient(135deg, #94a3b8, #64748b); }
+.scard-identity {
+  flex: 1;
+  min-width: 0;
+}
+.scard-phone {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scard-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
   border-radius: 4px;
-  background: #e5e7eb;
-  color: #9ca3af;
-  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.scard-badge.connected    { background: #dcfce7; color: #15803d; }
+.scard-badge.connecting   { background: #fef3c7; color: #92400e; }
+.scard-badge.disconnected { background: #f1f5f9; color: #475569; }
+.scard-dispatch {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7C3AED;
+  background: #ede9fe;
+  padding: 2px 7px;
+  border-radius: 8px;
 }
 
-/* Tri-state: unset (0) - no color, neutral gray */
-.flag-badge.state-unset {
-  background: #f3f4f6;
-  color: #9ca3af;
-}
-
-/* Tri-state: off (-1) - red */
-.flag-badge.state-off {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-/* Tri-state: on (1) - green */
-.flag-badge.state-on {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-/* Legacy active class for compatibility */
-.flag-badge.active {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
-}
-
-.server-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.btn-action {
+.scard-token-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: #f3f4f6;
-  border: none;
-  border-radius: 8px;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-  transition: all 0.2s;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem 0.4rem;
   cursor: pointer;
-}
-
-.btn-action:hover {
-  background: #e5e7eb;
-}
-
-.btn-action.primary {
-  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
-  color: white;
-}
-
-.btn-action.primary:hover {
-  box-shadow: 0 4px 8px rgba(124, 58, 237, 0.25);
-}
-
-.btn-action.success {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.btn-action.success:hover {
-  background: #bbf7d0;
-}
-
-.btn-action.danger {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.btn-action.danger:hover {
-  background: #fecaca;
-}
-
-.btn-action.active {
-  background: var(--branding-primary, #7C3AED);
-  color: white;
-}
-
-.btn-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Quick Toggle Buttons */
-.quick-toggles {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px;
   background: #f8fafc;
-  border-radius: 8px;
-  justify-content: center;
+  border-top: 1px solid rgba(148,163,184,0.1);
+  border-bottom: 1px solid rgba(148,163,184,0.1);
+}
+.scard-token {
+  flex: 1;
+  font-size: 0.68rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+.scard-copy-icon { font-size: 0.7rem; color: #94a3b8; flex-shrink: 0; }
+.scard-token-row:hover .scard-copy-icon { color: #7C3AED; }
+
+.scard-flags {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.4rem 0.8rem;
 }
 
-.toggle-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  color: #9ca3af;
-  cursor: pointer;
+.scard-actions {
   display: flex;
   align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.7rem;
+  border-top: 1px solid rgba(148,163,184,0.08);
+  margin-top: auto;
+}
+.scard-btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  gap: 0.3rem;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 0.5rem;
+  border-radius: 7px;
+  border: 1px solid rgba(148,163,184,0.2);
+  background: transparent;
+  color: #475569;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.scard-btn:hover { background: #f1f5f9; color: #1f2937; }
+.scard-btn-connect {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #15803d;
+  font-weight: 600;
+}
+.scard-btn-connect:hover { background: #bbf7d0; color: #166534; }
+.scard-btn-more { margin-left: auto; }
+
+/* ===== Session Rows (Table View) ===== */
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.srow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(148,163,184,0.12);
+  border-left: 3px solid #e5e7eb;
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.srow:hover { box-shadow: 0 4px 14px rgba(15,23,42,0.06); transform: translateY(-1px); }
+.srow.connected    { border-left-color: var(--branding-primary, #7C3AED); }
+.srow.connecting   { border-left-color: #f59e0b; }
+.srow.disconnected { border-left-color: #d1d5db; }
+
+/* Avatar */
+.srow-avatar {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+}
+.srow-avatar.connected    { background: linear-gradient(135deg, var(--branding-primary,#7C3AED), var(--branding-secondary,#5B21B6)); }
+.srow-avatar.connecting   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.srow-avatar.disconnected { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+
+/* Info */
+.srow-info { flex: 1; min-width: 0; }
+.srow-phone {
+  font-size: 0.9rem; font-weight: 600; color: #111827;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.srow-sub {
+  display: flex; align-items: center; gap: 0.4rem; margin-top: 2px;
+  flex-wrap: nowrap; overflow: hidden;
+}
+.sbadge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sbadge.connected    { background: rgba(245,239,255,0.9); color: var(--branding-secondary,#5B21B6); }
+.sbadge.connecting   { background: rgba(254,243,199,0.9); color: #92400e; }
+.sbadge.disconnected { background: rgba(243,244,246,0.9); color: #6b7280; }
+
+.srow-token {
+  font-family: monospace; font-size: 0.7rem; color: #9ca3af;
+  cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 160px;
+}
+.srow-token:hover { color: #6b7280; }
+
+/* Feature flag toggles */
+.srow-flags {
+  display: flex; gap: 3px; flex-shrink: 0;
+}
+.fltbtn {
+  width: 28px; height: 28px;
+  border: 1px solid rgba(229,231,235,0.8);
+  border-radius: 8px;
+  background: rgba(249,250,251,0.8);
+  color: #d1d5db; cursor: pointer; font-size: 0.68rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.fltbtn:hover { background: rgba(243,244,246,0.9); color: #9ca3af; }
+.fltbtn.on {
+  background: rgba(220,252,231,0.85); color: #16a34a;
+  border-color: rgba(134,239,172,0.5);
+}
+.fltbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Dispatch badge */
+.srow-dispatch {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 600; color: #059669;
+  background: rgba(209,250,229,0.7);
+  padding: 2px 7px; border-radius: 999px;
+  flex-shrink: 0; white-space: nowrap;
 }
 
-.toggle-btn:hover {
-  background: #f3f4f6;
+/* Action buttons */
+.srow-actions {
+  display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+}
+.srow-btn {
+  width: 32px; height: 32px;
+  border: none;
+  background: rgba(243,244,246,0.8);
+  border-radius: 9px;
+  color: #6b7280; cursor: pointer; font-size: 0.8rem;
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.srow-btn:hover { background: rgba(229,231,235,0.9); color: #374151; }
+.srow-btn-connect { background: rgba(220,252,231,0.8); color: #16a34a; }
+.srow-btn-connect:hover { background: rgba(187,247,208,0.9); }
+.srow-btn-more:hover { background: var(--branding-primary,#7C3AED); color: white; }
+.srow-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== Pagination ===== */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(148,163,184,0.12);
+  border-radius: 12px;
+  font-size: 0.8rem;
   color: #6b7280;
+  flex-wrap: wrap;
+}
+.pager-info { flex: 1; min-width: 0; }
+.pager-nav { display: flex; align-items: center; gap: 0.4rem; }
+.pager-btn {
+  width: 30px; height: 30px;
+  border: 1px solid rgba(148,163,184,0.2);
+  border-radius: 8px; background: white;
+  color: #374151; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 0.75rem;
+}
+.pager-btn:hover:not(:disabled) { background: #f5f3ff; border-color: var(--branding-primary,#7C3AED); }
+.pager-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pager-indicator { min-width: 52px; text-align: center; font-size: 0.78rem; color: #6b7280; }
+.pager-size {
+  padding: 4px 8px;
+  border: 1px solid rgba(148,163,184,0.2);
+  border-radius: 7px; background: white;
+  color: #374151; font-size: 0.8rem; cursor: pointer;
 }
 
-.toggle-btn.active {
-  background: #10b981;
-  color: white;
-  border-color: #10b981;
-}
-
-.toggle-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Warning button style */
-.btn-action.warning {
-  background: #f59e0b;
-  color: white;
-}
-
-.btn-action.warning:hover {
-  background: #d97706;
-}
-
-/* Utility classes */
+/* ===== Utilities ===== */
 .text-success { color: #16a34a; }
 .text-warning { color: #f59e0b; }
-.text-muted { color: #9ca3af; }
+.text-danger  { color: #dc2626; }
 .ms-1 { margin-left: 4px; }
+.me-2 { margin-right: 6px; }
+.dropdown-divider { margin: 3px 0; border-color: rgba(229,231,235,0.6); }
 
-/* Pagination */
-.pagination-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: var(--card-bg);
-  border-radius: 8px;
-  margin-top: 20px;
-  gap: 16px;
-  flex-wrap: wrap;
+/* ===== Responsive ===== */
+@media (max-width: 680px) {
+  .srow-flags { display: none; }
+  .srow-token { max-width: 100px; }
+  .pager { flex-direction: column; align-items: stretch; }
+  .pager-nav { justify-content: center; }
 }
-
-.pagination-info {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.page-size-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-size-selector label {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.page-size-selector select {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--input-bg);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.page-nav {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.page-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--input-bg);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: var(--hover-bg);
-  border-color: var(--primary-color);
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.page-indicator {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  min-width: 100px;
-  text-align: center;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .hide-mobile {
-    display: none !important;
-  }
-
-  .home-page {
-    padding: 0;
-    margin: 0;
-  }
-
-  .page-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: white;
-    margin: 0;
-    padding: 12px 16px;
-    border-radius: 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-
-  .header-content h1 {
-    font-size: 20px;
-  }
-
-  .mobile-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background: #f9fafb;
-    position: sticky;
-    top: 60px;
-    z-index: 99;
-  }
-
-  .mobile-controls .search-box {
-    flex: 1;
-  }
-
-  .mobile-controls .search-input {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .btn-add-mobile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: var(--branding-primary, #7C3AED);
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    flex-shrink: 0;
-  }
-
-  .servers-table-wrapper {
-    overflow-x: auto;
-  }
-  
-  .servers-table {
-    min-width: 800px;
-  }
-  
-  .servers-grid {
-    grid-template-columns: 1fr;
-    padding: 0 16px;
-  }
-
-  .stats-bar {
-    margin: 0 16px 16px;
-  }
-
-  .pagination-bar {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-    margin: 16px;
-  }
-
-  .pagination-controls {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .desktop-controls {
-    display: none;
-  }
-
-  .btn-add span {
-    display: none;
-  }
-
-  .btn-add {
-    padding: 10px;
-    border-radius: 8px;
-  }
-}
-
-/* Desktop: hide mobile-only elements */
-@media (min-width: 769px) {
-  .mobile-controls {
-    display: none;
-  }
-
-  .btn-add-mobile {
-    display: none;
-  }
+@media (max-width: 480px) {
+  .srow-dispatch { display: none; }
+  .page-title { font-size: 0.95rem; }
+  .servers-table-wrapper { overflow-x: auto; }
+  .servers-table { min-width: 600px; }
 }
 </style>

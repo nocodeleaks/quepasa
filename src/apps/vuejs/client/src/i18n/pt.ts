@@ -10,7 +10,9 @@ const pt: Messages = {
   nav_connect: 'Conectar',
   nav_account: 'Conta',
   nav_classic_ui: 'UI Clássica',
-  nav_api_docs: 'Docs API',
+  nav_api_docs: 'Swagger',
+  nav_more: 'Mais',
+  language_label: 'Idioma',
 
   // Home page
   home_title: 'Suas Sessões',

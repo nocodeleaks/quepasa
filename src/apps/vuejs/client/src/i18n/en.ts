@@ -8,7 +8,9 @@ const en = {
   nav_connect: 'Connect',
   nav_account: 'Account',
   nav_classic_ui: 'Classic UI',
-  nav_api_docs: 'API Docs',
+  nav_api_docs: 'Swagger',
+  nav_more: 'More',
+  language_label: 'Language',
 
   // Home page
   home_title: 'Your Sessions',

@@ -222,7 +222,7 @@ export default defineComponent({
         const payload = new URLSearchParams()
         payload.append('email', email.value)
         payload.append('password', password.value)
-        await api.post('/login', payload)
+        await api.post('/api/auth/login', payload)
         await session.loadSession()
         const redirect = (route.query.redirect as string) || '/'
         router.push(redirect)

@@ -47,7 +47,11 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const session = useSessionStore()
   const requiresAuth = Boolean(to.meta.requiresAuth)
-  const shouldProbeSession = requiresAuth || ((to.name === 'login' || to.name === 'setup') && hasSessionCookie())
+  // Always probe the session when navigating to a protected page or the login/setup
+  // pages. The jwt cookie is HttpOnly so document.cookie cannot detect it — probing
+  // the backend directly is the only reliable way to know whether the user is already
+  // authenticated.
+  const shouldProbeSession = requiresAuth || to.name === 'login' || to.name === 'setup'
 
   if (session.loading.value && shouldProbeSession) {
     await session.loadSession({ allowUnauthorized: true })

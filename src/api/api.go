@@ -48,7 +48,12 @@ func Configure(r chi.Router) {
 		}))
 		*/
 
-		// Mount API routes under the configured prefix
+		// Mount API routes under the configured prefix.
+		// The prefix is controlled exclusively by the API_PREFIX environment variable
+		// (default: "api", see environment/api_settings.go). The frontend SPA reads
+		// the effective prefix from window.__QUEPASA_CONFIG__.apiBase injected at
+		// serve time, so it adapts automatically. Do NOT add a hardcoded /api alias
+		// here — the server owner is responsible for choosing the prefix.
 		r.Route("/"+apiPrefix, func(r chi.Router) {
 			r.Group(RegisterAPIV5Controllers)
 			r.Group(RegisterAPIControllers)

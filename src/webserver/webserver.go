@@ -237,7 +237,7 @@ func ServeDiscoveredAppRequest(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if relativePath == "" || relativePath == "/" {
-		http.ServeFile(w, req, app.IndexFile)
+		serveIndexWithConfig(w, req, app.IndexFile)
 		return
 	}
 
@@ -253,7 +253,39 @@ func ServeDiscoveredAppRequest(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	http.ServeFile(w, req, app.IndexFile)
+	serveIndexWithConfig(w, req, app.IndexFile)
+}
+
+// serveIndexWithConfig reads an SPA index.html and injects a runtime config
+// block so browser clients can discover the server's API prefix without a
+// separate HTTP round-trip.
+func serveIndexWithConfig(w http.ResponseWriter, req *http.Request, indexFile string) {
+	content, err := os.ReadFile(indexFile)
+	if err != nil {
+		http.ServeFile(w, req, indexFile)
+		return
+	}
+
+	// Resolve the effective API base path from the environment setting.
+	// This is injected into the SPA so it can call the correct routes without
+	// any hardcoded prefix. The default is "api" (see environment/api_settings.go).
+	prefix := strings.Trim(environment.Settings.API.Prefix, "/")
+	var apiBase string
+	if prefix != "" {
+		apiBase = "/" + prefix
+	} else {
+		apiBase = ""
+	}
+
+	script := fmt.Sprintf(
+		`<script>window.quepasa={"apiBase":%q};</script>`,
+		apiBase,
+	)
+	html := strings.Replace(string(content), "</head>", script+"</head>", 1)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	_, _ = w.Write([]byte(html))
 }
 
 // useFrontendDevProxy enables the Vite reverse proxy explicitly for local SPA work.

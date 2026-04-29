@@ -1,8 +1,12 @@
 package api
 
 import (
+	"errors"
 	"net/http"
+	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/go-chi/jwtauth"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
 )
@@ -50,4 +54,51 @@ func LoginConfigController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondSuccess(w, response)
+}
+
+// CanonicalLoginPostController authenticates a user and sets the JWT cookie.
+// Accepts application/x-www-form-urlencoded or application/json bodies with
+// "email" and "password" fields. Returns JSON on success so SPA clients do not
+// need to follow HTML redirects.
+func CanonicalLoginPostController(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.FormValue("email")
+	password := r.FormValue("password")
+
+	if username == "" || password == "" {
+		RespondUnauthorized(w, errors.New("missing username or password"))
+		return
+	}
+
+	user, err := models.WhatsappService.GetUser(username, password)
+	if err != nil {
+		RespondUnauthorized(w, err)
+		return
+	}
+
+	claims := jwt.MapClaims{"user_id": user.Username}
+	jwtauth.SetIssuedNow(claims)
+	jwtauth.SetExpiryIn(claims, 24*time.Hour)
+
+	_, tokenString, err := GetSPATokenAuth().Encode(claims)
+	if err != nil {
+		RespondErrorCode(w, errors.New("cannot encode token"), http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    tokenString,
+		MaxAge:   60 * 60 * 24,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	RespondSuccess(w, map[string]interface{}{
+		"user": map[string]interface{}{
+			"username": user.Username,
+			"email":    user.Username,
+		},
+		"version": models.QpVersion,
+	})
 }

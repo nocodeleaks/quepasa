@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"sync/atomic"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 
@@ -34,8 +34,8 @@ type WhatsmeowConnection struct {
 	WakeUpScheduler *WakeUpScheduler         // composition for scheduled presence wake-ups
 	// call managers intentionally omitted per request (do not include CallManager / SIPCallManager)
 
-	failedToken  bool
-	paired       func(string)
+	failedToken bool
+	paired      func(string)
 	// Keep connection-in-progress state atomic because status and connect paths are
 	// touched from different goroutines.
 	isConnecting atomic.Bool

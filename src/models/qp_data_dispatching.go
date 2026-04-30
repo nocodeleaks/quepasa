@@ -1,8 +1,5 @@
 package models
 
-import (
-)
-
 // Dispatching model
 type QpDataDispatching struct {
 	Dispatching []*QpDispatching `json:"dispatching,omitempty"`

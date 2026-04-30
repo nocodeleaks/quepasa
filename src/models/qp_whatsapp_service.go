@@ -148,8 +148,8 @@ func (source *QPWhatsappService) NewQpWhatsappServer(info *QpServer) (server *Qp
 			Start: startTime,
 		},
 
-		StopRequested: false, // setting initial state
-		db:            source.DB.Servers,
+		Intent: SessionIntentNone,
+		db:     source.DB.Servers,
 	}
 
 	var loglevel log.Level

@@ -38,6 +38,10 @@ type WhatsmeowHandlers struct {
 
 	// Sequential counter for precise timestamp ordering within this handler
 	eventSequence uint64
+
+	// router dispatches incoming whatsmeow events to dedicated handler functions.
+	// Lazily initialized on first use via getRouter().
+	router *EventRouter
 }
 
 func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions, waOptions *whatsapp.WhatsappOptions) *WhatsmeowHandlers {
@@ -46,6 +50,11 @@ func NewWhatsmeowHandlers(conn *WhatsmeowConnection, wmOptions WhatsmeowOptions,
 		WhatsmeowOptions:    wmOptions,
 		WhatsappOptions:     waOptions,
 	}
+}
+
+// hasWAHandlers returns true when the domain WhatsApp handler is initialized and ready.
+func (source *WhatsmeowHandlers) hasWAHandlers() bool {
+	return source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil()
 }
 
 // getTimestamp returns a UTC timestamp with a tiny monotonic offset.
@@ -235,6 +244,87 @@ func (source *WhatsmeowHandlers) SendPresence(presence types.Presence, from stri
 var historySyncID int32
 var startupTime = time.Now().Unix()
 
+// getRouter returns the event router for this handler, building it on first use.
+func (source *WhatsmeowHandlers) getRouter() *EventRouter {
+	if source.router == nil {
+		source.router = source.buildRouter()
+	}
+	return source.router
+}
+
+// onConnectedEvent handles the Connected lifecycle event.
+func (source *WhatsmeowHandlers) onConnectedEvent() {
+	source.offlineSyncStarted = true
+	source.offlineSyncCompleted = false
+
+	logentry := source.GetLogger()
+	logentry.Info("connection established - assuming history sync period will start")
+
+	if source.Client != nil {
+		source.Client.AutoReconnectErrors = 0
+		presence := source.GetPresence()
+		source.SendPresence(presence, "'connected' event")
+	}
+
+	go source.sendConnectionDispatching("connected")
+
+	if source.hasWAHandlers() {
+		go source.WAHandlers.OnConnected()
+	}
+}
+
+// onConnectFailureEvent handles ConnectFailure events.
+func (source *WhatsmeowHandlers) onConnectFailureEvent(evt *events.ConnectFailure) {
+	reasonStr := fmt.Sprintf("%v", evt.Reason)
+	details := fmt.Sprintf("Reason: %s", reasonStr)
+	if evt.Message != "" {
+		details = fmt.Sprintf("%s, Message: %s", details, evt.Message)
+	}
+	source.GetLogger().Warnf("connect failure: %s", details)
+	if source.hasWAHandlers() {
+		go source.WAHandlers.OnDisconnected("connect_failure", details)
+	}
+}
+
+// onStreamErrorEvent handles StreamError events.
+func (source *WhatsmeowHandlers) onStreamErrorEvent(evt *events.StreamError) {
+	details := fmt.Sprintf("Error code: %s", evt.Code)
+	source.GetLogger().Warnf("stream error: %s", details)
+	if source.hasWAHandlers() {
+		go source.WAHandlers.OnDisconnected("stream_error", details)
+	}
+}
+
+// onTemporaryBanEvent handles TemporaryBan events.
+func (source *WhatsmeowHandlers) onTemporaryBanEvent(evt *events.TemporaryBan) {
+	banReason := "Unknown"
+	switch evt.Code {
+	case 101:
+		banReason = "Sent to too many people"
+	case 102:
+		banReason = "Blocked by users"
+	case 103:
+		banReason = "Created too many groups"
+	case 104:
+		banReason = "Sent too many same message"
+	case 106:
+		banReason = "Broadcast list"
+	}
+	details := fmt.Sprintf("Code: %d (%s), Expires: %v", evt.Code, banReason, evt.Expire)
+	source.GetLogger().Warnf("temporary ban: %s", details)
+	if source.hasWAHandlers() {
+		go source.WAHandlers.OnDisconnected("temporary_ban", details)
+	}
+}
+
+// onAppStateSyncCompleteEvent handles AppStateSyncComplete events.
+func (source *WhatsmeowHandlers) onAppStateSyncCompleteEvent(evt *events.AppStateSyncComplete) {
+	if evt.Name == appstate.WAPatchCriticalBlock {
+		presence := source.GetPresence()
+		source.SendPresence(presence, "'app state sync complete' event")
+	}
+}
+
 // Define os diferentes tipos de eventos a serem reconhecidos
 // Aqui se define se vamos processar mensagens | confirmações de leitura | etc
 func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
@@ -256,205 +346,14 @@ func (source *WhatsmeowHandlers) EventsHandler(rawEvt interface{}) {
 		return
 	}
 
-	switch evt := rawEvt.(type) {
-
-	case *events.Message:
-		go source.Message(*evt, "live")
+	if source.getRouter().Dispatch(rawEvt) {
 		return
+	}
 
-		//# region CALLS
-	case *events.CallOffer:
-		logentry.Infof("CallOffer: %v", evt)
-		go source.CallMessage(evt.BasicCallMeta)
-		return
-
-	case *events.CallOfferNotice:
-		logentry.Infof("CallOfferNotice: %v", evt)
-		go source.CallMessage(evt.BasicCallMeta)
-		return
-
-	/*
-		case *events.CallRelayLatency:
-			logentry.Infof("CallRelayLatency: %v", evt)
-			return
-	*/
-	//#endregion
-
-	case *events.Receipt:
-		go source.Receipt(*evt)
-		return
-
-	case *events.Connected:
-		// Initialize offline sync flags - assume sync will happen after connection
-		source.offlineSyncStarted = true
-		source.offlineSyncCompleted = false
-
-		logentry.Info("connection established - assuming history sync period will start")
-
-		if source.Client != nil {
-			// zerando contador de tentativas de reconexão
-			// importante para zerar o tempo entre tentativas em caso de erro
-			source.Client.AutoReconnectErrors = 0
-
-			presence := source.GetPresence()
-			source.SendPresence(presence, "'connected' event")
-		}
-
-		// Send connection dispatching event
-		go source.sendConnectionDispatching("connected")
-
-		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnConnected()
-		}
-		return
-
-	case *events.PushNameSetting:
-
-		presence := source.GetPresence()
-		source.SendPresence(presence, "'push name setting' event")
-		return
-
-	case *events.Disconnected:
-		msgDisconnected := "disconnected from server"
-		if source.Client.EnableAutoReconnect {
-			logentry.Infof("%s, dont worry, reconnecting", msgDisconnected)
-		} else {
-			logentry.Warn(msgDisconnected)
-		}
-
-		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected("network", "Server closed connection")
-		}
-		return
-
-	case *events.ConnectFailure:
-		reasonStr := fmt.Sprintf("%v", evt.Reason)
-		details := fmt.Sprintf("Reason: %s", reasonStr)
-		if evt.Message != "" {
-			details = fmt.Sprintf("%s, Message: %s", details, evt.Message)
-		}
-		logentry.Warnf("connect failure: %s", details)
-
-		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected("connect_failure", details)
-		}
-		return
-
-	case *events.StreamError:
-		details := fmt.Sprintf("Error code: %s", evt.Code)
-		logentry.Warnf("stream error: %s", details)
-
-		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected("stream_error", details)
-		}
-		return
-
-	case *events.TemporaryBan:
-		banReason := "Unknown"
-		switch evt.Code {
-		case 101:
-			banReason = "Sent to too many people"
-		case 102:
-			banReason = "Blocked by users"
-		case 103:
-			banReason = "Created too many groups"
-		case 104:
-			banReason = "Sent too many same message"
-		case 106:
-			banReason = "Broadcast list"
-		}
-		details := fmt.Sprintf("Code: %d (%s), Expires: %v", evt.Code, banReason, evt.Expire)
-		logentry.Warnf("temporary ban: %s", details)
-
-		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected("temporary_ban", details)
-		}
-		return
-
-	case *events.StreamReplaced:
-		logentry.Warn("stream replaced by another client")
-
-		if source.WAHandlers != nil && !source.WAHandlers.IsInterfaceNil() {
-			go source.WAHandlers.OnDisconnected("stream_replaced", "Another client connected with same session")
-		}
-		return
-
-	case *events.LoggedOut:
-		source.OnLoggedOutEvent(*evt)
-		return
-
-	case *events.HistorySync:
-		if source.HandleHistorySync() {
-			go source.OnHistorySyncEvent(*evt)
-		}
-		return
-
-	case *events.AppStateSyncComplete:
-		if evt.Name == appstate.WAPatchCriticalBlock {
-			presence := source.GetPresence()
-			source.SendPresence(presence, "'app state sync complete' event")
-		}
-		return
-
-	case *events.JoinedGroup:
-		source.JoinedGroup(*evt)
-		return
-
-	case *events.Contact:
-		go OnEventContact(source, *evt)
-		return
-
-	case *events.PairError:
-		{
-			jsonEvt := library.ToJson(evt)
-			logentry.Errorf("pair error event: %s", jsonEvt)
-		}
-
-	case *events.OfflineSyncPreview:
-		go source.OnOfflineSyncPreview(*evt)
-		return
-
-	case *events.OfflineSyncCompleted:
-		go source.OnOfflineSyncCompleted(*evt)
-		return
-
-	case *events.UndecryptableMessage:
-		go source.UndecryptableMessage(*evt)
-		return
-
-	case
-		*events.AppState,
-		*events.CallTerminate,
-		*events.DeleteChat,
-		*events.DeleteForMe,
-		*events.MarkChatAsRead,
-		*events.Mute,
-		*events.Pin,
-		*events.PushName,
-		*events.GroupInfo:
-		logentry.Tracef("event not implemented yet: %v", reflect.TypeOf(evt))
-		if source.ShouldDispatchUnhandled() {
-			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
-		}
-		return // ignoring not implemented yet
-
-	case *events.QR:
-		source.OnQREvent(evt)
-		return
-
-	case *events.PairSuccess:
-		source.OnPairSuccessEvent(evt)
-		return
-
-	default:
-		logentry.Debugf("event not handled: %v", reflect.TypeOf(evt))
-
-		// Only dispatch debug events if DEBUGEVENTS is true
-		// If DEBUGEVENTS=false or not set, do nothing (no dispatch)
-		if source.ShouldDispatchUnhandled() {
-			go source.DispatchUnhandledEvent(evt, reflect.TypeOf(rawEvt).String())
-		}
-		return
+	// Default: unregistered event type
+	logentry.Debugf("event not handled: %v", reflect.TypeOf(rawEvt))
+	if source.ShouldDispatchUnhandled() {
+		go source.DispatchUnhandledEvent(rawEvt, reflect.TypeOf(rawEvt).String())
 	}
 }
 

@@ -137,12 +137,12 @@ func TestDeleteRestoresStateAndDispatchingsWhenDatabaseDeleteFails(t *testing.T)
 		t.Fatal("expected delete to fail")
 	}
 
-	if server.DeleteRequested {
-		t.Fatal("expected DeleteRequested to be restored after failure")
+	if server.Intent.IsDeleteRequested() {
+		t.Fatal("expected Intent to be restored to no delete after failure")
 	}
 
-	if server.StopRequested {
-		t.Fatal("expected StopRequested to be restored after failure")
+	if server.Intent.IsStopRequested() {
+		t.Fatal("expected Intent to be restored to no stop after failure")
 	}
 
 	if len(server.QpDataDispatching.Dispatching) != 1 {

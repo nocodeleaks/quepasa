@@ -1,7 +1,6 @@
 package models
 
 import (
-	"sync"
 	"testing"
 
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -20,7 +19,7 @@ func (c *captureLifecyclePublisher) PublishLifecycle(event *DispatchingLifecycle
 }
 
 func TestHasDispatchingSubscriber_OnlyForMarkedSubscriber(t *testing.T) {
-	handler := &DispatchingHandler{syncRegister: &sync.Mutex{}}
+	handler := &DispatchingHandler{}
 
 	handler.Register(nonDispatchingTestSubscriber{})
 	if handler.HasDispatchingSubscriber() {
@@ -49,7 +48,8 @@ func TestPublishRealtimeLifecycle_UsesInjectedPublisher(t *testing.T) {
 	server.Verified = true
 
 	handler := &DispatchingHandler{server: server}
-	handler.publishRealtimeLifecycle("connected", "", "")
+	lifecycle := NewLifecycleHandler(handler)
+	lifecycle.publishRealtimeLifecycle("connected", "", "")
 
 	if capture.event == nil {
 		t.Fatalf("expected lifecycle event to be published")

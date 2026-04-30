@@ -23,38 +23,38 @@ func registerCanonicalSessionRoutes(r chi.Router) {
 }
 
 func CanonicalSessionsListController(w http.ResponseWriter, r *http.Request) {
-	SPAServersController(w, r)
+	SPASessionsController(w, r)
 }
 func CanonicalSessionCreateController(w http.ResponseWriter, r *http.Request) {
-	SPAServerCreateController(w, r)
+	SPASessionCreateController(w, r)
 }
 func CanonicalSessionSearchController(w http.ResponseWriter, r *http.Request) {
-	SPAServersSearchController(w, r)
+	SPASessionsSearchController(w, r)
 }
 func CanonicalSessionGetController(w http.ResponseWriter, r *http.Request) {
-	SPAServerInfoController(w, r)
+	SPASessionGetController(w, r)
 }
 func CanonicalSessionUpdateController(w http.ResponseWriter, r *http.Request) {
-	SPAServerUpdateController(w, r)
+	SPASessionUpdateController(w, r)
 }
 func CanonicalSessionDeleteController(w http.ResponseWriter, r *http.Request) {
-	SPAServerDeleteController(w, r)
+	SPASessionDeleteController(w, r)
 }
 func CanonicalSessionQRCodeController(w http.ResponseWriter, r *http.Request) {
-	SPAServerQRCodeController(w, r)
+	SPASessionQRCodeController(w, r)
 }
 func CanonicalSessionPairCodeController(w http.ResponseWriter, r *http.Request) {
-	SPAServerPairCodeController(w, r)
+	SPASessionPairCodeController(w, r)
 }
 func CanonicalSessionEnableController(w http.ResponseWriter, r *http.Request) {
-	SPAServerEnableController(w, r)
+	SPASessionEnableController(w, r)
 }
 func CanonicalSessionDisableController(w http.ResponseWriter, r *http.Request) {
-	SPAServerDisableController(w, r)
+	SPASessionDisableController(w, r)
 }
 func CanonicalSessionDebugController(w http.ResponseWriter, r *http.Request) {
-	SPAServerDebugToggleController(w, r)
+	SPASessionDebugToggleController(w, r)
 }
 func CanonicalSessionOptionController(w http.ResponseWriter, r *http.Request) {
-	SPAServerOptionToggleController(w, r)
+	SPASessionOptionToggleController(w, r)
 }

@@ -65,14 +65,20 @@ type OutboundRequest struct {
 	Enrich func(message *whatsapp.WhatsappMessage) *whatsapp.WhatsappMessage
 }
 
-type DispatchService struct{}
+type DispatchService struct {
+	// Policy determines whether a message should be sent to a given target.
+	// Defaults to DefaultDispatchPolicy; can be overridden for testing or custom routing.
+	Policy DispatchPolicy
+}
 
 var dispatchServiceOnce sync.Once
 var dispatchServiceInstance *DispatchService
 
 func GetInstance() *DispatchService {
 	dispatchServiceOnce.Do(func() {
-		dispatchServiceInstance = &DispatchService{}
+		dispatchServiceInstance = &DispatchService{
+			Policy: DefaultDispatchPolicy{},
+		}
 	})
 
 	return dispatchServiceInstance
@@ -165,7 +171,7 @@ func (service *DispatchService) DispatchTargets(serverWid string, message *whats
 		logentry = logentry.WithField("messageid", message.Id)
 		logentry.Level = loglevel
 
-		if !service.shouldDispatchToTarget(target, message, logentry) {
+		if !service.Policy.ShouldDispatch(target, message, logentry) {
 			continue
 		}
 
@@ -176,34 +182,4 @@ func (service *DispatchService) DispatchTargets(serverWid string, message *whats
 	}
 
 	return nil
-}
-
-// shouldDispatchToTarget centralizes outbound filter rules shared by all
-// external dispatch transports.
-func (service *DispatchService) shouldDispatchToTarget(target Target, message *whatsapp.WhatsappMessage, logentry *log.Entry) bool {
-	if message.Id == "readreceipt" && target.IsSetReadReceipts() && !target.GetReadReceipts() {
-		logentry.Debugf("ignoring read receipt message: %s", message.Text)
-		return false
-	}
-
-	if message.FromGroup() && target.IsSetGroups() && !target.GetGroups() {
-		logentry.Debug("ignoring group message")
-		return false
-	}
-
-	if message.FromBroadcast() && target.IsSetBroadcasts() && !target.GetBroadcasts() {
-		logentry.Debug("ignoring broadcast message")
-		return false
-	}
-
-	if message.Type == whatsapp.CallMessageType && target.IsSetCalls() && !target.GetCalls() {
-		logentry.Debug("ignoring call message")
-		return false
-	}
-
-	if message.FromInternal && (!target.IsFromInternalForwardEnabled() || (target.GetTrackId() != "" && target.GetTrackId() == message.TrackId)) {
-		return false
-	}
-
-	return true
 }

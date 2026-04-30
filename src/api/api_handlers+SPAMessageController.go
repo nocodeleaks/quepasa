@@ -31,7 +31,7 @@ func SPAServerSendController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
@@ -54,7 +54,7 @@ func SPAServerArchiveChatController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func SPAServerPresenceController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
@@ -100,7 +100,7 @@ func SPAWebHooksController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func SPARabbitMQController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
@@ -146,12 +146,12 @@ func SPAServerMessagesController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureSPAServerReady(server); err != nil {
-		respondSPAServerReadyError(w, err)
+		respondSPASessionReadyError(w, err)
 		return
 	}
 
@@ -238,12 +238,12 @@ func SPAServerEditMessageController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureSPAServerReady(server); err != nil {
-		respondSPAServerReadyError(w, err)
+		respondSPASessionReadyError(w, err)
 		return
 	}
 
@@ -293,12 +293,12 @@ func SPAServerRevokeMessageController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureSPAServerReady(server); err != nil {
-		respondSPAServerReadyError(w, err)
+		respondSPASessionReadyError(w, err)
 		return
 	}
 
@@ -335,12 +335,12 @@ func SPAServerDownloadMediaController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetSPAOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondSPASessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureSPAServerReady(server); err != nil {
-		respondSPAServerReadyError(w, err)
+		respondSPASessionReadyError(w, err)
 		return
 	}
 
@@ -381,7 +381,7 @@ func SPAServerDownloadMediaController(w http.ResponseWriter, r *http.Request) {
 	w.Write(*content)
 }
 
-func respondSPAServerLookupError(w http.ResponseWriter, err error) {
+func respondSPASessionLookupError(w http.ResponseWriter, err error) {
 	switch err.Error() {
 	case "server token not owned by user":
 		RespondErrorCode(w, err, http.StatusForbidden)
@@ -392,10 +392,19 @@ func respondSPAServerLookupError(w http.ResponseWriter, err error) {
 	}
 }
 
-func respondSPAServerReadyError(w http.ResponseWriter, err error) {
+func respondSPASessionReadyError(w http.ResponseWriter, err error) {
 	response := &models.QpResponse{}
 	response.ParseError(err)
 	RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
+}
+
+// Backward compatibility aliases for server-named functions
+func respondSPAServerLookupError(w http.ResponseWriter, err error) {
+	respondSPASessionLookupError(w, err)
+}
+
+func respondSPAServerReadyError(w http.ResponseWriter, err error) {
+	respondSPASessionReadyError(w, err)
 }
 
 func buildSPAMessageResponseSummary(timestamp int64, filters ReceiveMessageFilters, page, totalPages, count int) string {

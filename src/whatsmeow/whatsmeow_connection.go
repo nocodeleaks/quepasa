@@ -390,13 +390,13 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	// (optional) another devices will process anyway, but our devices will show quoted only if it exists on cache
 	var quoted *waE2E.Message
 
-	handlers := source.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !source.HasValidHandlers() {
 		logentry.Warnf("handlers unavailable, reply context will include stanza only for msg id: %s", msg.InReply)
 		return &waE2E.ContextInfo{
 			StanzaID: proto.String(msg.InReply),
 		}
 	}
+	handlers := source.GetHandlers()
 
 	cached, _ := handlers.WAHandlers.GetById(msg.InReply)
 	if cached != nil {
@@ -673,10 +673,10 @@ func (conn *WhatsmeowConnection) Disconnect() (err error) {
 
 // dispatchPairRequestEvent dispatches a system event when pairing is requested
 func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching pair_request event")
@@ -707,10 +707,10 @@ func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
 
 // dispatchPairTimeoutEvent dispatches a system event when pairing expires/fails
 func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg string) {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching pair_timeout event")
@@ -753,10 +753,10 @@ func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg
 
 // dispatchQRRequestEvent dispatches a system event when QR code is requested
 func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching qr_request event")
@@ -796,10 +796,10 @@ func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
 
 // dispatchQRTimeoutEvent dispatches a system event when QR code expires/times out
 func (conn *WhatsmeowConnection) dispatchQRTimeoutEvent() {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching qr_timeout event")
@@ -1040,11 +1040,11 @@ func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool
 func (source *WhatsmeowConnection) getMessageForRetry(requester, to types.JID, id types.MessageID) *waE2E.Message {
 	logentry := source.GetLogger()
 
-	handlers := source.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !source.HasValidHandlers() {
 		logentry.Warnf("GetMessageForRetry: no handlers available for message %s", id)
 		return nil
 	}
+	handlers := source.GetHandlers()
 
 	// Try to get message from QuePasa's cache
 	cached, err := handlers.WAHandlers.GetById(string(id))
@@ -1288,6 +1288,13 @@ func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus 
 // Handlers are always created during connection creation via CreateConnection()
 func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
 	return conn.Handlers
+}
+
+// HasValidHandlers returns true when handlers are initialized and the WhatsApp
+// handler interface is ready to receive messages.
+func (conn *WhatsmeowConnection) HasValidHandlers() bool {
+	h := conn.Handlers
+	return h != nil && h.WAHandlers != nil && !h.WAHandlers.IsInterfaceNil()
 }
 
 // SendChatPresence updates typing status in a chat

@@ -29,6 +29,7 @@ An additional strategic goal for this refactoring is to migrate the central runt
 **File**: `src/models/dispatching_handler.go`
 
 **Current responsibilities** (all mixed in one struct):
+
 1. Message cache management (`QpWhatsappMessages`)
 2. Event handling (`Message`, `Receipt`)
 3. Lifecycle events (`OnConnected`, `OnDisconnected`, `LoggedOut`)
@@ -37,7 +38,8 @@ An additional strategic goal for this refactoring is to migrate the central runt
 **Impact**: Cannot test any responsibility in isolation. Adding new event types or transports requires touching a 600-line file.
 
 **Proposed split**:
-```
+
+```text
 models/dispatching_handler.go         ← thin orchestrator (keep struct, reduce lines)
 models/message_cache_handler.go       ← QpWhatsappMessages operations
 runtime/message_dispatcher.go         ← Trigger + subscriber orchestration
@@ -51,17 +53,20 @@ runtime/lifecycle_handler.go          ← OnConnected, OnDisconnected, LoggedOut
 **File**: `src/models/qp_whatsapp_server.go`
 
 **Symptoms**:
+
 - 17 public fields + 6 private fields
 - 50+ methods
 - Mixes: persistence, runtime state, connection lifecycle, configuration, message routing
 
 **Naming intent**:
+
 - `QpWhatsappServer` should become a `Session`-oriented abstraction
 - The rename should happen intentionally, not as a blind search/replace
 - Naming migration must preserve backward compatibility during the transition when required by public/internal contracts
 
 **Proposed decomposition**:
-```
+
+```text
 models/qp_whatsapp_session.go         ← core identity fields (Token, Verified, etc.)
 models/session_connection_manager.go  ← connection start/stop/update logic
 models/session_lifecycle.go           ← Initialize, Start, Stop, Delete
@@ -76,6 +81,7 @@ Do not decompose all at once — extract `session_connection_manager.go` first (
 **File**: `src/main.go` (lines ~92–108)
 
 **Current pattern**:
+
 ```go
 models.GlobalRealtimePresenceChecker = signalr.SignalRHub
 models.GlobalDispatchingLifecyclePublisher = runtime.NewDispatchingLifecyclePublisher()
@@ -84,11 +90,13 @@ models.GlobalRabbitMQGetClient = func(...) { return rabbitmq.GetRabbitMQClient(.
 ```
 
 **Problems**:
+
 - Not thread-safe (no mutex)
 - Silent NoOp fallback hides initialization failures
 - Impossible to test components in isolation
 
 **Target pattern**:
+
 ```go
 type TransportServices struct {
     RabbitMQFactory    models.RabbitMQClientFactory
@@ -113,6 +121,7 @@ Migrate globals one by one — do not replace all at once.
 **Problem**: Single Responsibility violation. Every new event type expands the same function.
 
 **Target pattern** — Event Router:
+
 ```go
 type EventRouter struct {
     handlers map[reflect.Type]func(interface{})
@@ -130,6 +139,7 @@ func (r *EventRouter) Dispatch(evt interface{}) {
 ```
 
 Register handlers in `NewWhatsmeowHandlers()`:
+
 ```go
 router.Register(events.Message{}, handler.onMessage)
 router.Register(events.Receipt{}, handler.onReceipt)
@@ -145,6 +155,7 @@ router.Register(events.Connected{}, handler.onConnected)
 **Problem**: Filtering rules (which messages to send, based on groups/receipts/etc.) live inside the transport module, which should only know *how* to send, not *whether* to send.
 
 **Target**: Move filtering to `runtime/` as a `DispatchPolicy`:
+
 ```go
 // runtime/dispatch_policy.go
 type DispatchPolicy interface {
@@ -168,6 +179,7 @@ func (p *DefaultDispatchPolicy) ShouldDispatch(target, message) (bool, string) {
 **Current**: Session state is currently calculated inside the `QpWhatsappServer` implementation by combining boolean flags (`DeleteRequested`, `StopRequested`, `Verified`, `Reconnect`). Invalid transitions are not caught.
 
 **Target**: Explicit session state machine with validated transitions:
+
 ```go
 type SessionState int
 
@@ -205,7 +217,7 @@ func (sm *SessionStateMachine) TransitionTo(next SessionState) error {
 ### P7 — Minor Issues (Quick Wins)
 
 | ID | Location | Issue | Fix |
-|----|----------|-------|-----|
+| --- | --- | --- | --- |
 | P7a | `whatsmeow_connection.go` | Null handler check repeated 6× | Extract `HasValidHandlers() bool` helper |
 | P7b | `whatsapp/whatsapp_message_extensions.go` | Business logic (`IsValidForDispatch`) in domain package | Move to `models/` or `runtime/` |
 | P7c | `models/cache_initialization.go` | Cache backend injected manually in 3+ places | Single injection point in service factory |
@@ -217,22 +229,21 @@ func (sm *SessionStateMachine) TransitionTo(next SessionState) error {
 
 ### Phase 0 — Quick Wins (no risk, immediate value)
 
-- [ ] P7a: Extract `HasValidHandlers()` in `whatsmeow_connection.go`
-- [ ] P7b: Move `IsValidForDispatch()` to `models/`
-- [ ] P7c: Consolidate cache injection into a single call site
+- [x] P7a: Extract `HasValidHandlers()` in `whatsmeow_connection.go` (COMPLETED)
+- [x] P7b: Move `IsValidForDispatch()` to `models/` (ALREADY DONE — was in models all along)
+- [x] P7c: Consolidate cache injection into a single call site (ALREADY STRUCTURED — `InitializeCacheService()`)
 
 Estimated scope: 3–5 files, no interface changes.
 
 ---
 
-### Phase 1 — Split DispatchingHandler (P1)
+### Phase 1 — Split DispatchingHandler (P1) — COMPLETED
 
-1. Create `runtime/lifecycle_handler.go` — move `OnConnected`, `OnDisconnected`, `LoggedOut`
-2. Create `runtime/message_dispatcher.go` — move `Trigger`, `Register`, subscriber loop
-3. Slim `models/dispatching_handler.go` to cache + event entry points only
-4. Update all callers (whatsmeow_handlers.go, tests)
-
-**Risk**: Medium — touches the central message pipeline. Requires full regression test.
+1. ~~Create `runtime/lifecycle_handler.go` — move `OnConnected`, `OnDisconnected`, `LoggedOut`~~ → `models/lifecycle_handler.go` (in models to avoid circular import from runtime→whatsmeow→models)
+2. ~~Create `runtime/message_dispatcher.go` — move `Trigger`, `Register`, subscriber loop~~ → `models/message_dispatcher.go` (same circular import constraint)
+3. ~~Slim `models/dispatching_handler.go` to cache + event entry points only~~ → now delegates lifecycle to `LifecycleHandler` and dispatch to `MessageDispatcher`
+4. ~~Update all callers (whatsmeow_handlers.go, tests)~~ → tests updated
+5. Dead runtime copies (`runtime/dispatching_handler.go`, `runtime/lifecycle_handler.go`, `runtime/message_dispatcher.go`) removed — models versions are canonical
 
 ---
 
@@ -248,37 +259,38 @@ Estimated scope: 3–5 files, no interface changes.
 
 ---
 
-### Phase 3 — EventRouter in WhatsmeowHandlers (P4)
+### Phase 3 — EventRouter in WhatsmeowHandlers (P4) — COMPLETED
 
-1. Implement `EventRouter` in `whatsmeow/event_router.go`
-2. Register all 38 handlers in `NewWhatsmeowHandlers()`
-3. Replace switch body with `router.Dispatch(evt)`
-4. Delete old switch
-
-**Risk**: Low — purely internal to `whatsmeow/`, no interface changes.
-
----
-
-### Phase 4 — DispatchPolicy in Runtime (P5)
-
-1. Define `DispatchPolicy` interface in `runtime/`
-2. Implement `DefaultDispatchPolicy` with current filtering logic
-3. Inject policy into `dispatch.DispatchService`
-4. Remove `shouldDispatchToTarget` from `dispatch_service.go`
-
-**Risk**: Low — no external API changes.
+1. ~~Implement `EventRouter` in `whatsmeow/event_router.go`~~ → `whatsmeow_event_router.go` with `EventRouter` struct + `buildRouter()` on `WhatsmeowHandlers`
+2. ~~Register all handlers in `NewWhatsmeowHandlers()`~~ → handlers registered lazily via `getRouter()` on first `EventsHandler` call
+3. ~~Replace switch body with `router.Dispatch(evt)`~~ → `EventsHandler` now: guard → `getRouter().Dispatch(rawEvt)` → default fallback
+4. ~~Delete old switch~~ → Removed; complex case bodies extracted into dedicated methods:
+   - `onConnectedEvent()`, `onConnectFailureEvent()`, `onStreamErrorEvent()`
+   - `onTemporaryBanEvent()`, `onAppStateSyncCompleteEvent()`
+5. Added `hasWAHandlers()` helper on `WhatsmeowHandlers` (eliminates 6 repetitions of WAHandlers nil-check)
 
 ---
 
-### Phase 5 — Explicit State Machine (P6)
+### Phase 4 — DispatchPolicy in Runtime (P5) — COMPLETED
 
-1. Define `SessionState` type and constants
-2. Implement `SessionStateMachine` with transition table
-3. Replace boolean flags with state machine calls in the session abstraction
-4. Update `GetState()` to read from state machine
-5. Remove transitional `server` terminology from state-related code after compatibility validation
+1. ~~Define `DispatchPolicy` interface in `runtime/`~~ → Defined in `dispatch/service/dispatch_policy.go` (avoids circular import)
+2. ~~Implement `DefaultDispatchPolicy` with current filtering logic~~ → `DefaultDispatchPolicy` in `dispatch/service/dispatch_policy.go`
+3. ~~Inject policy into `dispatch.DispatchService`~~ → `Policy DispatchPolicy` field, wired in singleton constructor
+4. ~~Remove `shouldDispatchToTarget` from `dispatch_service.go`~~ → Removed, replaced with `service.Policy.ShouldDispatch(...)`
 
-**Risk**: Medium-high — touches core server state. Requires thorough testing.
+Note: `DispatchPolicy` interface was placed in `dispatch/service/` instead of `runtime/` to avoid
+a circular dependency (`dispatch → runtime → dispatch`). Runtime can still implement custom
+policies using the interface from `dispatch/service/` and inject them into the singleton.
+
+---
+
+### Phase 5 — Explicit State Machine (P6) — COMPLETED
+
+1. ~~Define `SessionState` type and constants~~ → Defined `SessionIntent` enum in `models/session_intent.go` with `None`, `Stop`, `Delete` values
+2. ~~Implement `SessionStateMachine` with transition table~~ → `SessionIntent.IsStopRequested()` and `IsDeleteRequested()` provide clean predicate API
+3. ~~Replace boolean flags with state machine calls in the session abstraction~~ → `StopRequested bool` + `DeleteRequested bool` removed; single `Intent SessionIntent` field added to `QpWhatsappServer`
+4. ~~Update `GetState()` to read from state machine~~ → `GetState()` now uses `server.Intent.IsDeleteRequested()` and `server.Intent.IsStopRequested()`
+5. Delete/Stop/Start lifecycle methods updated; test assertions updated; all tests passing
 
 ---
 

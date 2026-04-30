@@ -21,7 +21,7 @@ import (
 )
 
 // @title						QuePasa WhatsApp API
-// @version					4.0.0
+// @version					5.0.0
 // @description				QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs for WhatsApp messaging integration
 // @termsOfService				https://github.com/nocodeleaks/quepasa
 // @contact.name				QuePasa Support

@@ -1482,7 +1482,7 @@ info:
     url: https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
   termsOfService: https://github.com/nocodeleaks/quepasa
   title: QuePasa WhatsApp API
-  version: 4.0.0
+  version: 5.0.0
 paths:
   /account:
     post:

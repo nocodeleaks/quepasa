@@ -333,6 +333,15 @@ func DeletePersistedUser(username string) error {
 	return models.WhatsappService.DB.Users.Delete(strings.TrimSpace(username))
 }
 
+// FindPersistedDispatching returns all persisted dispatching entries for a session token.
+func FindPersistedDispatching(token string) ([]*models.QpServerDispatching, error) {
+	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Dispatching == nil {
+		return nil, fmt.Errorf("dispatching service not initialized")
+	}
+
+	return models.WhatsappService.DB.Dispatching.FindAll(token)
+}
+
 // GetConversationLabelStore resolves the configured conversation-label store.
 func GetConversationLabelStore() (models.QpDataConversationLabelsInterface, error) {
 	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.ConversationLabels == nil {

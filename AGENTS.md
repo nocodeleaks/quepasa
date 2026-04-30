@@ -82,6 +82,9 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ Runtime persisted-record slice: persisted server-record list/lookup now delegate through `runtime.ListPersistedSessionRecords` and `runtime.FindPersistedSessionRecord`; direct `models` calls disappeared from non-SPA API handlers
 - ✅ Runtime user-service slice: persisted user find/auth/update-password helpers now live in `src/runtime`; API user helpers only delegate to runtime
 - ✅ Runtime conversation-label store slice: conversation-label store resolution now lives in `src/runtime`; API helper only delegates to runtime
+- ✅ Runtime user CRUD slice: `CountPersistedUsers`, `ListPersistedUsers`, `CreatePersistedUser`, `DeletePersistedUser` added to `src/runtime`; SPA admin/read controllers no longer access `DB.Users` directly
+- ✅ Runtime dispatching slice: `FindPersistedDispatching` added to `src/runtime`; `CountSPADispatchingForServer` fallback no longer accesses `DB.Dispatching` directly
+- ✅ **All direct `models.WhatsappService` access in API production code eliminated**; remaining occurrences are confined to `testing_setup.go` (test infrastructure only)
 
 **Layer 3b Implementation Details:**
 - Updated `src/api/api_handlers+SPAMessageController.go`:

@@ -124,7 +124,7 @@ func CountSPADispatchingForServer(token string, liveServer *models.QpWhatsappSer
 		return
 	}
 
-	dispatchings, err := models.WhatsappService.DB.Dispatching.FindAll(token)
+	dispatchings, err := runtime.FindPersistedDispatching(token)
 	if err != nil {
 		return
 	}
@@ -167,26 +167,26 @@ func recoverSPAValue[T any](fallback T, operation string, fields log.Fields, fn 
 	return fn()
 }
 
-func buildSPAFallbackServerSummary(dbServer *models.QpServer, runtime spaServerRuntimeSnapshot) map[string]interface{} {
+func buildSPAFallbackServerSummary(dbServer *models.QpServer, snap spaServerRuntimeSnapshot) map[string]interface{} {
 	if dbServer == nil {
 		return map[string]interface{}{
 			"token":          "",
 			"wid":            "",
-			"state":          runtime.state.String(),
-			"stateCode":      runtime.state.EnumIndex(),
+			"state":          snap.state.String(),
+			"stateCode":      snap.state.EnumIndex(),
 			"verified":       false,
 			"devel":          false,
 			"user":           "",
 			"timestamp":      time.Time{},
-			"startTime":      runtime.timestamps.Start,
-			"lastUpdate":     runtime.timestamps.Update,
+			"startTime":      snap.timestamps.Start,
+			"lastUpdate":     snap.timestamps.Update,
 			"uptimeSeconds":  int64(0),
-			"dispatchCount":  runtime.dispatchCount,
-			"webhookCount":   runtime.webhookCount,
-			"rabbitmqCount":  runtime.rabbitmqCount,
-			"hasDispatching": runtime.dispatchCount > 0,
-			"hasWebhooks":    runtime.webhookCount > 0,
-			"hasRabbitMQ":    runtime.rabbitmqCount > 0,
+			"dispatchCount":  snap.dispatchCount,
+			"webhookCount":   snap.webhookCount,
+			"rabbitmqCount":  snap.rabbitmqCount,
+			"hasDispatching": snap.dispatchCount > 0,
+			"hasWebhooks":    snap.webhookCount > 0,
+			"hasRabbitMQ":    snap.rabbitmqCount > 0,
 			"groups":         false,
 			"broadcasts":     false,
 			"readReceipts":   false,
@@ -195,28 +195,28 @@ func buildSPAFallbackServerSummary(dbServer *models.QpServer, runtime spaServerR
 	}
 
 	uptimeSeconds := int64(0)
-	if !runtime.timestamps.Start.IsZero() {
-		uptimeSeconds = int64(time.Since(runtime.timestamps.Start).Seconds())
+	if !snap.timestamps.Start.IsZero() {
+		uptimeSeconds = int64(time.Since(snap.timestamps.Start).Seconds())
 	}
 
 	return map[string]interface{}{
 		"token":          dbServer.Token,
 		"wid":            dbServer.GetWId(),
-		"state":          runtime.state.String(),
-		"stateCode":      runtime.state.EnumIndex(),
+		"state":          snap.state.String(),
+		"stateCode":      snap.state.EnumIndex(),
 		"verified":       dbServer.Verified,
 		"devel":          dbServer.Devel,
 		"user":           dbServer.GetUser(),
 		"timestamp":      dbServer.Timestamp,
-		"startTime":      runtime.timestamps.Start,
-		"lastUpdate":     runtime.timestamps.Update,
+		"startTime":      snap.timestamps.Start,
+		"lastUpdate":     snap.timestamps.Update,
 		"uptimeSeconds":  uptimeSeconds,
-		"dispatchCount":  runtime.dispatchCount,
-		"webhookCount":   runtime.webhookCount,
-		"rabbitmqCount":  runtime.rabbitmqCount,
-		"hasDispatching": runtime.dispatchCount > 0,
-		"hasWebhooks":    runtime.webhookCount > 0,
-		"hasRabbitMQ":    runtime.rabbitmqCount > 0,
+		"dispatchCount":  snap.dispatchCount,
+		"webhookCount":   snap.webhookCount,
+		"rabbitmqCount":  snap.rabbitmqCount,
+		"hasDispatching": snap.dispatchCount > 0,
+		"hasWebhooks":    snap.webhookCount > 0,
+		"hasRabbitMQ":    snap.rabbitmqCount > 0,
 		"groups":         dbServer.GetGroups(),
 		"broadcasts":     dbServer.GetBroadcasts(),
 		"readReceipts":   dbServer.GetReadReceipts(),
@@ -240,7 +240,7 @@ func BuildSPAServerSummary(dbServer *models.QpServer, liveServer *models.QpWhats
 		fields["user"] = dbServer.GetUser()
 	}
 
-	runtime := recoverSPAValue(fallbackRuntime, "BuildSPAServerSummary runtime snapshot", fields, func() spaServerRuntimeSnapshot {
+	snap := recoverSPAValue(fallbackRuntime, "BuildSPAServerSummary runtime snapshot", fields, func() spaServerRuntimeSnapshot {
 		snapshot := fallbackRuntime
 		if liveServer != nil {
 			snapshot.state = liveServer.GetState()
@@ -252,7 +252,7 @@ func BuildSPAServerSummary(dbServer *models.QpServer, liveServer *models.QpWhats
 		return snapshot
 	})
 
-	return recoverSPAValue(buildSPAFallbackServerSummary(dbServer, runtime), "BuildSPAServerSummary response payload", fields, func() map[string]interface{} {
-		return buildSPAFallbackServerSummary(dbServer, runtime)
+	return recoverSPAValue(buildSPAFallbackServerSummary(dbServer, snap), "BuildSPAServerSummary response payload", fields, func() map[string]interface{} {
+		return buildSPAFallbackServerSummary(dbServer, snap)
 	})
 }

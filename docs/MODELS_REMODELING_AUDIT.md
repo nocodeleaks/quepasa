@@ -31,17 +31,15 @@ same namespace and dependency surface.
 
 Representative examples:
 
-- [src/models/qp_server.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_server.go)
+- [src/models/qp_server.go](../src/models/qp_server.go)
   Domain entity.
-- [src/models/qp_whatsapp_service.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_whatsapp_service.go)
+- [src/models/qp_whatsapp_service.go](../src/models/qp_whatsapp_service.go)
   Application/runtime service.
-- [src/models/qp_database.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_database.go)
+- [src/models/qp_database.go](../src/models/qp_database.go)
   Persistence and migrations.
-- [src/models/qp_contacts_search_request.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_contacts_search_request.go)
-  HTTP request DTO still living in the shared package.
-- [src/models/qp_account_update_request.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_account_update_request.go)
-  Transport-shaped request payload still living in the shared package.
-- [src/models/qp_contact_manager.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_contact_manager.go)
+- [src/models/qp_send_request+extras.go](../src/models/qp_send_request+extras.go)
+  Transport-adjacent send helpers still living in the shared package.
+- [src/models/qp_contact_manager.go](../src/models/qp_contact_manager.go)
   Adapter around WhatsMeow-facing contact access.
 
 Best-practice consequence:
@@ -372,18 +370,15 @@ Rule:
 
 After the form view-model extraction, the first API response DTO extraction,
 the migration of the main send/receive and health contracts into `src/api/models`,
-and the removal of obsolete `v1`/`v2` compatibility types from `models`, the
-next safest move is:
+the migration of contact search/account/info patch/poll request contracts into
+`src/api`, and the removal of obsolete `v1`/`v2` compatibility types from
+`models`, the next safest move is:
 
-- continue moving the remaining API-only request payloads from `models` into
-  `src/api/models` or a new `src/api/dto`
+- continue removing the remaining transport-adjacent request helpers from
+  `models`
 
 Priority candidates:
 
-- `qp_poll_request.go`
-- `qp_info_patch_request.go`
-- `qp_contacts_search_request.go`
-- `qp_account_update_request.go`
 - transport-only helpers still attached to `qp_send_request+extras.go`
 
 This keeps the transport boundary moving in the right direction before touching
@@ -419,5 +414,7 @@ Progress note:
 - `QpSendRequest` and `QpSendAnyRequest` were replaced by API-local request
   contracts in `src/api/models`
 - `QpHealthResponseItem` was replaced by an API-local health item projection
-- several request-shaped files still remain in `src/models`, which is why the
-  transport-boundary cleanup is not finished yet
+- `QpContactsSearchRequest`, `QpAccountUpdateRequest`, `QpInfoPatchRequest`,
+  and `PollRequest` were moved out of `src/models` into `src/api`
+- transport-boundary cleanup in `models` is now mostly narrowed to
+  `qp_send_request+extras.go`

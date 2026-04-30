@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
-	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -22,7 +21,7 @@ import (
 //	@Tags			Contacts
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		models.QpContactsSearchRequest	true	"Search criteria"
+//	@Param			body	body		api.ContactSearchRequest	true	"Search criteria"
 //	@Success		200		{object}	api.ContactsResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -42,7 +41,7 @@ func ContactSearchController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse request body (accept empty body)
-	var searchRequest models.QpContactsSearchRequest
+	var searchRequest ContactSearchRequest
 	if r.Body != nil {
 		err = json.NewDecoder(r.Body).Decode(&searchRequest)
 		// Ignore EOF error (empty body is valid - means no filters)
@@ -84,7 +83,7 @@ func ContactSearchController(w http.ResponseWriter, r *http.Request) {
 }
 
 // filterContacts applies search criteria to contact list
-func filterContacts(contacts []whatsapp.WhatsappChat, request models.QpContactsSearchRequest) []whatsapp.WhatsappChat {
+func filterContacts(contacts []whatsapp.WhatsappChat, request ContactSearchRequest) []whatsapp.WhatsappChat {
 	var result []whatsapp.WhatsappChat
 
 	for _, contact := range contacts {
@@ -99,7 +98,7 @@ func filterContacts(contacts []whatsapp.WhatsappChat, request models.QpContactsS
 }
 
 // matchesSearchCriteria checks if contact matches all search criteria
-func matchesSearchCriteria(contact whatsapp.WhatsappChat, request models.QpContactsSearchRequest) bool {
+func matchesSearchCriteria(contact whatsapp.WhatsappChat, request ContactSearchRequest) bool {
 	// Filter by has_title
 	if request.HasTitle != nil {
 		hasTitle := len(strings.TrimSpace(contact.Title)) > 0

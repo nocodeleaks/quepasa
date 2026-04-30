@@ -118,7 +118,7 @@ func SPAServerUpdateController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request *models.QpInfoPatchRequest
+	var request *InfoPatchRequest
 	if err := json.Unmarshal(body, &request); err != nil {
 		response.ParseError(fmt.Errorf("error converting body to json: %v", err.Error()))
 		RespondInterface(w, response)

@@ -519,7 +519,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.QpContactsSearchRequest"
+                            "$ref": "#/definitions/api.ContactSearchRequest"
                         }
                     }
                 ],
@@ -3042,6 +3042,23 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ContactSearchRequest": {
+            "type": "object",
+            "properties": {
+                "has_lid": {
+                    "type": "boolean"
+                },
+                "has_title": {
+                    "type": "boolean"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
         "api.ContactsResponse": {
             "type": "object",
             "properties": {
@@ -4127,27 +4144,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "suggested_action": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.QpContactsSearchRequest": {
-            "type": "object",
-            "properties": {
-                "has_lid": {
-                    "description": "Filter contacts with/without LID: true=with LID, false=without LID, null=no filter",
-                    "type": "boolean"
-                },
-                "has_title": {
-                    "description": "Filter contacts with/without title: true=with title, false=without title, null=no filter",
-                    "type": "boolean"
-                },
-                "phone": {
-                    "description": "Search by specific phone (optional)",
-                    "type": "string"
-                },
-                "query": {
-                    "description": "Search in title and phone (optional)",
                     "type": "string"
                 }
             }

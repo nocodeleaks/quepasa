@@ -51,7 +51,7 @@ func AccountController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Declare a new Person struct.
-		var request *models.QpAccountUpdateRequest
+		var request *AccountUpdateRequest
 
 		if len(body) > 0 {
 

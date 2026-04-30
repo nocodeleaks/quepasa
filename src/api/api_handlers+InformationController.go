@@ -96,7 +96,7 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 	}
 
 	// Apply configuration from request
-	// Handle both InfoCreateRequest and QpInfoPatchRequest
+	// Handle both InfoCreateRequest and InfoPatchRequest
 	var groups, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
 	var devel *bool
 
@@ -110,9 +110,9 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 			readUpdate = req.ReadUpdate
 			devel = req.Devel
 		}
-	case *models.QpInfoPatchRequest:
+	case *InfoPatchRequest:
 		if req != nil {
-			// QpInfoPatchRequest may have Username field, handle groups/broadcasts/etc
+			// InfoPatchRequest may have Username field, handle groups/broadcasts/etc
 			groups = req.Groups
 			broadcasts = req.Broadcasts
 			readReceipts = req.ReadReceipts
@@ -332,7 +332,7 @@ func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request *models.QpInfoPatchRequest
+	var request *InfoPatchRequest
 
 	// Try to decode the request body into the struct. If there is an error,
 	// respond to the client with the error message and a 400 status code.

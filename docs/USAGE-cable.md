@@ -50,7 +50,7 @@ That means:
 
 This keeps the transport scalable and predictable:
 
-- account dashboards refresh on server lifecycle changes without manual polling
+- account dashboards refresh on session lifecycle changes without manual polling
 - heavy message streams stay opt-in through subscriptions
 
 ## Protocol
@@ -363,6 +363,12 @@ Topic:
 
 Emitted from lifecycle hooks in `models.DispatchingHandler`.
 
+Terminology note:
+
+- the websocket protocol keeps `server.*` event names for compatibility
+- these lifecycle events refer to the WhatsApp session runtime, not to the web
+  server process
+
 Delivery rules:
 
 - to every connection of the owning user
@@ -406,7 +412,7 @@ current objective.
 Reasons:
 
 - it is centered on QR/verification flow, not on a durable command/event bus
-- it does not define a stable protocol for server commands
+- it does not define a stable protocol for session commands
 - it is not structured for multiple concurrent user connections as the main
   realtime transport
 - it would need deep adaptation anyway, so a dedicated module is cleaner
@@ -417,7 +423,7 @@ This first version is intentionally narrow:
 
 - it does not replace the legacy SignalR path yet
 - it still does not expose every HTTP mutation via websocket commands
-- it currently focuses on server lifecycle plus the main message/chat actions
+- it currently focuses on session lifecycle plus the main message/chat actions
 
 That is deliberate. The protocol is now stable enough to expand without another
 transport rewrite.

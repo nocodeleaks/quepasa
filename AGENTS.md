@@ -38,6 +38,12 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ Layer 2: API Helpers & Controllers - Request-level helpers, 12 SPA controllers (3+ tests passing)
 - ✅ Layer 3: SPA Utilities - 6 wrapper functions for utility layer (5 tests passing)
 - ✅ Layer 3b: Call Site Migration - 13 call sites updated in SPAMessageController (8 tests total passing)
+- ✅ Architecture documentation expansion - current state, target state, and roadmap docs added under `docs/`
+- ✅ Architecture package map documentation added under `docs/`
+- ✅ Architecture index and execution checklist added under `docs/`
+- ✅ Architecture ADR set added under `docs/`
+- ✅ Runtime terminology alignment in existing docs (`CONNECTION_STATES.md`, `USAGE-cable.md`)
+- ✅ Architecture ADRs for application layer and composition-root wiring added under `docs/`
 - ✅ Phase 1: DispatchingHandler decomposition → models/lifecycle_handler.go + models/message_dispatcher.go
 - ✅ Test fix: TestSessionServiceWrappersDelegateToServerImplementations (nil DB.Dispatching stub)
 - ✅ Phase 0: P7a HasValidHandlers() in WhatsmeowConnection (6 nil-checks eliminated)
@@ -105,3 +111,17 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - src/api/api_handlers+SPASessionController.go ✅
 - src/api/api_routes_sessions.go ✅
 - docs/PLAN-ARCHITECTURE-REFACTORING.md ✅
+- docs/ARCHITECTURE-CURRENT-STATE.md ✅
+- docs/ARCHITECTURE-INDEX.md ✅
+- docs/ARCHITECTURE-TARGET-STATE.md ✅
+- docs/ARCHITECTURE-ROADMAP.md ✅
+- docs/ARCHITECTURE-EXECUTION-CHECKLIST.md ✅
+- docs/ARCHITECTURE-DECISIONS.md ✅
+- docs/ADR-0001-MODULAR-MONOLITH-INCREMENTAL-REFACTORING.md ✅
+- docs/ADR-0002-SESSION-AS-RUNTIME-CONCEPT.md ✅
+- docs/ADR-0003-MODELS-IS-NOT-THE-ESCAPE-HATCH.md ✅
+- docs/ADR-0004-EXPLICIT-APPLICATION-LAYER.md ✅
+- docs/ADR-0005-GROUPED-COMPOSITION-ROOT-WIRING.md ✅
+- docs/ARCHITECTURE-PACKAGE-MAP.md ✅
+- docs/CONNECTION_STATES.md ✅
+- docs/USAGE-cable.md ✅

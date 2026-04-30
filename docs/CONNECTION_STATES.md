@@ -6,10 +6,17 @@ This document explains the WhatsApp connection states exposed by QuePasa, how th
 
 Connection states are defined in `src/whatsapp/whatsapp_connection_state.go`.
 
+Terminology note:
+
+- this document uses `session` as the preferred runtime term for one WhatsApp
+	connected identity
+- some code and compatibility surfaces still use historical `server` naming
+	while the migration remains in progress
+
 They are used to:
 
-- represent the runtime status of each WhatsApp server
-- expose server health in API responses
+- represent the runtime status of each WhatsApp session
+- expose session health in API responses
 - distinguish intentional stop states from transport or authentication failures
 
 ## Health Semantics
@@ -21,7 +28,7 @@ QuePasa currently treats only the following states as healthy:
 
 This means:
 
-- `Ready` is healthy because the server is connected, authenticated, and fully operational
+- `Ready` is healthy because the session is connected, authenticated, and fully operational
 - `Stopped` is healthy because it represents an intentional and stable stopped state, not a failure condition
 
 All other states are treated as non-healthy by the health endpoint.
@@ -34,11 +41,11 @@ Fallback for invalid, missing, or unmapped values.
 
 Current usage:
 
-- returned by the server wrapper when the server reference itself is invalid or nil
+- returned by the session wrapper when the runtime reference itself is invalid or nil
 
 ### `UnPrepared`
 
-The server exists, but there is no active connection object attached.
+The session exists, but there is no active connection object attached.
 
 Typical situations:
 
@@ -47,12 +54,12 @@ Typical situations:
 
 Current usage:
 
-- emitted by the server wrapper
+- emitted by the session wrapper
 - emitted by the whatsmeow status provider
 
 ### `UnVerified`
 
-The server is not authenticated with WhatsApp yet.
+The session is not authenticated with WhatsApp yet.
 
 Typical situations:
 
@@ -66,7 +73,7 @@ Important:
 
 Current usage:
 
-- emitted by the server wrapper
+- emitted by the session wrapper
 - emitted by the whatsmeow status provider when no authenticated client/session is available
 
 ### `Starting`
@@ -97,11 +104,11 @@ Important:
 
 Current usage:
 
-- emitted by the server wrapper when `StopRequested` is true and the transport is still connected
+- emitted by the session wrapper when an intentional stop or delete flow is active and the transport is still connected
 
 ### `Stopped`
 
-The server is intentionally offline after a stop request completed.
+The session is intentionally offline after a stop request completed.
 
 Important:
 
@@ -118,7 +125,7 @@ Typical situations:
 
 Current usage:
 
-- emitted by the server wrapper
+- emitted by the session wrapper
 - treated as healthy by the health endpoint
 
 ### `Restarting`
@@ -164,7 +171,7 @@ Current usage:
 
 ### `Ready`
 
-The server is connected, authenticated, and fully operational.
+The session is connected, authenticated, and fully operational.
 
 Important:
 
@@ -199,7 +206,7 @@ Current usage:
 
 ### `Failed`
 
-The server entered an error state that prevented normal operation.
+The session entered an error state that prevented normal operation.
 
 Current usage:
 
@@ -237,12 +244,12 @@ They are kept to preserve room for more detailed lifecycle reporting in the futu
 The current state is composed from two layers:
 
 1. The whatsmeow provider calculates transport/session states.
-2. The QuePasa server wrapper adds intentional stop semantics on top of that provider.
+2. The QuePasa session wrapper adds intentional stop semantics on top of that provider.
 
 This is why:
 
 - `Connected`, `Ready`, `Disconnected`, and `Failed` come from the whatsmeow provider
-- `Stopping` and `Stopped` are added by the QuePasa server wrapper through `StopRequested`
+- `Stopping` and `Stopped` are added by the QuePasa session wrapper through session intent handling
 
 ## Practical Interpretation
 

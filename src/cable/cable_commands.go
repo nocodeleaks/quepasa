@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
@@ -194,7 +195,7 @@ func (hub *Hub) handleMessageSend(client *Client, command ClientCommand) (interf
 		return nil, err
 	}
 
-	server, err := models.WhatsappService.FindByToken(token)
+	server, err := runtime.GetLiveSessionByToken(token)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +402,7 @@ func getOwnedLiveServerForCommand(user *models.QpUser, raw json.RawMessage, crea
 		return models.WhatsappService.GetOrCreateServerFromToken(token)
 	}
 
-	return models.WhatsappService.FindByToken(token)
+	return runtime.GetLiveSessionByToken(token)
 }
 
 func getOwnedReadyServerForToken(user *models.QpUser, token string) (*models.QpWhatsappServer, error) {
@@ -414,7 +415,7 @@ func getOwnedReadyServerForToken(user *models.QpUser, token string) (*models.QpW
 		return nil, err
 	}
 
-	server, err := models.WhatsappService.FindByToken(token)
+	server, err := runtime.GetLiveSessionByToken(token)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +436,7 @@ func getOwnedReadyServerForToken(user *models.QpUser, token string) (*models.QpW
 }
 
 func getOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, error) {
-	server, err := models.WhatsappService.DB.Servers.FindByToken(token)
+	server, err := runtime.FindPersistedSessionRecord(token)
 	if err != nil {
 		return nil, err
 	}

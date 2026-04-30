@@ -3,11 +3,11 @@ go 1.25.0
 use (
 	.
 	./api
+	./apps/form
 	./cache
 	./dispatch
 	./environment
 	./events
-	./apps/form
 	./library
 	./mcp
 	./media

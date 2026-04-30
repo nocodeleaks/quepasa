@@ -65,7 +65,7 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
 	golang.org/x/text v0.34.0 // indirect
 )
@@ -77,7 +77,7 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v1.14.42
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sirupsen/logrus v1.9.3
 	go.mau.fi/libsignal v0.2.1 // indirect

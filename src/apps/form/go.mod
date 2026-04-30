@@ -46,12 +46,12 @@ require (
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/library v0.0.0
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/models v0.0.0
 	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 )
@@ -87,8 +87,8 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/dispatch v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0 // indirect
+	github.com/nocodeleaks/quepasa/events v0.0.0 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
@@ -104,7 +104,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
 	github.com/teivah/onecontext v1.3.0 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect

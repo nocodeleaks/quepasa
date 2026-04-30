@@ -57,7 +57,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.6 // indirect
 	go.mau.fi/whatsmeow v0.0.0-20260219150138-7ae702b1eed4 // indirect

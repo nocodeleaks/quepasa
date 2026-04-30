@@ -36,6 +36,8 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
 replace github.com/nocodeleaks/quepasa/cable => ../cable
 
+replace github.com/nocodeleaks/quepasa/runtime => ../runtime
+
 go 1.25.0
 
 require (
@@ -46,12 +48,13 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/nocodeleaks/quepasa/dispatch v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0
+	github.com/nocodeleaks/quepasa/library v0.0.0
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/models v0.0.0
+	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 )
@@ -83,7 +86,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/events v0.0.0 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
@@ -97,7 +100,7 @@ require (
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.6 // indirect
 	go.mau.fi/whatsmeow v0.0.0-20260219150138-7ae702b1eed4 // indirect

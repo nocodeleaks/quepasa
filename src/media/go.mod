@@ -36,7 +36,10 @@ require (
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300
 )
 
-require github.com/sirupsen/logrus v1.9.3
+require (
+	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/sirupsen/logrus v1.9.3
+)
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
@@ -44,7 +47,6 @@ require (
 	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 )

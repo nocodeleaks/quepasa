@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/jwtauth"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // cableTokenAuth intentionally reuses the same signing secret and token lookup
@@ -53,5 +54,5 @@ func GetCableUser(r *http.Request) (*models.QpUser, error) {
 		return nil, models.ErrFormUnauthenticated
 	}
 
-	return models.WhatsappService.DB.Users.Find(username)
+	return runtime.FindPersistedUser(username)
 }

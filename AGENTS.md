@@ -85,6 +85,8 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ Runtime user CRUD slice: `CountPersistedUsers`, `ListPersistedUsers`, `CreatePersistedUser`, `DeletePersistedUser` added to `src/runtime`; SPA admin/read controllers no longer access `DB.Users` directly
 - ✅ Runtime dispatching slice: `FindPersistedDispatching` added to `src/runtime`; `CountSPADispatchingForServer` fallback no longer accesses `DB.Dispatching` directly
 - ✅ **All direct `models.WhatsappService` access in API production code eliminated**; remaining occurrences are confined to `testing_setup.go` (test infrastructure only)
+- ✅ Runtime mcp slice: `tool_list_servers.go`, `tool_health.go`, `mcp_server.go` no longer access `models.WhatsappService` directly; use `runtime.ListLiveSessions` and `runtime.FindLiveSessionByToken`; `mcp/go.mod` updated with runtime require
+- ✅ Runtime cable slice: `cable_auth.go` and `cable_commands.go` no longer access `models.WhatsappService` directly; use `runtime.FindPersistedUser`, `runtime.GetLiveSessionByToken`, `runtime.FindPersistedSessionRecord`; `cable/go.mod` updated with runtime replace + require; `go mod tidy` synced; cable and mcp build validation passing (exit 0)
 
 **Layer 3b Implementation Details:**
 - Updated `src/api/api_handlers+SPAMessageController.go`:

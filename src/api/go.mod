@@ -102,7 +102,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.6 // indirect
 	golang.org/x/crypto v0.48.0 // indirect

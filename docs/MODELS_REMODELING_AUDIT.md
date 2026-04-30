@@ -6,8 +6,8 @@ Document why the current `src/models` package became a maintenance bottleneck
 and define a practical refactor path that improves boundaries without requiring
 one risky rewrite.
 
-This audit is meant to run in parallel with the PR `#39` review so backend
-cleanup and SPA extraction can move in the same direction.
+This audit focuses on practical package-boundary cleanup so backend evolution
+and transport cleanup can move in the same direction.
 
 ## Executive Summary
 
@@ -65,21 +65,27 @@ Best-practice consequence:
 - changing one transport shape risks unnecessary recompilation and coupling
 - versioned payloads become harder to retire
 
-### 3. `models` imports infrastructure directly
+### 3. `models` still imports boundary-oriented packages directly
 
-Observed imports from `models`:
+Current observed imports from `models` still include:
 
 - `whatsmeow`
-- `rabbitmq`
-- `signalr`
 - `environment`
 - `library`
 
+Important progress already achieved:
+
+- direct `signalr` imports were removed from `models`
+- direct `rabbitmq` imports were removed from `models`
+- those integrations now rely on startup wiring and transport-neutral seams
+
 Best-practice consequence:
 
-- the dependency direction is inverted
-- core logic depends on delivery/transport choices
-- testing and mocking become harder because the domain layer knows too much
+- the dependency direction has improved, but is not fully clean yet
+- broad runtime packages still know too much about SDK, configuration, or
+  shared utility details
+- testing and mocking remain harder than they should be because the package
+  still mixes core and boundary-facing behavior
 
 ### 4. Persistence is mixed with runtime orchestration
 
@@ -255,8 +261,8 @@ Safe moves:
 
 Status:
 
-- started in this turn for legacy form page data
-- continued in this turn for API-only response DTOs
+- completed for legacy form page data extraction
+- completed for the first API-only response DTO extractions
 - completed for the first batch of API response DTOs by moving them into
   `src/api/models` and deleting their duplicated definitions from `src/models`
 - continued by moving the HTTP send request contracts into `src/api/models`
@@ -280,7 +286,7 @@ Benefits:
 Move toward:
 
 - `app` or `runtime`
-- server lifecycle orchestration
+- session lifecycle orchestration
 - message dispatch orchestration
 
 Benefits:
@@ -291,7 +297,8 @@ Benefits:
 
 Priority hotspots:
 
-- remove direct `signalr` import from core runtime code
+- preserve the removal of direct `signalr` imports from core runtime code
+- preserve the removal of direct `rabbitmq` imports from core runtime code
 - keep realtime publishing behind transport-neutral interfaces
 - reduce direct `whatsmeow` calls from broad packages to focused adapters
 
@@ -364,13 +371,20 @@ Rule:
 ## Next Recommended Slice
 
 After the form view-model extraction, the first API response DTO extraction,
+the migration of the main send/receive and health contracts into `src/api/models`,
 and the removal of obsolete `v1`/`v2` compatibility types from `models`, the
 next safest move is:
 
-- continue moving API-only request payloads from `models` into `src/api/models`
-  or a new `src/api/dto`
+- continue moving the remaining API-only request payloads from `models` into
+  `src/api/models` or a new `src/api/dto`
 
 Priority candidates:
+
+- `qp_poll_request.go`
+- `qp_info_patch_request.go`
+- `qp_contacts_search_request.go`
+- `qp_account_update_request.go`
+- transport-only helpers still attached to `qp_send_request+extras.go`
 
 This keeps the transport boundary moving in the right direction before touching
 the heavier runtime/persistence split.
@@ -405,3 +419,5 @@ Progress note:
 - `QpSendRequest` and `QpSendAnyRequest` were replaced by API-local request
   contracts in `src/api/models`
 - `QpHealthResponseItem` was replaced by an API-local health item projection
+- several request-shaped files still remain in `src/models`, which is why the
+  transport-boundary cleanup is not finished yet

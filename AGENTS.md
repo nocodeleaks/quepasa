@@ -44,6 +44,9 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ Architecture ADR set added under `docs/`
 - ✅ Runtime terminology alignment in existing docs (`CONNECTION_STATES.md`, `USAGE-cable.md`)
 - ✅ Architecture ADRs for application layer and composition-root wiring added under `docs/`
+- ✅ `MODELS_REMODELING_AUDIT.md` refreshed to match current dependency and DTO migration state
+- ✅ Removed redundant `ARCHITECTURE-DECISIONS.md` and consolidated ADR navigation in `ARCHITECTURE-INDEX.md`
+- ✅ Cleaned stale branch-specific and outdated transport/request references in legacy docs
 - ✅ Phase 1: DispatchingHandler decomposition → models/lifecycle_handler.go + models/message_dispatcher.go
 - ✅ Test fix: TestSessionServiceWrappersDelegateToServerImplementations (nil DB.Dispatching stub)
 - ✅ Phase 0: P7a HasValidHandlers() in WhatsmeowConnection (6 nil-checks eliminated)
@@ -116,7 +119,6 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - docs/ARCHITECTURE-TARGET-STATE.md ✅
 - docs/ARCHITECTURE-ROADMAP.md ✅
 - docs/ARCHITECTURE-EXECUTION-CHECKLIST.md ✅
-- docs/ARCHITECTURE-DECISIONS.md ✅
 - docs/ADR-0001-MODULAR-MONOLITH-INCREMENTAL-REFACTORING.md ✅
 - docs/ADR-0002-SESSION-AS-RUNTIME-CONCEPT.md ✅
 - docs/ADR-0003-MODELS-IS-NOT-THE-ESCAPE-HATCH.md ✅
@@ -124,4 +126,8 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - docs/ADR-0005-GROUPED-COMPOSITION-ROOT-WIRING.md ✅
 - docs/ARCHITECTURE-PACKAGE-MAP.md ✅
 - docs/CONNECTION_STATES.md ✅
+- docs/MODELS_REMODELING_AUDIT.md ✅
+- docs/CONTACT_MESSAGES.md ✅
+- docs/PLAN-ARCHITECTURE-REFACTORING.md ✅
+- docs/SEND_LOCATION.md ✅
 - docs/USAGE-cable.md ✅

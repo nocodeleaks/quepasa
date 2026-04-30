@@ -60,7 +60,6 @@ For detailed refactor findings and already completed structural items, read:
 
 For stable architecture decisions and their rationale, read:
 
-- `ARCHITECTURE-DECISIONS.md`
 - `ADR-0001-MODULAR-MONOLITH-INCREMENTAL-REFACTORING.md`
 - `ADR-0002-SESSION-AS-RUNTIME-CONCEPT.md`
 - `ADR-0003-MODELS-IS-NOT-THE-ESCAPE-HATCH.md`
@@ -113,13 +112,6 @@ Role:
 - detailed technical inventory of refactor items
 - tracks already completed architecture improvements
 
-### `ARCHITECTURE-DECISIONS.md`
-
-Role:
-
-- entry point for formal architecture decisions
-- links the active ADR set
-
 ### `MODELS_REMODELING_AUDIT.md`
 
 Role:
@@ -162,8 +154,7 @@ If you are touching large files during implementation:
 
 If you need the rationale behind an architectural constraint:
 
-- read `ARCHITECTURE-DECISIONS.md`
-- then read the relevant ADR
+- read the relevant ADR directly
 
 ## Conclusion
 

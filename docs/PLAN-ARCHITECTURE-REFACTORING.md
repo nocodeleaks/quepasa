@@ -176,7 +176,7 @@ func (p *DefaultDispatchPolicy) ShouldDispatch(target, message) (bool, string) {
 
 **File**: `src/models/qp_whatsapp_server.go`
 
-**Current**: Session state is currently calculated inside the `QpWhatsappServer` implementation by combining boolean flags (`DeleteRequested`, `StopRequested`, `Verified`, `Reconnect`). Invalid transitions are not caught.
+**Historical issue**: Session state used to be calculated inside the `QpWhatsappServer` implementation by combining boolean flags (`DeleteRequested`, `StopRequested`, `Verified`, `Reconnect`). Invalid transitions were not caught.
 
 **Target**: Explicit session state machine with validated transitions:
 

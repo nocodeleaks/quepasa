@@ -404,9 +404,9 @@ The `cable` module:
 That separation is what allows the module to stay isolated without creating a
 package cycle between `models`, `api`, and the transport.
 
-## Why Not Reuse PR 39 Websocket Code
+## Why Not Reuse The Earlier Websocket Implementation
 
-PR `#39` has a websocket implementation, but it is not a good base for the
+An earlier websocket implementation exists, but it is not a good base for the
 current objective.
 
 Reasons:

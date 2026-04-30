@@ -129,7 +129,7 @@ curl -X POST "http://localhost:31000/v3/bot/YOUR_TOKEN/send" \
 ## Implementation Details
 
 ### Data Flow
-1. **API Request** → `QpSendRequest` with `Location` field
+1. **API Request** → API `SendRequest` with `Location` field
 2. **Model Conversion** → `ToWhatsappMessage()` creates `WhatsappMessage` with `LocationMessageType`
 3. **Type Preservation** → Type is maintained through validation and processing
 4. **WhatsApp Send** → `WhatsmeowConnection.Send()` creates protobuf `LocationMessage`
@@ -148,7 +148,7 @@ type WhatsappLocation struct {
 }
 ```
 
-#### 2. QpSendRequest
+#### 2. API SendRequest
 - Contains `Location *WhatsappLocation` field
 - `ToWhatsappMessage()` converts to internal format
 - Sets `Type = LocationMessageType`

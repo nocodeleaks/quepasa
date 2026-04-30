@@ -10,6 +10,7 @@ import (
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -332,7 +333,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.Se
 			}
 
 			// Try to send directly to LID first
-			sendResponse, err := server.SendMessage(waMsg)
+			sendResponse, err := runtime.SendSessionMessage(server, waMsg)
 			if err == nil {
 				// Success sending to LID directly
 				logentry.Infof("successfully sent message directly to LID: %s", originalChatId)
@@ -366,7 +367,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.Se
 	} else {
 	}
 
-	sendResponse, err := server.SendMessage(waMsg)
+	sendResponse, err := runtime.SendSessionMessage(server, waMsg)
 	if err != nil {
 		MessageSendErrors.Inc()
 		response.ParseError(err)

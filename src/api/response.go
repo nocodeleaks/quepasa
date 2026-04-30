@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -42,7 +43,7 @@ func RespondServerError(server *models.QpWhatsappServer, w http.ResponseWriter, 
 	logentry := server.GetLogger()
 	if strings.Contains(err.Error(), "invalid websocket") {
 		logentry.Error("forced disconnected by any reason of invalid websocket or no response")
-		go server.Restart()
+		runtime.RestartSessionAsync(server)
 	} else {
 		logentry.Errorf("request server error: %s", err.Error())
 	}

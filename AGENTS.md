@@ -49,6 +49,8 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ Cleaned stale branch-specific and outdated transport/request references in legacy docs
 - ✅ Replaced obsolete absolute-path links in `MODELS_REMODELING_AUDIT.md` with repo-relative links
 - ✅ Moved API-only request DTOs (`ContactSearchRequest`, `AccountUpdateRequest`, `InfoPatchRequest`, `PollRequest`) out of `src/models` into `src/api`
+- ✅ Removed `qp_send_request+extras.go` by consolidating its helpers into `qp_to_whatsapp_attachment.go`
+- ✅ Moved shared attachment hardening implementation from `src/models` to `src/media/attachment_pipeline.go`, keeping `models` aliases/wrappers for compatibility
 - ✅ Phase 1: DispatchingHandler decomposition → models/lifecycle_handler.go + models/message_dispatcher.go
 - ✅ Test fix: TestSessionServiceWrappersDelegateToServerImplementations (nil DB.Dispatching stub)
 - ✅ Phase 0: P7a HasValidHandlers() in WhatsmeowConnection (6 nil-checks eliminated)
@@ -57,6 +59,29 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ Phase 1 Cleanup: Removed dead runtime copies (dispatching_handler.go, lifecycle_handler.go, message_dispatcher.go from runtime/) — models versions are canonical
 - ✅ Phase 6: QpWhatsappServer decomposition — server_connection.go, server_messaging.go, server_persistence.go; methods removed from qp_whatsapp_server.go; build + all tests passing
 - ✅ Transport-boundary cleanup slice: migrated contact search/account/info patch/poll request DTOs from `src/models` to `src/api`; swagger regenerated; api+swagger compile validation passing
+- ✅ Attachment helper cleanup slice: consolidated `qp_send_request+extras.go` into `qp_to_whatsapp_attachment.go`; api/apps-form compile validation passing
+- ✅ Attachment ownership cleanup slice: `QpToWhatsappAttachment` implementation now lives in `src/media`; `models` keeps compatibility alias/wrappers; `src/media` compile validation passing
+- ✅ Multi-module manifest cleanup slice: synced `go.mod`/`go.sum` and local `replace` directives so `models`, `api`, `apps/form`, and `cable` compile checks pass again
+- ✅ Application-layer runtime slice: added explicit runtime session entry points for start/stop/restart/send and rerouted selected API call sites through `src/runtime`
+- ✅ Application-layer runtime slice extended: moved session option toggles, debug toggle, and configuration patch flag application behind explicit `src/runtime` helpers
+- ✅ Application-layer runtime slice extended again: moved create/save/delete session flows behind explicit `src/runtime` helpers; production API no longer calls direct session lifecycle/persistence/service operations for this slice
+- ✅ Test setup alignment slice: `src/api/testing_setup.go` now creates in-memory test sessions through `runtime.LoadSessionRecord`, removing the last direct `AppendNewServer` call from API helpers
+- ✅ Application-layer runtime slice extended once more: existing-session owner validation/mutation now goes through `runtime.ApplySessionUser`; API no longer mutates live session ownership directly before save
+- ✅ Application-layer runtime slice extended again: new-session record assembly now goes through `runtime.BuildSessionRecord`; duplicated `QpServer` construction left the API create handlers
+- ✅ API request mapping cleanup slice: `buildSessionConfigurationPatch` centralizes `InfoCreateRequest`/`InfoPatchRequest` to `runtime.SessionConfigurationPatch` mapping, with focused tests passing
+- ✅ Application-layer runtime slice extended again: live-session existence checks by token now go through `runtime.FindLiveSessionByToken`; direct map access left `InformationController` and SPA live lookup utils
+- ✅ API persisted-record lookup cleanup slice: `findPersistedServerRecord` centralizes DB server-record lookup with case-insensitive fallback and is reused by SPA ownership lookup and conversation-label flows
+- ✅ Application-layer runtime lookup slice: API server/session extension helpers now delegate live-session token lookup and first-ready-session lookup through explicit `src/runtime` wrappers instead of calling `models.Get*` helpers directly
+- ✅ API persisted-record listing slice: `listPersistedServerRecords` centralizes `DB.Servers.FindAll()` and is reused by SPA read controllers and server-record fallback lookup
+- ✅ API user lookup cleanup slice: `findPersistedUser` centralizes `DB.Users.Find()` so request user resolution no longer reaches the users store directly outside the shared helper
+- ✅ Non-SPA user service cleanup slice: login, health credential checks, and password update now delegate through shared API user helpers instead of calling `DB.Users.Check/Exists/UpdatePassword` directly
+- ✅ Non-SPA restore/runtime slice: restore diagnose/auto/manual controllers now delegate through explicit `src/runtime` wrappers instead of calling `models.WhatsappService` restore methods directly
+- ✅ Non-SPA live-session listing slice: `HealthController` now consumes `runtime.ListLiveSessions*`; direct iteration over `models.WhatsappService.Servers` left the API production code and remains only in test setup
+- ✅ Non-SPA history download slice: attachment URL prefix resolution now delegates through `runtime.GetSessionDownloadPrefix`; `HistoryDownloadController` no longer calls `models.GetDownloadPrefixFromToken` directly
+- ✅ API conversation-label store cleanup slice: `findConversationLabelStore` centralizes conversation-label store access and is reused by controller and v5 label search entry points
+- ✅ Runtime persisted-record slice: persisted server-record list/lookup now delegate through `runtime.ListPersistedSessionRecords` and `runtime.FindPersistedSessionRecord`; direct `models` calls disappeared from non-SPA API handlers
+- ✅ Runtime user-service slice: persisted user find/auth/update-password helpers now live in `src/runtime`; API user helpers only delegate to runtime
+- ✅ Runtime conversation-label store slice: conversation-label store resolution now lives in `src/runtime`; API helper only delegates to runtime
 
 **Layer 3b Implementation Details:**
 - Updated `src/api/api_handlers+SPAMessageController.go`:
@@ -89,6 +114,7 @@ Perform a phased server→session naming migration across the QuePasa codebase t
    - Phase 2: Transport Injection via ServiceContainer (P3) — deferred, globals work well
    - Phase 5: Explicit State Machine (P6) — ✅ COMPLETE (SessionIntent enum, all tests passing)
    - Phase 6: Decompose QpWhatsappServer (P2) — highest risk, do last
+  - Next cleanup candidate: continue reducing `models` by targeting runtime/application seams instead of shared attachment helpers
 
 ## Immutable Constraints
 
@@ -138,3 +164,7 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - docs/PLAN-ARCHITECTURE-REFACTORING.md ✅
 - docs/SEND_LOCATION.md ✅
 - docs/USAGE-cable.md ✅
+- src/media/attachment_pipeline.go ✅
+- src/models/qp_to_whatsapp_attachment_alias.go ✅
+- src/runtime/session_service.go ✅
+- src/runtime/session_service_test.go ✅

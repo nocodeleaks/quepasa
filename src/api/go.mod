@@ -4,6 +4,12 @@ replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.42
 
 replace github.com/nocodeleaks/quepasa/media => ../media
 
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
+replace github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+
+replace github.com/nocodeleaks/quepasa/runtime => ../runtime
+
 replace github.com/nocodeleaks/quepasa/library => ../library
 
 replace github.com/nocodeleaks/quepasa/metrics => ../metrics
@@ -35,19 +41,23 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 go 1.25.0
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-chi/jwtauth v4.0.4+incompatible
+	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/events v0.0.0
+	github.com/nocodeleaks/quepasa/library v0.0.0
+	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/models v0.0.0
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
@@ -59,17 +69,13 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/beeper/argo-go v1.1.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
 	github.com/go-chi/chi v1.5.5 // indirect
-	github.com/go-kit/log v0.2.1 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopxl/beep/v2 v2.1.1 // indirect
 	github.com/gosimple/slug v1.13.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
@@ -84,22 +90,19 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
-	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0 // indirect
 	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
-	github.com/philippseith/signalr v0.6.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
+	github.com/redis/go-redis/v9 v9.7.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
-	github.com/teivah/onecontext v1.3.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.30 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
-	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
 	go.mau.fi/util v0.9.6 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
@@ -107,5 +110,4 @@ require (
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
-	nhooyr.io/websocket v1.8.11 // indirect
 )

@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	models "github.com/nocodeleaks/quepasa/models"
+	media "github.com/nocodeleaks/quepasa/media"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
@@ -164,7 +164,7 @@ func (source *SendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage, e
 
 // ToWhatsappAttachment builds and hardens the optional outbound attachment from
 // the resolved binary content.
-func (source *SendRequest) ToWhatsappAttachment() (result models.QpToWhatsappAttachment) {
+func (source *SendRequest) ToWhatsappAttachment() (result media.QpToWhatsappAttachment) {
 	contentLength := len(source.Content)
 	if contentLength == 0 {
 		return

@@ -11,6 +11,7 @@ import (
 
 	api "github.com/nocodeleaks/quepasa/api"
 	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
+	media "github.com/nocodeleaks/quepasa/media"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -131,7 +132,7 @@ func GetAttachFromUploadedFile(r *http.Request, logentry *log.Entry) (attach *wh
 
 	attach.FileName = reader.Filename
 
-	result := &models.QpToWhatsappAttachment{Attach: attach}
+	result := &media.QpToWhatsappAttachment{Attach: attach}
 	result.AttachSecureAndCustomize()
 	result.AttachImageTreatment()
 	result.AttachAudioTreatment()

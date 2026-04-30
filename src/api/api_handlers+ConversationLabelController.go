@@ -117,7 +117,7 @@ func SPAServerConversationLabelController(w http.ResponseWriter, r *http.Request
 
 func handleConversationLabelCatalog(w http.ResponseWriter, r *http.Request, username string) {
 	response := &apiModels.ConversationLabelsResponse{}
-	store, err := getConversationLabelStoreOrError()
+	store, err := findConversationLabelStore()
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -257,7 +257,7 @@ func handleConversationLabelCatalog(w http.ResponseWriter, r *http.Request, user
 
 func handleConversationChatLabels(w http.ResponseWriter, r *http.Request, username string, serverToken string) {
 	response := &apiModels.ConversationLabelsResponse{}
-	store, err := getConversationLabelStoreOrError()
+	store, err := findConversationLabelStore()
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -356,24 +356,7 @@ func handleConversationChatLabels(w http.ResponseWriter, r *http.Request, userna
 }
 
 func getConversationLabelServerRecord(r *http.Request) (*models.QpServer, error) {
-	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Servers == nil {
-		return nil, fmt.Errorf("database service not initialized")
-	}
-
-	token := strings.TrimSpace(GetToken(r))
-	if token == "" {
-		return nil, fmt.Errorf("missing token parameter")
-	}
-
-	return models.WhatsappService.DB.Servers.FindByToken(token)
-}
-
-func getConversationLabelStoreOrError() (models.QpDataConversationLabelsInterface, error) {
-	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.ConversationLabels == nil {
-		return nil, fmt.Errorf("conversation labels service not initialized")
-	}
-
-	return models.WhatsappService.DB.ConversationLabels, nil
+	return findPersistedServerRecord(GetToken(r))
 }
 
 func parseConversationLabelRequest(r *http.Request) (*conversationLabelRequest, error) {

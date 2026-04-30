@@ -12,6 +12,7 @@ import (
 
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"github.com/skip2/go-qrcode"
 )
@@ -42,7 +43,11 @@ func SPAServersController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbServers := models.WhatsappService.DB.Servers.FindAll()
+	dbServers, err := listPersistedServerRecords()
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusInternalServerError)
+		return
+	}
 	items := make([]map[string]interface{}, 0, len(dbServers))
 	for _, dbServer := range dbServers {
 		if dbServer == nil || dbServer.GetUser() != user.Username {
@@ -91,7 +96,11 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := strings.ToLower(strings.TrimSpace(req.Query))
-	dbServers := models.WhatsappService.DB.Servers.FindAll()
+	dbServers, err := listPersistedServerRecords()
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusInternalServerError)
+		return
+	}
 	items := make([]map[string]interface{}, 0, len(dbServers))
 	for _, dbServer := range dbServers {
 		if dbServer == nil || dbServer.GetUser() != user.Username {
@@ -150,7 +159,7 @@ func SPAAccountController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	servers := models.WhatsappService.GetServersForUser(user.Username)
+	servers := runtime.ListLiveSessionsForUser(user.Username)
 	RespondSuccess(w, map[string]interface{}{
 		"user":         user,
 		"serverCount":  len(servers),
@@ -340,7 +349,7 @@ func SPAUsersListController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := models.WhatsappService.DB.Users.FindAll()
+	users, err := runtime.ListPersistedUsers()
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusInternalServerError)
 		return

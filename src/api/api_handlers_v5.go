@@ -169,7 +169,7 @@ func CanonicalLabelSearchController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := getConversationLabelStoreOrError()
+	store, err := findConversationLabelStore()
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusInternalServerError)
 		return

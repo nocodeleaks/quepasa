@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	models "github.com/nocodeleaks/quepasa/models"
+	media "github.com/nocodeleaks/quepasa/media"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
@@ -152,8 +152,8 @@ func (request *sendMessageRequest) ToWhatsAppMessage() (*whatsapp.WhatsappMessag
 
 // ToWhatsAppAttachment builds the optional attachment payload and reuses the
 // shared attachment hardening helpers already used by the HTTP transport.
-func (request *sendMessageRequest) ToWhatsAppAttachment() models.QpToWhatsappAttachment {
-	var result models.QpToWhatsappAttachment
+func (request *sendMessageRequest) ToWhatsAppAttachment() media.QpToWhatsappAttachment {
+	var result media.QpToWhatsappAttachment
 	if len(request.Content) == 0 {
 		return result
 	}

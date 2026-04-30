@@ -5,12 +5,13 @@ import (
 	"time"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 // SPAServerEnableController starts a server through the SPA HTTP surface.
 //
-// The actual lifecycle logic stays in models.QpWhatsappServer.Start(). This handler
+// The actual lifecycle logic stays behind the runtime session entry point. This handler
 // only resolves the route token, translates errors into HTTP responses, and emits
 // a lightweight system message so active listeners can refresh UI state quickly.
 func SPAServerEnableController(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +24,7 @@ func SPAServerEnableController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = server.Start()
+	err = runtime.StartSession(server)
 	if err != nil {
 		response.ParseError(err)
 		RespondInterfaceCode(w, response, http.StatusInternalServerError)
@@ -62,7 +63,7 @@ func SPAServerDisableController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = server.Stop("disabled via api")
+	err = runtime.StopSession(server, "disabled via api")
 	if err != nil {
 		response.ParseError(err)
 		RespondInterfaceCode(w, response, http.StatusInternalServerError)

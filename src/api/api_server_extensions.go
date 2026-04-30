@@ -8,6 +8,7 @@ import (
 
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 /*
@@ -19,13 +20,13 @@ import (
 */
 func GetServer(r *http.Request) (server *models.QpWhatsappServer, err error) {
 	token := GetToken(r)
-	return models.GetServerFromToken(token)
+	return runtime.GetLiveSessionByToken(token)
 }
 
 // <summary>Find a whatsapp server by token passed on Url Path parameters</summary>
 func GetServerRespondOnError(w http.ResponseWriter, r *http.Request) (server *models.QpWhatsappServer, err error) {
 	token := GetToken(r)
-	server, err = models.GetServerFromToken(token)
+	server, err = runtime.GetLiveSessionByToken(token)
 	if err != nil {
 		RespondNotFound(w, fmt.Errorf("token '%s' not found", token))
 	}
@@ -43,7 +44,7 @@ func GetServerFromMaster(r *http.Request) (server *models.QpWhatsappServer, err 
 		return nil, errors.New("dont even try to trick me, first strike")
 	}
 
-	return models.GetServerFirstAvailable()
+	return runtime.GetFirstReadySession()
 }
 
 // <summary>Checks if was passed a valid master key</summary>

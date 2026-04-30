@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // SPAServerCreateController creates a new pre-configured server owned by the SPA user.
@@ -39,41 +40,11 @@ func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	info := &models.QpServer{
-		Token: uuid.NewString(),
-	}
-	info.SetUser(user.Username)
+	patch := buildSessionConfigurationPatch(request)
+	info := runtime.BuildSessionRecord(uuid.NewString(), user.Username, patch)
 
-	if request != nil {
-		if request.Groups != nil {
-			info.Groups = *request.Groups
-		}
-		if request.Broadcasts != nil {
-			info.Broadcasts = *request.Broadcasts
-		}
-		if request.ReadReceipts != nil {
-			info.ReadReceipts = *request.ReadReceipts
-		}
-		if request.Calls != nil {
-			info.Calls = *request.Calls
-		}
-		if request.ReadUpdate != nil {
-			info.ReadUpdate = *request.ReadUpdate
-		}
-		if request.Devel != nil {
-			info.Devel = *request.Devel
-		}
-	}
-
-	server, err := models.WhatsappService.AppendNewServer(info)
+	server, err := runtime.CreateSessionRecord(info, "server created via SPA")
 	if err != nil {
-		response.ParseError(err)
-		RespondInterface(w, response)
-		return
-	}
-
-	if err := server.Save("server created via SPA"); err != nil {
-		delete(models.WhatsappService.Servers, info.Token)
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -144,7 +115,7 @@ func SPAServerUpdateController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(update) > 0 {
-		if err := server.Save("patching info via SPA"); err != nil {
+		if err := runtime.SaveSession(server, "patching info via SPA"); err != nil {
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -182,7 +153,7 @@ func SPAServerDeleteController(w http.ResponseWriter, r *http.Request) {
 
 	server := FindSPALiveServer(serverRecord.Token)
 	if server == nil {
-		server, err = models.WhatsappService.AppendNewServer(serverRecord)
+		server, err = runtime.LoadSessionRecord(serverRecord)
 		if err != nil {
 			response.ParseError(err)
 			RespondInterfaceCode(w, response, http.StatusInternalServerError)
@@ -190,7 +161,7 @@ func SPAServerDeleteController(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := models.WhatsappService.Delete(server, "spa"); err != nil {
+	if err := runtime.DeleteSessionRecord(server, "spa"); err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -220,7 +191,7 @@ func SPAServerDebugToggleController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := server.ToggleDevel(); err != nil {
+	if _, err := runtime.ToggleSessionDebug(server); err != nil {
 		RespondServerError(server, w, err)
 		return
 	}
@@ -271,33 +242,5 @@ func SPAServerOptionToggleController(w http.ResponseWriter, r *http.Request) {
 }
 
 func toggleSPAServerOption(server *models.QpWhatsappServer, option string) (bool, error) {
-	switch option {
-	case "groups":
-		if err := models.ToggleGroups(server); err != nil {
-			return false, err
-		}
-		return server.GetGroups(), nil
-	case "broadcasts":
-		if err := models.ToggleBroadcasts(server); err != nil {
-			return false, err
-		}
-		return server.GetBroadcasts(), nil
-	case "readreceipts":
-		if err := models.ToggleReadReceipts(server); err != nil {
-			return false, err
-		}
-		return server.GetReadReceipts(), nil
-	case "calls":
-		if err := models.ToggleCalls(server); err != nil {
-			return false, err
-		}
-		return server.GetCalls(), nil
-	case "readupdate":
-		if err := models.ToggleReadUpdate(server); err != nil {
-			return false, err
-		}
-		return server.ReadUpdate.Boolean(), nil
-	default:
-		return false, fmt.Errorf("unsupported option: %s", option)
-	}
+	return runtime.ToggleSessionOption(server, option)
 }

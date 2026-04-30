@@ -1,4 +1,4 @@
-package models
+package media
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
-	media "github.com/nocodeleaks/quepasa/media"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
@@ -15,6 +14,39 @@ import (
 type QpToWhatsappAttachment struct {
 	Attach *whatsapp.WhatsappAttachment
 	Debug  []string `json:"debug,omitempty"`
+}
+
+func IsValidExtensionFor(request string, content string) bool {
+	switch {
+	case
+		request == ".csv" && content == ".txt",
+		request == ".jpg" && content == ".jpeg",
+		request == ".jpeg" && content == ".jpg",
+		request == ".json" && content == ".txt",
+		request == ".oga" && content == ".webm",
+		request == ".oga" && content == ".ogx",
+		request == ".opus" && content == ".ogx",
+		request == ".ovpn" && content == ".txt",
+		request == ".pdf" && content == ".txt",
+		request == ".sql" && content == ".txt",
+		request == ".svg" && content == ".xml",
+		request == ".xml" && content == ".txt":
+		return true
+	}
+
+	return request == content
+}
+
+func IsCompatibleWithPTT(mime string) bool {
+	mimeOnly := strings.Split(mime, ";")[0]
+
+	for _, item := range whatsapp.WhatsappMIMEAudioPTTCompatible {
+		if item == mimeOnly {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
@@ -35,7 +67,7 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 
 	var requestExtension string
 	if len(attach.FileName) > 0 {
-		fileNameNormalized := strings.ToLower(attach.FileName) // important, because some bitches do capitalize filenames
+		fileNameNormalized := strings.ToLower(attach.FileName)
 		requestExtension = filepath.Ext(fileNameNormalized)
 		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] detected extension: %s, from filename: %s", requestExtension, attach.FileName))
 	} else if len(attach.Mimetype) > 0 {
@@ -47,8 +79,6 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 	}
 
 	if len(contentMime) > 0 {
-
-		// downloaded pdf, issue by @Marcelo
 		if attach.Mimetype == "application/x-www-form-urlencoded" && contentMime == "application/pdf" {
 			attach.Mimetype = contentMime
 			source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachSecureAndCustomize] updating downloaded mime type from content: %s", contentMime))
@@ -67,16 +97,13 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 		if success {
 			source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] content extension: %s", contentExtension))
 
-			// if was passed a filename without extension
 			if len(requestExtension) == 0 && len(attach.FileName) > 0 {
 				source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachSecureAndCustomize] missing extension for attachment (%s), using from content: %s :: content mime: %s", attach.FileName, contentExtension, contentMime))
 
 				attach.Mimetype = contentMime
 				attach.FileName += contentExtension
 			} else {
-				// validating mime information
 				if !IsValidExtensionFor(requestExtension, contentExtension) {
-					// invalid attachment
 					source.Debug = append(source.Debug, fmt.Sprintf("[warn][AttachSecureAndCustomize] invalid extension for attachment, request extension: %s (%s) != content extension: %s :: content mime: %s, revalidating for security", requestExtension, attach.FileName, contentExtension, contentMime))
 					attach.Mimetype = contentMime
 					attach.FileName = whatsapp.InvalidFilePrefix + library.GenerateFileNameFromMimeType(contentMime)
@@ -85,13 +112,11 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 		}
 	}
 
-	// setting a filename if not found before
 	if len(attach.FileName) == 0 {
 		attach.FileName = library.GenerateFileNameFromMimeType(attach.Mimetype)
 		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] empty file name, generating a new one based on mime type: %s, file name: %s", attach.Mimetype, attach.FileName))
 	}
 
-	// if pdf mime contains extra info
 	if strings.HasPrefix(attach.Mimetype, "application/pdf;") {
 		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachSecureAndCustomize] removing extra information from pdf mime type: %s", attach.Mimetype))
 		attach.Mimetype = strings.Split(attach.Mimetype, ";")[0]
@@ -100,12 +125,9 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 	source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] resolved mime type: %s, filename: %s", attach.Mimetype, attach.FileName))
 }
 
-// Audio Formatting ...
 func (source *QpToWhatsappAttachment) AttachAudioTreatmentTesting() {
-
-	if media.AreAudioToolsAvailable() {
-
-		audioInfo, err := media.GetAudioInfoFromBytes(*source.Attach.GetContent())
+	if AreAudioToolsAvailable() {
+		audioInfo, err := GetAudioInfoFromBytes(*source.Attach.GetContent())
 		if err != nil {
 			log.Errorf("Erro ao obter as informações de áudio a partir dos bytes: %v", err)
 			return
@@ -118,7 +140,7 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatmentTesting() {
 			}
 		}
 
-		source.Attach.WaveForm, err = media.GenerateWaveform(*source.Attach.GetContent())
+		source.Attach.WaveForm, err = GenerateWaveform(*source.Attach.GetContent())
 		if err != nil {
 			log.Errorf("error generating waveform from bytes: %v", err)
 			return
@@ -139,18 +161,15 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 		return
 	}
 
-	// Check if force audio as PTT is enabled
 	forceAudioAsPTT := environment.Settings.General.ForceAudioAsPTT
 
-	// If force PTT is enabled, convert non-PTT audio formats to OGG Opus via ffmpeg
-	// (MP3, AAC, MP4 audio, OGA, etc. - but NOT WAV, which is handled later without ffmpeg)
-	if forceAudioAsPTT && media.ShouldConvertToPTT(attach.Mimetype) {
+	if forceAudioAsPTT && ShouldConvertToPTT(attach.Mimetype) {
 		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachAudioTreatment] FORCE_AUDIO_AS_PTT enabled, converting %s to OGG Opus via ffmpeg", attach.Mimetype))
 
 		content := attach.GetContent()
 		if content != nil && len(*content) > 0 {
 			originalMime := attach.Mimetype
-			convertedData, err := media.ConvertToOggOpus(*content)
+			convertedData, err := ConvertToOggOpus(*content)
 			if err != nil {
 				source.Debug = append(source.Debug, fmt.Sprintf("[error][AttachAudioTreatment] failed to convert %s to OGG Opus: %v", originalMime, err))
 				log.Errorf("Failed to convert %s to OGG Opus: %v", originalMime, err)
@@ -160,7 +179,6 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 				attach.Mimetype = whatsapp.WhatsappPTTMime
 				attach.FileLength = uint64(len(convertedData))
 
-				// Update filename extension
 				if len(attach.FileName) > 0 {
 					ext := filepath.Ext(attach.FileName)
 					if len(ext) > 0 {
@@ -168,7 +186,6 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 					}
 				}
 
-				// Send as PTT compatible
 				attach.SetPTTCompatible(true)
 
 				source.Debug = append(source.Debug, fmt.Sprintf("[success][AttachAudioTreatment] converted to OGG Opus PTT. Original: %d bytes (%s), New: %d bytes (%s)", originalSize, originalMime, len(convertedData), whatsapp.WhatsappPTTMime))
@@ -178,34 +195,32 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 		}
 	}
 
-	if media.IsAudioMIMEType(source.Attach.Mimetype) {
+	if IsAudioMIMEType(source.Attach.Mimetype) {
 		source.AttachAudioTreatmentTesting()
 	}
 
 	if IsCompatibleWithPTT(attach.Mimetype) {
 		source.Debug = append(source.Debug, fmt.Sprintf("[trace][AttachAudioTreatment] mime type is compatible for ptt: %s", attach.Mimetype))
 
-		// set compatible audios to be sent as ptt
-		ForceCompatiblePTT := ENV.UseCompatibleMIMEsAsAudio()
-		if ForceCompatiblePTT && !attach.IsValidAudio() {
+		forceCompatiblePTT := environment.Settings.General.UseCompatibleMIMEsAsAudio()
+		if forceCompatiblePTT && !attach.IsValidAudio() {
 			source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachAudioTreatment] setting that it should be sent as ptt, regards its incompatible mime type: %s", attach.Mimetype))
 			attach.SetPTTCompatible(true)
 		}
 	}
 
 	if IsCompatibleWithPTT(attach.Mimetype) || attach.IsValidAudio() {
-		if ENV.Testing() {
+		if environment.Settings.General.Testing {
 			source.AudioDetails()
 		}
 	}
 }
 
 func (source *QpToWhatsappAttachment) AudioDetails() {
-	debug := media.GetAudioDetails(source.Attach)
+	debug := GetAudioDetails(source.Attach)
 	source.Debug = append(source.Debug, debug...)
 }
 
-// AttachImageTreatment handles image conversion, specifically PNG to JPG conversion
 func (source *QpToWhatsappAttachment) AttachImageTreatment() {
 	attach := source.Attach
 	if attach == nil {
@@ -213,36 +228,31 @@ func (source *QpToWhatsappAttachment) AttachImageTreatment() {
 		return
 	}
 
-	// Check if PNG to JPG conversion is enabled
 	if !environment.Settings.General.ConvertPNGToJPG {
 		source.Debug = append(source.Debug, "[trace][AttachImageTreatment] PNG to JPG conversion is disabled in settings, returning without image validation")
 		return
 	}
 
-	// Check if this is a PNG image that should be converted
-	if !media.ShouldConvertImage(attach.Mimetype, attach.FileName) {
+	if !ShouldConvertImage(attach.Mimetype, attach.FileName) {
 		source.Debug = append(source.Debug, fmt.Sprintf("[trace][AttachImageTreatment] PNG image conversion not required, current mime: %s, filename: %s", attach.Mimetype, attach.FileName))
 		return
 	}
 
 	source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachImageTreatment] PNG image detected, attempting conversion to JPG. Current mime: %s, filename: %s", attach.Mimetype, attach.FileName))
 
-	// Get the current content
 	content := attach.GetContent()
 	if content == nil || len(*content) == 0 {
 		source.Debug = append(source.Debug, "[warn][AttachImageTreatment] no content available for PNG conversion")
 		return
 	}
 
-	// Convert PNG to JPG
-	jpgData, newMime, err := media.ConvertPngToJpg(*content)
+	jpgData, newMime, err := ConvertPngToJpg(*content)
 	if err != nil {
 		source.Debug = append(source.Debug, fmt.Sprintf("[error][AttachImageTreatment] failed to convert PNG to JPG: %v", err))
 		log.Errorf("Failed to convert PNG to JPG: %v", err)
 		return
 	}
 
-	// Update attachment with converted data
 	originalSize := len(*content)
 	newSize := len(jpgData)
 
@@ -250,12 +260,10 @@ func (source *QpToWhatsappAttachment) AttachImageTreatment() {
 	attach.Mimetype = newMime
 	attach.FileLength = uint64(newSize)
 
-	// Update filename extension if needed
 	if len(attach.FileName) > 0 {
 		lowerFileName := strings.ToLower(attach.FileName)
 		if strings.HasSuffix(lowerFileName, ".png") {
-			// Remove .png extension (case-insensitive) and add .jpg
-			baseFileName := attach.FileName[:len(attach.FileName)-4] // Remove last 4 characters (.png or .PNG)
+			baseFileName := attach.FileName[:len(attach.FileName)-4]
 			attach.FileName = baseFileName + ".jpg"
 		}
 	}

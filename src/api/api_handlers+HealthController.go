@@ -8,6 +8,7 @@ import (
 	api "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 //region CONTROLLER - HEALTH
@@ -83,7 +84,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 
 	// Handle master key authentication first (higher priority)
 	if master {
-		healthItems := collectHealthItems(models.WhatsappService.Servers)
+		healthItems := collectHealthItems(runtime.ListLiveSessions())
 		response.Items = healthItems
 
 		// Calculate statistics
@@ -104,7 +105,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 	// Handle user/password authentication (user's servers view)
 	if username != "" && password != "" {
 		// Validate user credentials
-		user, err := models.WhatsappService.DB.Users.Check(username, password)
+		user, err := authenticatePersistedUser(username, password)
 		if err != nil {
 			response.Success = false
 			response.Status = fmt.Sprintf("invalid credentials: %s", err.Error())
@@ -113,12 +114,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Get all servers for this user
-		var userServers []api.HealthResponseItem
-		for _, server := range models.WhatsappService.Servers {
-			if server.GetUser() == user.Username {
-				userServers = append(userServers, api.NewHealthResponseItem(server))
-			}
-		}
+		userServers := collectHealthItems(runtime.ListLiveSessionsForUser(user.Username))
 
 		response.Items = userServers
 
@@ -200,7 +196,7 @@ func calculateHealthStats(items []api.HealthResponseItem) api.HealthStats {
 
 // collectHealthItems projects a server collection into API health items without
 // leaking transport DTOs into the shared runtime layer.
-func collectHealthItems(servers map[string]*models.QpWhatsappServer) []api.HealthResponseItem {
+func collectHealthItems(servers []*models.QpWhatsappServer) []api.HealthResponseItem {
 	items := make([]api.HealthResponseItem, 0, len(servers))
 	for _, server := range servers {
 		items = append(items, api.NewHealthResponseItem(server))

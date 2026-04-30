@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // restoreManualRequest is the payload expected by POST /restore/manual.
@@ -60,12 +60,7 @@ func RestoreDiagnoseController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if models.WhatsappService == nil {
-		RespondErrorCode(w, fmt.Errorf("whatsapp service not initialised"), http.StatusServiceUnavailable)
-		return
-	}
-
-	report, err := models.WhatsappService.DiagnoseOrphaned()
+	report, err := runtime.DiagnoseOrphanedSessions()
 	if err != nil {
 		RespondErrorCode(w, fmt.Errorf("diagnosis failed: %v", err), http.StatusInternalServerError)
 		return
@@ -110,12 +105,7 @@ func RestoreAutoController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if models.WhatsappService == nil {
-		RespondErrorCode(w, fmt.Errorf("whatsapp service not initialised"), http.StatusServiceUnavailable)
-		return
-	}
-
-	report, err := models.WhatsappService.RestoreOrphaned()
+	report, err := runtime.RestoreOrphanedSessions()
 	if err != nil {
 		RespondErrorCode(w, fmt.Errorf("auto restore failed: %v", err), http.StatusInternalServerError)
 		return
@@ -169,11 +159,6 @@ func RestoreManualController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if models.WhatsappService == nil {
-		RespondErrorCode(w, fmt.Errorf("whatsapp service not initialised"), http.StatusServiceUnavailable)
-		return
-	}
-
 	// Read and parse the request body.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -197,7 +182,7 @@ func RestoreManualController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := models.WhatsappService.RestoreManual(req.Token, req.JID); err != nil {
+	if err := runtime.RestoreSessionManually(req.Token, req.JID); err != nil {
 		RespondErrorCode(w, err, http.StatusInternalServerError)
 		return
 	}

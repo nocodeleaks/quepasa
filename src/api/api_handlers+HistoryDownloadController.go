@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
 	"google.golang.org/protobuf/proto"
@@ -125,7 +126,7 @@ func SPAServerHistoryDownloadController(w http.ResponseWriter, r *http.Request) 
 			attachment.Mimetype = "application/octet-stream"
 		}
 
-		if prefix, err := models.GetDownloadPrefixFromToken(server.Token); err == nil {
+		if prefix, err := runtime.GetSessionDownloadPrefix(server.Token); err == nil {
 			attachment.Url = prefix + "/" + msg.Id
 		}
 

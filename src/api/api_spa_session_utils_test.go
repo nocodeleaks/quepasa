@@ -80,6 +80,30 @@ func TestGetSPAOwnedSessionRecord_DelegatesUserOwnershipCheck(t *testing.T) {
 	}
 }
 
+func TestFindPersistedServerRecord_FallsBackToCaseInsensitiveScan(t *testing.T) {
+	prevService := models.WhatsappService
+	defer func() { models.WhatsappService = prevService }()
+
+	dbServer := &models.QpServer{Token: "owner-test"}
+	models.WhatsappService = &models.QPWhatsappService{
+		Servers: map[string]*models.QpWhatsappServer{},
+		DB: &models.QpDatabase{
+			Servers: &stubSessionServersData{
+				findByTokenResult: dbServer,
+			},
+		},
+	}
+
+	got, err := findPersistedServerRecord("OWNER-TEST")
+	if err != nil {
+		t.Fatalf("expected no error for case-insensitive lookup, got %v", err)
+	}
+
+	if got != dbServer {
+		t.Fatalf("expected the same persisted record instance")
+	}
+}
+
 // Stub for testing session record lookups
 type stubSessionServersData struct {
 	findByTokenResult *models.QpServer

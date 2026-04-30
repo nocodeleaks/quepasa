@@ -12,12 +12,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 )
 
 // GetSPAUser resolves the authenticated user for SPA-only routes from the JWT claims.
-//
 // This duplicates the minimum auth lookup logic from the form package so the API
 // layer can stay independent and avoid a package cycle with form.
 func GetSPAUser(r *http.Request) (*models.QpUser, error) {
@@ -31,7 +31,7 @@ func GetSPAUser(r *http.Request) (*models.QpUser, error) {
 		return nil, models.ErrFormUnauthenticated
 	}
 
-	return models.WhatsappService.DB.Users.Find(username)
+	return findPersistedUser(username)
 }
 
 // GetSPATokenParam returns the server token from a SPA route and validates presence.
@@ -54,21 +54,7 @@ func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServe
 		}
 	}
 
-	server, err := models.WhatsappService.DB.Servers.FindByToken(resolvedToken)
-	if err != nil {
-		for _, candidate := range models.WhatsappService.DB.Servers.FindAll() {
-			if candidate == nil {
-				continue
-			}
-
-			if strings.EqualFold(candidate.Token, resolvedToken) {
-				server = candidate
-				err = nil
-				break
-			}
-		}
-	}
-
+	server, err := findPersistedServerRecord(resolvedToken)
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +70,8 @@ func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServe
 // live state is not treated as an error because some SPA reads must still work for
 // disconnected servers that only exist in the database.
 func FindSPALiveServer(token string) *models.QpWhatsappServer {
-	server, err := models.WhatsappService.FindByToken(token)
-	if err != nil {
+	server, ok := runtime.FindLiveSessionByToken(token)
+	if !ok {
 		return nil
 	}
 	return server

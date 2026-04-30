@@ -372,7 +372,7 @@ func GetUser(r *http.Request) (*models.QpUser, error) {
 		return nil, ex
 	}
 
-	user, err := models.WhatsappService.DB.Users.Find(username)
+	user, err := findPersistedUser(username)
 	if err != nil {
 		ex := &ApiExceptionBase{Inner: err}
 		ex.Prependf("error for: %s", username)

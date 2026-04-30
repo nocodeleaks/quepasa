@@ -9,6 +9,7 @@ import (
 
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // CurrentAPIVersion is the latest versioned alias exposed by the legacy HTTP API.
@@ -49,17 +50,17 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 	action := library.GetRequestParameter(r, "action")
 	switch action {
 	case "start":
-		err = server.Start()
+		err = runtime.StartSession(server)
 		if err == nil {
 			response.ParseSuccess("started")
 		}
 	case "stop":
-		err = server.Stop("command")
+		err = runtime.StopSession(server, "command")
 		if err == nil {
 			response.ParseSuccess("stopped")
 		}
 	case "restart":
-		err = server.Restart()
+		err = runtime.RestartSession(server)
 		if err == nil {
 			response.ParseSuccess("restarted")
 		}
@@ -68,31 +69,31 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 	case "groups":
 		// These toggles remain part of the current command surface until the SPA
 		// fully owns configuration through explicit endpoints.
-		err := models.ToggleGroups(server)
+		_, err := runtime.ToggleSessionOption(server, "groups")
 		if err == nil {
 			message := "groups toggled: " + server.Groups.String()
 			response.ParseSuccess(message)
 		}
 	case "broadcasts":
-		err := models.ToggleBroadcasts(server)
+		_, err := runtime.ToggleSessionOption(server, "broadcasts")
 		if err == nil {
 			message := "broadcasts toggled: " + server.Broadcasts.String()
 			response.ParseSuccess(message)
 		}
 	case "readreceipts":
-		err := models.ToggleReadReceipts(server)
+		_, err := runtime.ToggleSessionOption(server, "readreceipts")
 		if err == nil {
 			message := "readreceipts toggled: " + server.ReadReceipts.String()
 			response.ParseSuccess(message)
 		}
 	case "calls":
-		err := models.ToggleCalls(server)
+		_, err := runtime.ToggleSessionOption(server, "calls")
 		if err == nil {
 			message := "calls toggled: " + server.Calls.String()
 			response.ParseSuccess(message)
 		}
 	case "debug":
-		_, err := server.ToggleDevel()
+		_, err := runtime.ToggleSessionDebug(server)
 		if err == nil {
 			message := "debug toggled: " + fmt.Sprintf("%t", server.Devel)
 			response.ParseSuccess(message)

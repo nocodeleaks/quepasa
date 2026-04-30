@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // GetSession returns the live WhatsApp session associated with the token in the request.
 func GetSession(r *http.Request) (*models.QpWhatsappSession, error) {
-	return models.GetSessionFromToken(GetToken(r))
+	return runtime.GetLiveSessionByToken(GetToken(r))
 }
 
 // GetSessionRespondOnError mirrors GetServerRespondOnError while exposing session naming.

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/nbutton23/zxcvbn-go"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
-	models "github.com/nocodeleaks/quepasa/models"
-	"github.com/nbutton23/zxcvbn-go"
-	"github.com/go-chi/chi/v5"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 type spaUserCreateRequest struct {
@@ -69,7 +69,7 @@ func SPAUserDeleteController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := models.WhatsappService.DB.Users.Count()
+	count, err := runtime.CountPersistedUsers()
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusInternalServerError)
 		return
@@ -80,7 +80,7 @@ func SPAUserDeleteController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := models.WhatsappService.DB.Users.Delete(username); err != nil {
+	if err := runtime.DeletePersistedUser(username); err != nil {
 		RespondErrorCode(w, err, http.StatusNotFound)
 		return
 	}
@@ -121,16 +121,11 @@ func createSPAUserFromRequest(r *http.Request) (string, error) {
 		return "", fmt.Errorf("password is too weak")
 	}
 
-	exists, err := models.WhatsappService.DB.Users.Exists(username)
-	if err != nil {
-		return "", err
-	}
-
-	if exists {
+	if _, err := findPersistedUser(username); err == nil {
 		return "", fmt.Errorf("user already exists: %s", username)
 	}
 
-	if _, err := models.WhatsappService.DB.Users.Create(username, password); err != nil {
+	if _, err := runtime.CreatePersistedUser(username, password); err != nil {
 		return "", err
 	}
 

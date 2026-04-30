@@ -70,7 +70,7 @@ func CanonicalLoginPostController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.WhatsappService.GetUser(username, password)
+	user, err := authenticatePersistedUser(username, password)
 	if err != nil {
 		RespondUnauthorized(w, err)
 		return

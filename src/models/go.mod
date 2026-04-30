@@ -6,6 +6,8 @@ replace github.com/nocodeleaks/quepasa/media => ../media
 
 replace github.com/nocodeleaks/quepasa/cache => ../cache
 
+replace github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+
 replace github.com/nocodeleaks/quepasa/library => ../library
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
@@ -29,6 +31,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
@@ -53,6 +56,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
@@ -79,6 +83,7 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
+	github.com/redis/go-redis/v9 v9.7.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
 	github.com/teivah/onecontext v1.3.0 // indirect

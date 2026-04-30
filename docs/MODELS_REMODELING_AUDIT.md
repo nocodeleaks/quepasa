@@ -37,8 +37,10 @@ Representative examples:
   Application/runtime service.
 - [src/models/qp_database.go](../src/models/qp_database.go)
   Persistence and migrations.
-- [src/models/qp_send_request+extras.go](../src/models/qp_send_request+extras.go)
-  Transport-adjacent send helpers still living in the shared package.
+- [src/media/attachment_pipeline.go](../src/media/attachment_pipeline.go)
+  Shared attachment hardening implementation extracted out of `models`.
+- [src/models/qp_to_whatsapp_attachment_alias.go](../src/models/qp_to_whatsapp_attachment_alias.go)
+  Compatibility alias and wrappers preserved for older callers.
 - [src/models/qp_contact_manager.go](../src/models/qp_contact_manager.go)
   Adapter around WhatsMeow-facing contact access.
 
@@ -371,18 +373,19 @@ Rule:
 After the form view-model extraction, the first API response DTO extraction,
 the migration of the main send/receive and health contracts into `src/api/models`,
 the migration of contact search/account/info patch/poll request contracts into
-`src/api`, and the removal of obsolete `v1`/`v2` compatibility types from
-`models`, the next safest move is:
+`src/api`, the removal of obsolete `v1`/`v2` compatibility types from
+`models`, and the extraction of shared attachment hardening into `src/media`,
+the next safest move is:
 
-- continue removing the remaining transport-adjacent request helpers from
-  `models`
+- shift attention from transport residue to runtime/application separation
 
 Priority candidates:
 
-- transport-only helpers still attached to `qp_send_request+extras.go`
+- narrow runtime orchestration seams that still sit in `models`
+- explicit application/use-case entry points around session lifecycle and send flows
 
-This keeps the transport boundary moving in the right direction before touching
-the heavier runtime/persistence split.
+This keeps `models` shrinking by responsibility before touching the heavier
+persistence split.
 
 ## Immediate Recommendation
 
@@ -416,5 +419,9 @@ Progress note:
 - `QpHealthResponseItem` was replaced by an API-local health item projection
 - `QpContactsSearchRequest`, `QpAccountUpdateRequest`, `QpInfoPatchRequest`,
   and `PollRequest` were moved out of `src/models` into `src/api`
-- transport-boundary cleanup in `models` is now mostly narrowed to
-  `qp_send_request+extras.go`
+- `qp_send_request+extras.go` was removed by consolidating its helpers before
+  the shared attachment implementation was moved into `src/media`
+- `QpToWhatsappAttachment` now lives in `src/media`, while `src/models`
+  preserves only a compatibility alias and helper wrappers
+- transport-boundary cleanup in `models` is no longer centered on attachment
+  hardening and can now move to runtime/application boundaries

@@ -10,6 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 var (
@@ -176,7 +177,7 @@ func CreateTestServer(t *testing.T, token, username string) *models.QpWhatsappSe
 	}
 	serverInfo.SetUser(username)
 
-	server, err := models.WhatsappService.AppendNewServer(serverInfo)
+	server, err := runtime.LoadSessionRecord(serverInfo)
 	if err != nil {
 		t.Fatalf("Failed to create test server %s: %v", token, err)
 	}

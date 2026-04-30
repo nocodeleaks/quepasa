@@ -2,7 +2,7 @@
 
 > Generated: 2026-04-29  
 > Branch: develop  
-> Status: Draft
+> Status: Active working document
 
 ---
 

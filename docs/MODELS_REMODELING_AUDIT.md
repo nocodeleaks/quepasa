@@ -37,10 +37,10 @@ Representative examples:
   Application/runtime service.
 - [src/models/qp_database.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_database.go)
   Persistence and migrations.
-- [src/models/qp_form_account_data.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_form_account_data.go)
-  Legacy form view-model.
-- [src/models/qp_send_request.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_send_request.go)
-  HTTP request DTO plus conversion logic.
+- [src/models/qp_contacts_search_request.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_contacts_search_request.go)
+  HTTP request DTO still living in the shared package.
+- [src/models/qp_account_update_request.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_account_update_request.go)
+  Transport-shaped request payload still living in the shared package.
 - [src/models/qp_contact_manager.go](/abs/path/Z:/Desenvolvimento/nocodeleaks-quepasa/src/models/qp_contact_manager.go)
   Adapter around WhatsMeow-facing contact access.
 

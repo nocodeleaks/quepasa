@@ -508,12 +508,14 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 		}
 	} else if !msg.HasAttachment() {
 		// Text messages, buttons, polls
+		// NOTE: WhatsApp blocks ButtonsMessage (deprecated) and InteractiveMessage/NativeFlowMessage
+		// for accounts not connected via the official Business Cloud API. Both types are accepted by
+		// the send endpoint but never delivered. Convert $buttons:[...] to plain formatted text.
 		if IsValidForButtons(messageText) {
-			internal := GenerateButtonsMessage(messageText)
+			formattedText := ConvertButtonsToText(messageText)
+			internal := &waE2E.ExtendedTextMessage{Text: &formattedText}
 			internal.ContextInfo = source.GetContextInfo(*msg)
-			newMessage = &waE2E.Message{
-				ButtonsMessage: internal,
-			}
+			newMessage = &waE2E.Message{ExtendedTextMessage: internal}
 		} else {
 			if msg.Poll != nil {
 				newMessage, err = GeneratePollMessage(msg)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/nbutton23/zxcvbn-go"
 	library "github.com/nocodeleaks/quepasa/library"
-	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 func renderSetupForm(w http.ResponseWriter, data FormSetupData) {
@@ -80,7 +80,7 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.WhatsappService.DB.Users.Exists(email)
+	exists, err := runtime.ExistsPersistedUser(email)
 	if err != nil {
 		data.ErrorMessage = err.Error()
 		renderSetupForm(w, data)
@@ -93,7 +93,7 @@ func SetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = models.WhatsappService.DB.Users.Create(email, password)
+	_, err = runtime.CreatePersistedUser(email, password)
 	if err != nil {
 		data.ErrorMessage = err.Error()
 		renderSetupForm(w, data)

@@ -14,6 +14,7 @@ import (
 	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	log "github.com/sirupsen/logrus"
 )
@@ -93,7 +94,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.WhatsappService.GetUser(username, password)
+	user, err := runtime.AuthenticateUser(username, password)
 	if err != nil {
 		api.RespondUnauthorized(w, err)
 		return

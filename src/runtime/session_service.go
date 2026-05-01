@@ -22,6 +22,11 @@ var ErrNilSession = errors.New("session is nil")
 var ErrNilSessionInfo = errors.New("session info is nil")
 var ErrSessionServiceUnavailable = errors.New("whatsapp service is not initialised")
 
+// IsSessionServiceAvailable reports whether the shared runtime service has been initialised.
+func IsSessionServiceAvailable() bool {
+	return models.WhatsappService != nil
+}
+
 // StartSession is the explicit runtime entry point for session startup.
 func StartSession(session *models.QpWhatsappSession) error {
 	if session == nil {
@@ -157,6 +162,16 @@ func GetLiveSessionByToken(token string) (*models.QpWhatsappSession, error) {
 	return session, nil
 }
 
+// GetOrCreateLiveSessionByToken resolves a live session from cache or
+// materializes it from persistence when available.
+func GetOrCreateLiveSessionByToken(token string) (*models.QpWhatsappSession, error) {
+	if models.WhatsappService == nil {
+		return nil, ErrSessionServiceUnavailable
+	}
+
+	return models.WhatsappService.GetOrCreateSessionFromToken(strings.TrimSpace(token))
+}
+
 // GetFirstReadySession returns the first live session currently ready to serve requests.
 func GetFirstReadySession() (*models.QpWhatsappSession, error) {
 	if models.WhatsappService == nil {
@@ -263,6 +278,15 @@ func FindPersistedUser(username string) (*models.QpUser, error) {
 	}
 
 	return models.WhatsappService.DB.Users.Find(strings.TrimSpace(username))
+}
+
+// ExistsPersistedUser checks whether a persisted user exists by username.
+func ExistsPersistedUser(username string) (bool, error) {
+	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Users == nil {
+		return false, fmt.Errorf("user service not initialized")
+	}
+
+	return models.WhatsappService.DB.Users.Exists(strings.TrimSpace(username))
 }
 
 // AuthenticateUser resolves and authenticates a persisted user.

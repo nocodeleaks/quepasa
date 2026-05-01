@@ -248,6 +248,31 @@ func TestFindPersistedUserNilServiceReturnsError(t *testing.T) {
 	}
 }
 
+func TestExistsPersistedUserDelegatesToUserStore(t *testing.T) {
+	previousService := models.WhatsappService
+	defer func() {
+		models.WhatsappService = previousService
+	}()
+
+	users := &stubRuntimeUsersData{existsResult: true}
+	models.WhatsappService = &models.QPWhatsappService{
+		DB: &models.QpDatabase{Users: users},
+	}
+
+	exists, err := ExistsPersistedUser(" owner@example.com ")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if !exists {
+		t.Fatalf("expected exists result to be true")
+	}
+
+	if users.existsUsername != "owner@example.com" {
+		t.Fatalf("expected trimmed username in exists check")
+	}
+}
+
 func TestUpdatePersistedUserPasswordDelegatesToUserStore(t *testing.T) {
 	previousService := models.WhatsappService
 	defer func() {
@@ -371,6 +396,29 @@ func TestGetConversationLabelStoreNilServiceReturnsError(t *testing.T) {
 	}
 }
 
+func TestGetOrCreateLiveSessionByTokenReturnsCachedSession(t *testing.T) {
+	previousService := models.WhatsappService
+	defer func() {
+		models.WhatsappService = previousService
+	}()
+
+	session := &models.QpWhatsappSession{QpServer: &models.QpServer{Token: "token-123"}}
+	models.WhatsappService = &models.QPWhatsappService{
+		Servers: map[string]*models.QpWhatsappServer{
+			session.Token: session,
+		},
+	}
+
+	found, err := GetOrCreateLiveSessionByToken(" token-123 ")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if found != session {
+		t.Fatalf("expected cached session instance")
+	}
+}
+
 func TestGetFirstReadySessionMissingReturnsNotFound(t *testing.T) {
 	previousService := models.WhatsappService
 	defer func() {
@@ -405,6 +453,7 @@ type stubRuntimeUsersData struct {
 	countResult            int
 	findAllResult          []*models.QpUser
 	existsResult           bool
+	existsUsername         string
 	createResult           *models.QpUser
 	createUsername         string
 	deleteUsername         string
@@ -419,7 +468,10 @@ func (s *stubRuntimeUsersData) Find(string) (*models.QpUser, error) {
 	return nil, fmt.Errorf("user not found")
 }
 
-func (s *stubRuntimeUsersData) Exists(string) (bool, error) { return s.existsResult, nil }
+func (s *stubRuntimeUsersData) Exists(username string) (bool, error) {
+	s.existsUsername = username
+	return s.existsResult, nil
+}
 
 func (s *stubRuntimeUsersData) Check(string, string) (*models.QpUser, error) {
 	return nil, fmt.Errorf("user not found")

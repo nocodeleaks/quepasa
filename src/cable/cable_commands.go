@@ -399,7 +399,7 @@ func getOwnedLiveServerForCommand(user *models.QpUser, raw json.RawMessage, crea
 	}
 
 	if createIfMissing {
-		return models.WhatsappService.GetOrCreateServerFromToken(token)
+		return runtime.GetOrCreateLiveSessionByToken(token)
 	}
 
 	return runtime.GetLiveSessionByToken(token)

@@ -51,7 +51,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		Timestamp: time.Now(),
 	}
 
-	if models.WhatsappService == nil {
+	if !runtime.IsSessionServiceAvailable() {
 		response.Success = false
 		response.Status = "whatsapp service not initialized"
 		RespondInterface(w, response)

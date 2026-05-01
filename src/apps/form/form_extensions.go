@@ -16,6 +16,7 @@ import (
 	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 func loginRedirectEndpointForRequest(r *http.Request) string {
@@ -290,7 +291,7 @@ func FormDeleteController(w http.ResponseWriter, r *http.Request) {
 			{
 				destination = FormAccountEndpoint
 				logentry.Warnf("delete requested by form !")
-				err = models.WhatsappService.Delete(server, "form")
+				err = runtime.DeleteSessionRecord(server, "form")
 			}
 		case "webhook":
 			{
@@ -356,7 +357,7 @@ func GetUserAndServer(w http.ResponseWriter, r *http.Request) (user *models.QpUs
 	r.ParseForm()
 
 	token := api.GetToken(r)
-	server, err = models.WhatsappService.FindByToken(token)
+	server, err = runtime.GetLiveSessionByToken(token)
 	if err != nil {
 		err = fmt.Errorf("get user and server error: %s", err.Error())
 		return
@@ -367,7 +368,7 @@ func GetUserAndServer(w http.ResponseWriter, r *http.Request) (user *models.QpUs
 
 func GetServerFromRequest(r *http.Request) (server *models.QpWhatsappServer, err error) {
 	token := api.GetToken(r)
-	return models.WhatsappService.FindByToken(token)
+	return runtime.GetLiveSessionByToken(token)
 }
 
 func GetDownloadPrefix(token string) (path string) {
@@ -390,5 +391,5 @@ func GetFormUser(r *http.Request) (*models.QpUser, error) {
 		return nil, models.ErrFormUnauthenticated
 	}
 
-	return models.WhatsappService.DB.Users.Find(user)
+	return runtime.FindPersistedUser(user)
 }

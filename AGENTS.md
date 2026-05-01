@@ -87,6 +87,9 @@ Perform a phased server→session naming migration across the QuePasa codebase t
 - ✅ **All direct `models.WhatsappService` access in API production code eliminated**; remaining occurrences are confined to `testing_setup.go` (test infrastructure only)
 - ✅ Runtime mcp slice: `tool_list_servers.go`, `tool_health.go`, `mcp_server.go` no longer access `models.WhatsappService` directly; use `runtime.ListLiveSessions` and `runtime.FindLiveSessionByToken`; `mcp/go.mod` updated with runtime require
 - ✅ Runtime cable slice: `cable_auth.go` and `cable_commands.go` no longer access `models.WhatsappService` directly; use `runtime.FindPersistedUser`, `runtime.GetLiveSessionByToken`, `runtime.FindPersistedSessionRecord`; `cable/go.mod` updated with runtime replace + require; `go mod tidy` synced; cable and mcp build validation passing (exit 0)
+- ✅ Runtime form slice: `form_handlers.go`, `form_account.go`, and `form_extensions.go` no longer access `models.WhatsappService` directly for user auth, user lookup/create, session lookup, or session delete; they now use `runtime.AuthenticateUser`, `runtime.FindPersistedUser`, `runtime.ExistsPersistedUser`, `runtime.CreatePersistedUser`, `runtime.GetLiveSessionByToken`, and `runtime.DeleteSessionRecord`; `apps/form/go.mod` synced with runtime require/replace; compile validation passing
+- ✅ Runtime helper slice: `ExistsPersistedUser` and `GetOrCreateLiveSessionByToken` added to `src/runtime`, with focused tests passing; `cable_commands.go` no longer calls `GetOrCreateServerFromToken` directly
+- ✅ Runtime health slice: `api_handlers+HealthController.go` no longer checks `models.WhatsappService` directly; it now uses `runtime.IsSessionServiceAvailable`, leaving `src/runtime/session_service.go` as the sole production boundary over `models.WhatsappService`
 
 **Layer 3b Implementation Details:**
 - Updated `src/api/api_handlers+SPAMessageController.go`:
@@ -119,7 +122,7 @@ Perform a phased server→session naming migration across the QuePasa codebase t
    - Phase 2: Transport Injection via ServiceContainer (P3) — deferred, globals work well
    - Phase 5: Explicit State Machine (P6) — ✅ COMPLETE (SessionIntent enum, all tests passing)
    - Phase 6: Decompose QpWhatsappServer (P2) — highest risk, do last
-  - Next cleanup candidate: continue reducing `models` by targeting runtime/application seams instead of shared attachment helpers
+  - Next cleanup candidate: decide whether the remaining direct `models.WhatsappService` usage inside `src/runtime/session_service.go` should stay as the canonical application-layer boundary or be split into narrower internal helpers/services.
 
 ## Immutable Constraints
 

@@ -14,6 +14,8 @@ replace github.com/nocodeleaks/quepasa/metrics => ../../metrics
 
 replace github.com/nocodeleaks/quepasa/models => ../../models
 
+replace github.com/nocodeleaks/quepasa/runtime => ../../runtime
+
 replace github.com/nocodeleaks/quepasa/whatsapp => ../../whatsapp
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../../whatsmeow
@@ -49,6 +51,7 @@ require (
 	github.com/nocodeleaks/quepasa/library v0.0.0
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0
+	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0

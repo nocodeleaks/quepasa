@@ -15,6 +15,7 @@ func registerCanonicalGroupRoutes(r chi.Router) {
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalGroupIDParam)).Put("/groups/participants", CanonicalGroupParticipantsController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalGroupIDParam)).Put("/groups/photo", CanonicalGroupPhotoController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalGroupIDParam)).Post("/groups/invite", CanonicalGroupInviteController)
+	r.With(withCanonicalParams(canonicalTokenParam, canonicalGroupIDParam)).Delete("/groups/invite", CanonicalGroupRevokeInviteController)
 }
 
 func CanonicalGroupsListController(w http.ResponseWriter, r *http.Request) {
@@ -37,4 +38,7 @@ func CanonicalGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 }
 func CanonicalGroupInviteController(w http.ResponseWriter, r *http.Request) {
 	SPAGroupInviteController(w, r)
+}
+func CanonicalGroupRevokeInviteController(w http.ResponseWriter, r *http.Request) {
+	SPAGroupRevokeInviteController(w, r)
 }

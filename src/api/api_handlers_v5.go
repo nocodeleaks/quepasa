@@ -103,6 +103,7 @@ func registerCanonicalProtectedRoutes(r chi.Router) {
 	registerCanonicalGroupRoutes(r)
 	registerCanonicalMediaRoutes(r)
 	registerCanonicalLabelRoutes(r)
+	registerCanonicalStatusRoutes(r)
 }
 
 // VersionController exposes the current backend version in the canonical system family.

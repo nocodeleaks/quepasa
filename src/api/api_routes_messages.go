@@ -13,6 +13,8 @@ func registerCanonicalMessageRoutes(r chi.Router) {
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalMessageIDParam), canonicalMethodOverride(http.MethodPut)).Patch("/messages", CanonicalMessageEditController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalMessageIDParam), requireOwnedServerToken()).Delete("/messages", CanonicalMessageDeleteController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalMessageIDParam), requireOwnedServerToken()).Post("/messages/retry", CanonicalMessageRetryController)
+	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Post("/messages/react", CanonicalMessageReactController)
+	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Delete("/messages/react", CanonicalMessageUnreactController)
 }
 
 func CanonicalMessagesListController(w http.ResponseWriter, r *http.Request) {
@@ -30,4 +32,10 @@ func CanonicalMessageEditController(w http.ResponseWriter, r *http.Request) {
 func CanonicalMessageDeleteController(w http.ResponseWriter, r *http.Request) { RevokeController(w, r) }
 func CanonicalMessageRetryController(w http.ResponseWriter, r *http.Request) {
 	RedispatchAPIHandler(w, r)
+}
+func CanonicalMessageReactController(w http.ResponseWriter, r *http.Request) {
+	SendReactionController(w, r)
+}
+func CanonicalMessageUnreactController(w http.ResponseWriter, r *http.Request) {
+	RemoveReactionController(w, r)
 }

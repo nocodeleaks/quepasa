@@ -115,7 +115,8 @@ func RegisterSPAControllers(r chi.Router) {
 	r.Put("/server/{token}/group/{groupid}/description", SPAGroupDescriptionController)
 	r.Put("/server/{token}/group/{groupid}/participants", SPAGroupParticipantsController)
 	r.Put("/server/{token}/group/{groupid}/photo", SPAGroupPhotoController)
-	r.Get("/server/{token}/group/{groupid}/invite", SPAGroupInviteController)
+	r.With(withCanonicalParams(canonicalGroupIDParam)).Get("/server/{token}/groups/invite", SPAGroupInviteController)
+	r.With(withCanonicalParams(canonicalGroupIDParam)).Delete("/server/{token}/groups/invite", SPAGroupRevokeInviteController)
 
 	// Current extracted SPA message/lifecycle/media actions.
 	r.Get("/server/{token}/messages", SPAServerMessagesController)

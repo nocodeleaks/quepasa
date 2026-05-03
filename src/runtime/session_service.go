@@ -1,4 +1,4 @@
-package runtime
+﻿package runtime
 
 import (
 	"errors"
@@ -280,7 +280,8 @@ func FindPersistedUser(username string) (*models.QpUser, error) {
 	return models.WhatsappService.DB.Users.Find(strings.TrimSpace(username))
 }
 
-// ExistsPersistedUser checks whether a persisted user exists by username.
+// ExistsPersistedUser checks if a persisted user exists in the database.
+// Delegates to models.WhatsappService.DB.Users.Exists when available.
 func ExistsPersistedUser(username string) (bool, error) {
 	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Users == nil {
 		return false, fmt.Errorf("user service not initialized")
@@ -528,4 +529,47 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 	}
 
 	return update, nil
+}
+
+// GetSessionPairingQRCode creates a pairing context for the given token and returns the raw
+// WhatsApp QR code string. The API layer is responsible for encoding to image if needed.
+func GetSessionPairingQRCode(token, username string, historySyncDays uint32) (string, error) {
+	pairing := &models.QpWhatsappPairing{
+		Token:           strings.TrimSpace(token),
+		Username:        strings.TrimSpace(username),
+		HistorySyncDays: historySyncDays,
+	}
+
+	conn, err := pairing.GetConnection()
+	if err != nil {
+		return "", err
+	}
+
+	raw := conn.GetWhatsAppQRCode()
+	if raw == "" {
+		return "", fmt.Errorf("empty QR code - session may already be connected")
+	}
+
+	return raw, nil
+}
+
+// PairSessionWithPhone initiates WhatsApp phone pairing and returns the 8-character pairing code.
+func PairSessionWithPhone(token, username, phone string, historySyncDays uint32) (string, error) {
+	phone = strings.TrimSpace(phone)
+	if phone == "" {
+		return "", fmt.Errorf("missing phone parameter")
+	}
+
+	pairing := &models.QpWhatsappPairing{
+		Token:           strings.TrimSpace(token),
+		Username:        strings.TrimSpace(username),
+		HistorySyncDays: historySyncDays,
+	}
+
+	conn, err := pairing.GetConnection()
+	if err != nil {
+		return "", err
+	}
+
+	return conn.PairPhone(phone)
 }

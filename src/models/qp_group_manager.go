@@ -171,6 +171,16 @@ func (gm *QpGroupManager) CreateGroupExtendedWithOptions(options map[string]inte
 	return groupManager.CreateGroupExtended(title, participantsRaw)
 }
 
+// RevokeInvite revokes the current group invite link and returns the new one.
+func (gm *QpGroupManager) RevokeInvite(groupId string) (string, error) {
+	groupManager, err := gm.getGroupManager()
+	if err != nil {
+		return "", err
+	}
+
+	return groupManager.RevokeInvite(groupId)
+}
+
 // LeaveGroup leaves a group by group ID
 func (gm *QpGroupManager) LeaveGroup(groupID string) error {
 	groupManager, err := gm.getGroupManager()

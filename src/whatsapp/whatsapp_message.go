@@ -79,6 +79,8 @@ type WhatsappMessage struct {
 	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
 
 	Exceptions []string `json:"exceptions,omitempty"`
+	// Unix timestamp (seconds) when the message expires; 0 means it never expires
+	ExpiresAt int64 `json:"expiresat,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP

@@ -573,6 +573,106 @@ const docTemplate = `{
                 }
             }
         },
+        "/contacts/block": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Blocks a WhatsApp contact by their JID/WID so they cannot send messages to this session.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Block contact",
+                "parameters": [
+                    {
+                        "description": "Contact to block",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.BlockContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Removes a previously placed block from a WhatsApp contact.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Unblock contact",
+                "parameters": [
+                    {
+                        "description": "Contact to unblock",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.BlockContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/download": {
             "get": {
                 "security": [
@@ -886,6 +986,90 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.GroupsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/invite": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves the current invite link for a WhatsApp group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group invite link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InviteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Revokes the current invite link for a WhatsApp group and returns the new one",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Revoke group invite link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InviteResponse"
                         }
                     },
                     "400": {
@@ -1889,6 +2073,106 @@ const docTemplate = `{
                 }
             }
         },
+        "/messages/react": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Sends an emoji reaction to a specific WhatsApp message. Send emoji=\"\" to remove an existing reaction.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send message reaction",
+                "parameters": [
+                    {
+                        "description": "Reaction request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ReactionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Removes an emoji reaction previously sent to a WhatsApp message.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Remove message reaction",
+                "parameters": [
+                    {
+                        "description": "Reaction request (emoji field is ignored)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ReactionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/paircode": {
             "get": {
                 "security": [
@@ -2716,6 +3000,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/status/publish": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Publishes a WhatsApp status (story). Send text for text-only status, or include an attachment for media status (image/video). The story expires after 24 hours on WhatsApp servers.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Publish WhatsApp status",
+                "parameters": [
+                    {
+                        "description": "Status publish request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusPublishRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/useridentifier": {
             "get": {
                 "security": [
@@ -2999,6 +3334,15 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.BlockContactRequest": {
+            "type": "object",
+            "properties": {
+                "wid": {
+                    "description": "Wid is the WhatsApp ID (JID) of the contact to block or unblock.\nExample: \"5511999999999@s.whatsapp.net\"",
+                    "type": "string"
+                }
+            }
+        },
         "api.ChatArchiveRequest": {
             "type": "object",
             "properties": {
@@ -3487,6 +3831,27 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ReactionRequest": {
+            "type": "object",
+            "properties": {
+                "chatid": {
+                    "description": "ChatId is the conversation that contains the target message.",
+                    "type": "string"
+                },
+                "emoji": {
+                    "description": "Emoji is the reaction emoji (e.g. \"👍\"). Send empty string to remove reaction.",
+                    "type": "string"
+                },
+                "fromme": {
+                    "description": "FromMe indicates whether the target message was sent by the session owner.\nRequired to build the correct WhatsApp message key.",
+                    "type": "boolean"
+                },
+                "messageid": {
+                    "description": "MessageId is the ID of the message to react to.",
+                    "type": "string"
+                }
+            }
+        },
         "api.ReceiveResponse": {
             "type": "object",
             "properties": {
@@ -3608,6 +3973,23 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.StatusPublishRequest": {
+            "type": "object",
+            "properties": {
+                "attachment": {
+                    "description": "Attachment is optional. When provided, the status becomes a media story (image or video).\nLeave nil to publish a text-only status.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappAttachment"
+                        }
+                    ]
+                },
+                "text": {
+                    "description": "Text is the caption for media status, or the full content for text-only status.",
+                    "type": "string"
                 }
             }
         },
@@ -4932,6 +5314,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "expiresat": {
+                    "description": "Unix timestamp (seconds) when the message expires; 0 means it never expires",
+                    "type": "integer"
                 },
                 "forwardingscore": {
                     "description": "How many times this message was forwarded",

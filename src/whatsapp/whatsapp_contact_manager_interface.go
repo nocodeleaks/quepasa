@@ -23,6 +23,12 @@ type WhatsappContactManagerInterface interface {
 
 	// Get comprehensive user information for given JIDs
 	GetUserInfo(jids []string) ([]interface{}, error)
+
+	// BlockContact blocks a contact by WID/JID.
+	BlockContact(wid string) error
+
+	// UnblockContact unblocks a previously blocked contact by WID/JID.
+	UnblockContact(wid string) error
 }
 
 // IWhatsappConnectionWithContacts extends IWhatsappConnection with contact management

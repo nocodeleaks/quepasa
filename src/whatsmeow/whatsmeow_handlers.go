@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	qpevents "github.com/nocodeleaks/quepasa/events"
 	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
@@ -281,6 +282,15 @@ func (source *WhatsmeowHandlers) onConnectFailureEvent(evt *events.ConnectFailur
 		details = fmt.Sprintf("%s, Message: %s", details, evt.Message)
 	}
 	source.GetLogger().Warnf("connect failure: %s", details)
+	qpevents.Publish(qpevents.Event{
+		Name:   "whatsapp.connect.failure",
+		Source: "whatsmeow.handlers",
+		Status: "error",
+		Attributes: map[string]string{
+			"reason":  reasonStr,
+			"details": details,
+		},
+	})
 	if source.hasWAHandlers() {
 		go source.WAHandlers.OnDisconnected("connect_failure", details)
 	}
@@ -290,6 +300,15 @@ func (source *WhatsmeowHandlers) onConnectFailureEvent(evt *events.ConnectFailur
 func (source *WhatsmeowHandlers) onStreamErrorEvent(evt *events.StreamError) {
 	details := fmt.Sprintf("Error code: %s", evt.Code)
 	source.GetLogger().Warnf("stream error: %s", details)
+	qpevents.Publish(qpevents.Event{
+		Name:   "whatsapp.stream.error",
+		Source: "whatsmeow.handlers",
+		Status: "error",
+		Attributes: map[string]string{
+			"code":    evt.Code,
+			"details": details,
+		},
+	})
 	if source.hasWAHandlers() {
 		go source.WAHandlers.OnDisconnected("stream_error", details)
 	}
@@ -312,6 +331,17 @@ func (source *WhatsmeowHandlers) onTemporaryBanEvent(evt *events.TemporaryBan) {
 	}
 	details := fmt.Sprintf("Code: %d (%s), Expires: %v", evt.Code, banReason, evt.Expire)
 	source.GetLogger().Warnf("temporary ban: %s", details)
+	qpevents.Publish(qpevents.Event{
+		Name:   "whatsapp.ban.temporary",
+		Source: "whatsmeow.handlers",
+		Status: "error",
+		Attributes: map[string]string{
+			"code":    fmt.Sprintf("%d", evt.Code),
+			"reason":  banReason,
+			"expires": evt.Expire.String(),
+			"details": details,
+		},
+	})
 	if source.hasWAHandlers() {
 		go source.WAHandlers.OnDisconnected("temporary_ban", details)
 	}
@@ -581,6 +611,13 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 
 	// Process diferent message types
 	HandleKnowingMessages(handler, message, evt.Message)
+
+	// If whatsmeow auto-unwrapped an ephemeral (disappearing) message, capture the expiration time
+	if evt.IsEphemeral && message.ExpiresAt == 0 {
+		if expiration := extractExpirationFromMessage(evt.Message); expiration > 0 {
+			message.ExpiresAt = message.Timestamp.Unix() + int64(expiration)
+		}
+	}
 
 	// Process mentions using the centralized function
 	if message.FromGroup() && evt.Message != nil {

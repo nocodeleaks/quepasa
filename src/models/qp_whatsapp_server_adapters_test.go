@@ -6,7 +6,7 @@ import (
 
 // stubPresenceChecker is a test double for RealtimePresenceChecker.
 type stubPresenceChecker struct {
-	hasActive bool
+	hasActive    bool
 	queriedToken string
 }
 
@@ -78,7 +78,7 @@ func TestGlobalRabbitMQClientResolver_DefaultReturnsFalse(t *testing.T) {
 	server := &QpWhatsappServer{QpServer: &QpServer{Token: "tok-rmq"}}
 	_ = server // function under test is the global resolver itself
 
-	if GlobalRabbitMQClientResolver("amqp://guest@localhost/") {
+	if ResolveRabbitMQClient("amqp://guest@localhost/") {
 		t.Fatal("default resolver should return false when rabbitmq module is not wired")
 	}
 }
@@ -96,7 +96,7 @@ func TestGlobalRabbitMQClientResolver_CanBeInjected(t *testing.T) {
 	}
 
 	const wantConnStr = "amqp://user:pass@rmq:5672/vhost"
-	result := GlobalRabbitMQClientResolver(wantConnStr)
+	result := ResolveRabbitMQClient(wantConnStr)
 
 	if !called {
 		t.Fatal("injected resolver was not called")
@@ -106,5 +106,32 @@ func TestGlobalRabbitMQClientResolver_CanBeInjected(t *testing.T) {
 	}
 	if !result {
 		t.Fatal("injected resolver should return true")
+	}
+}
+
+func TestHasActiveRealtimeConnections_NilCheckerReturnsFalse(t *testing.T) {
+	prev := GlobalRealtimePresenceChecker
+	defer func() { GlobalRealtimePresenceChecker = prev }()
+
+	GlobalRealtimePresenceChecker = nil
+
+	if HasActiveRealtimeConnections("tok-standalone") {
+		t.Fatal("nil realtime presence checker should return false")
+	}
+}
+
+func TestHasActiveRealtimeConnections_DelegatesToChecker(t *testing.T) {
+	prev := GlobalRealtimePresenceChecker
+	defer func() { GlobalRealtimePresenceChecker = prev }()
+
+	stub := &stubPresenceChecker{hasActive: true}
+	GlobalRealtimePresenceChecker = stub
+
+	const wantToken = "tok-direct-helper"
+	if !HasActiveRealtimeConnections(wantToken) {
+		t.Fatal("expected helper to propagate true from realtime presence checker")
+	}
+	if stub.queriedToken != wantToken {
+		t.Errorf("expected checker to be called with token %q, got %q", wantToken, stub.queriedToken)
 	}
 }

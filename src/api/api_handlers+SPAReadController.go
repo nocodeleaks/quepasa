@@ -1,4 +1,4 @@
-package api
+﻿package api
 
 import (
 	"encoding/base64"
@@ -243,25 +243,15 @@ func SPAServerQRCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pairing, err := buildSPAPairing(user, token, r)
-	if err != nil {
-		RespondErrorCode(w, err, http.StatusBadRequest)
-		return
-	}
+	historySyncDays := parseSPAHistorySyncDays(r)
 
-	conn, err := pairing.GetConnection()
+	rawCode, err := runtime.GetSessionPairingQRCode(token, user.Username, historySyncDays)
 	if err != nil {
 		RespondInterface(w, err)
 		return
 	}
 
-	qrCode := conn.GetWhatsAppQRCode()
-	if qrCode == "" {
-		RespondErrorCode(w, errors.New("empty QR code - server may already be connected"), http.StatusBadRequest)
-		return
-	}
-
-	png, err := qrcode.Encode(qrCode, qrcode.Medium, 256)
+	png, err := qrcode.Encode(rawCode, qrcode.Medium, 256)
 	if err != nil {
 		RespondInterface(w, err)
 		return
@@ -272,7 +262,7 @@ func SPAServerQRCodeController(w http.ResponseWriter, r *http.Request) {
 		"connected": false,
 		"token":     dbServer.Token,
 		"qrcode":    "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
-		"rawcode":   qrCode,
+		"rawcode":   rawCode,
 	})
 }
 
@@ -316,19 +306,9 @@ func SPAServerPairCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pairing, err := buildSPAPairing(user, token, r)
-	if err != nil {
-		RespondErrorCode(w, err, http.StatusBadRequest)
-		return
-	}
+	historySyncDays := parseSPAHistorySyncDays(r)
 
-	conn, err := pairing.GetConnection()
-	if err != nil {
-		RespondInterface(w, err)
-		return
-	}
-
-	pairCode, err := conn.PairPhone(phone)
+	pairCode, err := runtime.PairSessionWithPhone(token, user.Username, phone, historySyncDays)
 	if err != nil {
 		RespondInterface(w, err)
 		return
@@ -461,22 +441,17 @@ func SPAServerGroupsController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// buildSPAPairing rebuilds the pairing context used by QR/pair-code reads.
-func buildSPAPairing(user *models.QpUser, token string, r *http.Request) (*models.QpWhatsappPairing, error) {
-	historySyncDays := uint32(0)
-	if raw := strings.TrimSpace(r.URL.Query().Get("historysyncdays")); raw != "" {
-		value, err := strconv.ParseUint(raw, 10, 32)
-		if err != nil {
-			return nil, fmt.Errorf("invalid historysyncdays value")
-		}
-		historySyncDays = uint32(value)
+// parseSPAHistorySyncDays extracts and validates the historysyncdays query parameter.
+func parseSPAHistorySyncDays(r *http.Request) uint32 {
+	raw := strings.TrimSpace(r.URL.Query().Get("historysyncdays"))
+	if raw == "" {
+		return 0
 	}
-
-	return &models.QpWhatsappPairing{
-		Token:           token,
-		Username:        user.Username,
-		HistorySyncDays: historySyncDays,
-	}, nil
+	value, err := strconv.ParseUint(raw, 10, 32)
+	if err != nil {
+		return 0
+	}
+	return uint32(value)
 }
 
 // formatSPAPairCode groups the raw pairing code for readability in the SPA.

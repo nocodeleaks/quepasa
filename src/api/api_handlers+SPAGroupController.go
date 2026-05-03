@@ -375,3 +375,27 @@ func SPAGroupInviteController(w http.ResponseWriter, r *http.Request) {
 	response.Url = url
 	RespondSuccess(w, response)
 }
+
+// SPAGroupRevokeInviteController revokes the current invite link and returns the new one.
+func SPAGroupRevokeInviteController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+	if !ok {
+		return
+	}
+
+	groupID, err := getSPAGroupIDParam(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	url, err := server.GetGroupManager().RevokeInvite(groupID)
+	if err != nil {
+		RespondServerError(server, w, err)
+		return
+	}
+
+	response := &apiModels.InviteResponse{}
+	response.Url = url
+	RespondSuccess(w, response)
+}

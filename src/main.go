@@ -84,27 +84,31 @@ func main() {
 	dbParameters := environment.Settings.Database.GetDBParameters()
 	whatsmeow.Start(options, dbParameters, logentry)
 
-	// Inject realtime presence adapter so models remain transport-agnostic.
-	models.GlobalRealtimePresenceChecker = signalr.SignalRHub
-	models.GlobalDispatchingLifecyclePublisher = runtime.NewDispatchingLifecyclePublisher()
-	models.GlobalRabbitMQGetClient = func(connectionString string) models.RabbitMQPublisherClient {
-		return rabbitmq.GetRabbitMQClient(connectionString)
-	}
-	models.GlobalRabbitMQCloseClient = rabbitmq.CloseRabbitMQClient
-	models.GlobalRabbitMQInjectQueueBackend = func() {
-		if rabbitmq.RabbitMQClientInstance != nil {
-			rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
-		}
-	}
-	models.GlobalRabbitMQExchangeName = rabbitmq.QuePasaExchangeName
-	models.GlobalRabbitMQRoutingKeyProd = rabbitmq.QuePasaRoutingKeyProd
-	models.GlobalRabbitMQRoutingKeyHistory = rabbitmq.QuePasaRoutingKeyHistory
-	models.GlobalRabbitMQRoutingKeyEvents = rabbitmq.QuePasaRoutingKeyEvents
-	models.GlobalRabbitMQMessagesPublishedInc = func() { rabbitmq.MessagesPublished.Inc() }
-	models.GlobalRabbitMQMessagePublishErrorsInc = func() { rabbitmq.MessagePublishErrors.Inc() }
-	models.GlobalRabbitMQClientResolver = func(connectionString string) bool {
-		return rabbitmq.GetRabbitMQClient(connectionString) != nil
-	}
+	// Inject transport adapters so models remain transport-agnostic.
+	models.ApplyTransportServices(models.TransportServices{
+		RealtimePresenceChecker:       signalr.SignalRHub,
+		DispatchingLifecyclePublisher: runtime.NewDispatchingLifecyclePublisher(),
+		RabbitMQGetClient: func(connectionString string) models.RabbitMQPublisherClient {
+			return rabbitmq.GetRabbitMQClient(connectionString)
+		},
+		RabbitMQCloseClient: rabbitmq.CloseRabbitMQClient,
+		RabbitMQInjectQueueBackend: func() {
+			if rabbitmq.RabbitMQClientInstance != nil {
+				rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
+			}
+		},
+		RabbitMQExchangeName:         rabbitmq.QuePasaExchangeName,
+		RabbitMQRoutingKeyProd:       rabbitmq.QuePasaRoutingKeyProd,
+		RabbitMQRoutingKeyHistory:    rabbitmq.QuePasaRoutingKeyHistory,
+		RabbitMQRoutingKeyEvents:     rabbitmq.QuePasaRoutingKeyEvents,
+		RabbitMQMessagesPublishedInc: func() { rabbitmq.MessagesPublished.Inc() },
+		RabbitMQMessagePublishErrorsInc: func() {
+			rabbitmq.MessagePublishErrors.Inc()
+		},
+		RabbitMQClientResolver: func(connectionString string) bool {
+			return rabbitmq.GetRabbitMQClient(connectionString) != nil
+		},
+	})
 
 	// must execute after whatsmeow started
 	for _, element := range models.Running {

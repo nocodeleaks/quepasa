@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  api.BlockContactRequest:
+    properties:
+      wid:
+        description: |-
+          Wid is the WhatsApp ID (JID) of the contact to block or unblock.
+          Example: "5511999999999@s.whatsapp.net"
+        type: string
+    type: object
   api.ChatArchiveRequest:
     properties:
       archive:
@@ -317,6 +325,24 @@ definitions:
       success:
         type: boolean
     type: object
+  api.ReactionRequest:
+    properties:
+      chatid:
+        description: ChatId is the conversation that contains the target message.
+        type: string
+      emoji:
+        description: "Emoji is the reaction emoji (e.g. \"\U0001F44D\"). Send empty
+          string to remove reaction."
+        type: string
+      fromme:
+        description: |-
+          FromMe indicates whether the target message was sent by the session owner.
+          Required to build the correct WhatsApp message key.
+        type: boolean
+      messageid:
+        description: MessageId is the ID of the message to react to.
+        type: string
+    type: object
   api.ReceiveResponse:
     properties:
       debug:
@@ -399,6 +425,19 @@ definitions:
         type: boolean
       total:
         type: integer
+    type: object
+  api.StatusPublishRequest:
+    properties:
+      attachment:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappAttachment'
+        description: |-
+          Attachment is optional. When provided, the status becomes a media story (image or video).
+          Leave nil to publish a text-only status.
+      text:
+        description: Text is the caption for media status, or the full content for
+          text-only status.
+        type: string
     type: object
   api.UserInfoRequest:
     properties:
@@ -1286,6 +1325,10 @@ definitions:
         items:
           type: string
         type: array
+      expiresat:
+        description: Unix timestamp (seconds) when the message expires; 0 means it
+          never expires
+        type: integer
       forwardingscore:
         description: How many times this message was forwarded
         type: integer
@@ -1827,6 +1870,70 @@ paths:
       summary: Get contacts
       tags:
       - Contacts
+  /contacts/block:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a previously placed block from a WhatsApp contact.
+      parameters:
+      - description: Contact to unblock
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.BlockContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Unblock contact
+      tags:
+      - Contacts
+    post:
+      consumes:
+      - application/json
+      description: Blocks a WhatsApp contact by their JID/WID so they cannot send
+        messages to this session.
+      parameters:
+      - description: Contact to block
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.BlockContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Block contact
+      tags:
+      - Contacts
   /download:
     get:
       description: Downloads media files (images, videos, documents) from WhatsApp
@@ -2030,6 +2137,60 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get all groups
+      tags:
+      - Groups
+  /groups/invite:
+    delete:
+      consumes:
+      - application/json
+      description: Revokes the current invite link for a WhatsApp group and returns
+        the new one
+      parameters:
+      - description: Group ID
+        in: query
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InviteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Revoke group invite link
+      tags:
+      - Groups
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current invite link for a WhatsApp group
+      parameters:
+      - description: Group ID
+        in: query
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InviteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get group invite link
       tags:
       - Groups
   /groups/leave:
@@ -2658,6 +2819,70 @@ paths:
       summary: Get message
       tags:
       - Message
+  /messages/react:
+    delete:
+      consumes:
+      - application/json
+      description: Removes an emoji reaction previously sent to a WhatsApp message.
+      parameters:
+      - description: Reaction request (emoji field is ignored)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ReactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove message reaction
+      tags:
+      - Messages
+    post:
+      consumes:
+      - application/json
+      description: Sends an emoji reaction to a specific WhatsApp message. Send emoji=""
+        to remove an existing reaction.
+      parameters:
+      - description: Reaction request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ReactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send message reaction
+      tags:
+      - Messages
   /paircode:
     get:
       description: Generates a pairing code for WhatsApp authentication using phone
@@ -3292,6 +3517,40 @@ paths:
       summary: Send spam messages
       tags:
       - Application
+  /status/publish:
+    post:
+      consumes:
+      - application/json
+      description: Publishes a WhatsApp status (story). Send text for text-only status,
+        or include an attachment for media status (image/video). The story expires
+        after 24 hours on WhatsApp servers.
+      parameters:
+      - description: Status publish request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.StatusPublishRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Publish WhatsApp status
+      tags:
+      - Status
   /useridentifier:
     get:
       consumes:

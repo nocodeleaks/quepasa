@@ -34,20 +34,14 @@ func TestHasDispatchingSubscriber_OnlyForMarkedSubscriber(t *testing.T) {
 }
 
 func TestPublishRealtimeLifecycle_UsesInjectedPublisher(t *testing.T) {
-	previousPublisher := GlobalDispatchingLifecyclePublisher
-	defer func() {
-		GlobalDispatchingLifecyclePublisher = previousPublisher
-	}()
-
 	capture := &captureLifecyclePublisher{}
-	GlobalDispatchingLifecyclePublisher = capture
 
 	server := &QpWhatsappServer{QpServer: &QpServer{Token: "token-123"}}
 	server.QpServer.SetWId("5511999999999@s.whatsapp.net")
 	server.QpServer.SetUser("integration-user")
 	server.Verified = true
 
-	handler := &DispatchingHandler{server: server}
+	handler := &DispatchingHandler{server: server, lifecyclePublisher: capture}
 	lifecycle := NewLifecycleHandler(handler)
 	lifecycle.publishRealtimeLifecycle("connected", "", "")
 

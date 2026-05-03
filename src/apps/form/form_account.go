@@ -16,13 +16,6 @@ func renderSetupForm(w http.ResponseWriter, data FormSetupData) {
 
 // SetupFormHandler renders route GET "/setup"
 func SetupFormHandler(w http.ResponseWriter, r *http.Request) {
-	/* temporarily removed to permit multiple users
-	count, err := WhatsappService.DB.User.Count()
-	if count > 0 || err != nil {
-		RedirectToLogin(w, r)
-		return
-	}
-	*/
 	data := FormSetupData{
 		PageTitle: "Setup - Quepasa",
 	}
@@ -32,13 +25,6 @@ func SetupFormHandler(w http.ResponseWriter, r *http.Request) {
 
 // SetupHandler renders route POST "/setup"
 func SetupHandler(w http.ResponseWriter, r *http.Request) {
-	/* temporarily removed to permit multiple users
-	count, err := WhatsappService.DB.User.Count()
-	if count > 0 || err != nil {
-		RedirectToLogin(w, r)
-		return
-	}
-	*/
 	data := FormSetupData{
 		PageTitle: "Setup - Quepasa",
 	}

@@ -132,6 +132,11 @@ func (source *WhatsmeowHandlers) buildRouter() *EventRouter {
 		go OnEventContact(source, *evt)
 	})
 
+	r.register(reflect.TypeOf(&events.Blocklist{}), func(raw interface{}) {
+		evt := raw.(*events.Blocklist)
+		go OnEventBlocklist(source, *evt)
+	})
+
 	r.register(reflect.TypeOf(&events.PairError{}), func(raw interface{}) {
 		evt := raw.(*events.PairError)
 		source.GetLogger().Errorf("pair error event: %v", evt)
@@ -168,6 +173,8 @@ func (source *WhatsmeowHandlers) buildRouter() *EventRouter {
 	r.register(reflect.TypeOf(&events.Pin{}), unimplementedHandler)
 	r.register(reflect.TypeOf(&events.PushName{}), unimplementedHandler)
 	r.register(reflect.TypeOf(&events.GroupInfo{}), unimplementedHandler)
+	r.register(reflect.TypeOf(&events.UserAbout{}), unimplementedHandler)
+	r.register(reflect.TypeOf(&events.UserStatusMute{}), unimplementedHandler)
 
 	r.register(reflect.TypeOf(&events.QR{}), func(raw interface{}) {
 		evt := raw.(*events.QR)

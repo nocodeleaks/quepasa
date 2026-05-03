@@ -31,7 +31,7 @@ func HandleKnowingMessages(handler *WhatsmeowHandlers, out *whatsapp.WhatsappMes
 	case in.ExtendedTextMessage != nil:
 		HandleExtendedTextMessage(logentry, out, in.ExtendedTextMessage)
 	case in.EphemeralMessage != nil:
-		HandleEphemeralMessage(logentry, out, in.EphemeralMessage)
+		HandleEphemeralMessage(handler, logentry, out, in.EphemeralMessage)
 	case in.ButtonsResponseMessage != nil:
 		HandleButtonsResponseMessage(logentry, out, in.ButtonsResponseMessage)
 	case in.LocationMessage != nil:
@@ -200,8 +200,57 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 }
 
 // temporary messages
-func HandleEphemeralMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.FutureProofMessage) {
-	logentry.Warnf("handling ephemeral message not implemented: %v", in)
+// extractExpirationFromMessage returns the expiration duration in seconds from a message's ContextInfo,
+// checking the most common message types that carry ContextInfo.
+func extractExpirationFromMessage(msg *waE2E.Message) uint32 {
+	if msg == nil {
+		return 0
+	}
+
+	var ctx *waE2E.ContextInfo
+	switch {
+	case msg.ExtendedTextMessage != nil:
+		ctx = msg.ExtendedTextMessage.GetContextInfo()
+	case msg.ImageMessage != nil:
+		ctx = msg.ImageMessage.GetContextInfo()
+	case msg.VideoMessage != nil:
+		ctx = msg.VideoMessage.GetContextInfo()
+	case msg.AudioMessage != nil:
+		ctx = msg.AudioMessage.GetContextInfo()
+	case msg.DocumentMessage != nil:
+		ctx = msg.DocumentMessage.GetContextInfo()
+	case msg.StickerMessage != nil:
+		ctx = msg.StickerMessage.GetContextInfo()
+	}
+
+	if ctx == nil {
+		return 0
+	}
+	return ctx.GetExpiration()
+}
+
+// HandleEphemeralMessage processes a disappearing (ephemeral) message by delegating to
+// HandleKnowingMessages for the inner content and then capturing the expiration duration.
+func HandleEphemeralMessage(handler *WhatsmeowHandlers, logentry *log.Entry, out *whatsapp.WhatsappMessage, in *waE2E.FutureProofMessage) {
+	if in == nil {
+		return
+	}
+
+	inner := in.GetMessage()
+	if inner == nil {
+		logentry.Warn("ephemeral message has no inner message")
+		return
+	}
+
+	// Process the inner message content using the same pipeline
+	HandleKnowingMessages(handler, out, inner)
+
+	// Capture expiration if available and not yet set
+	if out.ExpiresAt == 0 {
+		if expiration := extractExpirationFromMessage(inner); expiration > 0 {
+			out.ExpiresAt = out.Timestamp.Unix() + int64(expiration)
+		}
+	}
 }
 
 // Msg em resposta a outra
@@ -258,13 +307,13 @@ func HandleReactionMessage(log *log.Entry, out *whatsapp.WhatsappMessage, in *wa
 
 	out.Type = whatsapp.TextMessageType
 	out.Text = in.GetText()
-	
+
 	// marking as reaction
 	out.InReaction = true
-	
+
 	// setting the message ID being reacted to
 	out.InReply = in.Key.GetID()
-	
+
 	// If text is empty, it means the reaction was removed
 	if out.Text == "" {
 		out.Info = "reaction removed"

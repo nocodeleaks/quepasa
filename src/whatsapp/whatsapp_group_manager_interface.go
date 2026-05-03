@@ -6,6 +6,9 @@ type WhatsappGroupManagerInterface interface {
 	// Get group invite link
 	GetInvite(groupId string) (string, error)
 
+	// Revoke current invite link and return the new one
+	RevokeInvite(groupId string) (string, error)
+
 	// Get a list of all groups
 	GetJoinedGroups() ([]interface{}, error)
 

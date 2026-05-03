@@ -55,28 +55,23 @@ MessageContextInfo: &waE2E.MessageContextInfo{
 ### 🚨 **PRIORITY HIGH** - Quick wins with high user value
 
 #### 1. **📤 Message Reactions (Send)**
-- **Status**: Not started
-- **Current state**: Receiving reactions works; sending emoji reactions is missing
-- **Complexity**: Low
-- **Impact**: Users can automate emoji reactions to messages
-
-**Architecture analysis**:
-- Receive already works: `HandleReactionMessage()` sets `out.InReaction=true`, `out.InReply=msgID`, `out.Text=emoji`
-- Fields already exist in `WhatsappMessage`: `InReaction bool`, `InReply string`, `Text string`
-- Send: build `waE2E.ReactionMessage{Text: emoji, Key: {ID: msgID}}` and call `Client.SendMessage()`
-
-- **Files to create/modify**:
-  - [ ] `src/whatsmeow/whatsmeow_extensions+reactions.go` — `SendReaction(chatID, msgID, emoji)` + `RemoveReaction(chatID, msgID)`
-  - [ ] `src/api/api_handlers+ReactionsController.go` — API endpoint
-  - [ ] `src/api/` routes file — register route
-- **Endpoint**: `POST /api/messages/{messageId}/react` — body: `{token, chatid, emoji}`
+- **Status**: ✅ IMPLEMENTED
+- **Endpoint**: `POST /messages/react`
+- **Request**: `{"chatid": "...", "messageid": "...", "fromme": true, "emoji": "👍"}`
 - **Remove reaction**: send with `emoji=""` (WhatsApp clears it)
 
+**Files created/modified**:
+  - [x] `src/whatsmeow/whatsmeow_extensions+reactions.go` — `SendReaction(chatID, msgID, fromMe, emoji)` on `WhatsmeowConnection`
+  - [x] `src/whatsapp/whatsapp_connection_interface.go` — `SendReaction` added to `IWhatsappConnection`
+  - [x] `src/api/api_handlers+ReactionsController.go` — `SendReactionController`, `ReactionRequest` DTO
+  - [x] `src/api/api_routes_messages.go` — `POST /messages/react` route registered
+  - [x] Swagger regenerated
+
 **Checklist**:
-- [ ] `whatsmeow_extensions+reactions.go` with `SendReaction` and `RemoveReaction`
-- [ ] `api_handlers+ReactionsController.go`
-- [ ] Route registered in routes file
-- [ ] Regenerate Swagger after
+  - [x] `whatsmeow_extensions+reactions.go` with `SendReaction`
+  - [x] `api_handlers+ReactionsController.go`
+  - [x] Route registered in routes file
+  - [x] Swagger regenerated
 
 **⚠️ Risks**:
 - Emoji can be multi-codepoint unicode (e.g., family emoji = 7 codepoints) — validate as rune, not byte length
@@ -121,28 +116,22 @@ MessageContextInfo: &waE2E.MessageContextInfo{
 
 **Test**: Create broadcast, verify in WhatsApp, send message; confirm webhook receives (if reception enabled)
 
-#### 4. **🔐 Block/Unblock Contacts**
-- **Status**: Not started
-- **Current state**: Methods exist in whatsmeow (`BlockJID`, `UnblockJID`) but no API
+#### 4. **🔐 Block/Unblock Contacts** ✅ IMPLEMENTED
+- **Status**: Implemented
+- **Current state**: `BlockContact`/`UnblockContact` in interface, `WhatsmeowContactManager`, `QpContactManager`, and HTTP controller
 - **Complexity**: Low
 - **Impact**: Control access and privacy
 
-**Architecture analysis**:
-- `WhatsmeowContactManager` already exists — add 2 methods: `BlockContact(wid)` and `UnblockContact(wid)`
-- Parse JID → call `Client.BlockJID()` / `Client.UnblockJID()` → return error
-- Add methods to contact manager interface in `src/whatsapp/`
-
-- **Files to create/modify**:
-  - [ ] `src/whatsmeow/whatsmeow_contact_manager.go` — add `BlockContact` and `UnblockContact`
-  - [ ] `src/whatsapp/` contact interface — add method signatures
-  - [ ] `src/api/api_handlers+BlockController.go` — block/unblock endpoints
+**Files created/modified**:
+  - [x] `src/whatsmeow/whatsmeow_contact_manager.go` — `BlockContact` and `UnblockContact` using `Client.UpdateBlocklist`
+  - [x] `src/whatsmeow/whatsmeow_contact_manager_store.go` — stub methods (store-only access returns error)
+  - [x] `src/whatsapp/whatsapp_contact_manager_interface.go` — interface method signatures
+  - [x] `src/models/qp_contact_manager.go` — delegation to underlying contact manager
+  - [x] `src/api/api_handlers+BlockController.go` — `BlockContactController` and `UnblockContactController`
+  - [x] `src/api/api_routes_contacts.go` — routes registered
 - **Endpoints**:
-  - [ ] `POST /api/contacts/{contactId}/block`
-  - [ ] `DELETE /api/contacts/{contactId}/block` (unblock)
-
-**⚠️ Risks**:
-- `BlockJID` is NOT idempotent — may return error if contact is already blocked; handle gracefully
-- `UnblockJID` same — may error if not blocked
+  - [x] `POST /contacts/block` — body `{wid: "...@s.whatsapp.net"}`
+  - [x] `DELETE /contacts/block` — body `{wid: "...@s.whatsapp.net"}`
 
 **Test**: Block contact, verify status in WhatsApp; unblock, verify restored
 
@@ -151,75 +140,61 @@ MessageContextInfo: &waE2E.MessageContextInfo{
 ### ⚠️ **PRIORITY MEDIUM** - Enhancements & partial features
 
 #### 5. **📱 Ephemeral Messages (Disappearing)**
-- **Status**: Detected but not processed
-- **Current state**: Handler has comment: `"handling ephemeral message not implemented"`
-- **Location**: [whatsmeow_handlers_message_extensions.go](../src/whatsmeow/whatsmeow_handlers_message_extensions.go#L203)
-- **Complexity**: Low (but needs investigation first)
-- **Impact**: Properly flag and document disappearing messages in webhooks
 
 **Architecture analysis**:
-- `HandleEphemeralMessage()` receives `waE2E.FutureProofMessage` — this is a **generic future-proof type**, NOT exclusive to ephemeral/disappearing messages
-- May be View Once, Disappearing, or another future type
-- Expiration can be in `ContextInfo.Expiration` (seconds) OR `ContextInfo.EphemeralSettingTimestamp` (milliseconds) — inconsistent units
 
-- **Files to modify**:
-  - [ ] Investigate what `FutureProofMessage` contains at runtime (add debug logging first)
-  - [ ] Add `ExpiresAt int64` field to `WhatsappMessage` model (unix seconds, 0 = never)
-  - [ ] `whatsmeow_handlers_message_extensions.go` — implement real handling
-  - [ ] Include `ExpiresAt` in webhook payload
 
 **⚠️ Risks**:
-- `FutureProofMessage` is a catch-all wrapper — content type must be detected dynamically
-- Unit mismatch: `Expiration` field is seconds, `EphemeralSettingTimestamp` is milliseconds
 
 **Test**: Send disappearing message, verify `ExpiresAt > 0` in webhook payload
+#### 5. **📱 Ephemeral Messages (Disappearing)**
+- **Status**: ✅ IMPLEMENTED
+- **Current state**: `ExpiresAt` added to `WhatsappMessage`; normal flow uses `evt.IsEphemeral`; fallback `HandleEphemeralMessage` recursively processes inner message
+- **Complexity**: Low
+- **Impact**: Properly flag disappearing messages in webhooks with expiry timestamp
 
+**Architecture notes**:
+- whatsmeow auto-unwraps `EphemeralMessage` and sets `evt.IsEphemeral = true` in the normal flow
+- `extractExpirationFromMessage()` checks `ContextInfo.Expiration` (seconds) across all common message types
+- `ExpiresAt = message.Timestamp.Unix() + int64(expiration)` — absolute unix timestamp
+- Fallback `HandleEphemeralMessage` handles edge cases (history sync, re-requested messages) by recursively calling `HandleKnowingMessages` then setting `ExpiresAt`
 #### 6. **🔔 WhatsApp Status/Stories Support**
-- **Status**: Not started
-- **Current state**: No publish or view functionality
-- **Complexity**: Medium
-- **Impact**: Publish automated status updates
+- **Status**: ✅ IMPLEMENTED
+- **Current state**: `PublishStatus(text, attachment)` added to `IWhatsappConnection` and `WhatsmeowConnection`; sends to `types.StatusBroadcastJID`; text-only and media (image/video) stories supported; `UserAbout` and `UserStatusMute` events registered in router
 
-**Architecture analysis**:
-- Status is sent to the special JID `status@broadcast`
-- Media upload uses the same logic as normal messages but media type must be `whatsmeow.MediaStatusRoomImage` (special constant)
-- Receiving status updates requires adding `*events.StatusUpdate` handler in `EventsHandler()` — currently not present
-
-- **Files to create/modify**:
-  - [ ] `src/whatsmeow/whatsmeow_extensions+status.go` — `PublishStatus(attachment, caption, expiration)`
-  - [ ] `src/whatsmeow/whatsmeow_handlers.go` — add `*events.StatusUpdate` case in `EventsHandler`
-  - [ ] `src/api/api_handlers+StatusController.go` — API endpoints
+**Files created/modified**:
+  - [x] `src/whatsmeow/whatsmeow_extensions+status.go` — `PublishStatus` on `WhatsmeowConnection`
+  - [x] `src/whatsapp/whatsapp_connection_interface.go` — `PublishStatus` added to `IWhatsappConnection`
+  - [x] `src/api/api_handlers+StatusController.go` — `PublishStatusController`, `StatusPublishRequest` DTO
+  - [x] `src/api/api_routes_status.go` — `POST /status/publish` route registered
+  - [x] `src/whatsmeow/whatsmeow_event_router.go` — `UserAbout` and `UserStatusMute` events registered
+  - [x] Swagger regenerated
 - **Endpoints**:
-  - [ ] `POST /api/status/publish` — Publish status with media
-  - [ ] `GET /api/status/viewed` — Get viewing notifications
-  - [ ] `GET /api/status/list` — List contact statuses
+  - [x] `POST /status/publish` — body `{"text": "...", "attachment": {...}}`
 
-**⚠️ Risks**:
-- Privacy settings of the account control who sees the status — publishing succeeds but may be invisible to contacts if privacy settings are restrictive
-- Status expiry (24h) is handled by WhatsApp server, no need to manage locally
-
-**Test**: Publish status, verify visibility on another device
+**⚠️ Notes**:
+- Privacy settings of the account control who sees the status — publishing succeeds but visibility depends on account privacy settings
+- Status expiry (24h) is handled by WhatsApp server
+- Media types: image and video supported; audio/document not typical for status
 
 #### 7. **🎫 Group Invitation Links**
-- **Status**: Almost ready ✅ (backend exists, API endpoint missing)
-- **Current state**: `GetInvite()` already exists in `whatsmeow_group_manager.go` — just needs API exposure
+- **Status**: ✅ IMPLEMENTED
+- **Current state**: `GetInvite()` and `RevokeInvite()` both implemented and exposed via API
 - **Complexity**: Very low
-- **Impact**: Better group invite workflows — **recommended as first implementation**
+- **Impact**: Better group invite workflows
 
-**Architecture analysis**:
-- `WhatsmeowGroupManager.GetInvite(groupId)` calls `Client.GetGroupInviteLink(ctx, jid, false)` — already works
-- Revoke: same method with `revokeCurrentLink=true` parameter
-- `GroupsController` already has the server/group resolution pattern to follow
-
-- **Files to modify**:
-  - [ ] `src/whatsmeow/whatsmeow_group_manager.go` — add `RevokeInviteLink(groupId)` method
-  - [ ] `src/api/api_handlers+GroupsController.go` — add `GetGroupInviteLinkController` and `RevokeGroupInviteLinkController`
-  - [ ] Routes file — register endpoints
-- **New endpoints**:
-  - [ ] `GET /api/groups/{groupId}/invite-link` — Get current invite link
-  - [ ] `POST /api/groups/{groupId}/revoke-link` — Revoke link (generates new one)
-
-**Test**: Generate link → open in WhatsApp → join group; revoke → previous link becomes invalid
+**Files created/modified**:
+  - [x] `src/whatsapp/whatsapp_group_manager_interface.go` — `RevokeInvite` added to interface
+  - [x] `src/whatsmeow/whatsmeow_group_manager.go` — `RevokeInvite` calls `GetGroupInviteLink(ctx, jid, true)`
+  - [x] `src/models/qp_group_manager.go` — `RevokeInvite` delegates to underlying group manager
+  - [x] `src/api/api_handlers+SPAGroupController.go` — `SPAGroupRevokeInviteController`
+  - [x] `src/api/api_handlers+GroupsController.go` — `GetGroupInviteLinkController` + `RevokeGroupInviteLinkController` with Swagger
+  - [x] `src/api/api_spa_routes.go` — `DELETE /server/{token}/group/{groupid}/invite`
+  - [x] `src/api/api_routes_groups.go` — `DELETE /groups/invite` canonical alias
+  - [x] Swagger regenerated
+- **Endpoints**:
+  - [x] `GET /groups/invite?groupId=xxx` — Get current invite link
+  - [x] `DELETE /groups/invite?groupId=xxx` — Revoke link (generates new one)
 
 #### 8. **🔐 Privacy Settings (Granular)**
 - **Status**: Not started
@@ -278,7 +253,7 @@ MessageContextInfo: &waE2E.MessageContextInfo{
 | Ephemeral Messages Flag | 3-4h | Low (after investigation) | **#4** |
 
 - [ ] Group Invitation Links — expose `GetInvite()` to API
-- [ ] Contact Block/Unblock — add to ContactManager + controller
+- [x] Contact Block/Unblock — add to ContactManager + controller
 - [ ] Message Reactions (Send) — `whatsmeow_extensions+reactions.go` + controller
 - [ ] Ephemeral Messages — investigate `FutureProofMessage`, add `ExpiresAt` field
 

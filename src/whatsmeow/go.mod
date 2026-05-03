@@ -8,6 +8,8 @@ replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
 
 replace github.com/nocodeleaks/quepasa/library => ../library
 
+replace github.com/nocodeleaks/quepasa/events => ../events
+
 replace github.com/nocodeleaks/quepasa/metrics => ../metrics
 
 replace github.com/nocodeleaks/quepasa/api => ../api
@@ -34,6 +36,7 @@ go 1.25.0
 
 require (
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000

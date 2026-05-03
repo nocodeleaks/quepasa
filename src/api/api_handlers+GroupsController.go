@@ -663,3 +663,87 @@ func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
 	response.ParseSuccess("successfully left the group")
 	RespondSuccess(w, response)
 }
+
+//region CONTROLLER - GET GROUP INVITE LINK
+
+// GetGroupInviteLinkController retrieves the current invite link for a group
+//
+//	@Summary		Get group invite link
+//	@Description	Retrieves the current invite link for a WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			groupId	query		string	true	"Group ID"
+//	@Success		200		{object}	api.InviteResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/invite [get]
+func GetGroupInviteLinkController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	server, err := GetServer(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	groupId := library.GetRequestParameter(r, "groupid")
+	if !whatsapp.IsValidGroupId(groupId) {
+		RespondErrorCode(w, fmt.Errorf("invalid group id: %s", groupId), http.StatusBadRequest)
+		return
+	}
+
+	url, err := server.GetGroupManager().GetInvite(groupId)
+	if err != nil {
+		RespondServerError(server, w, err)
+		return
+	}
+
+	response := &apiModels.InviteResponse{}
+	response.Url = url
+	RespondSuccess(w, response)
+}
+
+//endregion
+
+//region CONTROLLER - REVOKE GROUP INVITE LINK
+
+// RevokeGroupInviteLinkController revokes the current invite link and returns the new one
+//
+//	@Summary		Revoke group invite link
+//	@Description	Revokes the current invite link for a WhatsApp group and returns the new one
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			groupId	query		string	true	"Group ID"
+//	@Success		200		{object}	api.InviteResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/invite [delete]
+func RevokeGroupInviteLinkController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	server, err := GetServer(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	groupId := library.GetRequestParameter(r, "groupid")
+	if !whatsapp.IsValidGroupId(groupId) {
+		RespondErrorCode(w, fmt.Errorf("invalid group id: %s", groupId), http.StatusBadRequest)
+		return
+	}
+
+	url, err := server.GetGroupManager().RevokeInvite(groupId)
+	if err != nil {
+		RespondServerError(server, w, err)
+		return
+	}
+
+	response := &apiModels.InviteResponse{}
+	response.Url = url
+	RespondSuccess(w, response)
+}
+
+//endregion

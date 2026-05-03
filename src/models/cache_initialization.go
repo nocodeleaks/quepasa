@@ -23,7 +23,7 @@ func InitializeCacheService() error {
 
 	// Delegate queue-backend injection to transport wiring.
 	log.Println("Injecting queue backend into RabbitMQ client...")
-	GlobalRabbitMQInjectQueueBackend()
+	InjectRabbitMQQueueBackend()
 
 	return nil
 }

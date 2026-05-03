@@ -102,3 +102,21 @@ func (cm *QpContactManager) GetUserInfo(jids []string) ([]interface{}, error) {
 	}
 	return contactManager.GetUserInfo(jids)
 }
+
+// BlockContact blocks a contact by their WID/JID.
+func (cm *QpContactManager) BlockContact(wid string) error {
+	contactManager, err := cm.getContactManager()
+	if err != nil {
+		return err
+	}
+	return contactManager.BlockContact(wid)
+}
+
+// UnblockContact removes a previously placed block from a contact.
+func (cm *QpContactManager) UnblockContact(wid string) error {
+	contactManager, err := cm.getContactManager()
+	if err != nil {
+		return err
+	}
+	return contactManager.UnblockContact(wid)
+}

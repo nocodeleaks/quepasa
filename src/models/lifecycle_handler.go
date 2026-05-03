@@ -241,7 +241,7 @@ func (lh *LifecycleHandler) publishRealtimeLifecycle(kind string, cause string, 
 		return
 	}
 
-	GlobalDispatchingLifecyclePublisher.PublishLifecycle(&DispatchingLifecycleEvent{
+	lh.dispatcher.LifecyclePublisher().PublishLifecycle(&DispatchingLifecycleEvent{
 		Kind:      kind,
 		Token:     lh.dispatcher.Server().Token,
 		User:      lh.dispatcher.Server().GetUser(),

@@ -17,7 +17,8 @@ type DispatchingHandler struct {
 
 	server *QpWhatsappServer
 
-	messageDispatcher *MessageDispatcher
+	messageDispatcher  *MessageDispatcher
+	lifecyclePublisher DispatchingLifecyclePublisher
 }
 
 // Server returns the underlying QpWhatsappServer instance.
@@ -94,6 +95,23 @@ func (noopDispatchingLifecyclePublisher) PublishLifecycle(event *DispatchingLife
 // GlobalDispatchingLifecyclePublisher is injected by runtime/bootstrap to keep
 // models independent from concrete lifecycle transport implementations.
 var GlobalDispatchingLifecyclePublisher DispatchingLifecyclePublisher = noopDispatchingLifecyclePublisher{}
+
+func PublishDispatchingLifecycle(event *DispatchingLifecycleEvent) {
+	transportServicesMu.RLock()
+	publisher := GlobalDispatchingLifecyclePublisher
+	transportServicesMu.RUnlock()
+	publisher.PublishLifecycle(event)
+}
+
+// LifecyclePublisher returns the per-handler lifecycle publisher when present,
+// falling back to the globally wired publisher for backward compatibility.
+func (handler *DispatchingHandler) LifecyclePublisher() DispatchingLifecyclePublisher {
+	if handler != nil && handler.lifecyclePublisher != nil {
+		return handler.lifecyclePublisher
+	}
+
+	return DefaultDispatchingLifecyclePublisher()
+}
 
 // Returns whatsapp controller id on E164
 // Ex: 5521967609494

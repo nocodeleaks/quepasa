@@ -9,6 +9,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	types "go.mau.fi/whatsmeow/types"
+	events "go.mau.fi/whatsmeow/types/events"
 )
 
 // Compile-time interface check
@@ -346,6 +347,36 @@ func (cm *WhatsmeowContactManager) GetUserInfo(jids []string) ([]interface{}, er
 	}
 
 	return result, nil
+}
+
+// BlockContact blocks a contact by their WID/JID so they cannot send messages to this account.
+func (cm *WhatsmeowContactManager) BlockContact(wid string) error {
+	if cm.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(wid)
+	if err != nil {
+		return fmt.Errorf("invalid contact id: %w", err)
+	}
+
+	_, err = cm.Client.UpdateBlocklist(context.Background(), jid, events.BlocklistChangeActionBlock)
+	return err
+}
+
+// UnblockContact removes a block previously placed on a contact.
+func (cm *WhatsmeowContactManager) UnblockContact(wid string) error {
+	if cm.Client == nil {
+		return fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(wid)
+	if err != nil {
+		return fmt.Errorf("invalid contact id: %w", err)
+	}
+
+	_, err = cm.Client.UpdateBlocklist(context.Background(), jid, events.BlocklistChangeActionUnblock)
+	return err
 }
 
 // GetPhoneFromContactId attempts to get phone number from contact Id using available mapping

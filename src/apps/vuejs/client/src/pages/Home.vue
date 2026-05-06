@@ -113,6 +113,8 @@
               <template v-if="isConnected(srv)">
                 <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                 <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
+                <li><router-link :to="`/server/${srv.token}/lid/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> Teste envio @lid</router-link></li>
+                <li><router-link :to="`/server/${srv.token}/lid/mappings`" class="dropdown-item"><i class="fa fa-random me-2"></i> Mapeamentos @lid</router-link></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? t('state_on_short') : t('state_off_short') }}</button></li>
                 <li><button class="dropdown-item text-warning" @click="disconnectServer(srv)"><i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}</button></li>
@@ -179,6 +181,8 @@
               <template v-if="isConnected(srv)">
                 <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                 <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
+                <li><router-link :to="`/server/${srv.token}/lid/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> Teste envio @lid</router-link></li>
+                <li><router-link :to="`/server/${srv.token}/lid/mappings`" class="dropdown-item"><i class="fa fa-random me-2"></i> Mapeamentos @lid</router-link></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><button class="dropdown-item" :class="{ active: srv.devel }" @click="toggleDebug(srv)"><i class="fa fa-bug me-2"></i> {{ t('debug') }} {{ srv.devel ? t('state_on_short') : t('state_off_short') }}</button></li>
                 <li><button class="dropdown-item text-warning" @click="disconnectServer(srv)"><i class="fa fa-unlink me-2"></i> {{ t('disconnect') }}</button></li>
@@ -900,7 +904,6 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   position: relative;
-  isolation: isolate;
   transition: box-shadow 0.18s, transform 0.18s;
 }
 .scard:hover {
@@ -1000,7 +1003,6 @@ export default defineComponent({
   border-top: 1px solid rgba(148,163,184,0.08);
   margin-top: auto;
   position: relative;
-  z-index: 5;
   overflow: visible;
 }
 
@@ -1132,6 +1134,12 @@ export default defineComponent({
 /* Action buttons */
 .srow-actions {
   display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.srow-actions .dropdown-menu {
+  z-index: 1085;
 }
 .srow-btn {
   width: 32px; height: 32px;

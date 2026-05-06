@@ -645,7 +645,7 @@ export default defineComponent({
 
 .app-main {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   padding-top: 7rem;
   padding-bottom: 4.5rem;
 }
@@ -663,7 +663,7 @@ export default defineComponent({
 
 .app-footer {
   position: relative;
-  z-index: 1;
+  z-index: 0;
   margin-top: 1rem;
   padding: 1.2rem 0 1.8rem;
 }
@@ -706,6 +706,7 @@ export default defineComponent({
   color: #fff;
   font-size: 0.76rem;
   font-weight: 700;
+  pointer-events: none;
 }
 
 @media (min-width: 992px) {

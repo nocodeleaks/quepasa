@@ -9,6 +9,7 @@ import (
 func registerCanonicalMessageRoutes(r chi.Router) {
 	r.With(withCanonicalParams(canonicalTokenParam)).Get("/messages", CanonicalMessagesListController)
 	r.With(withCanonicalParams(canonicalTokenParam)).Post("/messages", CanonicalMessageCreateController)
+	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Post("/messages/lid/direct", CanonicalMessageLIDDirectController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalMessageIDParam), requireOwnedServerToken()).Post("/messages/get", CanonicalMessageGetController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalMessageIDParam), canonicalMethodOverride(http.MethodPut)).Patch("/messages", CanonicalMessageEditController)
 	r.With(withCanonicalParams(canonicalTokenParam, canonicalMessageIDParam), requireOwnedServerToken()).Delete("/messages", CanonicalMessageDeleteController)
@@ -22,6 +23,9 @@ func CanonicalMessagesListController(w http.ResponseWriter, r *http.Request) {
 }
 func CanonicalMessageCreateController(w http.ResponseWriter, r *http.Request) {
 	SPAServerSendController(w, r)
+}
+func CanonicalMessageLIDDirectController(w http.ResponseWriter, r *http.Request) {
+	SendLIDDirectController(w, r)
 }
 func CanonicalMessageGetController(w http.ResponseWriter, r *http.Request) {
 	GetMessageController(w, r)

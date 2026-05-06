@@ -746,10 +746,22 @@ export default defineComponent({
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #6b7280;
-  text-decoration: none;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
   font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
   margin-bottom: 16px;
+}
+
+.back-link:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .page-header h1 {
@@ -861,9 +873,32 @@ export default defineComponent({
 }
 .contact-search-btn{
   position: absolute;
-  right: 8px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
+}
+
+.btn-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #dbe3ef;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .input-prefix {

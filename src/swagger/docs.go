@@ -2073,6 +2073,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/messages/lid/direct": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Testing endpoint that sends a text message directly to a @lid destination without converting recipient to phone/@s.whatsapp.net in API layer.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Send"
+                ],
+                "summary": "Send text directly to @lid",
+                "parameters": [
+                    {
+                        "description": "Direct @lid send request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LIDDirectSendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.SendResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/api.SendResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/messages/react": {
             "post": {
                 "security": [
@@ -3731,6 +3782,27 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.LIDDirectSendRequest": {
+            "type": "object",
+            "properties": {
+                "chatid": {
+                    "description": "ChatId must be a WhatsApp LID, for example: 121281638842371@lid",
+                    "type": "string"
+                },
+                "inreply": {
+                    "description": "Optional id of the quoted message.",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "Text is the message body.",
+                    "type": "string"
+                },
+                "trackid": {
+                    "description": "Optional tracking id.",
+                    "type": "string"
                 }
             }
         },

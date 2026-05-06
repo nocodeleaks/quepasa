@@ -9,6 +9,8 @@ import QRCodePage from '@/pages/QRCode.vue'
 import PairCodePage from '@/pages/PairCode.vue'
 import MessagesPage from '@/pages/Messages.vue'
 import SendMessagePage from '@/pages/SendMessage.vue'
+import LIDDirectSendPage from '@/pages/LIDDirectSend.vue'
+import LIDMappingsPage from '@/pages/LIDMappings.vue'
 import AccountPage from '@/pages/Account.vue'
 import EnvironmentPage from '@/pages/Environment.vue'
 import UsersPage from '@/pages/Users.vue'
@@ -33,6 +35,8 @@ const router = createRouter({
     { path: '/server/:token/paircode', name: 'server.paircode', component: PairCodePage, meta: { requiresAuth: true } },
     { path: '/server/:token/messages', name: 'server.messages', component: MessagesPage, meta: { requiresAuth: true } },
     { path: '/server/:token/send', name: 'server.send', component: SendMessagePage, meta: { requiresAuth: true } },
+    { path: '/server/:token/lid/send', name: 'server.lid.send', component: LIDDirectSendPage, meta: { requiresAuth: true } },
+    { path: '/server/:token/lid/mappings', name: 'server.lid.mappings', component: LIDMappingsPage, meta: { requiresAuth: true } },
     { path: '/server/:token/groups', name: 'server.groups', component: () => import('@/pages/Groups.vue'), meta: { requiresAuth: true } },
     { path: '/server/:token/groups/:id', name: 'server.groups.detail', component: () => import('@/pages/GroupDetail.vue'), meta: { requiresAuth: true } },
     { path: '/account', name: 'account', component: AccountPage, meta: { requiresAuth: true } },

@@ -260,6 +260,21 @@ definitions:
       total:
         type: integer
     type: object
+  api.LIDDirectSendRequest:
+    properties:
+      chatid:
+        description: 'ChatId must be a WhatsApp LID, for example: 121281638842371@lid'
+        type: string
+      inreply:
+        description: Optional id of the quoted message.
+        type: string
+      text:
+        description: Text is the message body.
+        type: string
+      trackid:
+        description: Optional tracking id.
+        type: string
+    type: object
   api.LIDResponse:
     properties:
       debug:
@@ -2819,6 +2834,39 @@ paths:
       summary: Get message
       tags:
       - Message
+  /messages/lid/direct:
+    post:
+      consumes:
+      - application/json
+      description: Testing endpoint that sends a text message directly to a @lid destination
+        without converting recipient to phone/@s.whatsapp.net in API layer.
+      parameters:
+      - description: Direct @lid send request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.LIDDirectSendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.SendResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.SendResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send text directly to @lid
+      tags:
+      - Send
   /messages/react:
     delete:
       consumes:

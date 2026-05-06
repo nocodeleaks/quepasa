@@ -45,15 +45,6 @@ func GetPhoneController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		response.ParseError(err)
-		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
-		return
-	}
-
 	// Get lid from query parameter
 	lid := normalizeLIDInput(library.GetRequestParameter(r, "lid"))
 	// Validate lid parameter
@@ -164,13 +155,6 @@ func GetLIdFromPhone(r *http.Request, phone string) (response string, err error)
 		return response, err
 	}
 
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		return response, err
-	}
-
 	contactManager := server.GetContactManager()
 	return contactManager.GetLIDFromPhone(phone)
 }
@@ -178,13 +162,6 @@ func GetLIdFromPhone(r *http.Request, phone string) (response string, err error)
 func GetPhoneFromLId(r *http.Request, lid string) (response string, err error) {
 	server, err := GetServer(r)
 	if err != nil {
-		return response, err
-	}
-
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
 		return response, err
 	}
 

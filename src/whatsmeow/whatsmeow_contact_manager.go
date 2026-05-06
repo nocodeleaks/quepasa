@@ -46,17 +46,49 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 	return GetContactsFromDevice(cm.Client.Store)
 }
 
-// IsOnWhatsApp checks if phone numbers are registered on WhatsApp
+// IsOnWhatsApp checks if phone numbers are registered on WhatsApp.
+//
+// WARNING: This method performs a live query against WhatsApp servers.
+// Results are cached in-memory (per session singleton) to avoid repeated
+// network calls for the same phone number. Bypassing the cache or calling
+// with many distinct numbers in a short period may trigger WhatsApp's
+// anti-abuse detection and result in account banning.
 func (cm *WhatsmeowContactManager) IsOnWhatsApp(phones ...string) (registered []string, err error) {
-	results, err := cm.Client.IsOnWhatsApp(context.Background(), phones)
+	var uncached []string
+
+	// Return cached results immediately; collect phones that still need lookup
+	for _, phone := range phones {
+		if jid, found := cm.maps.GetIsOnWhatsAppCache(phone); found {
+			if jid != "" {
+				registered = append(registered, jid)
+			}
+		} else {
+			uncached = append(uncached, phone)
+		}
+	}
+
+	if len(uncached) == 0 {
+		return
+	}
+
+	// Live query only for phones not yet cached
+	results, err := cm.Client.IsOnWhatsApp(context.Background(), uncached)
 	if err != nil {
 		return
 	}
 
+	// Build a set of which uncached phones got a positive result
+	resolved := make(map[string]string, len(results))
 	for _, result := range results {
 		if result.IsIn {
+			resolved[result.Query] = result.JID.String()
 			registered = append(registered, result.JID.String())
 		}
+	}
+
+	// Persist results in cache (including negatives, to avoid future lookups)
+	for _, phone := range uncached {
+		cm.maps.SetIsOnWhatsAppCache(phone, resolved[phone])
 	}
 
 	return

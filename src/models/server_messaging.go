@@ -111,15 +111,28 @@ func (source *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (resp
 		return
 	}
 
-	// leading with wrongs digit 9
-	if ENV.ShouldRemoveDigit9() {
+	// Normalize Brazilian mobile phone number (handles 8/9-digit ambiguity).
+	// Queries IsOnWhatsApp at most once per phone per session (cached in WhatsmeowContactMaps).
+	if ENV.ShouldNormalizeBRPhone() {
 
 		phone, _ := whatsapp.GetPhoneIfValid(msg.Chat.Id)
 		if len(phone) > 0 {
-			phoneWithout9, _ := library.RemoveDigit9IfElegible(phone)
-			if len(phoneWithout9) > 0 {
+			// Try remove-9: 9-digit (14 chars) → 8-digit variant (DDDs > 30)
+			phoneWithout9, errRemove := library.RemoveDigit9IfElegible(phone)
+
+			// Try add-9: 8-digit (13 chars) → 9-digit variant (all Brazilian DDDs)
+			phoneWith9, errAdd := library.AddDigit9BRAllDDDs(phone)
+
+			var variant string
+			if errRemove == nil {
+				variant = phoneWithout9
+			} else if errAdd == nil {
+				variant = phoneWith9
+			}
+
+			if len(variant) > 0 {
 				contactManager := source.GetContactManager()
-				valids, err := contactManager.IsOnWhatsApp(phone, phoneWithout9)
+				valids, err := contactManager.IsOnWhatsApp(phone, variant)
 				if err != nil {
 					return nil, err
 				}

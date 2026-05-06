@@ -208,6 +208,9 @@ ContactInfo fields priority (use `ExtractContactName()`):
   - Files: docs.go, swagger.json, swagger.yaml (all generated, do not edit)
 
 #### FRONTEND APPS
+- Each app under `src/apps/<slug>` is an independent SPA; users may bring their own custom frontends.
+- **i18n rule (applies to any app in `src/apps/` that ships an i18n/translation system):** When creating or modifying pages, ensure ALL user-visible strings go through the app's translation mechanism. Both the English source file and any other language files must have corresponding entries. Validate with the app's build step to catch missing keys via TypeScript type-checking.
+
 - **apps/form** (src/apps/form) - Form submission app
   - Purpose: Standalone SPA for webhook form submissions
   - Isolation: Independent from other apps by slug

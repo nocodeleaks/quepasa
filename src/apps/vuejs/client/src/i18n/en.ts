@@ -496,6 +496,41 @@ const en = {
   messages_ad_link: 'View ad',
   messages_presence_sent: 'Presence sent',
   messages_error_presence: 'Error sending presence',
+
+  // LID mappings page
+  lid_mappings_title: 'LID Mapping Lookup',
+  lid_mappings_subtitle: 'Bidirectional @lid ↔ phone lookup using system resolvers.',
+  lid_mappings_lid_to_phone_title: '@lid -> phone',
+  lid_mappings_phone_to_lid_title: 'phone -> @lid',
+  lid_mappings_lid_label: 'LID',
+  lid_mappings_phone_label: 'Phone',
+  lid_mappings_lid_placeholder: '121281638842371@lid',
+  lid_mappings_phone_placeholder: '+5511999999999',
+  lid_mappings_loading: 'Loading...',
+  lid_mappings_lookup_phone: 'Lookup phone',
+  lid_mappings_lookup_lid: 'Lookup @lid',
+  lid_mappings_error_lid: 'Failed to lookup mapping by LID',
+  lid_mappings_error_phone: 'Failed to lookup mapping by phone',
+
+  // LID direct send page
+  lid_direct_title: 'Direct Send Test via @lid',
+  lid_direct_subtitle: 'This send path uses a dedicated endpoint without API conversion to phone.',
+  lid_direct_recipient_label: 'Recipient @lid',
+  lid_direct_recipient_placeholder: '121281638842371@lid',
+  lid_direct_text_label: 'Text',
+  lid_direct_inreply_label: 'InReply (optional)',
+  lid_direct_trackid_label: 'TrackId (optional)',
+  lid_direct_sending: 'Sending...',
+  lid_direct_send_button: 'Send direct @lid',
+  lid_direct_open_mappings: 'Open mappings screen',
+  lid_direct_success_title: 'Sent successfully',
+  lid_direct_message_id_label: 'Message ID',
+  lid_direct_chatid_label: 'ChatId',
+  lid_direct_trackid_label_short: 'TrackId',
+  lid_direct_error_send: 'Direct send via @lid failed',
+
+  // Shared
+  raw_response: 'Raw response',
 }
 
 export default en

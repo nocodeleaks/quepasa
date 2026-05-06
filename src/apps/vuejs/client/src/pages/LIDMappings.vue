@@ -1,58 +1,50 @@
 <template>
   <div class="lid-page">
     <div class="page-header">
-      <button @click="$router.back()" class="back-link">Voltar</button>
-      <h1>Consulta de mapeamentos @lid</h1>
-      <p>Consulta bidirecional @lid ↔ telefone usando os resolvers do sistema.</p>
+      <button @click="$router.back()" class="back-link">{{ t('back') }}</button>
+      <h1>{{ t('lid_mappings_title') }}</h1>
+      <p>{{ t('lid_mappings_subtitle') }}</p>
     </div>
 
     <div class="grid">
       <section class="card">
-        <h2>@lid -> telefone</h2>
+        <h2>{{ t('lid_mappings_lid_to_phone_title') }}</h2>
         <form @submit.prevent="lookupByLid" class="form-grid">
           <label>
-            Token da sessao
-            <input v-model="token" type="text" class="form-input" required />
-          </label>
-          <label>
-            LID
-            <input v-model="lid" type="text" class="form-input" placeholder="121281638842371@lid" required />
+            {{ t('lid_mappings_lid_label') }}
+            <input v-model="lid" type="text" class="form-input" :placeholder="t('lid_mappings_lid_placeholder')" required />
           </label>
           <button class="btn-primary" type="submit" :disabled="loadingLid">
-            {{ loadingLid ? 'Consultando...' : 'Consultar telefone' }}
+            {{ loadingLid ? t('lid_mappings_loading') : t('lid_mappings_lookup_phone') }}
           </button>
         </form>
         <div v-if="lidResult" class="result-box">
-          <div><strong>LID:</strong> {{ lidResult.lid || lid }}</div>
-          <div><strong>Telefone:</strong> {{ lidResult.phone || '-' }}</div>
+          <div><strong>{{ t('lid_mappings_lid_label') }}:</strong> {{ lidResult.lid || lid }}</div>
+          <div><strong>{{ t('lid_mappings_phone_label') }}:</strong> {{ lidResult.phone || '-' }}</div>
         </div>
       </section>
 
       <section class="card">
-        <h2>telefone -> @lid</h2>
+        <h2>{{ t('lid_mappings_phone_to_lid_title') }}</h2>
         <form @submit.prevent="lookupByPhone" class="form-grid">
           <label>
-            Token da sessao
-            <input v-model="token" type="text" class="form-input" required />
-          </label>
-          <label>
-            Telefone
-            <input v-model="phone" type="text" class="form-input" placeholder="+5511999999999" required />
+            {{ t('lid_mappings_phone_label') }}
+            <input v-model="phone" type="text" class="form-input" :placeholder="t('lid_mappings_phone_placeholder')" required />
           </label>
           <button class="btn-primary" type="submit" :disabled="loadingPhone">
-            {{ loadingPhone ? 'Consultando...' : 'Consultar @lid' }}
+            {{ loadingPhone ? t('lid_mappings_loading') : t('lid_mappings_lookup_lid') }}
           </button>
         </form>
         <div v-if="phoneResult" class="result-box">
-          <div><strong>Telefone:</strong> {{ phoneResult.phone || phone }}</div>
-          <div><strong>LID:</strong> {{ phoneResult.lid || '-' }}</div>
+          <div><strong>{{ t('lid_mappings_phone_label') }}:</strong> {{ phoneResult.phone || phone }}</div>
+          <div><strong>{{ t('lid_mappings_lid_label') }}:</strong> {{ phoneResult.lid || '-' }}</div>
         </div>
       </section>
     </div>
 
     <div v-if="error" class="error-box">{{ error }}</div>
     <div v-if="rawResponse" class="raw-box">
-      <strong>Resposta bruta</strong>
+      <strong>{{ t('raw_response') }}</strong>
       <pre>{{ rawResponse }}</pre>
     </div>
   </div>
@@ -61,11 +53,13 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useLocale } from '@/i18n'
 import api from '@/services/api'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
+    const { t } = useLocale()
     const token = ref(String(route.params.token || ''))
 
     const lid = ref('')
@@ -97,7 +91,7 @@ export default defineComponent({
         rawResponse.value = JSON.stringify(res.data, null, 2)
         lidResult.value = parsePayload(res.data)
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err?.response?.data?.message || err?.message || 'Falha ao consultar mapeamento por LID'
+        error.value = err?.response?.data?.result || err?.response?.data?.message || err?.message || t('lid_mappings_error_lid')
       } finally {
         loadingLid.value = false
       }
@@ -117,13 +111,14 @@ export default defineComponent({
         rawResponse.value = JSON.stringify(res.data, null, 2)
         phoneResult.value = parsePayload(res.data)
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err?.response?.data?.message || err?.message || 'Falha ao consultar mapeamento por telefone'
+        error.value = err?.response?.data?.result || err?.response?.data?.message || err?.message || t('lid_mappings_error_phone')
       } finally {
         loadingPhone.value = false
       }
     }
 
     return {
+      t,
       token,
       lid,
       phone,

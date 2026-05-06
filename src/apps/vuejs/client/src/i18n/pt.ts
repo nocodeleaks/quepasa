@@ -498,6 +498,41 @@ const pt: Messages = {
   messages_ad_link: 'Ver anúncio',
   messages_presence_sent: 'Presença enviada',
   messages_error_presence: 'Erro ao enviar presença',
+
+  // Página de mapeamentos LID
+  lid_mappings_title: 'Consulta de mapeamentos @lid',
+  lid_mappings_subtitle: 'Consulta bidirecional @lid ↔ telefone usando os resolvers do sistema.',
+  lid_mappings_lid_to_phone_title: '@lid -> telefone',
+  lid_mappings_phone_to_lid_title: 'telefone -> @lid',
+  lid_mappings_lid_label: 'LID',
+  lid_mappings_phone_label: 'Telefone',
+  lid_mappings_lid_placeholder: '121281638842371@lid',
+  lid_mappings_phone_placeholder: '+5511999999999',
+  lid_mappings_loading: 'Consultando...',
+  lid_mappings_lookup_phone: 'Consultar telefone',
+  lid_mappings_lookup_lid: 'Consultar @lid',
+  lid_mappings_error_lid: 'Falha ao consultar mapeamento por LID',
+  lid_mappings_error_phone: 'Falha ao consultar mapeamento por telefone',
+
+  // Página de envio direto por LID
+  lid_direct_title: 'Teste de envio direto via @lid',
+  lid_direct_subtitle: 'Este envio usa endpoint exclusivo sem conversão da API para telefone.',
+  lid_direct_recipient_label: 'Destinatário @lid',
+  lid_direct_recipient_placeholder: '121281638842371@lid',
+  lid_direct_text_label: 'Texto',
+  lid_direct_inreply_label: 'InReply (opcional)',
+  lid_direct_trackid_label: 'TrackId (opcional)',
+  lid_direct_sending: 'Enviando...',
+  lid_direct_send_button: 'Enviar direto @lid',
+  lid_direct_open_mappings: 'Abrir tela de mapeamentos',
+  lid_direct_success_title: 'Enviado com sucesso',
+  lid_direct_message_id_label: 'Message ID',
+  lid_direct_chatid_label: 'ChatId',
+  lid_direct_trackid_label_short: 'TrackId',
+  lid_direct_error_send: 'Falha no envio direto via @lid',
+
+  // Compartilhado
+  raw_response: 'Resposta bruta',
 }
 
 export default pt

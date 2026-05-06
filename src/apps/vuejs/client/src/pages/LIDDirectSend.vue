@@ -1,59 +1,54 @@
 <template>
   <div class="lid-page">
     <div class="page-header">
-      <button @click="$router.back()" class="back-link">Voltar</button>
-      <h1>Teste de envio direto via @lid</h1>
-      <p>Este envio usa endpoint exclusivo sem conversao API para telefone.</p>
+      <button @click="$router.back()" class="back-link">{{ t('back') }}</button>
+      <h1>{{ t('lid_direct_title') }}</h1>
+      <p>{{ t('lid_direct_subtitle') }}</p>
     </div>
 
     <div class="card">
       <form @submit.prevent="sendDirectLid" class="form-grid">
         <label>
-          Token da sessao
-          <input v-model="token" type="text" class="form-input" required />
+          {{ t('lid_direct_recipient_label') }}
+          <input v-model="chatid" type="text" class="form-input" :placeholder="t('lid_direct_recipient_placeholder')" required />
         </label>
 
         <label>
-          Destinatario @lid
-          <input v-model="chatid" type="text" class="form-input" placeholder="121281638842371@lid" required />
-        </label>
-
-        <label>
-          Texto
+          {{ t('lid_direct_text_label') }}
           <textarea v-model="text" class="form-textarea" rows="5" required></textarea>
         </label>
 
         <label>
-          InReply (opcional)
+          {{ t('lid_direct_inreply_label') }}
           <input v-model="inreply" type="text" class="form-input" />
         </label>
 
         <label>
-          TrackId (opcional)
+          {{ t('lid_direct_trackid_label') }}
           <input v-model="trackid" type="text" class="form-input" />
         </label>
 
         <div class="actions">
           <button class="btn-primary" type="submit" :disabled="sending">
-            {{ sending ? 'Enviando...' : 'Enviar direto @lid' }}
+            {{ sending ? t('lid_direct_sending') : t('lid_direct_send_button') }}
           </button>
           <RouterLink :to="`/server/${encodeURIComponent(token)}/lid/mappings`" class="btn-secondary">
-            Abrir tela de mapeamentos
+            {{ t('lid_direct_open_mappings') }}
           </RouterLink>
         </div>
       </form>
 
       <div v-if="success" class="success-box">
-        <strong>Enviado com sucesso</strong>
-        <div>Message ID: {{ success.id }}</div>
-        <div>ChatId: {{ success.chatid }}</div>
-        <div>TrackId: {{ success.trackid || '-' }}</div>
+        <strong>{{ t('lid_direct_success_title') }}</strong>
+        <div>{{ t('lid_direct_message_id_label') }}: {{ success.id }}</div>
+        <div>{{ t('lid_direct_chatid_label') }}: {{ success.chatid }}</div>
+        <div>{{ t('lid_direct_trackid_label_short') }}: {{ success.trackid || '-' }}</div>
       </div>
 
       <div v-if="error" class="error-box">{{ error }}</div>
 
       <div v-if="rawResponse" class="raw-box">
-        <strong>Resposta bruta</strong>
+        <strong>{{ t('raw_response') }}</strong>
         <pre>{{ rawResponse }}</pre>
       </div>
     </div>
@@ -63,11 +58,13 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useLocale } from '@/i18n'
 import api from '@/services/api'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
+    const { t } = useLocale()
     const token = ref(String(route.params.token || ''))
     const chatid = ref('')
     const text = ref('')
@@ -104,13 +101,14 @@ export default defineComponent({
           trackid: result?.trackid || trackid.value,
         }
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err?.response?.data?.message || err?.message || 'Falha no envio direto via @lid'
+        error.value = err?.response?.data?.result || err?.response?.data?.message || err?.message || t('lid_direct_error_send')
       } finally {
         sending.value = false
       }
     }
 
     return {
+      t,
       token,
       chatid,
       text,

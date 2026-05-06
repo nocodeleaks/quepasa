@@ -8,8 +8,8 @@
           </svg>
           Voltar
         </button>
-        <h1>Enviar Mensagem</h1>
-        <p>Envie mensagens via WhatsApp</p>
+        <h1>{{ t('send_page_title') }}</h1>
+        <p>{{ t('send_page_subtitle') }}</p>
       </div>
     </div>
 
@@ -37,7 +37,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
-              Destinatário
+              {{ t('send_recipient_label') }}
             </label>
             <div class="input-wrapper">
               <span class="input-prefix">+</span>
@@ -49,17 +49,17 @@
                 placeholder="5511999999999"
                 required
               />
-              <button type="button" class="btn-small contact-search-btn" @click="openContactSearch()">Buscar</button>
+              <button type="button" class="btn-small contact-search-btn" @click="openContactSearch()">{{ t('send_search_btn') }}</button>
             </div>
             <div v-if="contactSearchVisible" class="contact-search">
               <div class="contact-search-controls">
-                <input v-model="contactSearchQuery" @keyup.enter="searchContacts()" placeholder="Pesquisar nome ou telefone" class="form-input" />
-                <button type="button" class="btn-small" @click="searchContacts()">Buscar</button>
-                <button type="button" class="btn-small" @click="closeContactSearch()">Fechar</button>
+                <input v-model="contactSearchQuery" @keyup.enter="searchContacts()" :placeholder="t('send_contact_search_placeholder')" class="form-input" />
+                <button type="button" class="btn-small" @click="searchContacts()">{{ t('send_search_btn') }}</button>
+                <button type="button" class="btn-small" @click="closeContactSearch()">{{ t('send_close_btn') }}</button>
               </div>
               <div class="contact-search-list">
-                <div v-if="contactSearchLoading">Buscando...</div>
-                <div v-else-if="!contactSearchLoading && contactSearchResults.length === 0">Nenhum contato encontrado</div>
+                <div v-if="contactSearchLoading">{{ t('send_contact_searching') }}</div>
+                <div v-else-if="!contactSearchLoading && contactSearchResults.length === 0">{{ t('send_no_contacts') }}</div>
                 <ul v-else>
                   <li v-for="ct in contactSearchResults" :key="ct.id">
                     <button type="button" class="contact-result" @click="selectContact(ct)">{{ ct.title || ct.id || ct.phone }} — {{ ct.phone }}</button>
@@ -67,36 +67,36 @@
                 </ul>
               </div>
             </div>
-            <span class="input-hint">Número completo com código do país (sem espaços ou traços)</span>
+            <span class="input-hint">{{ t('send_recipient_hint') }}</span>
           </div>
 
           <!-- Message Type Tabs -->
           <div class="form-group">
-            <label>Tipo de Mensagem</label>
+            <label>{{ t('send_message_type_label') }}</label>
             <div class="message-tabs">
               <button type="button" @click="msgType = 'text'" :class="{ active: msgType === 'text' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                 </svg>
-                Texto
+                {{ t('send_type_text') }}
               </button>
               <button type="button" @click="msgType = 'image'" :class="{ active: msgType === 'image' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                 </svg>
-                Imagem
+                {{ t('send_type_image') }}
               </button>
               <button type="button" @click="msgType = 'document'" :class="{ active: msgType === 'document' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
                 </svg>
-                Documento
+                {{ t('send_type_document') }}
               </button>
               <button type="button" @click="msgType = 'audio'" :class="{ active: msgType === 'audio' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                 </svg>
-                Áudio
+                {{ t('send_type_audio') }}
               </button>
             </div>
           </div>
@@ -107,34 +107,34 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
               </svg>
-              Mensagem
+              {{ t('send_text_label') }}
             </label>
             <textarea 
               id="text"
               v-model="text"
               class="form-textarea"
-              placeholder="Digite sua mensagem..."
+              :placeholder="t('send_text_placeholder')"
               rows="5"
               required
             ></textarea>
-            <span class="input-hint">{{ text.length }} caracteres</span>
+            <span class="input-hint">{{ text.length }} {{ t('send_characters') }}</span>
           </div>
 
           <!-- Image Options -->
           <div v-if="msgType === 'image'" class="form-group">
-            <label>Origem da Imagem</label>
+            <label>{{ t('send_image_source_label') }}</label>
             <div class="source-tabs">
               <button type="button" @click="mediaSource = 'file'" :class="{ active: mediaSource === 'file' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
                 </svg>
-                Upload de Arquivo
+                {{ t('send_source_upload') }}
               </button>
               <button type="button" @click="mediaSource = 'url'" :class="{ active: mediaSource === 'url' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                 </svg>
-                URL
+                {{ t('send_source_url') }}
               </button>
             </div>
           </div>
@@ -144,7 +144,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
               </svg>
-              Selecionar Imagem
+              {{ t('send_image_select_label') }}
             </label>
             <div class="file-upload" @click="imageInput?.click()" :class="{ 'has-file': selectedFile }">
               <input ref="imageInput" type="file" accept="image/*" @change="handleFileSelect" hidden />
@@ -152,8 +152,8 @@
                 <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
                   <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
                 </svg>
-                <span>Clique para selecionar uma imagem</span>
-                <span class="file-hint">JPG, PNG, GIF - Máx 16MB</span>
+                <span>{{ t('send_click_select_image') }}</span>
+                <span class="file-hint">{{ t('send_image_hint') }}</span>
               </div>
               <div v-else class="file-selected">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
@@ -173,7 +173,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
               </svg>
-              URL da Imagem
+              {{ t('send_image_url_label') }}
             </label>
             <input 
               id="attachmentUrl"
@@ -190,32 +190,32 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
               </svg>
-              Legenda (opcional)
+              {{ t('send_caption_label') }}
             </label>
             <input 
               id="caption"
               v-model="text"
               type="text"
               class="form-input"
-              placeholder="Legenda da imagem..."
+              :placeholder="t('send_caption_placeholder')"
             />
           </div>
 
           <!-- Document Options -->
           <div v-if="msgType === 'document'" class="form-group">
-            <label>Origem do Documento</label>
+            <label>{{ t('send_doc_source_label') }}</label>
             <div class="source-tabs">
               <button type="button" @click="mediaSource = 'file'" :class="{ active: mediaSource === 'file' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
                 </svg>
-                Upload de Arquivo
+                {{ t('send_source_upload') }}
               </button>
               <button type="button" @click="mediaSource = 'url'" :class="{ active: mediaSource === 'url' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                 </svg>
-                URL
+                {{ t('send_source_url') }}
               </button>
             </div>
           </div>
@@ -225,7 +225,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6z"/>
               </svg>
-              Selecionar Documento
+              {{ t('send_doc_select_label') }}
             </label>
             <div class="file-upload" @click="docInput?.click()" :class="{ 'has-file': selectedFile }">
               <input ref="docInput" type="file" @change="handleFileSelect" hidden />
@@ -233,8 +233,8 @@
                 <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
                   <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
                 </svg>
-                <span>Clique para selecionar um documento</span>
-                <span class="file-hint">PDF, DOC, XLS, etc - Máx 100MB</span>
+                <span>{{ t('send_click_select_doc') }}</span>
+                <span class="file-hint">{{ t('send_doc_hint') }}</span>
               </div>
               <div v-else class="file-selected">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
@@ -254,7 +254,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
               </svg>
-              URL do Documento
+              {{ t('send_doc_url_label') }}
             </label>
             <input 
               id="attachmentUrl"
@@ -271,7 +271,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z"/>
               </svg>
-              Nome do Arquivo (opcional)
+              {{ t('send_filename_label') }}
             </label>
             <input 
               id="filename"
@@ -284,25 +284,25 @@
 
           <!-- Audio Options -->
           <div v-if="msgType === 'audio'" class="form-group">
-            <label>Origem do Áudio</label>
+            <label>{{ t('send_audio_source_label') }}</label>
             <div class="source-tabs">
               <button type="button" @click="mediaSource = 'record'" :class="{ active: mediaSource === 'record' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                 </svg>
-                Gravar Áudio
+                {{ t('send_source_record') }}
               </button>
               <button type="button" @click="mediaSource = 'file'" :class="{ active: mediaSource === 'file' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
                 </svg>
-                Upload de Arquivo
+                {{ t('send_source_upload') }}
               </button>
               <button type="button" @click="mediaSource = 'url'" :class="{ active: mediaSource === 'url' }">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                   <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                 </svg>
-                URL
+                {{ t('send_source_url') }}
               </button>
             </div>
           </div>
@@ -316,18 +316,19 @@
                     <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                   </svg>
                 </button>
-                <span>Clique para gravar</span>
+                <span>{{ t('send_click_record') }}</span>
               </div>
               <div v-else-if="isRecording" class="recorder-active">
                 <div class="recording-indicator">
                   <span class="recording-dot"></span>
                   <span class="recording-time">{{ recordingTime }}</span>
                 </div>
+                <canvas ref="waveformCanvas" class="waveform-canvas" height="56"></canvas>
                 <button type="button" @click="stopRecording" class="btn-stop">
                   <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                     <path d="M6 6h12v12H6z"/>
                   </svg>
-                  Parar
+                  {{ t('send_stop_btn') }}
                 </button>
               </div>
               <div v-else class="recorder-done">
@@ -336,7 +337,7 @@
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                   </svg>
-                  Limpar
+                  {{ t('send_clear_btn') }}
                 </button>
               </div>
             </div>
@@ -347,7 +348,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
               </svg>
-              Selecionar Áudio
+              {{ t('send_audio_select_label') }}
             </label>
             <div class="file-upload" @click="audioInput?.click()" :class="{ 'has-file': selectedFile }">
               <input ref="audioInput" type="file" accept="audio/*" @change="handleFileSelect" hidden />
@@ -355,8 +356,8 @@
                 <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
                   <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
                 </svg>
-                <span>Clique para selecionar um áudio</span>
-                <span class="file-hint">MP3, OGG, WAV - Máx 16MB</span>
+                <span>{{ t('send_click_select_audio') }}</span>
+                <span class="file-hint">{{ t('send_audio_hint') }}</span>
               </div>
               <div v-else class="file-selected">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
@@ -376,7 +377,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
               </svg>
-              URL do Áudio
+              {{ t('send_audio_url_label') }}
             </label>
             <input 
               id="attachmentUrl"
@@ -392,7 +393,7 @@
             <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
             </svg>
-            {{ sending ? 'Enviando...' : 'Enviar Mensagem' }}
+            {{ sending ? t('send_sending') : t('send_submit_btn') }}
           </button>
         </form>
       </div>
@@ -415,7 +416,7 @@
           </div>
           <div class="phone-messages">
             <div class="message-bubble sent">
-              <div v-if="msgType === 'text'" class="bubble-text">{{ text || 'Sua mensagem aparecerá aqui...' }}</div>
+              <div v-if="msgType === 'text'" class="bubble-text">{{ text || t('send_preview_placeholder') }}</div>
               <div v-else-if="msgType === 'image'" class="bubble-media">
                 <div class="media-placeholder">
                   <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
@@ -429,7 +430,7 @@
                   <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
                     <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z"/>
                   </svg>
-                  <span>{{ filename || 'arquivo' }}</span>
+                  <span>{{ filename || t('send_file_default') }}</span>
                 </div>
               </div>
               <div class="bubble-time">{{ currentTime }}</div>
@@ -439,11 +440,11 @@
 
         <!-- Recent sends -->
         <div v-if="recentSends.length > 0" class="recent-sends">
-          <h4>Envios Recentes</h4>
+          <h4>{{ t('send_recent_title') }}</h4>
           <div class="recent-list">
             <div v-for="(send, i) in recentSends" :key="i" class="recent-item" :class="{ failed: send.error }">
               <span class="recent-to">+{{ send.to }}</span>
-              <span class="recent-status">{{ send.error ? 'Falha' : 'Enviado' }}</span>
+              <span class="recent-status">{{ send.error ? t('send_status_failed') : t('send_status_sent') }}</span>
             </div>
           </div>
         </div>
@@ -457,10 +458,12 @@ import { defineComponent, ref, computed, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
+    const { t } = useLocale()
     const token = route.params.token as string
 
     const recipient = ref('')
@@ -493,7 +496,7 @@ export default defineComponent({
 
     async function searchContacts() {
       if (!contactSearchQuery.value) {
-        pushToast('Digite nome ou telefone para buscar', 'error')
+        pushToast(t('send_toast_type_search'), 'error')
         return
       }
       contactSearchLoading.value = true
@@ -511,9 +514,9 @@ export default defineComponent({
             return title.includes(query) || phone.includes(query) || id.includes(query) || lid.includes(query)
           })
           .slice(0, 20)
-        if (!contactSearchResults.value.length) pushToast('Nenhum contato encontrado', 'info')
+        if (!contactSearchResults.value.length) pushToast(t('send_toast_no_contacts'), 'info')
       } catch (e: any) {
-        contactSearchError.value = e?.response?.data?.result || e?.message || 'Erro ao buscar contatos'
+        contactSearchError.value = e?.response?.data?.result || e?.message || t('send_toast_contacts_error')
         pushToast(contactSearchError.value, 'error')
       } finally {
         contactSearchLoading.value = false
@@ -524,7 +527,7 @@ export default defineComponent({
       if (!ct) return
       recipient.value = ct.phone || ct.id || ct.lid || ''
       contactSearchVisible.value = false
-      pushToast(`Destinatário definido: ${recipient.value}`, 'success')
+      pushToast(`${t('send_toast_contact_selected')}${recipient.value}`, 'success')
     }
 
     // File upload
@@ -536,12 +539,18 @@ export default defineComponent({
     // Audio recording
     const isRecording = ref(false)
     const recordingTime = ref('0:00')
+    const recordingSeconds = ref(0)
     const audioBlob = ref<Blob | null>(null)
     const audioUrl = ref('')
+    const waveformCanvas = ref<HTMLCanvasElement | null>(null)
     let mediaRecorder: MediaRecorder | null = null
     let audioChunks: Blob[] = []
     let recordingInterval: number | null = null
     let recordingStartTime = 0
+    let audioContext: AudioContext | null = null
+    let analyserNode: AnalyserNode | null = null
+    let waveformAnimId: number | null = null
+    let recordingWaveform: Uint8Array | null = null
 
     const currentTime = computed(() => {
       const now = new Date()
@@ -586,21 +595,76 @@ export default defineComponent({
       selectedFile.value = null
     }
     
+    function drawWaveform() {
+      const canvas = waveformCanvas.value
+      const analyser = analyserNode
+      if (!canvas || !analyser) return
+
+      // Sync logical size to rendered CSS size for crisp drawing
+      canvas.width = canvas.offsetWidth || 400
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const width = canvas.width
+      const height = canvas.height
+      const bufferLength = analyser.frequencyBinCount
+      const dataArray = new Uint8Array(bufferLength)
+
+      function render() {
+        waveformAnimId = requestAnimationFrame(render)
+        analyser!.getByteTimeDomainData(dataArray)
+
+        ctx!.clearRect(0, 0, width, height)
+        ctx!.fillStyle = 'rgba(108, 43, 217, 0.06)'
+        ctx!.fillRect(0, 0, width, height)
+
+        ctx!.lineWidth = 2
+        ctx!.strokeStyle = '#7c3aed'
+        ctx!.beginPath()
+
+        const sliceWidth = width / bufferLength
+        let x = 0
+        for (let i = 0; i < bufferLength; i++) {
+          const v = dataArray[i] / 128.0
+          const y = (v * height) / 2
+          if (i === 0) ctx!.moveTo(x, y)
+          else ctx!.lineTo(x, y)
+          x += sliceWidth
+        }
+        ctx!.lineTo(width, height / 2)
+        ctx!.stroke()
+      }
+
+      render()
+    }
+
     async function startRecording() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         mediaRecorder = new MediaRecorder(stream)
         audioChunks = []
-        
+
+        // Wire up Web Audio analyser for waveform visualization
+        audioContext = new AudioContext()
+        const source = audioContext.createMediaStreamSource(stream)
+        analyserNode = audioContext.createAnalyser()
+        analyserNode.fftSize = 1024
+        source.connect(analyserNode)
+        // Start drawing after Vue updates the canvas element
+        setTimeout(drawWaveform, 50)
+
         mediaRecorder.ondataavailable = (e) => {
           audioChunks.push(e.data)
         }
-        
-        mediaRecorder.onstop = () => {
+
+        mediaRecorder.onstop = async () => {
           const blob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' })
           audioBlob.value = blob
           audioUrl.value = URL.createObjectURL(blob)
           stream.getTracks().forEach(t => t.stop())
+          // Compute waveform from actual PCM data for perfect sync
+          recordingWaveform = await computeWaveformFromBlob(blob)
         }
         
         mediaRecorder.start()
@@ -609,15 +673,65 @@ export default defineComponent({
         
         recordingInterval = window.setInterval(() => {
           const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000)
+          recordingSeconds.value = elapsed
           const min = Math.floor(elapsed / 60)
           const sec = elapsed % 60
           recordingTime.value = `${min}:${sec.toString().padStart(2, '0')}`
         }, 1000)
       } catch (err) {
-        error.value = 'Não foi possível acessar o microfone'
+        error.value = t('send_error_microphone')
       }
     }
     
+    // Decode recorded blob and sample PCM amplitude into 64 waveform bytes.
+    // Uses actual audio data for perfect sync with WhatsApp playback.
+    async function computeWaveformFromBlob(blob: Blob): Promise<Uint8Array | null> {
+      try {
+        const arrayBuffer = await blob.arrayBuffer()
+        const tempCtx = new AudioContext()
+        let audioBuffer: AudioBuffer
+        try {
+          audioBuffer = await tempCtx.decodeAudioData(arrayBuffer)
+        } finally {
+          await tempCtx.close()
+        }
+        const channelData = audioBuffer.getChannelData(0)
+        const numBars = 64
+        const blockSize = Math.max(1, Math.floor(channelData.length / numBars))
+        const floats = new Float32Array(numBars)
+        let maxAmp = 0.001
+        for (let i = 0; i < numBars; i++) {
+          const start = i * blockSize
+          const end = Math.min(start + blockSize, channelData.length)
+          let sum = 0
+          for (let j = start; j < end; j++) sum += channelData[j] * channelData[j]
+          const rms = Math.sqrt(sum / (end - start))
+          floats[i] = rms
+          if (rms > maxAmp) maxAmp = rms
+        }
+        const out = new Uint8Array(numBars)
+        for (let i = 0; i < numBars; i++) {
+          out[i] = Math.round((floats[i] / maxAmp) * 100)
+        }
+        return out
+      } catch {
+        return null
+      }
+    }
+
+    function stopWaveform() {
+      if (waveformAnimId !== null) {
+        cancelAnimationFrame(waveformAnimId)
+        waveformAnimId = null
+      }
+      if (audioContext) {
+        audioContext.close()
+        audioContext = null
+      }
+      analyserNode = null
+      // recordingWaveform is set asynchronously by mediaRecorder.onstop; do not clear here
+    }
+
     function stopRecording() {
       if (mediaRecorder && isRecording.value) {
         mediaRecorder.stop()
@@ -627,10 +741,14 @@ export default defineComponent({
           recordingInterval = null
         }
       }
+      stopWaveform()
     }
     
     function clearAudio() {
+      stopWaveform()
+      recordingWaveform = null
       audioBlob.value = null
+      recordingSeconds.value = 0
       if (audioUrl.value) {
         URL.revokeObjectURL(audioUrl.value)
         audioUrl.value = ''
@@ -640,8 +758,18 @@ export default defineComponent({
     
     onUnmounted(() => {
       if (recordingInterval) clearInterval(recordingInterval)
+      stopWaveform()
       if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
     })
+
+    function blobToDataURL(blob: Blob): Promise<string> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      })
+    }
 
     async function sendMessage() {
       sending.value = true
@@ -650,52 +778,51 @@ export default defineComponent({
 
       try {
         if (msgType.value === 'text') {
-          // Use SPA endpoint for text messages
-          const payload = {
+          await api.post('/api/messages', {
+            token,
             chatid: recipient.value,
             text: text.value
-          }
-          await api.post('/api/messages', { token, ...payload })
+          })
         } else {
-          // For media types, use the canonical SPA messages endpoint
           const hasFile = selectedFile.value || audioBlob.value
-          
-          if (mediaSource.value !== 'url' && hasFile) {
-            // Upload file using FormData
-            const formData = new FormData()
-            formData.append('chatid', recipient.value)
-            
-            if (audioBlob.value) {
-              formData.append('attach', audioBlob.value, 'audio.ogg')
-            } else if (selectedFile.value) {
-              formData.append('attach', selectedFile.value)
-            }
-            
-            if (text.value) formData.append('text', text.value)
-            if (filename.value) formData.append('filename', filename.value)
 
-            await api.post('/api/messages', formData, {
-              params: { token },
-              headers: {
-                'X-QUEPASA-TOKEN': token,
-                'Content-Type': 'multipart/form-data'
-              }
-            })
+          if (mediaSource.value !== 'url' && hasFile) {
+            // Convert file/blob to base64 data URL and send as JSON
+            const blob = audioBlob.value ?? selectedFile.value!
+            const content = await blobToDataURL(blob)
+            const payload: any = {
+              token,
+              chatid: recipient.value,
+              content
+            }
+            if (text.value) payload.text = text.value
+            const fname = filename.value || (selectedFile.value?.name ?? '')
+            if (fname) payload.filename = fname
+            // Send recording duration so WhatsApp shows the correct time
+            if (audioBlob.value && recordingSeconds.value > 0) {
+              payload.seconds = recordingSeconds.value
+            }
+            // Send waveform samples for WhatsApp PTT spectrum display
+            if (audioBlob.value && recordingWaveform && recordingWaveform.length > 0) {
+              payload.waveform = btoa(String.fromCharCode(...recordingWaveform))
+            }
+
+            await api.post('/api/messages', payload)
           } else {
             // Use URL
-            const mediaPayload: any = {
+            const payload: any = {
               token,
               chatid: recipient.value,
               url: attachmentUrl.value
             }
-            if (text.value) mediaPayload.text = text.value
-            if (filename.value) mediaPayload.filename = filename.value
+            if (text.value) payload.text = text.value
+            if (filename.value) payload.filename = filename.value
 
-            await api.post('/api/messages', mediaPayload)
+            await api.post('/api/messages', payload)
           }
         }
 
-        success.value = `Mensagem enviada para +${recipient.value}`
+        success.value = `${t('send_toast_sent')}${recipient.value}`
         recentSends.value.unshift({ to: recipient.value })
         if (recentSends.value.length > 5) recentSends.value.pop()
 
@@ -706,7 +833,7 @@ export default defineComponent({
         clearFile()
         clearAudio()
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao enviar mensagem'
+        error.value = err?.response?.data?.result || err.message || t('send_error_send')
         recentSends.value.unshift({ to: recipient.value, error: true })
         if (recentSends.value.length > 5) recentSends.value.pop()
       } finally {
@@ -715,9 +842,9 @@ export default defineComponent({
     }
 
     return {
-      token, recipient, text, msgType, mediaSource, attachmentUrl, filename,
+      t, token, recipient, text, msgType, mediaSource, attachmentUrl, filename,
       sending, error, success, recentSends, currentTime,
-      selectedFile, isRecording, recordingTime, audioBlob, audioUrl,
+      selectedFile, isRecording, recordingTime, recordingSeconds, audioBlob, audioUrl, waveformCanvas,
       imageInput, docInput, audioInput,
       getInitial, sendMessage, formatFileSize, handleFileSelect, clearFile,
       startRecording, stopRecording, clearAudio,
@@ -1321,6 +1448,14 @@ export default defineComponent({
   flex-direction: column;
   align-items: center;
   gap: 16px;
+}
+
+.waveform-canvas {
+  width: 100%;
+  height: 56px;
+  border-radius: 8px;
+  background: rgba(108, 43, 217, 0.06);
+  display: block;
 }
 
 .recording-indicator {

@@ -71,8 +71,11 @@ func (source *QpToWhatsappAttachment) AttachSecureAndCustomize() {
 		requestExtension = filepath.Ext(fileNameNormalized)
 		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] detected extension: %s, from filename: %s", requestExtension, attach.FileName))
 	} else if len(attach.Mimetype) > 0 {
-		requestExtension, _ = library.TryGetExtensionFromMimeType(attach.Mimetype)
-		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] detected extension from request mime type: %s", requestExtension))
+		// Strip MIME parameters (e.g. "; codecs=opus") before extension lookup so that
+		// "audio/ogg; codecs=opus" resolves to the same extension as plain "audio/ogg".
+		baseMime := strings.TrimSpace(strings.SplitN(attach.Mimetype, ";", 2)[0])
+		requestExtension, _ = library.TryGetExtensionFromMimeType(baseMime)
+		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] detected extension from request mime type: %s (base: %s)", requestExtension, baseMime))
 	} else if len(contentMime) > 0 {
 		requestExtension, _ = library.TryGetExtensionFromMimeType(contentMime)
 		source.Debug = append(source.Debug, fmt.Sprintf("[debug][AttachSecureAndCustomize] detected extension from content mime type: %s", requestExtension))
@@ -140,10 +143,11 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatmentTesting() {
 			}
 		}
 
-		source.Attach.WaveForm, err = GenerateWaveform(*source.Attach.GetContent())
-		if err != nil {
-			log.Errorf("error generating waveform from bytes: %v", err)
-			return
+		// Only overwrite WaveForm if generation succeeds; preserve any client-provided waveform on error.
+		if wf, wfErr := GenerateWaveform(*source.Attach.GetContent()); wfErr != nil {
+			log.Errorf("error generating waveform from bytes: %v", wfErr)
+		} else if len(wf) > 0 {
+			source.Attach.WaveForm = wf
 		}
 
 		log.Tracef("\n--- Informações de Áudio ---\n")
@@ -159,6 +163,13 @@ func (source *QpToWhatsappAttachment) AttachAudioTreatment() {
 	if attach == nil {
 		source.Debug = append(source.Debug, "[warn][AttachAudioTreatment] nil attach")
 		return
+	}
+
+	// If the MIME is already the canonical PTT format, mark as PTT immediately so
+	// GetMessageType returns AudioMessageType regardless of further processing.
+	if attach.IsValidPTT() {
+		attach.SetPTTCompatible(true)
+		source.Debug = append(source.Debug, fmt.Sprintf("[info][AttachAudioTreatment] canonical PTT MIME detected (%s), marking as PTT", attach.Mimetype))
 	}
 
 	forceAudioAsPTT := environment.Settings.General.ForceAudioAsPTT

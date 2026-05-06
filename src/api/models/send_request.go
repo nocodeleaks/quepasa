@@ -49,6 +49,11 @@ type SendRequest struct {
 	// Media duration for audio/video attachments when known.
 	Seconds uint32 `json:"seconds,omitempty"`
 
+	// Waveform data for PTT audio messages (64 bytes, 0-100 amplitude per sample).
+	// Base64-encoded. When provided by the client, used directly without server-side
+	// audio analysis (no ffmpeg required).
+	Waveform []byte `json:"waveform,omitempty"`
+
 	// Binary content resolved from request body, base64, or remote URL.
 	Content []byte
 
@@ -176,6 +181,7 @@ func (source *SendRequest) ToWhatsappAttachment() (result media.QpToWhatsappAtta
 		FileLength: source.FileLength,
 		FileName:   source.FileName,
 		Seconds:    source.Seconds,
+		WaveForm:   source.Waveform,
 	}
 
 	uIntContentLength := uint64(contentLength)
@@ -235,10 +241,14 @@ func (source *SendAnyRequest) GenerateEmbedContent() (err error) {
 
 		header := parts[0]
 		if strings.HasPrefix(header, "data:") && strings.Contains(header, ";base64") {
-			mimePart := header[5:]
-			mimeType := strings.Split(mimePart, ";")[0]
-			if len(source.Mimetype) == 0 {
-				source.Mimetype = mimeType
+			mimePart := header[5:] // strip "data:" prefix; e.g. "audio/ogg; codecs=opus;base64"
+			// Strip the trailing ";base64" marker so the full MIME type (including codec
+			// parameters like "; codecs=opus") is preserved.
+			if idx := strings.LastIndex(mimePart, ";base64"); idx >= 0 {
+				mimePart = strings.TrimSpace(mimePart[:idx])
+			}
+			if len(source.Mimetype) == 0 && len(mimePart) > 0 {
+				source.Mimetype = mimePart
 			}
 		}
 

@@ -79,7 +79,7 @@ func RegisterAPIV5Controllers(r chi.Router) {
 		Public: registerCanonicalPublicRoutes,
 		Protected: func(protected chi.Router) {
 			tokenAuth := GetSPATokenAuth()
-			protected.Use(jwtauth.Verify(tokenAuth, tokenFromAuthorizationOrQuePasaHeader, jwtauth.TokenFromCookie))
+			protected.Use(jwtauth.Verifier(tokenAuth))
 			protected.Use(SPAAuthenticatorHandler)
 			registerCanonicalProtectedRoutes(protected)
 		},
@@ -215,9 +215,11 @@ func CanonicalLabelSearchController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if request.IncludeChats && strings.TrimSpace(request.Token) != "" && len(request.ChatIDs) > 0 {
-		if _, err := GetSPAOwnedServerRecord(user, request.Token); err == nil {
-			if loaded, err := store.FindConversationLabelsMap(strings.TrimSpace(request.Token), strings.TrimSpace(user.Username), request.ChatIDs); err == nil {
-				response["assignedChats"] = invertConversationLabelMap(loaded)
+		if ensureSPATokenScope(r, request.Token) == nil {
+			if _, err := GetSPAOwnedServerRecord(user, request.Token); err == nil {
+				if loaded, err := store.FindConversationLabelsMap(strings.TrimSpace(request.Token), strings.TrimSpace(user.Username), request.ChatIDs); err == nil {
+					response["assignedChats"] = invertConversationLabelMap(loaded)
+				}
 			}
 		}
 	}
@@ -251,6 +253,11 @@ func requireOwnedServerToken() func(http.Handler) http.Handler {
 			token := strings.TrimSpace(GetToken(r))
 			if token == "" {
 				RespondErrorCode(w, fmt.Errorf("missing token parameter"), http.StatusBadRequest)
+				return
+			}
+
+			if err := ensureSPATokenScope(r, token); err != nil {
+				respondSPAServerLookupError(w, err)
 				return
 			}
 

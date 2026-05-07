@@ -7,4 +7,8 @@ func registerCanonicalSystemRoutes(r chi.Router) {
 	r.Head("/system/health", HealthController)
 	r.Get("/system/version", VersionController)
 	r.Get("/system/environment", EnvironmentController)
+
+	// Alias routes for convenience
+	r.Get("/health", HealthController)
+	r.Head("/health", HealthController)
 }

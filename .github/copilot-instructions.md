@@ -1,5 +1,24 @@
 # QuePasa AI Agent Instructions
 
+## AI Memory First - EXECUTE BEFORE BROAD REPOSITORY EXPLORATION
+
+- If the `Sufficit AI Memory` MCP server is available in VS Code, run memory recall before broad repository exploration, repo mapping, or speculative architecture reading.
+- Build the first recall query from the current repository, branch, active file, user goal, and the most stable local anchors available: symbol, failing command, failing test, or concrete error.
+- Use compact retrieval order: `memory_search` → `memory_timeline` → `memory_get_observations`.
+- Save structured memory with `memory_save` using the schema in `schemas/vscode-memory-anchor-checkpoint.schema.json`.
+- Save one `task-anchor` after initial routing and a `task-checkpoint` at major milestones: first local hypothesis, first substantive edit, focused validation, deploy/runtime verification, and handoff/summary boundaries.
+- Persist compact task state only. Never dump raw chat transcripts, secrets, or oversized logs into memory.
+- If the MCP server is unavailable or the current workspace is not configured for it, continue normally and do not block the task.
+
+## AI Agent Startup Checklist - EXECUTE FIRST
+
+**At the start of EVERY conversation or when resuming after summary:**
+
+1. **Run the `AI Memory First` workflow above** whenever the `Sufficit AI Memory` MCP server is available
+2. **Review current task context files** if available in the current directory
+3. **Read relevant project documentation** based on task type
+4. **Read `/.github/copilot-chat-vocabulary.md`** and apply its normalization rules in the full conversation
+
 ## Communication Guidelines
 - Response Language: Always respond in the same language as the user's query (Portuguese for Portuguese queries, English for English queries)
 - Code and Comments: All code, comments, documentation, and technical content must be in English

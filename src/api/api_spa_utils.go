@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,10 +18,78 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type spaAuthContextKey string
+
+const spaScopedSessionAuthKey spaAuthContextKey = "spa_scoped_session_auth"
+
+type spaScopedSessionAuth struct {
+	Token    string
+	Username string
+}
+
+func withSPAScopedSessionAuth(r *http.Request, token string, username string) *http.Request {
+	auth := spaScopedSessionAuth{
+		Token:    strings.TrimSpace(token),
+		Username: strings.TrimSpace(username),
+	}
+	ctx := context.WithValue(r.Context(), spaScopedSessionAuthKey, auth)
+	return r.WithContext(ctx)
+}
+
+func getSPAScopedSessionAuth(r *http.Request) (spaScopedSessionAuth, bool) {
+	if r == nil {
+		return spaScopedSessionAuth{}, false
+	}
+
+	raw := r.Context().Value(spaScopedSessionAuthKey)
+	auth, ok := raw.(spaScopedSessionAuth)
+	if !ok {
+		return spaScopedSessionAuth{}, false
+	}
+
+	auth.Token = strings.TrimSpace(auth.Token)
+	auth.Username = strings.TrimSpace(auth.Username)
+	if auth.Token == "" || auth.Username == "" {
+		return spaScopedSessionAuth{}, false
+	}
+
+	return auth, true
+}
+
+func getSPAScopedSessionToken(r *http.Request) (string, bool) {
+	auth, ok := getSPAScopedSessionAuth(r)
+	if !ok {
+		return "", false
+	}
+	return auth.Token, true
+}
+
+func ensureSPATokenScope(r *http.Request, token string) error {
+	scopedToken, scoped := getSPAScopedSessionToken(r)
+	if !scoped {
+		return nil
+	}
+
+	resolved := strings.TrimSpace(token)
+	if resolved == "" {
+		return errors.New("missing token parameter")
+	}
+
+	if !strings.EqualFold(resolved, scopedToken) {
+		return errors.New("server token not owned by user")
+	}
+
+	return nil
+}
+
 // GetSPAUser resolves the authenticated user for SPA-only routes from the JWT claims.
 // This duplicates the minimum auth lookup logic from the form package so the API
 // layer can stay independent and avoid a package cycle with form.
 func GetSPAUser(r *http.Request) (*models.QpUser, error) {
+	if scopedAuth, ok := getSPAScopedSessionAuth(r); ok {
+		return findPersistedUser(scopedAuth.Username)
+	}
+
 	_, claims, err := jwtauth.FromContext(r.Context())
 	if err != nil {
 		return nil, err
@@ -36,10 +105,15 @@ func GetSPAUser(r *http.Request) (*models.QpUser, error) {
 
 // GetSPATokenParam returns the server token from a SPA route and validates presence.
 func GetSPATokenParam(r *http.Request) (string, error) {
+	scopedAuth, hasScopedAuth := getSPAScopedSessionAuth(r)
 	token := strings.TrimSpace(chi.URLParam(r, "token"))
+	if hasScopedAuth {
+		return scopedAuth.Token, nil
+	}
 	if token == "" {
 		return "", errors.New("missing token parameter")
 	}
+
 	return token, nil
 }
 

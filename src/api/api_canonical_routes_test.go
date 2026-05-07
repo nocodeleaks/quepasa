@@ -225,12 +225,26 @@ func TestCanonicalSessionCreateAcceptsXQuePasaTokenHeader(t *testing.T) {
 
 	router := newCanonicalTestRouter()
 
-	createReq := newCanonicalTokenHeaderRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createReq := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createReq.Header.Set(library.HeaderToken, "custom-session-token-001")
 	createRec := httptest.NewRecorder()
 	router.ServeHTTP(createRec, createReq)
 
 	if createRec.Code != http.StatusCreated {
 		t.Fatalf("expected create session to return 201 with X-QUEPASA-TOKEN, got %d with body %s", createRec.Code, createRec.Body.String())
+	}
+
+	var createPayload struct {
+		Server struct {
+			Token string `json:"token"`
+		} `json:"server"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &createPayload); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+
+	if createPayload.Server.Token != "custom-session-token-001" {
+		t.Fatalf("expected created session token to match X-QUEPASA-TOKEN, got %q", createPayload.Server.Token)
 	}
 }
 
@@ -246,6 +260,7 @@ func TestCanonicalSessionCreateRequiresMasterKeyWhenNotRelaxed(t *testing.T) {
 	router := newCanonicalTestRouter()
 
 	createReq := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createReq.Header.Set(library.HeaderToken, "custom-session-token-002")
 	createRec := httptest.NewRecorder()
 	router.ServeHTTP(createRec, createReq)
 
@@ -275,6 +290,172 @@ func TestCanonicalSessionCreateMasterKeyOnlyStillRequiresAuthIdentity(t *testing
 	}
 }
 
+func TestCanonicalScopedSessionTokenAuthListsOnlyScopedSession(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	CreateTestUser(t, "owner@example.com", "Password123!")
+
+	restoreRelaxed := setRelaxedSessionsForTest(t, true)
+	defer restoreRelaxed()
+
+	router := newCanonicalTestRouter()
+
+	createA := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createA.Header.Set(library.HeaderToken, "session-a")
+	createARec := httptest.NewRecorder()
+	router.ServeHTTP(createARec, createA)
+	if createARec.Code != http.StatusCreated {
+		t.Fatalf("expected session-a create 201, got %d with body %s", createARec.Code, createARec.Body.String())
+	}
+
+	createB := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createB.Header.Set(library.HeaderToken, "session-b")
+	createBRec := httptest.NewRecorder()
+	router.ServeHTTP(createBRec, createB)
+	if createBRec.Code != http.StatusCreated {
+		t.Fatalf("expected session-b create 201, got %d with body %s", createBRec.Code, createBRec.Body.String())
+	}
+
+	req := newCanonicalScopedTokenAuthRequest(http.MethodGet, "/api/sessions", nil, "session-a")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected scoped token auth list to return 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Servers []struct {
+			Token string `json:"token"`
+		} `json:"servers"`
+		Total int `json:"total"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode sessions list response: %v", err)
+	}
+
+	if payload.Total != 1 || len(payload.Servers) != 1 {
+		t.Fatalf("expected exactly one scoped session, got total=%d len=%d", payload.Total, len(payload.Servers))
+	}
+
+	if payload.Servers[0].Token != "session-a" {
+		t.Fatalf("expected scoped session token session-a, got %q", payload.Servers[0].Token)
+	}
+}
+
+func TestCanonicalScopedSessionTokenAuthForcesAuthenticatedSessionToken(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	CreateTestUser(t, "owner@example.com", "Password123!")
+
+	restoreRelaxed := setRelaxedSessionsForTest(t, true)
+	defer restoreRelaxed()
+
+	router := newCanonicalTestRouter()
+
+	createA := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createA.Header.Set(library.HeaderToken, "session-a")
+	createARec := httptest.NewRecorder()
+	router.ServeHTTP(createARec, createA)
+	if createARec.Code != http.StatusCreated {
+		t.Fatalf("expected session-a create 201, got %d with body %s", createARec.Code, createARec.Body.String())
+	}
+
+	createB := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createB.Header.Set(library.HeaderToken, "session-b")
+	createBRec := httptest.NewRecorder()
+	router.ServeHTTP(createBRec, createB)
+	if createBRec.Code != http.StatusCreated {
+		t.Fatalf("expected session-b create 201, got %d with body %s", createBRec.Code, createBRec.Body.String())
+	}
+
+	req := newCanonicalScopedTokenAuthRequest(http.MethodPost, "/api/sessions/get", []byte(`{"token":"session-b"}`), "session-a")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected scoped token auth to resolve to authenticated session, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Server struct {
+			Token string `json:"token"`
+		} `json:"server"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode session get response: %v", err)
+	}
+
+	if payload.Server.Token != "session-a" {
+		t.Fatalf("expected scoped auth to force token session-a, got %q", payload.Server.Token)
+	}
+}
+
+// TestCanonicalHealthAliasRoutes validates that /api/health is an alias for /api/system/health
+func TestCanonicalHealthAliasRoutes(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	router := newCanonicalTestRouter()
+
+	// Test GET /api/system/health
+	sysReq := httptest.NewRequest(http.MethodGet, "/api/system/health", nil)
+	sysRec := httptest.NewRecorder()
+	router.ServeHTTP(sysRec, sysReq)
+
+	if sysRec.Code != http.StatusOK {
+		t.Fatalf("expected /api/system/health to return 200, got %d", sysRec.Code)
+	}
+
+	var sysPayload map[string]interface{}
+	if err := json.Unmarshal(sysRec.Body.Bytes(), &sysPayload); err != nil {
+		t.Fatalf("decode /api/system/health response: %v", err)
+	}
+
+	// Test GET /api/health (alias)
+	aliasReq := httptest.NewRequest(http.MethodGet, "/api/health", nil)
+	aliasRec := httptest.NewRecorder()
+	router.ServeHTTP(aliasRec, aliasReq)
+
+	if aliasRec.Code != http.StatusOK {
+		t.Fatalf("expected /api/health to return 200, got %d", aliasRec.Code)
+	}
+
+	var aliasPayload map[string]interface{}
+	if err := json.Unmarshal(aliasRec.Body.Bytes(), &aliasPayload); err != nil {
+		t.Fatalf("decode /api/health response: %v", err)
+	}
+
+	// Verify both responses are identical
+	sysJSON, _ := json.Marshal(sysPayload)
+	aliasJSON, _ := json.Marshal(aliasPayload)
+	if string(sysJSON) != string(aliasJSON) {
+		t.Fatalf("expected /api/health and /api/system/health to return identical responses\n/api/system/health: %s\n/api/health: %s", sysJSON, aliasJSON)
+	}
+
+	// Test HEAD /api/system/health
+	sysHeadReq := httptest.NewRequest(http.MethodHead, "/api/system/health", nil)
+	sysHeadRec := httptest.NewRecorder()
+	router.ServeHTTP(sysHeadRec, sysHeadReq)
+
+	if sysHeadRec.Code != http.StatusOK {
+		t.Fatalf("expected HEAD /api/system/health to return 200, got %d", sysHeadRec.Code)
+	}
+
+	// Test HEAD /api/health (alias)
+	aliasHeadReq := httptest.NewRequest(http.MethodHead, "/api/health", nil)
+	aliasHeadRec := httptest.NewRecorder()
+	router.ServeHTTP(aliasHeadRec, aliasHeadReq)
+
+	if aliasHeadRec.Code != http.StatusOK {
+		t.Fatalf("expected HEAD /api/health to return 200, got %d", aliasHeadRec.Code)
+	}
+
+	t.Log("Both /api/health and /api/system/health routes working correctly as aliases")
+}
+
 func newCanonicalTestRouter() chi.Router {
 	router := chi.NewRouter()
 	router.Route("/api", func(r chi.Router) {
@@ -300,20 +481,12 @@ func newCanonicalAuthRequest(t *testing.T, method string, target string, body []
 	return req
 }
 
-func newCanonicalTokenHeaderRequest(t *testing.T, method string, target string, body []byte, username string) *http.Request {
-	t.Helper()
-
+func newCanonicalScopedTokenAuthRequest(method string, target string, body []byte, scopedToken string) *http.Request {
 	req := httptest.NewRequest(method, target, bytes.NewReader(body))
 	if len(body) > 0 {
 		req.Header.Set("Content-Type", "application/json")
 	}
-
-	_, tokenString, err := GetSPATokenAuth().Encode(jwt.MapClaims{"user_id": username})
-	if err != nil {
-		t.Fatalf("encode canonical auth token: %v", err)
-	}
-
-	req.Header.Set(library.HeaderToken, tokenString)
+	req.Header.Set(library.HeaderToken, scopedToken)
 	return req
 }
 

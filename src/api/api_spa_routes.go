@@ -10,22 +10,13 @@ import (
 	events "github.com/nocodeleaks/quepasa/events"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // spaTokenAuth reuses the same signing secret as the form login flow so a browser
 // session authenticated through the existing UI can call SPA endpoints without a
 // second token system.
 var spaTokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
-
-// tokenFromAuthorizationOrQuePasaHeader resolves SPA auth tokens from the standard
-// Authorization Bearer header first, then falls back to X-QUEPASA-TOKEN.
-func tokenFromAuthorizationOrQuePasaHeader(r *http.Request) string {
-	if token := strings.TrimSpace(jwtauth.TokenFromHeader(r)); token != "" {
-		return token
-	}
-
-	return strings.TrimSpace(r.Header.Get(library.HeaderToken))
-}
 
 // GetSPATokenAuth returns the JWT authentication token used by SPA routes.
 func GetSPATokenAuth() *jwtauth.JWTAuth {
@@ -44,19 +35,41 @@ func RegisterSPAPublicControllers(r chi.Router) {
 func SPAAuthenticatorHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, _, err := jwtauth.FromContext(r.Context())
-		if err != nil {
-			publishSPAAuthenticationEvent(r, "unauthorized", "jwt_context_error")
-			RespondErrorCode(w, err, http.StatusUnauthorized)
+		if err == nil && token != nil && token.Valid {
+			publishSPAAuthenticationEvent(r, "success", "validated_jwt")
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		if token == nil || !token.Valid {
-			publishSPAAuthenticationEvent(r, "unauthorized", "invalid_token")
+		scopedToken := strings.TrimSpace(r.Header.Get(library.HeaderToken))
+		if scopedToken == "" {
+			reason := "invalid_token"
+			if err != nil {
+				reason = "jwt_context_error"
+			}
+			publishSPAAuthenticationEvent(r, "unauthorized", reason)
 			RespondErrorCode(w, models.ErrFormUnauthenticated, http.StatusUnauthorized)
 			return
 		}
 
-		publishSPAAuthenticationEvent(r, "success", "validated")
+		username := ""
+		if server, lookupErr := findPersistedServerRecord(scopedToken); lookupErr == nil && server != nil {
+			username = strings.TrimSpace(server.GetUser())
+		}
+		if username == "" {
+			if liveSession, ok := runtime.FindLiveSessionByToken(scopedToken); ok && liveSession != nil {
+				username = strings.TrimSpace(liveSession.GetUser())
+			}
+		}
+
+		if username == "" {
+			publishSPAAuthenticationEvent(r, "unauthorized", "invalid_scoped_session_token")
+			RespondErrorCode(w, models.ErrFormUnauthenticated, http.StatusUnauthorized)
+			return
+		}
+
+		r = withSPAScopedSessionAuth(r, scopedToken, username)
+		publishSPAAuthenticationEvent(r, "success", "validated_session_token")
 
 		next.ServeHTTP(w, r)
 	})
@@ -80,7 +93,7 @@ func publishSPAAuthenticationEvent(r *http.Request, status string, reason string
 // the current develop branch instead of importing the full PR #39 SPA controller set.
 func RegisterSPAControllers(r chi.Router) {
 	tokenAuth := GetSPATokenAuth()
-	r.Use(jwtauth.Verify(tokenAuth, tokenFromAuthorizationOrQuePasaHeader, jwtauth.TokenFromCookie))
+	r.Use(jwtauth.Verifier(tokenAuth))
 	r.Use(SPAAuthenticatorHandler)
 
 	// First extracted SPA read endpoints.

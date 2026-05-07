@@ -238,6 +238,55 @@ QuePasa exposes connection states such as `Ready`, `Stopped`, `Disconnected`, an
 
 📖 **[Connection States Guide](docs/CONNECTION_STATES.md)** - Detailed explanation of each state, health semantics, and which states are currently emitted by the runtime.
 
+## 🔐 Authentication
+
+QuePasa supports four authentication modes for secure API access:
+
+### Authentication Modes
+
+1. **JWT (User-Level Access)** - Full access to all user sessions
+   - Use the `Authorization: Bearer <jwt-token>` header
+   - Recommended for multi-session applications
+   - Managed by `SIGNING_SECRET` environment variable
+
+2. **X-QUEPASA-TOKEN (Session-Scoped Access)** - Access to a single session
+   - Use the `X-QUEPASA-TOKEN: <token>` header  
+   - Recommended for single-session applications
+   - Automatically created when `RELAXED_SESSIONS=true` (default)
+   - Restricted to authenticated session only (cannot access other sessions)
+
+3. **X-QUEPASA-MASTERKEY** - Administration and setup
+   - Use the `X-QUEPASA-MASTERKEY: <masterkey>` header
+   - Required for setup operations when `RELAXED_SESSIONS=false`
+   - Managed by `MASTERKEY` environment variable
+
+4. **Anonymous** - Public endpoints only
+   - No authentication required for health checks, version info, etc.
+   - No headers needed
+
+### Quick Examples
+
+```bash
+# JWT authentication (user-level)
+curl -H "Authorization: Bearer your-jwt-token" \
+  http://localhost:31000/api/servers
+
+# Session token authentication (single session)
+curl -H "X-QUEPASA-TOKEN: your-session-token" \
+  http://localhost:31000/api/servers
+
+# Master key (administration)
+curl -H "X-QUEPASA-MASTERKEY: your-masterkey" \
+  http://localhost:31000/api/sessions
+
+# Anonymous (public endpoints)
+curl http://localhost:31000/health
+```
+
+📖 **[Complete Authentication Guide](docs/USAGE-authentication-modes.md)** - Detailed documentation covering all authentication modes, use cases, security considerations, and advanced examples.
+
+📖 **[Environment Discovery Guide](docs/USAGE-environment-discovery.md)** - Learn how to query server capabilities with `GET /api/system/environment` — public preview vs. full configuration with master key.
+
 ## ⚙️ Configuration
 
 ### Environment Variables Overview

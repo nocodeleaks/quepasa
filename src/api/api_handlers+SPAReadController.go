@@ -43,6 +43,8 @@ func SPAServersController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	scopedToken, hasScopedToken := getSPAScopedSessionToken(r)
+
 	dbServers, err := listPersistedServerRecords()
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusInternalServerError)
@@ -51,6 +53,9 @@ func SPAServersController(w http.ResponseWriter, r *http.Request) {
 	items := make([]map[string]interface{}, 0, len(dbServers))
 	for _, dbServer := range dbServers {
 		if dbServer == nil || dbServer.GetUser() != user.Username {
+			continue
+		}
+		if hasScopedToken && !strings.EqualFold(dbServer.Token, scopedToken) {
 			continue
 		}
 
@@ -72,6 +77,8 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
+
+	scopedToken, hasScopedToken := getSPAScopedSessionToken(r)
 
 	var req struct {
 		Query string `json:"query"`
@@ -104,6 +111,9 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 	items := make([]map[string]interface{}, 0, len(dbServers))
 	for _, dbServer := range dbServers {
 		if dbServer == nil || dbServer.GetUser() != user.Username {
+			continue
+		}
+		if hasScopedToken && !strings.EqualFold(dbServer.Token, scopedToken) {
 			continue
 		}
 
@@ -160,6 +170,16 @@ func SPAAccountController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	servers := runtime.ListLiveSessionsForUser(user.Username)
+	if scopedToken, hasScopedToken := getSPAScopedSessionToken(r); hasScopedToken {
+		filtered := make([]*models.QpWhatsappServer, 0, 1)
+		for _, server := range servers {
+			if server == nil || !strings.EqualFold(server.Token, scopedToken) {
+				continue
+			}
+			filtered = append(filtered, server)
+		}
+		servers = filtered
+	}
 	RespondSuccess(w, map[string]interface{}{
 		"user":            user,
 		"serverCount":     len(servers),

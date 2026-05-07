@@ -40,11 +40,21 @@ func SPAEnvironmentController(w http.ResponseWriter, r *http.Request) {
 }
 
 // SPAPublicUserCreateController creates a user through the SPA setup flow.
-// When a MASTERKEY is configured, the X-Master-Key header must match it.
+// First user can be created without master key (bootstrap).
+// Subsequent users require X-Master-Key header.
 // The route remains reachable without JWT to support bootstrap (first user).
 func SPAPublicUserCreateController(w http.ResponseWriter, r *http.Request) {
-	if isMasterKeyEnabled() && !isMasterKeyRequest(r) {
-		RespondErrorCode(w, fmt.Errorf("master key required to create users"), http.StatusForbidden)
+	// Count existing users to determine if this is the first user
+	count, err := runtime.CountPersistedUsers()
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	// First user (count == 0) can be created without master key
+	// Subsequent users (count > 0) require master key
+	if count > 0 && !IsMatchForMaster(r) {
+		RespondErrorCode(w, fmt.Errorf("master key required to create additional users"), http.StatusForbidden)
 		return
 	}
 

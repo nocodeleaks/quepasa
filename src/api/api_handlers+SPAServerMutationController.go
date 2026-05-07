@@ -10,18 +10,27 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
+	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // SPAServerCreateController creates a new pre-configured server.
 //
-// Authentication is always required via SPA JWT (Authorization Bearer or X-QUEPASA-TOKEN).
+// Authentication is required via SPA JWT (user scope) or X-QUEPASA-TOKEN (single-session scope).
+// When authenticated by JWT, X-QUEPASA-TOKEN is treated as the optional token/identifier
+// for the new session and is accepted only when RELAXED_SESSIONS=true.
 // When RELAXED_SESSIONS=false, a valid master key is also required.
 func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetSPAUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	requestedSessionToken := strings.TrimSpace(r.Header.Get(library.HeaderToken))
+	if requestedSessionToken != "" && !isRelaxedSessions() {
+		RespondErrorCode(w, fmt.Errorf("X-QUEPASA-TOKEN is only allowed when RELAXED_SESSIONS=true"), http.StatusForbidden)
 		return
 	}
 
@@ -49,7 +58,11 @@ func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	patch := buildSessionConfigurationPatch(request)
-	info := runtime.BuildSessionRecord(uuid.NewString(), user.Username, patch)
+	sessionToken := uuid.NewString()
+	if requestedSessionToken != "" {
+		sessionToken = requestedSessionToken
+	}
+	info := runtime.BuildSessionRecord(sessionToken, user.Username, patch)
 
 	server, err := runtime.CreateSessionRecord(info, "server created via SPA")
 	if err != nil {

@@ -79,7 +79,7 @@ func RegisterAPIV5Controllers(r chi.Router) {
 		Public: registerCanonicalPublicRoutes,
 		Protected: func(protected chi.Router) {
 			tokenAuth := GetSPATokenAuth()
-			protected.Use(jwtauth.Verifier(tokenAuth))
+			protected.Use(jwtauth.Verify(tokenAuth, tokenFromAuthorizationOrQuePasaHeader, jwtauth.TokenFromCookie))
 			protected.Use(SPAAuthenticatorHandler)
 			registerCanonicalProtectedRoutes(protected)
 		},

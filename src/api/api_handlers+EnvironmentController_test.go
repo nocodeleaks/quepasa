@@ -143,7 +143,7 @@ func TestEnvironmentEndpoint_WithMasterKey(t *testing.T) {
 	// Test 1: Master key in header
 	t.Run("MasterKeyInHeader", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/environment", nil)
-		req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+		req.Header.Set(masterKeyHeader, testMasterKey)
 		rec := httptest.NewRecorder()
 
 		EnvironmentController(rec, req)
@@ -246,7 +246,7 @@ func TestEnvironmentEndpoint_InvalidMasterKey(t *testing.T) {
 	defer cleanup()
 
 	req := httptest.NewRequest(http.MethodGet, "/environment", nil)
-	req.Header.Set("X-QUEPASA-MASTERKEY", "invalid-master-key-wrong")
+	req.Header.Set(masterKeyHeader, "invalid-master-key-wrong")
 	rec := httptest.NewRecorder()
 
 	EnvironmentController(rec, req)
@@ -303,7 +303,7 @@ func TestEnvironmentEndpoint_AuthenticationPriority(t *testing.T) {
 	// Master key should grant access
 	req := httptest.NewRequest(http.MethodGet, "/environment", nil)
 	req.Header.Set("X-QUEPASA-TOKEN", testToken)
-	req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+	req.Header.Set(masterKeyHeader, testMasterKey)
 	rec := httptest.NewRecorder()
 
 	EnvironmentController(rec, req)

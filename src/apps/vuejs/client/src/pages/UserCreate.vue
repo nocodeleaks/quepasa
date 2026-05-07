@@ -102,10 +102,12 @@ import { defineComponent, ref, computed } from 'vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
 import { useLocale } from '@/i18n'
+import { useMasterKey } from '@/composables/useMasterKey'
 
 export default defineComponent({
   setup() {
     const { t } = useLocale()
+    const { masterKeyHeaders } = useMasterKey()
     const email = ref('')
     const password = ref('')
     const confirmPassword = ref('')
@@ -149,7 +151,7 @@ export default defineComponent({
         await api.post('/api/users', {
           email: email.value,
           password: password.value
-        })
+        }, { headers: masterKeyHeaders() })
         success.value = t('user_created_success')
         pushToast(t('user_created_success'), 'success')
         email.value = ''

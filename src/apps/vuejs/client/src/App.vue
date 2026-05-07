@@ -17,6 +17,7 @@
           <RouterLink class="nav-pill" to="/">{{ t('nav_home') }}</RouterLink>
           <RouterLink class="nav-pill" to="/connect">{{ t('nav_connect') }}</RouterLink>
           <RouterLink v-if="session.user.value" class="nav-pill" to="/account">{{ t('nav_account') }}</RouterLink>
+          <RouterLink v-if="hasMasterKey" class="nav-pill nav-pill-master" :class="{ 'nav-pill-master-active': isMasterAuthenticated() }" to="/master">{{ t('nav_master') }}</RouterLink>
           <a class="nav-pill nav-pill-secondary" href="/swagger/" target="_blank">{{ t('nav_api_docs') }}</a>
         </nav>
 
@@ -110,6 +111,10 @@
               <i class="fa fa-user-circle"></i>
               <span>{{ t('nav_account') }}</span>
             </button>
+            <button v-if="hasMasterKey" class="sheet-tile sheet-tile-master" type="button" @click="navigateTo('/master')">
+              <i class="fa fa-shield-alt"></i>
+              <span>{{ t('nav_master') }}</span>
+            </button>
             <a class="sheet-tile" href="/swagger/" target="_blank" @click="closeOffcanvas">
               <i class="fa fa-book"></i>
               <span>{{ t('nav_api_docs') }}</span>
@@ -159,6 +164,7 @@
 import { defineComponent, onMounted, computed, ref } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
+import { useMasterKey } from '@/composables/useMasterKey'
 import api from './services/api'
 import Toaster from '@/components/Toaster.vue'
 import { useLocale } from '@/i18n'
@@ -168,9 +174,12 @@ export default defineComponent({
   setup() {
     const year = new Date().getFullYear()
     const session = useSessionStore()
+    const { isMasterAuthenticated } = useMasterKey()
     const router = useRouter()
     const route = useRoute()
     const appVersion = ref('0.0.0')
+    const hasMasterKey = ref(false)
+    const relaxedSessions = ref(true)
 
     const { t, locale, setLocale } = useLocale()
 
@@ -200,8 +209,7 @@ export default defineComponent({
     const loadBranding = async () => {
       try {
         const res = await api.get('/api/auth/config')
-        if (res.data?.branding) {
-          branding.value = { ...branding.value, ...res.data.branding }
+        if (res.data?.branding) {          branding.value = { ...branding.value, ...res.data.branding }
 
           const root = document.documentElement
           root.style.setProperty('--branding-primary', branding.value.primaryColor)
@@ -223,6 +231,17 @@ export default defineComponent({
 
         if (res.data?.version) {
           appVersion.value = res.data.version
+        }
+
+        // Load master key availability after branding
+        if (session.user.value) {
+          try {
+            const accountRes = await api.get('/api/account')
+            hasMasterKey.value = Boolean(accountRes.data?.hasMasterKey)
+            relaxedSessions.value = accountRes.data?.relaxedSessions !== false
+          } catch {
+            // ignore
+          }
         }
       } catch {
         // ignore
@@ -259,7 +278,8 @@ export default defineComponent({
       loadBranding()
     })
 
-    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale }
+    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, hasMasterKey, isMasterAuthenticated, sessionCreateOpen }
+    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, hasMasterKey, isMasterAuthenticated, relaxedSessions }
   }
 })
 </script>
@@ -390,6 +410,21 @@ export default defineComponent({
 
 .nav-pill-secondary {
   background: rgba(17, 24, 39, 0.10);
+}
+
+.nav-pill-master {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.nav-pill-master-active {
+  background: rgba(220, 38, 38, 0.22);
+  font-weight: 700;
+}
+
+.sheet-tile-master {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
 }
 
 .user-avatar-shell {

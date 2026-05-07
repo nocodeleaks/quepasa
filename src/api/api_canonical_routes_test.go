@@ -10,6 +10,8 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi/v5"
+	environment "github.com/nocodeleaks/quepasa/environment"
+	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -212,6 +214,67 @@ func TestCanonicalSessionCreateThenGetReturnsCreatedServer(t *testing.T) {
 	}
 }
 
+func TestCanonicalSessionCreateAcceptsXQuePasaTokenHeader(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	CreateTestUser(t, "owner@example.com", "Password123!")
+
+	restoreRelaxed := setRelaxedSessionsForTest(t, true)
+	defer restoreRelaxed()
+
+	router := newCanonicalTestRouter()
+
+	createReq := newCanonicalTokenHeaderRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createRec := httptest.NewRecorder()
+	router.ServeHTTP(createRec, createReq)
+
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected create session to return 201 with X-QUEPASA-TOKEN, got %d with body %s", createRec.Code, createRec.Body.String())
+	}
+}
+
+func TestCanonicalSessionCreateRequiresMasterKeyWhenNotRelaxed(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	CreateTestUser(t, "owner@example.com", "Password123!")
+
+	restoreRelaxed := setRelaxedSessionsForTest(t, false)
+	defer restoreRelaxed()
+
+	router := newCanonicalTestRouter()
+
+	createReq := newCanonicalAuthRequest(t, http.MethodPost, "/api/sessions", []byte(`{}`), "owner@example.com")
+	createRec := httptest.NewRecorder()
+	router.ServeHTTP(createRec, createReq)
+
+	if createRec.Code != http.StatusForbidden {
+		t.Fatalf("expected create session to return 403 when RELAXED_SESSIONS=false and no master key, got %d with body %s", createRec.Code, createRec.Body.String())
+	}
+}
+
+func TestCanonicalSessionCreateMasterKeyOnlyStillRequiresAuthIdentity(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	cleanupMasterKey := SetupTestMasterKey(t, "master-key-123")
+	defer cleanupMasterKey()
+
+	router := newCanonicalTestRouter()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/sessions", bytes.NewReader([]byte(`{}`)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(library.HeaderMasterKey, "master-key-123")
+
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected create session to return 401 without JWT/X-QUEPASA-TOKEN, got %d with body %s", rec.Code, rec.Body.String())
+	}
+}
+
 func newCanonicalTestRouter() chi.Router {
 	router := chi.NewRouter()
 	router.Route("/api", func(r chi.Router) {
@@ -235,6 +298,34 @@ func newCanonicalAuthRequest(t *testing.T, method string, target string, body []
 
 	req.Header.Set("Authorization", "Bearer "+tokenString)
 	return req
+}
+
+func newCanonicalTokenHeaderRequest(t *testing.T, method string, target string, body []byte, username string) *http.Request {
+	t.Helper()
+
+	req := httptest.NewRequest(method, target, bytes.NewReader(body))
+	if len(body) > 0 {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	_, tokenString, err := GetSPATokenAuth().Encode(jwt.MapClaims{"user_id": username})
+	if err != nil {
+		t.Fatalf("encode canonical auth token: %v", err)
+	}
+
+	req.Header.Set(library.HeaderToken, tokenString)
+	return req
+}
+
+func setRelaxedSessionsForTest(t *testing.T, value bool) func() {
+	t.Helper()
+
+	oldValue := environment.Settings.API.RelaxedSessions
+	environment.Settings.API.RelaxedSessions = value
+
+	return func() {
+		environment.Settings.API.RelaxedSessions = oldValue
+	}
 }
 
 func setCanonicalAccountSetupEnv(t *testing.T, value string) func() {

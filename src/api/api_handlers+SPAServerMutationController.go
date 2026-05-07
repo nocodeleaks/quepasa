@@ -14,11 +14,19 @@ import (
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
-// SPAServerCreateController creates a new pre-configured server owned by the SPA user.
+// SPAServerCreateController creates a new pre-configured server.
+//
+// Authentication is always required via SPA JWT (Authorization Bearer or X-QUEPASA-TOKEN).
+// When RELAXED_SESSIONS=false, a valid master key is also required.
 func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetSPAUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	if !isRelaxedSessions() && !isMasterKeyRequest(r) {
+		RespondErrorCode(w, fmt.Errorf("master key required to create sessions (RELAXED_SESSIONS=false)"), http.StatusForbidden)
 		return
 	}
 

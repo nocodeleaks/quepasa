@@ -77,6 +77,7 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
 import { useLocale } from '@/i18n'
+import { useMasterKey } from '@/composables/useMasterKey'
 
 export default defineComponent({
   name: 'Connect',
@@ -85,6 +86,7 @@ export default defineComponent({
     const loading = ref(false)
     const error = ref('')
     const { t } = useLocale()
+    const { masterKeyHeaders } = useMasterKey()
 
     const connectWith = async (method: 'qrcode' | 'paircode') => {
       loading.value = true
@@ -92,7 +94,7 @@ export default defineComponent({
       
       try {
         // Create a new server first
-        const response = await api.post('/api/sessions', {})
+        const response = await api.post('/api/sessions', {}, { headers: masterKeyHeaders() })
         const createdServer = response.data?.server || response.data
 
         if (createdServer?.token) {

@@ -16,7 +16,9 @@ import EnvironmentPage from '@/pages/Environment.vue'
 import UsersPage from '@/pages/Users.vue'
 import UserCreatePage from '@/pages/UserCreate.vue'
 import SetupPage from '@/pages/Setup.vue'
+import MasterLoginPage from '@/pages/MasterLogin.vue'
 import { useSessionStore } from '@/stores/session'
+import { useMasterKey } from '@/composables/useMasterKey'
 
 function hasSessionCookie() {
   return document.cookie.split(';').some((entry) => entry.trim().startsWith('jwt='))
@@ -40,9 +42,10 @@ const router = createRouter({
     { path: '/server/:token/groups', name: 'server.groups', component: () => import('@/pages/Groups.vue'), meta: { requiresAuth: true } },
     { path: '/server/:token/groups/:id', name: 'server.groups.detail', component: () => import('@/pages/GroupDetail.vue'), meta: { requiresAuth: true } },
     { path: '/account', name: 'account', component: AccountPage, meta: { requiresAuth: true } },
-    { path: '/environment', name: 'environment', component: EnvironmentPage, meta: { requiresAuth: true } },
-    { path: '/users', name: 'users', component: UsersPage, meta: { requiresAuth: true } },
-    { path: '/users/create', name: 'users.create', component: UserCreatePage, meta: { requiresAuth: true } },
+    { path: '/environment', name: 'environment', component: EnvironmentPage, meta: { requiresAuth: true, requiresMaster: true } },
+    { path: '/users', name: 'users', component: UsersPage, meta: { requiresAuth: true, requiresMaster: true } },
+    { path: '/users/create', name: 'users.create', component: UserCreatePage, meta: { requiresAuth: true, requiresMaster: true } },
+    { path: '/master', name: 'master', component: MasterLoginPage, meta: { requiresAuth: true } },
     { path: '/setup', name: 'setup', component: SetupPage },
     { path: '/login', name: 'login', component: LoginPage },
   ],
@@ -50,7 +53,9 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const session = useSessionStore()
+  const { isMasterAuthenticated } = useMasterKey()
   const requiresAuth = Boolean(to.meta.requiresAuth)
+  const requiresMaster = Boolean(to.meta.requiresMaster)
   // Always probe the session when navigating to a protected page or the login/setup
   // pages. The jwt cookie is HttpOnly so document.cookie cannot detect it — probing
   // the backend directly is the only reliable way to know whether the user is already
@@ -65,6 +70,10 @@ router.beforeEach(async (to) => {
 
   if (requiresAuth && !session.user.value) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (requiresMaster && !isMasterAuthenticated()) {
+    return { name: 'master', query: { redirect: to.fullPath } }
   }
 
   if (to.name === 'login' && session.user.value) {

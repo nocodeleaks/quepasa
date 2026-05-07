@@ -3,10 +3,12 @@ package api
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 	events "github.com/nocodeleaks/quepasa/events"
+	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -14,6 +16,16 @@ import (
 // session authenticated through the existing UI can call SPA endpoints without a
 // second token system.
 var spaTokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
+
+// tokenFromAuthorizationOrQuePasaHeader resolves SPA auth tokens from the standard
+// Authorization Bearer header first, then falls back to X-QUEPASA-TOKEN.
+func tokenFromAuthorizationOrQuePasaHeader(r *http.Request) string {
+	if token := strings.TrimSpace(jwtauth.TokenFromHeader(r)); token != "" {
+		return token
+	}
+
+	return strings.TrimSpace(r.Header.Get(library.HeaderToken))
+}
 
 // GetSPATokenAuth returns the JWT authentication token used by SPA routes.
 func GetSPATokenAuth() *jwtauth.JWTAuth {
@@ -68,7 +80,7 @@ func publishSPAAuthenticationEvent(r *http.Request, status string, reason string
 // the current develop branch instead of importing the full PR #39 SPA controller set.
 func RegisterSPAControllers(r chi.Router) {
 	tokenAuth := GetSPATokenAuth()
-	r.Use(jwtauth.Verifier(tokenAuth))
+	r.Use(jwtauth.Verify(tokenAuth, tokenFromAuthorizationOrQuePasaHeader, jwtauth.TokenFromCookie))
 	r.Use(SPAAuthenticatorHandler)
 
 	// First extracted SPA read endpoints.
@@ -77,6 +89,7 @@ func RegisterSPAControllers(r chi.Router) {
 	r.Post("/servers/search", SPAServersSearchController)
 	r.Get("/account", SPAAccountController)
 	r.Get("/account/masterkey", SPAMasterKeyController)
+	r.Post("/master/verify", SPAMasterVerifyController)
 	r.Get("/environment", SPAEnvironmentController)
 	r.Get("/labels", SPAConversationLabelController)
 	r.Post("/labels", SPAConversationLabelController)

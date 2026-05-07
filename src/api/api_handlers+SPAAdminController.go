@@ -28,6 +28,11 @@ func SPAEnvironmentController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !isMasterKeyRequest(r) {
+		RespondErrorCode(w, fmt.Errorf("master key required"), http.StatusForbidden)
+		return
+	}
+
 	RespondSuccess(w, map[string]interface{}{
 		"settings": environment.Settings,
 		"preview":  environment.GetPreview(),
@@ -35,9 +40,14 @@ func SPAEnvironmentController(w http.ResponseWriter, r *http.Request) {
 }
 
 // SPAPublicUserCreateController creates a user through the SPA setup flow.
-// This route intentionally remains public so the alternate frontend can bootstrap
-// the first account without falling back to the classic UI.
+// When a MASTERKEY is configured, the X-Master-Key header must match it.
+// The route remains reachable without JWT to support bootstrap (first user).
 func SPAPublicUserCreateController(w http.ResponseWriter, r *http.Request) {
+	if isMasterKeyEnabled() && !isMasterKeyRequest(r) {
+		RespondErrorCode(w, fmt.Errorf("master key required to create users"), http.StatusForbidden)
+		return
+	}
+
 	username, err := createSPAUserFromRequest(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
@@ -51,10 +61,16 @@ func SPAPublicUserCreateController(w http.ResponseWriter, r *http.Request) {
 }
 
 // SPAUserDeleteController removes a user account through the authenticated SPA.
+// Requires a valid X-Master-Key header.
 func SPAUserDeleteController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+	_, err := GetSPAUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	if !isMasterKeyRequest(r) {
+		RespondErrorCode(w, fmt.Errorf("master key required"), http.StatusForbidden)
 		return
 	}
 
@@ -64,8 +80,8 @@ func SPAUserDeleteController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.EqualFold(username, user.Username) {
-		RespondErrorCode(w, fmt.Errorf("cannot delete the current authenticated user"), http.StatusBadRequest)
+	if strings.EqualFold(username, "") {
+		RespondErrorCode(w, fmt.Errorf("username cannot be empty"), http.StatusBadRequest)
 		return
 	}
 

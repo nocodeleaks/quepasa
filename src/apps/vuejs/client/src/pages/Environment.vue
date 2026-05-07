@@ -71,6 +71,7 @@
 import { defineComponent, ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import api from '@/services/api'
+import { useMasterKey } from '@/composables/useMasterKey'
 
 interface EnvVar {
   name: string
@@ -88,6 +89,7 @@ export default defineComponent({
   setup() {
     const loading = ref(true)
     const error = ref('')
+    const { masterKeyHeaders } = useMasterKey()
     const categories = ref<Category[]>([])
 
     const formatValue = (value: unknown): string => {
@@ -114,7 +116,7 @@ export default defineComponent({
 
     const loadEnvironment = async () => {
       try {
-        const res = await api.get('/api/system/environment')
+        const res = await api.get('/api/system/environment', { headers: masterKeyHeaders() })
         categories.value = buildCategories(res.data?.settings || res.data?.preview || {})
       } catch (e: any) {
         error.value = e?.response?.data?.result || e.message || 'Failed to load environment variables'

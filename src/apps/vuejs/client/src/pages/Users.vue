@@ -40,22 +40,18 @@
     </div>
 
     <div v-else class="users-list">
-      <div v-for="user in users" :key="user.username" class="user-card" :class="{ 'user-self': user.is_self }">
+      <div v-for="user in users" :key="user.username" class="user-card">
         <div class="user-info">
-          <div class="user-avatar" :class="{ 'avatar-self': user.is_self }">
+          <div class="user-avatar">
             <i class="fa fa-user"></i>
           </div>
           <div class="user-details">
-            <h3>
-              {{ user.username }}
-              <span v-if="user.is_self" class="self-badge">You</span>
-            </h3>
+            <h3>{{ user.username }}</h3>
             <small v-if="user.timestamp">Created: {{ formatDate(user.timestamp) }}</small>
           </div>
         </div>
         <div class="user-actions">
           <button
-            v-if="!user.is_self"
             class="btn-danger-small"
             @click="confirmDelete(user)"
             :disabled="deleting === user.username"
@@ -87,17 +83,16 @@
 import { defineComponent, ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
+import { useMasterKey } from '@/composables/useMasterKey'
 
 interface User {
   username: string
-  created_by?: string
   timestamp?: string
-  is_self?: boolean
-  isSelf?: boolean
 }
 
 export default defineComponent({
   setup() {
+    const { masterKeyHeaders } = useMasterKey()
     const users = ref<User[]>([])
     const loading = ref(true)
     const error = ref('')
@@ -109,11 +104,8 @@ export default defineComponent({
       loading.value = true
       error.value = ''
       try {
-        const res = await api.get('/api/users')
-        users.value = (res.data.users || []).map((user: User) => ({
-          ...user,
-          is_self: user.is_self ?? user.isSelf ?? false
-        }))
+        const res = await api.get('/api/users', { headers: masterKeyHeaders() })
+        users.value = res.data.users || []
       } catch (err: any) {
         error.value = err?.response?.data?.result || 'Failed to load users'
       } finally {
@@ -137,11 +129,12 @@ export default defineComponent({
     async function deleteUser() {
       if (!userToDelete.value) return
 
-      deleting.value = userToDelete.value.username
+      const username = userToDelete.value.username
+      deleting.value = username
       showDeleteModal.value = false
 
       try {
-        await api.delete('/api/users', { data: { username: userToDelete.value.username } })
+        await api.delete(`/api/user/${encodeURIComponent(username)}`, { headers: masterKeyHeaders() })
         pushToast('User deleted successfully', 'success')
         await load()
       } catch (err: any) {

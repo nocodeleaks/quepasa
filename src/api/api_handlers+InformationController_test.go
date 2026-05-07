@@ -176,7 +176,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 	// Test 1: Master key in header with bot token
 	t.Run("MasterKeyInHeaderWithToken", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/info", nil)
-		req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+		req.Header.Set(masterKeyHeader, testMasterKey)
 		req.Header.Set("X-QUEPASA-TOKEN", testToken)
 		rec := httptest.NewRecorder()
 
@@ -327,7 +327,7 @@ func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 	// Send request with both token and masterkey
 	req := httptest.NewRequest(http.MethodGet, "/info", nil)
 	req.Header.Set("X-QUEPASA-TOKEN", testToken)
-	req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+	req.Header.Set(masterKeyHeader, testMasterKey)
 	rec := httptest.NewRecorder()
 
 	GetInformationController(rec, req)

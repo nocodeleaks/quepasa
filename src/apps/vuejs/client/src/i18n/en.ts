@@ -7,13 +7,22 @@ const en = {
   nav_home: 'Home',
   nav_connect: 'Connect',
   nav_account: 'Account',
+  nav_master: 'Master',
   nav_classic_ui: 'Classic UI',
   nav_api_docs: 'Swagger',
   nav_more: 'More',
   language_label: 'Language',
 
-  // Home page
-  home_title: 'Your Sessions',
+  // Master key login
+  master_login_title: 'Master Access',
+  master_login_subtitle: 'Enter the master key to access admin functions.',
+  master_key_label: 'Master Key',
+  master_key_placeholder: 'Enter master key...',
+  master_verifying: 'Verifying...',
+  master_enter: 'Enter',
+  master_invalid_key: 'Invalid master key. Please try again.',
+
+
   home_subtitle: 'Manage your WhatsApp connections',
   new_session: 'New Session',
   search_placeholder: 'Search...',

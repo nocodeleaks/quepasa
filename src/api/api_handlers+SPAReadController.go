@@ -161,10 +161,11 @@ func SPAAccountController(w http.ResponseWriter, r *http.Request) {
 
 	servers := runtime.ListLiveSessionsForUser(user.Username)
 	RespondSuccess(w, map[string]interface{}{
-		"user":         user,
-		"serverCount":  len(servers),
-		"version":      models.QpVersion,
-		"hasMasterKey": len(strings.TrimSpace(models.ENV.MasterKey())) > 0,
+		"user":            user,
+		"serverCount":     len(servers),
+		"version":         models.QpVersion,
+		"hasMasterKey":    len(strings.TrimSpace(models.ENV.MasterKey())) > 0,
+		"relaxedSessions": isRelaxedSessions(),
 	})
 }
 
@@ -177,6 +178,38 @@ func SPAMasterKeyController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondSuccess(w, buildMasterKeyStatusResponse(strings.TrimSpace(models.ENV.MasterKey())))
+}
+
+// SPAMasterVerifyController validates a master key candidate sent in the request body.
+// Returns {"valid": true} when it matches the configured MASTERKEY, {"valid": false} otherwise.
+// The configured key itself is never returned.
+func SPAMasterVerifyController(w http.ResponseWriter, r *http.Request) {
+	_, err := GetSPAUser(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	var body struct {
+		Key string `json:"key"`
+	}
+	if r.Body == nil {
+		RespondErrorCode(w, fmt.Errorf("missing request body"), http.StatusBadRequest)
+		return
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		RespondErrorCode(w, fmt.Errorf("invalid request body"), http.StatusBadRequest)
+		return
+	}
+
+	configured := strings.TrimSpace(models.ENV.MasterKey())
+	if configured == "" {
+		RespondSuccess(w, map[string]interface{}{"valid": false, "reason": "not_configured"})
+		return
+	}
+
+	valid := strings.TrimSpace(body.Key) == configured
+	RespondSuccess(w, map[string]interface{}{"valid": valid})
 }
 
 // SPAServerInfoController returns server information for a token owned by the user.
@@ -321,11 +354,16 @@ func SPAServerPairCodeController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAUsersListController returns the current authenticated user in a users collection shape.
+// SPAUsersListController returns all users. Requires a valid X-Master-Key header.
 func SPAUsersListController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+	_, err := GetSPAUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	if !isMasterKeyRequest(r) {
+		RespondErrorCode(w, fmt.Errorf("master key required"), http.StatusForbidden)
 		return
 	}
 
@@ -341,14 +379,9 @@ func SPAUsersListController(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		isSelf := strings.EqualFold(current.Username, user.Username)
 		items = append(items, map[string]interface{}{
-			"username":   current.Username,
-			"createdBy":  "",
-			"created_by": "",
-			"timestamp":  current.Timestamp.Format(time.RFC3339),
-			"isSelf":     isSelf,
-			"is_self":    isSelf,
+			"username":  current.Username,
+			"timestamp": current.Timestamp.Format(time.RFC3339),
 		})
 	}
 

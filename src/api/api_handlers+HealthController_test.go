@@ -163,7 +163,7 @@ func TestHealthEndpoint_WithMasterKey(t *testing.T) {
 	// Test 1: Master key in header
 	t.Run("MasterKeyInHeader", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
-		req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+		req.Header.Set(masterKeyHeader, testMasterKey)
 		rec := httptest.NewRecorder()
 
 		HealthController(rec, req)
@@ -300,7 +300,7 @@ func TestHealthEndpoint_AuthenticationPriority(t *testing.T) {
 	// Master key should take precedence
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	req.Header.Set("X-QUEPASA-TOKEN", testToken)
-	req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+	req.Header.Set(masterKeyHeader, testMasterKey)
 	rec := httptest.NewRecorder()
 
 	HealthController(rec, req)

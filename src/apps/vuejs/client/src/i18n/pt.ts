@@ -9,13 +9,22 @@ const pt: Messages = {
   nav_home: 'Início',
   nav_connect: 'Conectar',
   nav_account: 'Conta',
+  nav_master: 'Mestre',
   nav_classic_ui: 'UI Clássica',
   nav_api_docs: 'Swagger',
   nav_more: 'Mais',
   language_label: 'Idioma',
 
-  // Home page
-  home_title: 'Suas Sessões',
+  // Master key login
+  master_login_title: 'Acesso Mestre',
+  master_login_subtitle: 'Insira a chave mestre para acessar as funções de administração.',
+  master_key_label: 'Chave Mestre',
+  master_key_placeholder: 'Digite a chave mestre...',
+  master_verifying: 'Verificando...',
+  master_enter: 'Entrar',
+  master_invalid_key: 'Chave mestre inválida. Tente novamente.',
+
+
   home_subtitle: 'Gerencie suas conexões WhatsApp',
   new_session: 'Nova Sessão',
   search_placeholder: 'Buscar...',

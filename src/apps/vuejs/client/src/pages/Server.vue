@@ -2,11 +2,11 @@
   <div class="server-page">
     <div class="server-header">
       <div class="header-top">
-        <button @click="$router.back()" class="back-link hide-mobile">
+        <button @click="$router.back()" class="back-link hide-mobile" type="button">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
           </svg>
-          Voltar
+          {{ t('back') }}
         </button>
       </div>
 
@@ -46,8 +46,8 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">QR Code</span>
-          <span class="action-desc">Conectar via QR Code</span>
+          <span class="action-title">{{ t('server_qr_title') }}</span>
+          <span class="action-desc">{{ t('server_qr_desc') }}</span>
         </div>
       </router-link>
 
@@ -96,8 +96,8 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">Teste envio @lid</span>
-          <span class="action-desc">Envio direto via whatsmeow</span>
+          <span class="action-title">{{ t('server_lid_send_title') }}</span>
+          <span class="action-desc">{{ t('server_lid_send_desc') }}</span>
         </div>
       </router-link>
 
@@ -108,8 +108,8 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">Mapeamentos @lid</span>
-          <span class="action-desc">Consulta @lid para telefone</span>
+          <span class="action-title">{{ t('server_lid_mappings_title') }}</span>
+          <span class="action-desc">{{ t('server_lid_mappings_desc') }}</span>
         </div>
       </router-link>
 
@@ -120,7 +120,7 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">Webhooks</span>
+          <span class="action-title">{{ t('webhooks_title') }}</span>
           <span class="action-desc">{{ t('server_webhooks_desc') }}</span>
         </div>
       </router-link>
@@ -132,7 +132,7 @@
           </svg>
         </div>
         <div class="action-info">
-          <span class="action-title">RabbitMQ</span>
+          <span class="action-title">{{ t('rabbitmq') }}</span>
           <span class="action-desc">{{ t('server_rabbitmq_desc') }}</span>
         </div>
       </router-link>
@@ -143,15 +143,22 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
         </svg>
-        Informações do Servidor
+        {{ t('server_info_title') }}
       </h2>
 
       <div class="details-grid">
         <div class="detail-card">
-          <span class="detail-label">Token</span>
+          <span class="detail-label">{{ t('server_token_label') }}</span>
           <div class="detail-value token">
             <code>{{ token }}</code>
-            <button @click="copyToken" class="copy-btn" :class="{ copied: tokenCopied }">
+            <button
+              @click="copyToken"
+              class="copy-btn"
+              :class="{ copied: tokenCopied }"
+              type="button"
+              :title="t('server_copy_token')"
+              :aria-label="t('server_copy_token')"
+            >
               <svg v-if="!tokenCopied" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
               </svg>
@@ -271,7 +278,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
         </svg>
-        Zona de Perigo
+        {{ t('server_danger_title') }}
       </h2>
 
       <div class="danger-actions">
@@ -431,6 +438,7 @@ export default defineComponent({
       try {
         await navigator.clipboard.writeText(token.value)
         tokenCopied.value = true
+        pushToast(t('server_token_copied'), 'success')
         setTimeout(() => {
           tokenCopied.value = false
         }, 2000)
@@ -538,6 +546,10 @@ export default defineComponent({
   color: #6b7280;
   text-decoration: none;
   font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 .back-link:hover {

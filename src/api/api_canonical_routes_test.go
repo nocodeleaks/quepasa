@@ -54,6 +54,8 @@ func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 
 	restore := setCanonicalAccountSetupEnv(t, "true")
 	defer restore()
+	cleanupMasterKey := SetupTestMasterKey(t, "canonical-master-key-123")
+	defer cleanupMasterKey()
 	CreateTestUser(t, "owner@example.com", "Password123!")
 	CreateTestUser(t, "other@example.com", "Password123!")
 
@@ -129,11 +131,12 @@ func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 	body := []byte(`{"email":"created@example.com","password":"CorrectHorseBatteryStaple!2026"}`)
 	createReq := httptest.NewRequest(http.MethodPost, "/api/users", bytes.NewReader(body))
 	createReq.Header.Set("Content-Type", "application/json")
+	createReq.Header.Set(library.HeaderMasterKey, strings.TrimSpace(models.ENV.MasterKey()))
 	createRec := httptest.NewRecorder()
 	router.ServeHTTP(createRec, createReq)
 
 	if createRec.Code != http.StatusOK {
-		t.Fatalf("expected public /api/users create to return 200, got %d with body %s", createRec.Code, createRec.Body.String())
+		t.Fatalf("expected /api/users create with master key to return 200, got %d with body %s", createRec.Code, createRec.Body.String())
 	}
 
 	finalUsersReq := newCanonicalAuthRequest(t, http.MethodGet, "/api/users", nil, "owner@example.com")

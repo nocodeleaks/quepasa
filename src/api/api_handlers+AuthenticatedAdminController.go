@@ -73,7 +73,7 @@ func PublicUserCreateController(w http.ResponseWriter, r *http.Request) {
 // AuthenticatedUserDeleteController removes a user account through the authenticated API.
 // Requires a valid X-Master-Key header.
 func AuthenticatedUserDeleteController(w http.ResponseWriter, r *http.Request) {
-	_, err := GetAuthenticatedUser(r)
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -92,6 +92,11 @@ func AuthenticatedUserDeleteController(w http.ResponseWriter, r *http.Request) {
 
 	if strings.EqualFold(username, "") {
 		RespondErrorCode(w, fmt.Errorf("username cannot be empty"), http.StatusBadRequest)
+		return
+	}
+
+	if strings.EqualFold(username, user.Username) {
+		RespondErrorCode(w, fmt.Errorf("cannot delete the authenticated user"), http.StatusBadRequest)
 		return
 	}
 

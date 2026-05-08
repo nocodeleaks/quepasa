@@ -52,7 +52,7 @@
                 v-model="phone"
                 type="tel"
                 class="phone-input"
-                placeholder="5511999999999"
+                :placeholder="t('paircode_phone_placeholder')"
                 @keyup.enter="generateCode"
               />
             </div>
@@ -126,14 +126,14 @@
         </div>
 
         <div class="instructions-box">
-          <h4>Como conectar com código:</h4>
+          <h4>{{ t('paircode_help_title') }}</h4>
           <ol>
-            <li>Abra o WhatsApp no seu celular</li>
-            <li>Vá em <strong>Configurações → Aparelhos Conectados</strong></li>
-            <li>Toque em <strong>Conectar um aparelho</strong></li>
-            <li>Toque em <strong>"Conectar com número de telefone"</strong></li>
-            <li>Digite o código de 8 dígitos mostrado acima</li>
-            <li>Clique em <strong>"Já digitei o código"</strong> para confirmar</li>
+            <li>{{ t('paircode_help_step1') }}</li>
+            <li>{{ t('paircode_help_step2') }}</li>
+            <li>{{ t('paircode_help_step3') }}</li>
+            <li>{{ t('paircode_help_step4') }}</li>
+            <li>{{ t('paircode_help_step5') }}</li>
+            <li>{{ t('paircode_help_step6') }}</li>
           </ol>
         </div>
 
@@ -205,10 +205,10 @@ export default defineComponent({
           pairCode.value = res.data?.pairCode || res.data?.paircode || res.data?.formatted
           scheduleFallbackCheck()
         } else {
-          error.value = res.data?.result || t('qrcode_loading')
+          error.value = res.data?.result || t('paircode_error_generate')
         }
       } catch (err: any) {
-        const msg = err?.response?.data?.result || err?.response?.data?.message || err.message || t('qrcode_loading')
+        const msg = err?.response?.data?.result || err?.response?.data?.message || err.message || t('paircode_error_generate')
         error.value = msg
       } finally {
         loading.value = false

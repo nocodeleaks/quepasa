@@ -3,12 +3,12 @@
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
         <i class="fa fa-arrow-left"></i>
-        Voltar
+        {{ t('back') }}
       </button>
       <div class="header-content">
         <h1>
           <i class="fa fa-globe"></i>
-          Webhooks
+          {{ t('webhooks_title') }}
         </h1>
         <p v-if="currentToken">{{ t('webhooks_server_label', [truncateToken(currentToken)]) }}</p>
         <p v-else>{{ t('webhooks_manage') }}</p>
@@ -82,11 +82,11 @@
             <div class="form-row options-row">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newForwardInternal" />
-                <span>Forward Internal</span>
+                <span>{{ t('webhooks_forward_internal') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newBroadcasts" />
-                <span>Broadcasts</span>
+                <span>{{ t('broadcasts') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newGroups" />
@@ -129,7 +129,7 @@
                 <div class="item-info">
                   <div class="item-main">
                     <strong class="webhook-url">{{ webhook.url }}</strong>
-                    <span v-if="webhook.trackid" class="track-id">Track: {{ webhook.trackid }}</span>
+                    <span v-if="webhook.trackid" class="track-id">{{ t('webhooks_track_prefix', [webhook.trackid]) }}</span>
                   </div>
                   <div class="item-status">
                     <span class="status-indicator" :class="{ success: !webhook.failure, error: !!webhook.failure }">
@@ -140,17 +140,17 @@
                 </div>
 
                 <div class="item-actions">
-                  <button class="btn-edit" @click="startEdit(webhook)" title="Editar">
+                  <button class="btn-edit" @click="startEdit(webhook)" :title="t('edit')">
                     <i class="fa fa-edit"></i>
                   </button>
-                  <button class="btn-delete" @click="confirmDelete(webhook.url)" title="Remover">
+                  <button class="btn-delete" @click="confirmDelete(webhook.url)" :title="t('remove')">
                     <i class="fa fa-trash"></i>
                   </button>
                 </div>
               </div>
 
               <div v-if="webhook.extra" class="item-extra">
-                <span class="extra-label">Extra:</span>
+                <span class="extra-label">{{ t('webhooks_extra_prefix') }}</span>
                 <code class="extra-value">{{ formatExtra(webhook.extra) }}</code>
               </div>
 
@@ -159,7 +159,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(webhook.forwardinternal ? 1 : -1)"
                   @click="toggleWebhookFlag(webhook, 'forwardinternal')"
-                  title="Forward Internal"
+                  :title="t('webhooks_forward_internal')"
                 >
                   <i class="fa fa-share"></i>
                 </button>
@@ -167,7 +167,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(webhook.broadcasts)"
                   @click="toggleWebhookFlag(webhook, 'broadcasts')"
-                  title="Broadcasts"
+                  :title="t('broadcasts')"
                 >
                   <i class="fa fa-bullhorn"></i>
                 </button>
@@ -234,12 +234,12 @@
             </div>
 
             <div class="form-group">
-              <label>Track ID</label>
+              <label>{{ t('webhooks_track_id_label') }}</label>
               <input
                 v-model="editData.trackid"
                 type="text"
                 class="form-input"
-                placeholder="Identificador para evitar loop"
+                :placeholder="t('webhooks_track_id_placeholder')"
               />
             </div>
 
@@ -257,13 +257,13 @@
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="editData.forwardinternal" />
-                <span>Forward Internal</span>
+                <span>{{ t('webhooks_forward_internal') }}</span>
               </label>
             </div>
 
             <div class="form-group options-grid">
               <div class="option-item">
-                <label>Broadcasts</label>
+                <label>{{ t('broadcasts') }}</label>
                 <TriStateToggle v-model="editData.broadcasts" />
               </div>
               <div class="option-item">

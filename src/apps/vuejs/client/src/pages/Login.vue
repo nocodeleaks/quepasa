@@ -1,6 +1,6 @@
 <template>
   <div class="login-wrapper">
-    <!-- Background decorativo -->
+    <!-- Decorative background -->
     <div class="login-bg">
       <div class="login-bg-shape shape-1"></div>
       <div class="login-bg-shape shape-2"></div>
@@ -8,9 +8,9 @@
     </div>
 
     <div class="login-container">
-      <!-- Card de login -->
+      <!-- Login card -->
       <div class="login-card">
-        <!-- Header do card -->
+        <!-- Card header -->
         <div class="login-header">
           <div class="login-logo-wrapper" v-if="config.branding?.logo || config.loginLogo">
             <img :src="config.branding?.logo || config.loginLogo" alt="Logo" class="login-logo" />
@@ -22,7 +22,7 @@
           </div>
           <h1 class="login-title">{{ config.branding?.title || config.appTitle || 'QuePasa' }}</h1>
           <p class="login-subtitle" v-if="config.loginSubtitle">{{ config.loginSubtitle }}</p>
-          <p class="login-subtitle" v-else>Sistema de Gerenciamento WhatsApp</p>
+          <p class="login-subtitle" v-else>{{ t('login_system_title') }}</p>
         </div>
 
         <!-- Warning -->
@@ -33,7 +33,7 @@
           <span>{{ config.loginWarning }}</span>
         </div>
 
-        <!-- Formulário -->
+        <!-- Form -->
         <form @submit.prevent="submit" class="login-form">
           <div v-if="error" class="login-error">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -43,7 +43,7 @@
           </div>
 
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">{{ t('email_label') }}</label>
             <div class="input-wrapper">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="input-icon">
                 <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
@@ -53,7 +53,7 @@
                 v-model="email" 
                 type="email"
                 class="form-input" 
-                placeholder="seu@email.com"
+                :placeholder="t('login_email_placeholder')"
                 autocomplete="email"
                 required
               />
@@ -61,7 +61,7 @@
           </div>
 
           <div class="form-group">
-            <label for="password">Senha</label>
+            <label for="password">{{ t('password_label') }}</label>
             <div class="input-wrapper">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="input-icon">
                 <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
@@ -71,7 +71,7 @@
                 v-model="password" 
                 type="password" 
                 class="form-input" 
-                placeholder="••••••••"
+                :placeholder="t('login_password_placeholder')"
                 autocomplete="current-password"
                 required
               />
@@ -80,7 +80,7 @@
 
           <button type="submit" class="login-button" :disabled="loading">
             <span v-if="loading" class="spinner"></span>
-            <span v-else>Entrar</span>
+            <span v-else>{{ t('login_submit') }}</span>
           </button>
         </form>
 
@@ -89,7 +89,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
             </svg>
-            Usar interface clássica
+            {{ t('nav_classic_ui') }}
           </a>
         </div>
 
@@ -98,7 +98,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M19 13H5v-2h14v2zm-7 8l-1.41-1.41L15.17 15H4v-2h11.17l-4.58-4.59L12 7l7 7-7 7z"/>
             </svg>
-            Criar conta inicial
+            {{ t('login_create_initial_account') }}
           </a>
         </div>
 
@@ -107,34 +107,34 @@
           {{ config.loginFooter }}
         </div>
         <div class="login-footer" v-else>
-          <span>Powered by {{ config.branding?.title || 'QuePasa' }}</span>
+          <span>{{ t('login_powered_by', [config.branding?.title || 'QuePasa']) }}</span>
         </div>
       </div>
 
-      <!-- Info lateral -->
+      <!-- Side info -->
       <div class="login-info">
         <div class="info-content">
-          <h2>Bem-vindo ao {{ config.branding?.title || 'QuePasa' }}</h2>
-          <p>Plataforma completa para gerenciamento de bots WhatsApp com suporte a múltiplas conexões, webhooks e integrações.</p>
+          <h2>{{ t('login_welcome_title', [config.branding?.title || 'QuePasa']) }}</h2>
+          <p>{{ t('login_welcome_desc') }}</p>
           
           <div class="features">
             <div class="feature">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
               </svg>
-              <span>Conexão Segura</span>
+              <span>{{ t('login_feature_secure') }}</span>
             </div>
             <div class="feature">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z"/>
               </svg>
-              <span>Multi-Servidor</span>
+              <span>{{ t('login_feature_multi_server') }}</span>
             </div>
             <div class="feature">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
               </svg>
-              <span>Webhooks</span>
+              <span>{{ t('login_feature_webhooks') }}</span>
             </div>
           </div>
         </div>
@@ -148,9 +148,11 @@ import { defineComponent, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/services/api'
 import { useSessionStore } from '@/stores/session'
+import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
+    const { t } = useLocale()
     const email = ref('')
     const password = ref('')
     const error = ref('')
@@ -227,13 +229,13 @@ export default defineComponent({
         const redirect = (route.query.redirect as string) || '/'
         router.push(redirect)
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Falha no login'
+        error.value = err?.response?.data?.result || err.message || t('login_error_failed')
       } finally {
         loading.value = false
       }
     }
 
-    return { email, password, submit, error, loading, config }
+    return { email, password, submit, error, loading, config, t }
   }
 })
 </script>

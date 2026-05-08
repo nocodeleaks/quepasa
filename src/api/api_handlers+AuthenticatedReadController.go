@@ -376,7 +376,7 @@ func AuthenticatedServerPairCodeController(w http.ResponseWriter, r *http.Reques
 
 // AuthenticatedUsersListController returns all users. Requires a valid X-Master-Key header.
 func AuthenticatedUsersListController(w http.ResponseWriter, r *http.Request) {
-	_, err := GetAuthenticatedUser(r)
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -402,6 +402,7 @@ func AuthenticatedUsersListController(w http.ResponseWriter, r *http.Request) {
 		items = append(items, map[string]interface{}{
 			"username":  current.Username,
 			"timestamp": current.Timestamp.Format(time.RFC3339),
+			"is_self":   strings.EqualFold(current.Username, user.Username),
 		})
 	}
 

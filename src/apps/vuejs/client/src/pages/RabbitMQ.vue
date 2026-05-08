@@ -3,12 +3,12 @@
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
         <i class="fa fa-arrow-left"></i>
-        Voltar
+        {{ t('back') }}
       </button>
       <div class="header-content">
         <h1>
           <i class="fa fa-server"></i>
-          Configurações RabbitMQ
+          {{ t('rabbitmq_title') }}
         </h1>
         <p v-if="currentToken">{{ t('rabbitmq_server_label', [truncateToken(currentToken)]) }}</p>
         <p v-else>{{ t('rabbitmq_manage') }}</p>
@@ -82,11 +82,11 @@
             <div class="form-row options-row">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newForwardInternal" />
-                <span>Forward Internal</span>
+                <span>{{ t('webhooks_forward_internal') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newBroadcasts" />
-                <span>Broadcasts</span>
+                <span>{{ t('broadcasts') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newGroups" />
@@ -128,14 +128,14 @@
               <div class="item-info">
                 <div class="item-main">
                   <strong class="connection-string">{{ item.connection_string }}</strong>
-                  <span v-if="item.trackid" class="track-id">Track: {{ item.trackid }}</span>
+                  <span v-if="item.trackid" class="track-id">{{ t('webhooks_track_prefix', [item.trackid]) }}</span>
                 </div>
                 <div class="item-meta">
                   <span v-if="item.exchange_name"><i class="fa fa-exchange-alt"></i> {{ item.exchange_name }}</span>
                   <span v-if="item.routing_key"><i class="fa fa-stream"></i> {{ item.routing_key }}</span>
                 </div>
                 <div v-if="item.extra" class="item-extra">
-                  <span class="extra-label">Extra:</span>
+                  <span class="extra-label">{{ t('webhooks_extra_prefix') }}</span>
                   <code class="extra-value">{{ formatExtra(item.extra) }}</code>
                 </div>
               </div>
@@ -145,7 +145,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(item.forwardinternal ? 1 : -1)"
                   @click="toggleRabbitFlag(item, 'forwardinternal')"
-                  title="Forward Internal"
+                  :title="t('webhooks_forward_internal')"
                 >
                   <i class="fa fa-share"></i>
                 </button>
@@ -153,7 +153,7 @@
                   class="flag-btn"
                   :class="getTriStateClass(item.broadcasts)"
                   @click="toggleRabbitFlag(item, 'broadcasts')"
-                  title="Broadcasts"
+                  :title="t('broadcasts')"
                 >
                   <i class="fa fa-bullhorn"></i>
                 </button>
@@ -183,7 +183,7 @@
                 </button>
               </div>
 
-              <button class="btn-delete" @click="confirmDelete(item.connection_string)" title="Remover">
+              <button class="btn-delete" @click="confirmDelete(item.connection_string)" :title="t('remove')">
                 <i class="fa fa-trash"></i>
               </button>
             </div>

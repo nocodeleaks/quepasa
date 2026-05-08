@@ -8,6 +8,11 @@ const DEFAULT_LOCALE: Locale = 'en-US'
 
 export type Locale = 'en-US' | 'pt-BR'
 
+export const localeOptions: Array<{ locale: Locale; label: string; title: string }> = [
+  { locale: 'en-US', label: 'EN', title: 'English' },
+  { locale: 'pt-BR', label: 'PT', title: 'Português' },
+]
+
 const translations: Record<Locale, Messages> = {
   'en-US': en,
   'pt-BR': pt,

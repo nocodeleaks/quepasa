@@ -29,8 +29,16 @@
             </button>
           </div>
           <div class="lang-switch">
-            <button class="lang-btn" :class="{ active: locale === 'en-US' }" @click="setLocale('en-US')" title="English">EN</button>
-            <button class="lang-btn" :class="{ active: locale === 'pt-BR' }" @click="setLocale('pt-BR')" title="Português">PT</button>
+            <button
+              v-for="option in localeOptions"
+              :key="option.locale"
+              class="lang-btn"
+              :class="{ active: locale === option.locale }"
+              @click="setLocale(option.locale)"
+              :title="option.title"
+            >
+              {{ option.label }}
+            </button>
           </div>
           <button v-if="session.user.value" class="logout-btn" @click="logout">{{ t('logout') }}</button>
         </div>
@@ -42,8 +50,16 @@
             </button>
           </div>
           <div class="lang-switch lang-switch-compact">
-            <button class="lang-btn" :class="{ active: locale === 'en-US' }" @click="setLocale('en-US')" title="English">EN</button>
-            <button class="lang-btn" :class="{ active: locale === 'pt-BR' }" @click="setLocale('pt-BR')" title="Português">PT</button>
+            <button
+              v-for="option in localeOptions"
+              :key="option.locale"
+              class="lang-btn"
+              :class="{ active: locale === option.locale }"
+              @click="setLocale(option.locale)"
+              :title="option.title"
+            >
+              {{ option.label }}
+            </button>
           </div>
           <button
             class="menu-btn"
@@ -128,8 +144,16 @@
           <div class="sheet-language">
             <span>{{ t('language_label') }}</span>
             <div class="lang-switch lang-switch-sheet">
-              <button class="lang-btn" :class="{ active: locale === 'en-US' }" @click="setLocale('en-US')" title="English">EN</button>
-              <button class="lang-btn" :class="{ active: locale === 'pt-BR' }" @click="setLocale('pt-BR')" title="Português">PT</button>
+              <button
+                v-for="option in localeOptions"
+                :key="option.locale"
+                class="lang-btn"
+                :class="{ active: locale === option.locale }"
+                @click="setLocale(option.locale)"
+                :title="option.title"
+              >
+                {{ option.label }}
+              </button>
             </div>
           </div>
         </div>
@@ -167,7 +191,7 @@ import { useSessionStore } from '@/stores/session'
 import { useMasterKey } from '@/composables/useMasterKey'
 import api from './services/api'
 import Toaster from '@/components/Toaster.vue'
-import { useLocale } from '@/i18n'
+import { localeOptions, useLocale } from '@/i18n'
 
 export default defineComponent({
   components: { RouterLink, RouterView, Toaster },
@@ -278,7 +302,7 @@ export default defineComponent({
       loadBranding()
     })
 
-    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, hasMasterKey, isMasterAuthenticated, relaxedSessions }
+    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, localeOptions, hasMasterKey, isMasterAuthenticated, relaxedSessions }
   }
 })
 </script>

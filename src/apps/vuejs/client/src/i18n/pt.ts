@@ -189,6 +189,11 @@ const pt: Messages = {
   account_environment: 'Ambiente',
   account_reload: 'Recarregar',
   account_error_load: 'Erro ao carregar conta',
+  environment_title: 'Variáveis de ambiente',
+  environment_variable: 'Variável',
+  environment_value: 'Valor',
+  environment_not_set: 'Não definido',
+  environment_error_load: 'Erro ao carregar variáveis de ambiente',
 
   // Groups page
   groups_title: 'Grupos',

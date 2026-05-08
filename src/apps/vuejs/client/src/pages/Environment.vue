@@ -1,15 +1,15 @@
 <template>
   <div class="environment-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>Environment Variables</h2>
+      <h2>{{ t('environment_title') }}</h2>
       <button @click="$router.back()" class="back-link hide-mobile">
-        <i class="fa fa-arrow-left me-2"></i> Back
+        <i class="fa fa-arrow-left me-2"></i> {{ t('back') }}
       </button>
     </div>
 
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">{{ t('loading_generic') }}</span>
       </div>
     </div>
 
@@ -45,8 +45,8 @@
               <table class="table table-hover mb-0">
                 <thead class="table-light">
                   <tr>
-                    <th style="width: 30%">Variable</th>
-                    <th style="width: 70%">Value</th>
+                    <th style="width: 30%">{{ t('environment_variable') }}</th>
+                    <th style="width: 70%">{{ t('environment_value') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -54,7 +54,7 @@
                     <td class="font-monospace text-primary">{{ v.name }}</td>
                     <td>
                       <code v-if="v.value" class="env-value">{{ v.value }}</code>
-                      <span v-else class="text-muted">Not set</span>
+                      <span v-else class="text-muted">{{ t('environment_not_set') }}</span>
                     </td>
                   </tr>
                 </tbody>
@@ -69,9 +69,9 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
 import api from '@/services/api'
 import { useMasterKey } from '@/composables/useMasterKey'
+import { useLocale } from '@/i18n'
 
 interface EnvVar {
   name: string
@@ -85,11 +85,11 @@ interface Category {
 
 export default defineComponent({
   name: 'Environment',
-  components: { RouterLink },
   setup() {
     const loading = ref(true)
     const error = ref('')
     const { masterKeyHeaders } = useMasterKey()
+    const { t } = useLocale()
     const categories = ref<Category[]>([])
 
     const formatValue = (value: unknown): string => {
@@ -119,7 +119,7 @@ export default defineComponent({
         const res = await api.get('/api/system/environment', { headers: masterKeyHeaders() })
         categories.value = buildCategories(res.data?.settings || res.data?.preview || {})
       } catch (e: any) {
-        error.value = e?.response?.data?.result || e.message || 'Failed to load environment variables'
+        error.value = e?.response?.data?.result || e.message || t('environment_error_load')
       } finally {
         loading.value = false
       }
@@ -128,6 +128,7 @@ export default defineComponent({
     onMounted(loadEnvironment)
 
     return {
+      t,
       loading,
       error,
       categories

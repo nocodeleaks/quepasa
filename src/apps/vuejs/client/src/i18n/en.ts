@@ -187,6 +187,11 @@ const en = {
   account_environment: 'Environment',
   account_reload: 'Reload',
   account_error_load: 'Error loading account',
+  environment_title: 'Environment Variables',
+  environment_variable: 'Variable',
+  environment_value: 'Value',
+  environment_not_set: 'Not set',
+  environment_error_load: 'Failed to load environment variables',
 
   // Groups page
   groups_title: 'Groups',

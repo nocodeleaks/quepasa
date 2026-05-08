@@ -4,6 +4,7 @@ import pt from './pt'
 import type { Messages } from './en'
 
 const STORAGE_KEY = 'quepasa_locale'
+const DEFAULT_LOCALE: Locale = 'en-US'
 
 export type Locale = 'en-US' | 'pt-BR'
 
@@ -12,15 +13,41 @@ const translations: Record<Locale, Messages> = {
   'pt-BR': pt,
 }
 
+function normalizeLocale(input?: string | null): Locale | null {
+  if (!input) return null
+
+  const normalized = input.trim().replace('_', '-').toLowerCase()
+
+  if (normalized === 'pt-br' || normalized === 'pt' || normalized.startsWith('pt-')) {
+    return 'pt-BR'
+  }
+
+  if (normalized === 'en-us' || normalized === 'en' || normalized.startsWith('en-')) {
+    return 'en-US'
+  }
+
+  return null
+}
+
 function detectBrowserLocale(): Locale {
-  const lang = navigator.language || ''
-  return lang.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en-US'
+  const candidates = [
+    ...(navigator.languages || []),
+    navigator.language,
+  ]
+
+  for (const candidate of candidates) {
+    const locale = normalizeLocale(candidate)
+    if (locale) return locale
+  }
+
+  return DEFAULT_LOCALE
 }
 
 function loadLocale(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'en-US' || stored === 'pt-BR') return stored as Locale
+    const normalized = normalizeLocale(stored)
+    if (normalized) return normalized
   } catch { /* ignore */ }
   return detectBrowserLocale()
 }
@@ -29,16 +56,18 @@ function loadLocale(): Locale {
 const state = reactive({ locale: loadLocale() })
 
 export function setLocale(locale: Locale) {
-  state.locale = locale
+  const normalized = normalizeLocale(locale) || DEFAULT_LOCALE
+  state.locale = normalized
   try {
-    localStorage.setItem(STORAGE_KEY, locale)
+    localStorage.setItem(STORAGE_KEY, normalized)
   } catch { /* ignore */ }
 }
 
 export function useLocale() {
   function t(key: keyof Messages, ...args: string[]): string {
-    const dict: any = translations[state.locale as Locale] ?? translations['en-US']
-    let msg: string = dict[key] ?? (translations['en-US'] as any)[key] ?? String(key)
+    const currentLocale = normalizeLocale(state.locale) || DEFAULT_LOCALE
+    const dict: any = translations[currentLocale] ?? translations[DEFAULT_LOCALE]
+    let msg: string = dict[key] ?? (translations[DEFAULT_LOCALE] as any)[key] ?? String(key)
     args.forEach((arg, i) => {
       msg = msg.replace(`{${i}}`, arg)
     })

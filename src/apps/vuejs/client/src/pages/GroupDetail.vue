@@ -238,14 +238,14 @@ export default defineComponent({
       if (message.attachment) {
         const mime = message.attachment.mimetype || ''
 
-        if (mime.startsWith('image/')) preview = preview ? `[IMG] ${preview}` : '[IMG] Imagem'
-        else if (mime.startsWith('video/')) preview = preview ? `[VID] ${preview}` : '[VID] Video'
-        else if (mime.startsWith('audio/') || message.type === 'ptt') preview = preview ? `[AUD] ${preview}` : '[AUD] Audio'
-        else if (mime.includes('pdf')) preview = preview ? `[PDF] ${preview}` : '[PDF] PDF'
-        else preview = preview ? `[ARQ] ${preview}` : '[ARQ] Arquivo'
+        if (mime.startsWith('image/')) preview = preview ? `[IMG] ${preview}` : `[IMG] ${t('media_image')}`
+        else if (mime.startsWith('video/')) preview = preview ? `[VID] ${preview}` : `[VID] ${t('media_video')}`
+        else if (mime.startsWith('audio/') || message.type === 'ptt') preview = preview ? `[AUD] ${preview}` : `[AUD] ${t('media_audio')}`
+        else if (mime.includes('pdf')) preview = preview ? `[PDF] ${preview}` : `[PDF] ${t('media_pdf')}`
+        else preview = preview ? `[ARQ] ${preview}` : `[ARQ] ${t('media_file')}`
       }
 
-      if (!preview && message.inreply) preview = '[RPL] Resposta'
+      if (!preview && message.inreply) preview = `[RPL] ${t('media_reply')}`
       return preview
     }
 

@@ -10,6 +10,11 @@ const en = {
   nav_master: 'Master',
   nav_classic_ui: 'Classic UI',
   nav_api_docs: 'Swagger',
+  account_role_user: 'user',
+  account_branding_primary: 'Primary',
+  account_branding_secondary: 'Secondary',
+  account_branding_accent: 'Accent',
+  account_logo_alt: 'Brand logo',
   nav_more: 'More',
   language_label: 'Language',
 
@@ -27,6 +32,9 @@ const en = {
   new_session: 'New Session',
   search_placeholder: 'Search...',
   search_sessions: 'Search sessions',
+  media_video: 'Video',
+  media_audio: 'Audio',
+  media_pdf: 'PDF',
   card_view: 'Card view',
   table_view: 'Table view',
 
@@ -41,24 +49,31 @@ const en = {
   no_sessions_configured: 'No session configured',
   no_sessions_description: 'Add your first WhatsApp session to start',
   connect_whatsapp: 'Connect WhatsApp',
+  qrcode_image_alt: 'QR Code',
   creating: 'Creating...',
   no_results: 'No sessions match your search',
   no_results_hint: 'Try a different query or clear the search.',
+  login_logo_alt: 'Brand logo',
 
   // Table headers
   col_active: 'Active',
+  webhooks_url_placeholder: 'https://example.com/webhook',
   col_phone: 'Phone',
   col_token: 'Token',
   col_dispatch: 'Dispatch',
   col_connection: 'Connection',
+  webhooks_extra_placeholder: '{"source":"crm"}',
   col_actions: 'Actions',
 
   // Table tooltips
   session_active: 'Session active',
+  rabbitmq_connection_placeholder: 'amqp://user:pass@host:5672/vhost',
+  rabbitmq_extra_placeholder: '{"tenant":"prod"}',
   session_not_verified: 'Session not verified',
 
   // Pagination
   showing: 'Showing',
+  messages_url_thumbnail_alt: 'URL thumbnail',
   of: 'of',
   sessions_label: 'sessions',
   per_page: 'Per page:',

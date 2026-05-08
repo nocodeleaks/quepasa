@@ -52,7 +52,7 @@
                   v-model="newConnectionString"
                   type="text"
                   class="form-input"
-                  placeholder="amqp://user:pass@host:5672/vhost"
+                  :placeholder="t('rabbitmq_connection_placeholder')"
                   required
                 />
               </div>
@@ -74,7 +74,7 @@
                   v-model="newExtra"
                   class="form-input extra-textarea"
                   rows="3"
-                  placeholder='{"tenant":"prod"}'
+                  :placeholder="t('rabbitmq_extra_placeholder')"
                 ></textarea>
               </div>
             </div>

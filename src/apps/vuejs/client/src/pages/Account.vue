@@ -34,7 +34,7 @@
           <div class="info-row">
             <span class="info-label">{{ t('account_level') }}</span>
             <span class="info-value">
-              <span class="badge badge-user">{{ user.level || 'user' }}</span>
+              <span class="badge badge-user">{{ user.level || t('account_role_user') }}</span>
             </span>
           </div>
         </div>
@@ -70,20 +70,20 @@
         </div>
         <div class="card-body">
           <div class="branding-preview">
-            <div class="color-swatch" :style="{ background: branding.primaryColor }" title="Primary">
-              <span>Primary</span>
+            <div class="color-swatch" :style="{ background: branding.primaryColor }" :title="t('account_branding_primary')">
+              <span>{{ t('account_branding_primary') }}</span>
             </div>
-            <div class="color-swatch" :style="{ background: branding.secondaryColor }" title="Secondary">
-              <span>Secondary</span>
+            <div class="color-swatch" :style="{ background: branding.secondaryColor }" :title="t('account_branding_secondary')">
+              <span>{{ t('account_branding_secondary') }}</span>
             </div>
-            <div class="color-swatch" :style="{ background: branding.accentColor }" title="Accent">
-              <span>Accent</span>
+            <div class="color-swatch" :style="{ background: branding.accentColor }" :title="t('account_branding_accent')">
+              <span>{{ t('account_branding_accent') }}</span>
             </div>
           </div>
           <div v-if="branding.logo" class="info-row">
             <span class="info-label">{{ t('account_logo') }}</span>
             <span class="info-value">
-              <img :src="branding.logo" alt="Logo" class="logo-preview" />
+              <img :src="branding.logo" :alt="t('account_logo_alt')" class="logo-preview" />
             </span>
           </div>
         </div>

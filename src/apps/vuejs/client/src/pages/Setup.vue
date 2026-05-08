@@ -4,7 +4,7 @@
       <div class="header-content">
         <h1>
           <i class="fa fa-cog"></i>
-          Configuração
+          {{ t('setup_title') }}
         </h1>
         <p>{{ t('setup_subtitle') }}</p>
       </div>
@@ -38,7 +38,7 @@
                 v-model="email"
                 type="email"
                 class="form-input"
-                placeholder="usuario@exemplo.com"
+                :placeholder="t('login_email_placeholder')"
                 required
               />
             </div>
@@ -54,7 +54,7 @@
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
                   class="form-input"
-                  placeholder="••••••••"
+                  :placeholder="t('login_password_placeholder')"
                   required
                 />
                 <button type="button" class="toggle-password" @click="showPassword = !showPassword">
@@ -77,7 +77,7 @@
                 v-model="confirmPassword"
                 type="password"
                 class="form-input"
-                placeholder="••••••••"
+                :placeholder="t('login_password_placeholder')"
                 required
               />
               <small v-if="confirmPassword && password !== confirmPassword" class="error-hint">

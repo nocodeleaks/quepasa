@@ -324,9 +324,9 @@ export default defineComponent({
         const mime = msg.attachment.mimetype || ''
 
         if (mime.startsWith('image/')) previewText = previewText ? `[IMG] ${previewText}` : `[IMG] ${t('media_image')}`
-        else if (mime.startsWith('video/')) previewText = previewText ? `[VID] ${previewText}` : '[VID] Video'
-        else if (mime.startsWith('audio/') || msg.type === 'ptt') previewText = previewText ? `[AUD] ${previewText}` : '[AUD] Audio'
-        else if (mime.includes('pdf')) previewText = previewText ? `[PDF] ${previewText}` : '[PDF] PDF'
+        else if (mime.startsWith('video/')) previewText = previewText ? `[VID] ${previewText}` : `[VID] ${t('media_video')}`
+        else if (mime.startsWith('audio/') || msg.type === 'ptt') previewText = previewText ? `[AUD] ${previewText}` : `[AUD] ${t('media_audio')}`
+        else if (mime.includes('pdf')) previewText = previewText ? `[PDF] ${previewText}` : `[PDF] ${t('media_pdf')}`
         else previewText = previewText ? `[ARQ] ${previewText}` : `[ARQ] ${t('media_file')}`
       }
 

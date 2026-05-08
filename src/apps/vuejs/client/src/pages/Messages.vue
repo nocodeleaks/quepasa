@@ -201,7 +201,7 @@
               <a :href="msg.url.reference" target="_blank" class="url-link">{{ msg.url.reference }}</a>
             </div>
             <div v-if="urlThumbnailUrl(msg.url)" class="url-thumbnail">
-              <img :src="urlThumbnailUrl(msg.url)" alt="URL thumbnail" />
+                <img :src="urlThumbnailUrl(msg.url)" :alt="t('messages_url_thumbnail_alt')" />
             </div>
           </div>
 

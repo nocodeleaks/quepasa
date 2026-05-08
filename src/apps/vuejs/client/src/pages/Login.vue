@@ -13,7 +13,7 @@
         <!-- Card header -->
         <div class="login-header">
           <div class="login-logo-wrapper" v-if="config.branding?.logo || config.loginLogo">
-            <img :src="config.branding?.logo || config.loginLogo" alt="Logo" class="login-logo" />
+            <img :src="config.branding?.logo || config.loginLogo" :alt="t('login_logo_alt')" class="login-logo" />
           </div>
           <div class="login-logo-placeholder" v-else>
             <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">

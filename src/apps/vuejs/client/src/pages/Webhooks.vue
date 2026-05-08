@@ -52,7 +52,7 @@
                   v-model="newUrl"
                   type="url"
                   class="form-input"
-                  placeholder="https://example.com/webhook"
+                  :placeholder="t('webhooks_url_placeholder')"
                   required
                 />
               </div>
@@ -74,7 +74,7 @@
                   v-model="newExtra"
                   class="form-input extra-textarea"
                   rows="3"
-                  placeholder='{"source":"crm"}'
+                  :placeholder="t('webhooks_extra_placeholder')"
                 ></textarea>
               </div>
             </div>
@@ -228,7 +228,7 @@
                 v-model="editData.url"
                 type="url"
                 class="form-input"
-                placeholder="https://example.com/webhook"
+                :placeholder="t('webhooks_url_placeholder')"
                 required
               />
             </div>
@@ -249,7 +249,7 @@
                 v-model="editData.extraStr"
                 class="form-input extra-textarea"
                 rows="4"
-                placeholder='{"chave":"valor"}'
+                :placeholder="t('webhooks_extra_placeholder')"
               ></textarea>
               <small class="form-hint">{{ t('webhooks_edit_hint') }}</small>
             </div>

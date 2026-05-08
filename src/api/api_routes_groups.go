@@ -19,26 +19,26 @@ func registerCanonicalGroupRoutes(r chi.Router) {
 }
 
 func CanonicalGroupsListController(w http.ResponseWriter, r *http.Request) {
-	SPAServerGroupsController(w, r)
+	AuthenticatedServerGroupsController(w, r)
 }
 func CanonicalGroupCreateController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupsCreateController(w, r)
+	AuthenticatedGroupCreateController(w, r)
 }
 func CanonicalGroupGetController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupInfoController(w, r)
+	AuthenticatedGroupInfoController(w, r)
 }
 func CanonicalGroupLeaveController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupLeaveController(w, r)
+	AuthenticatedGroupLeaveController(w, r)
 }
 func CanonicalGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupParticipantsController(w, r)
+	AuthenticatedGroupParticipantsController(w, r)
 }
 func CanonicalGroupPhotoController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupPhotoController(w, r)
+	AuthenticatedGroupPhotoController(w, r)
 }
 func CanonicalGroupInviteController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupInviteController(w, r)
+	AuthenticatedGroupInviteController(w, r)
 }
 func CanonicalGroupRevokeInviteController(w http.ResponseWriter, r *http.Request) {
-	SPAGroupRevokeInviteController(w, r)
+	AuthenticatedGroupRevokeInviteController(w, r)
 }

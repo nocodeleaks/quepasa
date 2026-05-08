@@ -15,14 +15,14 @@ import (
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
-// SPAServerCreateController creates a new pre-configured server.
+// AuthenticatedServerCreateController creates a new pre-configured server.
 //
 // Authentication is required via SPA JWT (user scope) or X-QUEPASA-TOKEN (single-session scope).
 // When authenticated by JWT, X-QUEPASA-TOKEN is treated as the optional token/identifier
 // for the new session and is accepted only when RELAXED_SESSIONS=true.
 // When RELAXED_SESSIONS=false, a valid master key is also required.
-func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+func AuthenticatedServerCreateController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -75,23 +75,23 @@ func SPAServerCreateController(w http.ResponseWriter, r *http.Request) {
 	RespondInterfaceCode(w, response, http.StatusCreated)
 }
 
-// SPAServerUpdateController patches persisted server configuration for the SPA user.
-func SPAServerUpdateController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerUpdateController patches persisted server configuration for the SPA user.
+func AuthenticatedServerUpdateController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondServerLookupError(w, err)
 		return
 	}
 
@@ -150,9 +150,9 @@ func SPAServerUpdateController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAServerDeleteController deletes a server owned by the SPA user.
-func SPAServerDeleteController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerDeleteController deletes a server owned by the SPA user.
+func AuthenticatedServerDeleteController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -160,19 +160,19 @@ func SPAServerDeleteController(w http.ResponseWriter, r *http.Request) {
 
 	response := &models.QpResponse{}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	serverRecord, err := GetSPAOwnedServerRecord(user, token)
+	serverRecord, err := GetOwnedServerRecord(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondServerLookupError(w, err)
 		return
 	}
 
-	server := FindSPALiveServer(serverRecord.Token)
+	server := FindLiveServer(serverRecord.Token)
 	if server == nil {
 		server, err = runtime.LoadSessionRecord(serverRecord)
 		if err != nil {
@@ -192,23 +192,23 @@ func SPAServerDeleteController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAServerDebugToggleController toggles server debug mode through the SPA auth surface.
-func SPAServerDebugToggleController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerDebugToggleController toggles server debug mode through the SPA auth surface.
+func AuthenticatedServerDebugToggleController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondServerLookupError(w, err)
 		return
 	}
 
@@ -219,27 +219,27 @@ func SPAServerDebugToggleController(w http.ResponseWriter, r *http.Request) {
 
 	RespondSuccess(w, map[string]interface{}{
 		"devel":  server.Devel,
-		"server": BuildSPAServerSummary(server.QpServer, server),
+		"server": BuildServerSummary(server.QpServer, server),
 	})
 }
 
-// SPAServerOptionToggleController toggles a persisted server option explicitly by name.
-func SPAServerOptionToggleController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerOptionToggleController toggles a persisted server option explicitly by name.
+func AuthenticatedServerOptionToggleController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPAServerLookupError(w, err)
+		respondServerLookupError(w, err)
 		return
 	}
 
@@ -258,7 +258,7 @@ func SPAServerOptionToggleController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, map[string]interface{}{
 		"option": option,
 		"value":  value,
-		"server": BuildSPAServerSummary(server.QpServer, server),
+		"server": BuildServerSummary(server.QpServer, server),
 	})
 }
 

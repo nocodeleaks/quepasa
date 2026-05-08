@@ -19,10 +19,10 @@ func registerCanonicalMessageRoutes(r chi.Router) {
 }
 
 func CanonicalMessagesListController(w http.ResponseWriter, r *http.Request) {
-	SPAServerMessagesController(w, r)
+	AuthenticatedServerMessagesController(w, r)
 }
 func CanonicalMessageCreateController(w http.ResponseWriter, r *http.Request) {
-	SPAServerSendController(w, r)
+	AuthenticatedServerSendController(w, r)
 }
 func CanonicalMessageLIDDirectController(w http.ResponseWriter, r *http.Request) {
 	SendLIDDirectController(w, r)
@@ -31,7 +31,7 @@ func CanonicalMessageGetController(w http.ResponseWriter, r *http.Request) {
 	GetMessageController(w, r)
 }
 func CanonicalMessageEditController(w http.ResponseWriter, r *http.Request) {
-	SPAServerEditMessageController(w, r)
+	AuthenticatedServerEditMessageController(w, r)
 }
 func CanonicalMessageDeleteController(w http.ResponseWriter, r *http.Request) { RevokeController(w, r) }
 func CanonicalMessageRetryController(w http.ResponseWriter, r *http.Request) {

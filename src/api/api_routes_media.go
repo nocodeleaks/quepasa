@@ -18,8 +18,8 @@ func CanonicalMediaMessageController(w http.ResponseWriter, r *http.Request) {
 	DownloadController(w, r)
 }
 func CanonicalMediaPictureInfoController(w http.ResponseWriter, r *http.Request) {
-	SPAPictureInfoController(w, r)
+	AuthenticatedPictureInfoController(w, r)
 }
 func CanonicalMediaDownloadController(w http.ResponseWriter, r *http.Request) {
-	SPAServerHistoryDownloadController(w, r)
+	AuthenticatedServerHistoryDownloadController(w, r)
 }

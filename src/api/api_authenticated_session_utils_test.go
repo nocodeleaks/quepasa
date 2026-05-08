@@ -6,7 +6,7 @@ import (
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
-func TestFindSPALiveSession_ReturnsNilWhenServerNotFound(t *testing.T) {
+func TestFindLiveSession_ReturnsNilWhenServerNotFound(t *testing.T) {
 	prevService := models.WhatsappService
 	defer func() { models.WhatsappService = prevService }()
 
@@ -14,37 +14,37 @@ func TestFindSPALiveSession_ReturnsNilWhenServerNotFound(t *testing.T) {
 		Servers: map[string]*models.QpWhatsappServer{},
 	}
 
-	if got := FindSPALiveSession("missing"); got != nil {
+	if got := FindLiveSession("missing"); got != nil {
 		t.Fatal("expected nil for missing session")
 	}
 }
 
-func TestCountSPADispatchingForSession_IsSessionWrapper(t *testing.T) {
+func TestCountDispatchingForSession_IsSessionWrapper(t *testing.T) {
 	// Verify function exists and is callable with session-oriented naming.
-	// Detailed behavior tested via CountSPADispatchingForServer integration tests.
-	_ = CountSPADispatchingForSession
+	// Detailed behavior tested via CountDispatchingForServer integration tests.
+	_ = CountDispatchingForSession
 }
 
-func TestBuildSPASessionSummary_IsSessionWrapper(t *testing.T) {
+func TestBuildSessionSummary_IsSessionWrapper(t *testing.T) {
 	// Verify function exists and is callable with session-oriented naming.
-	// Detailed behavior tested via BuildSPAServerSummary integration tests.
-	_ = BuildSPASessionSummary
+	// Detailed behavior tested via BuildServerSummary integration tests.
+	_ = BuildSessionSummary
 }
 
-func TestEnsureSPASessionReady_RequiresValidConnection(t *testing.T) {
+func TestEnsureLiveSessionReady_RequiresValidConnection(t *testing.T) {
 	dbServer := &models.QpServer{Token: "ready-test"}
 	session := &models.QpWhatsappSession{
 		QpServer: dbServer,
 	}
 
 	// Without handler or connection, should fail
-	err := EnsureSPASessionReady(session)
+	err := EnsureLiveSessionReady(session)
 	if err == nil {
 		t.Fatal("expected error for session without handler")
 	}
 }
 
-func TestGetSPAOwnedSessionRecord_DelegatesUserOwnershipCheck(t *testing.T) {
+func TestGetOwnedSessionRecord_DelegatesUserOwnershipCheck(t *testing.T) {
 	prevService := models.WhatsappService
 	defer func() { models.WhatsappService = prevService }()
 
@@ -61,7 +61,7 @@ func TestGetSPAOwnedSessionRecord_DelegatesUserOwnershipCheck(t *testing.T) {
 	}
 
 	ownerUser := &models.QpUser{Username: "owner@example.com"}
-	got, err := GetSPAOwnedSessionRecord(ownerUser, "owner-test")
+	got, err := GetOwnedSessionRecord(ownerUser, "owner-test")
 	if err != nil {
 		t.Fatalf("expected no error for owned session, got %v", err)
 	}
@@ -71,7 +71,7 @@ func TestGetSPAOwnedSessionRecord_DelegatesUserOwnershipCheck(t *testing.T) {
 
 	// Different user should fail
 	otherUser := &models.QpUser{Username: "other@example.com"}
-	got, err = GetSPAOwnedSessionRecord(otherUser, "owner-test")
+	got, err = GetOwnedSessionRecord(otherUser, "owner-test")
 	if err == nil {
 		t.Fatal("expected error for non-owner user")
 	}

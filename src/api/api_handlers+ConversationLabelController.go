@@ -82,9 +82,9 @@ func ConversationChatLabelController(w http.ResponseWriter, r *http.Request) {
 	handleConversationChatLabels(w, r, strings.TrimSpace(serverRecord.GetUser()), strings.TrimSpace(serverRecord.Token))
 }
 
-// SPAConversationLabelController exposes the label catalog through SPA authentication.
-func SPAConversationLabelController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedConversationLabelController exposes the label catalog through SPA authentication.
+func AuthenticatedConversationLabelController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -93,22 +93,22 @@ func SPAConversationLabelController(w http.ResponseWriter, r *http.Request) {
 	handleConversationLabelCatalog(w, r, strings.TrimSpace(user.Username))
 }
 
-// SPAServerConversationLabelController exposes conversation label bindings through SPA authentication.
-func SPAServerConversationLabelController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerConversationLabelController exposes conversation label bindings through SPA authentication.
+func AuthenticatedServerConversationLabelController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	if _, err := GetSPAOwnedServerRecord(user, token); err != nil {
-		respondSPAServerLookupError(w, err)
+	if _, err := GetOwnedServerRecord(user, token); err != nil {
+		respondServerLookupError(w, err)
 		return
 	}
 

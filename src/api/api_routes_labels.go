@@ -15,5 +15,5 @@ func registerCanonicalLabelRoutes(r chi.Router) {
 }
 
 func CanonicalLabelsController(w http.ResponseWriter, r *http.Request) {
-	SPAConversationLabelController(w, r)
+	AuthenticatedConversationLabelController(w, r)
 }

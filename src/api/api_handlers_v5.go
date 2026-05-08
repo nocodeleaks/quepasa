@@ -87,9 +87,9 @@ func RegisterAPIV5Controllers(r chi.Router, includeUnversioned bool) {
 	v5.RegisterControllers(r, canonicalAliases(includeUnversioned), v5.Groups{
 		Public: registerCanonicalPublicRoutes,
 		Protected: func(protected chi.Router) {
-			tokenAuth := GetSPATokenAuth()
+			tokenAuth := GetAuthenticatedTokenAuth()
 			protected.Use(jwtauth.Verifier(tokenAuth))
-			protected.Use(SPAAuthenticatorHandler)
+			protected.Use(AuthenticatedAPIHandler)
 			registerCanonicalProtectedRoutes(protected)
 		},
 	})
@@ -122,9 +122,9 @@ func VersionController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAMasterKeyStatusController exposes only master key status, never the secret value itself.
-func SPAMasterKeyStatusController(w http.ResponseWriter, r *http.Request) {
-	if _, err := GetSPAUser(r); err != nil {
+// AuthenticatedMasterKeyStatusController exposes only master key status, never the secret value itself.
+func AuthenticatedMasterKeyStatusController(w http.ResponseWriter, r *http.Request) {
+	if _, err := GetAuthenticatedUser(r); err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
@@ -138,9 +138,9 @@ func CanonicalDispatchesController(w http.ResponseWriter, r *http.Request) {
 	dispatchType := strings.ToLower(strings.TrimSpace(resolveCanonicalDispatchType(r)))
 	switch dispatchType {
 	case "webhook", "webhooks":
-		SPAWebHooksController(w, r)
+		AuthenticatedWebHooksController(w, r)
 	case "rabbitmq":
-		SPARabbitMQController(w, r)
+		AuthenticatedRabbitMQController(w, r)
 	default:
 		RespondErrorCode(w, fmt.Errorf("dispatch type is required and must be webhook or rabbitmq"), http.StatusBadRequest)
 	}
@@ -159,12 +159,12 @@ func CanonicalGroupsPatchController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if lookupBodyString(payload, "name") != "" {
-		SPAGroupNameController(w, r)
+		AuthenticatedGroupNameController(w, r)
 		return
 	}
 
 	if lookupBodyString(payload, "topic") != "" {
-		SPAGroupDescriptionController(w, r)
+		AuthenticatedGroupDescriptionController(w, r)
 		return
 	}
 
@@ -173,7 +173,7 @@ func CanonicalGroupsPatchController(w http.ResponseWriter, r *http.Request) {
 
 // CanonicalLabelSearchController exposes a body-based search contract for labels.
 func CanonicalLabelSearchController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -224,8 +224,8 @@ func CanonicalLabelSearchController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if request.IncludeChats && strings.TrimSpace(request.Token) != "" && len(request.ChatIDs) > 0 {
-		if ensureSPATokenScope(r, request.Token) == nil {
-			if _, err := GetSPAOwnedServerRecord(user, request.Token); err == nil {
+		if ensureTokenScope(r, request.Token) == nil {
+			if _, err := GetOwnedServerRecord(user, request.Token); err == nil {
 				if loaded, err := store.FindConversationLabelsMap(strings.TrimSpace(request.Token), strings.TrimSpace(user.Username), request.ChatIDs); err == nil {
 					response["assignedChats"] = invertConversationLabelMap(loaded)
 				}
@@ -253,7 +253,7 @@ func invertConversationLabelMap(source map[string][]*models.QpConversationLabel)
 func requireOwnedServerToken() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			user, err := GetSPAUser(r)
+			user, err := GetAuthenticatedUser(r)
 			if err != nil {
 				RespondErrorCode(w, err, http.StatusUnauthorized)
 				return
@@ -265,13 +265,13 @@ func requireOwnedServerToken() func(http.Handler) http.Handler {
 				return
 			}
 
-			if err := ensureSPATokenScope(r, token); err != nil {
-				respondSPAServerLookupError(w, err)
+			if err := ensureTokenScope(r, token); err != nil {
+				respondServerLookupError(w, err)
 				return
 			}
 
-			if _, err := GetSPAOwnedServerRecord(user, token); err != nil {
-				respondSPAServerLookupError(w, err)
+			if _, err := GetOwnedServerRecord(user, token); err != nil {
+				respondServerLookupError(w, err)
 				return
 			}
 

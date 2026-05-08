@@ -9,7 +9,7 @@ import (
 )
 
 func TestRecoverSPAValueReturnsFallbackOnPanic(t *testing.T) {
-	got := recoverSPAValue(42, "test panic recovery", nil, func() int {
+	got := recoverAPIValue(42, "test panic recovery", nil, func() int {
 		panic("boom")
 	})
 
@@ -29,7 +29,7 @@ func TestBuildSPAFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	server.SetWId("5511999999999@s.whatsapp.net")
 	server.SetUser("tester@example.com")
 
-	summary := buildSPAFallbackServerSummary(server, spaServerRuntimeSnapshot{
+	summary := buildFallbackServerSummary(server, spaServerRuntimeSnapshot{
 		state:         whatsapp.Disconnected,
 		dispatchCount: 3,
 		webhookCount:  2,

@@ -17,7 +17,7 @@ func registerCanonicalChatRoutes(r chi.Router) {
 }
 
 func CanonicalChatArchiveController(w http.ResponseWriter, r *http.Request) {
-	SPAServerArchiveChatController(w, r)
+	AuthenticatedServerArchiveChatController(w, r)
 }
 func CanonicalChatReadController(w http.ResponseWriter, r *http.Request) {
 	MarkChatAsReadController(w, r)
@@ -26,14 +26,14 @@ func CanonicalChatUnreadController(w http.ResponseWriter, r *http.Request) {
 	MarkChatAsUnreadController(w, r)
 }
 func CanonicalChatPresenceController(w http.ResponseWriter, r *http.Request) {
-	SPAServerPresenceController(w, r)
+	AuthenticatedServerPresenceController(w, r)
 }
 func CanonicalChatLabelsGetController(w http.ResponseWriter, r *http.Request) {
-	SPAServerConversationLabelController(w, r)
+	AuthenticatedServerConversationLabelController(w, r)
 }
 func CanonicalChatLabelsUpsertController(w http.ResponseWriter, r *http.Request) {
-	SPAServerConversationLabelController(w, r)
+	AuthenticatedServerConversationLabelController(w, r)
 }
 func CanonicalChatLabelsDeleteController(w http.ResponseWriter, r *http.Request) {
-	SPAServerConversationLabelController(w, r)
+	AuthenticatedServerConversationLabelController(w, r)
 }

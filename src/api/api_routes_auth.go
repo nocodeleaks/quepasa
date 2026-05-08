@@ -8,7 +8,7 @@ func registerCanonicalPublicAuthRoutes(r chi.Router) {
 }
 
 func registerCanonicalProtectedAuthRoutes(r chi.Router) {
-	r.Get("/auth/session", SPASessionController)
-	r.Get("/auth/account", SPAAccountController)
-	r.Get("/auth/masterkey/status", SPAMasterKeyStatusController)
+	r.Get("/auth/session", AuthenticatedSessionController)
+	r.Get("/auth/account", AuthenticatedAccountController)
+	r.Get("/auth/masterkey/status", AuthenticatedMasterKeyStatusController)
 }

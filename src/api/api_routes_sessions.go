@@ -23,38 +23,38 @@ func registerCanonicalSessionRoutes(r chi.Router) {
 }
 
 func CanonicalSessionsListController(w http.ResponseWriter, r *http.Request) {
-	SPASessionsController(w, r)
+	AuthenticatedSessionsController(w, r)
 }
 func CanonicalSessionCreateController(w http.ResponseWriter, r *http.Request) {
-	SPASessionCreateController(w, r)
+	AuthenticatedSessionCreateController(w, r)
 }
 func CanonicalSessionSearchController(w http.ResponseWriter, r *http.Request) {
-	SPASessionsSearchController(w, r)
+	AuthenticatedSessionsSearchController(w, r)
 }
 func CanonicalSessionGetController(w http.ResponseWriter, r *http.Request) {
-	SPASessionGetController(w, r)
+	AuthenticatedSessionGetController(w, r)
 }
 func CanonicalSessionUpdateController(w http.ResponseWriter, r *http.Request) {
-	SPASessionUpdateController(w, r)
+	AuthenticatedSessionUpdateController(w, r)
 }
 func CanonicalSessionDeleteController(w http.ResponseWriter, r *http.Request) {
-	SPASessionDeleteController(w, r)
+	AuthenticatedSessionDeleteController(w, r)
 }
 func CanonicalSessionQRCodeController(w http.ResponseWriter, r *http.Request) {
-	SPASessionQRCodeController(w, r)
+	AuthenticatedSessionQRCodeController(w, r)
 }
 func CanonicalSessionPairCodeController(w http.ResponseWriter, r *http.Request) {
-	SPASessionPairCodeController(w, r)
+	AuthenticatedSessionPairCodeController(w, r)
 }
 func CanonicalSessionEnableController(w http.ResponseWriter, r *http.Request) {
-	SPASessionEnableController(w, r)
+	AuthenticatedSessionEnableController(w, r)
 }
 func CanonicalSessionDisableController(w http.ResponseWriter, r *http.Request) {
-	SPASessionDisableController(w, r)
+	AuthenticatedSessionDisableController(w, r)
 }
 func CanonicalSessionDebugController(w http.ResponseWriter, r *http.Request) {
-	SPASessionDebugToggleController(w, r)
+	AuthenticatedSessionDebugToggleController(w, r)
 }
 func CanonicalSessionOptionController(w http.ResponseWriter, r *http.Request) {
-	SPASessionOptionToggleController(w, r)
+	AuthenticatedSessionOptionToggleController(w, r)
 }

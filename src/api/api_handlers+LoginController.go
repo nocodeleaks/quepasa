@@ -80,7 +80,7 @@ func CanonicalLoginPostController(w http.ResponseWriter, r *http.Request) {
 	jwtauth.SetIssuedNow(claims)
 	jwtauth.SetExpiryIn(claims, 24*time.Hour)
 
-	_, tokenString, err := GetSPATokenAuth().Encode(claims)
+	_, tokenString, err := GetAuthenticatedTokenAuth().Encode(claims)
 	if err != nil {
 		RespondErrorCode(w, errors.New("cannot encode token"), http.StatusInternalServerError)
 		return

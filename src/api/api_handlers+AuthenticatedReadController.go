@@ -1,4 +1,4 @@
-﻿package api
+package api
 
 import (
 	"encoding/base64"
@@ -17,9 +17,9 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-// SPASessionController returns the authenticated user session for SPA clients.
-func SPASessionController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedSessionController returns the authenticated user session for SPA clients.
+func AuthenticatedSessionController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -34,16 +34,16 @@ func SPASessionController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAServersController returns the user's servers, including disconnected records
+// AuthenticatedServersController returns the user's servers, including disconnected records
 // that still exist in the database.
-func SPAServersController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+func AuthenticatedServersController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	scopedToken, hasScopedToken := getSPAScopedSessionToken(r)
+	scopedToken, hasScopedToken := getScopedSessionToken(r)
 
 	dbServers, err := listPersistedServerRecords()
 	if err != nil {
@@ -59,7 +59,7 @@ func SPAServersController(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		items = append(items, BuildSPAServerSummary(dbServer, FindSPALiveServer(dbServer.Token)))
+		items = append(items, BuildServerSummary(dbServer, FindLiveServer(dbServer.Token)))
 	}
 
 	RespondSuccess(w, map[string]interface{}{
@@ -70,15 +70,15 @@ func SPAServersController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAServersSearchController performs lightweight server-side filtering for SPA clients.
-func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServersSearchController performs lightweight server-side filtering for SPA clients.
+func AuthenticatedServersSearchController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	scopedToken, hasScopedToken := getSPAScopedSessionToken(r)
+	scopedToken, hasScopedToken := getScopedSessionToken(r)
 
 	var req struct {
 		Query string `json:"query"`
@@ -117,8 +117,8 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		liveServer := FindSPALiveServer(dbServer.Token)
-		summary := BuildSPAServerSummary(dbServer, liveServer)
+		liveServer := FindLiveServer(dbServer.Token)
+		summary := BuildServerSummary(dbServer, liveServer)
 
 		tokenValue := strings.ToLower(dbServer.Token)
 		widValue := strings.ToLower(dbServer.GetWId())
@@ -161,16 +161,16 @@ func SPAServersSearchController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAAccountController returns basic account information for the authenticated SPA user.
-func SPAAccountController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedAccountController returns basic account information for the authenticated SPA user.
+func AuthenticatedAccountController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
 	servers := runtime.ListLiveSessionsForUser(user.Username)
-	if scopedToken, hasScopedToken := getSPAScopedSessionToken(r); hasScopedToken {
+	if scopedToken, hasScopedToken := getScopedSessionToken(r); hasScopedToken {
 		filtered := make([]*models.QpWhatsappServer, 0, 1)
 		for _, server := range servers {
 			if server == nil || !strings.EqualFold(server.Token, scopedToken) {
@@ -189,9 +189,9 @@ func SPAAccountController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAMasterKeyController keeps the legacy SPA route but never returns the master key secret.
-func SPAMasterKeyController(w http.ResponseWriter, r *http.Request) {
-	_, err := GetSPAUser(r)
+// AuthenticatedMasterKeyController keeps the legacy SPA route but never returns the master key secret.
+func AuthenticatedMasterKeyController(w http.ResponseWriter, r *http.Request) {
+	_, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -200,11 +200,11 @@ func SPAMasterKeyController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, buildMasterKeyStatusResponse(strings.TrimSpace(models.ENV.MasterKey())))
 }
 
-// SPAMasterVerifyController validates a master key candidate sent in the request body.
+// AuthenticatedMasterVerifyController validates a master key candidate sent in the request body.
 // Returns {"valid": true} when it matches the configured MASTERKEY, {"valid": false} otherwise.
 // The configured key itself is never returned.
-func SPAMasterVerifyController(w http.ResponseWriter, r *http.Request) {
-	_, err := GetSPAUser(r)
+func AuthenticatedMasterVerifyController(w http.ResponseWriter, r *http.Request) {
+	_, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -232,21 +232,21 @@ func SPAMasterVerifyController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, map[string]interface{}{"valid": valid})
 }
 
-// SPAServerInfoController returns server information for a token owned by the user.
-func SPAServerInfoController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerInfoController returns server information for a token owned by the user.
+func AuthenticatedServerInfoController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	dbServer, err := GetSPAOwnedServerRecord(user, token)
+	dbServer, err := GetOwnedServerRecord(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -256,27 +256,27 @@ func SPAServerInfoController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	liveServer := FindSPALiveServer(token)
+	liveServer := FindLiveServer(token)
 	RespondSuccess(w, map[string]interface{}{
-		"server": BuildSPAServerSummary(dbServer, liveServer),
+		"server": BuildServerSummary(dbServer, liveServer),
 	})
 }
 
-// SPAServerQRCodeController returns a QR code payload for a server that is not yet ready.
-func SPAServerQRCodeController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerQRCodeController returns a QR code payload for a server that is not yet ready.
+func AuthenticatedServerQRCodeController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	dbServer, err := GetSPAOwnedServerRecord(user, token)
+	dbServer, err := GetOwnedServerRecord(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -286,7 +286,7 @@ func SPAServerQRCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if liveServer := FindSPALiveServer(token); liveServer != nil && liveServer.GetStatus() == whatsapp.Ready {
+	if liveServer := FindLiveServer(token); liveServer != nil && liveServer.GetStatus() == whatsapp.Ready {
 		RespondSuccess(w, map[string]interface{}{
 			"result":    "connected",
 			"connected": true,
@@ -296,7 +296,7 @@ func SPAServerQRCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	historySyncDays := parseSPAHistorySyncDays(r)
+	historySyncDays := parseHistorySyncDays(r)
 
 	rawCode, err := runtime.GetSessionPairingQRCode(token, user.Username, historySyncDays)
 	if err != nil {
@@ -319,21 +319,21 @@ func SPAServerQRCodeController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAServerPairCodeController returns a phone pairing code for a server token owned by the user.
-func SPAServerPairCodeController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerPairCodeController returns a phone pairing code for a server token owned by the user.
+func AuthenticatedServerPairCodeController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	_, err = GetSPAOwnedServerRecord(user, token)
+	_, err = GetOwnedServerRecord(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -343,7 +343,7 @@ func SPAServerPairCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if liveServer := FindSPALiveServer(token); liveServer != nil && liveServer.GetStatus() == whatsapp.Ready {
+	if liveServer := FindLiveServer(token); liveServer != nil && liveServer.GetStatus() == whatsapp.Ready {
 		RespondSuccess(w, map[string]interface{}{
 			"result":    "connected",
 			"connected": true,
@@ -359,7 +359,7 @@ func SPAServerPairCodeController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	historySyncDays := parseSPAHistorySyncDays(r)
+	historySyncDays := parseHistorySyncDays(r)
 
 	pairCode, err := runtime.PairSessionWithPhone(token, user.Username, phone, historySyncDays)
 	if err != nil {
@@ -370,13 +370,13 @@ func SPAServerPairCodeController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, map[string]interface{}{
 		"result":    "success",
 		"pairCode":  pairCode,
-		"formatted": formatSPAPairCode(pairCode),
+		"formatted": formatPairCode(pairCode),
 	})
 }
 
-// SPAUsersListController returns all users. Requires a valid X-Master-Key header.
-func SPAUsersListController(w http.ResponseWriter, r *http.Request) {
-	_, err := GetSPAUser(r)
+// AuthenticatedUsersListController returns all users. Requires a valid X-Master-Key header.
+func AuthenticatedUsersListController(w http.ResponseWriter, r *http.Request) {
+	_, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -410,21 +410,21 @@ func SPAUsersListController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAServerContactsController returns contacts for a live server owned by the user.
-func SPAServerContactsController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerContactsController returns contacts for a live server owned by the user.
+func AuthenticatedServerContactsController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	_, err = GetSPAOwnedServerRecord(user, token)
+	_, err = GetOwnedServerRecord(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -434,7 +434,7 @@ func SPAServerContactsController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server := FindSPALiveServer(token)
+	server := FindLiveServer(token)
 	if server == nil {
 		RespondNotReady(w, fmt.Errorf("server is not active in memory"))
 		return
@@ -452,21 +452,21 @@ func SPAServerContactsController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAServerGroupsController returns joined groups for a live server owned by the user.
-func SPAServerGroupsController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerGroupsController returns joined groups for a live server owned by the user.
+func AuthenticatedServerGroupsController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	_, err = GetSPAOwnedServerRecord(user, token)
+	_, err = GetOwnedServerRecord(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -476,7 +476,7 @@ func SPAServerGroupsController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server := FindSPALiveServer(token)
+	server := FindLiveServer(token)
 	if server == nil {
 		RespondNotReady(w, fmt.Errorf("server is not active in memory"))
 		return
@@ -494,8 +494,8 @@ func SPAServerGroupsController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// parseSPAHistorySyncDays extracts and validates the historysyncdays query parameter.
-func parseSPAHistorySyncDays(r *http.Request) uint32 {
+// parseHistorySyncDays extracts and validates the historysyncdays query parameter.
+func parseHistorySyncDays(r *http.Request) uint32 {
 	raw := strings.TrimSpace(r.URL.Query().Get("historysyncdays"))
 	if raw == "" {
 		return 0
@@ -507,8 +507,8 @@ func parseSPAHistorySyncDays(r *http.Request) uint32 {
 	return uint32(value)
 }
 
-// formatSPAPairCode groups the raw pairing code for readability in the SPA.
-func formatSPAPairCode(code string) string {
+// formatPairCode groups the raw pairing code for readability in the SPA.
+func formatPairCode(code string) string {
 	if len(code) != 8 {
 		return code
 	}

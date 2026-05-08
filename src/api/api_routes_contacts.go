@@ -17,7 +17,7 @@ func registerCanonicalContactRoutes(r chi.Router) {
 }
 
 func CanonicalContactsListController(w http.ResponseWriter, r *http.Request) {
-	SPAServerContactsController(w, r)
+	AuthenticatedServerContactsController(w, r)
 }
 func CanonicalContactIdentifierController(w http.ResponseWriter, r *http.Request) {
 	GetUserIdentifierController(w, r)

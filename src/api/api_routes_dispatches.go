@@ -19,8 +19,8 @@ func registerCanonicalDispatchRoutes(r chi.Router) {
 }
 
 func CanonicalDispatchWebhooksController(w http.ResponseWriter, r *http.Request) {
-	SPAWebHooksController(w, r)
+	AuthenticatedWebHooksController(w, r)
 }
 func CanonicalDispatchRabbitMQController(w http.ResponseWriter, r *http.Request) {
-	SPARabbitMQController(w, r)
+	AuthenticatedRabbitMQController(w, r)
 }

@@ -16,11 +16,11 @@ func registerCanonicalProtectedUserRoutes(r chi.Router) {
 }
 
 func CanonicalUserCreateController(w http.ResponseWriter, r *http.Request) {
-	SPAPublicUserCreateController(w, r)
+	PublicUserCreateController(w, r)
 }
 func CanonicalUsersListController(w http.ResponseWriter, r *http.Request) {
-	SPAUsersListController(w, r)
+	AuthenticatedUsersListController(w, r)
 }
 func CanonicalUserDeleteController(w http.ResponseWriter, r *http.Request) {
-	SPAUserDeleteController(w, r)
+	AuthenticatedUserDeleteController(w, r)
 }

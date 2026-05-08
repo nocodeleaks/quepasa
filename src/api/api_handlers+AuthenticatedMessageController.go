@@ -14,22 +14,22 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-// SPAServerSendController sends a message through the current send request model
+// AuthenticatedServerSendController sends a message through the current send request model
 // while enforcing SPA JWT auth and server ownership checks.
-func SPAServerSendController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+func AuthenticatedServerSendController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
@@ -38,21 +38,21 @@ func SPAServerSendController(w http.ResponseWriter, r *http.Request) {
 	SendAnyWithServer(w, r, server)
 }
 
-// SPAServerArchiveChatController archives or unarchives a chat through the SPA auth surface.
-func SPAServerArchiveChatController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerArchiveChatController archives or unarchives a chat through the SPA auth surface.
+func AuthenticatedServerArchiveChatController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
@@ -61,21 +61,21 @@ func SPAServerArchiveChatController(w http.ResponseWriter, r *http.Request) {
 	ArchiveChatWithServer(w, r, server)
 }
 
-// SPAServerPresenceController sends typing/presence updates through the SPA auth surface.
-func SPAServerPresenceController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerPresenceController sends typing/presence updates through the SPA auth surface.
+func AuthenticatedServerPresenceController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
@@ -84,21 +84,21 @@ func SPAServerPresenceController(w http.ResponseWriter, r *http.Request) {
 	ChatPresenceWithServer(w, r, server)
 }
 
-// SPAWebHooksController exposes webhook CRUD through the SPA auth surface.
-func SPAWebHooksController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedWebHooksController exposes webhook CRUD through the SPA auth surface.
+func AuthenticatedWebHooksController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
@@ -107,21 +107,21 @@ func SPAWebHooksController(w http.ResponseWriter, r *http.Request) {
 	WebhookWithServer(w, r, server)
 }
 
-// SPARabbitMQController exposes RabbitMQ CRUD through the SPA auth surface.
-func SPARabbitMQController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedRabbitMQController exposes RabbitMQ CRUD through the SPA auth surface.
+func AuthenticatedRabbitMQController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
@@ -130,27 +130,27 @@ func SPARabbitMQController(w http.ResponseWriter, r *http.Request) {
 	RabbitMQWithServer(w, r, server)
 }
 
-// SPAServerMessagesController returns paginated messages for a live server owned by the user.
-func SPAServerMessagesController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerMessagesController returns paginated messages for a live server owned by the user.
+func AuthenticatedServerMessagesController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
 	}
 
-	if err := EnsureSPAServerReady(server); err != nil {
+	if err := EnsureLiveServerReady(server); err != nil {
 		respondSPASessionReadyError(w, err)
 		return
 	}
@@ -216,15 +216,15 @@ func SPAServerMessagesController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAServerEditMessageController edits the content of a cached message for a live server.
-func SPAServerEditMessageController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerEditMessageController edits the content of a cached message for a live server.
+func AuthenticatedServerEditMessageController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -236,13 +236,13 @@ func SPAServerEditMessageController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
 	}
 
-	if err := EnsureSPAServerReady(server); err != nil {
+	if err := EnsureLiveServerReady(server); err != nil {
 		respondSPASessionReadyError(w, err)
 		return
 	}
@@ -271,15 +271,15 @@ func SPAServerEditMessageController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAServerRevokeMessageController revokes a cached message for a live server.
-func SPAServerRevokeMessageController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerRevokeMessageController revokes a cached message for a live server.
+func AuthenticatedServerRevokeMessageController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -291,13 +291,13 @@ func SPAServerRevokeMessageController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
 	}
 
-	if err := EnsureSPAServerReady(server); err != nil {
+	if err := EnsureLiveServerReady(server); err != nil {
 		respondSPASessionReadyError(w, err)
 		return
 	}
@@ -313,15 +313,15 @@ func SPAServerRevokeMessageController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAServerDownloadMediaController downloads message media while preserving current legacy defaults.
-func SPAServerDownloadMediaController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedServerDownloadMediaController downloads message media while preserving current legacy defaults.
+func AuthenticatedServerDownloadMediaController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -333,13 +333,13 @@ func SPAServerDownloadMediaController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		respondSPASessionLookupError(w, err)
 		return
 	}
 
-	if err := EnsureSPAServerReady(server); err != nil {
+	if err := EnsureLiveServerReady(server); err != nil {
 		respondSPASessionReadyError(w, err)
 		return
 	}
@@ -399,7 +399,7 @@ func respondSPASessionReadyError(w http.ResponseWriter, err error) {
 }
 
 // Backward compatibility aliases for server-named functions
-func respondSPAServerLookupError(w http.ResponseWriter, err error) {
+func respondServerLookupError(w http.ResponseWriter, err error) {
 	respondSPASessionLookupError(w, err)
 }
 

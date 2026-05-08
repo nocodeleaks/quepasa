@@ -11,7 +11,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-func getSPAChatIDParam(r *http.Request) (string, error) {
+func getChatIDParam(r *http.Request) (string, error) {
 	chatID := strings.TrimSpace(chi.URLParam(r, "chatid"))
 	if chatID == "" {
 		return "", fmt.Errorf("missing chat id parameter")
@@ -30,21 +30,21 @@ func getSPAChatIDParam(r *http.Request) (string, error) {
 	return formatted, nil
 }
 
-// SPAPictureInfoController returns profile picture metadata for a chat using SPA auth.
-func SPAPictureInfoController(w http.ResponseWriter, r *http.Request) {
-	user, err := GetSPAUser(r)
+// AuthenticatedPictureInfoController returns profile picture metadata for a chat using SPA auth.
+func AuthenticatedPictureInfoController(w http.ResponseWriter, r *http.Request) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -58,7 +58,7 @@ func SPAPictureInfoController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := EnsureSPAServerReady(server); err != nil {
+	if err := EnsureLiveServerReady(server); err != nil {
 		if _, ok := err.(*ApiServerNotReadyException); ok {
 			RespondNotReady(w, err)
 			return
@@ -67,7 +67,7 @@ func SPAPictureInfoController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chatID, err := getSPAChatIDParam(r)
+	chatID, err := getChatIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return

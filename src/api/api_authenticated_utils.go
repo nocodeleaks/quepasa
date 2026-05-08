@@ -27,7 +27,7 @@ type spaScopedSessionAuth struct {
 	Username string
 }
 
-func withSPAScopedSessionAuth(r *http.Request, token string, username string) *http.Request {
+func withScopedSessionAuth(r *http.Request, token string, username string) *http.Request {
 	auth := spaScopedSessionAuth{
 		Token:    strings.TrimSpace(token),
 		Username: strings.TrimSpace(username),
@@ -36,7 +36,7 @@ func withSPAScopedSessionAuth(r *http.Request, token string, username string) *h
 	return r.WithContext(ctx)
 }
 
-func getSPAScopedSessionAuth(r *http.Request) (spaScopedSessionAuth, bool) {
+func getScopedSessionAuth(r *http.Request) (spaScopedSessionAuth, bool) {
 	if r == nil {
 		return spaScopedSessionAuth{}, false
 	}
@@ -56,16 +56,16 @@ func getSPAScopedSessionAuth(r *http.Request) (spaScopedSessionAuth, bool) {
 	return auth, true
 }
 
-func getSPAScopedSessionToken(r *http.Request) (string, bool) {
-	auth, ok := getSPAScopedSessionAuth(r)
+func getScopedSessionToken(r *http.Request) (string, bool) {
+	auth, ok := getScopedSessionAuth(r)
 	if !ok {
 		return "", false
 	}
 	return auth.Token, true
 }
 
-func ensureSPATokenScope(r *http.Request, token string) error {
-	scopedToken, scoped := getSPAScopedSessionToken(r)
+func ensureTokenScope(r *http.Request, token string) error {
+	scopedToken, scoped := getScopedSessionToken(r)
 	if !scoped {
 		return nil
 	}
@@ -82,11 +82,11 @@ func ensureSPATokenScope(r *http.Request, token string) error {
 	return nil
 }
 
-// GetSPAUser resolves the authenticated user for SPA-only routes from the JWT claims.
+// GetAuthenticatedUser resolves the authenticated user for SPA-only routes from the JWT claims.
 // This duplicates the minimum auth lookup logic from the form package so the API
 // layer can stay independent and avoid a package cycle with form.
-func GetSPAUser(r *http.Request) (*models.QpUser, error) {
-	if scopedAuth, ok := getSPAScopedSessionAuth(r); ok {
+func GetAuthenticatedUser(r *http.Request) (*models.QpUser, error) {
+	if scopedAuth, ok := getScopedSessionAuth(r); ok {
 		return findPersistedUser(scopedAuth.Username)
 	}
 
@@ -103,9 +103,9 @@ func GetSPAUser(r *http.Request) (*models.QpUser, error) {
 	return findPersistedUser(username)
 }
 
-// GetSPATokenParam returns the server token from a SPA route and validates presence.
-func GetSPATokenParam(r *http.Request) (string, error) {
-	scopedAuth, hasScopedAuth := getSPAScopedSessionAuth(r)
+// GetAuthenticatedTokenParam returns the server token from a SPA route and validates presence.
+func GetAuthenticatedTokenParam(r *http.Request) (string, error) {
+	scopedAuth, hasScopedAuth := getScopedSessionAuth(r)
 	token := strings.TrimSpace(chi.URLParam(r, "token"))
 	if hasScopedAuth {
 		return scopedAuth.Token, nil
@@ -117,9 +117,9 @@ func GetSPATokenParam(r *http.Request) (string, error) {
 	return token, nil
 }
 
-// GetSPAOwnedServerRecord returns the persisted server record for a token and ensures
+// GetOwnedServerRecord returns the persisted server record for a token and ensures
 // the authenticated user is allowed to access it.
-func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, error) {
+func GetOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, error) {
 	resolvedToken := strings.TrimSpace(token)
 	if decodedToken, decodeErr := url.PathUnescape(resolvedToken); decodeErr == nil {
 		decodedToken = strings.TrimSpace(decodedToken)
@@ -140,10 +140,10 @@ func GetSPAOwnedServerRecord(user *models.QpUser, token string) (*models.QpServe
 	return server, nil
 }
 
-// FindSPALiveServer returns the in-memory live server instance when present. Missing
+// FindLiveServer returns the in-memory live server instance when present. Missing
 // live state is not treated as an error because some SPA reads must still work for
 // disconnected servers that only exist in the database.
-func FindSPALiveServer(token string) *models.QpWhatsappServer {
+func FindLiveServer(token string) *models.QpWhatsappServer {
 	server, ok := runtime.FindLiveSessionByToken(token)
 	if !ok {
 		return nil
@@ -151,14 +151,14 @@ func FindSPALiveServer(token string) *models.QpWhatsappServer {
 	return server
 }
 
-// GetSPAOwnedLiveServer returns the in-memory server instance only after the user
+// GetOwnedLiveServer returns the in-memory server instance only after the user
 // has been authorized against the persisted server record.
-func GetSPAOwnedLiveServer(user *models.QpUser, token string) (*models.QpWhatsappServer, error) {
-	if _, err := GetSPAOwnedServerRecord(user, token); err != nil {
+func GetOwnedLiveServer(user *models.QpUser, token string) (*models.QpWhatsappServer, error) {
+	if _, err := GetOwnedServerRecord(user, token); err != nil {
 		return nil, err
 	}
 
-	server := FindSPALiveServer(token)
+	server := FindLiveServer(token)
 	if server == nil {
 		return nil, fmt.Errorf("server is not active in memory")
 	}
@@ -166,8 +166,8 @@ func GetSPAOwnedLiveServer(user *models.QpUser, token string) (*models.QpWhatsap
 	return server, nil
 }
 
-// EnsureSPAServerReady validates that the live server can serve realtime/message operations.
-func EnsureSPAServerReady(server *models.QpWhatsappServer) error {
+// EnsureLiveServerReady validates that the live server can serve realtime/message operations.
+func EnsureLiveServerReady(server *models.QpWhatsappServer) error {
 	if server == nil {
 		return fmt.Errorf("server is not active in memory")
 	}
@@ -187,9 +187,9 @@ func EnsureSPAServerReady(server *models.QpWhatsappServer) error {
 	return nil
 }
 
-// CountSPADispatchingForServer counts dispatching rows from the current live server
+// CountDispatchingForServer counts dispatching rows from the current live server
 // when available, otherwise it falls back to persisted dispatching data.
-func CountSPADispatchingForServer(token string, liveServer *models.QpWhatsappServer) (dispatchCount, webhookCount, rabbitmqCount int) {
+func CountDispatchingForServer(token string, liveServer *models.QpWhatsappServer) (dispatchCount, webhookCount, rabbitmqCount int) {
 	if liveServer != nil {
 		dispatchings := liveServer.GetDispatchingByFilter("")
 		dispatchCount = len(dispatchings)
@@ -228,7 +228,7 @@ type spaServerRuntimeSnapshot struct {
 	rabbitmqCount int
 }
 
-func recoverSPAValue[T any](fallback T, operation string, fields log.Fields, fn func() T) (result T) {
+func recoverAPIValue[T any](fallback T, operation string, fields log.Fields, fn func() T) (result T) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			entry := log.WithFields(fields)
@@ -241,7 +241,7 @@ func recoverSPAValue[T any](fallback T, operation string, fields log.Fields, fn 
 	return fn()
 }
 
-func buildSPAFallbackServerSummary(dbServer *models.QpServer, snap spaServerRuntimeSnapshot) map[string]interface{} {
+func buildFallbackServerSummary(dbServer *models.QpServer, snap spaServerRuntimeSnapshot) map[string]interface{} {
 	if dbServer == nil {
 		return map[string]interface{}{
 			"token":          "",
@@ -298,13 +298,13 @@ func buildSPAFallbackServerSummary(dbServer *models.QpServer, snap spaServerRunt
 	}
 }
 
-// BuildSPAServerSummary creates a stable JSON-friendly server summary for SPA reads.
-func BuildSPAServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) map[string]interface{} {
+// BuildServerSummary creates a stable JSON-friendly server summary for SPA reads.
+func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) map[string]interface{} {
 	fallbackRuntime := spaServerRuntimeSnapshot{
 		state: whatsapp.Disconnected,
 	}
 	if dbServer != nil {
-		fallbackRuntime.dispatchCount, fallbackRuntime.webhookCount, fallbackRuntime.rabbitmqCount = CountSPADispatchingForServer(dbServer.Token, nil)
+		fallbackRuntime.dispatchCount, fallbackRuntime.webhookCount, fallbackRuntime.rabbitmqCount = CountDispatchingForServer(dbServer.Token, nil)
 	}
 
 	fields := log.Fields{}
@@ -314,19 +314,19 @@ func BuildSPAServerSummary(dbServer *models.QpServer, liveServer *models.QpWhats
 		fields["user"] = dbServer.GetUser()
 	}
 
-	snap := recoverSPAValue(fallbackRuntime, "BuildSPAServerSummary runtime snapshot", fields, func() spaServerRuntimeSnapshot {
+	snap := recoverAPIValue(fallbackRuntime, "BuildServerSummary runtime snapshot", fields, func() spaServerRuntimeSnapshot {
 		snapshot := fallbackRuntime
 		if liveServer != nil {
 			snapshot.state = liveServer.GetState()
 			snapshot.timestamps = liveServer.Timestamps
 		}
 		if dbServer != nil {
-			snapshot.dispatchCount, snapshot.webhookCount, snapshot.rabbitmqCount = CountSPADispatchingForServer(dbServer.Token, liveServer)
+			snapshot.dispatchCount, snapshot.webhookCount, snapshot.rabbitmqCount = CountDispatchingForServer(dbServer.Token, liveServer)
 		}
 		return snapshot
 	})
 
-	return recoverSPAValue(buildSPAFallbackServerSummary(dbServer, snap), "BuildSPAServerSummary response payload", fields, func() map[string]interface{} {
-		return buildSPAFallbackServerSummary(dbServer, snap)
+	return recoverAPIValue(buildFallbackServerSummary(dbServer, snap), "BuildServerSummary response payload", fields, func() map[string]interface{} {
+		return buildFallbackServerSummary(dbServer, snap)
 	})
 }

@@ -19,11 +19,11 @@ type spaUserCreateRequest struct {
 	Password string `json:"password"`
 }
 
-// SPAEnvironmentController returns the current environment configuration for
+// AuthenticatedEnvironmentController returns the current environment configuration for
 // authenticated SPA users. The payload mirrors the legacy environment response
 // shape so the frontend can decide whether to render full settings or preview.
-func SPAEnvironmentController(w http.ResponseWriter, r *http.Request) {
-	if _, err := GetSPAUser(r); err != nil {
+func AuthenticatedEnvironmentController(w http.ResponseWriter, r *http.Request) {
+	if _, err := GetAuthenticatedUser(r); err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
 	}
@@ -39,11 +39,11 @@ func SPAEnvironmentController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAPublicUserCreateController creates a user through the SPA setup flow.
+// PublicUserCreateController creates a user through the SPA setup flow.
 // First user can be created without master key (bootstrap).
 // Subsequent users require X-Master-Key header.
 // The route remains reachable without JWT to support bootstrap (first user).
-func SPAPublicUserCreateController(w http.ResponseWriter, r *http.Request) {
+func PublicUserCreateController(w http.ResponseWriter, r *http.Request) {
 	// Count existing users to determine if this is the first user
 	count, err := runtime.CountPersistedUsers()
 	if err != nil {
@@ -58,7 +58,7 @@ func SPAPublicUserCreateController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username, err := createSPAUserFromRequest(r)
+	username, err := createAuthenticatedUserFromRequest(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -70,10 +70,10 @@ func SPAPublicUserCreateController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAUserDeleteController removes a user account through the authenticated SPA.
+// AuthenticatedUserDeleteController removes a user account through the authenticated SPA.
 // Requires a valid X-Master-Key header.
-func SPAUserDeleteController(w http.ResponseWriter, r *http.Request) {
-	_, err := GetSPAUser(r)
+func AuthenticatedUserDeleteController(w http.ResponseWriter, r *http.Request) {
+	_, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return
@@ -117,7 +117,7 @@ func SPAUserDeleteController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func createSPAUserFromRequest(r *http.Request) (string, error) {
+func createAuthenticatedUserFromRequest(r *http.Request) (string, error) {
 	if r.Body == nil {
 		return "", fmt.Errorf("missing request body")
 	}

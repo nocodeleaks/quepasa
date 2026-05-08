@@ -9,12 +9,12 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-// SPAServerEnableController starts a server through the SPA HTTP surface.
+// AuthenticatedServerEnableController starts a server through the SPA HTTP surface.
 //
 // The actual lifecycle logic stays behind the runtime session entry point. This handler
 // only resolves the route token, translates errors into HTTP responses, and emits
 // a lightweight system message so active listeners can refresh UI state quickly.
-func SPAServerEnableController(w http.ResponseWriter, r *http.Request) {
+func AuthenticatedServerEnableController(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpResponse{}
 
 	server, err := GetServer(r)
@@ -49,11 +49,11 @@ func SPAServerEnableController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, map[string]interface{}{"result": "started"})
 }
 
-// SPAServerDisableController stops a server through the SPA HTTP surface.
+// AuthenticatedServerDisableController stops a server through the SPA HTTP surface.
 //
 // Unlike enable, stop already emits internal lifecycle effects from the model layer,
 // so this controller only forwards the request and standardizes the JSON response.
-func SPAServerDisableController(w http.ResponseWriter, r *http.Request) {
+func AuthenticatedServerDisableController(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpResponse{}
 
 	server, err := GetServer(r)

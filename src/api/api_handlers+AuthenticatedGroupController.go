@@ -15,7 +15,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-func getSPAGroupIDParam(r *http.Request) (string, error) {
+func getGroupIDParam(r *http.Request) (string, error) {
 	groupID := strings.TrimSpace(chi.URLParam(r, "groupid"))
 	if groupID == "" {
 		return "", fmt.Errorf("missing group id parameter")
@@ -33,20 +33,20 @@ func getSPAGroupIDParam(r *http.Request) (string, error) {
 	return groupID, nil
 }
 
-func getSPAOwnedReadyGroupServer(w http.ResponseWriter, r *http.Request) (string, *models.QpWhatsappServer, bool) {
-	user, err := GetSPAUser(r)
+func getOwnedReadyGroupServer(w http.ResponseWriter, r *http.Request) (string, *models.QpWhatsappServer, bool) {
+	user, err := GetAuthenticatedUser(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
 		return "", nil, false
 	}
 
-	token, err := GetSPATokenParam(r)
+	token, err := GetAuthenticatedTokenParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return "", nil, false
 	}
 
-	server, err := GetSPAOwnedLiveServer(user, token)
+	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
 		if err.Error() == "server token not owned by user" {
 			RespondErrorCode(w, err, http.StatusForbidden)
@@ -65,14 +65,14 @@ func getSPAOwnedReadyGroupServer(w http.ResponseWriter, r *http.Request) (string
 	return token, server, true
 }
 
-// SPAGroupInfoController returns information for a single joined group.
-func SPAGroupInfoController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupInfoController returns information for a single joined group.
+func AuthenticatedGroupInfoController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -89,9 +89,9 @@ func SPAGroupInfoController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAGroupsCreateController creates a new group owned by the current SPA user.
-func SPAGroupsCreateController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupCreateController creates a new group owned by the current SPA user.
+func AuthenticatedGroupCreateController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
@@ -136,14 +136,14 @@ func SPAGroupsCreateController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAGroupLeaveController removes the current live server from a group.
-func SPAGroupLeaveController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupLeaveController removes the current live server from a group.
+func AuthenticatedGroupLeaveController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -157,14 +157,14 @@ func SPAGroupLeaveController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, map[string]interface{}{"result": "successfully left the group"})
 }
 
-// SPAGroupNameController updates a group subject.
-func SPAGroupNameController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupNameController updates a group subject.
+func AuthenticatedGroupNameController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -196,14 +196,14 @@ func SPAGroupNameController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAGroupDescriptionController updates a group topic.
-func SPAGroupDescriptionController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupDescriptionController updates a group topic.
+func AuthenticatedGroupDescriptionController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -229,14 +229,14 @@ func SPAGroupDescriptionController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAGroupParticipantsController updates members in a group.
-func SPAGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupParticipantsController updates members in a group.
+func AuthenticatedGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -277,14 +277,14 @@ func SPAGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAGroupPhotoController updates or removes a group picture from a remote image URL.
-func SPAGroupPhotoController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupPhotoController updates or removes a group picture from a remote image URL.
+func AuthenticatedGroupPhotoController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -352,14 +352,14 @@ func SPAGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// SPAGroupInviteController returns the invite link for a group.
-func SPAGroupInviteController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupInviteController returns the invite link for a group.
+func AuthenticatedGroupInviteController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -376,14 +376,14 @@ func SPAGroupInviteController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// SPAGroupRevokeInviteController revokes the current invite link and returns the new one.
-func SPAGroupRevokeInviteController(w http.ResponseWriter, r *http.Request) {
-	_, server, ok := getSPAOwnedReadyGroupServer(w, r)
+// AuthenticatedGroupRevokeInviteController revokes the current invite link and returns the new one.
+func AuthenticatedGroupRevokeInviteController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {
 		return
 	}
 
-	groupID, err := getSPAGroupIDParam(r)
+	groupID, err := getGroupIDParam(r)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return

@@ -13,7 +13,7 @@ import (
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
-type spaUserCreateRequest struct {
+type authenticatedUserCreateRequest struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -122,7 +122,7 @@ func createAuthenticatedUserFromRequest(r *http.Request) (string, error) {
 		return "", fmt.Errorf("missing request body")
 	}
 
-	var request spaUserCreateRequest
+	var request authenticatedUserCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return "", fmt.Errorf("error converting body to json: %w", err)
 	}

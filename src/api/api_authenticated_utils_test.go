@@ -8,7 +8,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-func TestRecoverSPAValueReturnsFallbackOnPanic(t *testing.T) {
+func TestRecoverAPIValueReturnsFallbackOnPanic(t *testing.T) {
 	got := recoverAPIValue(42, "test panic recovery", nil, func() int {
 		panic("boom")
 	})
@@ -18,7 +18,7 @@ func TestRecoverSPAValueReturnsFallbackOnPanic(t *testing.T) {
 	}
 }
 
-func TestBuildSPAFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
+func TestBuildFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	now := time.Now().UTC()
 	server := &models.QpServer{
 		Token:     "server-token",
@@ -29,7 +29,7 @@ func TestBuildSPAFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	server.SetWId("5511999999999@s.whatsapp.net")
 	server.SetUser("tester@example.com")
 
-	summary := buildFallbackServerSummary(server, spaServerRuntimeSnapshot{
+	summary := buildFallbackServerSummary(server, serverRuntimeSnapshot{
 		state:         whatsapp.Disconnected,
 		dispatchCount: 3,
 		webhookCount:  2,

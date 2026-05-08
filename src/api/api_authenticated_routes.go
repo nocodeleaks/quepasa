@@ -13,24 +13,24 @@ import (
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
-// spaTokenAuth reuses the same signing secret as the form login flow so a browser
-// session authenticated through the existing UI can call SPA endpoints without a
+// authenticatedTokenAuth reuses the same signing secret as the form login flow so a browser
+// session authenticated through the existing UI can call authenticated API endpoints without a
 // second token system.
-var spaTokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
+var authenticatedTokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
 
-// GetAuthenticatedTokenAuth returns the JWT authentication token used by SPA routes.
+// GetAuthenticatedTokenAuth returns the JWT authentication token used by authenticated API routes.
 func GetAuthenticatedTokenAuth() *jwtauth.JWTAuth {
-	return spaTokenAuth
+	return authenticatedTokenAuth
 }
 
-// RegisterAuthenticatedPublicControllers exposes SPA bootstrap routes that must stay
+// RegisterAuthenticatedPublicControllers exposes authenticated API bootstrap routes that must stay
 // reachable before authentication, such as the login screen configuration.
 func RegisterAuthenticatedPublicControllers(r chi.Router) {
 	r.Get("/login/config", LoginConfigController)
 	r.Post("/users", PublicUserCreateController)
 }
 
-// AuthenticatedAPIHandler validates JWT-based SPA requests after the jwtauth verifier
+// AuthenticatedAPIHandler validates JWT-based authenticated API requests after the jwtauth verifier
 // has extracted the token from the request context.
 func AuthenticatedAPIHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -77,8 +77,8 @@ func AuthenticatedAPIHandler(next http.Handler) http.Handler {
 
 func publishAuthenticatedAPIEvent(r *http.Request, status string, reason string) {
 	events.Publish(events.Event{
-		Name:   "api.spa.authentication",
-		Source: "api.spa_authenticator",
+		Name:   "api.authenticated.authentication",
+		Source: "api.authenticated_authenticator",
 		Status: status,
 		Attributes: map[string]string{
 			"reason": reason,
@@ -87,16 +87,16 @@ func publishAuthenticatedAPIEvent(r *http.Request, status string, reason string)
 	})
 }
 
-// RegisterAuthenticatedControllers registers the initial authenticated SPA-only endpoints.
+// RegisterAuthenticatedControllers registers the initial authenticated API endpoints.
 //
 // This is intentionally a narrow slice. We only expose handlers already adapted to
-// the current develop branch instead of importing the full PR #39 SPA controller set.
+// the current develop branch instead of importing the full legacy browser-specific surface.
 func RegisterAuthenticatedControllers(r chi.Router) {
 	tokenAuth := GetAuthenticatedTokenAuth()
 	r.Use(jwtauth.Verifier(tokenAuth))
 	r.Use(AuthenticatedAPIHandler)
 
-	// First extracted SPA read endpoints.
+	// First extracted authenticated read endpoints.
 	r.Get("/session", AuthenticatedSessionController)
 	r.Get("/servers", AuthenticatedServersController)
 	r.Post("/servers/search", AuthenticatedServersSearchController)
@@ -144,7 +144,7 @@ func RegisterAuthenticatedControllers(r chi.Router) {
 	r.With(withCanonicalParams(canonicalGroupIDParam)).Get("/server/{token}/groups/invite", AuthenticatedGroupInviteController)
 	r.With(withCanonicalParams(canonicalGroupIDParam)).Delete("/server/{token}/groups/invite", AuthenticatedGroupRevokeInviteController)
 
-	// Current extracted SPA message/lifecycle/media actions.
+	// Current extracted authenticated message/lifecycle/media actions.
 	r.Get("/server/{token}/messages", AuthenticatedServerMessagesController)
 	r.Put("/server/{token}/message/{messageid}/edit", AuthenticatedServerEditMessageController)
 	r.Delete("/server/{token}/message/{messageid}", AuthenticatedServerRevokeMessageController)

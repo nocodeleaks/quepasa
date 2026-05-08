@@ -18,39 +18,39 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type spaAuthContextKey string
+type authenticatedAPIContextKey string
 
-const spaScopedSessionAuthKey spaAuthContextKey = "spa_scoped_session_auth"
+const scopedSessionAuthKey authenticatedAPIContextKey = "authenticated_scoped_session_auth"
 
-type spaScopedSessionAuth struct {
+type scopedSessionAuth struct {
 	Token    string
 	Username string
 }
 
 func withScopedSessionAuth(r *http.Request, token string, username string) *http.Request {
-	auth := spaScopedSessionAuth{
+	auth := scopedSessionAuth{
 		Token:    strings.TrimSpace(token),
 		Username: strings.TrimSpace(username),
 	}
-	ctx := context.WithValue(r.Context(), spaScopedSessionAuthKey, auth)
+	ctx := context.WithValue(r.Context(), scopedSessionAuthKey, auth)
 	return r.WithContext(ctx)
 }
 
-func getScopedSessionAuth(r *http.Request) (spaScopedSessionAuth, bool) {
+func getScopedSessionAuth(r *http.Request) (scopedSessionAuth, bool) {
 	if r == nil {
-		return spaScopedSessionAuth{}, false
+		return scopedSessionAuth{}, false
 	}
 
-	raw := r.Context().Value(spaScopedSessionAuthKey)
-	auth, ok := raw.(spaScopedSessionAuth)
+	raw := r.Context().Value(scopedSessionAuthKey)
+	auth, ok := raw.(scopedSessionAuth)
 	if !ok {
-		return spaScopedSessionAuth{}, false
+		return scopedSessionAuth{}, false
 	}
 
 	auth.Token = strings.TrimSpace(auth.Token)
 	auth.Username = strings.TrimSpace(auth.Username)
 	if auth.Token == "" || auth.Username == "" {
-		return spaScopedSessionAuth{}, false
+		return scopedSessionAuth{}, false
 	}
 
 	return auth, true
@@ -82,7 +82,7 @@ func ensureTokenScope(r *http.Request, token string) error {
 	return nil
 }
 
-// GetAuthenticatedUser resolves the authenticated user for SPA-only routes from the JWT claims.
+// GetAuthenticatedUser resolves the authenticated user for authenticated API routes from the JWT claims.
 // This duplicates the minimum auth lookup logic from the form package so the API
 // layer can stay independent and avoid a package cycle with form.
 func GetAuthenticatedUser(r *http.Request) (*models.QpUser, error) {
@@ -103,7 +103,7 @@ func GetAuthenticatedUser(r *http.Request) (*models.QpUser, error) {
 	return findPersistedUser(username)
 }
 
-// GetAuthenticatedTokenParam returns the server token from a SPA route and validates presence.
+// GetAuthenticatedTokenParam returns the server token from an authenticated route and validates presence.
 func GetAuthenticatedTokenParam(r *http.Request) (string, error) {
 	scopedAuth, hasScopedAuth := getScopedSessionAuth(r)
 	token := strings.TrimSpace(chi.URLParam(r, "token"))
@@ -141,7 +141,7 @@ func GetOwnedServerRecord(user *models.QpUser, token string) (*models.QpServer, 
 }
 
 // FindLiveServer returns the in-memory live server instance when present. Missing
-// live state is not treated as an error because some SPA reads must still work for
+// live state is not treated as an error because some authenticated reads must still work for
 // disconnected servers that only exist in the database.
 func FindLiveServer(token string) *models.QpWhatsappServer {
 	server, ok := runtime.FindLiveSessionByToken(token)
@@ -220,7 +220,7 @@ func CountDispatchingForServer(token string, liveServer *models.QpWhatsappServer
 	return
 }
 
-type spaServerRuntimeSnapshot struct {
+type serverRuntimeSnapshot struct {
 	state         whatsapp.WhatsappConnectionState
 	timestamps    models.QpTimestamps
 	dispatchCount int
@@ -241,7 +241,7 @@ func recoverAPIValue[T any](fallback T, operation string, fields log.Fields, fn 
 	return fn()
 }
 
-func buildFallbackServerSummary(dbServer *models.QpServer, snap spaServerRuntimeSnapshot) map[string]interface{} {
+func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSnapshot) map[string]interface{} {
 	if dbServer == nil {
 		return map[string]interface{}{
 			"token":          "",
@@ -300,7 +300,7 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap spaServerRuntime
 
 // BuildServerSummary creates a stable JSON-friendly server summary for SPA reads.
 func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) map[string]interface{} {
-	fallbackRuntime := spaServerRuntimeSnapshot{
+	fallbackRuntime := serverRuntimeSnapshot{
 		state: whatsapp.Disconnected,
 	}
 	if dbServer != nil {
@@ -314,7 +314,7 @@ func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsapp
 		fields["user"] = dbServer.GetUser()
 	}
 
-	snap := recoverAPIValue(fallbackRuntime, "BuildServerSummary runtime snapshot", fields, func() spaServerRuntimeSnapshot {
+	snap := recoverAPIValue(fallbackRuntime, "BuildServerSummary runtime snapshot", fields, func() serverRuntimeSnapshot {
 		snapshot := fallbackRuntime
 		if liveServer != nil {
 			snapshot.state = liveServer.GetState()

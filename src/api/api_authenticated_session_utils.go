@@ -48,8 +48,7 @@ func BuildSessionSummary(dbServer *models.QpServer, liveSession *models.QpWhatsa
 	return BuildServerSummary(dbServer, liveSession)
 }
 
-// getOwnedReadySessionHelper is the session-oriented version of getSPAOwnedReadyServer.
-// Returns token, session, and bool indicating success.
+// getOwnedReadySessionHelper is the session-oriented version of the authenticated ready-server lookup.
 func getOwnedReadySessionHelper(user *models.QpUser, token string) (*models.QpWhatsappSession, error) {
 	session, err := GetOwnedLiveSession(user, token)
 	if err != nil {

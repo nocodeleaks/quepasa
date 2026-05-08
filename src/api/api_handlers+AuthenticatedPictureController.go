@@ -30,7 +30,7 @@ func getChatIDParam(r *http.Request) (string, error) {
 	return formatted, nil
 }
 
-// AuthenticatedPictureInfoController returns profile picture metadata for a chat using SPA auth.
+// AuthenticatedPictureInfoController returns profile picture metadata for a chat using authenticated API access.
 func AuthenticatedPictureInfoController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {

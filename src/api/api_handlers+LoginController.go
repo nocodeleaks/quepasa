@@ -58,7 +58,7 @@ func LoginConfigController(w http.ResponseWriter, r *http.Request) {
 
 // CanonicalLoginPostController authenticates a user and sets the JWT cookie.
 // Accepts application/x-www-form-urlencoded or application/json bodies with
-// "email" and "password" fields. Returns JSON on success so SPA clients do not
+// "email" and "password" fields. Returns JSON on success so authenticated API clients do not
 // need to follow HTML redirects.
 func CanonicalLoginPostController(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()

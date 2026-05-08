@@ -15,7 +15,7 @@ import (
 )
 
 // AuthenticatedServerSendController sends a message through the current send request model
-// while enforcing SPA JWT auth and server ownership checks.
+// while enforcing authenticated JWT auth and server ownership checks.
 func AuthenticatedServerSendController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -31,14 +31,14 @@ func AuthenticatedServerSendController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	SendAnyWithServer(w, r, server)
 }
 
-// AuthenticatedServerArchiveChatController archives or unarchives a chat through the SPA auth surface.
+// AuthenticatedServerArchiveChatController archives or unarchives a chat through the authenticated API surface.
 func AuthenticatedServerArchiveChatController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -54,14 +54,14 @@ func AuthenticatedServerArchiveChatController(w http.ResponseWriter, r *http.Req
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	ArchiveChatWithServer(w, r, server)
 }
 
-// AuthenticatedServerPresenceController sends typing/presence updates through the SPA auth surface.
+// AuthenticatedServerPresenceController sends typing/presence updates through the authenticated API surface.
 func AuthenticatedServerPresenceController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -77,14 +77,14 @@ func AuthenticatedServerPresenceController(w http.ResponseWriter, r *http.Reques
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	ChatPresenceWithServer(w, r, server)
 }
 
-// AuthenticatedWebHooksController exposes webhook CRUD through the SPA auth surface.
+// AuthenticatedWebHooksController exposes webhook CRUD through the authenticated API surface.
 func AuthenticatedWebHooksController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -100,14 +100,14 @@ func AuthenticatedWebHooksController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	WebhookWithServer(w, r, server)
 }
 
-// AuthenticatedRabbitMQController exposes RabbitMQ CRUD through the SPA auth surface.
+// AuthenticatedRabbitMQController exposes RabbitMQ CRUD through the authenticated API surface.
 func AuthenticatedRabbitMQController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -123,7 +123,7 @@ func AuthenticatedRabbitMQController(w http.ResponseWriter, r *http.Request) {
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
@@ -146,12 +146,12 @@ func AuthenticatedServerMessagesController(w http.ResponseWriter, r *http.Reques
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureLiveServerReady(server); err != nil {
-		respondSPASessionReadyError(w, err)
+		respondAuthenticatedSessionReadyError(w, err)
 		return
 	}
 
@@ -211,7 +211,7 @@ func AuthenticatedServerMessagesController(w http.ResponseWriter, r *http.Reques
 		response.Messages = []whatsapp.WhatsappMessage{}
 	}
 
-	msg := buildSPAMessageResponseSummary(timestamp, filters, page, totalPages, len(response.Messages))
+	msg := buildAuthenticatedMessageResponseSummary(timestamp, filters, page, totalPages, len(response.Messages))
 	response.ParseSuccess(msg)
 	RespondSuccess(w, response)
 }
@@ -238,12 +238,12 @@ func AuthenticatedServerEditMessageController(w http.ResponseWriter, r *http.Req
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureLiveServerReady(server); err != nil {
-		respondSPASessionReadyError(w, err)
+		respondAuthenticatedSessionReadyError(w, err)
 		return
 	}
 
@@ -293,12 +293,12 @@ func AuthenticatedServerRevokeMessageController(w http.ResponseWriter, r *http.R
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureLiveServerReady(server); err != nil {
-		respondSPASessionReadyError(w, err)
+		respondAuthenticatedSessionReadyError(w, err)
 		return
 	}
 
@@ -335,12 +335,12 @@ func AuthenticatedServerDownloadMediaController(w http.ResponseWriter, r *http.R
 
 	server, err := GetOwnedLiveServer(user, token)
 	if err != nil {
-		respondSPASessionLookupError(w, err)
+		respondAuthenticatedSessionLookupError(w, err)
 		return
 	}
 
 	if err := EnsureLiveServerReady(server); err != nil {
-		respondSPASessionReadyError(w, err)
+		respondAuthenticatedSessionReadyError(w, err)
 		return
 	}
 
@@ -381,7 +381,7 @@ func AuthenticatedServerDownloadMediaController(w http.ResponseWriter, r *http.R
 	w.Write(*content)
 }
 
-func respondSPASessionLookupError(w http.ResponseWriter, err error) {
+func respondAuthenticatedSessionLookupError(w http.ResponseWriter, err error) {
 	switch err.Error() {
 	case "server token not owned by user":
 		RespondErrorCode(w, err, http.StatusForbidden)
@@ -392,7 +392,7 @@ func respondSPASessionLookupError(w http.ResponseWriter, err error) {
 	}
 }
 
-func respondSPASessionReadyError(w http.ResponseWriter, err error) {
+func respondAuthenticatedSessionReadyError(w http.ResponseWriter, err error) {
 	response := &models.QpResponse{}
 	response.ParseError(err)
 	RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
@@ -400,14 +400,14 @@ func respondSPASessionReadyError(w http.ResponseWriter, err error) {
 
 // Backward compatibility aliases for server-named functions
 func respondServerLookupError(w http.ResponseWriter, err error) {
-	respondSPASessionLookupError(w, err)
+	respondAuthenticatedSessionLookupError(w, err)
 }
 
-func respondSPAServerReadyError(w http.ResponseWriter, err error) {
-	respondSPASessionReadyError(w, err)
+func respondAuthenticatedServerReadyError(w http.ResponseWriter, err error) {
+	respondAuthenticatedSessionReadyError(w, err)
 }
 
-func buildSPAMessageResponseSummary(timestamp int64, filters ReceiveMessageFilters, page, totalPages, count int) string {
+func buildAuthenticatedMessageResponseSummary(timestamp int64, filters ReceiveMessageFilters, page, totalPages, count int) string {
 	var parts []string
 	if timestamp > 0 {
 		parts = append(parts, fmt.Sprintf("getting with timestamp: %v => %s", timestamp, time.Unix(timestamp, 0)))

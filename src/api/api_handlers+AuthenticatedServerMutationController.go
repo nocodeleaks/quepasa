@@ -17,7 +17,7 @@ import (
 
 // AuthenticatedServerCreateController creates a new pre-configured server.
 //
-// Authentication is required via SPA JWT (user scope) or X-QUEPASA-TOKEN (single-session scope).
+// Authentication is required via JWT (user scope) or X-QUEPASA-TOKEN (single-session scope).
 // When authenticated by JWT, X-QUEPASA-TOKEN is treated as the optional token/identifier
 // for the new session and is accepted only when RELAXED_SESSIONS=true.
 // When RELAXED_SESSIONS=false, a valid master key is also required.
@@ -75,7 +75,7 @@ func AuthenticatedServerCreateController(w http.ResponseWriter, r *http.Request)
 	RespondInterfaceCode(w, response, http.StatusCreated)
 }
 
-// AuthenticatedServerUpdateController patches persisted server configuration for the SPA user.
+// AuthenticatedServerUpdateController patches persisted server configuration for the authenticated user.
 func AuthenticatedServerUpdateController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -182,7 +182,7 @@ func AuthenticatedServerDeleteController(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if err := runtime.DeleteSessionRecord(server, "spa"); err != nil {
+	if err := runtime.DeleteSessionRecord(server, "authenticated-api"); err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -192,7 +192,7 @@ func AuthenticatedServerDeleteController(w http.ResponseWriter, r *http.Request)
 	RespondSuccess(w, response)
 }
 
-// AuthenticatedServerDebugToggleController toggles server debug mode through the SPA auth surface.
+// AuthenticatedServerDebugToggleController toggles server debug mode through the authenticated API surface.
 func AuthenticatedServerDebugToggleController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -249,7 +249,7 @@ func AuthenticatedServerOptionToggleController(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	value, err := toggleSPAServerOption(server, option)
+	value, err := toggleAuthenticatedServerOption(server, option)
 	if err != nil {
 		RespondErrorCode(w, err, http.StatusBadRequest)
 		return
@@ -262,6 +262,6 @@ func AuthenticatedServerOptionToggleController(w http.ResponseWriter, r *http.Re
 	})
 }
 
-func toggleSPAServerOption(server *models.QpWhatsappServer, option string) (bool, error) {
+func toggleAuthenticatedServerOption(server *models.QpWhatsappServer, option string) (bool, error) {
 	return runtime.ToggleSessionOption(server, option)
 }

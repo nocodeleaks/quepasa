@@ -7,12 +7,12 @@ func AuthenticatedSessionsController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServersController(w, r)
 }
 
-// AuthenticatedSessionsSearchController performs lightweight session-side filtering for SPA clients.
+// AuthenticatedSessionsSearchController performs lightweight session-side filtering.
 func AuthenticatedSessionsSearchController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServersSearchController(w, r)
 }
 
-// AuthenticatedSessionCreateController creates a new pre-configured session owned by the SPA user.
+// AuthenticatedSessionCreateController creates a new pre-configured session owned by the authenticated user.
 func AuthenticatedSessionCreateController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerCreateController(w, r)
 }
@@ -22,12 +22,12 @@ func AuthenticatedSessionGetController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerInfoController(w, r)
 }
 
-// AuthenticatedSessionUpdateController patches persisted session configuration for the SPA user.
+// AuthenticatedSessionUpdateController patches persisted session configuration for the authenticated user.
 func AuthenticatedSessionUpdateController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerUpdateController(w, r)
 }
 
-// AuthenticatedSessionDeleteController deletes a session owned by the SPA user.
+// AuthenticatedSessionDeleteController deletes a session owned by the authenticated user.
 func AuthenticatedSessionDeleteController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerDeleteController(w, r)
 }
@@ -42,17 +42,17 @@ func AuthenticatedSessionPairCodeController(w http.ResponseWriter, r *http.Reque
 	AuthenticatedServerPairCodeController(w, r)
 }
 
-// AuthenticatedSessionEnableController starts a session through the SPA HTTP surface.
+// AuthenticatedSessionEnableController starts a session through the authenticated HTTP surface.
 func AuthenticatedSessionEnableController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerEnableController(w, r)
 }
 
-// AuthenticatedSessionDisableController stops a session through the SPA HTTP surface.
+// AuthenticatedSessionDisableController stops a session through the authenticated HTTP surface.
 func AuthenticatedSessionDisableController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerDisableController(w, r)
 }
 
-// AuthenticatedSessionDebugToggleController toggles session debug mode through the SPA auth surface.
+// AuthenticatedSessionDebugToggleController toggles session debug mode through the authenticated API surface.
 func AuthenticatedSessionDebugToggleController(w http.ResponseWriter, r *http.Request) {
 	AuthenticatedServerDebugToggleController(w, r)
 }

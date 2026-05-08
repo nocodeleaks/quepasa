@@ -6,23 +6,23 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
           </svg>
-          Voltar
+          {{ t('messages_back') }}
         </button>
         <div>
           <h1>{{ t('messages_title') }}</h1>
           <div v-if="serverNumber || totalMessages !== null" class="header-sub">
             <small class="text-muted">{{ t('messages_server_info', [serverNumber || '\u2014', totalMessages !== null ? totalMessages : messages.length]) }}</small>
-            <span v-if="wsConnected" class="ws-status ws-connected" title="WebSocket conectado - Atualizações em tempo real">
+            <span v-if="wsConnected" class="ws-status ws-connected" :title="t('messages_ws_connected')">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                 <circle cx="12" cy="12" r="8"/>
               </svg>
-              Live
+              {{ t('messages_live') }}
             </span>
-            <span v-else class="ws-status ws-disconnected" title="WebSocket desconectado">
+            <span v-else class="ws-status ws-disconnected" :title="t('messages_ws_disconnected')">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                 <circle cx="12" cy="12" r="8"/>
               </svg>
-              Offline
+              {{ t('messages_offline') }}
             </span>
           </div>
         </div>
@@ -102,9 +102,9 @@
         <option :value="10">{{ t('messages_per_page_10') }}</option>
         <option :value="15">{{ t('messages_per_page_15') }}</option>
         <option :value="25">{{ t('messages_per_page_25') }}</option>
-        <option :value="50">50 por página</option>
-        <option :value="100">100 por página</option>
-        <option :value="200">200 por página</option>
+        <option :value="50">{{ t('messages_per_page_50') }}</option>
+        <option :value="100">{{ t('messages_per_page_100') }}</option>
+        <option :value="200">{{ t('messages_per_page_200') }}</option>
       </select>
     </div>
 
@@ -134,8 +134,8 @@
             <div class="sender-info">
               <span class="sender-name">{{ getSenderDisplayName(msg) }}</span>
               <span class="sender-phone">{{ msg.fromme ? (serverNumber || msg.chat?.id || msg.from) : (msg.chat?.id || msg.from) }}</span>
-              <small v-if="msg.chat?.lid || msg.chat?.LId" class="sender-lid">LId: {{ msg.chat?.lid || msg.chat?.LId }}</small>
-              <small v-if="msg.chat?.title" class="chat-title">Chat: {{ msg.chat.title }}</small>
+              <small v-if="msg.chat?.lid || msg.chat?.LId" class="sender-lid">{{ t('messages_lid_label') }}: {{ msg.chat?.lid || msg.chat?.LId }}</small>
+              <small v-if="msg.chat?.title" class="chat-title">{{ t('messages_chat_label') }}: {{ msg.chat.title }}</small>
             </div>
           </div>
           <div class="message-meta">
@@ -143,14 +143,14 @@
               {{ formatTime(msg.timestamp) }}
             </div>
             <div class="message-badges">
-              <span v-if="msg.fromme" class="badge badge-sent">Enviada</span>
-              <span v-else class="badge badge-received">Recebida</span>
+              <span v-if="msg.fromme" class="badge badge-sent">{{ t('messages_badge_sent') }}</span>
+              <span v-else class="badge badge-received">{{ t('messages_badge_received') }}</span>
               <span v-if="msg.status" class="badge badge-status">{{ msg.status }}</span>
-              <span v-if="msg.edited" class="badge badge-warning">Editada</span>
-              <span v-if="msg.fromhistory" class="badge badge-secondary">Histórico</span>
-              <span v-if="msg.ads" class="badge badge-danger">Anúncio</span>
+              <span v-if="msg.edited" class="badge badge-warning">{{ t('messages_badge_edited') }}</span>
+              <span v-if="msg.fromhistory" class="badge badge-secondary">{{ t('messages_badge_history') }}</span>
+              <span v-if="msg.ads" class="badge badge-danger">{{ t('messages_badge_ad') }}</span>
             </div>
-            <button class="btn-small" @click="archiveChat(msg)" :disabled="archiving[msg.chat?.id]">{{ archiving[msg.chat?.id] ? 'Arquivando...' : 'Arquivar conversa' }}</button>
+            <button class="btn-small" @click="archiveChat(msg)" :disabled="archiving[msg.chat?.id]">{{ archiving[msg.chat?.id] ? t('messages_archiving_btn') : t('messages_archive_btn') }}</button>
           </div>
         </div>
 
@@ -161,16 +161,16 @@
           </svg>
           <div>
             <div class="participant-field" style="display:flex;gap:8px;align-items:center">
-              <strong>Número:</strong>
+              <strong>{{ t('messages_number_label') }}:</strong>
               <div style="display:flex;align-items:center;gap:8px">
-                <img v-if="contactPicMap[msg.participant?.id || msg.participant?.phone]" :src="contactPicMap[msg.participant?.id || msg.participant?.phone]" alt="avatar" class="participant-avatar" @error="handleAvatarError(msg.participant?.id || msg.participant?.phone)" />
+                <img v-if="contactPicMap[msg.participant?.id || msg.participant?.phone]" :src="contactPicMap[msg.participant?.id || msg.participant?.phone]" :alt="t('messages_avatar_alt')" class="participant-avatar" @error="handleAvatarError(msg.participant?.id || msg.participant?.phone)" />
                 <span>{{ msg.participant.phone }}</span>
               </div>
             </div>
-            <div class="participant-field"><strong>Lid:</strong> {{ msg.participant.id }}</div>
-            <div class="participant-field"><strong>Nome:</strong> {{ getParticipantDisplayName(msg) }}</div>
-            <div v-if="msg.participant?.title" class="participant-field"><strong>Título:</strong> {{ msg.participant.title }}</div>
-            <small v-if="msg.participant.lid || msg.participant.LId" class="participant-lid">LId: {{ msg.participant.lid || msg.participant.LId }}</small>
+            <div class="participant-field"><strong>{{ t('messages_lid_short_label') }}:</strong> {{ msg.participant.id }}</div>
+            <div class="participant-field"><strong>{{ t('messages_name_label') }}:</strong> {{ getParticipantDisplayName(msg) }}</div>
+            <div v-if="msg.participant?.title" class="participant-field"><strong>{{ t('messages_title_label') }}:</strong> {{ msg.participant.title }}</div>
+            <small v-if="msg.participant.lid || msg.participant.LId" class="participant-lid">{{ t('messages_lid_label') }}: {{ msg.participant.lid || msg.participant.LId }}</small>
           </div>
         </div>
 
@@ -179,14 +179,14 @@
           <div v-if="msg.text" class="message-text">
             <div v-if="isLikelyJson(msg.text)" class="json-message">
               <div class="json-controls">
-                <button class="btn-small" @click="toggleCollapse(msg.id)">{{ collapsed[msg.id] ? 'Ocultar' : 'Mostrar' }}</button>
-                <button class="btn-small" @click="copyText(extractJsonFromText(msg.text))">Copiar JSON</button>
+                <button class="btn-small" @click="toggleCollapse(msg.id)">{{ collapsed[msg.id] ? t('messages_json_hide') : t('messages_json_show') }}</button>
+                <button class="btn-small" @click="copyText(extractJsonFromText(msg.text))">{{ t('messages_json_copy') }}</button>
                 <button v-if="msg.debug && msg.debug.event === 'ProtocolMessage' && msg.debug.reason && msg.debug.reason.includes('history sync')" class="btn-small" @click.prevent="downloadHistory(msg)" :disabled="fetchingDownload[msg.id]">
-                  {{ fetchingDownload[msg.id] ? 'Baixando...' : 'Baixar mídia' }}
+                  {{ fetchingDownload[msg.id] ? t('messages_downloading') : t('messages_download_media') }}
                 </button>
               </div>
               <pre v-if="collapsed[msg.id]" class="json-block">{{ prettyJson(msg.text) }}</pre>
-              <div v-else class="json-collapsed">JSON ({{ msg.id }})</div>
+              <div v-else class="json-collapsed">{{ t('messages_json_summary', [msg.id]) }}</div>
             </div>
             <div v-else>
               {{ msg.text }}
@@ -211,17 +211,17 @@
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
               </svg>
-              <span>Anúncio: {{ msg.ads.title }} <small v-if="msg.ads.id">(#{{ msg.ads.id }})</small></span>
+              <span>{{ t('messages_badge_ad') }}: {{ msg.ads.title }} <small v-if="msg.ads.id">(#{{ msg.ads.id }})</small></span>
             </div>
             <div class="ads-meta">
-              <div v-if="msg.ads.sourceId"><strong>Source ID:</strong> {{ msg.ads.sourceId }}</div>
-              <div v-if="msg.ads.app"><strong>App:</strong> {{ msg.ads.app }}</div>
-              <div v-if="msg.ads.type"><strong>Tipo:</strong> {{ msg.ads.type }}</div>
+              <div v-if="msg.ads.sourceId"><strong>{{ t('messages_ad_source_label') }}</strong> {{ msg.ads.sourceId }}</div>
+              <div v-if="msg.ads.app"><strong>{{ t('messages_ad_app_label') }}</strong> {{ msg.ads.app }}</div>
+              <div v-if="msg.ads.type"><strong>{{ t('messages_ad_type_label') }}</strong> {{ msg.ads.type }}</div>
             </div>
             <div v-if="adThumbnailUrl(msg.ads)" class="ads-thumbnail">
-              <img :src="adThumbnailUrl(msg.ads)" alt="Ad thumbnail" />
+              <img :src="adThumbnailUrl(msg.ads)" :alt="t('messages_ad_thumbnail_alt')" />
             </div>
-            <a v-if="msg.ads.sourceurl" :href="msg.ads.sourceurl" target="_blank" class="ads-link">Ver anúncio</a>
+            <a v-if="msg.ads.sourceurl" :href="msg.ads.sourceurl" target="_blank" class="ads-link">{{ t('messages_ad_link') }}</a>
           </div>
 
           <!-- Media attachment -->
@@ -229,22 +229,22 @@
             <div v-if="isImageMessage(msg)" class="attachment-image">
               <img :src="getMediaUrl(msg)" :alt="getFilename(msg.attachment)" @error="handleImageError" />
               <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" target="_blank" class="btn-download" :download="getFilename(msg.attachment)">Abrir</a>
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">Baixar</a>
+                <a :href="getMediaUrl(msg)" target="_blank" class="btn-download" :download="getFilename(msg.attachment)">{{ t('messages_open') }}</a>
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download') }}</a>
               </div>
             </div>
 
             <div v-else-if="isAudioMessage(msg)" class="attachment-audio">
               <audio controls :src="getMediaUrl(msg)"></audio>
               <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">Baixar áudio</a>
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download_audio') }}</a>
               </div>
             </div>
 
             <div v-else-if="isVideoMessage(msg)" class="attachment-video">
               <video controls :src="getMediaUrl(msg)"></video>
               <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">Baixar vídeo</a>
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download_video') }}</a>
               </div>
             </div>
 
@@ -254,8 +254,8 @@
                 <span class="file-size">{{ formatSize(getFileLength(msg.attachment)) }}</span>
               </div>
               <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" target="_blank" class="btn-download">Abrir PDF</a>
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">Baixar</a>
+                <a :href="getMediaUrl(msg)" target="_blank" class="btn-download">{{ t('messages_open_pdf') }}</a>
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download') }}</a>
               </div>
             </div>
 
@@ -275,8 +275,8 @@
             </div>
 
             <div class="attachment-status">
-              <span v-if="isAttachmentValid(msg.attachment)" class="badge badge-success">Válido</span>
-              <span v-else class="badge badge-danger">Inválido</span>
+              <span v-if="isAttachmentValid(msg.attachment)" class="badge badge-success">{{ t('messages_valid') }}</span>
+              <span v-else class="badge badge-danger">{{ t('messages_invalid') }}</span>
             </div>
             <div class="attachment-meta">
               <span class="mime-type">{{ getMimetype(msg.attachment) }}</span>
@@ -288,7 +288,7 @@
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
               <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/>
             </svg>
-            <span>Em resposta a: <a :href="'#msg-'+msg.inreply">{{ msg.inreply }}</a></span>
+            <span>{{ t('messages_in_reply') }} <a :href="'#msg-'+msg.inreply">{{ msg.inreply }}</a></span>
           </div>
 
           <!-- Exceptions (dispatch errors) -->
@@ -297,7 +297,7 @@
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
               </svg>
-              <span>Erros de Dispatch:</span>
+              <span>{{ t('messages_dispatch_errors') }}</span>
             </div>
             <ul class="exceptions-list">
               <li v-for="(ex, i) in msg.exceptions" :key="i">{{ ex }}</li>
@@ -306,19 +306,19 @@
         </div>
 
         <div class="message-footer">
-          <span class="message-id">ID: {{ msg.id }}</span>
-          <span v-if="msg.trackid" class="message-trackid">Track: {{ msg.trackid }}</span>
+          <span class="message-id">{{ t('messages_id_label') }}: {{ msg.id }}</span>
+          <span v-if="msg.trackid" class="message-trackid">{{ t('messages_track_label') }}: {{ msg.trackid }}</span>
           <span class="message-type">{{ msg.type }}</span>
           <div class="message-actions">
             <template v-if="editing[msg.id]">
               <input v-model="editContent[msg.id]" class="edit-input" />
-              <button class="btn-small me-1" @click="saveEdit(msg)">Salvar</button>
-              <button class="btn-small" @click="cancelEdit(msg)">Cancelar</button>
+              <button class="btn-small me-1" @click="saveEdit(msg)">{{ t('messages_save_edit') }}</button>
+              <button class="btn-small" @click="cancelEdit(msg)">{{ t('messages_cancel_edit') }}</button>
             </template>
             <template v-else>
-              <button v-if="msg.fromme" class="btn-small me-1" @click="startEdit(msg)">Editar</button>
-              <button class="btn-small me-1" @click="revokeMessage(msg)">Cancelar Mensagem</button>
-              <button class="btn-small" @click="sendPresence(msg)" :disabled="presenceLoading[msg.chat?.id]">{{ presenceLoading[msg.chat?.id] ? 'Enviando...' : 'Mostrar presença' }}</button>
+              <button v-if="msg.fromme" class="btn-small me-1" @click="startEdit(msg)">{{ t('messages_edit') }}</button>
+              <button class="btn-small me-1" @click="revokeMessage(msg)">{{ t('messages_revoke_btn') }}</button>
+              <button class="btn-small" @click="sendPresence(msg)" :disabled="presenceLoading[msg.chat?.id]">{{ presenceLoading[msg.chat?.id] ? t('messages_sending') : t('messages_show_presence') }}</button>
             </template>
           </div>
         </div>
@@ -337,7 +337,7 @@
           <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
         </svg>
       </button>
-      <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      <span class="page-info">{{ t('messages_page_of', [currentPage, totalPages]) }}</span>
       <button @click="goToPage(currentPage + 1)" :disabled="currentPage >= totalPages || loading" class="btn-page">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
           <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
@@ -349,13 +349,13 @@
         </svg>
       </button>
       <select v-model.number="messagesPerPage" @change="changePageSize" class="page-size-select" :disabled="loading">
-        <option :value="5">5 por página</option>
-        <option :value="10">10 por página</option>
-        <option :value="15">15 por página</option>
-        <option :value="25">25 por página</option>
-        <option :value="50">50 por página</option>
-        <option :value="100">100 por página</option>
-        <option :value="200">200 por página</option>
+        <option :value="5">{{ t('messages_per_page_5') }}</option>
+        <option :value="10">{{ t('messages_per_page_10') }}</option>
+        <option :value="15">{{ t('messages_per_page_15') }}</option>
+        <option :value="25">{{ t('messages_per_page_25') }}</option>
+        <option :value="50">{{ t('messages_per_page_50') }}</option>
+        <option :value="100">{{ t('messages_per_page_100') }}</option>
+        <option :value="200">{{ t('messages_per_page_200') }}</option>
       </select>
     </div>
 
@@ -372,7 +372,7 @@ import { useLocale } from '@/i18n'
 
 export default defineComponent({
   setup() {
-    const { t } = useLocale()
+    const { t, locale } = useLocale()
     const route = useRoute()
     const token = route.params.token as string
 
@@ -564,7 +564,7 @@ export default defineComponent({
           // contacts are optional; ignore failures
         }
       } catch (err: any) {
-        error.value = err?.response?.data?.result || err.message || 'Erro ao carregar mensagens'
+        error.value = err?.response?.data?.result || err.message || t('messages_error_load')
       } finally {
         loading.value = false
       }
@@ -629,11 +629,11 @@ export default defineComponent({
     function formatTime(ts: any) {
       if (!ts) return ''
       const d = new Date(ts)
-      return d.toLocaleString('pt-BR', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return d.toLocaleString(locale.value, {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
       })
     }
 
@@ -675,7 +675,7 @@ export default defineComponent({
     }
 
     function getFilename(att: any) {
-      return att?.filename || att?.FileName || att?.fileName || att?.name || 'arquivo'
+      return att?.filename || att?.FileName || att?.fileName || att?.name || t('messages_file_default')
     }
 
     function getFileLength(att: any) {
@@ -699,7 +699,7 @@ export default defineComponent({
       if (chat.phone && contactMap[chat.phone]) return contactMap[chat.phone]
       if (chat.lid && contactMap[chat.lid]) return contactMap[chat.lid]
       if (m?.from && contactMap[m.from]) return contactMap[m.from]
-      return chat.title || chat.phone || chat.id || 'Desconhecido'
+      return chat.title || chat.phone || chat.id || t('unknown')
     }
 
     async function downloadHistory(m: any) {
@@ -709,10 +709,10 @@ export default defineComponent({
         await api.post('/api/media/download', { token, messageId: m.id })
         // on success reload messages to reflect new attachment
         await loadMessages()
-        pushToast('Mídia do histórico baixada', 'success')
+        pushToast(t('messages_history_downloaded'), 'success')
       } catch (e: any) {
         console.error('history download error', e)
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao baixar histórico', 'error')
+        pushToast(e?.response?.data?.result || e?.message || t('messages_error_download_history'), 'error')
       } finally {
         fetchingDownload[m.id] = false
       }
@@ -747,43 +747,43 @@ export default defineComponent({
       if (!m || !m.id) return
       const newText = editContent[m.id] || ''
       if (newText.trim().length === 0) {
-        pushToast('Conteúdo vazio não permitido', 'error')
+        pushToast(t('messages_empty_content'), 'error')
         return
       }
       try {
         await api.patch('/api/messages', { token: token.trim(), messageId: m.id, content: newText })
         editing[m.id] = false
         await loadMessages()
-        pushToast('Mensagem editada', 'success')
+        pushToast(t('messages_edited_msg'), 'success')
       } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao editar mensagem', 'error')
+        pushToast(e?.response?.data?.result || e?.message || t('messages_error_edit_msg'), 'error')
       }
     }
 
     // Revoke message
     async function revokeMessage(m: any) {
       if (!m || !m.id) return
-      if (!confirm('Deseja realmente revogar esta mensagem?')) return
+      if (!confirm(t('messages_confirm_revoke'))) return
       try {
         await api.delete('/api/messages', { data: { token: token.trim(), messageid: m.id } })
         await loadMessages()
-        pushToast('Mensagem revogada', 'success')
+        pushToast(t('messages_revoked'), 'success')
       } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao revogar mensagem', 'error')
+        pushToast(e?.response?.data?.result || e?.message || t('messages_error_revoke'), 'error')
       }
     }
 
     // Archive chat
     async function archiveChat(m: any) {
       if (!m || !m.chat || !m.chat.id) return
-      if (!confirm('Deseja arquivar esta conversa?')) return
+      if (!confirm(t('messages_confirm_archive'))) return
       archiving[m.chat.id] = true
       try {
         await api.post('/api/chats/archive', { token: token.trim(), chatid: m.chat.id, archive: true })
-        pushToast('Conversa arquivada', 'success')
+        pushToast(t('messages_archived'), 'success')
         await loadMessages()
       } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao arquivar', 'error')
+        pushToast(e?.response?.data?.result || e?.message || t('messages_error_archive'), 'error')
       } finally {
         archiving[m.chat.id] = false
       }
@@ -795,9 +795,9 @@ export default defineComponent({
       presenceLoading[m.chat.id] = true
       try {
         await api.post('/api/chats/presence', { token: token.trim(), chatid: m.chat.id, type: 'composing' })
-        pushToast('Indicador de presença enviado', 'success')
+        pushToast(t('messages_presence_sent'), 'success')
       } catch (e: any) {
-        pushToast(e?.response?.data?.result || e?.message || 'Erro ao enviar presença', 'error')
+        pushToast(e?.response?.data?.result || e?.message || t('messages_error_presence'), 'error')
       } finally {
         presenceLoading[m.chat.id] = false
       }
@@ -816,19 +816,18 @@ export default defineComponent({
       if (p.lid && contactMap[p.lid]) return contactMap[p.lid]
       // fallback to chat title or number
       if (m?.chat && m.chat.title) return m.chat.title
-      return p.title || p.phone || p.id || 'Desconhecido'
+      return p.title || p.phone || p.id || t('unknown')
     }
 
     function getSenderDisplayName(m: any) {
       // If message is from this bot, show server number or label
       if (m?.fromme) {
         if (serverNumber.value && serverNumber.value.length > 0) {
-          // try to get contact title for our number
           const sn = serverNumber.value
-          if (contactMap[sn]) return contactMap[sn] + ' (Você)'
-          return 'Você (' + sn + ')'
+          if (contactMap[sn]) return `${contactMap[sn]} (${t('messages_you')})`
+          return `${t('messages_you')} (${sn})`
         }
-        return 'Você'
+        return t('messages_you')
       }
 
       // otherwise use chat display (group title or contact name)
@@ -866,8 +865,8 @@ export default defineComponent({
                   })
               }
 
-              const sender = incoming.chat?.title || incoming.from || 'Novo'
-              pushToast(`Nova mensagem de ${sender}`, 'info')
+              const sender = incoming.chat?.title || incoming.from || t('unknown')
+              pushToast(t('messages_new_message_from', [sender]), 'info')
             }
           },
         },

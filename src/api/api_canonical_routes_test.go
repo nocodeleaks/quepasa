@@ -476,7 +476,7 @@ func newCanonicalAuthRequest(t *testing.T, method string, target string, body []
 
 	_, tokenString, err := GetAuthenticatedTokenAuth().Encode(jwt.MapClaims{"user_id": username})
 	if err != nil {
-		t.Fatalf("encode canonical auth token: %v", err)
+		t.Fatalf("encode authenticated canonical token: %v", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+tokenString)

@@ -17,7 +17,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-// AuthenticatedSessionController returns the authenticated user session for SPA clients.
+// AuthenticatedSessionController returns the authenticated user session.
 func AuthenticatedSessionController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -70,7 +70,7 @@ func AuthenticatedServersController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// AuthenticatedServersSearchController performs lightweight server-side filtering for SPA clients.
+// AuthenticatedServersSearchController performs lightweight server-side filtering.
 func AuthenticatedServersSearchController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -161,7 +161,7 @@ func AuthenticatedServersSearchController(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// AuthenticatedAccountController returns basic account information for the authenticated SPA user.
+// AuthenticatedAccountController returns basic account information for the authenticated user.
 func AuthenticatedAccountController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -189,7 +189,7 @@ func AuthenticatedAccountController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// AuthenticatedMasterKeyController keeps the legacy SPA route but never returns the master key secret.
+// AuthenticatedMasterKeyController keeps the legacy authenticated route but never returns the master key secret.
 func AuthenticatedMasterKeyController(w http.ResponseWriter, r *http.Request) {
 	_, err := GetAuthenticatedUser(r)
 	if err != nil {

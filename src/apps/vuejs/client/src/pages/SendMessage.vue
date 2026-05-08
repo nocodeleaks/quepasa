@@ -6,7 +6,7 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
           </svg>
-          Voltar
+          {{ t('send_back') }}
         </button>
         <h1>{{ t('send_page_title') }}</h1>
         <p>{{ t('send_page_subtitle') }}</p>
@@ -46,7 +46,7 @@
                 v-model="recipient"
                 type="tel"
                 class="form-input with-prefix"
-                placeholder="5511999999999"
+                :placeholder="t('send_recipient_placeholder')"
                 required
               />
               <button type="button" class="btn-small contact-search-btn" @click="openContactSearch()">{{ t('send_search_btn') }}</button>
@@ -180,7 +180,7 @@
               v-model="attachmentUrl"
               type="url"
               class="form-input"
-              placeholder="https://exemplo.com/imagem.jpg"
+              :placeholder="t('send_image_url_placeholder')"
             />
           </div>
 
@@ -261,7 +261,7 @@
               v-model="attachmentUrl"
               type="url"
               class="form-input"
-              placeholder="https://exemplo.com/documento.pdf"
+              :placeholder="t('send_doc_url_placeholder')"
             />
           </div>
 
@@ -278,7 +278,7 @@
               v-model="filename"
               type="text"
               class="form-input"
-              placeholder="documento.pdf"
+              :placeholder="t('send_filename_placeholder')"
             />
           </div>
 
@@ -384,7 +384,7 @@
               v-model="attachmentUrl"
               type="url"
               class="form-input"
-              placeholder="https://exemplo.com/audio.mp3"
+              :placeholder="t('send_audio_url_placeholder')"
             />
           </div>
 
@@ -404,14 +404,14 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
           </svg>
-          Preview
+          {{ t('send_preview_title') }}
         </h3>
 
         <div class="phone-mockup">
           <div class="phone-header">
             <div class="contact-info">
               <div class="contact-avatar">{{ getInitial(recipient) }}</div>
-              <span>+{{ recipient || '...' }}</span>
+              <span>+{{ recipient || t('send_preview_recipient_placeholder') }}</span>
             </div>
           </div>
           <div class="phone-messages">
@@ -463,7 +463,7 @@ import { useLocale } from '@/i18n'
 export default defineComponent({
   setup() {
     const route = useRoute()
-    const { t } = useLocale()
+    const { t, locale } = useLocale()
     const token = route.params.token as string
 
     const recipient = ref('')
@@ -554,7 +554,7 @@ export default defineComponent({
 
     const currentTime = computed(() => {
       const now = new Date()
-      return now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      return now.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
     })
 
     // Reset mediaSource when changing msgType
@@ -574,9 +574,9 @@ export default defineComponent({
     }
     
     function formatFileSize(bytes: number): string {
-      if (bytes === 0) return '0 Bytes'
+      if (bytes === 0) return `0 ${t('send_size_bytes')}`
       const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
+      const sizes = [t('send_size_bytes'), t('send_size_kb'), t('send_size_mb'), t('send_size_gb')]
       const i = Math.floor(Math.log(bytes) / Math.log(k))
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	library "github.com/nocodeleaks/quepasa/library"
@@ -48,6 +49,13 @@ func (source *QpWhatsappServer) Download(id string, cache bool) (att *whatsapp.W
 func (source *QpWhatsappServer) RevokeByPrefix(id string) (errors []error) {
 	messages := source.Handler.GetByPrefix(id)
 	for _, msg := range messages {
+		if msg == nil {
+			continue
+		}
+		if msg.Type == whatsapp.SystemMessageType {
+			errors = append(errors, fmt.Errorf("system messages cannot be revoked"))
+			continue
+		}
 		source.GetLogger().Infof("revoking msg by prefix %s", msg.Id)
 		err := source.connection.Revoke(msg)
 		if err != nil {
@@ -61,6 +69,9 @@ func (source *QpWhatsappServer) Revoke(id string) (err error) {
 	msg, err := source.Handler.GetById(id)
 	if err != nil {
 		return
+	}
+	if msg != nil && msg.Type == whatsapp.SystemMessageType {
+		return fmt.Errorf("system messages cannot be revoked")
 	}
 
 	source.GetLogger().Infof("revoking msg %s", id)

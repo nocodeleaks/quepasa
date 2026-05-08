@@ -317,7 +317,7 @@
             </template>
             <template v-else>
               <button v-if="msg.fromme" class="btn-small me-1" @click="startEdit(msg)">{{ t('messages_edit') }}</button>
-              <button class="btn-small me-1" @click="revokeMessage(msg)">{{ t('messages_revoke_btn') }}</button>
+              <button v-if="msg.type !== 'system'" class="btn-small me-1" @click="revokeMessage(msg)">{{ t('messages_revoke_btn') }}</button>
               <button class="btn-small" @click="sendPresence(msg)" :disabled="presenceLoading[msg.chat?.id]">{{ presenceLoading[msg.chat?.id] ? t('messages_sending') : t('messages_show_presence') }}</button>
             </template>
           </div>
@@ -763,6 +763,7 @@ export default defineComponent({
     // Revoke message
     async function revokeMessage(m: any) {
       if (!m || !m.id) return
+      if (m.type === 'system') return
       if (!confirm(t('messages_confirm_revoke'))) return
       try {
         await api.delete('/api/messages', { data: { token: token.trim(), messageid: m.id } })

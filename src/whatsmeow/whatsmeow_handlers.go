@@ -669,6 +669,21 @@ func (handler *WhatsmeowHandlers) Message(evt events.Message, from string) {
 		return
 	}
 
+	// Decrypt secret encrypted messages (edit/poll updates) before normal processing
+	if evt.Message.GetSecretEncryptedMessage() != nil {
+		if handler == nil || handler.Client == nil {
+			logentry.Warn("secret encrypted message received but client is unavailable for decryption")
+		} else {
+			decrypted, err := handler.Client.DecryptSecretEncryptedMessage(context.Background(), &evt)
+			if err != nil {
+				logentry.WithError(err).Warn("failed to decrypt secret encrypted message")
+			} else if decrypted != nil {
+				logentry.Debug("secret encrypted message decrypted")
+				evt.Message = decrypted
+			}
+		}
+	}
+
 	// Determine if message is from history based on multiple criteria
 	isFromHistory := handler.isHistoryMessage(from)
 

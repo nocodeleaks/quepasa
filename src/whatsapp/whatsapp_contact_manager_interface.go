@@ -6,7 +6,8 @@ type WhatsappContactManagerInterface interface {
 	// Get all contacts from WhatsApp
 	GetContacts() ([]WhatsappChat, error)
 
-	// Check if phone numbers are registered on WhatsApp
+	// IsOnWhatsApp checks whether the given phone numbers are registered on WhatsApp.
+	// This performs a live server query and should not be called frequently.
 	IsOnWhatsApp(phones ...string) ([]string, error)
 
 	// Get profile picture information

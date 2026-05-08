@@ -110,7 +110,8 @@ Each server can override global settings for `READUPDATE`, `GROUPS`, `DIRECT`, `
 
 - **`MIGRATIONS`** - Enable database migrations (default: `true`)
 - **`APP_TITLE`** - Application title for WhatsApp device list
-- **`REMOVEDIGIT9`** - Remove digit 9 from phone numbers (default: `false`)
+- **`NORMALIZE_BR_PHONE`** - Normalize Brazilian mobile phones (8/9-digit ambiguity) (default: `false`)
+- **`REMOVEDIGIT9`** - Legacy alias for `NORMALIZE_BR_PHONE` (deprecated)
 - **`SYNOPSISLENGTH`** - Synopsis length for messages (default: `50`)
 - **`CACHELENGTH`** - Cache max items (default: `0` = unlimited)
 - **`CACHEDAYS`** - Cache max days (default: `0` = unlimited)

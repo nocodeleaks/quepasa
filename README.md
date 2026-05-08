@@ -255,6 +255,9 @@ READRECEIPTS=true
 CALLS=true
 WEBSOCKETSSL=false
 
+# Brazilian phone normalization (8/9-digit ambiguity)
+NORMALIZE_BR_PHONE=true
+
 # Performance
 CACHELENGTH=800
 # History sync:

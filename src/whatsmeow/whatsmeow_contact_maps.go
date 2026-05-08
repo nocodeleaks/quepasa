@@ -7,9 +7,10 @@ import (
 
 // WhatsmeowContactMaps provides thread-safe mapping for LID/Phone relationships
 type WhatsmeowContactMaps struct {
-	mutex      sync.RWMutex
-	lidToPhone map[string]string // LID -> Phone mapping
-	phoneToLID map[string]string // Phone -> LID mapping
+	mutex        sync.RWMutex
+	lidToPhone   map[string]string // LID -> Phone mapping
+	phoneToLID   map[string]string // Phone -> LID mapping
+	isOnWhatsApp map[string]string // raw phone input -> resolved JID (or empty if not registered)
 }
 
 var (
@@ -23,8 +24,9 @@ var (
 func GetGlobalContactMaps() *WhatsmeowContactMaps {
 	once.Do(func() {
 		globalContactMaps = &WhatsmeowContactMaps{
-			lidToPhone: make(map[string]string),
-			phoneToLID: make(map[string]string),
+			lidToPhone:   make(map[string]string),
+			phoneToLID:   make(map[string]string),
+			isOnWhatsApp: make(map[string]string),
 		}
 	})
 	return globalContactMaps
@@ -96,4 +98,21 @@ func (c *WhatsmeowContactMaps) SetLIDFromPhoneMap(phone, lid string) {
 	if len(lid) > 0 {
 		c.lidToPhone[lid] = normalizedPhone
 	}
+}
+
+// GetIsOnWhatsAppCache returns the cached JID for a phone input.
+// The found flag is true only when the key exists (even if jid is empty).
+func (c *WhatsmeowContactMaps) GetIsOnWhatsAppCache(phone string) (jid string, found bool) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	jid, found = c.isOnWhatsApp[normalizePhone(phone)]
+	return
+}
+
+// SetIsOnWhatsAppCache stores the resolved JID for a phone input.
+// Pass empty jid to record a negative lookup.
+func (c *WhatsmeowContactMaps) SetIsOnWhatsAppCache(phone, jid string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.isOnWhatsApp[normalizePhone(phone)] = jid
 }

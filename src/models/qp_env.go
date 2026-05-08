@@ -28,10 +28,11 @@ const (
 	ENV_SIGNING_SECRET = "SIGNING_SECRET" // token for hash singing cookies
 	ENV_MASTER_KEY     = "MASTERKEY"      // used for manage all instances at all
 
-	ENV_WEBSOCKETSSL             = "WEBSOCKETSSL" // use ssl for websocket qrcode
-	ENV_MIGRATIONS               = "MIGRATIONS"   // enable migrations (can also be a path)
-	ENV_TITLE                    = "APP_TITLE"    // application title for whatsapp id
-	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"
+	ENV_WEBSOCKETSSL             = "WEBSOCKETSSL"       // use ssl for websocket qrcode
+	ENV_MIGRATIONS               = "MIGRATIONS"         // enable migrations (can also be a path)
+	ENV_TITLE                    = "APP_TITLE"          // application title for whatsapp id
+	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"       // deprecated: use NORMALIZE_BR_PHONE
+	ENV_NORMALIZE_BR_PHONE       = "NORMALIZE_BR_PHONE" // normalize Brazilian mobile phones (8/9-digit)
 	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"
 	ENV_CACHELENGTH              = "CACHELENGTH" // cache max items
 	ENV_CACHEDAYS                = "CACHEDAYS"   // cache max days
@@ -173,10 +174,21 @@ func (*Environment) AppTitle() string {
 	return getEnvOrDefaultString(ENV_TITLE, "")
 }
 
-// ShouldRemoveDigit9 checks if the 9th digit should be removed from phone numbers.
-// Returns true or false, defaulting to false if the environment variable is not set or invalid.
-func (*Environment) ShouldRemoveDigit9() bool {
+// ShouldNormalizeBRPhone reports whether Brazilian mobile phone normalization is enabled.
+// It checks NORMALIZE_BR_PHONE first and falls back to the legacy REMOVEDIGIT9 variable.
+func (*Environment) ShouldNormalizeBRPhone() bool {
+	if v, ok := os.LookupEnv(ENV_NORMALIZE_BR_PHONE); ok {
+		b, err := strconv.ParseBool(v)
+		if err == nil {
+			return b
+		}
+	}
 	return getEnvOrDefaultBool(ENV_REMOVEDIGIT9, false)
+}
+
+// ShouldRemoveDigit9 is deprecated. Use ShouldNormalizeBRPhone instead.
+func (e *Environment) ShouldRemoveDigit9() bool {
+	return e.ShouldNormalizeBRPhone()
 }
 
 // SynopsisLength returns the length for message synopsis. Defaults to 50.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	library "github.com/nocodeleaks/quepasa/library"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	types "go.mau.fi/whatsmeow/types"
@@ -46,15 +47,37 @@ func (cm *WhatsmeowContactManager) GetContacts() (chats []whatsapp.WhatsappChat,
 
 // IsOnWhatsApp checks if phone numbers are registered on WhatsApp
 func (cm *WhatsmeowContactManager) IsOnWhatsApp(phones ...string) (registered []string, err error) {
-	results, err := cm.Client.IsOnWhatsApp(context.Background(), phones)
+	var uncached []string
+
+	for _, phone := range phones {
+		if jid, found := cm.maps.GetIsOnWhatsAppCache(phone); found {
+			if jid != "" {
+				registered = append(registered, jid)
+			}
+		} else {
+			uncached = append(uncached, phone)
+		}
+	}
+
+	if len(uncached) == 0 {
+		return
+	}
+
+	results, err := cm.Client.IsOnWhatsApp(context.Background(), uncached)
 	if err != nil {
 		return
 	}
 
+	resolved := make(map[string]string, len(results))
 	for _, result := range results {
 		if result.IsIn {
+			resolved[result.Query] = result.JID.String()
 			registered = append(registered, result.JID.String())
 		}
+	}
+
+	for _, phone := range uncached {
+		cm.maps.SetIsOnWhatsAppCache(phone, resolved[phone])
 	}
 
 	return
@@ -137,7 +160,58 @@ func (cm *WhatsmeowContactManager) GetLIDFromPhone(phone string) (string, error)
 		cm.maps.SetLIDFromPhoneMap(normalized, lid)
 		logger.Debugf("Phone->LID mapping cached: %s -> %s", normalized, lid)
 
+		if variantPhone, verr := library.AddDigit9BRAllDDDs("+" + normalized); verr == nil {
+			variantNormalized := strings.TrimPrefix(variantPhone, "+")
+			variantJID := types.JID{User: variantNormalized, Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER}
+			if perr := cm.Client.Store.LIDs.PutLIDMapping(context.Background(), lidJID, variantJID); perr == nil {
+				logger.Debugf("BR digit-9 variant persisted in Store.LIDs: %s -> %s", variantNormalized, lid)
+				cm.maps.SetLIDFromPhoneMap(variantNormalized, lid)
+			} else {
+				logger.Warnf("BR digit-9 variant Store.LIDs write failed for %s: %v", variantNormalized, perr)
+			}
+		} else if variantPhone, verr := library.RemoveDigit9BRAllDDDs("+" + normalized); verr == nil {
+			variantNormalized := strings.TrimPrefix(variantPhone, "+")
+			variantJID := types.JID{User: variantNormalized, Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER}
+			if perr := cm.Client.Store.LIDs.PutLIDMapping(context.Background(), lidJID, variantJID); perr == nil {
+				logger.Debugf("BR digit-9 variant persisted in Store.LIDs: %s -> %s", variantNormalized, lid)
+				cm.maps.SetLIDFromPhoneMap(variantNormalized, lid)
+			} else {
+				logger.Warnf("BR digit-9 variant Store.LIDs write failed for %s: %v", variantNormalized, perr)
+			}
+		}
+
 		return lid, nil
+	}
+
+	var variantNormalizedFallback string
+	if vp, verr := library.AddDigit9BRAllDDDs("+" + normalized); verr == nil {
+		variantNormalizedFallback = strings.TrimPrefix(vp, "+")
+	} else if vp, verr := library.RemoveDigit9BRAllDDDs("+" + normalized); verr == nil {
+		variantNormalizedFallback = strings.TrimPrefix(vp, "+")
+	}
+
+	if variantNormalizedFallback != "" {
+		if cachedLID, exists := cm.maps.GetLIDFromPhoneMap(variantNormalizedFallback); exists {
+			logger.Debugf("LID found in maps via BR digit-9 variant for phone %s: %s", phone, cachedLID)
+			cm.maps.SetLIDFromPhoneMap(normalized, cachedLID)
+			return cachedLID, nil
+		}
+
+		variantJIDFallback := types.JID{User: variantNormalizedFallback, Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER}
+		if lidJID2, err2 := cm.Client.Store.LIDs.GetLIDForPN(context.Background(), variantJIDFallback); err2 == nil && !lidJID2.IsEmpty() {
+			lid := lidJID2.ToNonAD().String()
+			logger.Debugf("LID found in database via BR digit-9 variant %s: %s", variantNormalizedFallback, lid)
+
+			cm.maps.SetLIDFromPhoneMap(normalized, lid)
+			cm.maps.SetLIDFromPhoneMap(variantNormalizedFallback, lid)
+
+			originalJID := types.JID{User: normalized, Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER}
+			if perr := cm.Client.Store.LIDs.PutLIDMapping(context.Background(), lidJID2, originalJID); perr != nil {
+				logger.Warnf("BR digit-9 fallback: Store.LIDs write failed for original %s: %v", normalized, perr)
+			}
+
+			return lid, nil
+		}
 	}
 
 	logger.Debugf("No LID mapping found for phone %s", normalized)
@@ -196,6 +270,26 @@ func (cm *WhatsmeowContactManager) GetPhoneFromLID(lid string) (string, error) {
 	// Store successful mapping for future use
 	cm.maps.SetPhoneFromLIDMap(lid, phone)
 	logger.Debugf("LID->Phone mapping stored: %s -> %s", lid, phone)
+
+	if variantPhone, verr := library.AddDigit9BRAllDDDs("+" + phone); verr == nil {
+		variantNormalized := strings.TrimPrefix(variantPhone, "+")
+		variantJID := types.JID{User: variantNormalized, Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER}
+		if perr := cm.Client.Store.LIDs.PutLIDMapping(context.Background(), lidJID, variantJID); perr == nil {
+			logger.Debugf("BR digit-9 variant persisted in Store.LIDs (reverse): %s -> %s", lid, variantNormalized)
+			cm.maps.SetLIDFromPhoneMap(variantNormalized, lid)
+		} else {
+			logger.Warnf("BR digit-9 variant Store.LIDs write failed (reverse) for %s: %v", variantNormalized, perr)
+		}
+	} else if variantPhone, verr := library.RemoveDigit9BRAllDDDs("+" + phone); verr == nil {
+		variantNormalized := strings.TrimPrefix(variantPhone, "+")
+		variantJID := types.JID{User: variantNormalized, Server: whatsapp.WHATSAPP_SERVERDOMAIN_USER}
+		if perr := cm.Client.Store.LIDs.PutLIDMapping(context.Background(), lidJID, variantJID); perr == nil {
+			logger.Debugf("BR digit-9 variant persisted in Store.LIDs (reverse): %s -> %s", lid, variantNormalized)
+			cm.maps.SetLIDFromPhoneMap(variantNormalized, lid)
+		} else {
+			logger.Warnf("BR digit-9 variant Store.LIDs write failed (reverse) for %s: %v", variantNormalized, perr)
+		}
+	}
 
 	return phone, nil
 }

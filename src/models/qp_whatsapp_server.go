@@ -740,15 +740,24 @@ func (source *QpWhatsappServer) SendMessage(msg *whatsapp.WhatsappMessage) (resp
 		return
 	}
 
-	// leading with wrongs digit 9
-	if ENV.ShouldRemoveDigit9() {
+	// Normalize Brazilian mobile numbers with 8/9-digit ambiguity.
+	if ENV.ShouldNormalizeBRPhone() {
 
 		phone, _ := whatsapp.GetPhoneIfValid(msg.Chat.Id)
 		if len(phone) > 0 {
-			phoneWithout9, _ := library.RemoveDigit9IfElegible(phone)
-			if len(phoneWithout9) > 0 {
+			phoneWithout9, errRemove := library.RemoveDigit9IfElegible(phone)
+			phoneWith9, errAdd := library.AddDigit9BRAllDDDs(phone)
+
+			variant := ""
+			if errRemove == nil {
+				variant = phoneWithout9
+			} else if errAdd == nil {
+				variant = phoneWith9
+			}
+
+			if len(variant) > 0 {
 				contactManager := source.GetContactManager()
-				valids, err := contactManager.IsOnWhatsApp(phone, phoneWithout9)
+				valids, err := contactManager.IsOnWhatsApp(phone, variant)
 				if err != nil {
 					return nil, err
 				}

@@ -56,12 +56,12 @@ func GetPhoneIfValid(source string) (phone string, err error) {
 	return
 }
 
-// Whatsapp issue on understanding mobile phones with ddd bigger than 30, only mobile
+// RemoveDigit9IfElegible strips the extra 9th digit for BR mobile numbers (DDD > 30).
 func RemoveDigit9IfElegible(source string) (response string, err error) {
 	if len(source) == 14 {
 
-		// mobile phones with 9 digit
-		r, _ := regexp.Compile(`\+55([4-9][1-9]|[3-9][1-9])9\d{8}$`)
+		// mobile phones with 9 digit (subscriber must start with 5-9)
+		r, _ := regexp.Compile(`\+55([4-9][1-9]|[3-9][1-9])9[5-9]\d{7}$`)
 		if r.MatchString(source) {
 			prefix := source[0:5]
 			response = prefix + source[6:14]
@@ -70,6 +70,57 @@ func RemoveDigit9IfElegible(source string) (response string, err error) {
 		}
 	} else {
 		err = fmt.Errorf("not elegible number of digits")
+	}
+
+	return
+}
+
+// AddDigit9IfEligible inserts the extra 9th digit for legacy BR mobile numbers (DDD > 30).
+func AddDigit9IfEligible(source string) (response string, err error) {
+	if len(source) == 13 {
+		r, _ := regexp.Compile(`\+55([4-9][1-9]|[3-9][1-9])[5-9]\d{7}$`)
+		if r.MatchString(source) {
+			prefix := source[0:5]
+			response = prefix + "9" + source[5:13]
+		} else {
+			err = fmt.Errorf("not eligible match")
+		}
+	} else {
+		err = fmt.Errorf("not eligible number of digits")
+	}
+
+	return
+}
+
+// AddDigit9BRAllDDDs inserts the extra 9th digit for any BR DDD (mobile only).
+func AddDigit9BRAllDDDs(source string) (response string, err error) {
+	if len(source) == 13 {
+		r, _ := regexp.Compile(`^\+55\d{2}[5-9]\d{7}$`)
+		if r.MatchString(source) {
+			prefix := source[0:5]
+			response = prefix + "9" + source[5:13]
+		} else {
+			err = fmt.Errorf("not eligible match")
+		}
+	} else {
+		err = fmt.Errorf("not eligible number of digits")
+	}
+
+	return
+}
+
+// RemoveDigit9BRAllDDDs strips the extra 9th digit for any BR DDD (mobile only).
+func RemoveDigit9BRAllDDDs(source string) (response string, err error) {
+	if len(source) == 14 {
+		r, _ := regexp.Compile(`^\+55\d{2}9[5-9]\d{7}$`)
+		if r.MatchString(source) {
+			prefix := source[0:5]
+			response = prefix + source[6:14]
+		} else {
+			err = fmt.Errorf("not eligible match")
+		}
+	} else {
+		err = fmt.Errorf("not eligible number of digits")
 	}
 
 	return

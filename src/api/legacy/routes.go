@@ -9,6 +9,7 @@ import (
 type Config struct {
 	CurrentAPIVersion string
 	APIVersion3       string
+	Aliases           []string
 }
 
 type Handlers map[string]http.HandlerFunc
@@ -16,7 +17,10 @@ type Handlers map[string]http.HandlerFunc
 func RegisterAPIControllers(r chi.Router, config Config, handlers Handlers) {
 	r.Get("/healthapi", mustHandler(handlers, "BasicHealthController"))
 
-	aliases := []string{"/current", "", "/" + config.CurrentAPIVersion}
+	aliases := config.Aliases
+	if len(aliases) == 0 {
+		aliases = []string{"/current", "", "/" + config.CurrentAPIVersion}
+	}
 	for _, endpoint := range aliases {
 		r.Get(endpoint+"/health", mustHandler(handlers, "HealthController"))
 		r.Head(endpoint+"/health", mustHandler(handlers, "HealthController"))

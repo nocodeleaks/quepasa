@@ -47,11 +47,15 @@ func TestCanonicalEnvironmentAnonymousPreview(t *testing.T) {
 	}
 
 	// Verify preview has expected public fields
-	expectedFields := []string{"groups", "broadcasts", "calls", "read_receipts", "history_sync"}
+	expectedFields := []string{"groups", "broadcasts", "calls", "read_receipts", "history_sync", "default_api_version"}
 	for _, field := range expectedFields {
 		if _, exists := previewMap[field]; !exists {
 			t.Logf("Warning: expected field '%s' in preview, got fields: %+v", field, previewMap)
 		}
+	}
+
+	if previewMap["default_api_version"] == nil {
+		t.Fatalf("expected default_api_version in preview, got: %+v", previewMap)
 	}
 
 	t.Logf("Anonymous preview fields: %v", previewMap)
@@ -97,11 +101,19 @@ func TestCanonicalEnvironmentMasterKeyFullAccess(t *testing.T) {
 		t.Fatalf("expected settings to be map, got type: %T", settings)
 	}
 
-	expectedSections := []string{"api", "database", "webserver"}
+	expectedSections := []string{"API", "Database", "WebServer"}
 	for _, section := range expectedSections {
 		if _, exists := settingsMap[section]; !exists {
 			t.Logf("Warning: expected '%s' section in settings, got sections: %+v", section, settingsMap)
 		}
+	}
+
+	apiSettings, ok := settingsMap["API"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected API settings section, got: %+v", settingsMap["API"])
+	}
+	if apiSettings["default_version"] == nil {
+		t.Fatalf("expected API.default_version in settings, got: %+v", apiSettings)
 	}
 
 	t.Logf("Master key response sections: preview=%v, settings=%+v", preview != nil, settingsMap)

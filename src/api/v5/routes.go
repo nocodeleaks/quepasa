@@ -7,8 +7,7 @@ type Groups struct {
 	Protected func(chi.Router)
 }
 
-func RegisterControllers(r chi.Router, currentVersion string, groups Groups) {
-	aliases := []string{"", "/" + currentVersion}
+func RegisterControllers(r chi.Router, aliases []string, groups Groups) {
 	for _, alias := range aliases {
 		mountAlias(r, alias, func(router chi.Router) {
 			if groups.Public != nil {

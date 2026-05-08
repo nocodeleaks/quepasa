@@ -9,18 +9,19 @@ import (
 // EnvironmentSettingsPreview provides a read-only preview of environment settings
 // Used for public endpoints without authentication
 type EnvironmentSettingsPreview struct {
-	Groups               string `json:"groups"`
-	Broadcasts           string `json:"broadcasts"`
-	ReadReceipts         string `json:"read_receipts"`
-	Calls                string `json:"calls"`
-	HistorySync          string `json:"history_sync"`
-	LogLevel             string `json:"log_level"`
-	DBLogLevel           string `json:"db_log_level,omitempty"`
-	RetryMessageStore    string `json:"retry_message_store,omitempty"`
-	Presence             string `json:"presence,omitempty"`
-	ReadUpdate           string `json:"read_update,omitempty"`
-	WakeUpHour           string `json:"wakeup_hour,omitempty"`
-	WakeUpDuration       string `json:"wakeup_duration,omitempty"`
+	Groups            string `json:"groups"`
+	Broadcasts        string `json:"broadcasts"`
+	ReadReceipts      string `json:"read_receipts"`
+	Calls             string `json:"calls"`
+	HistorySync       string `json:"history_sync"`
+	LogLevel          string `json:"log_level"`
+	DBLogLevel        string `json:"db_log_level,omitempty"`
+	RetryMessageStore string `json:"retry_message_store,omitempty"`
+	Presence          string `json:"presence,omitempty"`
+	ReadUpdate        string `json:"read_update,omitempty"`
+	DefaultAPIVersion string `json:"default_api_version,omitempty"`
+	WakeUpHour        string `json:"wakeup_hour,omitempty"`
+	WakeUpDuration    string `json:"wakeup_duration,omitempty"`
 }
 
 // GetPreview returns a read-only preview of current environment settings
@@ -36,6 +37,7 @@ func GetPreview() *EnvironmentSettingsPreview {
 		RetryMessageStore: formatBool(Settings.Whatsmeow.UseRetryMessageStore),
 		Presence:          Settings.WhatsApp.Presence,
 		ReadUpdate:        formatBooleanExtended(Settings.WhatsApp.ReadUpdate),
+		DefaultAPIVersion: Settings.API.DefaultVersion,
 	}
 
 	// Optional fields

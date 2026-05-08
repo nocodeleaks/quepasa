@@ -30,6 +30,7 @@ curl http://localhost:31000/api/system/environment
     "retry_message_store": "true",
     "presence": "available",
     "read_update": "true",
+    "default_api_version": "v4",
     "wakeup_hour": "00:00",
     "wakeup_duration": "3600 seconds"
   }
@@ -53,6 +54,7 @@ curl -H "X-QUEPASA-MASTERKEY: your-master-key" \
       "port": 31000,
       "enabled": true,
       "relaxedSessions": true,
+      "defaultVersion": "v4",
       "masterKey": ""
     },
     "database": {
@@ -133,6 +135,7 @@ The following settings are exposed in the **public preview** (no authentication 
 | `retry_message_store` | Retry queue backend enabled | Boolean | `"true"`, `"false"` |
 | `presence` | Presence/availability mode | String | `"available"`, `"unavailable"`, `"composing"` |
 | `read_update` | Mark messages as read on send | Boolean state | `"true"`, `"false"` |
+| `default_api_version` | Default version used by the unversioned `/api/...` alias | String | `"v4"`, `"v5"` |
 | `wakeup_hour` | Service wake-up time (optional) | Time | `"00:00"` |
 | `wakeup_duration` | Wake-up duration (optional) | Duration | `"3600 seconds"` |
 

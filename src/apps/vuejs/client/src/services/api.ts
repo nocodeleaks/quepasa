@@ -7,21 +7,52 @@ import axios from 'axios'
 export const apiBase: string =
   (window as any).quepasa?.apiBase ?? ''
 
+const canonicalV5Prefixes = [
+  '/api/auth/',
+  '/api/system/',
+  '/api/users',
+  '/api/sessions',
+  '/api/session/',
+  '/api/dispatches/',
+  '/api/contacts',
+  '/api/messages',
+  '/api/media/',
+  '/api/chats/',
+  '/api/groups',
+  '/api/status/',
+  '/api/labels'
+]
+
 function trimSlashes(input: string): string {
   return input.replace(/^\/+|\/+$/g, '')
+}
+
+function isCanonicalV5Path(url: string): boolean {
+  return canonicalV5Prefixes.some((prefix) => url === prefix || url.startsWith(prefix))
+}
+
+function normalizeVueApiVersion(url: string): string {
+  if (!url.startsWith('/api/')) return url
+  if (url.startsWith('/api/v')) return url
+  if (!isCanonicalV5Path(url)) return url
+
+  const suffix = url.substring('/api/'.length)
+  return `/api/v5/${suffix}`
 }
 
 function resolveApiUrl(url: string): string {
   // Keep absolute URLs untouched.
   if (/^https?:\/\//i.test(url)) return url
 
+  const normalizedUrl = normalizeVueApiVersion(url)
+
   // Normalize only canonical API-prefixed requests.
-  if (!url.startsWith('/api/')) return url
+  if (!normalizedUrl.startsWith('/api/')) return normalizedUrl
 
   const configuredBase = trimSlashes(apiBase)
-  if (!configuredBase) return url
+  if (!configuredBase) return normalizedUrl
 
-  const legacySuffix = url.substring('/api/'.length)
+  const legacySuffix = normalizedUrl.substring('/api/'.length)
   return `/${configuredBase}/${legacySuffix}`
 }
 

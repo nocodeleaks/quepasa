@@ -15,12 +15,20 @@ import (
 // CurrentAPIVersion is the latest versioned alias exposed by the legacy HTTP API.
 const CurrentAPIVersion string = "v4"
 
+func legacyAliases(includeUnversioned bool) []string {
+	aliases := []string{"/current", "/" + CurrentAPIVersion}
+	if includeUnversioned {
+		aliases = append([]string{""}, aliases...)
+	}
+	return aliases
+}
+
 // RegisterAPIControllers wires the legacy/public HTTP API.
 //
 // The route set is intentionally registered under multiple aliases to preserve
 // compatibility with existing clients while newer surfaces are introduced.
-func RegisterAPIControllers(r chi.Router) {
-	legacy.RegisterAPIControllers(r, legacy.Config{CurrentAPIVersion: CurrentAPIVersion}, legacyHandlers())
+func RegisterAPIControllers(r chi.Router, includeUnversioned bool) {
+	legacy.RegisterAPIControllers(r, legacy.Config{CurrentAPIVersion: CurrentAPIVersion, Aliases: legacyAliases(includeUnversioned)}, legacyHandlers())
 }
 
 // CommandController manages bot server commands.

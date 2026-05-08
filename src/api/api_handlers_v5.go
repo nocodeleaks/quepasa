@@ -20,6 +20,15 @@ import (
 // CurrentCanonicalAPIVersion identifies the latest family-based canonical API.
 const CurrentCanonicalAPIVersion = "v5"
 
+func canonicalAliases(includeUnversioned bool) []string {
+	aliases := make([]string, 0, 2)
+	if includeUnversioned {
+		aliases = append(aliases, "")
+	}
+	aliases = append(aliases, "/"+CurrentCanonicalAPIVersion)
+	return aliases
+}
+
 type canonicalParamSpec struct {
 	Name       string
 	BodyKeys   []string
@@ -72,10 +81,10 @@ var (
 	}
 )
 
-// RegisterAPIV5Controllers mounts the canonical family-based API under both /api and /api/v5.
+// RegisterAPIV5Controllers mounts the canonical family-based API.
 // Legacy routes remain registered separately for compatibility.
-func RegisterAPIV5Controllers(r chi.Router) {
-	v5.RegisterControllers(r, CurrentCanonicalAPIVersion, v5.Groups{
+func RegisterAPIV5Controllers(r chi.Router, includeUnversioned bool) {
+	v5.RegisterControllers(r, canonicalAliases(includeUnversioned), v5.Groups{
 		Public: registerCanonicalPublicRoutes,
 		Protected: func(protected chi.Router) {
 			tokenAuth := GetSPATokenAuth()

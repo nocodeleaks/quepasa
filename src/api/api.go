@@ -52,18 +52,24 @@ func Configure(r chi.Router) {
 		// The prefix is controlled exclusively by the API_PREFIX environment variable
 		// (default: "api", see environment/api_settings.go). The frontend SPA reads
 		// the effective prefix from window.__QUEPASA_CONFIG__.apiBase injected at
-		// serve time, so it adapts automatically. Do NOT add a hardcoded /api alias
-		// here — the server owner is responsible for choosing the prefix.
+		// serve time, so it adapts automatically.
 		r.Route("/"+apiPrefix, func(r chi.Router) {
-			r.Group(RegisterAPIV5Controllers)
-			r.Group(RegisterAPIControllers)
+			defaultVersion := environment.Settings.API.DefaultVersion
+			r.Group(func(router chi.Router) {
+				RegisterAPIV5Controllers(router, defaultVersion == CurrentCanonicalAPIVersion)
+			})
+			r.Group(func(router chi.Router) {
+				RegisterAPIControllers(router, defaultVersion == CurrentAPIVersion)
+			})
 			r.Group(RegisterAPIV3Controllers)
 		})
 
 		// Preserve legacy root-level routes when API_PREFIX is configured so older
 		// clients keep working while newer clients can migrate to the prefixed API.
 		if apiPrefix != "" {
-			r.Group(RegisterAPIControllers)
+			r.Group(func(router chi.Router) {
+				RegisterAPIControllers(router, true)
+			})
 			r.Group(RegisterAPIV3Controllers)
 		}
 	})

@@ -42,6 +42,9 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`WEBHOOK_TIMEOUT`** - Webhook request timeout in milliseconds (default: `10000` = 10 seconds, minimum: `1`)
 - **`API_TIMEOUT`** - API request timeout in milliseconds (default: `30000` = 30 seconds, minimum: `1`)
 - **`API_PREFIX`** - API routes prefix
+- **`API_DEFAULT_VERSION`** - Default version used by the unversioned API alias under `API_PREFIX` (default: `v4`)
+  - Explicit versioned routes continue available in parallel, such as `/api/v4/...`, `/api/v5/...`, and `/api/v3/...`
+  - The official Vue.js SPA uses explicit `v5` canonical routes internally, so changing this value is intended for external client compatibility during migrations
 
 ### Database User Seeding (First Startup Only)
 

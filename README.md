@@ -309,6 +309,7 @@ GROUPS=true
 READRECEIPTS=true
 CALLS=true
 WEBSOCKETSSL=false
+API_DEFAULT_VERSION=v4  # Unversioned /api/... alias points to v4 or v5
 
 # Performance
 CACHELENGTH=800
@@ -316,6 +317,14 @@ HISTORYSYNCDAYS=30
 ```
 
 📖 **[Environment Variables Reference](src/environment/README.md)** - Complete configuration documentation.
+
+By default, the unversioned alias under your configured API prefix now follows `API_DEFAULT_VERSION`.
+Examples with the default prefix:
+- `/api/v4/...` → always legacy v4
+- `/api/v5/...` → always canonical v5
+- `/api/...` → whichever version is selected by `API_DEFAULT_VERSION`
+
+The official Vue.js SPA is pinned to explicit `v5` routes internally, so changing `API_DEFAULT_VERSION` is intended for external client migration compatibility.
 
 ### Cache System Architecture
 

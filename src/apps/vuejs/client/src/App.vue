@@ -278,7 +278,6 @@ export default defineComponent({
       loadBranding()
     })
 
-    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, hasMasterKey, isMasterAuthenticated, sessionCreateOpen }
     return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, hasMasterKey, isMasterAuthenticated, relaxedSessions }
   }
 })

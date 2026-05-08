@@ -459,7 +459,9 @@ func TestCanonicalHealthAliasRoutes(t *testing.T) {
 func newCanonicalTestRouter() chi.Router {
 	router := chi.NewRouter()
 	router.Route("/api", func(r chi.Router) {
-		r.Group(RegisterAPIV5Controllers)
+		r.Group(func(router chi.Router) {
+			RegisterAPIV5Controllers(router, true)
+		})
 	})
 	return router
 }

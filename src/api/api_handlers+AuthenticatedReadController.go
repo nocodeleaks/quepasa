@@ -507,7 +507,7 @@ func parseHistorySyncDays(r *http.Request) uint32 {
 	return uint32(value)
 }
 
-// formatPairCode groups the raw pairing code for readability in the SPA.
+// formatPairCode groups the raw pairing code for readability in the web client.
 func formatPairCode(code string) string {
 	if len(code) != 8 {
 		return code

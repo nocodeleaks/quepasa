@@ -190,11 +190,20 @@ func SetupTestMasterKey(t *testing.T, masterKey string) func() {
 	t.Helper()
 
 	oldMasterKey := environment.Settings.API.MasterKey
+	oldEnvMasterKey, hadEnvMasterKey := os.LookupEnv(models.ENV_MASTER_KEY)
 	environment.Settings.API.MasterKey = masterKey
+	if err := os.Setenv(models.ENV_MASTER_KEY, masterKey); err != nil {
+		t.Fatalf("failed to set master key env: %v", err)
+	}
 
 	// Return cleanup function
 	return func() {
 		environment.Settings.API.MasterKey = oldMasterKey
+		if !hadEnvMasterKey {
+			_ = os.Unsetenv(models.ENV_MASTER_KEY)
+			return
+		}
+		_ = os.Setenv(models.ENV_MASTER_KEY, oldEnvMasterKey)
 	}
 }
 

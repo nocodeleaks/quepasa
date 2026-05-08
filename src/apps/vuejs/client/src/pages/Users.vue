@@ -4,38 +4,38 @@
       <div class="header-content">
         <h1>
           <i class="fa fa-users"></i>
-          Users
+          {{ t('users_title') }}
         </h1>
-        <p class="hide-mobile">Manage users in your account</p>
+        <p class="hide-mobile">{{ t('users_subtitle') }}</p>
       </div>
       <div class="header-actions">
         <router-link to="/users/create" class="btn-primary">
           <i class="fa fa-user-plus"></i>
-          New User
+          {{ t('users_new') }}
         </router-link>
       </div>
     </div>
 
     <div v-if="loading" class="loading-state">
       <div class="spinner-large"></div>
-      <p>Loading users...</p>
+      <p>{{ t('users_loading') }}</p>
     </div>
 
     <div v-if="error" class="error-box">
       <i class="fa fa-exclamation-triangle"></i>
       <span>{{ error }}</span>
-      <button @click="load" class="retry-btn">Retry</button>
+      <button @click="load" class="retry-btn">{{ t('error_retry') }}</button>
     </div>
 
     <div v-else-if="!loading && users.length === 0" class="empty-state">
       <div class="empty-icon">
         <i class="fa fa-users fa-4x"></i>
       </div>
-      <h2>No users yet</h2>
-      <p>Create your first user to get started</p>
+      <h2>{{ t('users_empty_title') }}</h2>
+      <p>{{ t('users_empty_desc') }}</p>
       <router-link to="/users/create" class="btn-primary-large">
         <i class="fa fa-user-plus"></i>
-        Create User
+        {{ t('users_create_cta') }}
       </router-link>
     </div>
 
@@ -47,7 +47,7 @@
           </div>
           <div class="user-details">
             <h3>{{ user.username }}</h3>
-            <small v-if="user.timestamp">Created: {{ formatDate(user.timestamp) }}</small>
+            <small v-if="user.timestamp">{{ t('users_created_at', [formatDate(user.timestamp)]) }}</small>
           </div>
         </div>
         <div class="user-actions">
@@ -55,6 +55,7 @@
             class="btn-danger-small"
             @click="confirmDelete(user)"
             :disabled="deleting === user.username"
+            :title="t('delete')"
           >
             <i v-if="deleting === user.username" class="fa fa-spinner fa-spin"></i>
             <i v-else class="fa fa-trash"></i>
@@ -68,11 +69,11 @@
         <div class="modal-icon danger">
           <i class="fa fa-exclamation-triangle fa-3x"></i>
         </div>
-        <h3>Delete User?</h3>
-        <p>Are you sure you want to delete <strong>{{ userToDelete?.username }}</strong>? This action cannot be undone.</p>
+        <h3>{{ t('users_delete_title') }}</h3>
+        <p>{{ t('users_delete_message', [userToDelete?.username || '']) }}</p>
         <div class="modal-actions">
-          <button @click="showDeleteModal = false" class="btn-secondary">Cancel</button>
-          <button @click="deleteUser" class="btn-danger">Delete</button>
+          <button @click="showDeleteModal = false" class="btn-secondary">{{ t('cancel') }}</button>
+          <button @click="deleteUser" class="btn-danger">{{ t('delete') }}</button>
         </div>
       </div>
     </div>
@@ -84,6 +85,7 @@ import { defineComponent, ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { pushToast } from '@/services/toast'
 import { useMasterKey } from '@/composables/useMasterKey'
+import { useLocale } from '@/i18n'
 
 interface User {
   username: string
@@ -93,6 +95,7 @@ interface User {
 export default defineComponent({
   setup() {
     const { masterKeyHeaders } = useMasterKey()
+    const { t, locale } = useLocale()
     const users = ref<User[]>([])
     const loading = ref(true)
     const error = ref('')
@@ -107,7 +110,7 @@ export default defineComponent({
         const res = await api.get('/api/users', { headers: masterKeyHeaders() })
         users.value = res.data.users || []
       } catch (err: any) {
-        error.value = err?.response?.data?.result || 'Failed to load users'
+        error.value = err?.response?.data?.result || t('users_error_load')
       } finally {
         loading.value = false
       }
@@ -115,7 +118,7 @@ export default defineComponent({
 
     function formatDate(dateStr: string) {
       try {
-        return new Date(dateStr).toLocaleDateString()
+        return new Date(dateStr).toLocaleDateString(locale.value)
       } catch {
         return dateStr
       }
@@ -135,10 +138,10 @@ export default defineComponent({
 
       try {
         await api.delete(`/api/user/${encodeURIComponent(username)}`, { headers: masterKeyHeaders() })
-        pushToast('User deleted successfully', 'success')
+        pushToast(t('users_deleted'), 'success')
         await load()
       } catch (err: any) {
-        pushToast(err?.response?.data?.result || 'Failed to delete user', 'error')
+        pushToast(err?.response?.data?.result || t('users_error_delete'), 'error')
       } finally {
         deleting.value = ''
         userToDelete.value = null
@@ -150,6 +153,7 @@ export default defineComponent({
     })
 
     return {
+      t,
       users,
       loading,
       error,
@@ -159,7 +163,7 @@ export default defineComponent({
       load,
       formatDate,
       confirmDelete,
-      deleteUser
+      deleteUser,
     }
   }
 })

@@ -89,7 +89,7 @@ func AuthenticatedGroupInfoController(w http.ResponseWriter, r *http.Request) {
 	RespondSuccess(w, response)
 }
 
-// AuthenticatedGroupCreateController creates a new group owned by the current SPA user.
+// AuthenticatedGroupCreateController creates a new group owned by the current authenticated user.
 func AuthenticatedGroupCreateController(w http.ResponseWriter, r *http.Request) {
 	_, server, ok := getOwnedReadyGroupServer(w, r)
 	if !ok {

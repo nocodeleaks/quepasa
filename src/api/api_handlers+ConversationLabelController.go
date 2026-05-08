@@ -82,7 +82,7 @@ func ConversationChatLabelController(w http.ResponseWriter, r *http.Request) {
 	handleConversationChatLabels(w, r, strings.TrimSpace(serverRecord.GetUser()), strings.TrimSpace(serverRecord.Token))
 }
 
-// AuthenticatedConversationLabelController exposes the label catalog through SPA authentication.
+// AuthenticatedConversationLabelController exposes the label catalog through authenticated API access.
 func AuthenticatedConversationLabelController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {
@@ -93,7 +93,7 @@ func AuthenticatedConversationLabelController(w http.ResponseWriter, r *http.Req
 	handleConversationLabelCatalog(w, r, strings.TrimSpace(user.Username))
 }
 
-// AuthenticatedServerConversationLabelController exposes conversation label bindings through SPA authentication.
+// AuthenticatedServerConversationLabelController exposes conversation label bindings through authenticated API access.
 func AuthenticatedServerConversationLabelController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {

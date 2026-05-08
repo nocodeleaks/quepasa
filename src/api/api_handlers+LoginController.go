@@ -11,11 +11,11 @@ import (
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
-// LoginConfigController returns the public bootstrap payload used by SPA login screens.
+// LoginConfigController returns the public bootstrap payload used by web client login screens.
 //
 // The current implementation intentionally keeps most branding fields empty because
 // we have not imported PR #39 branding/environment customizations yet. The endpoint
-// still exists now so a SPA client can discover basic runtime facts without scraping
+// still exists now so a web client can discover basic runtime facts without scraping
 // templates or depending on private settings.
 func LoginConfigController(w http.ResponseWriter, r *http.Request) {
 	appTitle := environment.Settings.General.AppTitle
@@ -28,7 +28,7 @@ func LoginConfigController(w http.ResponseWriter, r *http.Request) {
 		"appTitle":     appTitle,
 		"accountSetup": environment.Settings.General.AccountSetup,
 		"version":      models.QpVersion,
-		// Reserved compatibility fields expected by the SPA branch. They remain empty
+		// Reserved compatibility fields expected by the web client branch. They remain empty
 		// until we decide to import branding/login customization support explicitly.
 		"loginLogo":     "",
 		"loginSubtitle": "",

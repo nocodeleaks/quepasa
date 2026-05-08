@@ -9,7 +9,7 @@ import (
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
-// AuthenticatedServerEnableController starts a server through the SPA HTTP surface.
+// AuthenticatedServerEnableController starts a server through the authenticated HTTP surface.
 //
 // The actual lifecycle logic stays behind the runtime session entry point. This handler
 // only resolves the route token, translates errors into HTTP responses, and emits
@@ -49,7 +49,7 @@ func AuthenticatedServerEnableController(w http.ResponseWriter, r *http.Request)
 	RespondSuccess(w, map[string]interface{}{"result": "started"})
 }
 
-// AuthenticatedServerDisableController stops a server through the SPA HTTP surface.
+// AuthenticatedServerDisableController stops a server through the authenticated HTTP surface.
 //
 // Unlike enable, stop already emits internal lifecycle effects from the model layer,
 // so this controller only forwards the request and standardizes the JSON response.

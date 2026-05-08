@@ -42,7 +42,7 @@ func CountDispatchingForSession(token string, liveSession *models.QpWhatsappSess
 	return CountDispatchingForServer(token, liveSession)
 }
 
-// BuildSessionSummary creates a stable JSON-friendly session summary for SPA reads,
+// BuildSessionSummary creates a stable JSON-friendly session summary for authenticated reads,
 // using session-oriented naming.
 func BuildSessionSummary(dbServer *models.QpServer, liveSession *models.QpWhatsappSession) map[string]interface{} {
 	return BuildServerSummary(dbServer, liveSession)

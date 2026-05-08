@@ -20,8 +20,8 @@ type authenticatedUserCreateRequest struct {
 }
 
 // AuthenticatedEnvironmentController returns the current environment configuration for
-// authenticated SPA users. The payload mirrors the legacy environment response
-// shape so the frontend can decide whether to render full settings or preview.
+// authenticated users. The payload mirrors the legacy environment response
+// shape so the web client can decide whether to render full settings or preview.
 func AuthenticatedEnvironmentController(w http.ResponseWriter, r *http.Request) {
 	if _, err := GetAuthenticatedUser(r); err != nil {
 		RespondErrorCode(w, err, http.StatusUnauthorized)
@@ -39,7 +39,7 @@ func AuthenticatedEnvironmentController(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-// PublicUserCreateController creates a user through the SPA setup flow.
+// PublicUserCreateController creates a user through the authenticated setup flow.
 // First user can be created without master key (bootstrap).
 // Subsequent users require X-Master-Key header.
 // The route remains reachable without JWT to support bootstrap (first user).
@@ -70,7 +70,7 @@ func PublicUserCreateController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// AuthenticatedUserDeleteController removes a user account through the authenticated SPA.
+// AuthenticatedUserDeleteController removes a user account through the authenticated API.
 // Requires a valid X-Master-Key header.
 func AuthenticatedUserDeleteController(w http.ResponseWriter, r *http.Request) {
 	_, err := GetAuthenticatedUser(r)

@@ -64,7 +64,7 @@ func AuthenticatedServerCreateController(w http.ResponseWriter, r *http.Request)
 	}
 	info := runtime.BuildSessionRecord(sessionToken, user.Username, patch)
 
-	server, err := runtime.CreateSessionRecord(info, "server created via SPA")
+	server, err := runtime.CreateSessionRecord(info, "server created via authenticated api")
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)
@@ -136,7 +136,7 @@ func AuthenticatedServerUpdateController(w http.ResponseWriter, r *http.Request)
 	}
 
 	if len(update) > 0 {
-		if err := runtime.SaveSession(server, "patching info via SPA"); err != nil {
+		if err := runtime.SaveSession(server, "patching info via authenticated api"); err != nil {
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -150,7 +150,7 @@ func AuthenticatedServerUpdateController(w http.ResponseWriter, r *http.Request)
 	RespondSuccess(w, response)
 }
 
-// AuthenticatedServerDeleteController deletes a server owned by the SPA user.
+// AuthenticatedServerDeleteController deletes a server owned by the authenticated user.
 func AuthenticatedServerDeleteController(w http.ResponseWriter, r *http.Request) {
 	user, err := GetAuthenticatedUser(r)
 	if err != nil {

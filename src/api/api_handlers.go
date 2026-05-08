@@ -75,8 +75,8 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 	case "status":
 		err = fmt.Errorf("status command has been removed, please use /health endpoint instead")
 	case "groups":
-		// These toggles remain part of the current command surface until the SPA
-		// fully owns configuration through explicit endpoints.
+		// These toggles remain part of the current command surface until the
+		// authenticated browser-oriented surface fully owns configuration through explicit endpoints.
 		_, err := runtime.ToggleSessionOption(server, "groups")
 		if err == nil {
 			message := "groups toggled: " + server.Groups.String()

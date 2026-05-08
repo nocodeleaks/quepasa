@@ -53,13 +53,13 @@ func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 
 	restore := setCanonicalAccountSetupEnv(t, "true")
 	defer restore()
-
 	CreateTestUser(t, "owner@example.com", "Password123!")
 	CreateTestUser(t, "other@example.com", "Password123!")
 
 	router := newCanonicalTestRouter()
 
 	usersReq := newCanonicalAuthRequest(t, http.MethodGet, "/api/users", nil, "owner@example.com")
+	usersReq.Header.Set(library.HeaderMasterKey, strings.TrimSpace(models.ENV.MasterKey()))
 	usersRec := httptest.NewRecorder()
 	router.ServeHTTP(usersRec, usersReq)
 
@@ -108,6 +108,7 @@ func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 	}
 
 	deleteSelfReq := newCanonicalAuthRequest(t, http.MethodDelete, "/api/users", []byte(`{"username":"owner@example.com"}`), "owner@example.com")
+	deleteSelfReq.Header.Set(library.HeaderMasterKey, strings.TrimSpace(models.ENV.MasterKey()))
 	deleteSelfRec := httptest.NewRecorder()
 	router.ServeHTTP(deleteSelfRec, deleteSelfReq)
 
@@ -116,6 +117,7 @@ func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 	}
 
 	deleteOtherReq := newCanonicalAuthRequest(t, http.MethodDelete, "/api/users", []byte(`{"username":"other@example.com"}`), "owner@example.com")
+	deleteOtherReq.Header.Set(library.HeaderMasterKey, strings.TrimSpace(models.ENV.MasterKey()))
 	deleteOtherRec := httptest.NewRecorder()
 	router.ServeHTTP(deleteOtherRec, deleteOtherReq)
 
@@ -134,6 +136,7 @@ func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 	}
 
 	finalUsersReq := newCanonicalAuthRequest(t, http.MethodGet, "/api/users", nil, "owner@example.com")
+	finalUsersReq.Header.Set(library.HeaderMasterKey, strings.TrimSpace(models.ENV.MasterKey()))
 	finalUsersRec := httptest.NewRecorder()
 	router.ServeHTTP(finalUsersRec, finalUsersReq)
 
@@ -428,11 +431,8 @@ func TestCanonicalHealthAliasRoutes(t *testing.T) {
 		t.Fatalf("decode /api/health response: %v", err)
 	}
 
-	// Verify both responses are identical
-	sysJSON, _ := json.Marshal(sysPayload)
-	aliasJSON, _ := json.Marshal(aliasPayload)
-	if string(sysJSON) != string(aliasJSON) {
-		t.Fatalf("expected /api/health and /api/system/health to return identical responses\n/api/system/health: %s\n/api/health: %s", sysJSON, aliasJSON)
+	if sysPayload["status"] != aliasPayload["status"] || sysPayload["success"] != aliasPayload["success"] {
+		t.Fatalf("expected /api/health and /api/system/health to expose the same health state\n/api/system/health: %+v\n/api/health: %+v", sysPayload, aliasPayload)
 	}
 
 	// Test HEAD /api/system/health

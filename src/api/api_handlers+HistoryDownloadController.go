@@ -22,7 +22,7 @@ import (
 // WhatsApp history sync can arrive as protocol/debug events that point to media but
 // do not yet carry a QuePasa attachment. This endpoint reconstructs enough metadata
 // to reuse the normal connection download path, then patches the cached message so
-// the SPA can render and download the attachment like a regular message.
+// the web client can render and download the attachment like a regular message.
 func AuthenticatedServerHistoryDownloadController(w http.ResponseWriter, r *http.Request) {
 	response := &models.QpResponse{}
 

@@ -298,7 +298,7 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 	}
 }
 
-// BuildServerSummary creates a stable JSON-friendly server summary for SPA reads.
+// BuildServerSummary creates a stable JSON-friendly server summary for authenticated reads.
 func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) map[string]interface{} {
 	fallbackRuntime := serverRuntimeSnapshot{
 		state: whatsapp.Disconnected,

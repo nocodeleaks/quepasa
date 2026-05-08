@@ -50,7 +50,7 @@ func Configure(r chi.Router) {
 
 		// Mount API routes under the configured prefix.
 		// The prefix is controlled exclusively by the API_PREFIX environment variable
-		// (default: "api", see environment/api_settings.go). The frontend SPA reads
+		// (default: "api", see environment/api_settings.go). The official web client reads
 		// the effective prefix from window.__QUEPASA_CONFIG__.apiBase injected at
 		// serve time, so it adapts automatically.
 		r.Route("/"+apiPrefix, func(r chi.Router) {

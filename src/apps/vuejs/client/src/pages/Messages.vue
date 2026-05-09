@@ -835,6 +835,12 @@ export default defineComponent({
       return getChatDisplayName(m)
     }
     let wsStatusInterval: ReturnType<typeof setInterval> | null = null
+    let syncInterval: ReturnType<typeof setInterval> | null = null
+
+    async function syncMessagesFallback() {
+      if (loading.value) return
+      await loadMessages()
+    }
 
     const cable = useCableSubscription(
       [
@@ -888,12 +894,22 @@ export default defineComponent({
       wsStatusInterval = setInterval(() => {
         wsConnected.value = cable.isConnected()
       }, 2000)
+
+      // Periodic fallback keeps this page in sync when websocket events are missed.
+      syncInterval = setInterval(() => {
+        syncMessagesFallback()
+      }, 10000)
     })
 
     onUnmounted(() => {
       if (wsStatusInterval) {
         clearInterval(wsStatusInterval)
         wsStatusInterval = null
+      }
+
+      if (syncInterval) {
+        clearInterval(syncInterval)
+        syncInterval = null
       }
     })
 

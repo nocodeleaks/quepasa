@@ -3,12 +3,10 @@ package models
 import (
 	"fmt"
 	"reflect"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	library "github.com/nocodeleaks/quepasa/library"
-	signalr "github.com/nocodeleaks/quepasa/signalr"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -19,10 +17,100 @@ type DispatchingHandler struct {
 
 	server *QpWhatsappServer
 
-	syncRegister *sync.Mutex
+	messageDispatcher  *MessageDispatcher
+	lifecyclePublisher DispatchingLifecyclePublisher
+}
 
-	// Appended events handler
-	aeh []QpDispatchingHandlerInterface
+// Server returns the underlying QpWhatsappServer instance.
+func (handler *DispatchingHandler) Server() *QpWhatsappServer {
+	return handler.server
+}
+
+// AppendMsgToCache adds a message to the cache and triggers async handlers.
+func (handler *DispatchingHandler) AppendMsgToCache(msg *whatsapp.WhatsappMessage, from string) {
+	handler.appendMsgToCache(msg, from)
+}
+
+// GetMessageDispatcher returns the message dispatcher for this handler (lazy init).
+func (handler *DispatchingHandler) GetMessageDispatcher() *MessageDispatcher {
+	if handler.messageDispatcher == nil {
+		handler.messageDispatcher = NewMessageDispatcher(handler)
+	}
+	return handler.messageDispatcher
+}
+
+// LoggedOut handles the logged out lifecycle event (implements IWhatsappHandlers).
+func (source *DispatchingHandler) LoggedOut(reason string) {
+	NewLifecycleHandler(source).LoggedOut(reason)
+}
+
+// OnConnected handles the connected lifecycle event (implements IWhatsappHandlers).
+func (source *DispatchingHandler) OnConnected() {
+	NewLifecycleHandler(source).OnConnected()
+}
+
+// OnDisconnected handles the disconnected lifecycle event (implements IWhatsappHandlers).
+func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
+	NewLifecycleHandler(source).OnDisconnected(cause, details)
+}
+
+// OnStopped handles the manually stopped lifecycle event.
+func (source *DispatchingHandler) OnStopped(cause string) {
+	NewLifecycleHandler(source).OnStopped(cause)
+}
+
+// OnDeleted handles the deleted lifecycle event.
+func (source *DispatchingHandler) OnDeleted(cause string) {
+	NewLifecycleHandler(source).OnDeleted(cause)
+}
+
+type dispatchingSubscriber interface {
+	QpDispatchingHandlerInterface
+	isDispatchingSubscriber()
+}
+
+// DispatchingLifecycleEvent defines transport-agnostic lifecycle payload emitted by models.
+type DispatchingLifecycleEvent struct {
+	Kind      string
+	Token     string
+	User      string
+	Wid       string
+	Phone     string
+	State     string
+	Verified  bool
+	Cause     string
+	Details   string
+	Timestamp time.Time
+}
+
+// DispatchingLifecyclePublisher sends lifecycle events to transport adapters.
+type DispatchingLifecyclePublisher interface {
+	PublishLifecycle(event *DispatchingLifecycleEvent)
+}
+
+type noopDispatchingLifecyclePublisher struct{}
+
+func (noopDispatchingLifecyclePublisher) PublishLifecycle(event *DispatchingLifecycleEvent) {}
+
+// GlobalDispatchingLifecyclePublisher is injected by runtime/bootstrap to keep
+// models independent from concrete lifecycle transport implementations.
+var GlobalDispatchingLifecyclePublisher DispatchingLifecyclePublisher = noopDispatchingLifecyclePublisher{}
+
+func PublishDispatchingLifecycle(event *DispatchingLifecycleEvent) {
+	transportServicesMu.RLock()
+	publisher := GlobalDispatchingLifecyclePublisher
+	transportServicesMu.RUnlock()
+	publisher.PublishLifecycle(event)
+}
+
+// LifecyclePublisher returns the per-handler lifecycle publisher when present,
+// falling back to the globally wired publisher for backward compatibility.
+func (handler *DispatchingHandler) LifecyclePublisher() DispatchingLifecyclePublisher {
+	if handler != nil && handler.lifecyclePublisher != nil {
+		return handler.lifecyclePublisher
+	}
+
+	return DefaultDispatchingLifecyclePublisher()
 }
 
 // Returns whatsapp controller id on E164
@@ -106,213 +194,20 @@ func (source *DispatchingHandler) Message(msg *whatsapp.WhatsappMessage, from st
 
 // does not cache msg, only update status and webhook dispatch
 func (source *DispatchingHandler) Receipt(msg *whatsapp.WhatsappMessage) {
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
-	// should implement a better method for that !!!!
+	if msg == nil {
+		return
+	}
+
+	// Receipt payloads must remain distinguishable from regular inbound messages.
+	if msg.Type == whatsapp.UnhandledMessageType {
+		msg.Type = whatsapp.SystemMessageType
+	}
 
 	// triggering external publishers
 	source.Trigger(msg)
 }
 
 //endregion
-
-/*
-<summary>
-
-	Event on:
-		* User Logged Out from whatsapp app
-		* Maximum numbers of devices reached
-		* Banned
-		* Token Expired
-
-</summary>
-*/
-func (source *DispatchingHandler) LoggedOut(reason string) {
-
-	// one step at a time
-	if source.server != nil {
-
-		msg := "logged out !"
-		if len(reason) > 0 {
-			msg += " reason: " + reason
-		}
-
-		logger := source.GetLogger()
-		logger.Warn(msg)
-
-		// marking unverified and wait for more analyses
-		source.server.MarkVerified(false)
-	}
-}
-
-/*
-<summary>
-
-	Event on:
-		* When connected to whatsapp servers and authenticated
-
-</summary>
-*/
-func (source *DispatchingHandler) OnConnected() {
-
-	// one step at a time
-	if source.server != nil {
-
-		// Reset server start timestamp on connection (uptime starts from connection moment)
-		source.server.Timestamps.Start = time.Now().UTC()
-
-		// marking unverified and wait for more analyses
-		err := source.server.MarkVerified(true)
-		if err != nil {
-			logger := source.server.GetLogger()
-			logger.Errorf("error on mark verified after connected: %s", err.Error())
-		}
-	}
-}
-
-/*
-<summary>
-
-	Event on:
-		* When disconnected from whatsapp servers with specific cause
-
-</summary>
-*/
-func (source *DispatchingHandler) OnDisconnected(cause string, details string) {
-	if source.server == nil {
-		return
-	}
-
-	logger := source.GetLogger()
-	logger.Infof("dispatching server disconnect event: %s - %s", cause, details)
-
-	// Get phone number and wid from server
-	phone := source.server.GetNumber()
-	wid := source.server.GetWId()
-
-	// Create description with cause and details in text
-	description := fmt.Sprintf("WhatsApp disconnected: %s", cause)
-	if details != "" {
-		description = fmt.Sprintf("%s - %s", description, details)
-	}
-
-	// Create disconnect event message with JSON details
-	eventData := map[string]interface{}{
-		"event":     "disconnected",
-		"cause":     cause,
-		"details":   details,
-		"wid":       wid,
-		"phone":     phone,
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        uuid.New().String(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      description,
-		Info:      eventData,
-	}
-
-	// Add to cache and send through dispatchers
-	source.appendMsgToCache(message, "disconnected")
-}
-
-/*
-<summary>
-
-	Event on:
-		* When server is manually stopped
-
-</summary>
-*/
-func (source *DispatchingHandler) OnStopped(cause string) {
-	if source.server == nil {
-		return
-	}
-
-	logger := source.GetLogger()
-	logger.Infof("dispatching server stop event: %s", cause)
-
-	// Get phone number and wid from server
-	phone := source.server.GetNumber()
-	wid := source.server.GetWId()
-
-	// Create description
-	description := fmt.Sprintf("WhatsApp server manually stopped: %s", cause)
-
-	// Create stop event message with JSON details
-	eventData := map[string]interface{}{
-		"event":     "stopped",
-		"cause":     cause,
-		"wid":       wid,
-		"phone":     phone,
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        uuid.New().String(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      description,
-		Info:      eventData,
-	}
-
-	// Add to cache and send through dispatchers
-	source.appendMsgToCache(message, "stopped")
-}
-
-/*
-<summary>
-
-	Event on:
-		* When server is deleted
-
-</summary>
-*/
-func (source *DispatchingHandler) OnDeleted(cause string) {
-	if source.server == nil {
-		return
-	}
-
-	logger := source.GetLogger()
-	logger.Infof("dispatching server delete event: %s", cause)
-
-	// Get phone number and wid from server
-	phone := source.server.GetNumber()
-	wid := source.server.GetWId()
-
-	// Create description
-	description := fmt.Sprintf("WhatsApp server was deleted: %s", cause)
-
-	// Create delete event message with JSON details
-	eventData := map[string]interface{}{
-		"event":     "deleted",
-		"cause":     cause,
-		"wid":       wid,
-		"phone":     phone,
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-	}
-
-	message := &whatsapp.WhatsappMessage{
-		Id:        uuid.New().String(),
-		Timestamp: time.Now().UTC(),
-		Type:      whatsapp.SystemMessageType,
-		FromMe:    false,
-		Chat:      whatsapp.WASYSTEMCHAT,
-		Text:      description,
-		Info:      eventData,
-	}
-
-	// Add to cache and send through dispatchers
-	source.appendMsgToCache(message, "deleted")
-}
 
 //#endregion
 //region MESSAGE CONTROL REGION HANDLE A LOCK
@@ -343,106 +238,38 @@ func (source *DispatchingHandler) GetById(id string) (*whatsapp.WhatsappMessage,
 
 // sends the message throw external publishers
 func (source *DispatchingHandler) Trigger(payload *whatsapp.WhatsappMessage) {
-	// If the source is nil, we cannot proceed with dispatching the message.
-	// This is a safeguard to prevent nil pointer dereference errors.
-	if source == nil {
-		return
-	}
-
-	// Validate the message payload. If it's not valid for dispatch,
-	// IsValidForDispatch will return a reason string.
-	reason := IsValidForDispatch(payload)
-	if len(reason) > 0 {
-		logentry := source.GetLogger()
-		logentry.Debug(reason)
-
-		jsonPayload := library.ToJson(payload)
-		logentry.Logger.Debugf("unhandled payload: %s", jsonPayload)
-
-		// If a reason is returned, it means the message should be ignored.
-		// No further action is needed, so we simply return.
-		return
-	}
-
-	// Update last message/event timestamps
-	if source.server != nil {
-		currentTime := time.Now().UTC()
-
-		// Check if this is an event (system messages, unhandled messages, or read receipts)
-		isEvent := payload.Type == whatsapp.UnhandledMessageType ||
-			payload.Type == whatsapp.SystemMessageType ||
-			payload.Id == "readreceipt"
-
-		if isEvent {
-			source.server.Timestamps.Event = &currentTime
-		} else {
-			// Regular message content (text, image, audio, video, etc.) - received messages only
-			source.server.Timestamps.Message = &currentTime
-		}
-	}
-
-	if source.server != nil {
-		payload.Wid = source.GetWId()
-		go signalr.SignalRHub.Dispatch(source.server.Token, payload)
-	}
-
-	for _, handler := range source.aeh {
-		go handler.HandleDispatching(payload)
-	}
+	source.GetMessageDispatcher().Trigger(payload)
 }
 
 // Register an event handler that triggers on a new message received on cache
 func (handler *DispatchingHandler) Register(evt QpDispatchingHandlerInterface) {
-	handler.syncRegister.Lock() // await for avoid simultaneous calls
-
-	if !handler.IsRegistered(evt) {
-		handler.aeh = append(handler.aeh, evt)
-	}
-
-	handler.syncRegister.Unlock()
+	handler.GetMessageDispatcher().Register(evt)
 }
 
 // Removes an specific event handler
 func (handler *DispatchingHandler) UnRegister(evt QpDispatchingHandlerInterface) {
-	handler.syncRegister.Lock() // await for avoid simultaneous calls
-
-	newHandlers := []QpDispatchingHandlerInterface{}
-	for _, v := range handler.aeh {
-		if v != evt {
-			newHandlers = append(newHandlers, v)
-		}
-	}
-
-	// updating
-	handler.aeh = newHandlers
-
-	handler.syncRegister.Unlock()
+	handler.GetMessageDispatcher().UnRegister(evt)
 }
 
 // Removes an specific event handler
 func (handler *DispatchingHandler) Clear() {
-	handler.syncRegister.Lock() // await for avoid simultaneous calls
-
-	// updating
-	handler.aeh = nil
-
-	handler.syncRegister.Unlock()
+	handler.GetMessageDispatcher().Clear()
 }
 
 // Indicates that has any event handler registered
 func (handler *DispatchingHandler) IsAttached() bool {
-	return len(handler.aeh) > 0
+	return handler.GetMessageDispatcher().IsAttached()
 }
 
 // Indicates that if an specific handler is registered
 func (handler *DispatchingHandler) IsRegistered(evt interface{}) bool {
-	for _, v := range handler.aeh {
-		if v == evt {
-			return true
-		}
-	}
+	return handler.GetMessageDispatcher().IsRegistered(evt)
+}
 
-	return false
+// HasDispatchingSubscriber reports whether the default outbound dispatching
+// subscriber is already attached to this server handler.
+func (handler *DispatchingHandler) HasDispatchingSubscriber() bool {
+	return handler.GetMessageDispatcher().HasDispatchingSubscriber()
 }
 
 //endregion
@@ -481,4 +308,40 @@ func (source *DispatchingHandler) processUnhandledMessage(msg *whatsapp.Whatsapp
 
 func (source *DispatchingHandler) IsInterfaceNil() bool {
 	return nil == source
+}
+
+func NewServerDeletedEvent(server *QpWhatsappServer, cause string, previousState *whatsapp.WhatsappConnectionState) *whatsapp.WhatsappMessage {
+	if server == nil {
+		return nil
+	}
+
+	phone := server.GetNumber()
+	wid := server.GetWId()
+	currentState := server.GetState()
+	now := time.Now().UTC()
+
+	eventData := map[string]interface{}{
+		"event":     "deleted",
+		"cause":     cause,
+		"wid":       wid,
+		"phone":     phone,
+		"state":     currentState.String(),
+		"timestamp": now.Format(time.RFC3339),
+	}
+
+	if previousState != nil {
+		eventData["previous_state"] = previousState.String()
+	}
+
+	description := fmt.Sprintf("WhatsApp server was deleted: %s", cause)
+
+	return &whatsapp.WhatsappMessage{
+		Id:        uuid.New().String(),
+		Timestamp: now,
+		Type:      whatsapp.SystemMessageType,
+		FromMe:    false,
+		Chat:      whatsapp.WASYSTEMCHAT,
+		Text:      description,
+		Info:      eventData,
+	}
 }

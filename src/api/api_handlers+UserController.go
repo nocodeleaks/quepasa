@@ -8,6 +8,7 @@ import (
 
 	api "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 //region CONTROLLER - User
@@ -50,15 +51,6 @@ func UserController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// searching user
-	request, err = models.WhatsappService.DB.Users.Find(request.Username)
-	if err != nil {
-		jsonError := fmt.Errorf("user not found: %v", err.Error())
-		response.ParseError(jsonError)
-		RespondInterface(w, response)
-		return
-	}
-
 	server, err := GetServer(r)
 	if err != nil {
 		response.ParseError(err)
@@ -66,8 +58,14 @@ func UserController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	server.User = request.Username
-	err = server.Save("updating username")
+	_, err = runtime.ApplySessionUser(server, request.Username)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	err = runtime.SaveSession(server, "updating username")
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)

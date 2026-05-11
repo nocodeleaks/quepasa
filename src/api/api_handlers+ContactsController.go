@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sort"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 )
 
 //region CONTROLLER - CONTACTS
@@ -16,7 +16,7 @@ import (
 //	@Tags			Contacts
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	models.QpContactsResponse
+//	@Success		200	{object}	api.ContactsResponse
 //	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/contacts [get]
@@ -25,7 +25,7 @@ func ContactsController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpContactsResponse{}
+	response := &apiModels.ContactsResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {

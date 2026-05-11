@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // HealthTool implements the health check tool for MCP
@@ -26,10 +27,11 @@ type HealthResponse struct {
 func (h *HealthTool) ExecuteWithContext(ctx *MCPToolContext, params json.RawMessage) (interface{}, error) {
 	if ctx.IsMaster {
 		// Master key access - return global system health
-		totalServers := len(models.WhatsappService.Servers)
+		sessions := runtime.ListLiveSessions()
+		totalServers := len(sessions)
 		connectedServers := 0
 
-		for _, srv := range models.WhatsappService.Servers {
+		for _, srv := range sessions {
 			if srv.GetConnection() != nil {
 				connectedServers++
 			}

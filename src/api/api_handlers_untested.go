@@ -3,12 +3,12 @@ package api
 import (
 	"net/http"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 )
 
 // SendDocumentFromBinary sends a document from binary data in the request body
 func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
-	response := &models.QpSendResponse{}
+	response := &apiModels.SendResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {
@@ -19,7 +19,7 @@ func SendDocumentFromBinary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Declare a new request struct.
-	request := &models.QpSendRequest{}
+	request := &apiModels.SendRequest{}
 
 	// Getting ChatId parameter
 	err = request.EnsureValidChatId(r)

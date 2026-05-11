@@ -1,8 +1,16 @@
 module github.com/nocodeleaks/quepasa/main
 
+replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.42
+
 replace github.com/nocodeleaks/quepasa/media => ./media
 
 replace github.com/nocodeleaks/quepasa/api => ./api
+
+replace github.com/nocodeleaks/quepasa/cache => ./cache
+
+replace github.com/nocodeleaks/quepasa/dispatch => ./dispatch
+
+replace github.com/nocodeleaks/quepasa/events => ./events
 
 replace github.com/nocodeleaks/quepasa/library => ./library
 
@@ -18,7 +26,9 @@ replace github.com/nocodeleaks/quepasa/rabbitmq => ./rabbitmq
 
 replace github.com/nocodeleaks/quepasa/webserver => ./webserver
 
-replace github.com/nocodeleaks/quepasa/form => ./form
+replace github.com/nocodeleaks/quepasa/apps/form => ./apps/form
+
+replace github.com/nocodeleaks/quepasa/cable => ./cable
 
 replace github.com/nocodeleaks/quepasa/sipproxy => ./sipproxy
 
@@ -30,22 +40,26 @@ replace github.com/nocodeleaks/quepasa/swagger => ./swagger
 
 replace github.com/nocodeleaks/quepasa/mcp => ./mcp
 
-go 1.24.0
+replace github.com/nocodeleaks/quepasa/runtime => ./runtime
 
-toolchain go1.24.2
+go 1.25.0
 
 require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/nocodeleaks/quepasa/api v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/apps/form v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/cable v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/form v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/library v0.0.0
 	github.com/nocodeleaks/quepasa/mcp v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/models v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/models v0.0.0
+	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/swagger v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
-	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 )
@@ -60,6 +74,7 @@ require (
 	github.com/cettoana/go-waveform v0.0.0-20210107122202-35aaec2de427 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
 	github.com/go-chi/jwtauth v4.0.4+incompatible // indirect
@@ -89,10 +104,12 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
+	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0 // indirect
+	github.com/nocodeleaks/quepasa/events v0.0.0 // indirect
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000 // indirect
-	github.com/nocodeleaks/quepasa/signalr v0.0.0-00010101000000-000000000000 // indirect
-	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
+	github.com/petermattis/goid v0.0.0-20260330135022-df67b199bc81 // indirect
 	github.com/philippseith/signalr v0.6.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
@@ -100,7 +117,8 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
-	github.com/rs/zerolog v1.34.0 // indirect
+	github.com/redis/go-redis/v9 v9.7.1 // indirect
+	github.com/rs/zerolog v1.35.0 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/swaggo/http-swagger v1.3.4 // indirect
@@ -111,14 +129,15 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.mau.fi/libsignal v0.2.1 // indirect
-	go.mau.fi/util v0.9.5 // indirect
-	go.mau.fi/whatsmeow v0.0.0-20260211193157-7b33f6289f98 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
-	golang.org/x/tools v0.41.0 // indirect
+	go.mau.fi/util v0.9.8 // indirect
+	go.mau.fi/whatsmeow v0.0.0-20260511155711-eb05d94dea7d // indirect
+	golang.org/x/crypto v0.50.0 // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
+	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect

@@ -51,7 +51,7 @@ func AccountController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Declare a new Person struct.
-		var request *models.QpAccountUpdateRequest
+		var request *AccountUpdateRequest
 
 		if len(body) > 0 {
 
@@ -101,19 +101,5 @@ func PasswordUpdate(user string, password string) error {
 		return errors.New("password is too weak")
 	}
 
-	exists, err := models.WhatsappService.DB.Users.Exists(user)
-	if err != nil {
-		return fmt.Errorf("error on database check if user exists: %s", err.Error())
-	}
-
-	if !exists {
-		return fmt.Errorf("user not found: %s", user)
-	}
-
-	err = models.WhatsappService.DB.Users.UpdatePassword(user, password)
-	if err != nil {
-		return fmt.Errorf("error on database updating password: %s", err.Error())
-	}
-
-	return nil
+	return updatePersistedUserPassword(user, password)
 }

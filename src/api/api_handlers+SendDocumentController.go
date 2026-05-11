@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -37,8 +38,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string}	false	"Request body"
-//	@Success		200		{object}	models.QpSendResponse
-//	@Failure		400		{object}	models.QpSendResponse
+//	@Success		200		{object}	api.SendResponse
+//	@Failure		400		{object}	api.SendResponse
 //	@Security		ApiKeyAuth
 //	@Router			/senddocument [post]
 func SendDocument(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +50,7 @@ func SendDocument(w http.ResponseWriter, r *http.Request) {
 		MessageSendErrors.Inc()
 		ObserveAPIRequestDuration(r.Method, "/senddocument", "400", time.Since(startTime).Seconds())
 
-		response := &models.QpSendResponse{}
+		response := &apiModels.SendResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -62,10 +63,10 @@ func SendDocument(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendDocumentWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
-	response := &models.QpSendResponse{}
+	response := &apiModels.SendResponse{}
 
 	// Declare a new request struct.
-	request := &models.QpSendAnyRequest{}
+	request := &apiModels.SendAnyRequest{}
 
 	if r.ContentLength > 0 && r.Method == http.MethodPost {
 		// Try to decode the request body into the struct. If there is an error,
@@ -122,12 +123,12 @@ func SendDocumentWithServer(w http.ResponseWriter, r *http.Request, server *mode
 		request.FileName = filename
 	}
 
-	SendDocumentRequest(w, r, &request.QpSendRequest, server)
+	SendDocumentRequest(w, r, &request.SendRequest, server)
 }
 
 // SendDocumentRequest sends a document request, forcing document type
-func SendDocumentRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendRequest, server *models.QpWhatsappServer) {
-	response := &models.QpSendResponse{}
+func SendDocumentRequest(w http.ResponseWriter, r *http.Request, request *apiModels.SendRequest, server *models.QpWhatsappServer) {
+	response := &apiModels.SendResponse{}
 	var err error
 
 	att := request.ToWhatsappAttachment()
@@ -166,7 +167,7 @@ func SendDocumentRequest(w http.ResponseWriter, r *http.Request, request *models
 }
 
 // SendDocument sends a document to the whatsapp server, forcing document type
-func SendDocumentToServer(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+func SendDocumentToServer(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *apiModels.SendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
 	// Use the common send method but force document type
 	SendWithMessageType(server, response, request, w, attach, whatsapp.DocumentMessageType)
 }

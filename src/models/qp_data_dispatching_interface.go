@@ -12,6 +12,7 @@ type QpDataDispatchingInterface interface {
 
 	// Unified dispatching methods for both webhook and RabbitMQ
 	DispatchingAddOrUpdate(context string, dispatching *QpDispatching) (affected uint, err error)
+	DispatchingUpdateHealth(context string, dispatching *QpDispatching) error
 	DispatchingRemove(context string, connectionString string) (affected uint, err error)
 	DispatchingClear(context string) (err error)
 

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	cache "github.com/nocodeleaks/quepasa/cache"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -21,9 +22,8 @@ type RabbitMQClient struct {
 	closed chan struct{}    // Signals that the client should stop
 	wg     sync.WaitGroup   // To wait for goroutines to finish
 
-	messageCache    chan RabbitMQMessage // In-memory queue for messages when disconnected
-	cacheProcessing sync.Once            // Ensures cache processor starts only once
-	maxCacheSize    int                  // Maximum number of messages to hold in cache
+	messageCache cache.BytesQueueBackend
+	maxCacheSize int
 
 	// Flag to track if QuePasa Exchange and Queues have been set up
 	quepasaSetupDone bool
@@ -31,29 +31,24 @@ type RabbitMQClient struct {
 }
 
 // NewRabbitMQClient creates and initializes a new RabbitMQClient instance.
-// maxCacheSize defines the maximum number of messages that can be cached in memory.
-// If maxCacheSize is 0, the cache capacity is set to a large, but manageable, default.
+// The cache backend must be set separately using SetCacheBackend() before the client is used.
+// This constructor does not initialize the cache - that is handled by the centralized CacheService.
 func NewRabbitMQClient(connURI string, maxCacheSize uint64) *RabbitMQClient {
-	actualCacheSize := int(maxCacheSize) // Converte uint64 para int
+	actualCacheSize := int(maxCacheSize)
 
-	// Define uma capacidade padrão para o "cache ilimitado"
-	const DefaultUnlimitedCacheCapacity = 100000 // Exemplo: 100.000 mensagens
+	const DefaultUnlimitedCacheCapacity = 100000
 
-	// Se maxCacheSize for 0 (indicando cache "ilimitado"), usa a capacidade padrão.
 	if maxCacheSize == 0 {
 		actualCacheSize = DefaultUnlimitedCacheCapacity
 		log.Printf("maxCacheSize is 0, setting cache capacity to effectively unlimited (default: %d).", actualCacheSize)
 	}
-	// A condição 'else if actualCacheSize <= 0' foi removida porque uint64 já garante valores não-negativos.
-	// Se maxCacheSize (uint64) for um número muito grande que excede math.MaxInt, Go causará um panic
-	// na conversão para int, mas isso é um caso extremo que não está ligado ao zero ou negativo.
 
 	client := &RabbitMQClient{
 		connURI:      connURI,
 		mu:           sync.RWMutex{},
 		closed:       make(chan struct{}),
-		messageCache: make(chan RabbitMQMessage, actualCacheSize), // Usa o tamanho determinado
-		maxCacheSize: actualCacheSize,                             // Armazena o tamanho real configurado
+		messageCache: nil, // Backend must be injected via SetCacheBackend()
+		maxCacheSize: actualCacheSize,
 	}
 	client.wg.Add(1)
 	go client.monitorConnection()
@@ -88,12 +83,6 @@ func (r *RabbitMQClient) connect() error {
 	r.setupMutex.Unlock()
 
 	log.Println("RabbitMQ connection and channel established successfully.")
-
-	// Start cache processing only once after a successful connection
-	r.cacheProcessing.Do(func() {
-		r.wg.Add(1) // Add one goroutine for cache processing
-		go r.processCache()
-	})
 
 	ConnectionsEstablished.Inc()
 
@@ -162,27 +151,49 @@ func (r *RabbitMQClient) GetChannel() *amqp.Channel {
 	}
 }
 
-// AddToCache adds a message to the in-memory cache if the cache is not full.
+// SetCacheBackend sets the cache backend for this RabbitMQ client.
+// This is called by the centralized CacheService during application initialization.
+// After setting the backend, the client will start processing the cache.
+func (r *RabbitMQClient) SetCacheBackend(backend cache.BytesQueueBackend) {
+	r.messageCache = backend
+	// Start cache processing after backend is set
+	r.wg.Add(1)
+	go r.processCache()
+}
+
+// AddToCache adds a message to the configured retry cache backend.
 // Returns true if added to cache, false if cache is full.
 func (r *RabbitMQClient) AddToCache(msg RabbitMQMessage) bool {
-	select {
-	case r.messageCache <- msg:
-		// Convert payload to string for logging if it's a simple type, otherwise log type
-		payloadStr := fmt.Sprintf("%v", msg.Payload)
-		if len(payloadStr) > 50 { // Truncate for cleaner logs
-			payloadStr = payloadStr[:47] + "..."
-		}
-		log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, len(r.messageCache), r.maxCacheSize)
-		return true
-	default:
-		// Se o cache for "ilimitado" (capacidade math.MaxInt), esta condição 'default:'
-		// só será atingida em situações de extrema escassez de memória, ou se o canal
-		// for fechado indevidamente por alguma razão externa (o que não deveria acontecer
-		// se a lógica de reconnection estiver correta).
-		// Para o propósito de 0 = ilimitado, a ideia é que ele *quase* nunca falhe aqui por "cache cheio".
+	payload, err := json.Marshal(msg)
+	if r.messageCache == nil {
+		return false
+	}
+
+	if err != nil {
+		log.Printf("Failed to marshal message ID %s for retry cache: %v", msg.ID, err)
+		return false
+	}
+
+	added, err := r.messageCache.Enqueue(payload)
+	if err != nil {
+		log.Printf("Failed to enqueue retry cache message ID %s: %v", msg.ID, err)
+		return false
+	}
+	if !added {
 		log.Printf("Cache is full, dropping message: ID=%s. Max cache size: %d", msg.ID, r.maxCacheSize)
 		return false
 	}
+
+	payloadStr := fmt.Sprintf("%v", msg.Payload)
+	if len(payloadStr) > 50 {
+		payloadStr = payloadStr[:47] + "..."
+	}
+	cacheLength, err := r.messageCache.Len()
+	if err != nil {
+		cacheLength = -1
+	}
+	log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, cacheLength, r.maxCacheSize)
+	return true
 }
 
 // processCache attempts to publish messages from the cache when a connection is available.
@@ -195,63 +206,68 @@ func (r *RabbitMQClient) processCache() {
 		case <-r.closed:
 			log.Println("RabbitMQ cache processor shutting down.")
 			return
-		case <-time.After(500 * time.Millisecond): // Periodically check for messages in cache
-			ch := r.channel // Read directly as this goroutine needs to react fast
+		case <-time.After(500 * time.Millisecond):
+			ch := r.channel
 			if ch == nil {
 				continue
 			}
 
 			for {
-				select {
-				case msg := <-r.messageCache: // Get a message from cache
-					log.Printf("Attempting to publish cached message: %s", msg.ID)
-					body, err := json.Marshal(msg)
-					if err != nil {
-						log.Printf("Error marshaling cached message ID %s to JSON: %v", msg.ID, err)
-						continue
-					}
-
-					currentChannel := r.GetChannel()
-					if currentChannel == nil {
-						log.Printf("Channel became unavailable while processing cache. Putting message %s back to cache.", msg.ID)
-						select {
-						case r.messageCache <- msg:
-							break // Break inner loop to re-evaluate channel
-						default:
-							log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
-						}
-						break
-					}
-
-					// QuePasa always uses exchange routing
-					err = currentChannel.Publish(
-						msg.Exchange,   // exchange
-						msg.RoutingKey, // routing key
-						false,          // mandatory
-						false,          // immediate
-						amqp.Publishing{
-							ContentType:  "application/json",
-							Body:         body,
-							DeliveryMode: amqp.Persistent,
-						})
-
-					if err != nil {
-						log.Printf("Failed to publish cached message ID %s to exchange '%s' with routing key '%s': %v. Putting message back to cache.", msg.ID, msg.Exchange, msg.RoutingKey, err)
-						select {
-						case r.messageCache <- msg:
-						default:
-							log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
-						}
-						goto CACHE_LOOP_END // Exit inner loop to check channel status
-					}
-					log.Printf("Cached message ID %s published successfully to exchange '%s' with routing key '%s'. Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, len(r.messageCache), r.maxCacheSize)
-					MessagesCacheProcessed.Inc()
-
-				default:
-					goto CACHE_LOOP_END // No more messages in cache
+				payload, found, err := r.messageCache.Dequeue()
+				if err != nil {
+					log.Printf("Failed to read retry cache entry: %v", err)
+					goto CACHE_LOOP_END
 				}
-				if len(r.messageCache) == 0 {
-					goto CACHE_LOOP_END // Cache is empty
+				if !found {
+					goto CACHE_LOOP_END
+				}
+
+				var msg RabbitMQMessage
+				if err := json.Unmarshal(payload, &msg); err != nil {
+					log.Printf("Error unmarshaling cached message payload: %v", err)
+					continue
+				}
+
+				log.Printf("Attempting to publish cached message: %s", msg.ID)
+				currentChannel := r.GetChannel()
+				if currentChannel == nil {
+					log.Printf("Channel became unavailable while processing cache. Putting message %s back to cache.", msg.ID)
+					added, enqueueErr := r.messageCache.Enqueue(payload)
+					if enqueueErr != nil || !added {
+						log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
+					}
+					break
+				}
+
+				err = currentChannel.Publish(
+					msg.Exchange,
+					msg.RoutingKey,
+					false,
+					false,
+					amqp.Publishing{
+						ContentType:  "application/json",
+						Body:         payload,
+						DeliveryMode: amqp.Persistent,
+					})
+
+				if err != nil {
+					log.Printf("Failed to publish cached message ID %s to exchange '%s' with routing key '%s': %v. Putting message back to cache.", msg.ID, msg.Exchange, msg.RoutingKey, err)
+					added, enqueueErr := r.messageCache.Enqueue(payload)
+					if enqueueErr != nil || !added {
+						log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
+					}
+					goto CACHE_LOOP_END
+				}
+
+				cacheLength, lenErr := r.messageCache.Len()
+				if lenErr != nil {
+					cacheLength = -1
+				}
+				log.Printf("Cached message ID %s published successfully to exchange '%s' with routing key '%s'. Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, cacheLength, r.maxCacheSize)
+				MessagesCacheProcessed.Inc()
+
+				if cacheLength == 0 {
+					goto CACHE_LOOP_END
 				}
 			}
 		CACHE_LOOP_END:
@@ -264,6 +280,12 @@ func (r *RabbitMQClient) Close() {
 	log.Println("Closing RabbitMQ client...")
 	close(r.closed)
 	r.wg.Wait()
+
+	if r.messageCache != nil {
+		if err := r.messageCache.Close(); err != nil {
+			log.Printf("Error closing RabbitMQ retry cache backend: %v", err)
+		}
+	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()

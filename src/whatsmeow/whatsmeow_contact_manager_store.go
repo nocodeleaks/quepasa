@@ -68,3 +68,11 @@ func (scm *WhatsmeowStoreContactManager) GetPhoneFromContactId(contactId string)
 func (scm *WhatsmeowStoreContactManager) GetUserInfo(jids []string) ([]interface{}, error) {
 	return nil, fmt.Errorf("GetUserInfo not supported for store-only access (requires active connection)")
 }
+
+func (scm *WhatsmeowStoreContactManager) BlockContact(wid string) error {
+	return fmt.Errorf("BlockContact not supported for store-only access (requires active connection)")
+}
+
+func (scm *WhatsmeowStoreContactManager) UnblockContact(wid string) error {
+	return fmt.Errorf("UnblockContact not supported for store-only access (requires active connection)")
+}

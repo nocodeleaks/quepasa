@@ -33,16 +33,20 @@ func ArchiveChatController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpResponse{}
-
-	// Get server
 	server, err := GetServer(r)
 	if err != nil {
+		response := &models.QpResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	ArchiveChatWithServer(w, r, server)
+}
+
+// ArchiveChatWithServer applies the current archive/unarchive behavior to a resolved server.
+func ArchiveChatWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
+	response := &models.QpResponse{}
 	logentry := server.GetLogger()
 
 	// Parse request body
@@ -83,7 +87,19 @@ func ArchiveChatController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get WhatsmeowConnection
-	conn := server.GetConnection().(*whatsmeow.WhatsmeowConnection)
+	rawConn, err := server.GetValidConnection()
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	conn, ok := rawConn.(*whatsmeow.WhatsmeowConnection)
+	if !ok {
+		response.ParseError(fmt.Errorf("unsupported connection type for archive"))
+		RespondInterface(w, response)
+		return
+	}
 
 	// Archive or unarchive chat
 	err = whatsmeow.ArchiveChat(conn, request.ChatId, request.Archive)

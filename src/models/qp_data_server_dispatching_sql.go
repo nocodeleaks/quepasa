@@ -197,6 +197,16 @@ func (source QpDataServerDispatchingSql) DispatchingAddOrUpdate(context string, 
 	return
 }
 
+func (source QpDataServerDispatchingSql) DispatchingUpdateHealth(context string, dispatching *QpDispatching) error {
+	if dispatching == nil || len(dispatching.ConnectionString) == 0 {
+		return fmt.Errorf("empty or nil dispatching")
+	}
+
+	query := `UPDATE dispatching SET failure = ?, success = ? WHERE context = ? AND connection_string = ?`
+	_, err := source.db.Exec(query, dispatching.Failure, dispatching.Success, context, dispatching.ConnectionString)
+	return err
+}
+
 // DispatchingRemove remove um dispatching pelo connection_string e context
 func (source QpDataServerDispatchingSql) DispatchingRemove(context string, connectionString string) (affected uint, err error) {
 	if len(connectionString) == 0 {

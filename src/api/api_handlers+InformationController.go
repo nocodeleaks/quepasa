@@ -8,7 +8,7 @@ import (
 
 	api "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
-	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 //region CONTROLLER - Information
@@ -84,73 +84,21 @@ func updateServerConfiguration(server *models.QpWhatsappServer, username string,
 	update := ""
 
 	// Update user if provided and different
-	if len(username) > 0 && server.User != username {
-		// Validate user exists in database
-		_, err := models.WhatsappService.DB.Users.Find(username)
+	if len(username) > 0 && server.QpServer.GetUser() != username {
+		userUpdate, err := runtime.ApplySessionUser(server, username)
 		if err != nil {
-			return "", fmt.Errorf("user not found: %v", err.Error())
+			return "", err
 		}
-
-		server.User = username
-		update += fmt.Sprintf("user to: {%s}; ", username)
+		update += userUpdate
 	}
 
-	// Apply configuration from request
-	// Handle both InfoCreateRequest and QpInfoPatchRequest
-	var groups, broadcasts, readReceipts, calls, readUpdate *whatsapp.WhatsappBoolean
-	var devel *bool
+	patch := buildSessionConfigurationPatch(request)
 
-	switch req := request.(type) {
-	case *InfoCreateRequest:
-		if req != nil {
-			groups = req.Groups
-			broadcasts = req.Broadcasts
-			readReceipts = req.ReadReceipts
-			calls = req.Calls
-			readUpdate = req.ReadUpdate
-			devel = req.Devel
-		}
-	case *models.QpInfoPatchRequest:
-		if req != nil {
-			// QpInfoPatchRequest may have Username field, handle groups/broadcasts/etc
-			groups = req.Groups
-			broadcasts = req.Broadcasts
-			readReceipts = req.ReadReceipts
-			calls = req.Calls
-			readUpdate = req.ReadUpdate
-			devel = req.Devel
-		}
+	patchUpdate, err := runtime.ApplySessionConfigurationPatch(server, patch)
+	if err != nil {
+		return "", err
 	}
-
-	if groups != nil && server.Groups != *groups {
-		server.Groups = *groups
-		update += fmt.Sprintf("groups to: {%s}; ", *groups)
-	}
-
-	if broadcasts != nil && server.Broadcasts != *broadcasts {
-		server.Broadcasts = *broadcasts
-		update += fmt.Sprintf("broadcasts to: {%s}; ", *broadcasts)
-	}
-
-	if readReceipts != nil && server.ReadReceipts != *readReceipts {
-		server.ReadReceipts = *readReceipts
-		update += fmt.Sprintf("readreceipts to: {%s}; ", *readReceipts)
-	}
-
-	if calls != nil && server.Calls != *calls {
-		server.Calls = *calls
-		update += fmt.Sprintf("calls to: {%s}; ", *calls)
-	}
-
-	if readUpdate != nil && server.ReadUpdate != *readUpdate {
-		server.ReadUpdate = *readUpdate
-		update += fmt.Sprintf("readupdate to: {%s}; ", *readUpdate)
-	}
-
-	if devel != nil && server.Devel != *devel {
-		server.Devel = *devel
-		update += fmt.Sprintf("devel to: {%t}; ", *devel)
-	}
+	update += patchUpdate
 
 	return update, nil
 }
@@ -195,8 +143,8 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Check if server already exists (AddOrUpdate pattern)
-	server, exists := models.WhatsappService.Servers[token]
+	// Check if a live session already exists (AddOrUpdate pattern)
+	server, exists := runtime.FindLiveSessionByToken(token)
 
 	if exists {
 		// UPDATE: Server exists, use shared update logic
@@ -209,7 +157,7 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 
 		// Save if there were changes
 		if len(update) > 0 {
-			err := server.Save("server configuration updated via POST")
+			err := runtime.SaveSession(server, "server configuration updated via POST")
 			if err != nil {
 				response.ParseError(err)
 				RespondInterface(w, response)
@@ -229,46 +177,11 @@ func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		// CREATE: Server doesn't exist, create new one
-		info := &models.QpServer{
-			Token: token,
-			User:  username,
-		}
+		patch := buildSessionConfigurationPatch(request)
+		info := runtime.BuildSessionRecord(token, username, patch)
 
-		// Apply configuration from request
-		if request != nil {
-			if request.Groups != nil {
-				info.Groups = *request.Groups
-			}
-			if request.Broadcasts != nil {
-				info.Broadcasts = *request.Broadcasts
-			}
-			if request.ReadReceipts != nil {
-				info.ReadReceipts = *request.ReadReceipts
-			}
-			if request.Calls != nil {
-				info.Calls = *request.Calls
-			}
-			if request.ReadUpdate != nil {
-				info.ReadUpdate = *request.ReadUpdate
-			}
-			if request.Devel != nil {
-				info.Devel = *request.Devel
-			}
-		}
-
-		// Create server using existing service method
-		server, err := models.WhatsappService.AppendNewServer(info)
+		server, err := runtime.CreateSessionRecord(info, "server created without connection via POST")
 		if err != nil {
-			response.ParseError(err)
-			RespondInterface(w, response)
-			return
-		}
-
-		// Save to database
-		err = server.Save("server created without connection via POST")
-		if err != nil {
-			// Remove from cache if save fails
-			delete(models.WhatsappService.Servers, token)
 			response.ParseError(err)
 			RespondInterface(w, response)
 			return
@@ -332,7 +245,7 @@ func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request *models.QpInfoPatchRequest
+	var request *InfoPatchRequest
 
 	// Try to decode the request body into the struct. If there is an error,
 	// respond to the client with the error message and a 400 status code.
@@ -373,7 +286,7 @@ func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(update) > 0 {
-		err = server.Save("patching info")
+		err = runtime.SaveSession(server, "patching info")
 		if err != nil {
 			response.ParseError(err)
 			RespondInterface(w, response)
@@ -408,7 +321,7 @@ func InformationDeleteRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = models.WhatsappService.Delete(server, "api")
+	err = runtime.DeleteSessionRecord(server, "api")
 	if err != nil {
 		response.ParseError(err)
 		RespondInterface(w, response)

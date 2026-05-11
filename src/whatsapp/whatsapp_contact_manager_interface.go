@@ -6,7 +6,14 @@ type WhatsappContactManagerInterface interface {
 	// Get all contacts from WhatsApp
 	GetContacts() ([]WhatsappChat, error)
 
-	// Check if phone numbers are registered on WhatsApp
+	// IsOnWhatsApp checks whether the given phone numbers are registered on WhatsApp.
+	//
+	// WARNING: This method performs a live query against WhatsApp servers.
+	// Calling it too frequently (e.g. on every outbound message) will trigger
+	// WhatsApp's anti-abuse detection and may result in the account being banned.
+	//
+	// Use only when strictly necessary (e.g. one-time digit-9 resolution during
+	// REMOVEDIGIT9 normalization). Do NOT call in hot paths or per-message loops.
 	IsOnWhatsApp(phones ...string) ([]string, error)
 
 	// Get profile picture information
@@ -23,6 +30,12 @@ type WhatsappContactManagerInterface interface {
 
 	// Get comprehensive user information for given JIDs
 	GetUserInfo(jids []string) ([]interface{}, error)
+
+	// BlockContact blocks a contact by WID/JID.
+	BlockContact(wid string) error
+
+	// UnblockContact unblocks a previously blocked contact by WID/JID.
+	UnblockContact(wid string) error
 }
 
 // IWhatsappConnectionWithContacts extends IWhatsappConnection with contact management

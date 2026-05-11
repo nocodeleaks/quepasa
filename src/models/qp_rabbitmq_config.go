@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nocodeleaks/quepasa/library"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -16,6 +15,9 @@ type QpRabbitMQConfig struct {
 	// Optional whatsapp options
 	// ------------------------
 	whatsapp.WhatsappOptions
+
+	// Per-instance client resolver; falls back to GetRabbitMQPublisherClient when nil.
+	clientResolver func(connectionString string) RabbitMQPublisherClient
 
 	// RabbitMQ Connection Settings
 	ConnectionString string `json:"connection_string,omitempty"` // Full RabbitMQ connection string (amqp://user:pass@host:port/vhost)
@@ -109,13 +111,28 @@ func (source QpRabbitMQConfig) GetExtraText() string {
 
 //#endregion
 
+// WithClientResolver returns a shallow copy of the config with a custom client resolver injected.
+// This is primarily used in tests to avoid mutating global state.
+func (source QpRabbitMQConfig) WithClientResolver(resolver func(string) RabbitMQPublisherClient) *QpRabbitMQConfig {
+	source.clientResolver = resolver
+	return &source
+}
+
+// resolveClient returns the active client resolver, falling back to the global helper.
+func (source *QpRabbitMQConfig) resolveClient(connectionString string) RabbitMQPublisherClient {
+	if source.clientResolver != nil {
+		return source.clientResolver(connectionString)
+	}
+	return GetRabbitMQPublisherClient(connectionString)
+}
+
 // PublishMessage publishes message to RabbitMQ exchange using the specific connection string and routing key
 func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage) (err error) {
 	startTime := time.Now()
 
 	// updating log
 	logentry := source.LogWithField(LogFields.MessageId, message.Id)
-	logentry.Infof("publishing to QuePasa Exchange: %s using connection: %s", rabbitmq.QuePasaExchangeName, source.ConnectionString)
+	logentry.Infof("publishing to QuePasa Exchange: %s using connection: %s", GetRabbitMQExchangeName(), source.ConnectionString)
 
 	payload := &QpRabbitMQPayload{
 		WhatsappMessage: message,
@@ -130,7 +147,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 	}
 
 	// Get or create RabbitMQ client for this specific connection string
-	client := rabbitmq.GetRabbitMQClient(source.ConnectionString)
+	client := source.resolveClient(source.ConnectionString)
 	if client != nil {
 		// Ensure QuePasa Exchange and Queues exist
 		err = client.EnsureExchangeAndQueues()
@@ -138,7 +155,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 			logentry.Errorf("failed to ensure QuePasa exchange and queues: %s", err.Error())
 
 			// Record RabbitMQ publish error
-			rabbitmq.MessagePublishErrors.Inc()
+			IncrementRabbitMQMessagePublishErrors()
 			return err
 		}
 
@@ -147,7 +164,7 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		client.PublishQuePasaMessage(routingKey, payload)
 
 		// Always increment RabbitMQ messages published counter
-		rabbitmq.MessagesPublished.Inc()
+		IncrementRabbitMQMessagesPublished()
 
 		// Record publish duration
 		duration := time.Since(startTime)
@@ -157,13 +174,13 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		source.Failure = nil
 		source.Success = &currentTime
 
-		logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", rabbitmq.QuePasaExchangeName, routingKey, duration, payloadSizeBytes)
+		logentry.Infof("message published to QuePasa exchange: %s with routing key: %s (duration: %v, size: %.0f bytes)", GetRabbitMQExchangeName(), routingKey, duration, payloadSizeBytes)
 	} else {
 		err = errors.New("failed to get rabbitmq client for connection: " + source.ConnectionString)
 		logentry.Errorf("rabbitmq client not available for connection %s: %s", source.ConnectionString, err.Error())
 
 		// Record RabbitMQ publish error
-		rabbitmq.MessagePublishErrors.Inc()
+		IncrementRabbitMQMessagePublishErrors()
 
 		currentTime := time.Now().UTC()
 		if source.Failure == nil {
@@ -250,42 +267,42 @@ func (source *QpRabbitMQConfig) ValidateConfig() error {
 func (source *QpRabbitMQConfig) DetermineRoutingKey(message *whatsapp.WhatsappMessage) string {
 	// Check if message is from history sync
 	if message.FromHistory {
-		return rabbitmq.QuePasaRoutingKeyHistory
+		return GetRabbitMQRoutingKeyHistory()
 	}
 
 	// Check if message type is unhandled (debug/system messages)
 	if message.Type == whatsapp.UnhandledMessageType {
-		return rabbitmq.QuePasaRoutingKeyEvents
+		return GetRabbitMQRoutingKeyEvents()
 	}
 
 	// Special-case: read-receipt system payloads created by the handlers use id "readreceipt"
 	// Route them to events so consumers receive read receipts in the events queue
 	if message.Id == "readreceipt" {
-		return rabbitmq.QuePasaRoutingKeyEvents
+		return GetRabbitMQRoutingKeyEvents()
 	}
 
 	// Check if message is a system message
 	if message.Type == whatsapp.SystemMessageType {
-		return rabbitmq.QuePasaRoutingKeyProd
+		return GetRabbitMQRoutingKeyProd()
 	}
 
 	// Check if message is a contact message with edited=true and has attachment
 	if message.Type == whatsapp.ContactMessageType {
 		if message.Edited && message.Attachment != nil {
-			return rabbitmq.QuePasaRoutingKeyEvents
+			return GetRabbitMQRoutingKeyEvents()
 		}
 	}
 
 	// Check if message is a call message (could be considered events)
 	if message.Type == whatsapp.CallMessageType {
-		return rabbitmq.QuePasaRoutingKeyProd
+		return GetRabbitMQRoutingKeyProd()
 	}
 
 	// Check if message is a revoke message
 	if message.Type == whatsapp.RevokeMessageType {
-		return rabbitmq.QuePasaRoutingKeyProd
+		return GetRabbitMQRoutingKeyProd()
 	}
 
 	// Default to production queue for normal messages
-	return rabbitmq.QuePasaRoutingKeyProd
+	return GetRabbitMQRoutingKeyProd()
 }

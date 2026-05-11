@@ -36,7 +36,11 @@ func EnvironmentGetRequest(w http.ResponseWriter, r *http.Request) {
 	isMaster := IsMatchForMaster(r)
 
 	if isMaster {
-		response.Settings = &environment.Settings
+		sanitized := environment.Settings
+		sanitized.API.MasterKey = ""
+		configured := isMasterKeyConfigured(environment.Settings.API.MasterKey)
+		response.Settings = &sanitized
+		response.MasterKeyConfigured = &configured
 		response.ParseSuccess("successfully retrieved full environment settings")
 	} else {
 		response.Preview = environment.GetPreview()

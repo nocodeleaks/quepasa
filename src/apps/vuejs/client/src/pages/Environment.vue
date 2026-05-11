@@ -1,0 +1,190 @@
+<template>
+  <div class="environment-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>{{ t('environment_title') }}</h2>
+      <button @click="$router.back()" class="back-link hide-mobile">
+        <i class="fa fa-arrow-left me-2"></i> {{ t('back') }}
+      </button>
+    </div>
+
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ t('loading_generic') }}</span>
+      </div>
+    </div>
+
+    <div v-else-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <div v-else>
+      <div class="accordion" id="envAccordion">
+        <div v-for="(cat, idx) in categories" :key="cat.name" class="accordion-item">
+          <h2 class="accordion-header" :id="'heading' + idx">
+            <button
+              class="accordion-button"
+              :class="{ collapsed: idx !== 0 }"
+              type="button"
+              data-bs-toggle="collapse"
+              :data-bs-target="'#collapse' + idx"
+              :aria-expanded="idx === 0 ? 'true' : 'false'"
+              :aria-controls="'collapse' + idx"
+            >
+              <span class="category-badge me-2">{{ cat.variables.length }}</span>
+              {{ cat.name }}
+            </button>
+          </h2>
+          <div
+            :id="'collapse' + idx"
+            class="accordion-collapse collapse"
+            :class="{ show: idx === 0 }"
+            :aria-labelledby="'heading' + idx"
+            data-bs-parent="#envAccordion"
+          >
+            <div class="accordion-body p-0">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 30%">{{ t('environment_variable') }}</th>
+                    <th style="width: 70%">{{ t('environment_value') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="v in cat.variables" :key="v.name">
+                    <td class="font-monospace text-primary">{{ v.name }}</td>
+                    <td>
+                      <code v-if="v.value" class="env-value">{{ v.value }}</code>
+                      <span v-else class="text-muted">{{ t('environment_not_set') }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, onMounted } from 'vue'
+import api from '@/services/api'
+import { useMasterKey } from '@/composables/useMasterKey'
+import { useLocale } from '@/i18n'
+
+interface EnvVar {
+  name: string
+  value: string
+}
+
+interface Category {
+  name: string
+  variables: EnvVar[]
+}
+
+export default defineComponent({
+  name: 'Environment',
+  setup() {
+    const loading = ref(true)
+    const error = ref('')
+    const { masterKeyHeaders } = useMasterKey()
+    const { t } = useLocale()
+    const categories = ref<Category[]>([])
+
+    const formatValue = (value: unknown): string => {
+      if (value === null || value === undefined || value === '') return ''
+      if (typeof value === 'object') return JSON.stringify(value)
+      return String(value)
+    }
+
+    const buildCategories = (source: Record<string, any>): Category[] => {
+      return Object.entries(source)
+        .filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value))
+        .map(([name, value]) => ({
+          name,
+          variables: Object.entries(value as Record<string, any>)
+            .map(([key, entry]) => ({
+              name: key,
+              value: formatValue(entry)
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        }))
+        .filter((category) => category.variables.length > 0)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    const loadEnvironment = async () => {
+      try {
+        const res = await api.get('/api/system/environment', { headers: masterKeyHeaders() })
+        categories.value = buildCategories(res.data?.settings || res.data?.preview || {})
+      } catch (e: any) {
+        error.value = e?.response?.data?.result || e.message || t('environment_error_load')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    onMounted(loadEnvironment)
+
+    return {
+      t,
+      loading,
+      error,
+      categories
+    }
+  }
+})
+</script>
+
+<style scoped>
+.environment-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--branding-primary, #7C3AED);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.accordion-button:not(.collapsed) {
+  background: linear-gradient(135deg, var(--branding-primary, #7C3AED), var(--branding-secondary, #5B21B6));
+  color: white;
+}
+
+.accordion-button:not(.collapsed) .category-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.env-value {
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+}
+</style>

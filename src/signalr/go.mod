@@ -2,7 +2,7 @@ module github.com/nocodeleaks/quepasa/signalr
 
 replace github.com/nocodeleaks/quepasa/api => ../api
 
-replace github.com/nocodeleaks/quepasa/form => ../form
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
 
 replace github.com/nocodeleaks/quepasa/media => ../media
 
@@ -18,9 +18,7 @@ replace github.com/nocodeleaks/quepasa/swagger => ../swagger
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0
 
 // Local module replacements
 replace github.com/nocodeleaks/quepasa/environment => ../environment
@@ -55,12 +53,12 @@ require (
 	github.com/teivah/onecontext v1.3.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
-	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
 )

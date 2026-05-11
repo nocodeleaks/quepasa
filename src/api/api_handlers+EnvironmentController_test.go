@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	api "github.com/nocodeleaks/quepasa/api/models"
-	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
 // Helper function to mask sensitive strings
@@ -40,11 +39,20 @@ func TestEnvironmentEndpoint_NoAuthentication(t *testing.T) {
 		t.Errorf("Expected status 200 without authentication (preview mode), got %d", resp.StatusCode)
 	}
 
-	// Parse as EnvironmentSettingsPreview
-	var preview environment.EnvironmentSettingsPreview
-	if err := json.NewDecoder(resp.Body).Decode(&preview); err != nil {
+	// The endpoint always returns the standard environment response envelope.
+	var response api.EnvironmentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode preview response: %v", err)
 	}
+
+	if !response.Success {
+		t.Fatalf("Expected success=true for preview response, got: %+v", response)
+	}
+	if response.Preview == nil {
+		t.Fatalf("Expected preview payload, got: %+v", response)
+	}
+
+	preview := response.Preview
 
 	// Should have preview fields
 	if preview.Groups == "" {
@@ -95,11 +103,18 @@ func TestEnvironmentEndpoint_WithBotToken(t *testing.T) {
 		t.Errorf("Expected status 200 with bot token (preview mode), got %d", resp.StatusCode)
 	}
 
-	// Parse as EnvironmentSettingsPreview
-	var preview environment.EnvironmentSettingsPreview
-	if err := json.NewDecoder(resp.Body).Decode(&preview); err != nil {
+	var response api.EnvironmentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode preview response: %v", err)
 	}
+	if !response.Success {
+		t.Fatalf("Expected success=true for preview response, got: %+v", response)
+	}
+	if response.Preview == nil {
+		t.Fatalf("Expected preview payload, got: %+v", response)
+	}
+
+	preview := response.Preview
 
 	// Should have preview fields (not full settings)
 	if preview.Groups == "" {
@@ -128,7 +143,7 @@ func TestEnvironmentEndpoint_WithMasterKey(t *testing.T) {
 	// Test 1: Master key in header
 	t.Run("MasterKeyInHeader", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/environment", nil)
-		req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+		req.Header.Set(masterKeyHeader, testMasterKey)
 		rec := httptest.NewRecorder()
 
 		EnvironmentController(rec, req)
@@ -170,8 +185,11 @@ func TestEnvironmentEndpoint_WithMasterKey(t *testing.T) {
 			if response.Settings.Database.Driver == "" {
 				t.Error("Expected Database settings to be populated")
 			}
-			if response.Settings.API.MasterKey == "" {
-				t.Error("Expected API settings to be populated")
+			if response.Settings.API.MasterKey != "" {
+				t.Error("Expected API master key to be sanitized from environment response")
+			}
+			if response.MasterKeyConfigured == nil || !*response.MasterKeyConfigured {
+				t.Errorf("Expected masterKeyConfigured=true, got %v", response.MasterKeyConfigured)
 			}
 		}
 	})
@@ -203,6 +221,12 @@ func TestEnvironmentEndpoint_WithMasterKey(t *testing.T) {
 		if response.Settings == nil {
 			t.Error("Expected environment settings with master key in query")
 		} else {
+			if response.Settings.API.MasterKey != "" {
+				t.Error("Expected API master key to be sanitized from environment response")
+			}
+			if response.MasterKeyConfigured == nil || !*response.MasterKeyConfigured {
+				t.Errorf("Expected masterKeyConfigured=true, got %v", response.MasterKeyConfigured)
+			}
 			t.Log("Environment settings correctly present with master key query parameter")
 		}
 
@@ -222,7 +246,7 @@ func TestEnvironmentEndpoint_InvalidMasterKey(t *testing.T) {
 	defer cleanup()
 
 	req := httptest.NewRequest(http.MethodGet, "/environment", nil)
-	req.Header.Set("X-QUEPASA-MASTERKEY", "invalid-master-key-wrong")
+	req.Header.Set(masterKeyHeader, "invalid-master-key-wrong")
 	rec := httptest.NewRecorder()
 
 	EnvironmentController(rec, req)
@@ -235,11 +259,18 @@ func TestEnvironmentEndpoint_InvalidMasterKey(t *testing.T) {
 		t.Errorf("Expected status 200 with invalid master key (preview mode), got %d", resp.StatusCode)
 	}
 
-	// Parse as EnvironmentSettingsPreview
-	var preview environment.EnvironmentSettingsPreview
-	if err := json.NewDecoder(resp.Body).Decode(&preview); err != nil {
+	var response api.EnvironmentResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode preview response: %v", err)
 	}
+	if !response.Success {
+		t.Fatalf("Expected success=true for preview response, got: %+v", response)
+	}
+	if response.Preview == nil {
+		t.Fatalf("Expected preview payload, got: %+v", response)
+	}
+
+	preview := response.Preview
 
 	// Should have preview fields (not full settings)
 	if preview.Groups == "" {
@@ -272,7 +303,7 @@ func TestEnvironmentEndpoint_AuthenticationPriority(t *testing.T) {
 	// Master key should grant access
 	req := httptest.NewRequest(http.MethodGet, "/environment", nil)
 	req.Header.Set("X-QUEPASA-TOKEN", testToken)
-	req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+	req.Header.Set(masterKeyHeader, testMasterKey)
 	rec := httptest.NewRecorder()
 
 	EnvironmentController(rec, req)
@@ -297,6 +328,12 @@ func TestEnvironmentEndpoint_AuthenticationPriority(t *testing.T) {
 	if response.Settings == nil {
 		t.Error("Expected environment settings when master key is present")
 	} else {
+		if response.Settings.API.MasterKey != "" {
+			t.Error("Expected API master key to be sanitized from environment response")
+		}
+		if response.MasterKeyConfigured == nil || !*response.MasterKeyConfigured {
+			t.Errorf("Expected masterKeyConfigured=true, got %v", response.MasterKeyConfigured)
+		}
 		t.Log("Environment settings correctly shown when master key present")
 	}
 

@@ -1,16 +1,20 @@
-go 1.24.2
+go 1.25.0
 
 use (
 	.
 	./api
+	./apps/form
+	./cache
+	./dispatch
 	./environment
-	./form
+	./events
 	./library
 	./mcp
 	./media
 	./metrics
 	./models
 	./rabbitmq
+	./runtime
 	./signalr
 	./sipproxy
 	./swagger

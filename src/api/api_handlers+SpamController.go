@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 )
 
 // -------------------------- PUBLIC METHODS
@@ -18,8 +18,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{chatId=string,text=string}	true	"Spam message request"
-//	@Success		200		{object}	models.QpSendResponse
-//	@Failure		423		{object}	models.QpSendResponse	"No server available"
+//	@Success		200		{object}	api.SendResponse
+//	@Failure		423		{object}	api.SendResponse	"No server available"
 //	@Security		ApiKeyAuth
 //	@Router			/spam [post]
 func Spam(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func Spam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		MessageSendErrors.Inc()
 
-		response := &models.QpSendResponse{}
+		response := &apiModels.SendResponse{}
 		response.ParseError(err)
 		RespondInterfaceCode(w, response, http.StatusLocked)
 		return

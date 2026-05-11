@@ -7,9 +7,10 @@ import (
 
 // WhatsmeowContactMaps provides thread-safe mapping for LID/Phone relationships
 type WhatsmeowContactMaps struct {
-	mutex      sync.RWMutex
-	lidToPhone map[string]string // LID -> Phone mapping
-	phoneToLID map[string]string // Phone -> LID mapping
+	mutex        sync.RWMutex
+	lidToPhone   map[string]string // LID -> Phone mapping
+	phoneToLID   map[string]string // Phone -> LID mapping
+	isOnWhatsApp map[string]string // raw phone input -> resolved JID (or "" if not registered)
 }
 
 var (
@@ -23,8 +24,9 @@ var (
 func GetGlobalContactMaps() *WhatsmeowContactMaps {
 	once.Do(func() {
 		globalContactMaps = &WhatsmeowContactMaps{
-			lidToPhone: make(map[string]string),
-			phoneToLID: make(map[string]string),
+			lidToPhone:   make(map[string]string),
+			phoneToLID:   make(map[string]string),
+			isOnWhatsApp: make(map[string]string),
 		}
 	})
 	return globalContactMaps
@@ -96,4 +98,26 @@ func (c *WhatsmeowContactMaps) SetLIDFromPhoneMap(phone, lid string) {
 	if len(lid) > 0 {
 		c.lidToPhone[lid] = normalizedPhone
 	}
+}
+
+// GetIsOnWhatsAppCache returns the cached result for a given phone input.
+// The second return value is true only when the key has been previously set
+// (even if the resolved JID is empty, meaning the number was not found).
+//
+// WARNING: IsOnWhatsApp queries WhatsApp servers. Calling it too frequently
+// may trigger anti-abuse detection and result in account banning.
+// Always check this cache before calling the live API.
+func (c *WhatsmeowContactMaps) GetIsOnWhatsAppCache(phone string) (jid string, found bool) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	jid, found = c.isOnWhatsApp[normalizePhone(phone)]
+	return
+}
+
+// SetIsOnWhatsAppCache stores the resolved JID for a given phone input.
+// Pass an empty jid string to record that the number is NOT on WhatsApp.
+func (c *WhatsmeowContactMaps) SetIsOnWhatsAppCache(phone, jid string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.isOnWhatsApp[normalizePhone(phone)] = jid
 }

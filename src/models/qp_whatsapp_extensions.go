@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/skip2/go-qrcode"
@@ -23,20 +22,17 @@ func NewConnection(options *whatsapp.WhatsappConnectionOptions) (whatsapp.IWhats
 func TryUpdateHttpChannel(ch chan<- []byte, value []byte) (closed bool) {
 	defer func() {
 		if recover() != nil {
-			// the return result can be altered
-			// in a defer function call
 			closed = false
 		}
 	}()
 
-	ch <- value // panic if ch is closed
-	return true // <=> closed = false; return
+	ch <- value
+	return true
 }
 
-// Envia o QRCode para o usuário e aguarda pela resposta
-// Retorna um novo BOT
+// SignInWithQRCode streams QR code images to the caller while the pairing flow
+// waits for the device to be linked.
 func SignInWithQRCode(ctx context.Context, pairing QpWhatsappPairing, out chan<- []byte) (err error) {
-
 	con, err := pairing.GetConnection()
 	if err != nil {
 		return
@@ -45,19 +41,17 @@ func SignInWithQRCode(ctx context.Context, pairing QpWhatsappPairing, out chan<-
 	logger := con.GetLogger()
 	qrChan := make(chan string)
 	defer close(qrChan)
+
 	go func() {
 		for qrBase64 := range qrChan {
-			var png []byte
-			png, err := qrcode.Encode(qrBase64, qrcode.Medium, 256)
-			if err != nil {
-				logger.Errorf("(qrcode) encode fail, %s", err.Error())
+			png, encodeErr := qrcode.Encode(qrBase64, qrcode.Medium, 256)
+			if encodeErr != nil {
+				logger.Errorf("(qrcode) encode fail, %s", encodeErr.Error())
 				return
 			}
 
 			encodedPNG := base64.StdEncoding.EncodeToString(png)
 			if !TryUpdateHttpChannel(out, []byte(encodedPNG)) {
-				// expected error, means that websocket was closed
-				// probably user has gone out page
 				logger.Error("(qrcode) cant write to output")
 				return
 			}
@@ -69,21 +63,19 @@ func SignInWithQRCode(ctx context.Context, pairing QpWhatsappPairing, out chan<-
 }
 
 func EnsureServerOnCache(currentUserID string, wid string, connection whatsapp.IWhatsappConnection) (err error) {
-	// Se chegou até aqui é pq o QRCode foi validado e sincronizado
 	server, err := WhatsappService.GetOrCreateServer(currentUserID, wid)
 	if err != nil {
 		log.Errorf("getting or create server after login : %s", err.Error())
 		return
 	}
 
-	// updating verified state
 	server.MarkVerified(true)
-
-	// updating underlying connection
 	go server.UpdateConnection(connection)
 	return
 }
 
+// GetDownloadPrefixFromToken resolves the internal attachment download prefix
+// for a live server token so transport layers can build stable download URLs.
 func GetDownloadPrefixFromToken(token string) (path string, err error) {
 	server, ok := WhatsappService.Servers[token]
 	if !ok {
@@ -93,122 +85,6 @@ func GetDownloadPrefixFromToken(token string) (path string, err error) {
 
 	prefix := fmt.Sprintf("/bot/%s/download", server.Token)
 	return prefix, err
-}
-
-func ToQPAttachmentV1(source *whatsapp.WhatsappAttachment, id string, token string) (attach *QPAttachmentV1) {
-
-	// Anexo que devolverá ao utilizador da api, cliente final
-	// com Url pública válida sem criptografia
-	attach = &QPAttachmentV1{}
-	attach.MIME = source.Mimetype
-	attach.FileName = source.FileName
-	attach.Length = source.FileLength
-
-	url, err := GetDownloadPrefixFromToken(token)
-	if err != nil {
-		return
-	}
-
-	attach.Url = url + "/" + id
-	return
-}
-
-func ToQPEndPointV1(source *whatsapp.WhatsappEndpoint) (destination QPEndpointV1) {
-	if !strings.Contains(source.ID, "@") {
-		if source.ID == "status" {
-			destination.ID = source.ID + "@broadcast"
-		} else if strings.Contains(source.ID, "-") {
-			destination.ID = source.ID + "@g.us"
-		} else {
-			destination.ID = source.ID + "@s.whatsapp.net"
-		}
-	} else {
-		destination.ID = source.ID
-	}
-
-	destination.Title = source.Title
-	if len(destination.Title) == 0 {
-		destination.Title = source.UserName
-	}
-
-	return
-}
-
-func ToQPEndPointV2(source *whatsapp.WhatsappEndpoint) (destination QPEndpointV2) {
-	if !strings.Contains(source.ID, "@") {
-		if source.ID == "status" {
-			destination.ID = source.ID + "@broadcast"
-		} else if strings.Contains(source.ID, "-") {
-			destination.ID = source.ID + "@g.us"
-		} else {
-			destination.ID = source.ID + "@s.whatsapp.net"
-		}
-	} else {
-		destination.ID = source.ID
-	}
-
-	destination.Title = source.Title
-	if len(destination.Title) == 0 {
-		destination.Title = source.UserName
-	}
-
-	// Include Phone if available
-	destination.Phone = source.Phone
-
-	return
-}
-
-func ChatToQPEndPointV1(source whatsapp.WhatsappChat) (destination QPEndpointV1) {
-	if !strings.Contains(source.Id, "@") {
-		if source.Id == "status" {
-			destination.ID = source.Id + "@broadcast"
-		} else if strings.Contains(source.Id, "-") {
-			destination.ID = source.Id + "@g.us"
-		} else {
-			destination.ID = source.Id + "@s.whatsapp.net"
-		}
-	} else {
-		destination.ID = source.Id
-	}
-
-	destination.Title = source.Title
-	return
-}
-
-func ChatToQPChatV2(source whatsapp.WhatsappChat) (destination QPChatV2) {
-	if !strings.Contains(source.Id, "@") {
-		if source.Id == "status" {
-			destination.ID = source.Id + "@broadcast"
-		} else if strings.Contains(source.Id, "-") {
-			destination.ID = source.Id + "@g.us"
-		} else {
-			destination.ID = source.Id + "@s.whatsapp.net"
-		}
-	} else {
-		destination.ID = source.Id
-	}
-
-	destination.Title = source.Title
-	return
-}
-
-func ChatToQPEndPointV2(source whatsapp.WhatsappChat) (destination QPEndpointV2) {
-	if !strings.Contains(source.Id, "@") {
-		if source.Id == "status" {
-			destination.ID = source.Id + "@broadcast"
-		} else if strings.Contains(source.Id, "-") {
-			destination.ID = source.Id + "@g.us"
-		} else {
-			destination.ID = source.Id + "@s.whatsapp.net"
-			destination.UserName = "+" + source.Id
-		}
-	} else {
-		destination.ID = source.Id
-	}
-
-	destination.Title = source.Title
-	destination.Phone = source.Phone
-	return
 }
 
 func ToWhatsappMessage(destination string, text string, attach *whatsapp.WhatsappAttachment) (msg *whatsapp.WhatsappMessage, err error) {
@@ -222,20 +98,17 @@ func ToWhatsappMessage(destination string, text string, attach *whatsapp.Whatsap
 	msg.FromMe = true
 	msg.Type = whatsapp.TextMessageType
 	msg.Text = text
-
-	chat := whatsapp.WhatsappChat{Id: recipient}
-	msg.Chat = chat
+	msg.Chat = whatsapp.WhatsappChat{Id: recipient}
 
 	if attach != nil {
 		msg.Attachment = attach
 		msg.Type = whatsapp.GetMessageType(attach)
 	}
-	return
 
+	return
 }
 
-//#region USING WHATSAPP OPTIONS INTERFACE
-
+// ToggleReadReceipts cycles the persisted read-receipt handling mode.
 func ToggleReadReceipts(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
@@ -252,6 +125,7 @@ func ToggleReadReceipts(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+// ToggleGroups cycles the persisted group-handling mode.
 func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
@@ -268,6 +142,7 @@ func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+// ToggleBroadcasts cycles the persisted broadcast-handling mode.
 func ToggleBroadcasts(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
@@ -284,6 +159,7 @@ func ToggleBroadcasts(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+// ToggleCalls cycles the persisted call-handling mode.
 func ToggleCalls(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()
 
@@ -300,4 +176,19 @@ func ToggleCalls(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
-//#endregion
+// ToggleReadUpdate cycles the persisted mark-read update handling mode.
+func ToggleReadUpdate(source whatsapp.IWhatsappOptions) error {
+	options := source.GetOptions()
+
+	switch options.ReadUpdate {
+	case whatsapp.UnSetBooleanType:
+		options.ReadUpdate = whatsapp.TrueBooleanType
+	case whatsapp.TrueBooleanType:
+		options.ReadUpdate = whatsapp.FalseBooleanType
+	default:
+		options.ReadUpdate = whatsapp.UnSetBooleanType
+	}
+
+	reason := fmt.Sprintf("toggle read update: %s", options.ReadUpdate)
+	return source.Save(reason)
+}

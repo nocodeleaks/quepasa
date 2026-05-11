@@ -1,2 +1,10 @@
 # Git attributes for merge strategies
 AGENTS.md merge=ours
+
+# Normalize text files in repository and keep LF as the canonical line ending.
+* text=auto eol=lf
+
+# Keep Windows command scripts with CRLF for native execution/editing.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

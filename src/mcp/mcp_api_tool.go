@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	environment "github.com/nocodeleaks/quepasa/environment"
+	library "github.com/nocodeleaks/quepasa/library"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -111,17 +112,17 @@ func (t *APIHandlerTool) ExecuteWithContext(ctx *MCPToolContext, params json.Raw
 	if useMasterKey {
 		// Master key authentication
 		masterKey := environment.Settings.API.MasterKey
-		req.Header.Set("X-QUEPASA-MASTERKEY", masterKey)
+		req.Header.Set(library.HeaderMasterKey, masterKey)
 		log.Debug("MCP API Tool: Using MASTER KEY authentication")
 
 		// If master key provided a specific server token, add it too
 		if authToken != "" {
-			req.Header.Set("X-QUEPASA-TOKEN", authToken)
+			req.Header.Set(library.HeaderToken, authToken)
 			log.Debugf("MCP API Tool: With target SERVER TOKEN: %s", authToken)
 		}
 	} else if authToken != "" {
 		// Direct bot token authentication
-		req.Header.Set("X-QUEPASA-TOKEN", authToken)
+		req.Header.Set(library.HeaderToken, authToken)
 		log.Debugf("MCP API Tool: Using SERVER TOKEN authentication: %s", authToken)
 	} else {
 		return nil, fmt.Errorf("no authentication context available")

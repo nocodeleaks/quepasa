@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuePasa Console Login</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
+    <link rel="stylesheet" href="/apps/console/assets/console.css" />
+    <style>
+      .login-shell {
+        max-width: 460px;
+        margin: 0 auto;
+      }
+
+      .login-form {
+        background: rgba(6, 13, 35, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35);
+      }
+
+      .login-form h2 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+      }
+
+      .login-form p {
+        margin: 0 0 18px;
+        color: #cbd5e1;
+      }
+
+      .login-form label {
+        display: block;
+        margin: 14px 0 6px;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+      }
+
+      .login-form input {
+        width: 100%;
+        border: 1px solid #334155;
+        background: #0b1229;
+        color: #f8fafc;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 1rem;
+      }
+
+      .login-form button {
+        width: 100%;
+        border: 0;
+        margin-top: 18px;
+        border-radius: 10px;
+        padding: 12px 14px;
+        background: linear-gradient(120deg, #22d3ee, #38bdf8);
+        color: #041024;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .login-links {
+        margin-top: 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .login-links a {
+        color: #93c5fd;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="console-shell login-shell">
+      <header class="console-header">
+        <span class="console-badge">Console Login</span>
+        <h1>QuePasa Classic Console</h1>
+        <p>This login route is isolated from the Vue app slug.</p>
+      </header>
+
+      <section class="login-form">
+        <h2>Sign in (Demo)</h2>
+        <p>This page is a standalone example and does not submit to backend auth.</p>
+
+        <form id="console-login-form" method="get" action="#">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="text" autocomplete="username" required />
+
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+
+          <button type="submit">Demo submit</button>
+        </form>
+
+        <script>
+          document.getElementById('console-login-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            alert('Console demo only: no backend login is configured for this app.');
+          });
+        </script>
+
+        <div class="login-links">
+          <a href="/apps/console/">Back to console home</a>
+          <a href="/apps/vuejs/">Open modern Vue app</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

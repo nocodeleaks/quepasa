@@ -37,6 +37,15 @@ type IWhatsappConnection interface {
 	// Default send message method
 	Send(*WhatsappMessage) (IWhatsappSendResponse, error)
 
+	// SendReaction sends an emoji reaction to a specific message.
+	// Pass emoji="" to remove an existing reaction.
+	SendReaction(chatID, targetMsgID string, fromMe bool, emoji string) error
+
+	// PublishStatus publishes a WhatsApp status (story) visible to contacts.
+	// Provide text for text-only status; provide attachment for media status.
+	// Returns the sent message ID on success.
+	PublishStatus(text string, attachment *WhatsappAttachment) (string, error)
+
 	// Useful to check if is a member of a group before send a msg.
 	// Indicates if has an open or archived chat.
 	HasChat(string) bool

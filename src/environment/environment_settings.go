@@ -16,6 +16,7 @@ type EnvironmentSettings struct {
 	// Embedded structs for organized access to different environment categories
 	Database  DatabaseSettings
 	API       APISettings
+	Cache     CacheSettings
 	WebServer WebServerSettings
 	Swagger   SwaggerSettings
 	Metrics   MetricsSettings
@@ -24,6 +25,7 @@ type EnvironmentSettings struct {
 	Whatsmeow WhatsmeowSettings
 	SIPProxy  SIPProxySettings
 	General   GeneralSettings
+	Redis     RedisSettings
 	RabbitMQ  RabbitMQSettings
 	MCP       MCPSettings
 }
@@ -47,6 +49,7 @@ func init() {
 	Settings = EnvironmentSettings{
 		Database:  NewDatabaseSettings(),
 		API:       NewAPISettings(),
+		Cache:     NewCacheSettings(),
 		WebServer: NewWebServerSettings(),
 		Swagger:   NewSwaggerSettings(),
 		Metrics:   NewMetricsSettings(),
@@ -55,6 +58,7 @@ func init() {
 		Whatsmeow: NewWhatsmeowSettings(),
 		SIPProxy:  NewSIPProxySettings(),
 		General:   NewGeneralSettings(),
+		Redis:     NewRedisSettings(),
 		RabbitMQ:  NewRabbitMQSettings(),
 		MCP:       NewMCPSettings(),
 	}

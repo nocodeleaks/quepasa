@@ -1,4 +1,4 @@
-{{ define "content" }}
+﻿{{ define "content" }}
   {{ if .ErrorMessage }}
     <div class="notification is-warning">
       {{ .ErrorMessage }}
@@ -46,7 +46,7 @@
             <td style="text-align: center;">
               <div style="text-align: center; display: flex; justify-content: center;">          
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-forwardinternal" data-value="{{ .ForwardInternal }}">
+                  <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-forwardinternal" data-value="{{ .ForwardInternal }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}" />
                     <button class="button {{ if .ForwardInternal }}is-info{{ else }}is-danger{{ end }}" title="ForwardInternal: {{ .ForwardInternal }}">
                       <span class="icon is-small is-inline"><i class="fa fa-forward"></i></span>
@@ -55,7 +55,7 @@
                 </p>
                 <p>&nbsp;</p>
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-broadcasts" data-value="{{ .Broadcasts }}">
+                  <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-broadcasts" data-value="{{ .Broadcasts }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts: {{ .Broadcasts }}">
                       <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
@@ -63,7 +63,7 @@
                   </form>
                 </p>
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-groups" data-value="{{ .Groups }}">
+                  <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-groups" data-value="{{ .Groups }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups: {{ .Groups }}">
                       <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
@@ -71,7 +71,7 @@
                   </form>
                 </p>
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-readreceipts" data-value="{{ .ReadReceipts }}">
+                  <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-readreceipts" data-value="{{ .ReadReceipts }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="ReadReceipts: {{ .ReadReceipts }}">
                       <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
@@ -79,7 +79,7 @@
                   </form>
                 </p>
                 <p class="control"> 
-                  <form class="" method="post" action="/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-calls" data-value="{{ .Calls }}">
+                  <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=rabbitmq-calls" data-value="{{ .Calls }}">
                     <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                     <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls: {{ .Calls }}">
                       <span class="icon is-small is-inline"><i class="fa fa-phone"></i></span>
@@ -123,7 +123,7 @@
               {{ end }}
             </td>
             <td>
-              <form class="" method="post" action="/form/delete?token={{ $.Server.Token }}&key=rabbitmq">
+              <form class="" method="post" action="/apps/form/delete?token={{ $.Server.Token }}&key=rabbitmq">
                 <input name="connection_string" type="hidden" value="{{ .ConnectionString }}">
                 <button class="button is-danger is-outlined" title="Delete this RabbitMQ configuration">
                   <i class="fa fa-trash"></i>&nbsp;&nbsp;
@@ -149,7 +149,7 @@
       <section class="modal-card-body">
         <!-- Information about RabbitMQ Routing System -->
         <div class="notification is-info" style="margin-bottom: 1.5rem;">
-          <h4 class="title is-6">🔄 QuePasa RabbitMQ Routing System</h4>
+          <h4 class="title is-6">ðŸ”„ QuePasa RabbitMQ Routing System</h4>
           <p><strong>Exchange:</strong> <code>quepasa.exchange</code></p>
           <p><strong>Automatic Queues:</strong></p>
           <ul style="margin-left: 1rem;">

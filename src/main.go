@@ -2,12 +2,16 @@ package main
 
 import (
 	_ "github.com/nocodeleaks/quepasa/api"
+	_ "github.com/nocodeleaks/quepasa/apps/form"
+	_ "github.com/nocodeleaks/quepasa/cable"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	_ "github.com/nocodeleaks/quepasa/form"
 	library "github.com/nocodeleaks/quepasa/library"
 	_ "github.com/nocodeleaks/quepasa/mcp"
 	_ "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
@@ -17,7 +21,7 @@ import (
 )
 
 // @title						QuePasa WhatsApp API
-// @version					4.0.0
+// @version					5.0.0
 // @description				QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs for WhatsApp messaging integration
 // @termsOfService				https://github.com/nocodeleaks/quepasa
 // @contact.name				QuePasa Support
@@ -44,6 +48,12 @@ func main() {
 		logentry.Fatalf("database migration error: %s", err.Error())
 	}
 
+	// Initialize centralized cache service (must be before starting services)
+	err = models.InitializeCacheService()
+	if err != nil {
+		logentry.Fatalf("cache service initialization error: %s", err.Error())
+	}
+
 	// should became before whatsmeow start
 	title := environment.Settings.General.AppTitle
 	if len(title) > 0 {
@@ -68,10 +78,37 @@ func main() {
 		WhatsappOptionsExtended: whatsapp.Options,
 		WMLogLevel:              environment.Settings.Whatsmeow.LogLevel,
 		DBLogLevel:              environment.Settings.Whatsmeow.DBLogLevel,
+		UseRetryMessageStore:    environment.Settings.Whatsmeow.UseRetryMessageStore,
 	}
 
 	dbParameters := environment.Settings.Database.GetDBParameters()
 	whatsmeow.Start(options, dbParameters, logentry)
+
+	// Inject transport adapters so models remain transport-agnostic.
+	models.ApplyTransportServices(models.TransportServices{
+		RealtimePresenceChecker:       signalr.SignalRHub,
+		DispatchingLifecyclePublisher: runtime.NewDispatchingLifecyclePublisher(),
+		RabbitMQGetClient: func(connectionString string) models.RabbitMQPublisherClient {
+			return rabbitmq.GetRabbitMQClient(connectionString)
+		},
+		RabbitMQCloseClient: rabbitmq.CloseRabbitMQClient,
+		RabbitMQInjectQueueBackend: func() {
+			if rabbitmq.RabbitMQClientInstance != nil {
+				rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
+			}
+		},
+		RabbitMQExchangeName:         rabbitmq.QuePasaExchangeName,
+		RabbitMQRoutingKeyProd:       rabbitmq.QuePasaRoutingKeyProd,
+		RabbitMQRoutingKeyHistory:    rabbitmq.QuePasaRoutingKeyHistory,
+		RabbitMQRoutingKeyEvents:     rabbitmq.QuePasaRoutingKeyEvents,
+		RabbitMQMessagesPublishedInc: func() { rabbitmq.MessagesPublished.Inc() },
+		RabbitMQMessagePublishErrorsInc: func() {
+			rabbitmq.MessagePublishErrors.Inc()
+		},
+		RabbitMQClientResolver: func(connectionString string) bool {
+			return rabbitmq.GetRabbitMQClient(connectionString) != nil
+		},
+	})
 
 	// must execute after whatsmeow started
 	for _, element := range models.Running {
@@ -80,8 +117,7 @@ func main() {
 		}
 	}
 
-	// Inicializando serviço de controle do whatsapp
-	// De forma assíncrona
+	// Starting WhatsApp control service asynchronously
 	err = models.QPWhatsappStart(logentry)
 	if err != nil {
 		logentry.Fatalf("whatsapp service starting error: %s", err.Error())

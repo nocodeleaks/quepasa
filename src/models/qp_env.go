@@ -28,15 +28,17 @@ const (
 	ENV_SIGNING_SECRET = "SIGNING_SECRET" // token for hash singing cookies
 	ENV_MASTER_KEY     = "MASTERKEY"      // used for manage all instances at all
 
-	ENV_WEBSOCKETSSL             = "WEBSOCKETSSL" // use ssl for websocket qrcode
-	ENV_MIGRATIONS               = "MIGRATIONS"   // enable migrations (can also be a path)
-	ENV_TITLE                    = "APP_TITLE"    // application title for whatsapp id
-	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"
+	ENV_WEBSOCKETSSL             = "WEBSOCKETSSL"       // use ssl for websocket qrcode
+	ENV_MIGRATIONS               = "MIGRATIONS"         // enable migrations (can also be a path)
+	ENV_TITLE                    = "APP_TITLE"          // application title for whatsapp id
+	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"       // deprecated: use NORMALIZE_BR_PHONE
+	ENV_NORMALIZE_BR_PHONE       = "NORMALIZE_BR_PHONE" // normalize Brazilian mobile phones (handles 8/9-digit ambiguity)
 	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"
 	ENV_CACHELENGTH              = "CACHELENGTH" // cache max items
 	ENV_CACHEDAYS                = "CACHEDAYS"   // cache max days
 	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"
 	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO"
+	ENV_FORCE_AUDIO_AS_PTT       = "FORCE_AUDIO_AS_PTT"
 
 	ENV_READUPDATE      = "READUPDATE"
 	ENV_READRECEIPTS    = "READRECEIPTS"
@@ -133,6 +135,12 @@ func (*Environment) UseCompatibleMIMEsAsAudio() bool {
 	return convertWave || compatibleMime
 }
 
+// ForceAudioAsPTT checks if all audio formats should be forced as PTT.
+// Defaults to true.
+func (*Environment) ForceAudioAsPTT() bool {
+	return getEnvOrDefaultBool(ENV_FORCE_AUDIO_AS_PTT, true)
+}
+
 // UseSSLForWebSocket checks if SSL should be used for WebSocket QR code. Defaults to false.
 func (*Environment) UseSSLForWebSocket() bool {
 	return getEnvOrDefaultBool(ENV_WEBSOCKETSSL, false)
@@ -166,10 +174,26 @@ func (*Environment) AppTitle() string {
 	return getEnvOrDefaultString(ENV_TITLE, "")
 }
 
-// ShouldRemoveDigit9 checks if the 9th digit should be removed from phone numbers.
-// Returns true or false, defaulting to false if the environment variable is not set or invalid.
-func (*Environment) ShouldRemoveDigit9() bool {
+// ShouldNormalizeBRPhone reports whether Brazilian mobile phone normalization is enabled.
+// When true, outbound sends check both the 8-digit and 9-digit variants of a BR mobile number
+// via IsOnWhatsApp (cached per session) and use whichever variant is actually registered.
+//
+// Reads NORMALIZE_BR_PHONE first; falls back to the legacy REMOVEDIGIT9 variable for
+// backward compatibility.
+func (*Environment) ShouldNormalizeBRPhone() bool {
+	if v, ok := os.LookupEnv(ENV_NORMALIZE_BR_PHONE); ok {
+		b, err := strconv.ParseBool(v)
+		if err == nil {
+			return b
+		}
+	}
+	// legacy fallback
 	return getEnvOrDefaultBool(ENV_REMOVEDIGIT9, false)
+}
+
+// ShouldRemoveDigit9 is deprecated. Use ShouldNormalizeBRPhone instead.
+func (e *Environment) ShouldRemoveDigit9() bool {
+	return e.ShouldNormalizeBRPhone()
 }
 
 // SynopsisLength returns the length for message synopsis. Defaults to 50.

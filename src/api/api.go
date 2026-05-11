@@ -9,12 +9,11 @@ import (
 )
 
 func init() {
-	// Automatically registers the Swagger configuration in the webserver
-	// This allows Swagger to be configured without the webserver module
-	// needing to know specifically about Swagger
+	// Register API routes as a webserver configurator so the webserver package does
+	// not need direct knowledge about API concerns.
 	webserver.RegisterRouterConfigurator(Configure)
 
-	// Log API prefix configuration
+	// Log prefix resolution once at startup to make route shape explicit in logs.
 	apiPrefix := environment.Settings.API.Prefix
 	if apiPrefix == "" {
 		log.Info("API routes initialized: prefix=/ (root)")
@@ -29,12 +28,12 @@ func init() {
 func Configure(r chi.Router) {
 	apiPrefix := environment.Settings.API.Prefix
 
-	// setting group
 	r.Group(func(r chi.Router) {
 		timeout := environment.Settings.API.GetAPITimeout()
 
-		// setting timeout for the group
+		// Apply one timeout policy to all HTTP API routes.
 		r.Use(middleware.Timeout(timeout))
+		r.Use(APIEventMiddleware)
 
 		/* CORS TESTING
 		r.Use(cors.Handler(cors.Options{
@@ -49,10 +48,29 @@ func Configure(r chi.Router) {
 		}))
 		*/
 
-		// Mount API routes under the configured prefix
+		// Mount API routes under the configured prefix.
+		// The prefix is controlled exclusively by the API_PREFIX environment variable
+		// (default: "api", see environment/api_settings.go). The official web client reads
+		// the effective prefix from window.__QUEPASA_CONFIG__.apiBase injected at
+		// serve time, so it adapts automatically.
 		r.Route("/"+apiPrefix, func(r chi.Router) {
-			r.Group(RegisterAPIControllers)
+			defaultVersion := environment.Settings.API.DefaultVersion
+			r.Group(func(router chi.Router) {
+				RegisterAPIV5Controllers(router, defaultVersion == CurrentCanonicalAPIVersion)
+			})
+			r.Group(func(router chi.Router) {
+				RegisterAPIControllers(router, defaultVersion == CurrentAPIVersion)
+			})
 			r.Group(RegisterAPIV3Controllers)
 		})
+
+		// Preserve legacy root-level routes when API_PREFIX is configured so older
+		// clients keep working while newer clients can migrate to the prefixed API.
+		if apiPrefix != "" {
+			r.Group(func(router chi.Router) {
+				RegisterAPIControllers(router, true)
+			})
+			r.Group(RegisterAPIV3Controllers)
+		}
 	})
 }

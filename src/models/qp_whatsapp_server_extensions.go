@@ -1,10 +1,8 @@
 package models
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -12,51 +10,14 @@ import (
 
 // handle message deliver to individual dispatching distribution
 func PostToDispatchingFromServer(server *QpWhatsappServer, message *whatsapp.WhatsappMessage) (err error) {
-	if server == nil {
-		err = fmt.Errorf("server nil")
-		return err
-	}
+	return DispatchOutboundFromServer(server, message)
+}
 
-	// ignoring ssl issues
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	for _, dispatching := range server.QpDataDispatching.Dispatching {
-
-		// updating log
-		logentry := dispatching.GetLogger()
-		loglevel := logentry.Level
-		logentry = logentry.WithField(LogFields.MessageId, message.Id)
-		logentry.Level = loglevel
-
-		if message.Id == "readreceipt" && dispatching.IsSetReadReceipts() && !dispatching.ReadReceipts.Boolean() {
-			logentry.Debugf("ignoring read receipt message: %s", message.Text)
-			continue
-		}
-
-		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
-			logentry.Debug("ignoring group message")
-			continue
-		}
-
-		if message.FromBroadcast() && dispatching.IsSetBroadcasts() && !dispatching.Broadcasts.Boolean() {
-			logentry.Debug("ignoring broadcast message")
-			continue
-		}
-
-		if message.Type == whatsapp.CallMessageType && dispatching.IsSetCalls() && !dispatching.Calls.Boolean() {
-			logentry.Debug("ignoring call message")
-			continue
-		}
-
-		if !message.FromInternal || (dispatching.ForwardInternal && (len(dispatching.TrackId) == 0 || dispatching.TrackId != message.TrackId)) {
-			elerr := dispatching.Dispatch(message)
-			if elerr != nil {
-				logentry.Errorf("error on dispatch: %s", elerr.Error())
-			}
-		}
-	}
-
-	return
+// PostToDispatchings delivers a message to the provided dispatching targets.
+// It is used by the normal server flow and by deletion flows that need to use
+// a preserved snapshot instead of the server's live dispatching slice.
+func PostToDispatchings(server *QpWhatsappServer, dispatchings []*QpDispatching, message *whatsapp.WhatsappMessage) (err error) {
+	return DispatchOutboundToTargets(server, dispatchings, message)
 }
 
 // region FIND|SEARCH WHATSAPP SERVER
@@ -72,7 +33,7 @@ func GetServerFromID(source string) (server *QpWhatsappServer, err error) {
 }
 
 func GetServerFromBot(source QPBot) (server *QpWhatsappServer, err error) {
-	return GetServerFromID(source.Wid)
+	return GetServerFromID(source.GetWId())
 }
 
 // insecure
@@ -121,47 +82,7 @@ func PostToWebhooksModern(server *QpWhatsappServer, message *whatsapp.WhatsappMe
 		return err
 	}
 
-	// ignoring ssl issues
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	webhookDispatchings := server.GetWebhookDispatchings()
-
-	for _, dispatching := range webhookDispatchings {
-		// updating log
-		logentry := dispatching.GetLogger()
-		loglevel := logentry.Level
-		logentry = logentry.WithField(LogFields.MessageId, message.Id)
-		logentry.Level = loglevel
-
-		// Check if should ignore based on message type and dispatching options
-		if message.Id == "readreceipt" && dispatching.IsSetReadReceipts() && !dispatching.ReadReceipts.Boolean() {
-			logentry.Debugf("ignoring read receipt message: %s", message.Text)
-			continue
-		}
-
-		if message.FromGroup() && dispatching.IsSetGroups() && !dispatching.Groups.Boolean() {
-			logentry.Debug("ignoring group message")
-			continue
-		}
-
-		if message.FromBroadcast() && dispatching.IsSetBroadcasts() && !dispatching.Broadcasts.Boolean() {
-			logentry.Debug("ignoring broadcast message")
-			continue
-		}
-
-		if message.Type == whatsapp.CallMessageType && dispatching.IsSetCalls() && !dispatching.Calls.Boolean() {
-			logentry.Debug("ignoring call message")
-			continue
-		}
-
-		// Send the message using the dispatching
-		err = dispatching.PostWebhook(message)
-		if err != nil {
-			logentry.Errorf("error posting to webhook: %s", err.Error())
-		}
-	}
-
-	return err
+	return DispatchOutboundToTargets(server, server.GetWebhookDispatchings(), message)
 }
 
 //endregion

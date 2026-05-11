@@ -1,9 +1,5 @@
 package models
 
-import (
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
-)
-
 // Dispatching model
 type QpDataDispatching struct {
 	Dispatching []*QpDispatching `json:"dispatching,omitempty"`
@@ -32,7 +28,7 @@ func (source *QpDataDispatching) DispatchingFill(info *QpServer, db QpDataDispat
 		dispatchingLogEntry := logentry.WithField(LogFields.Url, element.ConnectionString)
 		element.LogEntry = dispatchingLogEntry
 
-		element.Wid = info.Wid
+		element.Wid = info.GetWId()
 		dispatching = append(dispatching, element.QpDispatching)
 	}
 
@@ -66,6 +62,32 @@ func (source *QpDataDispatching) DispatchingAddOrUpdate(dispatching *QpDispatchi
 	return
 }
 
+func (source *QpDataDispatching) DispatchingUpdateHealth(dispatching *QpDispatching) error {
+	if source == nil || source.db == nil || dispatching == nil {
+		return nil
+	}
+
+	return source.db.DispatchingUpdateHealth(source.context, dispatching)
+}
+
+func (source *QpDataDispatching) DispatchingSyncHealth(dispatchings []*QpDispatching) error {
+	if source == nil || source.db == nil {
+		return nil
+	}
+
+	for _, dispatching := range dispatchings {
+		if dispatching == nil {
+			continue
+		}
+
+		if err := source.DispatchingUpdateHealth(dispatching); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (source *QpDataDispatching) DispatchingRemove(connectionString string) (affected uint, err error) {
 	affected, err = source.db.DispatchingRemove(source.context, connectionString)
 	if err != nil {
@@ -93,7 +115,7 @@ func (source *QpDataDispatching) DispatchingRemove(connectionString string) (aff
 
 	// Close the RabbitMQ client after removing from memory to avoid race conditions
 	if isRabbitMQ {
-		rabbitmq.CloseRabbitMQClient(connectionString)
+		CloseRabbitMQPublisherClient(connectionString)
 	}
 
 	return
@@ -103,7 +125,7 @@ func (source *QpDataDispatching) DispatchingClear() (err error) {
 	// Close all RabbitMQ clients before clearing
 	for _, element := range source.Dispatching {
 		if element.IsRabbitMQ() {
-			rabbitmq.CloseRabbitMQClient(element.ConnectionString)
+			CloseRabbitMQPublisherClient(element.ConnectionString)
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	api "github.com/nocodeleaks/quepasa/api/models"
 )
@@ -68,6 +69,15 @@ func TestHealthEndpoint_WithBotToken(t *testing.T) {
 
 	CreateTestUser(t, testUser, testPassword)
 	server := CreateTestServer(t, testToken, testUser)
+	occurredAt := time.Date(2026, time.April, 22, 18, 55, 16, 0, time.UTC)
+	server.SetMetadataValue("connection_diagnostic", map[string]any{
+		"code":             "logged_out_another_device",
+		"message":          "WhatsApp removed this session because another device took over the connection.",
+		"occurred_at":      occurredAt,
+		"requires_reauth":  true,
+		"logout_reason":    "401: logged out from another device",
+		"disconnect_cause": "logged_out",
+	})
 
 	// Create request with bot token in header
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -105,6 +115,18 @@ func TestHealthEndpoint_WithBotToken(t *testing.T) {
 	if response.Items != nil {
 		t.Errorf("Expected no items array with bot token, got: %+v", response.Items)
 	}
+	if response.Diagnostic == nil {
+		t.Fatal("Expected diagnostic field in response body with bot token")
+	}
+	if response.Diagnostic.Code != "logged_out_another_device" {
+		t.Errorf("Expected diagnostic code logged_out_another_device, got %s", response.Diagnostic.Code)
+	}
+	if !response.Diagnostic.RequiresReauth {
+		t.Error("Expected diagnostic requires_reauth=true")
+	}
+	if response.Diagnostic.OccurredAt == nil || !response.Diagnostic.OccurredAt.Equal(occurredAt) {
+		t.Errorf("Expected diagnostic occurred_at %s, got %+v", occurredAt, response.Diagnostic.OccurredAt)
+	}
 
 	t.Logf("Bot token response: State=%s, Wid=%s",
 		response.State.String(), response.Wid)
@@ -141,7 +163,7 @@ func TestHealthEndpoint_WithMasterKey(t *testing.T) {
 	// Test 1: Master key in header
 	t.Run("MasterKeyInHeader", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
-		req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+		req.Header.Set(masterKeyHeader, testMasterKey)
 		rec := httptest.NewRecorder()
 
 		HealthController(rec, req)
@@ -278,7 +300,7 @@ func TestHealthEndpoint_AuthenticationPriority(t *testing.T) {
 	// Master key should take precedence
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	req.Header.Set("X-QUEPASA-TOKEN", testToken)
-	req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+	req.Header.Set(masterKeyHeader, testMasterKey)
 	rec := httptest.NewRecorder()
 
 	HealthController(rec, req)

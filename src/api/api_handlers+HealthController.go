@@ -8,6 +8,7 @@ import (
 	api "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 //region CONTROLLER - HEALTH
@@ -50,7 +51,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		Timestamp: time.Now(),
 	}
 
-	if models.WhatsappService == nil {
+	if !runtime.IsSessionServiceAvailable() {
 		response.Success = false
 		response.Status = "whatsapp service not initialized"
 		RespondInterface(w, response)
@@ -83,7 +84,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 
 	// Handle master key authentication first (higher priority)
 	if master {
-		healthItems := models.WhatsappService.GetHealth()
+		healthItems := collectHealthItems(runtime.ListLiveSessions())
 		response.Items = healthItems
 
 		// Calculate statistics
@@ -104,7 +105,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 	// Handle user/password authentication (user's servers view)
 	if username != "" && password != "" {
 		// Validate user credentials
-		user, err := models.WhatsappService.DB.Users.Check(username, password)
+		user, err := authenticatePersistedUser(username, password)
 		if err != nil {
 			response.Success = false
 			response.Status = fmt.Sprintf("invalid credentials: %s", err.Error())
@@ -113,12 +114,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Get all servers for this user
-		var userServers []models.QpHealthResponseItem
-		for _, server := range models.WhatsappService.Servers {
-			if server.User == user.Username {
-				userServers = append(userServers, models.ToHealthReponseItem(server))
-			}
-		}
+		userServers := collectHealthItems(runtime.ListLiveSessionsForUser(user.Username))
 
 		response.Items = userServers
 
@@ -158,7 +154,8 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 		response.Status = fmt.Sprintf("server state is %s", state.String())
 
 		response.State = &state
-		response.Wid = server.Wid
+		response.Wid = server.GetWId()
+		response.Diagnostic = server.ConnectionDiagnostic()
 
 		// Add server uptime
 		if !server.Timestamps.Start.IsZero() {
@@ -177,7 +174,7 @@ func HealthController(w http.ResponseWriter, r *http.Request) {
 }
 
 // calculateHealthStats calculates statistics for all servers
-func calculateHealthStats(items []models.QpHealthResponseItem) api.HealthStats {
+func calculateHealthStats(items []api.HealthResponseItem) api.HealthStats {
 	stats := api.HealthStats{
 		Total: len(items),
 	}
@@ -195,6 +192,16 @@ func calculateHealthStats(items []models.QpHealthResponseItem) api.HealthStats {
 	}
 
 	return stats
+}
+
+// collectHealthItems projects a server collection into API health items without
+// leaking transport DTOs into the shared runtime layer.
+func collectHealthItems(servers []*models.QpWhatsappServer) []api.HealthResponseItem {
+	items := make([]api.HealthResponseItem, 0, len(servers))
+	for _, server := range servers {
+		items = append(items, api.NewHealthResponseItem(server))
+	}
+	return items
 }
 
 //endregion

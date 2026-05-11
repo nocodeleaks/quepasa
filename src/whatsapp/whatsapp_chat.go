@@ -17,6 +17,8 @@ type WhatsappChat struct {
 	Phone string `json:"phone,omitempty"`
 
 	Title string `json:"title,omitempty"`
+
+	Labels []WhatsappChatLabel `json:"labels,omitempty"`
 }
 
 func (source *WhatsappChat) GetChatId() string {
@@ -24,6 +26,13 @@ func (source *WhatsappChat) GetChatId() string {
 }
 
 var WASYSTEMCHAT = WhatsappChat{Id: "system", Title: "Internal System Message"}
+
+type WhatsappChatLabel struct {
+	ID     int64  `json:"id"`
+	Name   string `json:"name"`
+	Color  string `json:"color,omitempty"`
+	Active bool   `json:"active"`
+}
 
 // get phone number if exists
 func (source *WhatsappChat) GetPhone() string {

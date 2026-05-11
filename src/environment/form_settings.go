@@ -3,7 +3,7 @@ package environment
 // Form environment variable names
 const (
 	ENV_FORM        = "FORM"        // enable/disable form interface
-	ENV_FORM_PREFIX = "FORM_PREFIX" // form endpoint path prefix (default: "form")
+	ENV_FORM_PREFIX = "FORM_PREFIX" // form endpoint path prefix (default: "apps/form")
 )
 
 // FormSettings holds all Form configuration loaded from environment
@@ -16,6 +16,6 @@ type FormSettings struct {
 func NewFormSettings() FormSettings {
 	return FormSettings{
 		Enabled: getEnvOrDefaultBool(ENV_FORM, true),
-		Prefix:  getEnvOrDefaultString(ENV_FORM_PREFIX, "form"),
+		Prefix:  getEnvOrDefaultString(ENV_FORM_PREFIX, "apps/form"),
 	}
 }

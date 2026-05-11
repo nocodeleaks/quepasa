@@ -9,6 +9,15 @@ import (
 	chi "github.com/go-chi/chi/v5"
 )
 
+// Standard X-QUEPASA-* header name constants used across all modules.
+const (
+	HeaderPrefix    = "X-QUEPASA-"
+	HeaderToken     = "X-QUEPASA-TOKEN"
+	HeaderMasterKey = "X-QUEPASA-MASTERKEY"
+	HeaderChatID    = "X-QUEPASA-CHATID"
+	HeaderUser      = "X-QUEPASA-USER"
+)
+
 /*
 <summary>
 

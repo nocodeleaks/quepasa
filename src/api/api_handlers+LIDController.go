@@ -45,27 +45,11 @@ func GetPhoneController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		response.ParseError(err)
-		RespondInterfaceCode(w, response, http.StatusServiceUnavailable)
-		return
-	}
-
 	// Get lid from query parameter
-	lid := library.GetRequestParameter(r, "lid")
+	lid := normalizeLIDInput(library.GetRequestParameter(r, "lid"))
 	// Validate lid parameter
 	if lid == "" {
 		response.ParseError(fmt.Errorf("lid parameter is required"))
-		RespondInterface(w, response)
-		return
-	}
-
-	// validate if the lid has the correct suffix
-	if !strings.HasSuffix(lid, "@lid") {
-		response.ParseError(fmt.Errorf("lid must have @lid suffix"))
 		RespondInterface(w, response)
 		return
 	}
@@ -85,6 +69,13 @@ func GetPhoneController(w http.ResponseWriter, r *http.Request) {
 		RespondInterface(w, response)
 		return
 	}
+
+	if len(processedPhone) == 0 {
+		response.ParseError(fmt.Errorf("phone not found for lid"))
+		RespondInterface(w, response)
+		return
+	}
+
 	// Set response data
 	response.Phone = processedPhone
 	response.LID = lid
@@ -96,7 +87,7 @@ func GetUserIdentifierController(w http.ResponseWriter, r *http.Request) {
 
 	request := api.UserIdentifierRequest{}
 	request.Phone = library.GetRequestParameter(r, "phone")
-	request.LId = library.GetRequestParameter(r, "lid")
+	request.LId = normalizeLIDInput(library.GetRequestParameter(r, "lid"))
 
 	response := api.UserIdentifierResponse{}
 
@@ -124,11 +115,24 @@ func GetUserIdentifierController(w http.ResponseWriter, r *http.Request) {
 			RespondInterface(w, response)
 			return
 		}
+
+		if len(lid) == 0 {
+			response.ParseError(fmt.Errorf("lid not found for phone"))
+			RespondInterface(w, response)
+			return
+		}
+
 		response.LId = lid
 	} else if len(request.LId) > 0 {
 		phone, err := GetPhoneFromLId(r, request.LId)
 		if err != nil {
 			response.ParseError(fmt.Errorf("failed to get phone from LId: %v", err))
+			RespondInterface(w, response)
+			return
+		}
+
+		if len(phone) == 0 {
+			response.ParseError(fmt.Errorf("phone not found for lid"))
 			RespondInterface(w, response)
 			return
 		}
@@ -151,13 +155,6 @@ func GetLIdFromPhone(r *http.Request, phone string) (response string, err error)
 		return response, err
 	}
 
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		return response, err
-	}
-
 	contactManager := server.GetContactManager()
 	return contactManager.GetLIDFromPhone(phone)
 }
@@ -168,15 +165,27 @@ func GetPhoneFromLId(r *http.Request, lid string) (response string, err error) {
 		return response, err
 	}
 
-	// Checking for ready state
-	status := server.GetStatus()
-	if status != whatsapp.Ready {
-		err = &ApiServerNotReadyException{Wid: server.GetWId(), Status: status}
-		return response, err
+	lid = normalizeLIDInput(lid)
+	if len(lid) == 0 {
+		return response, fmt.Errorf("invalid lid")
 	}
 
 	contactManager := server.GetContactManager()
 	return contactManager.GetPhoneFromLID(lid)
+}
+
+// normalizeLIDInput trims surrounding spaces and ensures @lid suffix.
+func normalizeLIDInput(source string) string {
+	lid := strings.TrimSpace(source)
+	if len(lid) == 0 {
+		return ""
+	}
+
+	if !strings.HasSuffix(lid, "@lid") {
+		lid += "@lid"
+	}
+
+	return lid
 }
 
 //endregion

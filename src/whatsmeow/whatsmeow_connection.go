@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 
@@ -33,9 +34,11 @@ type WhatsmeowConnection struct {
 	WakeUpScheduler *WakeUpScheduler         // composition for scheduled presence wake-ups
 	// call managers intentionally omitted per request (do not include CallManager / SIPCallManager)
 
-	failedToken  bool
-	paired       func(string)
-	IsConnecting bool `json:"isconnecting"` // used to avoid multiple connection attempts
+	failedToken bool
+	paired      func(string)
+	// Keep connection-in-progress state atomic because status and connect paths are
+	// touched from different goroutines.
+	isConnecting atomic.Bool
 }
 
 //#region IMPLEMENT WHATSAPP CONNECTION OPTIONS INTERFACE
@@ -74,14 +77,14 @@ func (conn *WhatsmeowConnection) GetChatTitle(wid string) string {
 func (source *WhatsmeowConnection) Connect() (err error) {
 	source.GetLogger().Info("starting whatsmeow connection")
 
-	if source.IsConnecting {
+	if source.IsConnecting() {
 		return
 	}
 
-	source.IsConnecting = true
+	source.isConnecting.Store(true)
 
 	err = source.Client.Connect()
-	source.IsConnecting = false
+	source.isConnecting.Store(false)
 
 	if err != nil {
 		source.failedToken = true
@@ -94,6 +97,15 @@ func (source *WhatsmeowConnection) Connect() (err error) {
 
 	source.failedToken = false
 	return
+}
+
+// IsConnecting returns a concurrency-safe snapshot of current connect attempt.
+func (source *WhatsmeowConnection) IsConnecting() bool {
+	if source == nil {
+		return false
+	}
+
+	return source.isConnecting.Load()
 }
 
 // func (cli *Client) Download(msg DownloadableMessage) (data []byte, err error)
@@ -245,6 +257,95 @@ func isASCII(s string) bool {
 	return true
 }
 
+// region error 463
+// try to fix recipient session-routing issue
+func isSendError463(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "server returned error 463")
+}
+
+func (source *WhatsmeowConnection) resolveLIDRetryJID(currentJID types.JID) (types.JID, bool) {
+	if source == nil || source.GetContactManager() == nil {
+		return types.EmptyJID, false
+	}
+
+	phone, err := whatsapp.GetPhoneIfValid(currentJID.String())
+	if err != nil || len(phone) == 0 {
+		return types.EmptyJID, false
+	}
+
+	lid, err := source.GetContactManager().GetLIDFromPhone(phone)
+	if err != nil || len(lid) == 0 {
+		return types.EmptyJID, false
+	}
+
+	lidJID, err := types.ParseJID(lid)
+	if err != nil || lidJID.IsEmpty() {
+		return types.EmptyJID, false
+	}
+
+	if lidJID.String() == currentJID.String() {
+		return types.EmptyJID, false
+	}
+
+	return lidJID, true
+}
+
+func (source *WhatsmeowConnection) resetSignalStateForTargets(targets ...types.JID) {
+	if source == nil || source.Client == nil || source.Client.Store == nil {
+		return
+	}
+
+	ctx := context.Background()
+	logentry := source.GetLogger()
+	seen := make(map[string]bool)
+
+	for _, target := range targets {
+		if target.IsEmpty() {
+			continue
+		}
+
+		signalUser := target.SignalAddressUser()
+		if len(signalUser) == 0 || seen[signalUser] {
+			continue
+		}
+		seen[signalUser] = true
+
+		if err := source.Client.Store.Identities.DeleteAllIdentities(ctx, signalUser); err != nil {
+			logentry.Warnf("failed to clear identities for %s: %v", signalUser, err)
+		}
+
+		if err := source.Client.Store.Sessions.DeleteAllSessions(ctx, signalUser); err != nil {
+			logentry.Warnf("failed to clear sessions for %s: %v", signalUser, err)
+		}
+
+		logentry.Debugf("cleared signal state for retry target: %s", signalUser)
+	}
+}
+
+func (source *WhatsmeowConnection) logPrivacyTokenStatus(target types.JID) {
+	if source == nil || source.Client == nil || source.Client.Store == nil {
+		return
+	}
+
+	logentry := source.GetLogger()
+	token, err := source.Client.Store.PrivacyTokens.GetPrivacyToken(context.Background(), target)
+	if err != nil {
+		logentry.Warnf("failed to read privacy token for %s: %v", target, err)
+		return
+	}
+
+	if token == nil {
+		logentry.Debugf("no privacy token available for %s", target)
+		return
+	}
+
+	logentry.Debugf("privacy token found for %s (ts: %s)", target, token.Timestamp)
+}
+
+// endregion
 func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
 
 	var contextInfo *waE2E.ContextInfo
@@ -252,17 +353,24 @@ func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) 
 		contextInfo = source.GetInReplyContextInfo(msg)
 	}
 
+	messageText := msg.GetText()
+
 	// mentions ---------------------------------------
 	if msg.FromGroup() {
-		messageText := msg.GetText()
-		mentions := GetMentions(messageText)
-		if len(mentions) > 0 {
-
+		if ContainsMentionAll(messageText) {
+			// @all notifies all participants in the group
 			if contextInfo == nil {
 				contextInfo = &waE2E.ContextInfo{}
 			}
-
-			contextInfo.MentionedJID = mentions
+			contextInfo.NonJIDMentions = proto.Uint32(1)
+		} else {
+			mentions := GetMentions(messageText)
+			if len(mentions) > 0 {
+				if contextInfo == nil {
+					contextInfo = &waE2E.ContextInfo{}
+				}
+				contextInfo.MentionedJID = mentions
+			}
 		}
 	}
 
@@ -278,6 +386,9 @@ func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) 
 
 func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
 	logentry := source.GetLogger()
+	if source == nil || len(msg.InReply) == 0 {
+		return nil
+	}
 
 	// default information for cached messages
 	var info types.MessageInfo
@@ -286,7 +397,15 @@ func (source *WhatsmeowConnection) GetInReplyContextInfo(msg whatsapp.WhatsappMe
 	// (optional) another devices will process anyway, but our devices will show quoted only if it exists on cache
 	var quoted *waE2E.Message
 
-	cached, _ := source.GetHandlers().WAHandlers.GetById(msg.InReply)
+	if !source.HasValidHandlers() {
+		logentry.Warnf("handlers unavailable, reply context will include stanza only for msg id: %s", msg.InReply)
+		return &waE2E.ContextInfo{
+			StanzaID: proto.String(msg.InReply),
+		}
+	}
+	handlers := source.GetHandlers()
+
+	cached, _ := handlers.WAHandlers.GetById(msg.InReply)
 	if cached != nil {
 
 		// update cached info
@@ -396,12 +515,14 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 		}
 	} else if !msg.HasAttachment() {
 		// Text messages, buttons, polls
+		// NOTE: WhatsApp blocks ButtonsMessage (deprecated) and InteractiveMessage/NativeFlowMessage
+		// for accounts not connected via the official Business Cloud API. Both types are accepted by
+		// the send endpoint but never delivered. Convert $buttons:[...] to plain formatted text.
 		if IsValidForButtons(messageText) {
-			internal := GenerateButtonsMessage(messageText)
+			formattedText := ConvertButtonsToText(messageText)
+			internal := &waE2E.ExtendedTextMessage{Text: &formattedText}
 			internal.ContextInfo = source.GetContextInfo(*msg)
-			newMessage = &waE2E.Message{
-				ButtonsMessage: internal,
-			}
+			newMessage = &waE2E.Message{ExtendedTextMessage: internal}
 		} else {
 			if msg.Poll != nil {
 				newMessage, err = GeneratePollMessage(msg)
@@ -436,10 +557,57 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 		msg.Content = newMessage
 	}
 
+	source.logPrivacyTokenStatus(jid)
 	resp, err := source.Client.SendMessage(context.Background(), jid, newMessage, extra)
 	if err != nil {
 		logentry.Errorf("whatsmeow connection send error: %s", err)
-		return msg, err
+		retryJID := types.EmptyJID
+		// region error 463 retry
+		if isSendError463(err) && jid.Server == types.DefaultUserServer {
+			if resolvedRetryJID, ok := source.resolveLIDRetryJID(jid); ok {
+				retryJID = resolvedRetryJID
+				logentry.Warnf("send failed with 463 for %s, retrying once via LID %s", jid, retryJID)
+
+				msg.Chat.Id = retryJID.String()
+				msg.Id = source.Client.GenerateMessageID()
+				extra.ID = msg.Id
+
+				source.logPrivacyTokenStatus(retryJID)
+				resp, err = source.Client.SendMessage(context.Background(), retryJID, newMessage, extra)
+				if err != nil {
+					logentry.Errorf("LID retry after 463 failed: %s", err)
+				} else {
+					logentry.Infof("send succeeded after 463 retry via LID: %s", retryJID)
+				}
+			}
+		}
+
+		if err != nil && isSendError463(err) {
+			finalJID := jid
+			if !retryJID.IsEmpty() {
+				finalJID = retryJID
+			}
+
+			source.resetSignalStateForTargets(jid, retryJID)
+			logentry.Warnf("retrying send after signal state reset, target: %s", finalJID)
+
+			msg.Chat.Id = finalJID.String()
+			msg.Id = source.Client.GenerateMessageID()
+			extra.ID = msg.Id
+
+			source.logPrivacyTokenStatus(finalJID)
+			resp, err = source.Client.SendMessage(context.Background(), finalJID, newMessage, extra)
+			if err != nil {
+				logentry.Errorf("final retry after signal state reset failed: %s", err)
+			} else {
+				logentry.Infof("send succeeded after signal state reset retry: %s", finalJID)
+			}
+		}
+
+		if err != nil {
+			return msg, err
+		}
+		//endregion
 	}
 
 	// updating timestamp
@@ -491,7 +659,10 @@ func (source *WhatsmeowConnection) UploadAttachment(msg whatsapp.WhatsappMessage
 		return
 	}
 
-	inreplycontext := source.GetInReplyContextInfo(msg)
+	var inreplycontext *waE2E.ContextInfo
+	if len(msg.InReply) > 0 {
+		inreplycontext = source.GetInReplyContextInfo(msg)
+	}
 	result = NewWhatsmeowMessageAttachment(response, msg, mediaType, inreplycontext)
 	return
 }
@@ -509,10 +680,10 @@ func (conn *WhatsmeowConnection) Disconnect() (err error) {
 
 // dispatchPairRequestEvent dispatches a system event when pairing is requested
 func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching pair_request event")
@@ -543,10 +714,10 @@ func (conn *WhatsmeowConnection) dispatchPairRequestEvent(phone string) {
 
 // dispatchPairTimeoutEvent dispatches a system event when pairing expires/fails
 func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg string) {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching pair_timeout event")
@@ -589,10 +760,10 @@ func (conn *WhatsmeowConnection) dispatchPairTimeoutEvent(phone string, errorMsg
 
 // dispatchQRRequestEvent dispatches a system event when QR code is requested
 func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching qr_request event")
@@ -632,10 +803,10 @@ func (conn *WhatsmeowConnection) dispatchQRRequestEvent() {
 
 // dispatchQRTimeoutEvent dispatches a system event when QR code expires/times out
 func (conn *WhatsmeowConnection) dispatchQRTimeoutEvent() {
-	handlers := conn.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !conn.HasValidHandlers() {
 		return
 	}
+	handlers := conn.GetHandlers()
 
 	logger := conn.GetLogger()
 	logger.Debug("dispatching qr_timeout event")
@@ -726,9 +897,10 @@ func (conn *WhatsmeowConnection) GetWhatsAppQRCode() string {
 
 	evt, ok := <-qrChan
 	if ok {
-		if evt.Event == "code" {
+		switch evt.Event {
+		case "code":
 			result = evt.Code
-		} else if evt.Event == "timeout" {
+		case "timeout":
 			// QR code timed out - dispatch event
 			logger.Warn("QR code timed out")
 			conn.dispatchQRTimeoutEvent()
@@ -875,11 +1047,11 @@ func (source *WhatsmeowConnection) AutoReconnectHook(disconnectError error) bool
 func (source *WhatsmeowConnection) getMessageForRetry(requester, to types.JID, id types.MessageID) *waE2E.Message {
 	logentry := source.GetLogger()
 
-	handlers := source.GetHandlers()
-	if handlers == nil || handlers.WAHandlers == nil || handlers.WAHandlers.IsInterfaceNil() {
+	if !source.HasValidHandlers() {
 		logentry.Warnf("GetMessageForRetry: no handlers available for message %s", id)
 		return nil
 	}
+	handlers := source.GetHandlers()
 
 	// Try to get message from QuePasa's cache
 	cached, err := handlers.WAHandlers.GetById(string(id))
@@ -1123,6 +1295,13 @@ func (conn *WhatsmeowConnection) GetResume() *whatsapp.WhatsappConnectionStatus 
 // Handlers are always created during connection creation via CreateConnection()
 func (conn *WhatsmeowConnection) GetHandlers() *WhatsmeowHandlers {
 	return conn.Handlers
+}
+
+// HasValidHandlers returns true when handlers are initialized and the WhatsApp
+// handler interface is ready to receive messages.
+func (conn *WhatsmeowConnection) HasValidHandlers() bool {
+	h := conn.Handlers
+	return h != nil && h.WAHandlers != nil && !h.WAHandlers.IsInterfaceNil()
 }
 
 // SendChatPresence updates typing status in a chat

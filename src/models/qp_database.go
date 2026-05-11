@@ -22,11 +22,12 @@ import (
 )
 
 type QpDatabase struct {
-	Parameters  library.DatabaseParameters `json:"parameters,omitempty"`
-	Connection  *sqlx.DB
-	Users       QpDataUsersInterface
-	Servers     QpDataServersInterface
-	Dispatching QpDataDispatchingInterface
+	Parameters         library.DatabaseParameters `json:"parameters,omitempty"`
+	Connection         *sqlx.DB
+	Users              QpDataUsersInterface
+	Servers            QpDataServersInterface
+	Dispatching        QpDataDispatchingInterface
+	ConversationLabels QpDataConversationLabelsInterface
 }
 
 var (
@@ -70,13 +71,15 @@ func GetDatabase() *QpDatabase {
 	var iusers = QpDataUserSql{db}
 	var iservers = QpDataServerSql{db}
 	var idispatching = QpDataServerDispatchingSql{db}
+	var iconversationlabels = QpDataConversationLabelSql{db}
 
 	return &QpDatabase{
 		dbParameters,
 		db,
 		iusers,
 		iservers,
-		idispatching}
+		idispatching,
+		iconversationlabels}
 }
 
 // NewQpDataUserSql creates a new QpDataUserSql instance with the given database connection
@@ -92,6 +95,11 @@ func NewQpDataServerDispatchingSql(db *sqlx.DB) QpDataDispatchingInterface {
 // NewQpDataServerSql creates a new QpDataServerSql instance with the given database connection
 func NewQpDataServerSql(db *sqlx.DB) QpDataServersInterface {
 	return QpDataServerSql{db}
+}
+
+// NewQpDataConversationLabelSql creates a new QpDataConversationLabelSql instance with the given database connection
+func NewQpDataConversationLabelSql(db *sqlx.DB) QpDataConversationLabelsInterface {
+	return QpDataConversationLabelSql{db}
 }
 
 // MigrateToLatest updates the database to the latest schema
@@ -141,8 +149,23 @@ func MigrateToLatest(logentry *log.Entry) (err error) {
 }
 
 func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
+	fullPath = strings.TrimRight(fullPath, "/\\")
 	log.Debugf("migrating files from: %s", fullPath)
 	files, err := os.ReadDir(fullPath)
+	if err != nil {
+		// Common case: binary is started from repo root, but migrations live in src/migrations.
+		// If <workdir>/migrations doesn't exist, fall back to <workdir>/src/migrations.
+		alt := filepath.Join(filepath.Dir(fullPath), "src", "migrations")
+		alt = strings.TrimRight(alt, "/\\")
+		if alt != fullPath {
+			if altFiles, altErr := os.ReadDir(alt); altErr == nil {
+				log.Infof("migrations path fallback: using %s", alt)
+				fullPath = alt
+				files = altFiles
+				err = nil
+			}
+		}
+	}
 	if err != nil {
 		if strings.Contains(err.Error(), "cannot find the file specified") {
 			log.Warnf("no migrations found at: %s", fullPath)
@@ -211,9 +234,10 @@ func GetBase() migrate.SqlxMigration {
 	  
 	  CREATE TABLE IF NOT EXISTS "servers" (
 		"token" CHAR (100) PRIMARY KEY UNIQUE NOT NULL,
-		"wid" VARCHAR (255) UNIQUE NOT NULL,
+		"wid" VARCHAR (255) UNIQUE,
 		"verified" BOOLEAN NOT NULL DEFAULT FALSE,
 		"devel" BOOLEAN NOT NULL DEFAULT FALSE,
+		"metadata" TEXT DEFAULT NULL,
 		"groups" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
   		"readreceipts" INT(1) NOT NULL DEFAULT 0,
@@ -233,11 +257,38 @@ func GetBase() migrate.SqlxMigration {
   		"groups" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
 		"extra" BLOB DEFAULT NULL,
+		"failure" TIMESTAMP DEFAULT NULL,
+		"success" TIMESTAMP DEFAULT NULL,
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		CONSTRAINT "dispatching_pkey" PRIMARY KEY ("context", "connection_string")
 	  );
+
+	  CREATE TABLE IF NOT EXISTS "conversation_labels" (
+		"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+		"user" CHAR (255) NOT NULL REFERENCES "users"("username"),
+		"name" VARCHAR (100) NOT NULL COLLATE NOCASE,
+		"color" VARCHAR (32) DEFAULT '',
+		"active" BOOLEAN NOT NULL DEFAULT TRUE,
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "conversation_labels_user_name_key" UNIQUE ("user", "name")
+	  );
+
+	  CREATE TABLE IF NOT EXISTS "conversation_label_links" (
+		"server_token" CHAR (100) NOT NULL REFERENCES "servers"("token"),
+		"chat_id" VARCHAR (255) NOT NULL,
+		"label_id" INTEGER NOT NULL REFERENCES "conversation_labels"("id"),
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "conversation_label_links_pkey" PRIMARY KEY ("server_token", "chat_id", "label_id")
+	  );
+
+	  CREATE INDEX IF NOT EXISTS "idx_conversation_label_links_server_chat" ON "conversation_label_links" ("server_token", "chat_id");
 	  
-	  INSERT OR REPLACE INTO migrations (id) VALUES
+	  -- IMPORTANT:
+	  -- This seed is only applied on brand-new/empty databases (base migration).
+	  -- It marks historical migrations as applied because the base schema already
+	  -- includes their end-state. Do NOT add new migration IDs here unless the
+	  -- base schema was also updated to include the same changes.
+	  INSERT OR IGNORE INTO migrations (id) VALUES
 	  ('202207131700'),
 	  ('202209281840'),
 	  ('202303011900'),
@@ -245,7 +296,11 @@ func GetBase() migrate.SqlxMigration {
 	  ('202403021242'),
 	  ('202403141920'),
 	  ('202512151400'),
-	  ('202512231500');
+	  ('202512231500'),
+	  ('202602241200'),
+	  ('202604221930'),
+	  ('202604251130'),
+	  ('202604281430');
 	  `, "")
 	return migration
 }
@@ -299,7 +354,7 @@ func MigrationHandler_202303011900(id string) {
 	db := GetDatabase()
 	servers := db.Servers.FindAll()
 	for _, server := range servers {
-		oldWid := server.Wid
+		oldWid := server.GetWId()
 		if strings.HasSuffix(oldWid, "@migrated") {
 			phone := library.GetPhoneByWId(oldWid)
 			store, err := whatsmeow.WhatsmeowService.GetStoreForMigrated(phone)
@@ -308,7 +363,7 @@ func MigrationHandler_202303011900(id string) {
 				continue
 			}
 
-			server.Wid = store.ID.String()
+			server.SetWId(store.ID.String())
 			err = db.Servers.Update(server)
 			if err != nil {
 				log.Fatalf("error at update server: %s", err.Error())

@@ -1,0 +1,47 @@
+:root{
+  --primary-color: #00034B;
+  --font-sans: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
+  --text-primary: #18212f;
+  --text-secondary: #5f6c82;
+}
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body{
+  background: #f8f9fa;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+button,
+input,
+select,
+textarea,
+a {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
+  letter-spacing: -0.03em;
+}
+
+.navbar.bg-primary{
+  background: var(--primary-color) !important;
+}
+
+.container{
+  max-width: 1180px;
+}

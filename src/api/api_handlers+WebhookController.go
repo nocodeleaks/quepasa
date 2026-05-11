@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -19,7 +20,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{url=string,bearer_token=string,method=string,failure_url=string,failure_bearer_token=string,failure_method=string}	false	"Webhook config (for POST/DELETE)"
-//	@Success		200		{object}	models.QpWebhookResponse
+//	@Success		200		{object}	api.WebhookResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/webhook [get]
@@ -30,15 +31,20 @@ func WebhookController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpWebhookResponse{}
-
 	server, err := GetServer(r)
 	if err != nil {
+		response := &apiModels.WebhookResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	WebhookWithServer(w, r, server)
+}
+
+// WebhookWithServer applies the current webhook CRUD behavior to a resolved server.
+func WebhookWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
+	response := &apiModels.WebhookResponse{}
 	logger := server.GetLogger()
 
 	// reading body to avoid converting to json if empty
@@ -71,7 +77,7 @@ func WebhookController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// updating wid for logging and response headers
-	webhook.Wid = server.Wid
+	webhook.Wid = server.GetWId()
 
 	switch os := r.Method; os {
 	case http.MethodPost:

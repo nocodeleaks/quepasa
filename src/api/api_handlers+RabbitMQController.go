@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 )
@@ -22,7 +23,7 @@ import (
 //	@Produce		json
 //	@Param			request				body		object{connection_string=string,exchange=string,routing_key=string}	false	"RabbitMQ config (for POST)"
 //	@Param			connection_string	query		string																false	"Connection string (for DELETE)"
-//	@Success		200					{object}	models.QpRabbitMQResponse
+//	@Success		200					{object}	api.RabbitMQResponse
 //	@Failure		400					{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/rabbitmq [get]
@@ -33,15 +34,20 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpRabbitMQResponse{}
-
 	server, err := GetServer(r)
 	if err != nil {
+		response := &apiModels.RabbitMQResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	RabbitMQWithServer(w, r, server)
+}
+
+// RabbitMQWithServer applies the current RabbitMQ CRUD behavior to a resolved server.
+func RabbitMQWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
+	response := &apiModels.RabbitMQResponse{}
 	logger := server.GetLogger()
 
 	// reading body to avoid converting to json if empty
@@ -74,7 +80,7 @@ func RabbitMQController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// updating wid for logging and response headers
-	rabbitmqConfig.Wid = server.Wid
+	rabbitmqConfig.Wid = server.GetWId()
 
 	switch os := r.Method; os {
 	case http.MethodPost:

@@ -10,6 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 var (
@@ -52,15 +53,17 @@ func createTestSchema(db *sqlx.DB) error {
 		-- Servers table
 		CREATE TABLE IF NOT EXISTS servers (
 			token TEXT PRIMARY KEY,
-			wid TEXT,
+			wid TEXT UNIQUE,
 			user TEXT NOT NULL,
 			verified BOOLEAN DEFAULT 0,
 			devel BOOLEAN DEFAULT 0,
+			metadata TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 			groups INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,
+			readupdate INTEGER DEFAULT 1,
 			FOREIGN KEY (user) REFERENCES users(username)
 		);
 
@@ -78,6 +81,24 @@ func createTestSchema(db *sqlx.DB) error {
 			readreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,
 			PRIMARY KEY (context, connection_string)
+		);
+
+		CREATE TABLE IF NOT EXISTS conversation_labels (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user TEXT NOT NULL,
+			name TEXT NOT NULL COLLATE NOCASE,
+			color TEXT DEFAULT '',
+			active BOOLEAN DEFAULT 1,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE (user, name)
+		);
+
+		CREATE TABLE IF NOT EXISTS conversation_label_links (
+			server_token TEXT NOT NULL,
+			chat_id TEXT NOT NULL,
+			label_id INTEGER NOT NULL,
+			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (server_token, chat_id, label_id)
 		);
 	`
 
@@ -113,6 +134,9 @@ func SetupTestService(t *testing.T) {
 
 		// Initialize Servers interface
 		models.WhatsappService.DB.Servers = models.NewQpDataServerSql(testDB)
+
+		// Initialize Conversation Labels interface
+		models.WhatsappService.DB.ConversationLabels = models.NewQpDataConversationLabelSql(testDB)
 	}
 }
 
@@ -150,10 +174,10 @@ func CreateTestServer(t *testing.T, token, username string) *models.QpWhatsappSe
 
 	serverInfo := &models.QpServer{
 		Token: token,
-		User:  username,
 	}
+	serverInfo.SetUser(username)
 
-	server, err := models.WhatsappService.AppendNewServer(serverInfo)
+	server, err := runtime.LoadSessionRecord(serverInfo)
 	if err != nil {
 		t.Fatalf("Failed to create test server %s: %v", token, err)
 	}
@@ -166,11 +190,20 @@ func SetupTestMasterKey(t *testing.T, masterKey string) func() {
 	t.Helper()
 
 	oldMasterKey := environment.Settings.API.MasterKey
+	oldEnvMasterKey, hadEnvMasterKey := os.LookupEnv(models.ENV_MASTER_KEY)
 	environment.Settings.API.MasterKey = masterKey
+	if err := os.Setenv(models.ENV_MASTER_KEY, masterKey); err != nil {
+		t.Fatalf("failed to set master key env: %v", err)
+	}
 
 	// Return cleanup function
 	return func() {
 		environment.Settings.API.MasterKey = oldMasterKey
+		if !hadEnvMasterKey {
+			_ = os.Unsetenv(models.ENV_MASTER_KEY)
+			return
+		}
+		_ = os.Setenv(models.ENV_MASTER_KEY, oldEnvMasterKey)
 	}
 }
 

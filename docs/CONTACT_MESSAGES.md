@@ -412,7 +412,7 @@ You can bypass auto-detection by providing your own vCard:
 └────────────────────┬────────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              QpSendRequest.ToWhatsappMessage()              │
+│              API SendRequest.ToWhatsappMessage()            │
 │  • Creates WhatsappMessage                                  │
 │  • Sets Type = ContactMessageType                           │
 │  • Returns early (prevents type override)                   │
@@ -481,16 +481,16 @@ type WhatsappContact struct {
 }
 ```
 
-#### 2. QpSendRequest
-**File:** `src/models/qp_send_request.go`
+#### 2. API SendRequest
+**File:** `src/api/models/send_request.go`
 
 ```go
-type QpSendRequest struct {
+type SendRequest struct {
     // ... other fields
     Contact *whatsapp.WhatsappContact `json:"contact,omitempty"`
 }
 
-func (source *QpSendRequest) ToWhatsappMessage() (*whatsapp.WhatsappMessage, error) {
+func (source *SendRequest) ToWhatsappMessage() (*whatsapp.WhatsappMessage, error) {
     // Contact handling
     if source.Contact != nil {
         result.Contact = source.Contact
@@ -500,6 +500,12 @@ func (source *QpSendRequest) ToWhatsappMessage() (*whatsapp.WhatsappMessage, err
     // ... other types
 }
 ```
+
+Transport note:
+
+- this request contract now lives in the API boundary instead of `src/models`
+- the internal runtime still receives a `whatsapp.WhatsappMessage` after
+    projection
 
 #### 3. WhatsmeowConnection.Send()
 **File:** `src/whatsmeow/whatsmeow_connection.go` (lines ~357-380)
@@ -794,7 +800,7 @@ No specific environment variables required. Uses standard QuePasa configuration.
 | File | Purpose |
 |------|---------|
 | `src/whatsapp/whatsapp_contact.go` | Contact data structure |
-| `src/models/qp_send_request.go` | API request model |
+| `src/api/models/send_request.go` | API request model |
 | `src/api/api_handlers+SendController.go` | Send endpoint handler |
 | `src/whatsmeow/whatsmeow_connection.go` | Core implementation |
 | `tests/test-contact-send.ps1` | Basic test script |

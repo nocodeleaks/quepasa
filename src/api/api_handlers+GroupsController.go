@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
@@ -23,7 +24,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			groupId	query		string	true	"Group ID"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/get [get]
@@ -32,7 +33,7 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {
@@ -71,7 +72,7 @@ func GetGroupController(w http.ResponseWriter, r *http.Request) {
 //	@Tags			Groups
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	models.QpGroupsResponse
+//	@Success		200	{object}	api.GroupsResponse
 //	@Failure		400	{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/getall [get]
@@ -79,7 +80,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpGroupsResponse{}
+	response := &apiModels.GroupsResponse{}
 
 	// Get the server from the request
 	server, err := GetServer(r)
@@ -116,7 +117,7 @@ func FetchAllGroupsController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{title=string,participants=[]string}	true	"Group creation request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/create [post]
@@ -124,7 +125,7 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	// Get server
 	server, err := GetServer(r)
@@ -196,14 +197,14 @@ func CreateGroupController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,name=string}	true	"Group name update request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/name [put]
 func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	type setGroupNameStruct struct {
 		GroupJID string `json:"group_jid"`
@@ -262,7 +263,7 @@ func SetGroupNameController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,remove_img=boolean}	true	"Group photo update request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/photo [put]
@@ -376,13 +377,13 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,participants=[]string,action=string}	true	"Participants update request"
-//	@Success		200		{object}	models.QpParticipantResponse
+//	@Success		200		{object}	api.ParticipantResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/participants [put]
 func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	response := &models.QpParticipantResponse{}
+	response := &apiModels.ParticipantResponse{}
 
 	type participantUpdate struct {
 		GroupJID     string   `json:"group_jid"`
@@ -454,14 +455,14 @@ func UpdateGroupParticipantsController(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			request		body		object{group_jid=string,participants=[]string,action=string}	true	"Membership request"
 //	@Param			group_jid	query		string															false	"Group JID (for GET requests)"
-//	@Success		200			{object}	models.QpRequestResponse
+//	@Success		200			{object}	api.RequestResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/requests [get]
 //	@Router			/groups/requests [post]
 func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	response := &models.QpRequestResponse{}
+	response := &apiModels.RequestResponse{}
 
 	type membershipRequest struct {
 		GroupJID     string   `json:"group_jid"`
@@ -550,14 +551,14 @@ func GroupMembershipRequestsController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{group_jid=string,topic=string}	true	"Group topic update request"
-//	@Success		200		{object}	models.QpSingleGroupResponse
+//	@Success		200		{object}	api.SingleGroupResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/groups/description [put]
 func SetGroupTopicController(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpSingleGroupResponse{}
+	response := &apiModels.SingleGroupResponse{}
 
 	type setGroupTopicStruct struct {
 		GroupJID string `json:"group_jid"`
@@ -662,3 +663,87 @@ func LeaveGroupController(w http.ResponseWriter, r *http.Request) {
 	response.ParseSuccess("successfully left the group")
 	RespondSuccess(w, response)
 }
+
+//region CONTROLLER - GET GROUP INVITE LINK
+
+// GetGroupInviteLinkController retrieves the current invite link for a group
+//
+//	@Summary		Get group invite link
+//	@Description	Retrieves the current invite link for a WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			groupId	query		string	true	"Group ID"
+//	@Success		200		{object}	api.InviteResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/invite [get]
+func GetGroupInviteLinkController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	server, err := GetServer(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	groupId := library.GetRequestParameter(r, "groupid")
+	if !whatsapp.IsValidGroupId(groupId) {
+		RespondErrorCode(w, fmt.Errorf("invalid group id: %s", groupId), http.StatusBadRequest)
+		return
+	}
+
+	url, err := server.GetGroupManager().GetInvite(groupId)
+	if err != nil {
+		RespondServerError(server, w, err)
+		return
+	}
+
+	response := &apiModels.InviteResponse{}
+	response.Url = url
+	RespondSuccess(w, response)
+}
+
+//endregion
+
+//region CONTROLLER - REVOKE GROUP INVITE LINK
+
+// RevokeGroupInviteLinkController revokes the current invite link and returns the new one
+//
+//	@Summary		Revoke group invite link
+//	@Description	Revokes the current invite link for a WhatsApp group and returns the new one
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			groupId	query		string	true	"Group ID"
+//	@Success		200		{object}	api.InviteResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/groups/invite [delete]
+func RevokeGroupInviteLinkController(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	server, err := GetServer(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	groupId := library.GetRequestParameter(r, "groupid")
+	if !whatsapp.IsValidGroupId(groupId) {
+		RespondErrorCode(w, fmt.Errorf("invalid group id: %s", groupId), http.StatusBadRequest)
+		return
+	}
+
+	url, err := server.GetGroupManager().RevokeInvite(groupId)
+	if err != nil {
+		RespondServerError(server, w, err)
+		return
+	}
+
+	response := &apiModels.InviteResponse{}
+	response.Url = url
+	RespondSuccess(w, response)
+}
+
+//endregion

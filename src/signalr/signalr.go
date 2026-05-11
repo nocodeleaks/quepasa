@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	kitlog "github.com/go-kit/log"
+	dispatchservice "github.com/nocodeleaks/quepasa/dispatch/service"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	signalr "github.com/philippseith/signalr"
 	log "github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ func init() {
 	// This allows SignalR to be configured without the webserver module
 	// needing to know specifically about SignalR
 	webserver.RegisterRouterConfigurator(Configure)
+	dispatchservice.RegisterRealtimePublisher(realtimeDispatchPublisher{})
 }
 
 // Configure automatically configures SignalR routes in the router

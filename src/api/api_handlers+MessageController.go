@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 )
 
@@ -20,7 +21,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			messageid	path		string	true	"Message ID"
-//	@Success		200			{object}	models.QpMessageResponse
+//	@Success		200			{object}	api.MessageResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/message/{messageid} [get]
@@ -29,7 +30,7 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 	// setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpMessageResponse{}
+	response := &apiModels.MessageResponse{}
 
 	server, err := GetServer(r)
 	if err != nil {
@@ -56,7 +57,7 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response.ParseSuccess("found")
-		response.Message = msg
+		response.Message = models.CloneAndEnrichMessageForServer(server, msg)
 		RespondSuccess(w, response)
 	}
 }
@@ -69,7 +70,7 @@ func GetMessageController(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			messageid	path		string	true	"Message ID"
-//	@Success		200			{object}	models.QpMessageResponse
+//	@Success		200			{object}	api.MessageResponse
 //	@Failure		400			{object}	models.QpResponse
 //	@Security		ApiKeyAuth
 //	@Router			/message/{messageid} [delete]

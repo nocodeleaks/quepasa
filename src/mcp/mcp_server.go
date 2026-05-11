@@ -10,6 +10,7 @@ import (
 
 	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -212,8 +213,9 @@ func (s *MCPServer) authenticate(r *http.Request) (*models.QpWhatsappServer, str
 	}
 
 	// PRIORITY 2: Check if token matches a specific server token (limited access)
-	log.Debugf("MCP auth: checking if token is a server identifier (total_servers=%d)", len(models.WhatsappService.Servers))
-	server, ok := models.WhatsappService.Servers[token]
+	sessions := runtime.ListLiveSessions()
+	log.Debugf("MCP auth: checking if token is a server identifier (total_servers=%d)", len(sessions))
+	server, ok := runtime.FindLiveSessionByToken(token)
 	if ok {
 		log.Debugf("MCP auth: SERVER TOKEN authenticated - limited access to server: %s", server.Token)
 		return server, "bot", nil

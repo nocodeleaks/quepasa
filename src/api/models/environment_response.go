@@ -8,6 +8,7 @@ import (
 // EnvironmentResponse represents environment settings response
 type EnvironmentResponse struct {
 	models.QpResponse
-	Settings *environment.EnvironmentSettings        `json:"settings,omitempty"`
-	Preview  *environment.EnvironmentSettingsPreview `json:"preview,omitempty"`
+	Settings            *environment.EnvironmentSettings        `json:"settings,omitempty"`
+	Preview             *environment.EnvironmentSettingsPreview `json:"preview,omitempty"`
+	MasterKeyConfigured *bool                                   `json:"masterKeyConfigured,omitempty"`
 }

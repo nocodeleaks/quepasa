@@ -5,9 +5,23 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	api "github.com/nocodeleaks/quepasa/api/models"
+	models "github.com/nocodeleaks/quepasa/models"
 )
+
+type infoResponseServer struct {
+	Token string `json:"token"`
+	User  string `json:"user,omitempty"`
+	State string `json:"state,omitempty"`
+}
+
+type infoResponse struct {
+	Success    bool                           `json:"success"`
+	Version    string                         `json:"version,omitempty"`
+	Server     *infoResponseServer            `json:"server,omitempty"`
+	Diagnostic *models.QpConnectionDiagnostic `json:"diagnostic,omitempty"`
+}
 
 // TestInfoEndpoint_NoAuthentication tests /info endpoint without authentication
 func TestInfoEndpoint_NoAuthentication(t *testing.T) {
@@ -32,7 +46,7 @@ func TestInfoEndpoint_NoAuthentication(t *testing.T) {
 	}
 
 	// Parse response
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -68,6 +82,17 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 
 	CreateTestUser(t, testUser, testPassword)
 	server := CreateTestServer(t, testToken, testUser)
+	occurredAt := time.Date(2026, time.April, 22, 18, 55, 16, 0, time.UTC)
+	server.SetMetadataValue("connection_diagnostic", map[string]any{
+		"code":               "logged_out_another_device",
+		"message":            "WhatsApp removed this session because another device took over the connection.",
+		"occurred_at":        occurredAt,
+		"requires_reauth":    true,
+		"suggested_action":   "Scan the QR code or request a new pairing code to connect the WhatsApp account again.",
+		"logout_reason":      "401: logged out from another device",
+		"disconnect_cause":   "logged_out",
+		"disconnect_details": "401: logged out from another device",
+	})
 
 	// Create request with bot token in header
 	req := httptest.NewRequest(http.MethodGet, "/info", nil)
@@ -86,7 +111,7 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 	}
 
 	// Parse response
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -109,7 +134,16 @@ func TestInfoEndpoint_WithBotToken(t *testing.T) {
 			t.Errorf("Expected token %s, got %s", testToken, response.Server.Token)
 		}
 		t.Logf("Server info: Token=%s, User=%s, Connected=%v",
-			response.Server.Token, response.Server.User, response.Server.GetStatus())
+			response.Server.Token, response.Server.User, response.Server.State)
+	}
+	if response.Diagnostic == nil {
+		t.Fatal("Expected diagnostic field in info response")
+	}
+	if response.Diagnostic.Code != "logged_out_another_device" {
+		t.Errorf("Expected diagnostic code logged_out_another_device, got %s", response.Diagnostic.Code)
+	}
+	if response.Diagnostic.OccurredAt == nil || !response.Diagnostic.OccurredAt.Equal(occurredAt) {
+		t.Errorf("Expected diagnostic occurred_at %s, got %+v", occurredAt, response.Diagnostic.OccurredAt)
 	}
 
 	t.Log("Bot token correctly returns base information")
@@ -142,7 +176,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 	// Test 1: Master key in header with bot token
 	t.Run("MasterKeyInHeaderWithToken", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/info", nil)
-		req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+		req.Header.Set(masterKeyHeader, testMasterKey)
 		req.Header.Set("X-QUEPASA-TOKEN", testToken)
 		rec := httptest.NewRecorder()
 
@@ -155,7 +189,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 			t.Errorf("Expected status 200 with master key, got %d", resp.StatusCode)
 		}
 
-		var response api.InformationResponse
+		var response infoResponse
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
@@ -191,7 +225,7 @@ func TestInfoEndpoint_WithMasterKey(t *testing.T) {
 			t.Errorf("Expected status 200 with master key in query, got %d", resp.StatusCode)
 		}
 
-		var response api.InformationResponse
+		var response infoResponse
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
@@ -232,6 +266,45 @@ func TestInfoEndpoint_InvalidToken(t *testing.T) {
 	t.Log("Invalid token correctly returned 204 No Content")
 }
 
+func TestInfoPost_AllowsMultiplePlaceholderServersWithEmptyWid(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+
+	testUser := "testuser"
+	testPassword := "testpass123"
+	CreateTestUser(t, testUser, testPassword)
+
+	create := func(t *testing.T, token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/info?user="+testUser, nil)
+		req.Header.Set("X-QUEPASA-TOKEN", token)
+		rec := httptest.NewRecorder()
+		CreateInformationController(rec, req)
+		return rec
+	}
+
+	// First placeholder (wid empty)
+	resp1 := create(t, "test-token-001")
+	if resp1.Result().StatusCode != http.StatusCreated {
+		t.Fatalf("Expected status 201 for first placeholder server, got %d", resp1.Result().StatusCode)
+	}
+
+	// Second placeholder (wid empty again) must also be accepted
+	resp2 := create(t, "test-token-002")
+	if resp2.Result().StatusCode != http.StatusCreated {
+		body := resp2.Body.String()
+		t.Fatalf("Expected status 201 for second placeholder server, got %d. Body: %s", resp2.Result().StatusCode, body)
+	}
+
+	// Basic response validation
+	var response infoResponse
+	if err := json.NewDecoder(resp2.Result().Body).Decode(&response); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+	if !response.Success {
+		t.Fatalf("Expected success=true for second placeholder creation, got: %+v", response)
+	}
+}
+
 // TestInfoEndpoint_AuthenticationPriority tests authentication header priority
 func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 	// Setup test environment
@@ -254,7 +327,7 @@ func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 	// Send request with both token and masterkey
 	req := httptest.NewRequest(http.MethodGet, "/info", nil)
 	req.Header.Set("X-QUEPASA-TOKEN", testToken)
-	req.Header.Set("X-QUEPASA-MASTERKEY", testMasterKey)
+	req.Header.Set(masterKeyHeader, testMasterKey)
 	rec := httptest.NewRecorder()
 
 	GetInformationController(rec, req)
@@ -266,7 +339,7 @@ func TestInfoEndpoint_AuthenticationPriority(t *testing.T) {
 		t.Errorf("Expected status 200 with both credentials, got %d", resp.StatusCode)
 	}
 
-	var response api.InformationResponse
+	var response infoResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}

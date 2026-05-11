@@ -21,6 +21,13 @@ func GetMentions(text string) (mentions []string) {
 	return
 }
 
+// ContainsMentionAll checks if text contains @all pattern (case-insensitive).
+// Used to detect when a user wants to mention all group participants.
+func ContainsMentionAll(text string) bool {
+	re := regexp.MustCompile(`(?i)@all\b`)
+	return re.MatchString(text)
+}
+
 // returns a valid chat title from local memory store
 func GetChatTitleFromWId(source *WhatsmeowConnection, wid string) string {
 	jid, err := types.ParseJID(wid)

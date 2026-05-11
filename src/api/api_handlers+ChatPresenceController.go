@@ -32,16 +32,20 @@ func ChatPresenceController(w http.ResponseWriter, r *http.Request) {
 	// Setting default response type as json
 	w.Header().Set("Content-Type", "application/json")
 
-	response := &models.QpResponse{}
-
-	// Get server
 	server, err := GetServer(r)
 	if err != nil {
+		response := &models.QpResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
 	}
 
+	ChatPresenceWithServer(w, r, server)
+}
+
+// ChatPresenceWithServer applies the current presence behavior to a resolved server.
+func ChatPresenceWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
+	response := &models.QpResponse{}
 	logentry := server.GetLogger()
 
 	// Parse request body

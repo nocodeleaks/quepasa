@@ -1,4 +1,4 @@
-<!-- VERSION: 3.26.0214.2107.0 -->
+<!-- VERSION: 3.26.0506.1600 -->
 [![Go Build](https://github.com/nocodeleaks/quepasa/actions/workflows/go.yml/badge.svg)](https://github.com/nocodeleaks/quepasa/actions/workflows/go.yml)
 
 <p align="center">
@@ -22,7 +22,7 @@
 
 > A micro web-application to make web-based WhatsApp bots easy to write.
 
-**Current Version:** `3.26.0214.2107.0`
+**Current Version:** `3.26.0506.1600`
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://god.gw.postman.com/run-collection/5047984-405506cf-59f5-479e-b512-4ba5b935411b?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D5047984-405506cf-59f5-479e-b512-4ba5b935411b%26entityType%3Dcollection%26workspaceId%3Dbd72aaba-0c31-40ad-801c-d5ba19184aff#?env%5BQuepasa%5D=W3sia2V5IjoiYmFzZVVybCIsInZhbHVlIjoiIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiIiLCJjb21wbGV0ZVNlc3Npb25WYWx1ZSI6IiIsInNlc3Npb25JbmRleCI6MH0seyJrZXkiOiJ0b2tlbiIsInZhbHVlIjoiIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiIiLCJjb21wbGV0ZVNlc3Npb25WYWx1ZSI6IiIsInNlc3Npb25JbmRleCI6MX0seyJrZXkiOiJjaGF0SWQiLCJ2YWx1ZSI6IiIsImVuYWJsZWQiOnRydWUsInR5cGUiOiJkZWZhdWx0Iiwic2Vzc2lvblZhbHVlIjoiIiwiY29tcGxldGVTZXNzaW9uVmFsdWUiOiIiLCJzZXNzaW9uSW5kZXgiOjJ9LHsia2V5IjoiZmlsZU5hbWUiLCJ2YWx1ZSI6IiIsImVuYWJsZWQiOnRydWUsInR5cGUiOiJkZWZhdWx0Iiwic2Vzc2lvblZhbHVlIjoiIiwiY29tcGxldGVTZXNzaW9uVmFsdWUiOiIiLCJzZXNzaW9uSW5kZXgiOjN9LHsia2V5IjoidGV4dCIsInZhbHVlIjoiIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiIiLCJjb21wbGV0ZVNlc3Npb25WYWx1ZSI6IiIsInNlc3Npb25JbmRleCI6NH0seyJrZXkiOiJ0cmFja0lkIiwidmFsdWUiOiJwb3N0bWFuIiwiZW5hYmxlZCI6dHJ1ZSwidHlwZSI6ImRlZmF1bHQiLCJzZXNzaW9uVmFsdWUiOiJwb3N0bWFuIiwiY29tcGxldGVTZXNzaW9uVmFsdWUiOiJwb3N0bWFuIiwic2Vzc2lvbkluZGV4Ijo1fV0=)
 
@@ -58,6 +58,7 @@ docker-compose up -d --build
   - [Local Development](#local-development)
 - [Integration Examples](#integration-examples)
 - [API Documentation](#api-documentation)
+- [Connection States](#connection-states)
 - [Configuration](#configuration)
 - [Community & Support](#community--support)
 - [Contributing](#contributing)
@@ -231,6 +232,61 @@ curl --location 'localhost:31000/webhook' \
 
 📖 **[Complete API Documentation](docs/)** - Detailed endpoint documentation with examples.
 
+## 🔌 Connection States
+
+QuePasa exposes connection states such as `Ready`, `Stopped`, `Disconnected`, and `Failed` to represent the runtime status of each WhatsApp server.
+
+📖 **[Connection States Guide](docs/CONNECTION_STATES.md)** - Detailed explanation of each state, health semantics, and which states are currently emitted by the runtime.
+
+## 🔐 Authentication
+
+QuePasa supports four authentication modes for secure API access:
+
+### Authentication Modes
+
+1. **JWT (User-Level Access)** - Full access to all user sessions
+   - Use the `Authorization: Bearer <jwt-token>` header
+   - Recommended for multi-session applications
+   - Managed by `SIGNING_SECRET` environment variable
+
+2. **X-QUEPASA-TOKEN (Session-Scoped Access)** - Access to a single session
+   - Use the `X-QUEPASA-TOKEN: <token>` header  
+   - Recommended for single-session applications
+   - Automatically created when `RELAXED_SESSIONS=true` (default)
+   - Restricted to authenticated session only (cannot access other sessions)
+
+3. **X-QUEPASA-MASTERKEY** - Administration and setup
+   - Use the `X-QUEPASA-MASTERKEY: <masterkey>` header
+   - Required for setup operations when `RELAXED_SESSIONS=false`
+   - Managed by `MASTERKEY` environment variable
+
+4. **Anonymous** - Public endpoints only
+   - No authentication required for health checks, version info, etc.
+   - No headers needed
+
+### Quick Examples
+
+```bash
+# JWT authentication (user-level)
+curl -H "Authorization: Bearer your-jwt-token" \
+  http://localhost:31000/api/servers
+
+# Session token authentication (single session)
+curl -H "X-QUEPASA-TOKEN: your-session-token" \
+  http://localhost:31000/api/servers
+
+# Master key (administration)
+curl -H "X-QUEPASA-MASTERKEY: your-masterkey" \
+  http://localhost:31000/api/sessions
+
+# Anonymous (public endpoints)
+curl http://localhost:31000/health
+```
+
+📖 **[Complete Authentication Guide](docs/USAGE-authentication-modes.md)** - Detailed documentation covering all authentication modes, use cases, security considerations, and advanced examples.
+
+📖 **[Environment Discovery Guide](docs/USAGE-environment-discovery.md)** - Learn how to query server capabilities with `GET /api/system/environment` — public preview vs. full configuration with master key.
+
 ## ⚙️ Configuration
 
 ### Environment Variables Overview
@@ -253,6 +309,7 @@ GROUPS=true
 READRECEIPTS=true
 CALLS=true
 WEBSOCKETSSL=false
+API_DEFAULT_VERSION=v4  # Unversioned /api/... alias points to v4 or v5
 
 # Performance
 CACHELENGTH=800
@@ -260,6 +317,63 @@ HISTORYSYNCDAYS=30
 ```
 
 📖 **[Environment Variables Reference](src/environment/README.md)** - Complete configuration documentation.
+
+By default, the unversioned alias under your configured API prefix now follows `API_DEFAULT_VERSION`.
+Examples with the default prefix:
+- `/api/v4/...` → always legacy v4
+- `/api/v5/...` → always canonical v5
+- `/api/...` → whichever version is selected by `API_DEFAULT_VERSION`
+
+The official Vue.js SPA is pinned to explicit `v5` routes internally, so changing `API_DEFAULT_VERSION` is intended for external client migration compatibility.
+
+### Cache System Architecture
+
+QuePasa 3.26+ features a centralized cache system with automatic fallback:
+
+```
+┌─────────────────────────────────────────┐
+│  Centralized CacheService (Singleton)   │
+├─────────────────────────────────────────┤
+│                                         │
+│  Messages Backend        Queue Backend  │
+│  ├─ Memory (sync.Map)    ├─ Memory      │
+│  ├─ Disk (JSON)          ├─ Disk        │
+│  └─ Redis (go-redis)     └─ Redis       │
+│                                         │
+│  Auto-Fallback on Failure               │
+│  (Enabled when CACHE_INIT_FALLBACK=true)│
+└─────────────────────────────────────────┘
+```
+
+**Usage Examples:**
+
+```bash
+# Default: In-memory caching (no setup required)
+CACHE_BACKEND=memory
+
+# Persistent disk-based caching
+CACHE_BACKEND=disk
+CACHE_DISK_PATH=/var/cache/quepasa
+
+# Distributed caching with Redis
+CACHE_BACKEND=redis
+REDIS_HOST=redis-server
+REDIS_PORT=6379
+REDIS_PASSWORD=your-password
+
+# Mixed: Memory messages + Redis queue
+CACHE_BACKEND=memory
+RABBITMQ_CACHE_BACKEND=redis
+REDIS_HOST=redis-server
+```
+
+**Key Features:**
+- ✅ Single cache backend for entire system
+- ✅ Pluggable backends (memory/disk/redis)
+- ✅ Automatic fallback to memory on backend failure
+- ✅ Separate queue backend configuration (optional)
+- ✅ Environment-based configuration
+- ✅ Zero external dependencies for default setup
 
 ## 🏗️ Architecture
 
@@ -331,11 +445,50 @@ For detailed configuration options, see [docker/.env.example](docker/.env.exampl
 | `CALLS` | Accept incoming calls | `true` |
 | `READUPDATE` | Mark chats as read when sending | `true` |
 
-#### Performance & Caching
+#### Cache System (Centralized)
+
+**New architecture**: Single CacheService with three backend options:
+- **memory**: In-process cache (default, no external dependencies)
+- **disk**: File-based storage (JSON format)
+- **redis**: Distributed cache (for multi-instance deployments)
+
+| Variable | Description | Default | Options |
+|----------|-------------|---------|----------|
+| `CACHE_BACKEND` | Cache backend type | `memory` | `memory`, `disk`, `redis` |
+| `CACHE_DISK_PATH` | Disk storage directory (for disk backend) | `./cache` | *file path* |
+| `CACHE_INIT_FALLBACK` | Auto-fallback to memory on backend failure | `true` | `true`, `false` |
+| `CACHELENGTH` | Max messages in cache | `800` | *number* |
+| `CACHEDAYS` | Days to keep cached messages | `7` | *number* |
+
+**Redis-specific variables** (when `CACHE_BACKEND=redis`):
+
 | Variable | Description | Default |
-|----------|-------------|---------|
-| `CACHELENGTH` | Number of messages in cache | `800` |
-| `CACHEDAYS` | Days to keep messages in cache | `7` |
+|----------|-------------|----------|
+| `REDIS_HOST` | Redis server hostname | `localhost` |
+| `REDIS_PORT` | Redis server port | `6379` |
+| `REDIS_USERNAME` | Redis authentication username | `` |
+| `REDIS_PASSWORD` | Redis authentication password | `` |
+| `REDIS_DATABASE` | Redis database number | `0` |
+| `REDIS_KEY_PREFIX` | Prefix for all Redis keys | `quepasa:` |
+| `REDIS_POOL_SIZE` | Connection pool size | `10` |
+| `REDIS_MAX_RETRIES` | Max reconnection attempts | `3` |
+| `REDIS_DIAL_TIMEOUT` | Connection timeout (seconds) | `5` |
+| `REDIS_READ_TIMEOUT` | Read operation timeout (seconds) | `3` |
+| `REDIS_WRITE_TIMEOUT` | Write operation timeout (seconds) | `3` |
+
+**RabbitMQ Queue Backend** (independent from message cache):
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `RABBITMQ_CACHE_BACKEND` | Queue backend (disk/redis/memory) | *inherits CACHE_BACKEND* |
+| `RABBITMQ_CACHE_DISK_PATH` | Queue disk storage path | *inherits CACHE_DISK_PATH* |
+| `RABBITMQ_CACHE_QUEUE_KEY` | Redis queue namespace | `rabbitmq_retry` |
+| `RABBITMQ_CACHELENGTH` | Max messages in retry queue (legacy) | `100000` | *number* |
+
+#### Performance & Sync
+
+| Variable | Description | Default |
+|----------|-------------|----------|
 | `HISTORYSYNCDAYS` | Days of history to sync on QR scan | `30` |
 | `SYNOPSISLENGTH` | Length for message synopsis | `50` |
 

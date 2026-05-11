@@ -7,8 +7,9 @@ import (
 func IsConnected(source *WhatsmeowConnection) bool {
 	if source != nil {
 
-		// manual checks for avoid thread locking
-		if source.IsConnecting {
+		// Fast-path short circuit: when a connect attempt is in-flight, avoid
+		// calling Client.IsConnected() because socket internals may still be settling.
+		if source.IsConnecting() {
 			return false
 		}
 
@@ -27,8 +28,8 @@ func GetStatus(source *WhatsmeowConnection) whatsapp.WhatsappConnectionState {
 			return whatsapp.UnVerified
 		} else {
 
-			// manual checks for avoid thread locking
-			if source.IsConnecting {
+			// Keep status evaluation non-blocking while connect is in progress.
+			if source.IsConnecting() {
 				return whatsapp.Connecting
 			}
 

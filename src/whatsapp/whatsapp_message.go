@@ -51,6 +51,9 @@ type WhatsappMessage struct {
 	// When true with empty Text, indicates a reaction removal
 	InReaction bool `json:"inreaction,omitempty"`
 
+	// Is this video message a video note (PTV Message)?
+	InVideoNote bool `json:"invideonote,omitempty"`
+
 	// Msg in reply of another ? Message ID
 	InReply string `json:"inreply,omitempty"`
 
@@ -79,6 +82,8 @@ type WhatsappMessage struct {
 	Debug *WhatsappMessageDebug `json:"debug,omitempty"`
 
 	Exceptions []string `json:"exceptions,omitempty"`
+	// Unix timestamp (seconds) when the message expires; 0 means it never expires
+	ExpiresAt int64 `json:"expiresat,omitempty"`
 }
 
 //region ORDER BY TIMESTAMP

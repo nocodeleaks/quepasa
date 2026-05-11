@@ -1,6 +1,8 @@
 package models
 
 import (
+	"database/sql"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -27,12 +29,65 @@ type QpServer struct {
 	Token string `db:"token" json:"token" validate:"max=100"`
 
 	// Whatsapp session id
-	Wid      string `db:"wid" json:"wid" validate:"max=255"`
-	Verified bool   `db:"verified" json:"verified"`
-	Devel    bool   `db:"devel" json:"devel"`
+	Wid      sql.NullString `db:"wid" json:"wid" validate:"max=255" swaggertype:"string"`
+	Verified bool           `db:"verified" json:"verified"`
+	Devel    bool           `db:"devel" json:"devel"`
+	Metadata QpMetadata     `db:"metadata" json:"metadata,omitempty"`
 
-	User      string    `db:"user" json:"user,omitempty" validate:"max=36"`
-	Timestamp time.Time `db:"timestamp" json:"timestamp,omitempty"`
+	User      sql.NullString `db:"user" json:"user,omitempty" validate:"max=36" swaggertype:"string"`
+	Timestamp time.Time      `db:"timestamp" json:"timestamp,omitempty"`
+}
+
+func (source QpServer) MarshalJSON() ([]byte, error) {
+	type serverJSON struct {
+		whatsapp.WhatsappOptions
+		Token     string     `json:"token"`
+		Wid       string     `json:"wid,omitempty"`
+		Verified  bool       `json:"verified"`
+		Devel     bool       `json:"devel"`
+		Metadata  QpMetadata `json:"metadata,omitempty"`
+		User      string     `json:"user,omitempty"`
+		Timestamp time.Time  `json:"timestamp,omitempty"`
+	}
+
+	return json.Marshal(serverJSON{
+		WhatsappOptions: source.WhatsappOptions,
+		Token:           source.Token,
+		Wid:             source.GetWId(),
+		Verified:        source.Verified,
+		Devel:           source.Devel,
+		Metadata:        source.Metadata,
+		User:            source.GetUser(),
+		Timestamp:       source.Timestamp,
+	})
+}
+
+func (source *QpServer) UnmarshalJSON(data []byte) error {
+	type serverJSON struct {
+		whatsapp.WhatsappOptions
+		Token     string     `json:"token"`
+		Wid       string     `json:"wid"`
+		Verified  bool       `json:"verified"`
+		Devel     bool       `json:"devel"`
+		Metadata  QpMetadata `json:"metadata,omitempty"`
+		User      string     `json:"user"`
+		Timestamp time.Time  `json:"timestamp,omitempty"`
+	}
+
+	var payload serverJSON
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+
+	source.WhatsappOptions = payload.WhatsappOptions
+	source.Token = payload.Token
+	source.SetWId(payload.Wid)
+	source.Verified = payload.Verified
+	source.Devel = payload.Devel
+	source.Metadata = payload.Metadata
+	source.SetUser(payload.User)
+	source.Timestamp = payload.Timestamp
+	return nil
 }
 
 // custom log entry with fields: wid
@@ -43,7 +98,11 @@ func (source *QpServer) GetLogger() *log.Entry {
 
 	logentry := library.NewLogEntry(source)
 	if source != nil {
-		logentry = logentry.WithField(LogFields.WId, source.Wid)
+		widStr := ""
+		if source.Wid.Valid {
+			widStr = source.Wid.String
+		}
+		logentry = logentry.WithField(LogFields.WId, widStr)
 		logentry = logentry.WithField(LogFields.Token, source.Token)
 		source.LogEntry = logentry
 	}
@@ -55,7 +114,42 @@ func (source *QpServer) GetLogger() *log.Entry {
 }
 
 func (source *QpServer) GetWId() string {
-	return source.Wid
+	if source == nil || !source.Wid.Valid {
+		return ""
+	}
+	return source.Wid.String
+}
+
+// SetWId sets the Wid field
+func (source *QpServer) SetWId(wid string) {
+	if source == nil {
+		return
+	}
+	if len(wid) == 0 {
+		source.Wid = sql.NullString{}
+	} else {
+		source.Wid = sql.NullString{String: wid, Valid: true}
+	}
+}
+
+// GetUser returns user as string, handling sql.NullString
+func (source *QpServer) GetUser() string {
+	if source == nil || !source.User.Valid {
+		return ""
+	}
+	return source.User.String
+}
+
+// SetUser sets the User field
+func (source *QpServer) SetUser(user string) {
+	if source == nil {
+		return
+	}
+	if len(user) == 0 {
+		source.User = sql.NullString{}
+	} else {
+		source.User = sql.NullString{String: user, Valid: true}
+	}
 }
 
 // used for view

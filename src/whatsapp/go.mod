@@ -6,7 +6,7 @@ require github.com/sirupsen/logrus v1.9.3
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -18,7 +18,7 @@ replace github.com/nocodeleaks/quepasa/api => ../api
 
 replace github.com/nocodeleaks/quepasa/environment => ../environment
 
-replace github.com/nocodeleaks/quepasa/form => ../form
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
 
 replace github.com/nocodeleaks/quepasa/media => ../media
 
@@ -38,6 +38,4 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 
 replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0

@@ -3,7 +3,7 @@ package mcp
 import (
 	"encoding/json"
 
-	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
 
 // ListServersTool lists all available WhatsApp servers
@@ -32,10 +32,11 @@ func (t *ListServersTool) ExecuteWithContext(ctx *MCPToolContext, params json.Ra
 	}
 
 	// Master key access - return all servers
-	servers := make([]ServerInfo, 0, len(models.WhatsappService.Servers))
-	for token, srv := range models.WhatsappService.Servers {
+	sessions := runtime.ListLiveSessions()
+	servers := make([]ServerInfo, 0, len(sessions))
+	for _, srv := range sessions {
 		servers = append(servers, ServerInfo{
-			Token:     token,
+			Token:     srv.Token,
 			Number:    srv.GetWId(),
 			Status:    srv.GetStatus().String(),
 			Connected: srv.GetConnection() != nil,

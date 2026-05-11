@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
@@ -106,8 +108,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		object{chatId=string,text=string,url=string,content=string,fileName=string,poll=object{question=string,options=[]string,selections=int},location=object{latitude=float64,longitude=float64,name=string,address=string,url=string},contact=object{phone=string,name=string,vcard=string}}	false	"Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object."
-//	@Success		200		{object}	models.QpSendResponse
-//	@Failure		400		{object}	models.QpSendResponse
+//	@Success		200		{object}	api.SendResponse
+//	@Failure		400		{object}	api.SendResponse
 //	@Security		ApiKeyAuth
 //	@Router			/send [post]
 func SendAny(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +120,7 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 		MessageSendErrors.Inc()
 		ObserveAPIRequestDuration(r.Method, "/send", "400", time.Since(startTime).Seconds())
 
-		response := &models.QpSendResponse{}
+		response := &apiModels.SendResponse{}
 		response.ParseError(err)
 		RespondInterface(w, response)
 		return
@@ -131,10 +133,10 @@ func SendAny(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.QpWhatsappServer) {
-	response := &models.QpSendResponse{}
+	response := &apiModels.SendResponse{}
 
 	// Declare a new request struct.
-	request := &models.QpSendAnyRequest{}
+	request := &apiModels.SendAnyRequest{}
 
 	if r.ContentLength > 0 && r.Method == http.MethodPost {
 		// Try to decode the request body into the struct. If there is an error,
@@ -191,7 +193,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
-	SendRequest(w, r, &request.QpSendRequest, server)
+	SendRequest(w, r, &request.SendRequest, server)
 }
 
 //endregion
@@ -199,8 +201,8 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 // -------------------------- INTERNAL METHODS
 
 // Send a request already validated with chatid and server
-func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendRequest, server *models.QpWhatsappServer) {
-	response := &models.QpSendResponse{}
+func SendRequest(w http.ResponseWriter, r *http.Request, request *apiModels.SendRequest, server *models.QpWhatsappServer) {
+	response := &apiModels.SendResponse{}
 	var err error
 
 	att := request.ToWhatsappAttachment()
@@ -239,13 +241,13 @@ func SendRequest(w http.ResponseWriter, r *http.Request, request *models.QpSendR
 }
 
 // finally sends to the whatsapp server
-func Send(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
+func Send(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *apiModels.SendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment) {
 	SendWithMessageType(server, response, request, w, attach, whatsapp.UnhandledMessageType)
 }
 
 // SendWithMessageType sends to the whatsapp server with specified message type
 // If messageType is UnhandledMessageType, it will auto-detect the type
-func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSendResponse, request *models.QpSendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
+func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.SendResponse, request *apiModels.SendRequest, w http.ResponseWriter, attach *whatsapp.WhatsappAttachment, messageType whatsapp.WhatsappMessageType) {
 	waMsg, err := request.ToWhatsappMessage()
 
 	if err != nil {
@@ -278,12 +280,15 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 
 	if attach != nil {
 		waMsg.Attachment = attach
-		if messageType == whatsapp.UnhandledMessageType {
+		if messageType != whatsapp.UnhandledMessageType {
+			waMsg.Type = messageType
+			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		} else if waMsg.Type == whatsapp.UnhandledMessageType || waMsg.Type == whatsapp.TextMessageType {
+			// For attachments, text is only a caption and should not define media type.
 			waMsg.Type = whatsapp.GetMessageType(attach)
 			logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 		} else {
-			waMsg.Type = messageType
-			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+			logentry.Debugf("send attachment of type: %v (from request), mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 		}
 	} else {
 		// Only set text type if type was not already set (e.g., by Poll or Location)
@@ -331,13 +336,13 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 			}
 
 			// Try to send directly to LID first
-			sendResponse, err := server.SendMessage(waMsg)
+			sendResponse, err := runtime.SendSessionMessage(server, waMsg)
 			if err == nil {
 				// Success sending to LID directly
 				logentry.Infof("successfully sent message directly to LID: %s", originalChatId)
 				MessagesSent.Inc()
 
-				result := &models.QpSendResponseMessage{}
+				result := &apiModels.SendResponseMessage{}
 				result.Wid = server.GetWId()
 				result.Id = sendResponse.GetId()
 				result.ChatId = originalChatId
@@ -365,7 +370,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 	} else {
 	}
 
-	sendResponse, err := server.SendMessage(waMsg)
+	sendResponse, err := runtime.SendSessionMessage(server, waMsg)
 	if err != nil {
 		MessageSendErrors.Inc()
 		response.ParseError(err)
@@ -376,7 +381,7 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *models.QpSen
 	// success
 	MessagesSent.Inc()
 
-	result := &models.QpSendResponseMessage{}
+	result := &apiModels.SendResponseMessage{}
 	result.Wid = server.GetWId()
 	result.Id = sendResponse.GetId()
 	result.ChatId = waMsg.Chat.Id

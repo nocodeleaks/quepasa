@@ -58,6 +58,23 @@ func (gm *WhatsmeowGroupManager) GetInvite(groupId string) (link string, err err
 	return
 }
 
+// RevokeInvite revokes the current invite link for a group and returns the new link.
+func (gm *WhatsmeowGroupManager) RevokeInvite(groupId string) (link string, err error) {
+	client := gm.GetClient()
+	if client == nil {
+		return "", fmt.Errorf("client not defined")
+	}
+
+	jid, err := types.ParseJID(groupId)
+	if err != nil {
+		gm.GetLogger().Infof("revoking invite error on parse jid: %s", err)
+		return "", err
+	}
+
+	link, err = client.GetGroupInviteLink(context.Background(), jid, true)
+	return
+}
+
 // GetJoinedGroups returns all groups the user has joined
 func (gm *WhatsmeowGroupManager) GetJoinedGroups() ([]interface{}, error) {
 	client := gm.GetClient()

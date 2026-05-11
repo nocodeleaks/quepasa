@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -64,6 +65,7 @@ type Client struct {
 	hub           *Hub
 	send          chan []byte
 	closeOnce     sync.Once
+	closed        atomic.Bool // Track if client has been closed to prevent sends on closed channel
 	subscriptions map[string]struct{}
 }
 
@@ -140,6 +142,9 @@ func (hub *Hub) removeClient(client *Client) {
 	}
 
 	client.closeOnce.Do(func() {
+		// Mark client as closed BEFORE closing the channel to prevent concurrent sends
+		client.closed.Store(true)
+
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 
@@ -219,6 +224,11 @@ func (hub *Hub) getSubscriptions(client *Client) []string {
 }
 
 func (hub *Hub) queueFrame(client *Client, frame ServerFrame) {
+	// Check if client has been closed to prevent sending on closed channel
+	if client.closed.Load() {
+		return
+	}
+
 	frame.Timestamp = time.Now().UTC()
 	payload, err := json.Marshal(frame)
 	if err != nil {

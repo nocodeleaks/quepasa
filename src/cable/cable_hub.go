@@ -63,7 +63,9 @@ type Client struct {
 	conn          *websocket.Conn
 	hub           *Hub
 	send          chan []byte
+	sendMu        sync.Mutex
 	closeOnce     sync.Once
+	closed        bool
 	subscriptions map[string]struct{}
 }
 
@@ -141,8 +143,6 @@ func (hub *Hub) removeClient(client *Client) {
 
 	client.closeOnce.Do(func() {
 		hub.mu.Lock()
-		defer hub.mu.Unlock()
-
 		delete(hub.clients, client.id)
 
 		if userClients := hub.userClients[client.user.Username]; userClients != nil {
@@ -160,9 +160,16 @@ func (hub *Hub) removeClient(client *Client) {
 				}
 			}
 		}
+		hub.mu.Unlock()
 
+		client.sendMu.Lock()
+		client.closed = true
 		close(client.send)
-		_ = client.conn.Close()
+		client.sendMu.Unlock()
+
+		if client.conn != nil {
+			_ = client.conn.Close()
+		}
 	})
 }
 
@@ -226,9 +233,22 @@ func (hub *Hub) queueFrame(client *Client, frame ServerFrame) {
 		return
 	}
 
+	shouldRemove := false
+
+	client.sendMu.Lock()
+	if client.closed {
+		client.sendMu.Unlock()
+		return
+	}
+
 	select {
 	case client.send <- payload:
 	default:
+		shouldRemove = true
+	}
+	client.sendMu.Unlock()
+
+	if shouldRemove {
 		log.WithField("client_id", client.id).Warn("closing slow cable client")
 		hub.removeClient(client)
 	}

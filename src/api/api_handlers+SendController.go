@@ -280,12 +280,15 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.Se
 
 	if attach != nil {
 		waMsg.Attachment = attach
-		if messageType == whatsapp.UnhandledMessageType {
+		if messageType != whatsapp.UnhandledMessageType {
+			waMsg.Type = messageType
+			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+		} else if waMsg.Type == whatsapp.UnhandledMessageType || waMsg.Type == whatsapp.TextMessageType {
+			// For attachments, text is only a caption and should not define media type.
 			waMsg.Type = whatsapp.GetMessageType(attach)
 			logentry.Debugf("send attachment of type: %v, mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 		} else {
-			waMsg.Type = messageType
-			logentry.Debugf("send attachment (forced type: %v): mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
+			logentry.Debugf("send attachment of type: %v (from request), mime: %s, length: %v, filename: %s", waMsg.Type, attach.Mimetype, attach.FileLength, attach.FileName)
 		}
 	} else {
 		// Only set text type if type was not already set (e.g., by Poll or Location)

@@ -51,6 +51,9 @@ type WhatsappMessage struct {
 	// When true with empty Text, indicates a reaction removal
 	InReaction bool `json:"inreaction,omitempty"`
 
+	// Is this video message a video note (PTV Message)?
+	InVideoNote bool `json:"invideonote,omitempty"`
+
 	// Msg in reply of another ? Message ID
 	InReply string `json:"inreply,omitempty"`
 

@@ -34,7 +34,6 @@ WORKDIR /opt/quepasa/
 
 COPY --from=builder /build/. /builder/
 COPY --from=builder /build/docker-entrypoint.sh /
-COPY --from=builder /build/apps/ /opt/quepasa/apps/
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["sh"]

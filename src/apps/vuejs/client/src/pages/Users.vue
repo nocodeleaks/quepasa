@@ -3,14 +3,18 @@
     <div class="page-header">
       <div class="header-content">
         <h1>
-          <i class="fa fa-users"></i>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
           {{ t('users_title') }}
         </h1>
         <p class="hide-mobile">{{ t('users_subtitle') }}</p>
       </div>
       <div class="header-actions">
         <router-link to="/users/create" class="btn-primary">
-          <i class="fa fa-user-plus"></i>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
           {{ t('users_new') }}
         </router-link>
       </div>
@@ -192,6 +196,14 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.header-content h1 svg {
+  color: var(--branding-primary, #7C3AED);
+}
+
+.btn-primary svg {
+  flex-shrink: 0;
 }
 
 .header-content p {

@@ -1107,7 +1107,7 @@ export default defineComponent({
   display: flex; gap: 3px; flex-shrink: 0;
 }
 .fltbtn {
-  width: 28px; height: 28px;
+  width: 32px; height: 32px;
   border: 1px solid rgba(229,231,235,0.8);
   border-radius: 8px;
   background: rgba(249,250,251,0.8);

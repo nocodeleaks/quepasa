@@ -322,9 +322,6 @@ export default defineComponent({
   left: 0;
   right: 0;
   z-index: 1020;
-  background: rgba(247, 247, 251, 0.98);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
 }
 
 .app-topbar,
@@ -334,6 +331,7 @@ export default defineComponent({
 
 .app-topbar-wrap {
   width: 100%;
+  background: linear-gradient(135deg, #6d33d4, #4f1da0);
 }
 
 .app-topbar {

@@ -1,14 +1,19 @@
 <template>
   <div class="send-page">
     <div class="page-header">
+      <button @click="$router.back()" class="back-link hide-mobile">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        {{ t('send_back') }}
+      </button>
       <div class="header-content">
-        <button @click="$router.back()" class="back-link">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        <h1>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
           </svg>
-          {{ t('send_back') }}
-        </button>
-        <h1>{{ t('send_page_title') }}</h1>
+          {{ t('send_page_title') }}
+        </h1>
         <p>{{ t('send_page_subtitle') }}</p>
       </div>
     </div>
@@ -862,11 +867,30 @@ export default defineComponent({
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.header-content {
-  text-align: center;
+.header-content h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.header-content h1 svg {
+  color: var(--branding-primary, #7C3AED);
+}
+
+.header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 14px;
 }
 
 .back-link {
@@ -882,25 +906,13 @@ export default defineComponent({
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .back-link:hover {
   background: #eef2ff;
   border-color: #c7d2fe;
   color: #312e81;
-}
-
-.page-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 8px;
-}
-
-.page-header p {
-  color: #6b7280;
-  margin: 0;
 }
 
 .content-grid {

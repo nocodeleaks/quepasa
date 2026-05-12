@@ -1,14 +1,19 @@
 <template>
   <div class="qrcode-page">
     <div class="page-header">
+      <button @click="$router.back()" class="back-link hide-mobile">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        {{ t('back') }}
+      </button>
       <div class="header-content">
-        <button @click="$router.back()" class="back-link hide-mobile">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        <h1>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm2 2h2v2h-2zm0-4h2v2h-2zm2-2h2v2h-2z"/>
           </svg>
-          {{ t('back') }}
-        </button>
-        <h1>{{ t('qrcode_title') }}</h1>
+          {{ t('qrcode_title') }}
+        </h1>
         <p>{{ t('qrcode_subtitle') }}</p>
       </div>
     </div>
@@ -217,37 +222,52 @@ export default defineComponent({
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.header-content {
-  text-align: center;
+.header-content h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.header-content h1 svg {
+  color: var(--branding-primary, #7C3AED);
+}
+
+.header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 14px;
 }
 
 .back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #6b7280;
-  text-decoration: none;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
   font-size: 14px;
-  margin-bottom: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .back-link:hover {
-  color: #374151;
-}
-
-.page-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 8px;
-}
-
-.page-header p {
-  color: #6b7280;
-  margin: 0;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .content-card {

@@ -2,12 +2,16 @@
   <div class="webhooks-page">
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
-        <i class="fa fa-arrow-left"></i>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
         {{ t('back') }}
       </button>
       <div class="header-content">
         <h1>
-          <i class="fa fa-globe"></i>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm-1-5h2v2h-2zm0-8h2v6h-2z"/>
+          </svg>
           {{ t('webhooks_title') }}
         </h1>
         <p v-if="currentToken">{{ t('webhooks_server_label', [truncateToken(currentToken)]) }}</p>
@@ -16,7 +20,9 @@
     </div>
 
     <div v-if="error" class="error-box">
-      <i class="fa fa-exclamation-triangle"></i>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
       <span>{{ error }}</span>
     </div>
 
@@ -608,41 +614,52 @@ export default defineComponent({
   margin: 0 auto;
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #6b7280;
-  text-decoration: none;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-.back-link:hover {
-  color: #374151;
-}
-
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.page-header h1 {
+.header-content h1 {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 28px;
   font-weight: 700;
   color: #111827;
   margin: 0 0 4px;
 }
 
-.page-header h1 i {
+.header-content h1 svg {
   color: var(--branding-primary, #7c3aed);
 }
 
-.page-header p {
+.header-content p {
   color: #6b7280;
   margin: 0;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.back-link:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .error-box {

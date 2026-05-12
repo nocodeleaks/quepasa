@@ -2,12 +2,16 @@
   <div class="user-create-page">
     <div class="page-header">
       <button @click="$router.back()" class="back-link hide-mobile">
-        <i class="fa fa-arrow-left"></i>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
         {{ t('back') }}
       </button>
       <div class="header-content">
         <h1>
-          <i class="fa fa-user-plus"></i>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
           {{ t('user_create_title') }}
         </h1>
         <p>{{ t('user_create_subtitle') }}</p>
@@ -181,36 +185,53 @@ export default defineComponent({
   margin: 0 auto;
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #6b7280;
-  text-decoration: none;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-.back-link:hover {
-  color: #374151;
-}
-
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.page-header h1 {
+.header-content h1 {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 28px;
   font-weight: 700;
   color: #111827;
   margin: 0 0 4px;
 }
 
-.page-header h1 i {
+.header-content h1 svg {
   color: var(--branding-primary, #7C3AED);
+}
+
+.header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 14px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.back-link:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .page-header p {

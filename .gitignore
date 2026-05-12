@@ -47,6 +47,7 @@ src/service
 src/.dist/
 .dist/
 dist/
+src/apps/vuejs/dist/
 
 # symbolic link to src folder under linux
 quepasa/

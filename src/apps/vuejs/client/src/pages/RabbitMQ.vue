@@ -106,6 +106,10 @@
                 <input type="checkbox" v-model="newCalls" />
                 <span>{{ t('webhooks_calls') }}</span>
               </label>
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="newDirect" />
+                <span>{{ t('direct') }}</span>
+              </label>
             </div>
 
             <button type="submit" class="btn-primary" :disabled="!newConnectionString || creating">
@@ -187,6 +191,14 @@
                 >
                   <i class="fa fa-phone"></i>
                 </button>
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.direct)"
+                  @click="toggleRabbitFlag(item, 'direct')"
+                  :title="t('direct')"
+                >
+                  <i class="fa fa-comment"></i>
+                </button>
               </div>
 
               <button class="btn-delete" @click="confirmDelete(item.connection_string)" :title="t('remove')">
@@ -228,6 +240,7 @@ type RabbitItem = {
   groups?: number | boolean | null
   readreceipts?: number | boolean | null
   calls?: number | boolean | null
+  direct?: number | boolean | null
   extra?: unknown
 }
 
@@ -251,6 +264,7 @@ export default defineComponent({
     const newGroups = ref(true)
     const newReadReceipts = ref(false)
     const newCalls = ref(false)
+    const newDirect = ref(true)
     const newExtra = ref('')
 
     const currentToken = computed(() => String(route.query.token || ''))
@@ -304,6 +318,7 @@ export default defineComponent({
         groups: toTriState(item.groups),
         readreceipts: toTriState(item.readreceipts),
         calls: toTriState(item.calls),
+        direct: toTriState(item.direct),
         extra: item.extra ?? null,
       }
     }
@@ -399,7 +414,7 @@ export default defineComponent({
       }
     }
 
-    async function toggleRabbitFlag(item: RabbitItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls') {
+    async function toggleRabbitFlag(item: RabbitItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls' | 'direct') {
       try {
         const payload = buildRabbitPayload(item)
 
@@ -437,6 +452,7 @@ export default defineComponent({
       newBroadcasts,
       newCalls,
       newConnectionString,
+      newDirect,
       newExtra,
       newForwardInternal,
       newGroups,

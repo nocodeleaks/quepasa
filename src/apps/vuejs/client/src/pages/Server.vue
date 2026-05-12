@@ -282,6 +282,40 @@
             :disabled="togglingOption === 'server-calls'"
           />
         </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 11H7v-2h4v2zm6 0h-4v-2h4v2zm0-4H7V7h10v2z" />
+              </svg>
+              <span class="option-title">{{ t('server_direct_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_direct_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.direct"
+            @change="updateOption('direct', $event)"
+            :disabled="togglingOption === 'server-direct'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
+              </svg>
+              <span class="option-title">{{ t('server_readupdate_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_readupdate_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.readupdate"
+            @change="updateOption('readupdate', $event)"
+            :disabled="togglingOption === 'server-readupdate'"
+          />
+        </div>
       </div>
     </div>
 
@@ -375,6 +409,8 @@ export default defineComponent({
       groups: 0,
       readreceipts: 0,
       calls: 0,
+      direct: 0,
+      readupdate: 0,
     })
 
     const statusClass = computed(() => {
@@ -422,6 +458,8 @@ export default defineComponent({
         options.value.groups = toTriState(summary.groups)
         options.value.readreceipts = toTriState(summary.readReceipts ?? summary.readreceipts)
         options.value.calls = toTriState(summary.calls)
+        options.value.direct = toTriState(summary.direct)
+        options.value.readupdate = toTriState(summary.readupdate)
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || t('server_error_load')
       } finally {
@@ -1032,6 +1070,95 @@ export default defineComponent({
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+html[data-theme='dark'] .server-details h1,
+html[data-theme='dark'] .details-section h2,
+html[data-theme='dark'] .danger-section h2,
+html[data-theme='dark'] .options-section h2,
+html[data-theme='dark'] .action-title,
+html[data-theme='dark'] .detail-value,
+html[data-theme='dark'] .option-title,
+html[data-theme='dark'] .modal-content h3 {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .server-meta,
+html[data-theme='dark'] .action-desc,
+html[data-theme='dark'] .detail-label,
+html[data-theme='dark'] .option-desc,
+html[data-theme='dark'] .loading-placeholder,
+html[data-theme='dark'] .modal-content p,
+html[data-theme='dark'] .readonly-badge {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .details-section,
+html[data-theme='dark'] .danger-section {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+  box-shadow: 0 22px 44px rgba(2, 6, 23, 0.28);
+}
+
+html[data-theme='dark'] .detail-card {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .detail-value code {
+  background: rgba(30, 41, 59, 0.94);
+  color: #dbeafe;
+}
+
+html[data-theme='dark'] .copy-btn {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .copy-btn:hover {
+  background: rgba(51, 65, 85, 0.82);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .btn-warning-outline {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+html[data-theme='dark'] .btn-warning-outline:hover:not(:disabled) {
+  background: rgba(120, 53, 15, 0.28);
+}
+
+html[data-theme='dark'] .modal-content {
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.42);
+}
+
+html[data-theme='dark'] .modal-icon.danger {
+  background: rgba(127, 29, 29, 0.28);
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .btn-secondary {
+  background: rgba(30, 41, 59, 0.94);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .btn-secondary:hover {
+  background: rgba(51, 65, 85, 0.96);
+}
+
+html[data-theme='dark'] .option-card {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.22);
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .readonly-badge {
+  background: rgba(30, 41, 59, 0.94);
+  border: 1px solid rgba(71, 85, 105, 0.24);
 }
 
 @media (max-width: 768px) {

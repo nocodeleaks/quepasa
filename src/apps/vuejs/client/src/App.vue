@@ -1,5 +1,17 @@
 <template>
   <div class="app-shell">
+    <button
+      v-if="isLoginPage"
+      class="theme-fab"
+      type="button"
+      :title="themeToggleLabel"
+      :aria-label="themeToggleLabel"
+      @click="toggleTheme"
+    >
+      <i :class="themeIconClass"></i>
+      <span>{{ themeName }}</span>
+    </button>
+
     <header v-if="!isLoginPage" class="app-shell-header">
       <div class="app-topbar-wrap" :style="shellStyle">
         <div class="app-topbar">
@@ -28,6 +40,15 @@
               <i class="fa fa-user-circle"></i>
             </button>
           </div>
+          <button
+            class="theme-toggle-btn"
+            type="button"
+            :title="themeToggleLabel"
+            :aria-label="themeToggleLabel"
+            @click="toggleTheme"
+          >
+            <i :class="themeIconClass"></i>
+          </button>
           <div class="lang-switch">
             <button
               v-for="option in localeOptions"
@@ -49,6 +70,15 @@
               <i class="fa fa-user-circle"></i>
             </button>
           </div>
+          <button
+            class="theme-toggle-btn theme-toggle-btn-mobile"
+            type="button"
+            :title="themeToggleLabel"
+            :aria-label="themeToggleLabel"
+            @click="toggleTheme"
+          >
+            <i :class="themeIconClass"></i>
+          </button>
           <div class="lang-switch lang-switch-compact">
             <button
               v-for="option in localeOptions"
@@ -141,18 +171,34 @@
             </button>
           </div>
 
-          <div class="sheet-language">
-            <span>{{ t('language_label') }}</span>
-            <div class="lang-switch lang-switch-sheet">
+          <div class="sheet-preferences">
+            <div class="sheet-language">
+              <span>{{ t('language_label') }}</span>
+              <div class="lang-switch lang-switch-sheet">
+                <button
+                  v-for="option in localeOptions"
+                  :key="option.locale"
+                  class="lang-btn"
+                  :class="{ active: locale === option.locale }"
+                  @click="setLocale(option.locale)"
+                  :title="option.title"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="sheet-language sheet-theme-row">
+              <span>{{ t('theme_label') }}</span>
               <button
-                v-for="option in localeOptions"
-                :key="option.locale"
-                class="lang-btn"
-                :class="{ active: locale === option.locale }"
-                @click="setLocale(option.locale)"
-                :title="option.title"
+                class="sheet-theme-btn"
+                type="button"
+                :title="themeToggleLabel"
+                :aria-label="themeToggleLabel"
+                @click="toggleTheme"
               >
-                {{ option.label }}
+                <i :class="themeIconClass"></i>
+                <span>{{ themeName }}</span>
               </button>
             </div>
           </div>
@@ -189,6 +235,7 @@ import { defineComponent, onMounted, computed, ref } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { useMasterKey } from '@/composables/useMasterKey'
+import { useTheme } from '@/composables/useTheme'
 import api from './services/api'
 import Toaster from '@/components/Toaster.vue'
 import { localeOptions, useLocale } from '@/i18n'
@@ -206,6 +253,7 @@ export default defineComponent({
     const relaxedSessions = ref(true)
 
     const { t, locale, setLocale } = useLocale()
+    const { isDark, toggleTheme } = useTheme()
 
     const branding = ref({
       title: 'QuePasa',
@@ -229,6 +277,10 @@ export default defineComponent({
       background: `linear-gradient(135deg, color-mix(in srgb, ${branding.value.primaryColor} 92%, black), color-mix(in srgb, ${branding.value.secondaryColor} 88%, black))`,
       boxShadow: `0 4px 14px color-mix(in srgb, ${branding.value.primaryColor} 20%, transparent)`
     }))
+
+    const themeIconClass = computed(() => (isDark.value ? 'fa fa-sun' : 'fa fa-moon'))
+    const themeName = computed(() => (isDark.value ? t('theme_dark') : t('theme_light')))
+    const themeToggleLabel = computed(() => (isDark.value ? t('theme_toggle_to_light') : t('theme_toggle_to_dark')))
 
     const loadBranding = async () => {
       try {
@@ -302,7 +354,30 @@ export default defineComponent({
       loadBranding()
     })
 
-    return { year, session, logout, isLoginPage, branding, shellStyle, mainClass, appVersion, navigateTo, closeOffcanvas, t, locale, setLocale, localeOptions, hasMasterKey, isMasterAuthenticated, relaxedSessions }
+    return {
+      year,
+      session,
+      logout,
+      isLoginPage,
+      branding,
+      shellStyle,
+      mainClass,
+      appVersion,
+      navigateTo,
+      closeOffcanvas,
+      t,
+      locale,
+      setLocale,
+      localeOptions,
+      hasMasterKey,
+      isMasterAuthenticated,
+      relaxedSessions,
+      isDark,
+      toggleTheme,
+      themeIconClass,
+      themeName,
+      themeToggleLabel,
+    }
   }
 })
 </script>
@@ -351,6 +426,56 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.theme-toggle-btn,
+.sheet-theme-btn,
+.theme-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.theme-toggle-btn {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0;
+}
+
+.theme-toggle-btn:hover,
+.sheet-theme-btn:hover,
+.theme-fab:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.theme-toggle-btn-mobile {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.theme-fab {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1035;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.16);
+}
+
+.theme-fab span,
+.sheet-theme-btn span {
+  font-size: 0.82rem;
 }
 
 .mobile-actions {
@@ -684,6 +809,29 @@ export default defineComponent({
   font-weight: 600;
 }
 
+.sheet-preferences {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sheet-preferences .sheet-language {
+  margin-top: 0;
+}
+
+.sheet-theme-row {
+  gap: 1rem;
+}
+
+.sheet-theme-btn {
+  min-height: 40px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 0;
+  background: var(--branding-primary, #7C3AED);
+  color: #fff;
+}
+
 .lang-switch-sheet {
   background: rgba(124, 58, 237, 0.10);
   border: 0;
@@ -765,6 +913,96 @@ export default defineComponent({
   pointer-events: none;
 }
 
+html[data-theme='dark'] .app-shell {
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 24%),
+    linear-gradient(180deg, #06101d 0%, #0b1526 100%);
+}
+
+html[data-theme='dark'] .app-shell-header {
+  background: linear-gradient(180deg, rgba(6, 17, 31, 0.98), rgba(6, 17, 31, 0.84));
+}
+
+html[data-theme='dark'] .mobile-dock {
+  background: rgba(7, 17, 31, 0.82);
+  border-top-color: rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .dock-link {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .dock-link.router-link-active,
+html[data-theme='dark'] .dock-link.router-link-exact-active,
+html[data-theme='dark'] .dock-link:hover,
+html[data-theme='dark'] .dock-link-button:hover {
+  color: #f8fafc;
+  background: rgba(124, 58, 237, 0.18);
+}
+
+html[data-theme='dark'] .mobile-menu-sheet {
+  background: linear-gradient(180deg, rgba(10, 18, 32, 0.98), rgba(7, 17, 31, 0.96));
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .sheet-title {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .sheet-subtitle,
+html[data-theme='dark'] .shell-loading,
+html[data-theme='dark'] .footer-left {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .sheet-user-pill {
+  background: rgba(37, 99, 235, 0.14);
+  color: #dbeafe;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+}
+
+html[data-theme='dark'] .sheet-tile {
+  background: rgba(15, 23, 42, 0.88);
+  color: #e2e8f0;
+  border-color: rgba(71, 85, 105, 0.32);
+  box-shadow: 0 12px 26px rgba(2, 6, 23, 0.32);
+}
+
+html[data-theme='dark'] .sheet-language {
+  background: rgba(15, 23, 42, 0.82);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .lang-switch-sheet {
+  background: rgba(30, 41, 59, 0.92);
+}
+
+html[data-theme='dark'] .lang-switch-sheet .lang-btn {
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .lang-switch-sheet .lang-btn.active,
+html[data-theme='dark'] .lang-switch-sheet .lang-btn:hover {
+  background: var(--branding-primary, #7C3AED);
+  color: #fff;
+}
+
+html[data-theme='dark'] .company-link {
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .user-hover-card {
+  background: rgba(2, 6, 23, 0.92);
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.45);
+}
+
+html[data-theme='dark'] .theme-fab {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
 @media (min-width: 992px) {
   .app-shell-header {
     background: linear-gradient(180deg, rgba(247, 247, 251, 0.98), rgba(247, 247, 251, 0.92));
@@ -840,6 +1078,17 @@ export default defineComponent({
   .footer-content {
     flex-direction: column;
     text-align: center;
+  }
+
+  .theme-fab {
+    top: 0.8rem;
+    right: 0.8rem;
+    min-height: 40px;
+    padding: 0.65rem 0.9rem;
+  }
+
+  .theme-fab span {
+    display: none;
   }
 }
 </style>

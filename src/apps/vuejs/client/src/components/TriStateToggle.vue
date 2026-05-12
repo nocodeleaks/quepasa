@@ -133,4 +133,46 @@ export default defineComponent({
 .tri-btn i {
   font-size: 12px;
 }
+
+html[data-theme='dark'] .tri-state-toggle {
+  border-color: rgba(71, 85, 105, 0.42);
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.22);
+}
+
+html[data-theme='dark'] .tri-state-toggle.state-off {
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+html[data-theme='dark'] .tri-state-toggle.state-on {
+  border-color: rgba(74, 222, 128, 0.48);
+}
+
+html[data-theme='dark'] .tri-btn {
+  color: #64748b;
+}
+
+html[data-theme='dark'] .tri-btn:hover:not(:disabled) {
+  background: rgba(30, 41, 59, 0.96);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .tri-btn:not(:last-child) {
+  border-right-color: rgba(71, 85, 105, 0.34);
+}
+
+html[data-theme='dark'] .tri-btn.off.active {
+  background: rgba(127, 29, 29, 0.42);
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .tri-btn.default.active {
+  background: rgba(51, 65, 85, 0.84);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .tri-btn.on.active {
+  background: rgba(20, 83, 45, 0.46);
+  color: #86efac;
+}
 </style>

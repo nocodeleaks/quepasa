@@ -3,6 +3,42 @@
   --font-sans: 'Manrope', 'Segoe UI', 'Trebuchet MS', sans-serif;
   --text-primary: #18212f;
   --text-secondary: #5f6c82;
+  --surface-app: #f8f9fa;
+  --surface-card: #ffffff;
+  --surface-card-soft: rgba(255, 255, 255, 0.72);
+  --surface-panel: rgba(255, 255, 255, 0.65);
+  --surface-muted: #f8fafc;
+  --surface-muted-strong: #eef2ff;
+  --surface-input: #f9fafb;
+  --surface-input-focus: #ffffff;
+  --border-subtle: rgba(148, 163, 184, 0.12);
+  --border-default: #e5e7eb;
+  --border-strong: #dbe3ef;
+  --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --input-placeholder: #9ca3af;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --surface-app: #07111f;
+  --surface-card: rgba(15, 23, 42, 0.92);
+  --surface-card-soft: rgba(15, 23, 42, 0.78);
+  --surface-panel: rgba(15, 23, 42, 0.84);
+  --surface-muted: #0f172a;
+  --surface-muted-strong: #162235;
+  --surface-input: #0b1628;
+  --surface-input-focus: #101c31;
+  --border-subtle: rgba(71, 85, 105, 0.28);
+  --border-default: #334155;
+  --border-strong: #475569;
+  --shadow-soft: 0 22px 48px rgba(2, 6, 23, 0.42);
+  --input-placeholder: #64748b;
 }
 
 html {
@@ -10,14 +46,20 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background: var(--surface-app);
 }
 
 body{
-  background: #f8f9fa;
+  background: var(--surface-app);
   font-family: var(--font-sans);
   color: var(--text-primary);
   font-weight: 500;
   letter-spacing: -0.01em;
+  transition: background-color 0.24s ease, color 0.24s ease;
+}
+
+#app {
+  min-height: 100vh;
 }
 
 button,
@@ -26,6 +68,13 @@ select,
 textarea,
 a {
   font: inherit;
+}
+
+input,
+select,
+textarea,
+button {
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
 h1,
@@ -38,10 +87,853 @@ h6 {
   letter-spacing: -0.03em;
 }
 
+a {
+  color: var(--branding-primary, var(--primary-color));
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.18);
+  color: inherit;
+}
+
 .navbar.bg-primary{
   background: var(--primary-color) !important;
 }
 
 .container{
   max-width: 1180px;
+}
+
+html[data-theme='light'] .login-wrapper {
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #f4f0ff 100%);
+}
+
+html[data-theme='light'] .login-container {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(219, 227, 239, 0.82);
+}
+
+html[data-theme='light'] .login-card {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+html[data-theme='light'] .login-bg-shape {
+  opacity: 0.16;
+}
+
+html[data-theme='dark'] body {
+  background: var(--surface-app);
+  color: var(--text-primary);
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.88);
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+html[data-theme='dark'] .page-header h1,
+html[data-theme='dark'] .header-content h1,
+html[data-theme='dark'] .page-title,
+html[data-theme='dark'] .server-details h1,
+html[data-theme='dark'] .sheet-title,
+html[data-theme='dark'] .login-title,
+html[data-theme='dark'] .info-content h2,
+html[data-theme='dark'] .master-login-card h1,
+html[data-theme='dark'] .card-header h2,
+html[data-theme='dark'] .method-card h3,
+html[data-theme='dark'] .group-name,
+html[data-theme='dark'] .sender-name,
+html[data-theme='dark'] .request-name,
+html[data-theme='dark'] .detail-value,
+html[data-theme='dark'] .action-title,
+html[data-theme='dark'] .option-title,
+html[data-theme='dark'] .message-text,
+html[data-theme='dark'] .file-name,
+html[data-theme='dark'] .invite-url-text,
+html[data-theme='dark'] .server-meta,
+html[data-theme='dark'] .message-time,
+html[data-theme='dark'] .message-type,
+html[data-theme='dark'] .mchip,
+html[data-theme='dark'] .srow-phone,
+html[data-theme='dark'] .scard-phone,
+html[data-theme='dark'] .table,
+html[data-theme='dark'] .table th,
+html[data-theme='dark'] .table td {
+  color: var(--text-primary);
+}
+
+html[data-theme='dark'] .page-header p,
+html[data-theme='dark'] .header-content p,
+html[data-theme='dark'] .login-subtitle,
+html[data-theme='dark'] .login-footer,
+html[data-theme='dark'] .master-subtitle,
+html[data-theme='dark'] .card-preview,
+html[data-theme='dark'] .action-desc,
+html[data-theme='dark'] .option-desc,
+html[data-theme='dark'] .detail-label,
+html[data-theme='dark'] .info-label,
+html[data-theme='dark'] .sender-phone,
+html[data-theme='dark'] .request-date,
+html[data-theme='dark'] .participant-lid,
+html[data-theme='dark'] .sender-lid,
+html[data-theme='dark'] .messages-count,
+html[data-theme='dark'] .message-id,
+html[data-theme='dark'] .message-trackid,
+html[data-theme='dark'] .page-info,
+html[data-theme='dark'] .pager-indicator,
+html[data-theme='dark'] .srow-token,
+html[data-theme='dark'] .scard-token,
+html[data-theme='dark'] .empty-state p,
+html[data-theme='dark'] .help-section,
+html[data-theme='dark'] .loading-state,
+html[data-theme='dark'] .error-state,
+html[data-theme='dark'] .filter-group label,
+html[data-theme='dark'] .participant-field,
+html[data-theme='dark'] .json-collapsed,
+html[data-theme='dark'] .loading-container p,
+html[data-theme='dark'] .attachment-meta,
+html[data-theme='dark'] .file-size,
+html[data-theme='dark'] .message-participant .participant-field,
+html[data-theme='dark'] .empty-requests,
+html[data-theme='dark'] .readonly-badge,
+html[data-theme='dark'] .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+html[data-theme='dark'] .search-row,
+html[data-theme='dark'] .filters-bar,
+html[data-theme='dark'] .empty-state,
+html[data-theme='dark'] .help-section,
+html[data-theme='dark'] .loading-state,
+html[data-theme='dark'] .error-state,
+html[data-theme='dark'] .setup-card,
+html[data-theme='dark'] .create-card,
+html[data-theme='dark'] .master-login-card,
+html[data-theme='dark'] .method-card,
+html[data-theme='dark'] .action-card,
+html[data-theme='dark'] .detail-card,
+html[data-theme='dark'] .option-card,
+html[data-theme='dark'] .group-card,
+html[data-theme='dark'] .group-row,
+html[data-theme='dark'] .message-card,
+html[data-theme='dark'] .message-participant,
+html[data-theme='dark'] .message-url,
+html[data-theme='dark'] .message-ads,
+html[data-theme='dark'] .attachment-file,
+html[data-theme='dark'] .message-reply,
+html[data-theme='dark'] .message-exceptions,
+html[data-theme='dark'] .login-container,
+html[data-theme='dark'] .login-card,
+html[data-theme='dark'] .scard,
+html[data-theme='dark'] .srow,
+html[data-theme='dark'] .pager,
+html[data-theme='dark'] .modal-card,
+html[data-theme='dark'] .card,
+html[data-theme='dark'] .accordion-item,
+html[data-theme='dark'] .dropdown-menu,
+html[data-theme='dark'] .table-responsive,
+html[data-theme='dark'] .toast,
+html[data-theme='dark'] .url-preview,
+html[data-theme='dark'] .invite-url-box,
+html[data-theme='dark'] .request-row,
+html[data-theme='dark'] .lookup-card,
+html[data-theme='dark'] .result-card,
+html[data-theme='dark'] .config-card,
+html[data-theme='dark'] .info-card,
+html[data-theme='dark'] .section-card {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+}
+
+html[data-theme='dark'] .search-wrap,
+html[data-theme='dark'] .search-box,
+html[data-theme='dark'] .member-search-wrap,
+html[data-theme='dark'] .loading-placeholder,
+html[data-theme='dark'] .error-banner {
+  color: var(--text-secondary);
+}
+
+html[data-theme='dark'] .login-wrapper {
+  background: linear-gradient(135deg, #030712 0%, #0f172a 50%, #111827 100%);
+}
+
+html[data-theme='dark'] .login-container {
+  background: rgba(2, 6, 23, 0.76);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+}
+
+html[data-theme='dark'] .login-card {
+  background: rgba(9, 15, 28, 0.86);
+}
+
+html[data-theme='dark'] .login-bg-shape {
+  opacity: 0.12;
+}
+
+html[data-theme='dark'] .feature {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+html[data-theme='dark'] .login-warning {
+  background: rgba(133, 77, 14, 0.22);
+  border-color: rgba(245, 158, 11, 0.38);
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .login-error,
+html[data-theme='dark'] .error-box,
+html[data-theme='dark'] .modal-error,
+html[data-theme='dark'] .error-banner {
+  background: rgba(127, 29, 29, 0.18);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #fecaca;
+}
+
+html[data-theme='dark'] .success-box {
+  background: rgba(22, 101, 52, 0.20);
+  border-color: rgba(74, 222, 128, 0.24);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .modal-overlay,
+html[data-theme='dark'] .modal-backdrop.show {
+  background: rgba(2, 6, 23, 0.72);
+}
+
+html[data-theme='dark'] .card-header,
+html[data-theme='dark'] .modal-header,
+html[data-theme='dark'] .modal-footer,
+html[data-theme='dark'] .card-footer,
+html[data-theme='dark'] .members-card .card-header,
+html[data-theme='dark'] .accordion-button,
+html[data-theme='dark'] .table thead th {
+  background: rgba(15, 23, 42, 0.96);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+html[data-theme='dark'] .accordion-button:not(.collapsed) {
+  background: rgba(30, 41, 59, 0.96);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .accordion-button::after {
+  filter: invert(1) opacity(0.82);
+}
+
+html[data-theme='dark'] .dropdown-divider,
+html[data-theme='dark'] .table td,
+html[data-theme='dark'] .table th,
+html[data-theme='dark'] .group-row,
+html[data-theme='dark'] .request-row,
+html[data-theme='dark'] .card-header,
+html[data-theme='dark'] .modal-header,
+html[data-theme='dark'] .modal-footer,
+html[data-theme='dark'] .message-header,
+html[data-theme='dark'] .message-footer,
+html[data-theme='dark'] .scard-actions,
+html[data-theme='dark'] .action-card,
+html[data-theme='dark'] .detail-card,
+html[data-theme='dark'] .option-card,
+html[data-theme='dark'] .invite-url-box,
+html[data-theme='dark'] .attachment-file,
+html[data-theme='dark'] .message-reply,
+html[data-theme='dark'] .message-exceptions {
+  border-color: var(--border-subtle);
+}
+
+html[data-theme='dark'] input:not([type='checkbox']):not([type='radio']),
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] .form-input,
+html[data-theme='dark'] .sf-input,
+html[data-theme='dark'] .search-input,
+html[data-theme='dark'] .filter-select,
+html[data-theme='dark'] .page-size-select,
+html[data-theme='dark'] .pager-size,
+html[data-theme='dark'] .form-control,
+html[data-theme='dark'] .form-select,
+html[data-theme='dark'] .member-search {
+  background: var(--surface-input);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+html[data-theme='dark'] input:not([type='checkbox']):not([type='radio']):focus,
+html[data-theme='dark'] select:focus,
+html[data-theme='dark'] textarea:focus,
+html[data-theme='dark'] .form-input:focus,
+html[data-theme='dark'] .sf-input:focus,
+html[data-theme='dark'] .search-input:focus,
+html[data-theme='dark'] .filter-select:focus,
+html[data-theme='dark'] .page-size-select:focus,
+html[data-theme='dark'] .pager-size:focus,
+html[data-theme='dark'] .member-search:focus {
+  background: var(--surface-input-focus);
+  color: var(--text-primary);
+  border-color: var(--branding-primary, #7C3AED);
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.16);
+  outline: none;
+}
+
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder,
+html[data-theme='dark'] .form-input::placeholder,
+html[data-theme='dark'] .sf-input::placeholder,
+html[data-theme='dark'] .search-input::placeholder,
+html[data-theme='dark'] .member-search::placeholder {
+  color: var(--input-placeholder);
+}
+
+html[data-theme='dark'] input[type='checkbox'] {
+  accent-color: var(--branding-primary, #7C3AED);
+}
+
+html[data-theme='dark'] .input-icon,
+html[data-theme='dark'] .search-icon,
+html[data-theme='dark'] .search-box svg,
+html[data-theme='dark'] .sf-icon,
+html[data-theme='dark'] .toggle-password,
+html[data-theme='dark'] .modal-close,
+html[data-theme='dark'] .btn-icon,
+html[data-theme='dark'] .back-link svg {
+  color: var(--text-secondary);
+}
+
+html[data-theme='dark'] .back-link,
+html[data-theme='dark'] .btn-secondary,
+html[data-theme='dark'] .btn-cancel,
+html[data-theme='dark'] .btn-icon,
+html[data-theme='dark'] .btn-page,
+html[data-theme='dark'] .btn-small,
+html[data-theme='dark'] .btn-download,
+html[data-theme='dark'] .copy-btn,
+html[data-theme='dark'] .toggle-password,
+html[data-theme='dark'] .sf-clear,
+html[data-theme='dark'] .fltbtn,
+html[data-theme='dark'] .vbtn,
+html[data-theme='dark'] .scard-btn,
+html[data-theme='dark'] .srow-btn,
+html[data-theme='dark'] .pager-btn,
+html[data-theme='dark'] .action-btn,
+html[data-theme='dark'] .modal-close {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+html[data-theme='dark'] .back-link:hover,
+html[data-theme='dark'] .btn-secondary:hover,
+html[data-theme='dark'] .btn-cancel:hover:not(:disabled),
+html[data-theme='dark'] .btn-icon:hover,
+html[data-theme='dark'] .btn-page:hover:not(:disabled),
+html[data-theme='dark'] .btn-small:hover,
+html[data-theme='dark'] .btn-download:hover,
+html[data-theme='dark'] .copy-btn:hover,
+html[data-theme='dark'] .sf-clear:hover,
+html[data-theme='dark'] .fltbtn:hover,
+html[data-theme='dark'] .vbtn:hover,
+html[data-theme='dark'] .scard-btn:hover,
+html[data-theme='dark'] .srow-btn:hover,
+html[data-theme='dark'] .pager-btn:hover:not(:disabled),
+html[data-theme='dark'] .action-btn:hover,
+html[data-theme='dark'] .modal-close:hover {
+  background: var(--surface-muted-strong);
+  color: #f8fafc;
+  border-color: rgba(124, 58, 237, 0.34);
+}
+
+html[data-theme='dark'] .search-row,
+html[data-theme='dark'] .filters-bar,
+html[data-theme='dark'] .pager,
+html[data-theme='dark'] .search-wrap {
+  background: var(--surface-panel);
+  border-color: var(--border-subtle);
+}
+
+html[data-theme='dark'] .group-card:hover,
+html[data-theme='dark'] .group-row:hover,
+html[data-theme='dark'] .method-card:hover,
+html[data-theme='dark'] .scard:hover,
+html[data-theme='dark'] .srow:hover,
+html[data-theme='dark'] .action-card:hover {
+  background: rgba(30, 41, 59, 0.96);
+  border-color: rgba(124, 58, 237, 0.24);
+  box-shadow: 0 18px 32px rgba(2, 6, 23, 0.34);
+}
+
+html[data-theme='dark'] .action-card.disabled {
+  opacity: 0.58;
+}
+
+html[data-theme='dark'] .message-card.from-me {
+  background: rgba(36, 52, 78, 0.88);
+}
+
+html[data-theme='dark'] .message-card.has-exceptions {
+  border-color: rgba(248, 113, 113, 0.34);
+}
+
+html[data-theme='dark'] .url-link,
+html[data-theme='dark'] .ads-link,
+html[data-theme='dark'] .setup-link-text,
+html[data-theme='dark'] .company-link,
+html[data-theme='dark'] .link-btn {
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .url-link:hover,
+html[data-theme='dark'] .ads-link:hover,
+html[data-theme='dark'] .setup-link-text:hover,
+html[data-theme='dark'] .company-link:hover,
+html[data-theme='dark'] .link-btn:hover {
+  color: #ddd6fe;
+}
+
+html[data-theme='dark'] .badge {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+html[data-theme='dark'] .badge-secondary {
+  background: rgba(71, 85, 105, 0.42);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .badge-warning {
+  color: #fde68a;
+}
+
+html[data-theme='dark'] .empty-state svg,
+html[data-theme='dark'] .loading-state svg,
+html[data-theme='dark'] .empty-requests svg {
+  color: #475569;
+}
+
+html[data-theme='dark'] .action-icon,
+html[data-theme='dark'] .method-icon,
+html[data-theme='dark'] .master-icon,
+html[data-theme='dark'] .server-avatar,
+html[data-theme='dark'] .sender-avatar {
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.26);
+}
+
+html[data-theme='dark'] .dropdown-item {
+  color: var(--text-primary);
+}
+
+html[data-theme='dark'] .dropdown-item:hover,
+html[data-theme='dark'] .dropdown-item:focus,
+html[data-theme='dark'] .dropdown-item.active {
+  background: rgba(124, 58, 237, 0.18);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .toast-body {
+  color: var(--text-primary);
+  background: transparent;
+}
+
+html[data-theme='dark'] code {
+  background: rgba(148, 163, 184, 0.08);
+  color: #e2e8f0;
+  border-radius: 0.35rem;
+  padding: 0.08rem 0.32rem;
+}
+
+html[data-theme='dark'] pre:not(.json-block) {
+  background: rgba(2, 6, 23, 0.58);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.22);
+}
+
+/* Page-Specific Dark Theme Repairs */
+html[data-theme='dark'] .account-page .info-card,
+html[data-theme='dark'] .connect-page .method-card,
+html[data-theme='dark'] .connect-page .help-section,
+html[data-theme='dark'] .qrcode-page .content-card,
+html[data-theme='dark'] .qrcode-page .qr-display,
+html[data-theme='dark'] .qrcode-page .qr-instructions,
+html[data-theme='dark'] .paircode-page .content-card,
+html[data-theme='dark'] .paircode-page .code-display,
+html[data-theme='dark'] .paircode-page .instructions-box,
+html[data-theme='dark'] .lid-page .send-card,
+html[data-theme='dark'] .lid-page .result-box,
+html[data-theme='dark'] .webhooks-page .add-card,
+html[data-theme='dark'] .webhooks-page .list-card,
+html[data-theme='dark'] .webhooks-page .webhook-item,
+html[data-theme='dark'] .rabbitmq-page .add-card,
+html[data-theme='dark'] .rabbitmq-page .list-card,
+html[data-theme='dark'] .rabbitmq-page .rabbitmq-item,
+html[data-theme='dark'] .home-page .scard,
+html[data-theme='dark'] .home-page .srow {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.28);
+  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.34);
+}
+
+html[data-theme='dark'] .account-page .card-body,
+html[data-theme='dark'] .webhooks-page .card-body,
+html[data-theme='dark'] .rabbitmq-page .card-body {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+html[data-theme='dark'] .account-page .info-row,
+html[data-theme='dark'] .webhooks-page .webhook-item,
+html[data-theme='dark'] .rabbitmq-page .rabbitmq-item,
+html[data-theme='dark'] .webhooks-page .modal-header,
+html[data-theme='dark'] .webhooks-page .modal-actions {
+  border-color: rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .account-page .info-label,
+html[data-theme='dark'] .account-page .color-label,
+html[data-theme='dark'] .connect-page .method-card > p,
+html[data-theme='dark'] .connect-page .method-features li,
+html[data-theme='dark'] .connect-page .help-section ol,
+html[data-theme='dark'] .qrcode-page .qr-loading p,
+html[data-theme='dark'] .qrcode-page .qr-success p,
+html[data-theme='dark'] .qrcode-page .alt-method p,
+html[data-theme='dark'] .paircode-page .step-info p,
+html[data-theme='dark'] .paircode-page .success-section p,
+html[data-theme='dark'] .paircode-page .code-timer,
+html[data-theme='dark'] .paircode-page .alt-method p,
+html[data-theme='dark'] .lid-page .form-group label,
+html[data-theme='dark'] .lid-page .result-label,
+html[data-theme='dark'] .webhooks-page .form-group label,
+html[data-theme='dark'] .webhooks-page .checkbox-label,
+html[data-theme='dark'] .webhooks-page .extra-label,
+html[data-theme='dark'] .webhooks-page .item-meta,
+html[data-theme='dark'] .webhooks-page .form-hint,
+html[data-theme='dark'] .rabbitmq-page .form-group label,
+html[data-theme='dark'] .rabbitmq-page .checkbox-label,
+html[data-theme='dark'] .rabbitmq-page .extra-label,
+html[data-theme='dark'] .rabbitmq-page .item-meta {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .account-page .info-value,
+html[data-theme='dark'] .account-page .card-header h2,
+html[data-theme='dark'] .connect-page .help-section h4,
+html[data-theme='dark'] .qrcode-page .qr-instructions h4,
+html[data-theme='dark'] .paircode-page .step-info h3,
+html[data-theme='dark'] .paircode-page .instructions-box h4,
+html[data-theme='dark'] .lid-page .send-card h2,
+html[data-theme='dark'] .lid-page .result-value,
+html[data-theme='dark'] .webhooks-page .card-header h2,
+html[data-theme='dark'] .webhooks-page .webhook-url,
+html[data-theme='dark'] .webhooks-page .modal-header h3,
+html[data-theme='dark'] .rabbitmq-page .card-header h2,
+html[data-theme='dark'] .rabbitmq-page .connection-string,
+html[data-theme='dark'] .home-page .scard-phone,
+html[data-theme='dark'] .home-page .srow-phone {
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .account-page .info-value code,
+html[data-theme='dark'] .webhooks-page .track-id,
+html[data-theme='dark'] .rabbitmq-page .track-id {
+  background: rgba(76, 29, 149, 0.28);
+  color: #ddd6fe;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+}
+
+html[data-theme='dark'] .account-page .badge-user {
+  background: rgba(76, 29, 149, 0.28);
+  color: #ddd6fe;
+}
+
+html[data-theme='dark'] .account-page .badge-success {
+  background: rgba(20, 83, 45, 0.56);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .account-page .btn-secondary {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .account-page .btn-secondary:hover {
+  background: rgba(30, 41, 59, 0.92);
+}
+
+html[data-theme='dark'] .connect-page .method-card:hover,
+html[data-theme='dark'] .home-page .scard:hover,
+html[data-theme='dark'] .home-page .srow:hover {
+  background: rgba(20, 30, 48, 0.96);
+  border-color: rgba(124, 58, 237, 0.28);
+}
+
+html[data-theme='dark'] .connect-page .method-action,
+html[data-theme='dark'] .qrcode-page .link-primary,
+html[data-theme='dark'] .paircode-page .btn-link,
+html[data-theme='dark'] .paircode-page .link-primary,
+html[data-theme='dark'] .lid-page .success-box strong {
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .connect-page .help-section {
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .qrcode-page .qr-display {
+  background: rgba(10, 17, 30, 0.92);
+}
+
+html[data-theme='dark'] .qrcode-page .qr-placeholder {
+  color: #64748b;
+}
+
+html[data-theme='dark'] .qrcode-page .qr-instructions {
+  background: rgba(30, 41, 59, 0.78);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .qrcode-page .qr-instructions ol {
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .qrcode-page .alt-method {
+  border-top-color: rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .paircode-page .phone-input,
+html[data-theme='dark'] .paircode-page .code-char {
+  background: rgba(11, 22, 40, 0.96);
+  color: #f8fafc;
+  border-color: rgba(124, 58, 237, 0.42);
+}
+
+html[data-theme='dark'] .paircode-page .input-prefix {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .paircode-page .code-display {
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .paircode-page .code-char.separator {
+  background: transparent;
+  color: #a78bfa;
+  border-color: transparent;
+}
+
+html[data-theme='dark'] .paircode-page .btn-copy {
+  background: rgba(15, 23, 42, 0.94);
+  color: #ddd6fe;
+  border-color: rgba(124, 58, 237, 0.36);
+}
+
+html[data-theme='dark'] .paircode-page .btn-copy:hover {
+  background: rgba(76, 29, 149, 0.42);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .paircode-page .instructions-box {
+  background: rgba(120, 53, 15, 0.24);
+  border: 1px solid rgba(245, 158, 11, 0.24);
+}
+
+html[data-theme='dark'] .paircode-page .instructions-box ol {
+  color: #fde68a;
+}
+
+html[data-theme='dark'] .paircode-page .alt-method {
+  border-top-color: rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .lid-page .form-input,
+html[data-theme='dark'] .lid-page .form-textarea,
+html[data-theme='dark'] .webhooks-page .form-input,
+html[data-theme='dark'] .rabbitmq-page .form-input {
+  background: rgba(11, 22, 40, 0.96);
+  color: #e2e8f0;
+  border-color: rgba(71, 85, 105, 0.34);
+}
+
+html[data-theme='dark'] .lid-page .btn-secondary {
+  background: rgba(15, 23, 42, 0.84);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .lid-page .btn-secondary:hover {
+  background: rgba(30, 41, 59, 0.92);
+}
+
+html[data-theme='dark'] .lid-page .result-box {
+  background: rgba(30, 41, 59, 0.76);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .lid-page .raw-box {
+  background: rgba(2, 6, 23, 0.82);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .webhooks-page .no-token-warning,
+html[data-theme='dark'] .rabbitmq-page .no-token-warning {
+  background: rgba(120, 53, 15, 0.18);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+html[data-theme='dark'] .webhooks-page .no-token-warning .warning-icon,
+html[data-theme='dark'] .rabbitmq-page .no-token-warning .warning-icon {
+  background: rgba(146, 64, 14, 0.28);
+}
+
+html[data-theme='dark'] .webhooks-page .no-token-warning h2,
+html[data-theme='dark'] .rabbitmq-page .no-token-warning h2 {
+  color: #fde68a;
+}
+
+html[data-theme='dark'] .webhooks-page .no-token-warning p,
+html[data-theme='dark'] .rabbitmq-page .no-token-warning p {
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .webhooks-page .item-extra,
+html[data-theme='dark'] .rabbitmq-page .item-extra {
+  background: rgba(2, 6, 23, 0.52);
+  border: 1px solid rgba(71, 85, 105, 0.22);
+}
+
+html[data-theme='dark'] .webhooks-page .extra-value,
+html[data-theme='dark'] .rabbitmq-page .extra-value {
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .webhooks-page .status-indicator.success {
+  background: rgba(20, 83, 45, 0.52);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .webhooks-page .status-indicator.error {
+  background: rgba(127, 29, 29, 0.32);
+  color: #fecaca;
+}
+
+html[data-theme='dark'] .webhooks-page .flag-btn,
+html[data-theme='dark'] .rabbitmq-page .flag-btn,
+html[data-theme='dark'] .webhooks-page .btn-edit,
+html[data-theme='dark'] .webhooks-page .btn-delete,
+html[data-theme='dark'] .rabbitmq-page .btn-delete {
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .webhooks-page .flag-btn.state-unset,
+html[data-theme='dark'] .rabbitmq-page .flag-btn.state-unset {
+  background: rgba(15, 23, 42, 0.9);
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .webhooks-page .flag-btn.state-on,
+html[data-theme='dark'] .rabbitmq-page .flag-btn.state-on {
+  background: rgba(20, 83, 45, 0.56);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .webhooks-page .flag-btn.state-off,
+html[data-theme='dark'] .rabbitmq-page .flag-btn.state-off {
+  background: rgba(127, 29, 29, 0.32);
+  color: #fecaca;
+}
+
+html[data-theme='dark'] .webhooks-page .btn-edit {
+  background: rgba(49, 46, 129, 0.28);
+  color: #c7d2fe;
+}
+
+html[data-theme='dark'] .webhooks-page .btn-edit:hover {
+  background: rgba(67, 56, 202, 0.34);
+}
+
+html[data-theme='dark'] .webhooks-page .btn-delete,
+html[data-theme='dark'] .rabbitmq-page .btn-delete {
+  background: rgba(127, 29, 29, 0.24);
+  color: #fecaca;
+}
+
+html[data-theme='dark'] .webhooks-page .btn-delete:hover,
+html[data-theme='dark'] .rabbitmq-page .btn-delete:hover {
+  background: rgba(153, 27, 27, 0.34);
+}
+
+html[data-theme='dark'] .webhooks-page .modal-content.edit-modal {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .home-page .scard-token-row {
+  background: rgba(2, 6, 23, 0.34);
+  border-top-color: rgba(71, 85, 105, 0.24);
+  border-bottom-color: rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .home-page .scard-copy-icon,
+html[data-theme='dark'] .home-page .srow-token,
+html[data-theme='dark'] .home-page .pager,
+html[data-theme='dark'] .home-page .pager-info {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .home-page .scard-dispatch,
+html[data-theme='dark'] .home-page .srow-dispatch {
+  background: rgba(76, 29, 149, 0.32);
+  color: #ddd6fe;
+}
+
+html[data-theme='dark'] .home-page .scard-btn,
+html[data-theme='dark'] .home-page .srow-btn,
+html[data-theme='dark'] .home-page .fltbtn,
+html[data-theme='dark'] .home-page .pager-btn,
+html[data-theme='dark'] .home-page .pager-size {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(71, 85, 105, 0.28);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .home-page .scard-btn-connect,
+html[data-theme='dark'] .home-page .srow-btn-connect,
+html[data-theme='dark'] .home-page .fltbtn.on {
+  background: rgba(20, 83, 45, 0.52);
+  border-color: rgba(34, 197, 94, 0.24);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .home-page .scard-badge.connected,
+html[data-theme='dark'] .home-page .sbadge.connected {
+  background: rgba(20, 83, 45, 0.52);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .home-page .scard-badge.connecting,
+html[data-theme='dark'] .home-page .sbadge.connecting {
+  background: rgba(120, 53, 15, 0.32);
+  color: #fde68a;
+}
+
+html[data-theme='dark'] .home-page .scard-badge.disconnected,
+html[data-theme='dark'] .home-page .sbadge.disconnected {
+  background: rgba(51, 65, 85, 0.76);
+  color: #cbd5e1;
 }

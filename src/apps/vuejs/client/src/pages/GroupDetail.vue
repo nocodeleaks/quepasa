@@ -1349,6 +1349,199 @@ export default defineComponent({
 
 .spin-icon { display: inline-block; animation: spin 0.8s linear infinite; }
 
+html[data-theme='dark'] .back-link {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.28);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .back-link:hover {
+  background: rgba(30, 41, 59, 0.94);
+  border-color: rgba(124, 58, 237, 0.3);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .profile-card,
+html[data-theme='dark'] .info-card,
+html[data-theme='dark'] .action-btn,
+html[data-theme='dark'] .danger-card,
+html[data-theme='dark'] .modal-card {
+  background: rgba(15, 23, 42, 0.94);
+  border-color: rgba(71, 85, 105, 0.28);
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.28);
+}
+
+html[data-theme='dark'] .profile-name,
+html[data-theme='dark'] .participant-name,
+html[data-theme='dark'] .card-header,
+html[data-theme='dark'] .description-text,
+html[data-theme='dark'] .request-name,
+html[data-theme='dark'] .modal-header h3,
+html[data-theme='dark'] .invite-url-text,
+html[data-theme='dark'] .field-label {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .profile-meta,
+html[data-theme='dark'] .description-meta,
+html[data-theme='dark'] .description-empty,
+html[data-theme='dark'] .participant-phone,
+html[data-theme='dark'] .request-date,
+html[data-theme='dark'] .load-more-info,
+html[data-theme='dark'] .modal-loading,
+html[data-theme='dark'] .revoke-hint,
+html[data-theme='dark'] .field-hint {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .profile-photo {
+  border-color: rgba(71, 85, 105, 0.42);
+}
+
+html[data-theme='dark'] .edit-photo-btn {
+  border-color: rgba(15, 23, 42, 0.94);
+}
+
+html[data-theme='dark'] .edit-inline-btn,
+html[data-theme='dark'] .participant-action-btn,
+html[data-theme='dark'] .modal-close {
+  background: rgba(30, 41, 59, 0.94);
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .edit-inline-btn:hover,
+html[data-theme='dark'] .participant-action-btn:hover,
+html[data-theme='dark'] .modal-close:hover {
+  background: rgba(51, 65, 85, 0.96);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .card-header,
+html[data-theme='dark'] .modal-header,
+html[data-theme='dark'] .modal-footer {
+  background: rgba(15, 23, 42, 0.96);
+  border-color: rgba(71, 85, 105, 0.26);
+}
+
+html[data-theme='dark'] .action-btn {
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .action-btn:hover {
+  background: rgba(30, 41, 59, 0.96);
+}
+
+html[data-theme='dark'] .member-search,
+html[data-theme='dark'] .field-input {
+  background: rgba(11, 22, 40, 0.96);
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .member-search::placeholder,
+html[data-theme='dark'] .field-input::placeholder {
+  color: #64748b;
+}
+
+html[data-theme='dark'] .member-search:focus,
+html[data-theme='dark'] .field-input:focus {
+  background: rgba(16, 28, 49, 0.98);
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.14);
+}
+
+html[data-theme='dark'] .participant-row {
+  border-bottom-color: rgba(51, 65, 85, 0.3);
+}
+
+html[data-theme='dark'] .participant-avatar-placeholder {
+  background: rgba(30, 41, 59, 0.96);
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .role-owner {
+  background: rgba(76, 29, 149, 0.34);
+  color: #ddd6fe;
+}
+
+html[data-theme='dark'] .role-admin {
+  background: rgba(20, 83, 45, 0.34);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .danger-card {
+  background: rgba(127, 29, 29, 0.16);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+html[data-theme='dark'] .danger-btn {
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .danger-btn:hover {
+  background: rgba(127, 29, 29, 0.24);
+}
+
+html[data-theme='dark'] .invite-url-box,
+html[data-theme='dark'] .request-row {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.26);
+}
+
+html[data-theme='dark'] .copy-url-btn {
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .pmenu-promote {
+  background: rgba(76, 29, 149, 0.28);
+  color: #ddd6fe;
+}
+
+html[data-theme='dark'] .pmenu-promote:hover {
+  background: rgba(76, 29, 149, 0.38);
+}
+
+html[data-theme='dark'] .pmenu-demote {
+  background: rgba(120, 53, 15, 0.28);
+  color: #fde68a;
+}
+
+html[data-theme='dark'] .pmenu-demote:hover {
+  background: rgba(120, 53, 15, 0.38);
+}
+
+html[data-theme='dark'] .pmenu-remove {
+  background: rgba(127, 29, 29, 0.22);
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .pmenu-remove:hover {
+  background: rgba(127, 29, 29, 0.32);
+}
+
+html[data-theme='dark'] .empty-requests svg {
+  color: #475569;
+}
+
+html[data-theme='dark'] .btn-cancel {
+  background: rgba(30, 41, 59, 0.94);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .btn-cancel:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.96);
+}
+
+html[data-theme='dark'] .btn-danger-outline {
+  background: rgba(15, 23, 42, 0.94);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .btn-danger-outline:hover:not(:disabled) {
+  background: rgba(127, 29, 29, 0.2);
+}
+
 @media (max-width: 900px) {
   .group-layout { grid-template-columns: 1fr; }
   .messages-card { order: 2; }

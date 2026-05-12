@@ -1637,4 +1637,104 @@ export default defineComponent({
 .json-collapsed{ color:#6b7280; font-style:italic }
 .btn-small{ background:#eef2ff; border:1px solid #c7d2fe; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px }
 .btn-small:hover{ background:#e0e7ff }
+
+html[data-theme='dark'] .back-link {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.3);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .back-link:hover {
+  background: rgba(30, 41, 59, 0.94);
+  border-color: rgba(124, 58, 237, 0.3);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .btn-refresh {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.32);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .btn-refresh:hover:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.46);
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .filters-bar {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .messages-count {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .pagination-controls {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.26);
+}
+
+html[data-theme='dark'] .btn-page {
+  background: rgba(30, 41, 59, 0.94);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.26);
+}
+
+html[data-theme='dark'] .btn-page:hover:not(:disabled) {
+  background: rgba(76, 29, 149, 0.88);
+  border-color: rgba(124, 58, 237, 0.58);
+}
+
+html[data-theme='dark'] .btn-page:disabled {
+  background: rgba(30, 41, 59, 0.58);
+  color: #64748b;
+  border-color: rgba(71, 85, 105, 0.16);
+}
+
+html[data-theme='dark'] .page-info {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .page-size-select {
+  background: rgba(11, 22, 40, 0.96);
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .page-size-select:hover:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.52);
+}
+
+html[data-theme='dark'] .page-size-select:disabled {
+  background: rgba(30, 41, 59, 0.58);
+}
+
+html[data-theme='dark'] .btn-small {
+  background: rgba(30, 41, 59, 0.94);
+  border-color: rgba(71, 85, 105, 0.24);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .btn-small:hover {
+  background: rgba(51, 65, 85, 0.96);
+}
+
+html[data-theme='dark'] .message-type {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .attachment-file {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .btn-download {
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.24);
+}
 </style>

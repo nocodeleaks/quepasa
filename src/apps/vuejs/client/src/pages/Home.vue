@@ -95,8 +95,10 @@
         <div v-if="isConnected(srv)" class="scard-flags">
           <button class="fltbtn" :class="{ on: srv.groups }" @click.stop="toggleGroups(srv)" :title="t('groups')" :disabled="toggling === srv.token"><i class="fa fa-users"></i></button>
           <button class="fltbtn" :class="{ on: srv.broadcasts }" @click.stop="toggleBroadcasts(srv)" :title="t('broadcasts')" :disabled="toggling === srv.token"><i class="fa fa-bullhorn"></i></button>
-          <button class="fltbtn" :class="{ on: srv.read_receipts }" @click.stop="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
+          <button class="fltbtn" :class="{ on: srv.readReceipts }" @click.stop="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
           <button class="fltbtn" :class="{ on: srv.calls }" @click.stop="toggleCalls(srv)" :title="t('calls')" :disabled="toggling === srv.token"><i class="fa fa-phone"></i></button>
+          <button class="fltbtn" :class="{ on: srv.direct }" @click.stop="toggleDirect(srv)" :title="t('direct')" :disabled="toggling === srv.token"><i class="fa fa-comment"></i></button>
+          <button class="fltbtn" :class="{ on: srv.readupdate }" @click.stop="toggleReadUpdate(srv)" :title="t('readupdate')" :disabled="toggling === srv.token"><i class="fa fa-eye"></i></button>
         </div>
 
         <!-- Card actions -->
@@ -122,8 +124,10 @@
               <li><hr class="dropdown-divider"></li>
               <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }}</button></li>
               <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }}</button></li>
-              <li><button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.readReceipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}</button></li>
               <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.direct }" @click="toggleDirect(srv)"><i class="fa fa-comment me-2"></i> {{ t('direct') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.readupdate }" @click="toggleReadUpdate(srv)"><i class="fa fa-eye me-2"></i> {{ t('readupdate') }}</button></li>
               <li><hr class="dropdown-divider"></li>
               <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
               <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
@@ -160,8 +164,10 @@
         <div class="srow-flags" v-if="isConnected(srv)">
           <button class="fltbtn" :class="{ on: srv.groups }" @click="toggleGroups(srv)" :title="t('groups')" :disabled="toggling === srv.token"><i class="fa fa-users"></i></button>
           <button class="fltbtn" :class="{ on: srv.broadcasts }" @click="toggleBroadcasts(srv)" :title="t('broadcasts')" :disabled="toggling === srv.token"><i class="fa fa-bullhorn"></i></button>
-          <button class="fltbtn" :class="{ on: srv.read_receipts }" @click="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
+          <button class="fltbtn" :class="{ on: srv.readReceipts }" @click="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
           <button class="fltbtn" :class="{ on: srv.calls }" @click="toggleCalls(srv)" :title="t('calls')" :disabled="toggling === srv.token"><i class="fa fa-phone"></i></button>
+          <button class="fltbtn" :class="{ on: srv.direct }" @click="toggleDirect(srv)" :title="t('direct')" :disabled="toggling === srv.token"><i class="fa fa-comment"></i></button>
+          <button class="fltbtn" :class="{ on: srv.readupdate }" @click="toggleReadUpdate(srv)" :title="t('readupdate')" :disabled="toggling === srv.token"><i class="fa fa-eye"></i></button>
         </div>
         <!-- Dispatch badge -->
         <div class="srow-dispatch" v-if="srv.dispatch_count > 0" :title="t('col_dispatch')">
@@ -190,8 +196,10 @@
               <li><hr class="dropdown-divider"></li>
               <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }} {{ srv.groups ? t('state_on_short') : t('state_off_short') }}</button></li>
               <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }} {{ srv.broadcasts ? t('state_on_short') : t('state_off_short') }}</button></li>
-              <li><button class="dropdown-item" :class="{ active: srv.read_receipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.read_receipts ? t('state_on_short') : t('state_off_short') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.readReceipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }} {{ srv.readReceipts ? t('state_on_short') : t('state_off_short') }}</button></li>
               <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }} {{ srv.calls ? t('state_on_short') : t('state_off_short') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.direct }" @click="toggleDirect(srv)"><i class="fa fa-comment me-2"></i> {{ t('direct') }} {{ srv.direct ? t('state_on_short') : t('state_off_short') }}</button></li>
+              <li><button class="dropdown-item" :class="{ active: srv.readupdate }" @click="toggleReadUpdate(srv)"><i class="fa fa-eye me-2"></i> {{ t('readupdate') }} {{ srv.readupdate ? t('state_on_short') : t('state_off_short') }}</button></li>
               <li><hr class="dropdown-divider"></li>
               <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
               <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
@@ -564,6 +572,32 @@ export default defineComponent({
       }
     }
 
+    async function toggleDirect(srv: any) {
+      try {
+        toggling.value = srv.token
+        await api.post('/api/session/option', { token: srv.token, option: 'direct' })
+        await load()
+        pushToast(t('direct_updated'), 'success')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || t('error_update_direct'), 'error')
+      } finally {
+        toggling.value = ''
+      }
+    }
+
+    async function toggleReadUpdate(srv: any) {
+      try {
+        toggling.value = srv.token
+        await api.post('/api/session/option', { token: srv.token, option: 'readupdate' })
+        await load()
+        pushToast(t('readupdate_updated'), 'success')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || t('error_update_readupdate'), 'error')
+      } finally {
+        toggling.value = ''
+      }
+    }
+
     async function deleteServer(srv: any) {
       if (!confirm(t('confirm_remove'))) return
       try {
@@ -617,7 +651,7 @@ export default defineComponent({
       filteredServers, currentPage, pageSize, pageSizeOptions, totalPages,
       load, getStatusClass, getConnectionClass, isConnected, formatUptime, formatWid,
       copyToken, toggleServer, toggleDebug, toggleGroups, toggleBroadcasts, 
-      toggleReadReceipts, toggleCalls, disconnectServer, deleteServer,
+      toggleReadReceipts, toggleCalls, toggleDirect, toggleReadUpdate, disconnectServer, deleteServer,
       applySearch, clearSearch, goToPage, nextPage, prevPage, createNewServer,
       getTriStateClass, getTriStateTitle,
       t, locale, setLocale
@@ -879,6 +913,8 @@ export default defineComponent({
   border: 1px solid rgba(229,231,235,0.7);
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(12px);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 .dropdown-item {
   padding: 8px 14px;
@@ -1120,6 +1156,7 @@ export default defineComponent({
   background: rgba(220,252,231,0.85); color: #16a34a;
   border-color: rgba(134,239,172,0.5);
 }
+
 .fltbtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Dispatch badge */
@@ -1197,6 +1234,77 @@ export default defineComponent({
 .ms-1 { margin-left: 4px; }
 .me-2 { margin-right: 6px; }
 .dropdown-divider { margin: 3px 0; border-color: rgba(229,231,235,0.6); }
+
+html[data-theme='dark'] .page-title {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .mchip-total,
+html[data-theme='dark'] .mchip-offline {
+  background: rgba(51, 65, 85, 0.88);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .mchip-online {
+  background: rgba(20, 83, 45, 0.82);
+  color: #bbf7d0;
+}
+
+html[data-theme='dark'] .search-field {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(71, 85, 105, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.18);
+}
+
+html[data-theme='dark'] .sf-input {
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .sf-input::placeholder {
+  color: #64748b;
+}
+
+html[data-theme='dark'] .sf-icon,
+html[data-theme='dark'] .sf-clear {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .view-toggle {
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .vbtn {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .servers-table-wrapper {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .servers-table th {
+  background: rgba(15, 23, 42, 0.96);
+  color: #94a3b8;
+  border-bottom-color: rgba(71, 85, 105, 0.26);
+}
+
+html[data-theme='dark'] .servers-table td {
+  border-bottom-color: rgba(51, 65, 85, 0.28);
+}
+
+html[data-theme='dark'] .servers-table tbody tr:hover {
+  background: rgba(30, 41, 59, 0.72);
+}
+
+html[data-theme='dark'] .token-code {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .token-code:hover {
+  background: rgba(51, 65, 85, 0.96);
+}
 
 /* ===== Responsive ===== */
 @media (max-width: 680px) {

@@ -106,6 +106,10 @@
                 <input type="checkbox" v-model="newCalls" />
                 <span>{{ t('webhooks_calls') }}</span>
               </label>
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="newDirect" />
+                <span>{{ t('direct') }}</span>
+              </label>
             </div>
 
             <button type="submit" class="btn-primary" :disabled="!newUrl || creating">
@@ -201,6 +205,14 @@
                 >
                   <i class="fa fa-phone"></i>
                 </button>
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.direct)"
+                  @click="toggleWebhookFlag(webhook, 'direct')"
+                  :title="t('direct')"
+                >
+                  <i class="fa fa-comment"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -284,6 +296,10 @@
                 <label>{{ t('webhooks_calls') }}</label>
                 <TriStateToggle v-model="editData.calls" />
               </div>
+              <div class="option-item">
+                <label>{{ t('direct') }}</label>
+                <TriStateToggle v-model="editData.direct" />
+              </div>
             </div>
 
             <div class="modal-actions">
@@ -320,6 +336,7 @@ type WebhookItem = {
   groups?: number | boolean | null
   readreceipts?: number | boolean | null
   calls?: number | boolean | null
+  direct?: number | boolean | null
   extra?: unknown
   failure?: string | null
 }
@@ -346,6 +363,7 @@ export default defineComponent({
     const newGroups = ref(true)
     const newReadReceipts = ref(false)
     const newCalls = ref(false)
+    const newDirect = ref(true)
     const newExtra = ref('')
 
     const editData = reactive({
@@ -358,6 +376,7 @@ export default defineComponent({
       groups: 0,
       readreceipts: 0,
       calls: 0,
+      direct: 0,
     })
 
     const currentToken = computed(() => String(route.query.token || ''))
@@ -411,6 +430,7 @@ export default defineComponent({
         groups: toTriState(webhook.groups),
         readreceipts: toTriState(webhook.readreceipts),
         calls: toTriState(webhook.calls),
+        direct: toTriState(webhook.direct),
         extra: webhook.extra ?? null,
       }
     }
@@ -458,6 +478,7 @@ export default defineComponent({
           groups: toTriState(newGroups.value),
           readreceipts: toTriState(newReadReceipts.value),
           calls: toTriState(newCalls.value),
+          direct: toTriState(newDirect.value),
           extra: parseExtra(newExtra.value),
         })
 
@@ -470,6 +491,7 @@ export default defineComponent({
         newGroups.value = true
         newReadReceipts.value = false
         newCalls.value = false
+        newDirect.value = true
         newExtra.value = ''
 
         pushToast(t('webhooks_created'), 'success')
@@ -506,7 +528,7 @@ export default defineComponent({
       }
     }
 
-    async function toggleWebhookFlag(webhook: WebhookItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls') {
+    async function toggleWebhookFlag(webhook: WebhookItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls' | 'direct') {
       try {
         const payload = buildWebhookPayload(webhook)
 
@@ -533,6 +555,7 @@ export default defineComponent({
       editData.groups = toTriState(webhook.groups)
       editData.readreceipts = toTriState(webhook.readreceipts)
       editData.calls = toTriState(webhook.calls)
+      editData.direct = toTriState(webhook.direct)
       editData.extraStr = webhook.extra ? formatExtra(webhook.extra) : ''
       showEditModal.value = true
     }
@@ -556,6 +579,7 @@ export default defineComponent({
           groups: editData.groups,
           readreceipts: editData.readreceipts,
           calls: editData.calls,
+          direct: editData.direct,
           extra: parseExtra(editData.extraStr),
         })
 
@@ -590,6 +614,7 @@ export default defineComponent({
       loading,
       newBroadcasts,
       newCalls,
+      newDirect,
       newExtra,
       newForwardInternal,
       newGroups,

@@ -117,3 +117,29 @@ func TestConfigureUsesDefaultVersionForUnversionedAlias(t *testing.T) {
 		t.Fatalf("expected /api/system/version to be absent when default version is %s, got %d", CurrentAPIVersion, canonicalRes.Code)
 	}
 }
+
+func TestCanonicalGroupAliasesRemainMounted(t *testing.T) {
+	router := newCanonicalTestRouter()
+
+	testCases := []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodPut, path: "/api/v5/groups/name"},
+		{method: http.MethodPut, path: "/api/v5/groups/description"},
+		{method: http.MethodGet, path: "/api/v5/groups/invite"},
+		{method: http.MethodGet, path: "/api/v5/groups/requests"},
+		{method: http.MethodPost, path: "/api/v5/groups/requests"},
+	}
+
+	for _, testCase := range testCases {
+		req := httptest.NewRequest(testCase.method, testCase.path, nil)
+		res := httptest.NewRecorder()
+
+		router.ServeHTTP(res, req)
+
+		if res.Code == http.StatusNotFound {
+			t.Fatalf("expected canonical group alias %s %s to remain mounted", testCase.method, testCase.path)
+		}
+	}
+}

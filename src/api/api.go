@@ -62,6 +62,8 @@ func Configure(r chi.Router) {
 				RegisterAPIControllers(router, defaultVersion == CurrentAPIVersion)
 			})
 			r.Group(RegisterAPIV3Controllers)
+			r.Group(RegisterAuthenticatedPublicControllers)
+			r.Group(RegisterAuthenticatedControllers)
 		})
 
 		// Preserve legacy root-level routes when API_PREFIX is configured so older

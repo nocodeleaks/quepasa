@@ -298,6 +298,20 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 	}
 }
 
+func resolveSummaryWid(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) string {
+	if liveServer != nil {
+		if wid := strings.TrimSpace(liveServer.GetWId()); wid != "" {
+			return wid
+		}
+	}
+
+	if dbServer == nil {
+		return ""
+	}
+
+	return strings.TrimSpace(dbServer.GetWId())
+}
+
 // BuildServerSummary creates a stable JSON-friendly server summary for authenticated reads.
 func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) map[string]interface{} {
 	fallbackRuntime := serverRuntimeSnapshot{
@@ -327,6 +341,8 @@ func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsapp
 	})
 
 	return recoverAPIValue(buildFallbackServerSummary(dbServer, snap), "BuildServerSummary response payload", fields, func() map[string]interface{} {
-		return buildFallbackServerSummary(dbServer, snap)
+		payload := buildFallbackServerSummary(dbServer, snap)
+		payload["wid"] = resolveSummaryWid(dbServer, liveServer)
+		return payload
 	})
 }

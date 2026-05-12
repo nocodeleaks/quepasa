@@ -352,6 +352,75 @@ func AuthenticatedGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// AuthenticatedGroupRequestsController lists or handles pending join requests for a group.
+func AuthenticatedGroupRequestsController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
+	if !ok {
+		return
+	}
+
+	groupID, err := getGroupIDParam(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	type membershipRequest struct {
+		Participants []string `json:"participants"`
+		Action       string   `json:"action"`
+	}
+
+	request := membershipRequest{Action: "get"}
+	if r.Method == http.MethodPost {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			RespondErrorCode(w, fmt.Errorf("invalid JSON body: %w", err), http.StatusBadRequest)
+			return
+		}
+	}
+
+	action := strings.ToLower(strings.TrimSpace(request.Action))
+	if action == "" {
+		action = "get"
+	}
+
+	response := &apiModels.RequestResponse{}
+
+	switch action {
+	case "get":
+		requests, err := server.GetGroupManager().GetGroupJoinRequests(groupID)
+		if err != nil {
+			RespondServerError(server, w, err)
+			return
+		}
+
+		response.Total = len(requests)
+		response.Requests = requests
+		response.ParseSuccess("Group join requests retrieved successfully")
+		RespondSuccess(w, response)
+		return
+
+	case "approve", "reject":
+		if len(request.Participants) == 0 {
+			RespondErrorCode(w, fmt.Errorf("at least one participant is required"), http.StatusBadRequest)
+			return
+		}
+
+		result, err := server.GetGroupManager().HandleGroupJoinRequests(groupID, request.Participants, action)
+		if err != nil {
+			RespondServerError(server, w, err)
+			return
+		}
+
+		response.Total = len(result)
+		response.Requests = result
+		response.ParseSuccess("Group join requests processed successfully")
+		RespondSuccess(w, response)
+		return
+	}
+
+	RespondErrorCode(w, fmt.Errorf("invalid action, must be one of: get, approve, reject"), http.StatusBadRequest)
+}
+
 // AuthenticatedGroupInviteController returns the invite link for a group.
 func AuthenticatedGroupInviteController(w http.ResponseWriter, r *http.Request) {
 	_, server, ok := getOwnedReadyGroupServer(w, r)

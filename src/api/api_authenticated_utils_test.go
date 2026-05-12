@@ -52,3 +52,19 @@ func TestBuildFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 		t.Fatalf("expected user %q, got %#v", server.GetUser(), summary["user"])
 	}
 }
+
+func TestBuildServerSummaryPrefersLiveWidWhenPersistedWidIsEmpty(t *testing.T) {
+	dbServer := &models.QpServer{Token: "server-token"}
+	liveState := &models.QpServer{Token: "server-token"}
+	liveState.SetWId("5511999999999@s.whatsapp.net")
+
+	liveServer := &models.QpWhatsappServer{
+		QpServer: liveState,
+	}
+
+	summary := BuildServerSummary(dbServer, liveServer)
+
+	if got := summary["wid"]; got != "5511999999999@s.whatsapp.net" {
+		t.Fatalf("expected live wid to be returned, got %#v", got)
+	}
+}

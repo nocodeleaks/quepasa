@@ -14,7 +14,7 @@ type QpDataServerSql struct {
 
 func (source QpDataServerSql) FindForUser(token string, user string) (response *QpServer, err error) {
 	response = &QpServer{}
-	err = source.db.Get(response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ? AND user = ?", token, user)
+	err = source.db.Get(response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, direct, user, metadata, timestamp FROM servers WHERE token = ? AND user = ?", token, user)
 	if err != nil {
 		response = nil
 	}
@@ -22,7 +22,7 @@ func (source QpDataServerSql) FindForUser(token string, user string) (response *
 }
 
 func (source QpDataServerSql) FindAll() (response []*QpServer) {
-	_ = source.db.Select(&response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers")
+	_ = source.db.Select(&response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, direct, user, metadata, timestamp FROM servers")
 	return
 }
 
@@ -42,7 +42,7 @@ func (source QpDataServerSql) Exists(token string) (bool, error) {
 
 func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err error) {
 	response = &QpServer{}
-	err = source.db.Get(response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata, timestamp FROM servers WHERE token = ?", token)
+	err = source.db.Get(response, "SELECT token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, direct, user, metadata, timestamp FROM servers WHERE token = ?", token)
 	if err != nil {
 		response = nil
 	}
@@ -51,9 +51,9 @@ func (source QpDataServerSql) FindByToken(token string) (response *QpServer, err
 
 func (source QpDataServerSql) Add(element *QpServer) error {
 	query := `INSERT INTO servers (
-		token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, user, metadata
+		token, wid, verified, devel, groups, broadcasts, readreceipts, calls, readupdate, direct, user, metadata
 	) VALUES (
-		:token, :wid, :verified, :devel, :groups, :broadcasts, :readreceipts, :calls, :readupdate, :user, :metadata
+		:token, :wid, :verified, :devel, :groups, :broadcasts, :readreceipts, :calls, :readupdate, :direct, :user, :metadata
 	)`
 	params := map[string]any{
 		"token":        element.Token,
@@ -65,6 +65,7 @@ func (source QpDataServerSql) Add(element *QpServer) error {
 		"readreceipts": element.ReadReceipts,
 		"calls":        element.Calls,
 		"readupdate":   element.ReadUpdate,
+		"direct":       element.Direct,
 		"user":         element.User,
 		"metadata":     element.Metadata,
 	}
@@ -82,6 +83,7 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		readreceipts = :readreceipts,
 		calls = :calls,
 		readupdate = :readupdate,
+		direct = :direct,
 		user = :user,
 		metadata = :metadata
 	WHERE token = :token`
@@ -95,6 +97,7 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		"readreceipts": element.ReadReceipts,
 		"calls":        element.Calls,
 		"readupdate":   element.ReadUpdate,
+		"direct":       element.Direct,
 		"user":         element.User,
 		"metadata":     element.Metadata,
 	}

@@ -1,0 +1,2 @@
+ALTER TABLE `dispatching` ADD COLUMN `calls` INT(1) NOT NULL DEFAULT 0;
+ALTER TABLE `dispatching` ADD COLUMN `direct` INT(1) NOT NULL DEFAULT 0;

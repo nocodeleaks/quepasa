@@ -97,6 +97,14 @@ func (source QpDispatching) IsSetCalls() bool {
 	return source.Calls != whatsapp.UnSetBooleanType
 }
 
+func (source QpDispatching) GetDirect() bool {
+	return source.Direct.Boolean()
+}
+
+func (source QpDispatching) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
+}
+
 func (source QpDispatching) IsSetExtra() bool {
 	return source.Extra != nil
 }

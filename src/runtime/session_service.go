@@ -15,6 +15,7 @@ type SessionConfigurationPatch struct {
 	ReadReceipts *whatsapp.WhatsappBoolean
 	Calls        *whatsapp.WhatsappBoolean
 	ReadUpdate   *whatsapp.WhatsappBoolean
+	Direct       *whatsapp.WhatsappBoolean
 	Devel        *bool
 }
 
@@ -128,6 +129,9 @@ func BuildSessionRecord(token string, username string, patch *SessionConfigurati
 	}
 	if patch.ReadUpdate != nil {
 		info.ReadUpdate = *patch.ReadUpdate
+	}
+	if patch.Direct != nil {
+		info.Direct = *patch.Direct
 	}
 	if patch.Devel != nil {
 		info.Devel = *patch.Devel
@@ -481,6 +485,11 @@ func ToggleSessionOption(session *models.QpWhatsappSession, option string) (bool
 			return false, err
 		}
 		return session.ReadUpdate.Boolean(), nil
+	case "direct":
+		if err := models.ToggleDirect(session); err != nil {
+			return false, err
+		}
+		return session.Direct.Boolean(), nil
 	default:
 		return false, fmt.Errorf("unsupported option: %s", option)
 	}
@@ -521,6 +530,11 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 	if patch.ReadUpdate != nil && session.ReadUpdate != *patch.ReadUpdate {
 		session.ReadUpdate = *patch.ReadUpdate
 		update += fmt.Sprintf("readupdate to: {%s}; ", *patch.ReadUpdate)
+	}
+
+	if patch.Direct != nil && session.Direct != *patch.Direct {
+		session.Direct = *patch.Direct
+		update += fmt.Sprintf("direct to: {%s}; ", *patch.Direct)
 	}
 
 	if patch.Devel != nil && session.Devel != *patch.Devel {

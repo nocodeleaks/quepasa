@@ -176,6 +176,23 @@ func ToggleCalls(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+// ToggleDirect cycles the persisted direct-message handling mode.
+func ToggleDirect(source whatsapp.IWhatsappOptions) error {
+	options := source.GetOptions()
+
+	switch options.Direct {
+	case whatsapp.UnSetBooleanType:
+		options.Direct = whatsapp.FalseBooleanType
+	case whatsapp.FalseBooleanType:
+		options.Direct = whatsapp.TrueBooleanType
+	default:
+		options.Direct = whatsapp.UnSetBooleanType
+	}
+
+	reason := fmt.Sprintf("toggle direct: %s", options.Direct)
+	return source.Save(reason)
+}
+
 // ToggleReadUpdate cycles the persisted mark-read update handling mode.
 func ToggleReadUpdate(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()

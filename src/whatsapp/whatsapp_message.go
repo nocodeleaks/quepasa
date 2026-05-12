@@ -155,6 +155,13 @@ func (source *WhatsappMessage) FromGroup() bool {
 	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_GROUP_SUFFIX)
 }
 
+// FromDirect returns true for individual (@s.whatsapp.net or @lid) messages,
+// i.e. not groups and not broadcasts.
+func (source *WhatsappMessage) FromDirect() bool {
+	return strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_USER_SUFFIX) ||
+		strings.HasSuffix(source.Chat.Id, WHATSAPP_SERVERDOMAIN_LID_SUFFIX)
+}
+
 func (source *WhatsappMessage) FromAds() bool {
 	return source.Ads != nil
 }

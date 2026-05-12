@@ -143,6 +143,16 @@ func (source *DispatchingHandler) HandleBroadcasts() bool {
 	return global.HandleBroadcasts(local)
 }
 
+func (source *DispatchingHandler) HandleDirect() bool {
+	global := whatsapp.Options
+
+	var local whatsapp.WhatsappBoolean
+	if source.server != nil {
+		local = source.server.Direct
+	}
+	return global.HandleDirect(local)
+}
+
 //#region EVENTS FROM WHATSAPP SERVICE
 
 // Process messages received from whatsapp service
@@ -155,6 +165,11 @@ func (source *DispatchingHandler) Message(msg *whatsapp.WhatsappMessage, from st
 
 	// should skip broadcast ?
 	if !source.HandleBroadcasts() && msg.FromBroadcast() {
+		return
+	}
+
+	// should skip direct (individual) messages ?
+	if !source.HandleDirect() && msg.FromDirect() {
 		return
 	}
 

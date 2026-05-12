@@ -17,4 +17,7 @@ type WhatsappOptions struct {
 
 	// should send markread requests when receiving messages
 	ReadUpdate WhatsappBoolean `db:"readupdate" json:"readupdate,omitempty"`
+
+	// should handle direct (individual) messages (@s.whatsapp.net and @lid); default true
+	Direct WhatsappBoolean `db:"direct" json:"direct,omitempty"`
 }

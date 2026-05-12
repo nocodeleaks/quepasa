@@ -14,6 +14,11 @@ const pt: Messages = {
   nav_api_docs: 'Swagger',
   nav_more: 'Mais',
   language_label: 'Idioma',
+  theme_label: 'Tema',
+  theme_light: 'Claro',
+  theme_dark: 'Escuro',
+  theme_toggle_to_dark: 'Alternar para modo escuro',
+  theme_toggle_to_light: 'Alternar para modo claro',
 
   // Master key login
   master_login_title: 'Acesso Mestre',

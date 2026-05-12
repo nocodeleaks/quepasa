@@ -67,3 +67,4 @@ src/.env.apoint-voip
 .bash_history
 .landscape
 .motd_shown
+.claude/

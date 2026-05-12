@@ -17,6 +17,11 @@ const en = {
   account_logo_alt: 'Brand logo',
   nav_more: 'More',
   language_label: 'Language',
+  theme_label: 'Theme',
+  theme_light: 'Light',
+  theme_dark: 'Dark',
+  theme_toggle_to_dark: 'Switch to dark mode',
+  theme_toggle_to_light: 'Switch to light mode',
 
   // Master key login
   master_login_title: 'Master Access',

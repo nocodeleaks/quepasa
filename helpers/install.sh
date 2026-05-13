@@ -58,6 +58,21 @@ chown -R quepasa /opt/quepasa-source
 
 cp /opt/quepasa-source/helpers/.env /opt/quepasa/.env
 
+if [[ -d /opt/quepasa-source/src/apps/vuejs ]]; then
+    echo 'Building Vue.js frontend (optional)'
+    if ! command -v node &>/dev/null; then
+        echo 'Installing Node.js (LTS)'
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - &>/dev/null
+        apt install -y nodejs &>/dev/null
+    fi
+    cd /opt/quepasa-source/src/apps/vuejs
+    npm install &>/dev/null
+    npm run build
+    cd -
+else
+    echo 'Vue.js frontend not found, skipping build'
+fi
+
 systemctl enable quepasa.service
 systemctl start quepasa
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
+	media "github.com/nocodeleaks/quepasa/media"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -334,6 +335,14 @@ func AuthenticatedGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 		RespondErrorCode(w, fmt.Errorf("failed to read image data: %w", err), http.StatusBadRequest)
 		return
 	}
+
+	// Convert image to JPEG (WhatsApp requires JPEG for group photos)
+	convertedData, err := media.ConvertToJpeg(imageData)
+	if err != nil {
+		RespondErrorCode(w, fmt.Errorf("failed to convert image to JPEG: %w", err), http.StatusBadRequest)
+		return
+	}
+	imageData = convertedData
 
 	if len(imageData) < 10000 || len(imageData) > 500000 {
 		RespondErrorCode(w, fmt.Errorf("image size not ideal for WhatsApp (should be between 10KB and 500KB)"), http.StatusBadRequest)

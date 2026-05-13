@@ -138,8 +138,11 @@ func ConvertToJpeg(imageData []byte) ([]byte, error) {
 	defer os.Remove(outputFile.Name())
 	defer outputFile.Close()
 
+	// Scale up to at least 640x640 (WhatsApp profile/group photo minimum),
+	// preserving aspect ratio, then pad to exact square if needed.
 	cmd := exec.Command("ffmpeg",
 		"-i", inputFile.Name(),
+		"-vf", "scale='if(lt(iw,640),640,iw)':'if(lt(ih,640),640,ih)':flags=lanczos,crop=640:640",
 		"-f", "image2",
 		"-vcodec", "mjpeg",
 		"-pix_fmt", "yuvj420p",

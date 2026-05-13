@@ -169,17 +169,20 @@ func TestAppendPaired_ReusesPairingConnectionAndWiresHandler(t *testing.T) {
 func TestAppendPaired_UpdatesExistingCachedServerConnection(t *testing.T) {
 	service := newPairingTestService()
 
+	qpServer := &QpServer{Token: "existing-token"}
+	qpServer.LogEntry = log.New().WithField("test", t.Name())
+	qpServer.SetUser("owner@example.com")
+
 	existing := &QpWhatsappServer{
-		QpServer:        &QpServer{Token: "existing-token"},
-		Handler:         pairingTestHandlers{},
-		syncConnection:  &sync.Mutex{},
-		syncMessages:    &sync.Mutex{},
-		Timestamps:      QpTimestamps{Start: time.Now().UTC()},
-		Intent:          SessionIntentNone,
-		db:              service.DB.Servers,
-		LogStruct:       library.LogStruct{LogEntry: log.New().WithField("test", t.Name())},
+		QpServer:       qpServer,
+		syncConnection: &sync.Mutex{},
+		syncMessages:   &sync.Mutex{},
+		Timestamps:     QpTimestamps{Start: time.Now().UTC()},
+		Intent:         SessionIntentNone,
+		db:             service.DB.Servers,
 	}
-	existing.QpServer.SetUser("owner@example.com")
+	// Build a proper DispatchingHandler pointing back to this server.
+	existing.Handler = &DispatchingHandler{server: existing}
 	oldConn := newPairingTestConnection(t)
 	existing.connection = oldConn
 	service.Servers["existing-token"] = existing

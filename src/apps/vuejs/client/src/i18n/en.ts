@@ -631,6 +631,8 @@ const en = {
   messages_error_presence: 'Error sending presence',
   messages_ws_connected: 'WebSocket connected - real-time updates',
   messages_ws_disconnected: 'WebSocket disconnected',
+  messages_sync_pause: 'Pause auto-sync',
+  messages_sync_resume: 'Resume auto-sync',
   messages_lid_label: 'LId',
   messages_lid_short_label: 'Lid',
   messages_chat_label: 'Chat',

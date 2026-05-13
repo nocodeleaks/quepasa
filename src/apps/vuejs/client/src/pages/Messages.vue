@@ -27,6 +27,18 @@
               <circle cx="12" cy="12" r="8"/>
             </svg>
             {{ t('messages_offline') }}
+            <button
+              @click="syncPaused = !syncPaused"
+              class="btn-sync-toggle"
+              :title="syncPaused ? t('messages_sync_resume') : t('messages_sync_pause')"
+            >
+              <svg v-if="syncPaused" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+            </button>
           </span>
         </div>
       </div>
@@ -391,6 +403,7 @@ export default defineComponent({
     const filterType = ref('')
     const filterGroupsOnly = ref(false)
     const wsConnected = ref(false)
+    const syncPaused = ref(false)
     const currentPage = ref(1)
     const messagesPerPage = ref(50)
     const totalPages = ref(0)
@@ -898,9 +911,11 @@ export default defineComponent({
         wsConnected.value = cable.isConnected()
       }, 2000)
 
-      // Periodic fallback keeps this page in sync when websocket events are missed.
+      // Fallback polling only when WebSocket is disconnected and user hasn't paused it.
       syncInterval = setInterval(() => {
-        syncMessagesFallback()
+        if (!cable.isConnected() && !syncPaused.value) {
+          syncMessagesFallback()
+        }
       }, 10000)
     })
 
@@ -918,7 +933,7 @@ export default defineComponent({
 
     return {
       token, messages, serverNumber, totalMessages, loading, error, search, filterType, filterGroupsOnly,
-      wsConnected, filteredMessages, currentPage, messagesPerPage, totalPages,
+      wsConnected, syncPaused, filteredMessages, currentPage, messagesPerPage, totalPages,
       loadMessages, isImage, isAudio, isVideo,
       getMediaUrl, handleImageError, handleAvatarError, formatTime, formatSize,
       getAvatarColor, getInitial, adThumbnailUrl, urlThumbnailUrl, isAttachmentValid, contactPicMap,
@@ -1013,6 +1028,25 @@ export default defineComponent({
 
 .ws-disconnected svg {
   color: #ef4444;
+}
+
+.btn-sync-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 1px 4px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  margin-left: 4px;
+  line-height: 1;
+}
+
+.btn-sync-toggle:hover {
+  opacity: 1;
 }
 
 @keyframes pulse {

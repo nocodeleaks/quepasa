@@ -633,6 +633,8 @@ const pt: Messages = {
   messages_error_presence: 'Erro ao enviar presença',
   messages_ws_connected: 'WebSocket conectado - atualizações em tempo real',
   messages_ws_disconnected: 'WebSocket desconectado',
+  messages_sync_pause: 'Pausar sincronização automática',
+  messages_sync_resume: 'Retomar sincronização automática',
   messages_lid_label: 'LId',
   messages_lid_short_label: 'Lid',
   messages_chat_label: 'Chat',

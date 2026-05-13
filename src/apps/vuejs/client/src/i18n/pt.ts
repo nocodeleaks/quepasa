@@ -329,6 +329,18 @@ const pt: Messages = {
   group_detail_promoted: 'Participante promovido a admin',
   group_detail_demoted: 'Direitos de admin removidos',
   group_detail_participant_removed: 'Participante removido',
+  group_detail_info: 'Informações',
+  group_detail_info_id: 'ID do grupo',
+  group_detail_info_created: 'Criado em',
+  group_detail_info_add_mode: 'Modo de adição',
+  group_detail_info_addressing: 'Endereçamento',
+  group_detail_flag_locked: 'Bloqueado',
+  group_detail_flag_announce: 'Somente admins',
+  group_detail_flag_ephemeral: 'Efêmero',
+  group_detail_flag_incognito: 'Incógnito',
+  group_detail_flag_parent: 'Comunidade',
+  group_detail_flag_default_sub: 'Sub-grupo padrão',
+  group_detail_flag_approval: 'Aprovação p/ entrar',
 
   // Generic form fields
   email_label: 'Email',

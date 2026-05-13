@@ -327,6 +327,18 @@ const en = {
   group_detail_promoted: 'Participant promoted to admin',
   group_detail_demoted: 'Admin rights removed',
   group_detail_participant_removed: 'Participant removed',
+  group_detail_info: 'Information',
+  group_detail_info_id: 'Group ID',
+  group_detail_info_created: 'Created at',
+  group_detail_info_add_mode: 'Add mode',
+  group_detail_info_addressing: 'Addressing',
+  group_detail_flag_locked: 'Locked',
+  group_detail_flag_announce: 'Announce',
+  group_detail_flag_ephemeral: 'Ephemeral',
+  group_detail_flag_incognito: 'Incognito',
+  group_detail_flag_parent: 'Community',
+  group_detail_flag_default_sub: 'Default sub-group',
+  group_detail_flag_approval: 'Join approval',
 
   // Generic form fields
   email_label: 'Email',

@@ -155,8 +155,70 @@
 
         </div>
 
-        <!-- Right: messages history -->
+        <!-- Right: meta + messages -->
         <div class="messages-col">
+
+          <!-- Info -->
+          <div class="info-card">
+            <div class="card-header">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/>
+              </svg>
+              <span>{{ t('group_detail_info') }}</span>
+            </div>
+            <div class="info-grid">
+              <div class="info-cell">
+                <span class="info-label">{{ t('group_detail_info_id') }}</span>
+                <span class="info-value info-mono">{{ group.JID }}</span>
+              </div>
+              <div v-if="group.GroupCreated" class="info-cell">
+                <span class="info-label">{{ t('group_detail_info_created') }}</span>
+                <span class="info-value">{{ formatDate(group.GroupCreated) }}</span>
+              </div>
+              <div v-if="group.MemberAddMode" class="info-cell">
+                <span class="info-label">{{ t('group_detail_info_add_mode') }}</span>
+                <span class="info-value">{{ group.MemberAddMode }}</span>
+              </div>
+              <div v-if="group.AddressingMode" class="info-cell">
+                <span class="info-label">{{ t('group_detail_info_addressing') }}</span>
+                <span class="info-value">{{ group.AddressingMode }}</span>
+              </div>
+            </div>
+            <template v-if="group.IsLocked || group.IsAnnounce || group.IsEphemeral || group.IsIncognito || group.IsParent || group.IsDefaultSubGroup || group.IsJoinApprovalRequired">
+              <div class="info-divider"></div>
+              <div class="feature-badges">
+                <span v-if="group.IsLocked" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                  {{ t('group_detail_flag_locked') }}
+                </span>
+                <span v-if="group.IsAnnounce" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                  {{ t('group_detail_flag_announce') }}
+                </span>
+                <span v-if="group.IsEphemeral" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                  {{ t('group_detail_flag_ephemeral') }}
+                </span>
+                <span v-if="group.IsIncognito" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                  {{ t('group_detail_flag_incognito') }}
+                </span>
+                <span v-if="group.IsParent" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                  {{ t('group_detail_flag_parent') }}
+                </span>
+                <span v-if="group.IsDefaultSubGroup" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                  {{ t('group_detail_flag_default_sub') }}
+                </span>
+                <span v-if="group.IsJoinApprovalRequired" class="feature-badge badge-on">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  {{ t('group_detail_flag_approval') }}
+                </span>
+              </div>
+            </template>
+          </div>
+
           <div class="messages-card">
             <div class="messages-header">
               <div>
@@ -1075,6 +1137,33 @@ export default defineComponent({
 .description-empty { padding: 14px 16px 10px; margin: 0; color: #9ca3af; font-style: italic; font-size: 14px; }
 .description-meta { padding: 0 16px 12px; margin: 0; font-size: 11px; color: #9ca3af; }
 
+/* Info grid */
+.info-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 0; padding: 4px 0;
+}
+.info-cell {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 16px; border-bottom: 1px solid #f3f4f6;
+}
+.info-cell:nth-last-child(-n+3) { border-bottom: none; }
+.info-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: .04em; }
+.info-value { font-size: 13px; color: #374151; word-break: break-all; }
+.info-mono { font-family: monospace; font-size: 11.5px; }
+.info-cell:first-child { grid-column: 1 / -1; }
+
+.info-divider { height: 1px; background: #f3f4f6; margin: 0 16px; }
+
+/* Feature badges */
+.feature-badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 14px; }
+.feature-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; padding: 3px 9px 3px 7px;
+  border-radius: 99px; border: 1px solid transparent;
+}
+.badge-on  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.badge-off { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
+
 /* Actions row */
 .actions-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 
@@ -1374,6 +1463,11 @@ html[data-theme='dark'] .modal-card {
 html[data-theme='dark'] .profile-name,
 html[data-theme='dark'] .participant-name,
 html[data-theme='dark'] .card-header,
+html[data-theme='dark'] .info-value { color: #e5e7eb; }
+html[data-theme='dark'] .info-label { color: #6b7280; }
+html[data-theme='dark'] .info-cell { border-bottom-color: #374151; }
+html[data-theme='dark'] .info-divider { background: #374151; }
+html[data-theme='dark'] .flags-empty { color: #6b7280; }
 html[data-theme='dark'] .description-text,
 html[data-theme='dark'] .request-name,
 html[data-theme='dark'] .modal-header h3,

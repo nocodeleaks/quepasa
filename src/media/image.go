@@ -107,6 +107,67 @@ func ConvertPngToJpg(pngData []byte) (jpgData []byte, newMime string, err error)
 	return jpgData, "image/jpeg", nil
 }
 
+// ConvertToJpeg converts any image format to JPEG using FFmpeg.
+// Suitable for WhatsApp profile/group photos which require JPEG format.
+func ConvertToJpeg(imageData []byte) ([]byte, error) {
+	if !IsFFmpegImageAvailable() {
+		return nil, fmt.Errorf("ffmpeg is not available for image conversion: %w", GetFFmpegImageError())
+	}
+
+	inputFile, err := os.CreateTemp("", "img-input-*")
+	if err != nil {
+		return nil, fmt.Errorf("error creating temporary input file: %w", err)
+	}
+	defer os.Remove(inputFile.Name())
+	defer inputFile.Close()
+
+	if _, err := inputFile.Write(imageData); err != nil {
+		return nil, fmt.Errorf("error writing image data to temporary file: %w", err)
+	}
+	if err := inputFile.Sync(); err != nil {
+		return nil, fmt.Errorf("error syncing temporary input file: %w", err)
+	}
+	if err := inputFile.Close(); err != nil {
+		return nil, fmt.Errorf("error closing temporary input file: %w", err)
+	}
+
+	outputFile, err := os.CreateTemp("", "img-output-*.jpg")
+	if err != nil {
+		return nil, fmt.Errorf("error creating temporary output file: %w", err)
+	}
+	defer os.Remove(outputFile.Name())
+	defer outputFile.Close()
+
+	// Scale up to at least 640x640 (WhatsApp profile/group photo minimum),
+	// preserving aspect ratio, then pad to exact square if needed.
+	cmd := exec.Command("ffmpeg",
+		"-i", inputFile.Name(),
+		"-vf", "scale='if(lt(iw,640),640,iw)':'if(lt(ih,640),640,ih)':flags=lanczos,crop=640:640",
+		"-f", "image2",
+		"-vcodec", "mjpeg",
+		"-pix_fmt", "yuvj420p",
+		"-q:v", "2",
+		"-y",
+		outputFile.Name(),
+	)
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	log.Tracef("Executing FFmpeg image to JPEG conversion: %s", cmd.String())
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("error converting image to JPEG with ffmpeg: %w\nstderr: %s", err, stderr.String())
+	}
+
+	jpegData, err := os.ReadFile(outputFile.Name())
+	if err != nil {
+		return nil, fmt.Errorf("error reading converted JPEG file: %w", err)
+	}
+
+	log.Debugf("Successfully converted image to JPEG. Original size: %d bytes, converted size: %d bytes", len(imageData), len(jpegData))
+	return jpegData, nil
+}
+
 // ShouldConvertImage checks if an image should be converted based on its MIME type and filename.
 func ShouldConvertImage(mimeType, filename string) bool {
 	// First check MIME type - this is the most reliable indicator

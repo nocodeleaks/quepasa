@@ -1,14 +1,21 @@
 <template>
   <div class="connect-page">
-    <div class="connect-header">
-      <button @click="$router.back()" class="back-link">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+    <div class="page-header">
+      <button @click="$router.back()" class="back-link hide-mobile">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
         </svg>
         {{ t('back') }}
       </button>
-      <h1>{{ t('connect_page_title') }}</h1>
-      <p class="subtitle">{{ t('connect_page_subtitle') }}</p>
+      <div class="header-content">
+        <h1>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z"/>
+          </svg>
+          {{ t('connect_page_title') }}
+        </h1>
+        <p>{{ t('connect_page_subtitle') }}</p>
+      </div>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -130,35 +137,53 @@ export default defineComponent({
   padding: 2rem 1rem;
 }
 
-.connect-header {
-  text-align: center;
-  margin-bottom: 2rem;
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.header-content h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.header-content h1 svg {
+  color: var(--branding-primary, #7C3AED);
+}
+
+.header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 14px;
 }
 
 .back-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #6c757d;
-  text-decoration: none;
-  margin-bottom: 1rem;
-  transition: color 0.2s;
+  gap: 6px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .back-link:hover {
-  color: #7C3AED;
-}
-
-.connect-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0.5rem 0;
-}
-
-.subtitle {
-  color: #6c757d;
-  margin: 0;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .loading-state,

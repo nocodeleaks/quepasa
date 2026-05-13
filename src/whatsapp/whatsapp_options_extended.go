@@ -20,6 +20,9 @@ type WhatsappOptionsExtended struct {
 	// should send markread requests when receiving messages
 	ReadUpdate WhatsappBooleanExtended `json:"readupdate,omitempty"`
 
+	// should handle direct (individual) messages (@s.whatsapp.net and @lid); default true
+	Direct WhatsappBooleanExtended `json:"direct,omitempty"`
+
 	// nil for no sync, 0 for all, X for specific days
 	HistorySync *uint32 `json:"historysync,omitempty"`
 
@@ -39,6 +42,7 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 		source.ReadReceipts.Equals(UnSetBooleanType) &&
 		source.Calls.Equals(UnSetBooleanType) &&
 		source.ReadUpdate.Equals(UnSetBooleanType) &&
+		source.Direct.Equals(UnSetBooleanType) &&
 		source.HistorySync == nil &&
 		!source.DispatchUnhandled &&
 		len(source.LogLevel) == 0
@@ -126,6 +130,22 @@ func (source WhatsappOptionsExtended) HandleReadUpdate(local WhatsappBoolean) bo
 		}
 
 		return source.ReadUpdate.ToBoolean(false)
+	}
+}
+
+func (source WhatsappOptionsExtended) HandleDirect(local WhatsappBoolean) bool {
+	switch source.Direct {
+	case ForcedFalseBooleanType:
+		return false
+	case ForcedTrueBooleanType:
+		return true
+	default:
+		if local != UnSetBooleanType {
+			return local.Boolean()
+		}
+
+		// default: true — process individual messages
+		return source.Direct.ToBoolean(true)
 	}
 }
 

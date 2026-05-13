@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
+	media "github.com/nocodeleaks/quepasa/media"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -335,6 +336,14 @@ func AuthenticatedGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Convert image to JPEG (WhatsApp requires JPEG for group photos)
+	convertedData, err := media.ConvertToJpeg(imageData)
+	if err != nil {
+		RespondErrorCode(w, fmt.Errorf("failed to convert image to JPEG: %w", err), http.StatusBadRequest)
+		return
+	}
+	imageData = convertedData
+
 	if len(imageData) < 10000 || len(imageData) > 500000 {
 		RespondErrorCode(w, fmt.Errorf("image size not ideal for WhatsApp (should be between 10KB and 500KB)"), http.StatusBadRequest)
 		return
@@ -350,6 +359,75 @@ func AuthenticatedGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 		"result":    "Group photo updated successfully",
 		"pictureId": pictureID,
 	})
+}
+
+// AuthenticatedGroupRequestsController lists or handles pending join requests for a group.
+func AuthenticatedGroupRequestsController(w http.ResponseWriter, r *http.Request) {
+	_, server, ok := getOwnedReadyGroupServer(w, r)
+	if !ok {
+		return
+	}
+
+	groupID, err := getGroupIDParam(r)
+	if err != nil {
+		RespondErrorCode(w, err, http.StatusBadRequest)
+		return
+	}
+
+	type membershipRequest struct {
+		Participants []string `json:"participants"`
+		Action       string   `json:"action"`
+	}
+
+	request := membershipRequest{Action: "get"}
+	if r.Method == http.MethodPost {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			RespondErrorCode(w, fmt.Errorf("invalid JSON body: %w", err), http.StatusBadRequest)
+			return
+		}
+	}
+
+	action := strings.ToLower(strings.TrimSpace(request.Action))
+	if action == "" {
+		action = "get"
+	}
+
+	response := &apiModels.RequestResponse{}
+
+	switch action {
+	case "get":
+		requests, err := server.GetGroupManager().GetGroupJoinRequests(groupID)
+		if err != nil {
+			RespondServerError(server, w, err)
+			return
+		}
+
+		response.Total = len(requests)
+		response.Requests = requests
+		response.ParseSuccess("Group join requests retrieved successfully")
+		RespondSuccess(w, response)
+		return
+
+	case "approve", "reject":
+		if len(request.Participants) == 0 {
+			RespondErrorCode(w, fmt.Errorf("at least one participant is required"), http.StatusBadRequest)
+			return
+		}
+
+		result, err := server.GetGroupManager().HandleGroupJoinRequests(groupID, request.Participants, action)
+		if err != nil {
+			RespondServerError(server, w, err)
+			return
+		}
+
+		response.Total = len(result)
+		response.Requests = result
+		response.ParseSuccess("Group join requests processed successfully")
+		RespondSuccess(w, response)
+		return
+	}
+
+	RespondErrorCode(w, fmt.Errorf("invalid action, must be one of: get, approve, reject"), http.StatusBadRequest)
 }
 
 // AuthenticatedGroupInviteController returns the invite link for a group.

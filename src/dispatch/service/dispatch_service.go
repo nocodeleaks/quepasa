@@ -21,12 +21,18 @@ type Target interface {
 
 	IsSetReadReceipts() bool
 	GetReadReceipts() bool
+
 	IsSetGroups() bool
 	GetGroups() bool
+
 	IsSetBroadcasts() bool
 	GetBroadcasts() bool
+
 	IsSetCalls() bool
 	GetCalls() bool
+
+	IsSetDirect() bool
+	GetDirect() bool
 
 	IsFromInternalForwardEnabled() bool
 	GetTrackId() string

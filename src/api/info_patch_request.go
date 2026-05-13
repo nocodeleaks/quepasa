@@ -9,6 +9,7 @@ type InfoPatchRequest struct {
 	ReadReceipts *whatsapp.WhatsappBoolean `db:"readreceipts" json:"readreceipts,omitempty"`
 	Calls        *whatsapp.WhatsappBoolean `db:"calls" json:"calls,omitempty"`
 	ReadUpdate   *whatsapp.WhatsappBoolean `db:"readupdate" json:"readupdate,omitempty"`
+	Direct       *whatsapp.WhatsappBoolean `db:"direct" json:"direct,omitempty"`
 	Username     *string                   `json:"username,omitempty" validate:"max=255"`
 	Devel        *bool                     `json:"devel,omitempty"`
 }

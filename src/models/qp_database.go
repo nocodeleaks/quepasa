@@ -243,10 +243,11 @@ func GetBase() migrate.SqlxMigration {
   		"readreceipts" INT(1) NOT NULL DEFAULT 0,
   		"calls" INT(1) NOT NULL DEFAULT 0,
   		"readupdate" INT(1) NOT NULL DEFAULT 0,
+  		"direct" INT(1) NOT NULL DEFAULT 0,
 		"user" CHAR (255) DEFAULT NULL REFERENCES "users"("username"),
 		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 	  );
-	  
+
 	  CREATE TABLE IF NOT EXISTS "dispatching" (
 		"context" CHAR (100) NOT NULL REFERENCES "servers"("token"),
 		"connection_string" VARCHAR (255) NOT NULL,
@@ -256,6 +257,8 @@ func GetBase() migrate.SqlxMigration {
 		"readreceipts" INT(1) NOT NULL DEFAULT 0,
   		"groups" INT(1) NOT NULL DEFAULT 0,
   		"broadcasts" INT(1) NOT NULL DEFAULT 0,
+  		"calls" INT(1) NOT NULL DEFAULT 0,
+  		"direct" INT(1) NOT NULL DEFAULT 0,
 		"extra" BLOB DEFAULT NULL,
 		"failure" TIMESTAMP DEFAULT NULL,
 		"success" TIMESTAMP DEFAULT NULL,
@@ -300,7 +303,9 @@ func GetBase() migrate.SqlxMigration {
 	  ('202602241200'),
 	  ('202604221930'),
 	  ('202604251130'),
-	  ('202604281430');
+	  ('202604281430'),
+	  ('202605121200'),
+	  ('202605121201');
 	  `, "")
 	return migration
 }

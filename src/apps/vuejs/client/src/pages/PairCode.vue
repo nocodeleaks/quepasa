@@ -1,14 +1,19 @@
 <template>
   <div class="paircode-page">
     <div class="page-header">
+      <button @click="$router.back()" class="back-link hide-mobile">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        {{ t('back') }}
+      </button>
       <div class="header-content">
-        <button @click="$router.back()" class="back-link hide-mobile">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        <h1>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
           </svg>
-          {{ t('back') }}
-        </button>
-        <h1>{{ t('paircode_title') }}</h1>
+          {{ t('paircode_title') }}
+        </h1>
         <p>{{ t('paircode_subtitle') }}</p>
       </div>
     </div>
@@ -330,25 +335,48 @@ export default defineComponent({
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.header-content {
-  text-align: center;
+.header-content h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-content h1 svg {
+  color: var(--branding-primary, #7C3AED);
+}
+
+.header-content p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 14px;
 }
 
 .back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #6b7280;
-  text-decoration: none;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
   font-size: 14px;
-  margin-bottom: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .back-link:hover {
-  color: #374151;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .page-header h1 {

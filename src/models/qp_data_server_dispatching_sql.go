@@ -53,14 +53,14 @@ func (source QpDataServerDispatchingSql) All() ([]*QpServerDispatching, error) {
 }
 
 func (source QpDataServerDispatchingSql) Add(element *QpServerDispatching) error {
-	query := `INSERT OR IGNORE INTO dispatching (context, connection_string, type, forwardinternal, trackid, readreceipts, groups, broadcasts, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := source.db.Exec(query, element.Context, element.ConnectionString, element.Type, element.ForwardInternal, element.TrackId, element.ReadReceipts, element.Groups, element.Broadcasts, element.GetExtraText())
+	query := `INSERT OR IGNORE INTO dispatching (context, connection_string, type, forwardinternal, trackid, readreceipts, groups, broadcasts, calls, direct, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := source.db.Exec(query, element.Context, element.ConnectionString, element.Type, element.ForwardInternal, element.TrackId, element.ReadReceipts, element.Groups, element.Broadcasts, element.Calls, element.Direct, element.GetExtraText())
 	return err
 }
 
 func (source QpDataServerDispatchingSql) Update(element *QpServerDispatching) error {
-	query := `UPDATE dispatching SET type = ?, forwardinternal = ?, trackid = ?, readreceipts = ?, groups = ?, broadcasts = ?, extra = ? WHERE context = ? AND connection_string = ?`
-	_, err := source.db.Exec(query, element.Type, element.ForwardInternal, element.TrackId, element.ReadReceipts, element.Groups, element.Broadcasts, element.GetExtraText(), element.Context, element.ConnectionString)
+	query := `UPDATE dispatching SET type = ?, forwardinternal = ?, trackid = ?, readreceipts = ?, groups = ?, broadcasts = ?, calls = ?, direct = ?, extra = ? WHERE context = ? AND connection_string = ?`
+	_, err := source.db.Exec(query, element.Type, element.ForwardInternal, element.TrackId, element.ReadReceipts, element.Groups, element.Broadcasts, element.Calls, element.Direct, element.GetExtraText(), element.Context, element.ConnectionString)
 	return err
 }
 
@@ -144,6 +144,8 @@ func (source QpDataServerDispatchingSql) GetRabbitMQConfigs() []*QpRabbitMQConfi
 		config.ReadReceipts = dispatching.ReadReceipts
 		config.Groups = dispatching.Groups
 		config.Broadcasts = dispatching.Broadcasts
+		config.Calls = dispatching.Calls
+		config.Direct = dispatching.Direct
 
 		configs = append(configs, config)
 	}

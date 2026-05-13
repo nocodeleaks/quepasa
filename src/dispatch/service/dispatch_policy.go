@@ -38,6 +38,10 @@ func (DefaultDispatchPolicy) ShouldDispatch(target Target, message *whatsapp.Wha
 		return false
 	}
 
+	if message.FromDirect() && target.IsSetDirect() && !target.GetDirect() {
+		logentry.Debug("ignoring direct message")
+		return false
+	}
 	if message.FromInternal && (!target.IsFromInternalForwardEnabled() || (target.GetTrackId() != "" && target.GetTrackId() == message.TrackId)) {
 		return false
 	}

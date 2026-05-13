@@ -1,30 +1,45 @@
 <template>
   <div class="messages-page">
     <div class="page-header">
-      <div class="header-left">
-        <button @click="$router.back()" class="back-link hide-mobile">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+      <button @click="$router.back()" class="back-link hide-mobile">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        {{ t('messages_back') }}
+      </button>
+      <div class="header-content">
+        <h1>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
           </svg>
-          {{ t('messages_back') }}
-        </button>
-        <div>
-          <h1>{{ t('messages_title') }}</h1>
-          <div v-if="serverNumber || totalMessages !== null" class="header-sub">
-            <small class="text-muted">{{ t('messages_server_info', [serverNumber || '\u2014', totalMessages !== null ? totalMessages : messages.length]) }}</small>
-            <span v-if="wsConnected" class="ws-status ws-connected" :title="t('messages_ws_connected')">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <circle cx="12" cy="12" r="8"/>
+          {{ t('messages_title') }}
+        </h1>
+        <div class="header-sub">
+          <small v-if="serverNumber || totalMessages !== null" class="text-muted">{{ t('messages_server_info', [serverNumber || '\u2014', totalMessages !== null ? totalMessages : messages.length]) }}</small>
+          <span v-if="wsConnected" class="ws-status ws-connected" :title="t('messages_ws_connected')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+            {{ t('messages_live') }}
+          </span>
+          <span v-else class="ws-status ws-disconnected" :title="t('messages_ws_disconnected')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+            {{ t('messages_offline') }}
+            <button
+              @click="syncPaused = !syncPaused"
+              class="btn-sync-toggle"
+              :title="syncPaused ? t('messages_sync_resume') : t('messages_sync_pause')"
+            >
+              <svg v-if="syncPaused" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
               </svg>
-              {{ t('messages_live') }}
-            </span>
-            <span v-else class="ws-status ws-disconnected" :title="t('messages_ws_disconnected')">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <circle cx="12" cy="12" r="8"/>
+              <svg v-else viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
               </svg>
-              {{ t('messages_offline') }}
-            </span>
-          </div>
+            </button>
+          </span>
         </div>
       </div>
       <div class="header-actions">
@@ -388,6 +403,7 @@ export default defineComponent({
     const filterType = ref('')
     const filterGroupsOnly = ref(false)
     const wsConnected = ref(false)
+    const syncPaused = ref(false)
     const currentPage = ref(1)
     const messagesPerPage = ref(50)
     const totalPages = ref(0)
@@ -795,7 +811,7 @@ export default defineComponent({
       if (!m || !m.chat || !m.chat.id) return
       presenceLoading[m.chat.id] = true
       try {
-        await api.post('/api/chats/presence', { token: token.trim(), chatid: m.chat.id, type: 'composing' })
+        await api.post('/api/chats/presence', { token: token.trim(), chatid: m.chat.id, type: 'text', duration: 10000 })
         pushToast(t('messages_presence_sent'), 'success')
       } catch (e: any) {
         pushToast(e?.response?.data?.result || e?.message || t('messages_error_presence'), 'error')
@@ -895,9 +911,11 @@ export default defineComponent({
         wsConnected.value = cable.isConnected()
       }, 2000)
 
-      // Periodic fallback keeps this page in sync when websocket events are missed.
+      // Fallback polling only when WebSocket is disconnected and user hasn't paused it.
       syncInterval = setInterval(() => {
-        syncMessagesFallback()
+        if (!cable.isConnected() && !syncPaused.value) {
+          syncMessagesFallback()
+        }
       }, 10000)
     })
 
@@ -915,7 +933,7 @@ export default defineComponent({
 
     return {
       token, messages, serverNumber, totalMessages, loading, error, search, filterType, filterGroupsOnly,
-      wsConnected, filteredMessages, currentPage, messagesPerPage, totalPages,
+      wsConnected, syncPaused, filteredMessages, currentPage, messagesPerPage, totalPages,
       loadMessages, isImage, isAudio, isVideo,
       getMediaUrl, handleImageError, handleAvatarError, formatTime, formatSize,
       getAvatarColor, getInitial, adThumbnailUrl, urlThumbnailUrl, isAttachmentValid, contactPicMap,
@@ -950,17 +968,29 @@ export default defineComponent({
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
 }
 
-.header-left {
+.header-content {
+  flex: 1;
+}
+
+.header-content h1 {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.header-content h1 svg {
+  color: var(--branding-primary, #7C3AED);
 }
 
 .header-sub {
@@ -1000,22 +1030,50 @@ export default defineComponent({
   color: #ef4444;
 }
 
+.btn-sync-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 1px 4px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  margin-left: 4px;
+  line-height: 1;
+}
+
+.btn-sync-toggle:hover {
+  opacity: 1;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 
 .back-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #6b7280;
-  text-decoration: none;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  padding: 6px 12px;
   font-size: 14px;
-  background: none;
-  border: none;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.back-link:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #312e81;
 }
 
 .back-link:hover {
@@ -1613,4 +1671,104 @@ export default defineComponent({
 .json-collapsed{ color:#6b7280; font-style:italic }
 .btn-small{ background:#eef2ff; border:1px solid #c7d2fe; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px }
 .btn-small:hover{ background:#e0e7ff }
+
+html[data-theme='dark'] .back-link {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.3);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .back-link:hover {
+  background: rgba(30, 41, 59, 0.94);
+  border-color: rgba(124, 58, 237, 0.3);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .btn-refresh {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(71, 85, 105, 0.32);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .btn-refresh:hover:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.46);
+  color: #c4b5fd;
+}
+
+html[data-theme='dark'] .filters-bar {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .messages-count {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .pagination-controls {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.26);
+}
+
+html[data-theme='dark'] .btn-page {
+  background: rgba(30, 41, 59, 0.94);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.26);
+}
+
+html[data-theme='dark'] .btn-page:hover:not(:disabled) {
+  background: rgba(76, 29, 149, 0.88);
+  border-color: rgba(124, 58, 237, 0.58);
+}
+
+html[data-theme='dark'] .btn-page:disabled {
+  background: rgba(30, 41, 59, 0.58);
+  color: #64748b;
+  border-color: rgba(71, 85, 105, 0.16);
+}
+
+html[data-theme='dark'] .page-info {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .page-size-select {
+  background: rgba(11, 22, 40, 0.96);
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .page-size-select:hover:not(:disabled) {
+  border-color: rgba(124, 58, 237, 0.52);
+}
+
+html[data-theme='dark'] .page-size-select:disabled {
+  background: rgba(30, 41, 59, 0.58);
+}
+
+html[data-theme='dark'] .btn-small {
+  background: rgba(30, 41, 59, 0.94);
+  border-color: rgba(71, 85, 105, 0.24);
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .btn-small:hover {
+  background: rgba(51, 65, 85, 0.96);
+}
+
+html[data-theme='dark'] .message-type {
+  background: rgba(30, 41, 59, 0.94);
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .attachment-file {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .btn-download {
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.24);
+}
 </style>

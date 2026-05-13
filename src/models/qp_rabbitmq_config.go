@@ -95,6 +95,14 @@ func (source QpRabbitMQConfig) IsSetCalls() bool {
 	return source.Calls != whatsapp.UnSetBooleanType
 }
 
+func (source QpRabbitMQConfig) GetDirect() bool {
+	return source.Direct.Boolean()
+}
+
+func (source QpRabbitMQConfig) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
+}
+
 func (source QpRabbitMQConfig) IsSetExtra() bool {
 	return source.Extra != nil
 }

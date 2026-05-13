@@ -10,6 +10,7 @@ import (
 
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	library "github.com/nocodeleaks/quepasa/library"
+	media "github.com/nocodeleaks/quepasa/media"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -346,6 +347,15 @@ func SetGroupPhotoController(w http.ResponseWriter, r *http.Request) {
 		RespondInterface(w, response)
 		return
 	}
+
+	// Convert image to JPEG (WhatsApp requires JPEG for group photos)
+	convertedData, err := media.ConvertToJpeg(imageData)
+	if err != nil {
+		response.ParseError(fmt.Errorf("failed to convert image to JPEG: %v", err))
+		RespondInterface(w, response)
+		return
+	}
+	imageData = convertedData
 
 	// Check if the image meets WhatsApp's size requirements
 	if len(imageData) < 10000 || len(imageData) > 500000 {

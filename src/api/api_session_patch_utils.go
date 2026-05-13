@@ -13,6 +13,7 @@ func buildSessionConfigurationPatch(request interface{}) *runtime.SessionConfigu
 			patch.ReadReceipts = req.ReadReceipts
 			patch.Calls = req.Calls
 			patch.ReadUpdate = req.ReadUpdate
+			patch.Direct = req.Direct
 			patch.Devel = req.Devel
 		}
 	case *InfoPatchRequest:
@@ -22,6 +23,7 @@ func buildSessionConfigurationPatch(request interface{}) *runtime.SessionConfigu
 			patch.ReadReceipts = req.ReadReceipts
 			patch.Calls = req.Calls
 			patch.ReadUpdate = req.ReadUpdate
+			patch.Direct = req.Direct
 			patch.Devel = req.Devel
 		}
 	}

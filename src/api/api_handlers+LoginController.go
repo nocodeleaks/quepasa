@@ -12,44 +12,29 @@ import (
 )
 
 // LoginConfigController returns the public bootstrap payload used by web client login screens.
-//
-// The current implementation intentionally keeps most branding fields empty because
-// we have not imported PR #39 branding/environment customizations yet. The endpoint
-// still exists now so a web client can discover basic runtime facts without scraping
-// templates or depending on private settings.
 func LoginConfigController(w http.ResponseWriter, r *http.Request) {
-	appTitle := environment.Settings.General.AppTitle
-	if appTitle == "" {
-		appTitle = "QuePasa"
-	}
-
 	response := map[string]interface{}{
-		// Stable fields already supported by the current environment model.
-		"appTitle":     appTitle,
-		"accountSetup": environment.Settings.General.AccountSetup,
-		"version":      models.QpVersion,
-		// Reserved compatibility fields expected by the web client branch. They remain empty
-		// until we decide to import branding/login customization support explicitly.
-		"loginLogo":     "",
-		"loginSubtitle": "",
-		"loginWarning":  "",
-		"loginFooter":   "",
-		"loginLayout":   "center",
-		"customCss":     "",
-		"fontAwesome":   "",
-		"googleFonts":   "",
-		// SQLite migration discovery from PR #39 is not wired yet, so expose the
-		// field with a conservative false value to keep the payload shape stable.
+		"appTitle":                 environment.Settings.Branding.Title,
+		"accountSetup":             environment.Settings.General.AccountSetup,
+		"version":                  models.QpVersion,
+		"loginLogo":                environment.Settings.General.LoginLogo,
+		"loginSubtitle":            environment.Settings.General.LoginSubtitle,
+		"loginWarning":             environment.Settings.General.LoginWarning,
+		"loginFooter":              environment.Settings.General.LoginFooter,
+		"loginLayout":              environment.Settings.General.LoginLayout,
+		"customCss":                environment.Settings.General.LoginCustomCSS,
+		"fontAwesome":              environment.Settings.General.LoginFontAwesome,
+		"googleFonts":              environment.Settings.General.LoginGoogleFonts,
 		"sqliteMigrationAvailable": false,
 		"branding": map[string]interface{}{
-			"title":          appTitle,
-			"logo":           "",
-			"favicon":        "",
-			"primaryColor":   "",
-			"secondaryColor": "",
-			"accentColor":    "",
-			"companyName":    "",
-			"companyUrl":     "",
+			"title":          environment.Settings.Branding.Title,
+			"logo":           environment.Settings.Branding.Logo,
+			"favicon":        environment.Settings.Branding.Favicon,
+			"primaryColor":   environment.Settings.Branding.PrimaryColor,
+			"secondaryColor": environment.Settings.Branding.SecondaryColor,
+			"accentColor":    environment.Settings.Branding.AccentColor,
+			"companyName":    environment.Settings.Branding.CompanyName,
+			"companyUrl":     environment.Settings.Branding.CompanyUrl,
 		},
 	}
 

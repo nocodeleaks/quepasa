@@ -64,7 +64,7 @@
       </router-link>
     </div>
 
-    <div class="quick-actions" v-if="server">
+    <div class="quick-actions quick-actions-row" v-if="server">
       <router-link :to="`/server/${encodedToken}/send`" class="action-card primary">
         <div class="action-icon">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
@@ -134,6 +134,18 @@
         <div class="action-info">
           <span class="action-title">{{ t('rabbitmq') }}</span>
           <span class="action-desc">{{ t('server_rabbitmq_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/server/${encodedToken}/groups`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_groups_manage_title') }}</span>
+          <span class="action-desc">{{ t('server_groups_manage_desc') }}</span>
         </div>
       </router-link>
     </div>
@@ -270,6 +282,40 @@
             :disabled="togglingOption === 'server-calls'"
           />
         </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 11H7v-2h4v2zm6 0h-4v-2h4v2zm0-4H7V7h10v2z" />
+              </svg>
+              <span class="option-title">{{ t('server_direct_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_direct_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.direct"
+            @change="updateOption('direct', $event)"
+            :disabled="togglingOption === 'server-direct'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
+              </svg>
+              <span class="option-title">{{ t('server_readupdate_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_readupdate_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.readupdate"
+            @change="updateOption('readupdate', $event)"
+            :disabled="togglingOption === 'server-readupdate'"
+          />
+        </div>
       </div>
     </div>
 
@@ -363,6 +409,8 @@ export default defineComponent({
       groups: 0,
       readreceipts: 0,
       calls: 0,
+      direct: 0,
+      readupdate: 0,
     })
 
     const statusClass = computed(() => {
@@ -410,6 +458,8 @@ export default defineComponent({
         options.value.groups = toTriState(summary.groups)
         options.value.readreceipts = toTriState(summary.readReceipts ?? summary.readreceipts)
         options.value.calls = toTriState(summary.calls)
+        options.value.direct = toTriState(summary.direct)
+        options.value.readupdate = toTriState(summary.readupdate)
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || t('server_error_load')
       } finally {
@@ -658,6 +708,18 @@ export default defineComponent({
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 32px;
+}
+
+.quick-actions-row {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.quick-actions-row .action-card {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 10px;
+  gap: 10px;
 }
 
 .action-card {
@@ -1010,6 +1072,95 @@ export default defineComponent({
   text-transform: uppercase;
 }
 
+html[data-theme='dark'] .server-details h1,
+html[data-theme='dark'] .details-section h2,
+html[data-theme='dark'] .danger-section h2,
+html[data-theme='dark'] .options-section h2,
+html[data-theme='dark'] .action-title,
+html[data-theme='dark'] .detail-value,
+html[data-theme='dark'] .option-title,
+html[data-theme='dark'] .modal-content h3 {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .server-meta,
+html[data-theme='dark'] .action-desc,
+html[data-theme='dark'] .detail-label,
+html[data-theme='dark'] .option-desc,
+html[data-theme='dark'] .loading-placeholder,
+html[data-theme='dark'] .modal-content p,
+html[data-theme='dark'] .readonly-badge {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .details-section,
+html[data-theme='dark'] .danger-section {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+  box-shadow: 0 22px 44px rgba(2, 6, 23, 0.28);
+}
+
+html[data-theme='dark'] .detail-card {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .detail-value code {
+  background: rgba(30, 41, 59, 0.94);
+  color: #dbeafe;
+}
+
+html[data-theme='dark'] .copy-btn {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .copy-btn:hover {
+  background: rgba(51, 65, 85, 0.82);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .btn-warning-outline {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+html[data-theme='dark'] .btn-warning-outline:hover:not(:disabled) {
+  background: rgba(120, 53, 15, 0.28);
+}
+
+html[data-theme='dark'] .modal-content {
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.42);
+}
+
+html[data-theme='dark'] .modal-icon.danger {
+  background: rgba(127, 29, 29, 0.28);
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .btn-secondary {
+  background: rgba(30, 41, 59, 0.94);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .btn-secondary:hover {
+  background: rgba(51, 65, 85, 0.96);
+}
+
+html[data-theme='dark'] .option-card {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.22);
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .readonly-badge {
+  background: rgba(30, 41, 59, 0.94);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
 @media (max-width: 768px) {
   .hide-mobile {
     display: none !important;
@@ -1038,6 +1189,10 @@ export default defineComponent({
 
   .quick-actions {
     grid-template-columns: 1fr;
+  }
+
+  .quick-actions-row {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .details-grid {

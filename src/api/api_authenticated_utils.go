@@ -265,6 +265,8 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 			"broadcasts":     false,
 			"readReceipts":   false,
 			"calls":          false,
+			"readupdate":     false,
+			"direct":         true,
 		}
 	}
 
@@ -291,11 +293,27 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 		"hasDispatching": snap.dispatchCount > 0,
 		"hasWebhooks":    snap.webhookCount > 0,
 		"hasRabbitMQ":    snap.rabbitmqCount > 0,
-		"groups":         dbServer.GetGroups(),
-		"broadcasts":     dbServer.GetBroadcasts(),
-		"readReceipts":   dbServer.GetReadReceipts(),
-		"calls":          dbServer.GetCalls(),
+		"groups":         dbServer.Groups,
+		"broadcasts":     dbServer.Broadcasts,
+		"readReceipts":   dbServer.ReadReceipts,
+		"calls":          dbServer.Calls,
+		"readupdate":     dbServer.ReadUpdate,
+		"direct":         dbServer.Direct,
 	}
+}
+
+func resolveSummaryWid(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) string {
+	if liveServer != nil {
+		if wid := strings.TrimSpace(liveServer.GetWId()); wid != "" {
+			return wid
+		}
+	}
+
+	if dbServer == nil {
+		return ""
+	}
+
+	return strings.TrimSpace(dbServer.GetWId())
 }
 
 // BuildServerSummary creates a stable JSON-friendly server summary for authenticated reads.
@@ -327,6 +345,8 @@ func BuildServerSummary(dbServer *models.QpServer, liveServer *models.QpWhatsapp
 	})
 
 	return recoverAPIValue(buildFallbackServerSummary(dbServer, snap), "BuildServerSummary response payload", fields, func() map[string]interface{} {
-		return buildFallbackServerSummary(dbServer, snap)
+		payload := buildFallbackServerSummary(dbServer, snap)
+		payload["wid"] = resolveSummaryWid(dbServer, liveServer)
+		return payload
 	})
 }

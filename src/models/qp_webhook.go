@@ -89,6 +89,14 @@ func (source QpWebhook) IsSetCalls() bool {
 	return source.Calls != whatsapp.UnSetBooleanType
 }
 
+func (source QpWebhook) GetDirect() bool {
+	return source.Direct.Boolean()
+}
+
+func (source QpWebhook) IsSetDirect() bool {
+	return source.Direct != whatsapp.UnSetBooleanType
+}
+
 func (source QpWebhook) IsSetExtra() bool {
 	return source.Extra != nil
 }

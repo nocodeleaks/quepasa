@@ -1,3 +1,4 @@
+- ✅ Database configuration documentation slice: clarified that `DB*` variables configure the Whatsmeow SQL store, not the internal `quepasa.sqlite` application DB; updated inline comments plus `src/environment/README.md`, `src/.env.example`, root `README.md`, and `docker/docker.md` to explain sqlite defaults vs postgres/mysql-only fields
 - ✅ N8N integration tests slice: created comprehensive unit test suite for all n8n→QuePasa API v4 requests; `src/api/api_n8n_quepasa_integration_test.go` covers 29 test cases (send text, group invites, media download, contact info, webhooks, auth methods, request/response format, integration scenarios, error handling, edge cases); all 29 tests passing (0.365s execution); created 3 documentation files (`docs/N8N_QUEPASA_API_REQUESTS_MAPPING.md`, `docs/N8N_QUEPASA_API_TESTS_README.md`, `docs/N8N_INTEGRATION_TESTS_SUMMARY.md`); full project build passing (exit 0)
 - ✅ Multi-login session-scope slice: protected SPA
 - ✅ Multi-login session-scope slice: protected SPA/canonical routes now accept two auth modes — JWT (`Authorization`) for user-wide access and `X-QUEPASA-TOKEN` for single-session-scoped access; token-auth mode resolves user by session ownership and forces token-scoped operations/listing to that authenticated session; `POST /api/sessions` keeps JWT path and supports custom token override only when `RELAXED_SESSIONS=true`; canonical tests cover custom-token create success (201), strict-mode 403, master-key-only 401, scoped-list isolation, and scoped-token forced routing
@@ -22,13 +23,69 @@
 - ✅ Public user creation endpoint slice: `POST /api/users` now implements bootstrap-friendly logic — first user can be created without master key, subsequent users require `X-QUEPASA-MASTERKEY` header; `SPAPublicUserCreateController` counts persisted users via `runtime.CountPersistedUsers()` and gates master key check on count > 0; uses `IsMatchForMaster(r)` for test compatibility; `api_user_creation_test.go` covers 5 scenarios (first user no key, second user requires key, second user with key, invalid password, duplicate email); all tests passing (exit 0); full build passing (exit 0); integrated into canonical route `/api/users` (POST public, GET+DELETE protected)
 - ✅ Environment discovery endpoint slice: `GET /api/system/environment` now returns preview (anônimo) vs full settings (com master key); anonymous requests show public features only (groups, broadcasts, calls, history_sync, log_level, presence, etc) in humanized format; master key requests return complete config (API, Database, WebServer, Cache, RabbitMQ, Redis, etc); `api_environment_discovery_test.go` covers 3 scenarios (anonymous preview, master key full access, wrong key treated as anonymous); all tests passing (exit 0); `docs/USAGE-environment-discovery.md` documents full payload examples and field descriptions; README updated with environment discovery guide link; build passing (exit 0)
 - ✅ Configurable default API version slice: added `API_DEFAULT_VERSION` env (default `v4`) to control which version handles the unversioned `/<API_PREFIX>/...` alias while keeping explicit `/v4`, `/v5`, and `/v3` routes alive in parallel; environment preview/full settings now expose the selected default version; canonical Vue SPA requests are normalized to explicit `/api/v5/...` in `src/apps/vuejs/client/src/services/api.ts` so the official frontend is isolated from alias switching during migration
-# Task: QuePasa Architecture Refactoring - Server→Session Naming Migration
+# Task: Native WhatsApp VoIP Inbound Call Acceptance and Audio Playback
 
 ## Task Objective
 
-Perform a phased server→session naming migration across the QuePasa codebase to better reflect that QpWhatsappServer represents a per-connection WhatsApp identity (session), not infrastructure. Implement this through backward-compatible type aliases, wrapper functions, and gradual controller/utility layer migration, culminating in a comprehensive refactoring plan for remaining architectural issues.
+Implement an evidence-driven native WhatsApp VoIP path in QuePasa focused on inbound calls: receive a real incoming call, accept it natively, negotiate relay/media successfully, and reach deterministic prerecorded audio playback directly inside the call.
 
 ## Mandatory Checklist
+
+- [ ] Phase 0: Lab preparation and evidence capture
+  - [x] Validate local Linux + Go installation without Docker
+  - [x] Confirm local `systemd` service startup for QuePasa
+  - [ ] Create dedicated VoIP `.env` profile
+  - [ ] Prepare packet capture tooling and media fixtures
+  - [ ] Capture baseline real-app-to-real-app call for comparison
+
+- [ ] Phase 1: Signaling observability
+  - [ ] Add dedicated call-session state structures
+  - [ ] Track lifecycle by `CallID`
+  - [ ] Expand observed inbound call event coverage
+  - [ ] Add structured signaling debug logs and payload dumps
+  - [ ] Add experimental feature flags for call behavior
+
+- [ ] Phase 2: Native accept path
+  - [ ] Identify exact accept node structure
+  - [ ] Implement isolated call accept helper
+  - [ ] Add auto-answer experimental mode
+  - [ ] Validate answered call reaches relay setup
+
+- [ ] Phase 3+: TURN, SRTP, RTP, and Opus media pipeline
+  - [ ] Implement TURN auth/allocation path
+  - [ ] Implement SRTP derivation and protection
+  - [ ] Implement RTP packetizer and Opus framing experiments
+  - [ ] Validate prerecorded audio playback heard by caller
+
+## Current Status
+
+- ✅ Local QuePasa installation validated without Docker using Linux service + direct Go runtime
+- ✅ `quepasa.service` is active locally on port `31000`
+- ✅ Native VoIP implementation plan created in `docs/PLAN-whatsapp-native-voip-inbound-call-audio.md`
+- ✅ Existing local baseline identified:
+  - `CallOffer` and `CallOfferNotice` are observed in `src/whatsmeow/whatsmeow_event_router.go`
+  - calls are converted into internal call messages in `src/whatsmeow/whatsmeow_handlers.go`
+  - calls can be rejected when call handling is disabled
+- ✅ Important architectural direction confirmed: `src/sipproxy/` is out of scope for the first native WhatsApp VoIP milestone
+- ⏳ Next implementation focus: Phase 0/1 execution, starting with dedicated signaling observability and call-state tracking
+
+## Next Steps
+
+1. Create a reproducible local VoIP experiment profile and fixture directory
+2. Install/validate packet capture and media conversion tooling
+3. Add dedicated `whatsmeow_call_*` files for call state and signaling instrumentation
+4. Capture inbound offer payload details by `CallID`
+5. Prove native answer without media before attempting TURN/SRTP/audio
+
+## Immutable Constraints
+
+1. The first milestone is native WhatsApp inbound voice, not message fallback
+2. `sipproxy` is not the implementation path for this milestone
+3. Validation must happen locally on Linux without Docker
+4. Each layer must be proven with captures/logs before advancing to the next
+5. Audio playback inside the call is the target outcome, not chat audio attachment fallback
+
+## Previous Context (Preserved)
 
 - [ ] Layer 1: Session Foundation (type aliases, wrapper functions in models)
   - [x] Create qp_whatsapp_session.go with type aliases and wrappers (COMPLETED)

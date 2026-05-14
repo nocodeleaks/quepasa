@@ -299,10 +299,10 @@ DOMAIN=your-domain.com
 MASTERKEY=your-secret-key
 ACCOUNTSETUP=true  # Enable for first setup
 
-# Database
-DBDRIVER=postgres
-DBHOST=postgres
-DBDATABASE=quepasa_whatsmeow
+# Database (Whatsmeow store)
+DBDRIVER=sqlite3
+DBDATABASE=whatsmeow
+# For postgres/mysql also set DBHOST, DBPORT, DBUSER, DBPASSWORD and DBSSLMODE as needed
 
 # Features
 GROUPS=true
@@ -379,7 +379,7 @@ REDIS_HOST=redis-server
 
 QuePasa is built with:
 - **Backend**: Go with [Whatsmeow](https://github.com/tulir/whatsmeow) library
-- **Database**: PostgreSQL for data persistence
+- **Storage**: internal QuePasa data uses local SQLite by default, while the Whatsmeow store is configurable through `DB*` variables (`sqlite3`, `postgres`, or `mysql`)
 - **API**: RESTful HTTP endpoints
 - **Real-time**: WebSocket support for live updates
 
@@ -493,14 +493,20 @@ For detailed configuration options, see [docker/.env.example](docker/.env.exampl
 | `SYNOPSISLENGTH` | Length for message synopsis | `50` |
 
 #### Database Configuration
+
+These `DB*` variables configure the **Whatsmeow SQL store** used during startup.
+They do **not** currently move the internal QuePasa application database, which
+still follows the local `quepasa.sqlite` / `quepasa.db` path in the current code.
+
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DBDRIVER` | Database driver | `postgres` |
-| `DBHOST` | Database host | `localhost` |
-| `DBPORT` | Database port | `5432` |
-| `DBDATABASE` | Database name | `quepasa_whatsmeow` |
-| `DBUSER` | Database user | `quepasa` |
-| `DBPASSWORD` | Database password | *required* |
+| `DBDRIVER` | SQL driver for the Whatsmeow store (`sqlite3`, `postgres`, `mysql`) | `sqlite3` |
+| `DBHOST` | Host for `postgres` / `mysql`; ignored by `sqlite3` | empty |
+| `DBPORT` | Port for `postgres` / `mysql`; ignored by `sqlite3` | empty |
+| `DBDATABASE` | Database name for `postgres` / `mysql`, or sqlite base file path/name for the Whatsmeow store | runtime fallback: `whatsmeow` when empty with `sqlite3` |
+| `DBUSER` | User for `postgres` / `mysql`; ignored by `sqlite3` | empty |
+| `DBPASSWORD` | Password for `postgres` / `mysql`; ignored by `sqlite3` | empty |
+| `DBSSLMODE` | PostgreSQL `sslmode`; usually unused by `sqlite3` / `mysql` | empty |
 
 #### Logging & Debug
 | Variable | Description | Options |

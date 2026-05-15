@@ -35,11 +35,13 @@ replace github.com/nocodeleaks/quepasa/webserver => ../webserver
 go 1.25.0
 
 require (
+	github.com/emiago/sipgo v0.33.0
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/sipproxy v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 )
 

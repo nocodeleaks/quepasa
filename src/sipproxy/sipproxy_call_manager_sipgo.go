@@ -48,6 +48,7 @@ type SIPCallManagerSipgo struct {
 	userAgent       *sipgo.UserAgent
 	dialogUA        *sipgo.DialogUA
 	activeCalls     map[string]*CallInfo
+	activeCallsMu   sync.RWMutex
 	cancelCallCount map[string]int // Track how many times CancelCall is called per CallID
 	cancelMutex     sync.RWMutex   // Protect the counter
 	defaultTimeout  time.Duration
@@ -148,7 +149,7 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	// =========================================================================
 	// 🚫 CHECK IF CALL ALREADY EXISTS - PREVENT DUPLICATES
 	// =========================================================================
-	if existingCall, exists := scm.activeCalls[callID]; exists {
+	if existingCall, exists := scm.getActiveCall(callID); exists {
 		scm.logger.Warnf("⚠️ DUPLICATE CALL PREVENTION: CallID %s already exists!", callID)
 		scm.logger.Infof("📞 Existing call: From=%s, To=%s, State=%d",
 			existingCall.FromPhone, existingCall.ToPhone, existingCall.State)
@@ -188,18 +189,23 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	}
 
 	// Register the call (we already checked it doesn't exist)
-	scm.activeCalls[callID] = callInfo
+	scm.setActiveCall(callID, callInfo)
 
 	// Create custom headers with SIP tag management
 	headers := make([]sip.Header, 0)
 	headers = SetCallIDHeader(headers, callID)
 	headers = scm.SetViaHeader(headers)
 	headers = scm.SetFromHeader(headers, fromPhone, callID)
+	headers = scm.SetIdentityAndTraceHeaders(headers, fromPhone, toPhone, callID)
+	contactUser := fromPhone
+	if scm.config.FromUser != "" {
+		contactUser = scm.config.FromUser
+	}
 
 	// Fix Contact header with correct IP from network manager
 	localIP := scm.networkManager.GetLocalIP()
 	localPort := scm.networkManager.GetLocalPort()
-	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: fromPhone, Host: localIP, Port: localPort}})
+	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: contactUser, Host: localIP, Port: localPort}})
 
 	recipient := scm.GetRecipient(toPhone)
 	sdpBody := scm.CreateSDPOffer(fromPhone)
@@ -226,9 +232,9 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	scm.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	scm.logger.Infof("🎯 Request-URI: %s", inviteReq.Recipient.String())
 	scm.logger.Infof("📞 Call-ID: %s", inviteReq.CallID().String())
-	scm.logger.Infof("📤 From: %s", inviteReq.From().String())
-	scm.logger.Infof("📥 To: %s", inviteReq.To().String())
-	scm.logger.Infof("📞 Contact: %s", inviteReq.Contact().String())
+	scm.logger.Debugf("📤 From: %s", inviteReq.From().String())
+	scm.logger.Debugf("📥 To: %s", inviteReq.To().String())
+	scm.logger.Debugf("📞 Contact: %s", inviteReq.Contact().String())
 
 	// Try to access Via header for NAT information
 	if viaHeader := inviteReq.Via(); viaHeader != nil {
@@ -239,9 +245,27 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	if userAgent := inviteReq.GetHeader("User-Agent"); userAgent != nil {
 		scm.logger.Infof("🏷️  User-Agent: %s", userAgent.String())
 	}
-	scm.logger.Infof("📄 Complete message:")
+	if assertedID := inviteReq.GetHeader("P-Asserted-Identity"); assertedID != nil {
+		scm.logger.Debugf("🪪 P-Asserted-Identity: %s", assertedID.String())
+	}
+	if remotePartyID := inviteReq.GetHeader("Remote-Party-ID"); remotePartyID != nil {
+		scm.logger.Debugf("🪪 Remote-Party-ID: %s", remotePartyID.String())
+	}
+	if waCaller := inviteReq.GetHeader("X-QuePasa-WA-Caller"); waCaller != nil {
+		scm.logger.Debugf("🔎 X-QuePasa-WA-Caller: %s", waCaller.String())
+	}
+	if waCalled := inviteReq.GetHeader("X-QuePasa-WA-Called"); waCalled != nil {
+		scm.logger.Debugf("🔎 X-QuePasa-WA-Called: %s", waCalled.String())
+	}
+	if waSession := inviteReq.GetHeader("X-QuePasa-Session"); waSession != nil {
+		scm.logger.Debugf("🔎 X-QuePasa-Session: %s", waSession.String())
+	}
+	if waCallID := inviteReq.GetHeader("X-QuePasa-CallID"); waCallID != nil {
+		scm.logger.Debugf("🔎 X-QuePasa-CallID: %s", waCallID.String())
+	}
+	scm.logger.Debugf("📄 Complete message:")
 	for i, line := range strings.Split(inviteReq.String(), "\n") {
-		scm.logger.Infof("📄 Line %d: %s", i+1, line)
+		scm.logger.Debugf("📄 Line %d: %s", i+1, line)
 	}
 	scm.logger.Infof("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
@@ -261,7 +285,7 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 
 // updateCallState updates the state of a call
 func (scm *SIPCallManagerSipgo) updateCallState(callID string, state CallState) {
-	if callInfo, exists := scm.activeCalls[callID]; exists {
+	if callInfo, exists := scm.getActiveCall(callID); exists {
 		callInfo.State = state
 		callInfo.LastUpdate = time.Now()
 		scm.logger.Infof("🔄 Call %s state updated to: %v", callID, state)
@@ -270,11 +294,11 @@ func (scm *SIPCallManagerSipgo) updateCallState(callID string, state CallState) 
 
 // cleanupCall removes a call from active calls
 func (scm *SIPCallManagerSipgo) cleanupCall(callID string) {
-	if callInfo, exists := scm.activeCalls[callID]; exists {
+	if callInfo, exists := scm.getActiveCall(callID); exists {
 		if callInfo.CancelFunc != nil {
 			callInfo.CancelFunc()
 		}
-		delete(scm.activeCalls, callID)
+		scm.deleteActiveCall(callID)
 		scm.logger.Infof("🧹 Call %s cleaned up", callID)
 	}
 
@@ -291,7 +315,14 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	scm.logger.Infof("🔍 Dialog session state before wait...")
 	scm.logger.Infof("📞 MONITORING: Calling WaitAnswer() to wait for 200 OK response...")
 
-	err := dialogSession.WaitAnswer(callInfo.Context, sipgo.AnswerOptions{})
+	answerOptions := sipgo.AnswerOptions{}
+	if scm.config.AuthPassword != "" {
+		answerOptions.Username = scm.config.AuthUsername
+		answerOptions.Password = scm.config.AuthPassword
+		scm.logger.Infof("🔐 SIP digest auth enabled for INVITE answer flow (username=%s)", scm.config.AuthUsername)
+	}
+
+	err := dialogSession.WaitAnswer(callInfo.Context, answerOptions)
 
 	scm.logger.Infof("📞 MONITORING: WaitAnswer() completed for CallID: %s", callInfo.CallID)
 	if err == nil {
@@ -405,11 +436,7 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 
 // GetActiveCalls returns the list of active call IDs
 func (scm *SIPCallManagerSipgo) GetActiveCalls() []string {
-	callIDs := make([]string, 0, len(scm.activeCalls))
-	for callID := range scm.activeCalls {
-		callIDs = append(callIDs, callID)
-	}
-	return callIDs
+	return scm.listActiveCallIDs()
 }
 
 // CancelCall cancels an active call by sending BYE/CANCEL to SIP server
@@ -418,10 +445,16 @@ func (scm *SIPCallManagerSipgo) CancelCall(callID string) error {
 	scm.logger.Infof("🔥🔥🔥 [CANCEL-CALL-ENTRY] CallID: %s - Entry #%d", callID, callCount)
 
 	// Get call info
-	callInfo, exists := scm.activeCalls[callID]
+	callInfo, exists := scm.getActiveCall(callID)
 	if !exists {
 		scm.logger.Warnf("📞⚠️ Call %s not found for cancellation - may have been removed already", callID)
 		return nil // Not an error, call was already cleaned up
+	}
+
+	if callInfo.State != CallStateAccepted {
+		scm.logger.Infof("📞↩️ Call %s is not in accepted state (state=%v), skipping SIP BYE and cleaning up", callID, callInfo.State)
+		scm.cleanupCall(callID)
+		return nil
 	}
 
 	// =========================================================================
@@ -492,4 +525,38 @@ func (scm *SIPCallManagerSipgo) resetCancelCallCount(callID string) {
 	defer scm.cancelMutex.Unlock()
 
 	delete(scm.cancelCallCount, callID)
+}
+
+func (scm *SIPCallManagerSipgo) getActiveCall(callID string) (*CallInfo, bool) {
+	scm.activeCallsMu.RLock()
+	defer scm.activeCallsMu.RUnlock()
+
+	callInfo, exists := scm.activeCalls[callID]
+	return callInfo, exists
+}
+
+func (scm *SIPCallManagerSipgo) setActiveCall(callID string, callInfo *CallInfo) {
+	scm.activeCallsMu.Lock()
+	defer scm.activeCallsMu.Unlock()
+
+	scm.activeCalls[callID] = callInfo
+}
+
+func (scm *SIPCallManagerSipgo) deleteActiveCall(callID string) {
+	scm.activeCallsMu.Lock()
+	defer scm.activeCallsMu.Unlock()
+
+	delete(scm.activeCalls, callID)
+}
+
+func (scm *SIPCallManagerSipgo) listActiveCallIDs() []string {
+	scm.activeCallsMu.RLock()
+	defer scm.activeCallsMu.RUnlock()
+
+	callIDs := make([]string, 0, len(scm.activeCalls))
+	for callID := range scm.activeCalls {
+		callIDs = append(callIDs, callID)
+	}
+
+	return callIDs
 }

@@ -137,6 +137,11 @@ func (source *WhatsmeowHandlers) buildRouter() *EventRouter {
 		go OnEventBlocklist(source, *evt)
 	})
 
+	r.register(reflect.TypeOf(&events.CallTerminate{}), func(raw interface{}) {
+		evt := raw.(*events.CallTerminate)
+		go source.HandleCallTerminate(*evt)
+	})
+
 	r.register(reflect.TypeOf(&events.PairError{}), func(raw interface{}) {
 		evt := raw.(*events.PairError)
 		source.GetLogger().Errorf("pair error event: %v", evt)
@@ -165,7 +170,6 @@ func (source *WhatsmeowHandlers) buildRouter() *EventRouter {
 		}
 	}
 	r.register(reflect.TypeOf(&events.AppState{}), unimplementedHandler)
-	r.register(reflect.TypeOf(&events.CallTerminate{}), unimplementedHandler)
 	r.register(reflect.TypeOf(&events.DeleteChat{}), unimplementedHandler)
 	r.register(reflect.TypeOf(&events.DeleteForMe{}), unimplementedHandler)
 	r.register(reflect.TypeOf(&events.MarkChatAsRead{}), unimplementedHandler)

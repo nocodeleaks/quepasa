@@ -57,6 +57,10 @@ func GetEnvironmentSettings() SIPProxySettings {
 
 		SDPSessionName: env.SDPSessionName,
 		UserAgent:      env.UserAgent,
+		AuthUsername:   env.AuthUsername,
+		AuthPassword:   env.AuthPassword,
+		FromUser:       env.FromUser,
+		ToUser:         env.ToUser,
 		ServerHost:     env.Host,
 		ServerPort:     int(env.Port),
 		ListenerPort:   int(env.LocalPort),

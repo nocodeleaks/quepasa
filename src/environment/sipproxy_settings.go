@@ -9,6 +9,10 @@ const (
 	ENV_SIPPROXY_HOST           = "SIPPROXY_HOST"           // SIP server host (required for activation)
 	ENV_SIPPROXY_PORT           = "SIPPROXY_PORT"           // SIP server port
 	ENV_SIPPROXY_PROTOCOL       = "SIPPROXY_PROTOCOL"       // SIP server protocol
+	ENV_SIPPROXY_AUTHUSERNAME   = "SIPPROXY_AUTHUSERNAME"   // SIP auth username for 401/407 digest
+	ENV_SIPPROXY_AUTHPASSWORD   = "SIPPROXY_AUTHPASSWORD"   // SIP auth password for 401/407 digest
+	ENV_SIPPROXY_FROMUSER       = "SIPPROXY_FROMUSER"       // Optional From user override (caller ID)
+	ENV_SIPPROXY_TOUSER         = "SIPPROXY_TOUSER"         // Optional destination user override (extension/queue)
 	ENV_SIPPROXY_LOCALPORT      = "SIPPROXY_LOCALPORT"      // local SIP port
 	ENV_SIPPROXY_PUBLICIP       = "SIPPROXY_PUBLICIP"       // public IP for SIP
 	ENV_SIPPROXY_STUNSERVER     = "SIPPROXY_STUNSERVER"     // STUN server for NAT discovery
@@ -27,6 +31,10 @@ type SIPProxySettings struct {
 	Enabled        bool   `json:"enabled"`
 	Host           string `json:"host"`
 	Protocol       string `json:"protocol"`
+	AuthUsername   string `json:"auth_username"`
+	AuthPassword   string `json:"-"`
+	FromUser       string `json:"from_user"`
+	ToUser         string `json:"to_user"`
 	Port           uint32 `json:"port"`
 	LocalPort      uint32 `json:"local_port"`
 	PublicIP       string `json:"public_ip"`
@@ -50,6 +58,10 @@ func NewSIPProxySettings() SIPProxySettings {
 		Enabled:        enabled,
 		Host:           host,
 		Protocol:       getEnvOrDefaultString(ENV_SIPPROXY_PROTOCOL, "UDP"),
+		AuthUsername:   getEnvOrDefaultString(ENV_SIPPROXY_AUTHUSERNAME, ""),
+		AuthPassword:   getEnvOrDefaultString(ENV_SIPPROXY_AUTHPASSWORD, ""),
+		FromUser:       getEnvOrDefaultString(ENV_SIPPROXY_FROMUSER, ""),
+		ToUser:         getEnvOrDefaultString(ENV_SIPPROXY_TOUSER, ""),
 		Port:           getEnvOrDefaultUint32(ENV_SIPPROXY_PORT, 5060),
 		LocalPort:      getEnvOrDefaultUint32(ENV_SIPPROXY_LOCALPORT, 5060),
 		PublicIP:       getEnvOrDefaultString(ENV_SIPPROXY_PUBLICIP, ""),

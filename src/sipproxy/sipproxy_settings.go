@@ -46,6 +46,10 @@ type SIPProxySettings struct {
 
 	SDPSessionName string `json:"sdp_session_name"` // Optional SDP session name for media
 	UserAgent      string `json:"user_agent"`
+	AuthUsername   string `json:"auth_username"`
+	AuthPassword   string `json:"auth_password"`
+	FromUser       string `json:"from_user"`
+	ToUser         string `json:"to_user"`
 	ServerHost     string `json:"server_host"`
 	ServerPort     int    `json:"server_port"`
 	ListenerPort   int    `json:"listener_port"` // Port to listen for SIP responses

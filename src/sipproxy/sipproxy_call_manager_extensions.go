@@ -8,6 +8,39 @@ import (
 	"github.com/emiago/sipgo/sip"
 )
 
+func appendSIPCustomHeader(headers []sip.Header, name, value string) []sip.Header {
+	if len(value) == 0 {
+		return headers
+	}
+
+	header := sip.NewHeader(name, value)
+	if header == nil {
+		return headers
+	}
+
+	return append(headers, header)
+}
+
+// SetIdentityAndTraceHeaders adds SIP identity and QuePasa trace headers to help PBX caller display and auditing.
+func (source *SIPCallManagerSipgo) SetIdentityAndTraceHeaders(headers []sip.Header, fromPhone, toPhone, callID string) []sip.Header {
+	effectiveFrom := fromPhone
+	if source.config.FromUser != "" {
+		effectiveFrom = source.config.FromUser
+	}
+
+	identityURI := fmt.Sprintf("<sip:%s@%s>", effectiveFrom, source.config.SIPServer)
+	remotePartyID := fmt.Sprintf("%s;party=calling;screen=no;privacy=off", identityURI)
+
+	headers = appendSIPCustomHeader(headers, "P-Asserted-Identity", identityURI)
+	headers = appendSIPCustomHeader(headers, "Remote-Party-ID", remotePartyID)
+	headers = appendSIPCustomHeader(headers, "X-QuePasa-WA-Caller", fromPhone)
+	headers = appendSIPCustomHeader(headers, "X-QuePasa-WA-Called", toPhone)
+	headers = appendSIPCustomHeader(headers, "X-QuePasa-Session", toPhone)
+	headers = appendSIPCustomHeader(headers, "X-QuePasa-CallID", callID)
+
+	return headers
+}
+
 // generateSIPTag generates a random SIP tag following RFC 3261 recommendations
 // Tags should be cryptographically random and at least 32 bits of randomness
 func generateSIPTag() string {
@@ -41,6 +74,9 @@ func (source *SIPCallManagerSipgo) getOrGenerateCallTag(callID string) string {
 }
 
 func (source *SIPCallManagerSipgo) GetRecipient(toPhone string) (recipient sip.Uri) {
+	if source.config.ToUser != "" {
+		toPhone = source.config.ToUser
+	}
 
 	// Create recipient URI with port optimization (omit :5060 to reduce INVITE size)
 	recipient = sip.Uri{
@@ -59,6 +95,9 @@ func (source *SIPCallManagerSipgo) GetRecipient(toPhone string) (recipient sip.U
 }
 
 func (source *SIPCallManagerSipgo) SetFromHeader(headers []sip.Header, fromPhone, callID string) []sip.Header {
+	if source.config.FromUser != "" {
+		fromPhone = source.config.FromUser
+	}
 
 	publicIP := source.networkManager.GetPublicIP()
 	localPort := source.networkManager.GetLocalPort()

@@ -195,11 +195,16 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	headers = SetCallIDHeader(headers, callID)
 	headers = scm.SetViaHeader(headers)
 	headers = scm.SetFromHeader(headers, fromPhone, callID)
+	headers = scm.SetIdentityAndTraceHeaders(headers, fromPhone, toPhone, callID)
+	contactUser := fromPhone
+	if scm.config.FromUser != "" {
+		contactUser = scm.config.FromUser
+	}
 
 	// Fix Contact header with correct IP from network manager
 	localIP := scm.networkManager.GetLocalIP()
 	localPort := scm.networkManager.GetLocalPort()
-	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: fromPhone, Host: localIP, Port: localPort}})
+	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: contactUser, Host: localIP, Port: localPort}})
 
 	recipient := scm.GetRecipient(toPhone)
 	sdpBody := scm.CreateSDPOffer(fromPhone)
@@ -238,6 +243,24 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	// Try to access User-Agent header
 	if userAgent := inviteReq.GetHeader("User-Agent"); userAgent != nil {
 		scm.logger.Infof("🏷️  User-Agent: %s", userAgent.String())
+	}
+	if assertedID := inviteReq.GetHeader("P-Asserted-Identity"); assertedID != nil {
+		scm.logger.Infof("🪪 P-Asserted-Identity: %s", assertedID.String())
+	}
+	if remotePartyID := inviteReq.GetHeader("Remote-Party-ID"); remotePartyID != nil {
+		scm.logger.Infof("🪪 Remote-Party-ID: %s", remotePartyID.String())
+	}
+	if waCaller := inviteReq.GetHeader("X-QuePasa-WA-Caller"); waCaller != nil {
+		scm.logger.Infof("🔎 X-QuePasa-WA-Caller: %s", waCaller.String())
+	}
+	if waCalled := inviteReq.GetHeader("X-QuePasa-WA-Called"); waCalled != nil {
+		scm.logger.Infof("🔎 X-QuePasa-WA-Called: %s", waCalled.String())
+	}
+	if waSession := inviteReq.GetHeader("X-QuePasa-Session"); waSession != nil {
+		scm.logger.Infof("🔎 X-QuePasa-Session: %s", waSession.String())
+	}
+	if waCallID := inviteReq.GetHeader("X-QuePasa-CallID"); waCallID != nil {
+		scm.logger.Infof("🔎 X-QuePasa-CallID: %s", waCallID.String())
 	}
 	scm.logger.Infof("📄 Complete message:")
 	for i, line := range strings.Split(inviteReq.String(), "\n") {
@@ -291,7 +314,14 @@ func (scm *SIPCallManagerSipgo) monitorSipgoDialog(callInfo *CallInfo, dialogSes
 	scm.logger.Infof("🔍 Dialog session state before wait...")
 	scm.logger.Infof("📞 MONITORING: Calling WaitAnswer() to wait for 200 OK response...")
 
-	err := dialogSession.WaitAnswer(callInfo.Context, sipgo.AnswerOptions{})
+	answerOptions := sipgo.AnswerOptions{}
+	if scm.config.AuthPassword != "" {
+		answerOptions.Username = scm.config.AuthUsername
+		answerOptions.Password = scm.config.AuthPassword
+		scm.logger.Infof("🔐 SIP digest auth enabled for INVITE answer flow (username=%s)", scm.config.AuthUsername)
+	}
+
+	err := dialogSession.WaitAnswer(callInfo.Context, answerOptions)
 
 	scm.logger.Infof("📞 MONITORING: WaitAnswer() completed for CallID: %s", callInfo.CallID)
 	if err == nil {

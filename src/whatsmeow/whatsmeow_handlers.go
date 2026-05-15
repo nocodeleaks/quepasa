@@ -772,13 +772,12 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 
 	// should reject this call
 	if !source.HandleCalls() {
-		err := source.Client.RejectCall(context.Background(), evt.From, evt.CallID)
-		if err != nil {
-			logentry.Errorf("error on rejecting call: %s", err.Error())
-		} else {
-			logentry.Infof("rejecting incoming call from: %s", evt.From)
-		}
+		source.rejectIncomingCall(evt)
+		return
 	}
+
+	// When calls are enabled, attempt SIP bridging if SIP proxy is configured.
+	source.forwardIncomingCallToSIP(evt)
 }
 
 /*

@@ -19,7 +19,6 @@ This guide configures QuePasa as a SIP bridge/trunk peer to 3CX.
 Edit `.env` and configure the SIP block:
 
 ```env
-SIPPROXY_ENABLE=true
 SIPPROXY_HOST=<3CX_IP_OR_FQDN>
 SIPPROXY_PORT=5060
 SIPPROXY_PROTOCOL=UDP
@@ -40,6 +39,8 @@ SIPPROXY_CODECS=PCMU,PCMA,G729
 SIPPROXY_TIMEOUT=30
 SIPPROXY_RETRIES=3
 ```
+
+Note: SIP bridge mode is enabled automatically when `SIPPROXY_HOST` is set.
 
 ### Recommended values for bridge mode
 

@@ -32,7 +32,7 @@ type SIPProxySettings struct {
 	Host           string `json:"host"`
 	Protocol       string `json:"protocol"`
 	AuthUsername   string `json:"auth_username"`
-	AuthPassword   string `json:"auth_password"`
+	AuthPassword   string `json:"-"`
 	FromUser       string `json:"from_user"`
 	ToUser         string `json:"to_user"`
 	Port           uint32 `json:"port"`

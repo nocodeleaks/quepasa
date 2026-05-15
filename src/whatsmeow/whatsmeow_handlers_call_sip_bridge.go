@@ -3,10 +3,12 @@ package whatsmeow
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/emiago/sipgo/sip"
 	sipproxy "github.com/nocodeleaks/quepasa/sipproxy"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/sirupsen/logrus"
 	waBinary "go.mau.fi/whatsmeow/binary"
 	types "go.mau.fi/whatsmeow/types"
@@ -144,14 +146,12 @@ func (source *WhatsmeowHandlers) forwardIncomingCallToSIP(evt types.BasicCallMet
 
 	logentry := source.GetLogger().WithField(LogFields.MessageId, evt.CallID)
 	if sipproxy.SIPProxy == nil {
-		logentry.Warn("SIP proxy is disabled or not initialized, rejecting incoming call")
-		source.rejectIncomingCall(evt)
+		logentry.Warn("SIP proxy is disabled or not initialized, skipping SIP bridge for incoming call")
 		return
 	}
 
 	if !bindSIPBridgeCallbacks(logentry) {
-		logentry.Warn("failed to bind SIP bridge callbacks, rejecting incoming call")
-		source.rejectIncomingCall(evt)
+		logentry.Warn("failed to bind SIP bridge callbacks, skipping SIP bridge for incoming call")
 		return
 	}
 
@@ -161,7 +161,7 @@ func (source *WhatsmeowHandlers) forwardIncomingCallToSIP(evt types.BasicCallMet
 		callerJID = evt.From
 	}
 
-	fromPhone := callerJID.User
+	fromPhone := resolveSIPBridgeCallerPhone(callerJID, source.GetContactManager(), logentry)
 	toPhone := source.Client.Store.ID.User
 	if len(fromPhone) == 0 || len(toPhone) == 0 {
 		logentry.Warnf("missing call phones for SIP bridge (from=%q, to=%q), rejecting incoming call", fromPhone, toPhone)
@@ -181,6 +181,46 @@ func (source *WhatsmeowHandlers) forwardIncomingCallToSIP(evt types.BasicCallMet
 	}
 
 	logentry.Infof("incoming call forwarded to SIP proxy (%s -> %s)", fromPhone, toPhone)
+}
+
+func resolveSIPBridgeCallerPhone(callerJID types.JID, contactManager whatsapp.WhatsappContactManagerInterface, logentry *log.Entry) string {
+	if callerJID.IsEmpty() || len(callerJID.User) == 0 {
+		return ""
+	}
+
+	callerID := callerJID.ToNonAD().String()
+	if !strings.HasSuffix(callerID, "@lid") {
+		return callerJID.User
+	}
+
+	if contactManager == nil {
+		if logentry != nil {
+			logentry.Warnf("caller is LID but contact manager is unavailable, using opaque caller %s", callerID)
+		}
+		return callerJID.User
+	}
+
+	phone, err := contactManager.GetPhoneFromContactId(callerID)
+	if err != nil || len(phone) == 0 {
+		if logentry != nil {
+			logentry.Warnf("failed to resolve LID caller %s, using opaque caller ID", callerID)
+		}
+		return callerJID.User
+	}
+
+	normalizedPhone, err := whatsapp.GetPhoneIfValid(phone)
+	if err != nil || len(normalizedPhone) == 0 {
+		if logentry != nil {
+			logentry.Warnf("resolved LID caller phone is invalid (%s), using opaque caller ID", phone)
+		}
+		return callerJID.User
+	}
+
+	if logentry != nil {
+		logentry.Infof("resolved LID caller to phone for SIP bridge")
+	}
+
+	return normalizedPhone
 }
 
 func (source *WhatsmeowHandlers) HandleCallTerminate(evt events.CallTerminate) {

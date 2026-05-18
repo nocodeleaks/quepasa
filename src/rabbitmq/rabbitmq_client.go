@@ -230,6 +230,11 @@ func (r *RabbitMQClient) processCache() {
 				continue
 			}
 
+			cacheLen, _ := r.messageCache.Len()
+			if cacheLen > 0 {
+				log.Printf("RabbitMQ cache processor: flushing %d cached message(s) to broker", cacheLen)
+			}
+
 			for {
 				payload, found, err := r.messageCache.Dequeue()
 				if err != nil {
@@ -246,7 +251,7 @@ func (r *RabbitMQClient) processCache() {
 					continue
 				}
 
-				log.Printf("Attempting to publish cached message: %s", msg.ID)
+				log.Printf("Publishing cached message: %s to exchange '%s' routing key '%s'", msg.ID, msg.Exchange, msg.RoutingKey)
 				currentChannel := r.GetChannel()
 				if currentChannel == nil {
 					log.Printf("Channel became unavailable while processing cache. Putting message %s back to cache.", msg.ID)

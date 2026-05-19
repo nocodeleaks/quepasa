@@ -113,7 +113,10 @@ func (source *QPWhatsappService) AppendPaired(paired *QpWhatsappPairing) (server
 		logger.Infof("updating paired server on cache: %s, old wid: %s, new wid: %s", server.Token, server.GetWId(), paired.Wid)
 	}
 
-	server.connection = paired.conn
+	// Reuse the active pairing connection and wire the live server handler immediately.
+	// Without this, newly paired sessions can connect and send outbound messages but still
+	// miss inbound events because the connection keeps only its internal handlers.
+	server.UpdateConnection(paired.conn)
 	server.Verified = true
 
 	// checking user

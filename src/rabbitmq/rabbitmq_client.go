@@ -111,6 +111,24 @@ func (r *RabbitMQClient) monitorConnection() {
 				case <-r.closed: // Exit if the client is closed
 					return
 				}
+			} else {
+				// Ensure exchange and queues exist immediately after reconnection so that
+				// processCache can publish cached messages without the channel being closed
+				// by the broker due to a missing exchange (AMQP channel errors close the channel).
+				if setupErr := r.EnsureExchangeAndQueues(); setupErr != nil {
+					log.Printf("Failed to ensure exchange/queues after reconnect: %v. Will retry on next connection attempt.", setupErr)
+					r.mu.Lock()
+					r.channel = nil
+					r.conn = nil
+					r.mu.Unlock()
+					ReconnectionAttempts.Inc()
+					select {
+					case <-time.After(5 * time.Second):
+						continue
+					case <-r.closed:
+						return
+					}
+				}
 			}
 		}
 
@@ -212,6 +230,11 @@ func (r *RabbitMQClient) processCache() {
 				continue
 			}
 
+			cacheLen, _ := r.messageCache.Len()
+			if cacheLen > 0 {
+				log.Printf("RabbitMQ cache processor: flushing %d cached message(s) to broker", cacheLen)
+			}
+
 			for {
 				payload, found, err := r.messageCache.Dequeue()
 				if err != nil {
@@ -228,7 +251,7 @@ func (r *RabbitMQClient) processCache() {
 					continue
 				}
 
-				log.Printf("Attempting to publish cached message: %s", msg.ID)
+				log.Printf("Publishing cached message: %s to exchange '%s' routing key '%s'", msg.ID, msg.Exchange, msg.RoutingKey)
 				currentChannel := r.GetChannel()
 				if currentChannel == nil {
 					log.Printf("Channel became unavailable while processing cache. Putting message %s back to cache.", msg.ID)

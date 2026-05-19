@@ -27,7 +27,8 @@
    - **EMAIL**: Set your administrator email
    - **MASTERKEY**: Change the default master key for security
    - **PASSWORD**: Set a strong password
-   - **DBPASSWORD**: Set a secure database password
+   - **DBDRIVER** / **DBDATABASE**: Define how the **Whatsmeow SQL store** is persisted
+   - **DBPASSWORD**: Set a secure password only when using PostgreSQL/MySQL (`DBDRIVER=postgres` or `mysql`)
    - **SIGNING_SECRET**: Change the default signing secret
    - **WEBSOCKETSSL**: Set to `true` if using HTTPS/SSL
    - **LOGLEVEL**: Adjust logging level (ERROR, WARN, INFO, DEBUG, TRACE)
@@ -35,8 +36,9 @@
 
 4. **Optional: Review docker-compose.yml**
    - The compose file now uses environment variables from `.env`
-   - Includes PostgreSQL database service
-   - Configured with health checks and proper networking
+   - Includes a PostgreSQL database service for the Whatsmeow store
+   - Keep the `DB*` variables aligned with the compose database service when `DBDRIVER=postgres`
+   - The internal QuePasa application DB is still local in the current code path
 
 5. **Build and run the container**
    ```bash
@@ -110,7 +112,8 @@ The `.env` file contains all necessary configurations organized in sections:
    - **EMAIL**: Defina seu email de administrador
    - **MASTERKEY**: Altere a chave mestra padrão por segurança
    - **PASSWORD**: Defina uma senha forte
-   - **DBPASSWORD**: Defina uma senha segura para o banco
+   - **DBDRIVER** / **DBDATABASE**: Definem como o **store SQL do Whatsmeow** será persistido
+   - **DBPASSWORD**: Defina uma senha segura apenas quando usar PostgreSQL/MySQL (`DBDRIVER=postgres` ou `mysql`)
    - **SIGNING_SECRET**: Altere o segredo de assinatura padrão
    - **WEBSOCKETSSL**: Defina como `true` se usar HTTPS/SSL
    - **LOGLEVEL**: Ajuste o nível de log (ERROR, WARN, INFO, DEBUG, TRACE)
@@ -118,8 +121,9 @@ The `.env` file contains all necessary configurations organized in sections:
 
 4. **Opcional: Revise o docker-compose.yml**
    - O arquivo compose agora usa variáveis de ambiente do `.env`
-   - Inclui serviço de banco PostgreSQL
-   - Configurado com health checks e networking adequado
+   - Inclui serviço PostgreSQL para o store do Whatsmeow
+   - Mantenha as variáveis `DB*` alinhadas com o serviço do compose quando `DBDRIVER=postgres`
+   - O banco interno do QuePasa continua local no código atual
 
 5. **Construa e execute o container**
    ```bash

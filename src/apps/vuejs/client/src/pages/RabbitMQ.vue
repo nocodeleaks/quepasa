@@ -366,6 +366,7 @@ export default defineComponent({
           groups: toTriState(newGroups.value),
           readreceipts: toTriState(newReadReceipts.value),
           calls: toTriState(newCalls.value),
+          direct: toTriState(newDirect.value),
           extra: parseExtra(newExtra.value),
         })
 
@@ -378,6 +379,7 @@ export default defineComponent({
         newGroups.value = true
         newReadReceipts.value = false
         newCalls.value = false
+        newDirect.value = true
         newExtra.value = ''
 
         pushToast(t('rabbitmq_created'), 'success')

@@ -71,13 +71,23 @@ This document describes all environment variables used by the QuePasa applicatio
 
 ## 💾 Database Configuration
 
-- **`DBDRIVER`** - Database driver (default: `sqlite3`)
-- **`DBHOST`** - Database host
-- **`DBDATABASE`** - Database name
-- **`DBPORT`** - Database port
-- **`DBUSER`** - Database user
-- **`DBPASSWORD`** - Database password
-- **`DBSSLMODE`** - Database SSL mode
+These `DB*` variables configure the **Whatsmeow persistent SQL store loaded at startup**.
+They do **not** currently move the internal QuePasa application database used by
+models/migrations, which still defaults to the local `quepasa.sqlite` / `quepasa.db`
+code path.
+
+- **`DBDRIVER`** - SQL driver for the Whatsmeow store. Supported values: `sqlite3`, `postgres`, `mysql`. Default: `sqlite3`.
+- **`DBHOST`** - Hostname for `postgres` / `mysql`. Ignored when `DBDRIVER=sqlite3`.
+- **`DBDATABASE`** - Database name for `postgres` / `mysql`, or sqlite base file path/name for the Whatsmeow store.
+- **`DBPORT`** - TCP port for `postgres` / `mysql`. Ignored when `DBDRIVER=sqlite3`.
+- **`DBUSER`** - Username for `postgres` / `mysql`. Ignored when `DBDRIVER=sqlite3`.
+- **`DBPASSWORD`** - Password for `postgres` / `mysql`. Ignored when `DBDRIVER=sqlite3`.
+- **`DBSSLMODE`** - PostgreSQL `sslmode` value. Usually not used with `sqlite3` or `mysql`.
+
+**SQLite behavior:**
+- If `DBDRIVER=sqlite3`, the effective store is file-based.
+- If `DBDATABASE` is empty, the startup path later falls back to the base name `whatsmeow`.
+- Typical sqlite examples: `DBDATABASE=whatsmeow` or `DBDATABASE=/opt/quepasa/data/whatsmeow`.
 
 ## 📱 WhatsApp Configuration
 

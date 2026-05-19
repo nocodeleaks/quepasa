@@ -17,13 +17,13 @@ const (
 	ENV_WEBAPIPORT = "WEBAPIPORT"
 	ENV_WEBAPIHOST = "WEBAPIHOST"
 
-	ENV_DBDRIVER   = "DBDRIVER" // database driver, default sqlite3
-	ENV_DBHOST     = "DBHOST"
-	ENV_DBDATABASE = "DBDATABASE"
-	ENV_DBPORT     = "DBPORT"
-	ENV_DBUSER     = "DBUSER"
-	ENV_DBPASSWORD = "DBPASSWORD"
-	ENV_DBSSLMODE  = "DBSSLMODE"
+	ENV_DBDRIVER   = "DBDRIVER" // SQL driver for the Whatsmeow store (sqlite3, postgres, mysql). Default: sqlite3.
+	ENV_DBHOST     = "DBHOST"   // Hostname for postgres/mysql. Ignored when DBDRIVER=sqlite3.
+	ENV_DBDATABASE = "DBDATABASE" // Database name for postgres/mysql, or sqlite base file path/name for the Whatsmeow store.
+	ENV_DBPORT     = "DBPORT"     // TCP port for postgres/mysql. Ignored when DBDRIVER=sqlite3.
+	ENV_DBUSER     = "DBUSER"     // Username for postgres/mysql. Ignored when DBDRIVER=sqlite3.
+	ENV_DBPASSWORD = "DBPASSWORD" // Password for postgres/mysql. Ignored when DBDRIVER=sqlite3.
+	ENV_DBSSLMODE  = "DBSSLMODE"  // PostgreSQL sslmode value. Usually unused by sqlite3 and mysql.
 
 	ENV_SIGNING_SECRET = "SIGNING_SECRET" // token for hash singing cookies
 	ENV_MASTER_KEY     = "MASTERKEY"      // used for manage all instances at all
@@ -110,8 +110,15 @@ func getEnvOrDefaultUint64(key string, defaultValue uint64) uint64 {
 
 // --- DATABASE CONFIGURATION ---
 
-// GetDBParameters retrieves database connection parameters from environment variables.
-// It defaults to "sqlite3" if DBDRIVER is not set.
+// GetDBParameters retrieves the SQL connection parameters for the Whatsmeow
+// persistent store from environment variables.
+//
+// Important: these values are currently passed to whatsmeow.Start() from
+// `main.go`; they do not replace the internal QuePasa application database used
+// by `models.GetDB()` and migrations.
+//
+// It defaults to `sqlite3` when DBDRIVER is not set. When sqlite3 is used and
+// DBDATABASE is left empty, whatsmeow.Start() later falls back to `whatsmeow`.
 func (*Environment) GetDBParameters() library.DatabaseParameters {
 	parameters := library.DatabaseParameters{}
 

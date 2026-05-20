@@ -106,7 +106,11 @@ func (server *QpWhatsappServer) GetMessages(timestamp time.Time) (messages []wha
 		}
 	}
 
+	wid := server.GetWId()
 	for _, item := range server.Handler.GetByTime(timestamp) {
+		if item.Wid != "" && item.Wid != wid {
+			continue
+		}
 		messages = append(messages, *item)
 	}
 	return

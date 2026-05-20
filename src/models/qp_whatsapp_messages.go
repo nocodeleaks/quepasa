@@ -40,13 +40,14 @@ func (source *QpWhatsappMessages) readRecord(id string) (cache.MessageRecord, bo
 		return cache.MessageRecord{}, false, fmt.Errorf("message cache backend not initialized")
 	}
 
-	record, found, err := source.backend.Get(strings.ToUpper(id))
+	key := strings.ToUpper(id)
+	record, found, err := source.backend.Get(key)
 	if err != nil {
 		return cache.MessageRecord{}, false, err
 	}
 
 	if found && !record.ExpiresAt.IsZero() && time.Now().After(record.ExpiresAt) {
-		_ = source.backend.Delete(strings.ToUpper(id))
+		_ = source.backend.Delete(key)
 		return cache.MessageRecord{}, false, nil
 	}
 
@@ -239,8 +240,6 @@ func (source *QpWhatsappMessages) CleanUp(max uint64) {
 //#region STATUS
 
 func (source *QpWhatsappMessages) SetStatusById(id string, status whatsapp.WhatsappMessageStatus) {
-
-	// ensure that is an uppercase string before save
 	normalizedId := strings.ToUpper(id)
 
 	record, found, err := source.readRecord(normalizedId)
@@ -265,8 +264,6 @@ func (source *QpWhatsappMessages) SetStatusById(id string, status whatsapp.Whats
 }
 
 func (source *QpWhatsappMessages) GetStatusById(id string) (status whatsapp.WhatsappMessageStatus) {
-
-	// ensure that is an uppercase string before save
 	normalizedId := strings.ToUpper(id)
 
 	record, found, err := source.readRecord(normalizedId)

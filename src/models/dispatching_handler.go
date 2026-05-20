@@ -230,6 +230,11 @@ func (source *DispatchingHandler) Receipt(msg *whatsapp.WhatsappMessage) {
 // caches and triggers async hooks
 func (source *DispatchingHandler) appendMsgToCache(msg *whatsapp.WhatsappMessage, from string) {
 
+	// stamp the server wid before caching so disk/redis backends persist it
+	if msg != nil && msg.Wid == "" && source.server != nil {
+		msg.Wid = source.server.GetWId()
+	}
+
 	// saving on local normalized cache, do not affect remote msgs
 	valid := source.QpWhatsappMessages.Append(msg, from)
 

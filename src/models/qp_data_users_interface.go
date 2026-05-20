@@ -8,5 +8,6 @@ type QpDataUsersInterface interface {
 	Check(string, string) (*QpUser, error)
 	Create(username string, password string) (*QpUser, error)
 	UpdatePassword(username string, password string) error
+	UpdateUI(username string, ui string) error
 	Delete(username string) error
 }

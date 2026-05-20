@@ -95,6 +95,8 @@ const en = {
   delete: 'Delete',
   send: 'Send',
   messages: 'Messages',
+  actions: 'Actions',
+  filters: 'Filters',
   dispatching: 'Dispatching',
   rabbitmq: 'RabbitMQ',
   disconnect: 'Disconnect',

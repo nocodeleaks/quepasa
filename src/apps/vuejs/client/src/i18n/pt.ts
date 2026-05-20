@@ -82,6 +82,8 @@ const pt: Messages = {
   delete: 'Excluir',
   send: 'Enviar',
   messages: 'Mensagens',
+  actions: 'Ações',
+  filters: 'Filtros',
   dispatching: 'Despachos',
   rabbitmq: 'RabbitMQ',
   disconnect: 'Desconectar',

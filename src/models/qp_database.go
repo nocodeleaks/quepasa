@@ -141,7 +141,14 @@ func MigrateToLatest(logentry *log.Entry) (err error) {
 	}
 	err = migrator.Migrate(db, dbParameters.Driver)
 	if err != nil {
-		logentry.Fatal(err)
+		// "duplicate column name" means a repair migration tried to add a column
+		// that a previous migration already added successfully — the schema is
+		// already correct, so treat this as a warning and continue.
+		if strings.Contains(err.Error(), "duplicate column name") {
+			logentry.Warnf("migration skipped (column already exists): %s", err.Error())
+		} else {
+			logentry.Fatal(err)
+		}
 	}
 
 	logentry.Debug("migrating finished")
@@ -333,6 +340,19 @@ func (source *QpMigrator) Printf(format string, args ...interface{}) (int, error
 }
 
 func (source *QpMigrator) Migrate(sqlDB *sql.DB, dialect string) error {
+	// SQLite migrations use DROP TABLE + RENAME to recreate tables (e.g. to change
+	// column constraints). When child tables have FK references to the parent being
+	// dropped, SQLite raises FOREIGN KEY constraint failed even though the data is
+	// consistent. PRAGMA foreign_keys must be OFF before the transaction begins —
+	// it cannot be changed inside an open transaction (silently ignored).
+	// Connection pool LIFO ensures the same connection (with FK=OFF) is reused by
+	// the migration transaction, while the library's out-of-transaction INSERT INTO
+	// migrations opens a fresh connection (which is fine — migrations has no FKs).
+	if dialect == "sqlite3" {
+		sqlDB.Exec("PRAGMA foreign_keys = OFF")
+		defer sqlDB.Exec("PRAGMA foreign_keys = ON")
+	}
+
 	migrator := &migrate.Sqlx{
 		Printf:     source.Printf,
 		Migrations: source.Migrations,

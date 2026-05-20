@@ -940,11 +940,13 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: box-shadow 0.18s, transform 0.18s;
+  transition: box-shadow 0.18s;
 }
 .scard:hover {
-  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+}
+.scard:has(.dropdown.show) {
+  z-index: 1;
 }
 .scard.connected  { border-top: 3px solid #22c55e; }
 .scard.connecting { border-top: 3px solid #f59e0b; }

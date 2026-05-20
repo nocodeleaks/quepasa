@@ -62,12 +62,20 @@ func AuthenticatedServersController(w http.ResponseWriter, r *http.Request) {
 		items = append(items, BuildServerSummary(dbServer, FindLiveServer(dbServer.Token)))
 	}
 
-	RespondSuccess(w, map[string]interface{}{
+	ui := parseUserUI(user)
+	response := map[string]interface{}{
 		"servers":  items,
 		"total":    len(items),
 		"version":  models.QpVersion,
 		"username": user.Username,
-	})
+	}
+	if ui.ViewMode != "" {
+		response["serversViewMode"] = ui.ViewMode
+	}
+	if ui.PageSize > 0 {
+		response["serversPageSize"] = ui.PageSize
+	}
+	RespondSuccess(w, response)
 }
 
 // AuthenticatedServersSearchController performs lightweight server-side filtering.

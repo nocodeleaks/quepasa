@@ -102,6 +102,8 @@ func RegisterAuthenticatedControllers(r chi.Router) {
 	r.Post("/servers/search", AuthenticatedServersSearchController)
 	r.Get("/account", AuthenticatedAccountController)
 	r.Get("/account/masterkey", AuthenticatedMasterKeyController)
+	r.Get("/ui", AuthenticatedUIController)
+	r.Patch("/ui", AuthenticatedUIController)
 	r.Post("/master/verify", AuthenticatedMasterVerifyController)
 	r.Get("/environment", AuthenticatedEnvironmentController)
 	r.Get("/labels", AuthenticatedConversationLabelController)

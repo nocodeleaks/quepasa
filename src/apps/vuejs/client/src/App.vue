@@ -235,10 +235,12 @@ import { defineComponent, onMounted, computed, ref } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { useMasterKey } from '@/composables/useMasterKey'
-import { useTheme } from '@/composables/useTheme'
+import { useTheme, setTheme as rawSetTheme } from '@/composables/useTheme'
 import api from './services/api'
 import Toaster from '@/components/Toaster.vue'
-import { localeOptions, useLocale } from '@/i18n'
+import { localeOptions, useLocale, setLocale as rawSetLocale } from '@/i18n'
+import type { ThemeMode } from '@/composables/useTheme'
+import type { Locale } from '@/i18n'
 
 export default defineComponent({
   components: { RouterLink, RouterView, Toaster },
@@ -252,8 +254,29 @@ export default defineComponent({
     const hasMasterKey = ref(false)
     const relaxedSessions = ref(true)
 
-    const { t, locale, setLocale } = useLocale()
-    const { isDark, toggleTheme } = useTheme()
+    const { t, locale } = useLocale()
+    const { isDark } = useTheme()
+
+    // Debounced save of theme/locale to backend UI prefs
+    let uiSaveTimer: any = null
+    function saveUIPrefs(patch: { theme?: string; locale?: string }) {
+      if (!session.user.value) return
+      if (uiSaveTimer) clearTimeout(uiSaveTimer)
+      uiSaveTimer = setTimeout(() => {
+        api.patch('/api/ui', patch).catch(() => { /* silent */ })
+      }, 600)
+    }
+
+    function setLocale(loc: Locale) {
+      rawSetLocale(loc)
+      saveUIPrefs({ locale: loc })
+    }
+
+    function toggleTheme() {
+      const next: ThemeMode = isDark.value ? 'light' : 'dark'
+      rawSetTheme(next)
+      saveUIPrefs({ theme: next })
+    }
 
     const branding = ref({
       title: 'QuePasa',
@@ -309,7 +332,7 @@ export default defineComponent({
           appVersion.value = res.data.version
         }
 
-        // Load master key availability after branding
+        // Load master key availability and UI prefs after branding
         if (session.user.value) {
           try {
             const accountRes = await api.get('/api/account')
@@ -317,6 +340,14 @@ export default defineComponent({
             relaxedSessions.value = accountRes.data?.relaxedSessions !== false
           } catch {
             // ignore
+          }
+
+          try {
+            const uiRes = await api.get('/api/ui')
+            if (uiRes.data?.theme) rawSetTheme(uiRes.data.theme as ThemeMode)
+            if (uiRes.data?.locale) rawSetLocale(uiRes.data.locale as Locale)
+          } catch {
+            // ignore — local preferences remain
           }
         }
       } catch {

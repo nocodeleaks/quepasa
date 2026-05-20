@@ -57,12 +57,31 @@ func (source QpDataUserSql) Exists(username string) (bool, error) {
 
 func (source QpDataUserSql) Find(username string) (result *QpUser, err error) {
 	user := &QpUser{}
-	err = source.db.Get(user, "SELECT username, password, timestamp FROM users WHERE username = ?", username)
+	err = source.db.Get(user, "SELECT username, password, ui, timestamp FROM users WHERE username = ?", username)
 	if err != nil {
 		return
 	}
 
 	result = user
+	return
+}
+
+func (source QpDataUserSql) UpdateUI(username string, ui string) (err error) {
+	query := `UPDATE users SET ui = ? WHERE username = ?`
+	result, err := source.db.Exec(query, ui, username)
+	if err != nil {
+		return
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return
+	}
+
+	if affected == 0 {
+		err = fmt.Errorf("user (%s) not found for update ui", username)
+	}
+
 	return
 }
 

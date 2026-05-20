@@ -105,7 +105,7 @@
         <div class="scard-actions">
           <router-link v-if="!isConnected(srv)" :to="`/server/${srv.token}/qrcode`" class="scard-btn scard-btn-connect" :title="t('connect')"><i class="fa fa-qrcode"></i> {{ t('connect') }}</router-link>
           <router-link v-if="isConnected(srv)" :to="`/server/${srv.token}/send`" class="scard-btn" :title="t('send')"><i class="fa fa-paper-plane"></i></router-link>
-          <router-link :to="`/server/${srv.token}`" class="scard-btn" :title="t('open')"><i class="fa fa-eye"></i></router-link>
+          <router-link :to="`/server/${srv.token}`" class="scard-btn" :title="t('open')"><i class="fa fa-external-link-alt"></i></router-link>
           <div class="dropdown">
             <button class="scard-btn scard-btn-more" type="button" data-bs-toggle="dropdown" aria-expanded="false" :disabled="toggling === srv.token">
               <i class="fa fa-ellipsis-v"></i>
@@ -117,7 +117,7 @@
                   <i class="fa fa-bolt me-2"></i> {{ t('actions') }} <i class="fa fa-chevron-right ms-auto"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-submenu-menu" :class="{ show: activeSubmenu === srv.token + '-card-actions' }">
-                  <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-eye me-2"></i> {{ t('open') }}</router-link></li>
+                  <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-external-link-alt me-2"></i> {{ t('open') }}</router-link></li>
                   <template v-if="isConnected(srv)">
                     <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
@@ -194,7 +194,7 @@
         <div class="srow-actions">
           <router-link v-if="!isConnected(srv)" :to="`/server/${srv.token}/qrcode`" class="srow-btn srow-btn-connect" :title="t('connect')"><i class="fa fa-qrcode"></i></router-link>
           <router-link v-if="isConnected(srv)" :to="`/server/${srv.token}/send`" class="srow-btn" :title="t('send')"><i class="fa fa-paper-plane"></i></router-link>
-          <router-link :to="`/server/${srv.token}`" class="srow-btn" :title="t('open')"><i class="fa fa-eye"></i></router-link>
+          <router-link :to="`/server/${srv.token}`" class="srow-btn" :title="t('open')"><i class="fa fa-external-link-alt"></i></router-link>
           <div class="dropdown">
             <button class="srow-btn srow-btn-more" type="button" data-bs-toggle="dropdown" aria-expanded="false" :disabled="toggling === srv.token">
               <i class="fa fa-ellipsis-v"></i>
@@ -206,7 +206,7 @@
                   <i class="fa fa-bolt me-2"></i> {{ t('actions') }} <i class="fa fa-chevron-right ms-auto"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-submenu-menu" :class="{ show: activeSubmenu === srv.token + '-row-actions' }">
-                  <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-eye me-2"></i> {{ t('open') }}</router-link></li>
+                  <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-external-link-alt me-2"></i> {{ t('open') }}</router-link></li>
                   <template v-if="isConnected(srv)">
                     <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
@@ -281,6 +281,7 @@ export default defineComponent({
     const toggling = ref('')
     const creating = ref(false)
     const activeSubmenu = ref('')
+    const uiLoaded = ref(false)
 
   const { t, locale, setLocale } = useLocale()
 
@@ -376,6 +377,21 @@ export default defineComponent({
       }, 300)
     })
 
+    // Save UI preferences to backend (debounced)
+    let uiSaveTimeout: any = null
+    async function saveUI() {
+      if (!uiLoaded.value) return
+      if (uiSaveTimeout) clearTimeout(uiSaveTimeout)
+      uiSaveTimeout = setTimeout(async () => {
+        try {
+          await api.patch('/api/ui', { viewMode: viewMode.value, pageSize: pageSize.value })
+        } catch { /* silent */ }
+      }, 600)
+    }
+
+    watch(viewMode, saveUI)
+    watch(pageSize, saveUI)
+
     // When the debounced query changes, call the server-side search endpoint
     watch(debouncedQuery, async (val) => {
       const q = (val || '').trim()
@@ -396,10 +412,14 @@ export default defineComponent({
         servers.value = res.data.servers || []
         // Update allServersCount only on full load (not search)
         allServersCount.value = servers.value.length
-        // Use server-configured view mode as default
-        if (res.data.serversViewMode) {
+        // Apply UI preferences from server (only on first load)
+        if (res.data.serversViewMode && !uiLoaded.value) {
           viewMode.value = res.data.serversViewMode
         }
+        if (res.data.serversPageSize && !uiLoaded.value) {
+          pageSize.value = res.data.serversPageSize
+        }
+        uiLoaded.value = true
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || t('error_load_sessions')
       } finally {
@@ -682,7 +702,7 @@ export default defineComponent({
 
     return {
       servers, loading, error, connectedCount, disconnectedCount, viewMode,
-      searchQuery, displayServers, copiedToken, toggling, hasServers, creating, activeSubmenu,
+      searchQuery, displayServers, copiedToken, toggling, hasServers, creating, activeSubmenu, uiLoaded,
       filteredServers, currentPage, pageSize, pageSizeOptions, totalPages,
       load, getStatusClass, getConnectionClass, isConnected, formatUptime, formatWid,
       copyToken, toggleServer, toggleDebug, toggleGroups, toggleBroadcasts,

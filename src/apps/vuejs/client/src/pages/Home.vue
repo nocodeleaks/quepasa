@@ -378,8 +378,8 @@ export default defineComponent({
         error.value = ''
         const body = { query: query, page: 1, limit: 50 }
         const res = await api.post('/api/sessions/search', body)
-        // Replace servers with response
-        servers.value = res.data.servers || []
+        // Replace servers with response (search endpoint returns 'items', not 'servers')
+        servers.value = res.data.items || res.data.servers || []
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || t('error_search_sessions')
       } finally {

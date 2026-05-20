@@ -3,9 +3,11 @@ package models
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	migrate "github.com/joncalhoun/migrate"
+	log "github.com/sirupsen/logrus"
 )
 
 type QpMigration struct {
@@ -26,6 +28,11 @@ func (source *QpMigration) MigrateTransaction() func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(query)
 		if err == nil {
 			source.Success = true
+			return nil
+		}
+		if strings.Contains(err.Error(), "duplicate column name") {
+			log.Warnf("migration skipped (column already exists): %s: %s", source.Id, err.Error())
+			return nil
 		}
 		return err
 	}

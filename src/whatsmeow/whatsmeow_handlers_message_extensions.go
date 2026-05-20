@@ -128,7 +128,7 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 	switch v := in.GetType(); {
 	case v == waE2E.ProtocolMessage_MESSAGE_EDIT:
 		out.Type = whatsapp.TextMessageType
-		out.Id = in.Key.GetID()
+		out.Id = strings.ToUpper(in.Key.GetID())
 		out.Edited = true
 
 		// Extract text from different message types
@@ -158,7 +158,7 @@ func HandleProtocolMessage(logentry *log.Entry, out *whatsapp.WhatsappMessage, i
 		return
 
 	case v == waE2E.ProtocolMessage_REVOKE:
-		out.Id = in.Key.GetID()
+		out.Id = strings.ToUpper(in.Key.GetID())
 		out.Type = whatsapp.RevokeMessageType
 		return
 

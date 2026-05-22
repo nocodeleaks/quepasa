@@ -38,7 +38,7 @@ func RegisterAPIControllers(r chi.Router, includeUnversioned bool) {
 //	@Tags			Bot
 //	@Accept			json
 //	@Produce		json
-//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart)
+//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, direct, groups, broadcasts, readreceipts, calls, debug)
 //	@Success		200		{object}	models.QpResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -74,6 +74,12 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 		}
 	case "status":
 		err = fmt.Errorf("status command has been removed, please use /health endpoint instead")
+	case "direct":
+		_, err := runtime.ToggleSessionOption(server, "direct")
+		if err == nil {
+			message := "direct toggled: " + server.Direct.String()
+			response.ParseSuccess(message)
+		}
 	case "groups":
 		// These toggles remain part of the current command surface until the
 		// authenticated browser-oriented surface fully owns configuration through explicit endpoints.
@@ -107,7 +113,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess(message)
 		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,groups,broadcasts,readreceipts,calls,debug}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,direct,groups,broadcasts,readreceipts,calls,debug}", action)
 	}
 
 	if err != nil {

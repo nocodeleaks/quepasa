@@ -79,7 +79,7 @@
             <div class="scard-phone">{{ formatWid(srv.wid) || t('not_connected') }}</div>
             <span class="scard-badge" :class="getStatusClass(srv)">{{ srv.state || t('unknown') }}</span>
           </div>
-          <div v-if="srv.dispatch_count > 0" class="scard-dispatch" :title="t('col_dispatch')">
+          <div v-if="srv.dispatch_count > 0" class="scard-webhook" :title="t('col_dispatch')">
             <i class="fa fa-bell"></i> {{ srv.dispatch_count }}
           </div>
         </div>
@@ -141,7 +141,7 @@
                 </ul>
               </li>
               <li><hr class="dropdown-divider"></li>
-              <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
+              <li><router-link :to="`/webhooks?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
               <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
               <li><hr class="dropdown-divider"></li>
               <template v-if="isConnected(srv)">
@@ -186,8 +186,8 @@
           <button class="fltbtn" :class="{ on: srv.direct }" @click="toggleDirect(srv)" :title="t('direct')" :disabled="toggling === srv.token"><i class="fa fa-comment"></i></button>
           <button class="fltbtn" :class="{ on: srv.readupdate }" @click="toggleReadUpdate(srv)" :title="t('readupdate')" :disabled="toggling === srv.token"><i class="fa fa-eye"></i></button>
         </div>
-        <!-- Dispatch badge -->
-        <div class="srow-dispatch" v-if="srv.dispatch_count > 0" :title="t('col_dispatch')">
+        <!-- Webhook badge -->
+        <div class="srow-webhook" v-if="srv.dispatch_count > 0" :title="t('col_dispatch')">
           <i class="fa fa-bell"></i> {{ srv.dispatch_count }}
         </div>
         <!-- Action shortcuts -->
@@ -948,8 +948,8 @@ export default defineComponent({
 .connection-badge.connecting  { background: rgba(254,243,199,0.8); color: #92400e; }
 .connection-badge.unverified  { background: rgba(254,242,242,0.8); color: #dc2626; }
 .connection-badge.disconnected{ background: rgba(243,244,246,0.8); color: #6b7280; }
-.dispatch-cell { display: flex; align-items: center; justify-content: center; gap: 4px; }
-.dispatch-count { font-weight: 600; }
+.webhook-cell { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.webhook-count { font-weight: 600; }
 .actions-cell { width: 60px; text-align: center; }
 .action-dropdown-btn {
   width: 32px; height: 32px;
@@ -1049,7 +1049,7 @@ export default defineComponent({
 .scard-badge.connected    { background: #dcfce7; color: #15803d; }
 .scard-badge.connecting   { background: #fef3c7; color: #92400e; }
 .scard-badge.disconnected { background: #f1f5f9; color: #475569; }
-.scard-dispatch {
+.scard-webhook {
   flex-shrink: 0;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1248,8 +1248,8 @@ export default defineComponent({
 
 .fltbtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* Dispatch badge */
-.srow-dispatch {
+/* Webhook badge */
+.srow-webhook {
   display: flex; align-items: center; gap: 3px;
   font-size: 0.72rem; font-weight: 600; color: #059669;
   background: rgba(209,250,229,0.7);
@@ -1407,7 +1407,7 @@ html[data-theme='dark'] .token-code:hover {
   .pager-nav { justify-content: center; }
 }
 @media (max-width: 480px) {
-  .srow-dispatch { display: none; }
+  .srow-webhook { display: none; }
   .page-title { font-size: 0.95rem; }
   .servers-table-wrapper { overflow-x: auto; }
   .servers-table { min-width: 600px; }

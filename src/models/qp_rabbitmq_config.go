@@ -171,8 +171,8 @@ func (source *QpRabbitMQConfig) PublishMessage(message *whatsapp.WhatsappMessage
 		routingKey := source.DetermineRoutingKey(message)
 		client.PublishQuePasaMessage(routingKey, payload)
 
-		// Always increment RabbitMQ messages published counter
-		IncrementRabbitMQMessagesPublished()
+		// Always increment RabbitMQ messages published counter (labelled by routing key / queue)
+		IncrementRabbitMQMessagesPublished(routingKey)
 
 		// Record publish duration
 		duration := time.Since(startTime)

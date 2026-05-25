@@ -44,6 +44,9 @@ func GetMediaTypeFromWAMsgType(msgType whatsapp.WhatsappMessageType) whatsmeow.M
 		return whatsmeow.MediaAudio
 	case whatsapp.VideoMessageType:
 		return whatsmeow.MediaVideo
+	case whatsapp.StickerMessageType:
+		// Stickers are uploaded via the same endpoint as images
+		return whatsmeow.MediaImage
 	default:
 		return whatsmeow.MediaDocument
 	}
@@ -91,6 +94,25 @@ func NewWhatsmeowMessageAttachment(response whatsmeow.UploadResponse, waMsg what
 	var mimetype *string
 	if len(attach.Mimetype) > 0 {
 		mimetype = proto.String(attach.Mimetype)
+	}
+
+	// Stickers are sent as StickerMessage — build and return immediately,
+	// skipping thumbnail generation and the generic media switch below.
+	if waMsg.Type == whatsapp.StickerMessageType {
+		isAnimated := attach.Mimetype == "video/webp"
+		internal := &waE2E.StickerMessage{
+			URL:           proto.String(response.URL),
+			DirectPath:    proto.String(response.DirectPath),
+			MediaKey:      response.MediaKey,
+			FileEncSHA256: response.FileEncSHA256,
+			FileSHA256:    response.FileSHA256,
+			FileLength:    proto.Uint64(response.FileLength),
+			Mimetype:      mimetype,
+			IsAnimated:    proto.Bool(isAnimated),
+			ContextInfo:   inreplycontext,
+		}
+		msg = &waE2E.Message{StickerMessage: internal}
+		return
 	}
 
 	// Generate thumbnail when possible for image/video/pdf content.

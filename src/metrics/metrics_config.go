@@ -18,6 +18,7 @@ type CounterRecorder interface {
 // GaugeRecorder for gauge metrics
 type GaugeRecorder interface {
 	Add(float64)
+	Set(float64)
 }
 
 // HistogramRecorder for histogram metrics
@@ -140,6 +141,12 @@ type AsyncGaugeRecorder struct {
 func (a AsyncGaugeRecorder) Add(value float64) {
 	if a.enabled {
 		go func() { a.recorder.Add(value) }()
+	}
+}
+
+func (a AsyncGaugeRecorder) Set(value float64) {
+	if a.enabled {
+		go func() { a.recorder.Set(value) }()
 	}
 }
 
@@ -279,4 +286,40 @@ func CreateCounterRecorder(name, help string) CounterRecorder {
 		}
 	}
 	return &NoOpCounterRecorder{}
+}
+
+// NoOpGaugeRecorder provides a no-op implementation for gauges
+type NoOpGaugeRecorder struct{}
+
+func (n *NoOpGaugeRecorder) Add(float64) {}
+func (n *NoOpGaugeRecorder) Set(float64) {}
+
+// PrometheusGaugeRecorder wraps a prometheus Gauge
+type PrometheusGaugeRecorder struct {
+	gauge prometheus.Gauge
+}
+
+func (p *PrometheusGaugeRecorder) Add(value float64) {
+	p.gauge.Add(value)
+}
+
+func (p *PrometheusGaugeRecorder) Set(value float64) {
+	p.gauge.Set(value)
+}
+
+// CreateGaugeRecorder creates a new gauge recorder.
+// Use Add(+1)/Add(-1) to increment/decrement, or Set to assign an absolute value.
+// This is a generic factory function for modules to create their own gauges.
+func CreateGaugeRecorder(name, help string) GaugeRecorder {
+	if MetricsEnabled {
+		gauge := promauto.NewGauge(prometheus.GaugeOpts{
+			Name: name,
+			Help: help,
+		})
+		return &AsyncGaugeRecorder{
+			recorder: &PrometheusGaugeRecorder{gauge: gauge},
+			enabled:  MetricsEnabled,
+		}
+	}
+	return &NoOpGaugeRecorder{}
 }

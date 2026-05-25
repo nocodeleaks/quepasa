@@ -101,7 +101,7 @@ func main() {
 		RabbitMQRoutingKeyProd:       rabbitmq.QuePasaRoutingKeyProd,
 		RabbitMQRoutingKeyHistory:    rabbitmq.QuePasaRoutingKeyHistory,
 		RabbitMQRoutingKeyEvents:     rabbitmq.QuePasaRoutingKeyEvents,
-		RabbitMQMessagesPublishedInc: func() { rabbitmq.MessagesPublished.Inc() },
+		RabbitMQMessagesPublishedInc: func(queue string) { rabbitmq.MessagesPublished.WithLabelValues(queue).Inc() },
 		RabbitMQMessagePublishErrorsInc: func() {
 			rabbitmq.MessagePublishErrors.Inc()
 		},

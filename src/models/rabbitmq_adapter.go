@@ -47,14 +47,14 @@ var GlobalRabbitMQRoutingKeyHistory = "history"
 var GlobalRabbitMQRoutingKeyEvents = "events"
 
 // Metric hooks used by models without importing rabbitmq metrics directly.
-var GlobalRabbitMQMessagesPublishedInc = func() {}
+var GlobalRabbitMQMessagesPublishedInc = func(queue string) {}
 var GlobalRabbitMQMessagePublishErrorsInc = func() {}
 
-func IncrementRabbitMQMessagesPublished() {
+func IncrementRabbitMQMessagesPublished(queue string) {
 	transportServicesMu.RLock()
 	inc := GlobalRabbitMQMessagesPublishedInc
 	transportServicesMu.RUnlock()
-	inc()
+	inc(queue)
 }
 
 func IncrementRabbitMQMessagePublishErrors() {

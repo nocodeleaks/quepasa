@@ -23,6 +23,7 @@ const (
 	GroupMessageType
 	RevokeMessageType
 	PollMessageType
+	StickerMessageType
 )
 
 func (s WhatsappMessageType) MarshalJSON() ([]byte, error) {
@@ -55,6 +56,8 @@ func (Type WhatsappMessageType) String() string {
 		return "revoke"
 	case PollMessageType:
 		return "poll"
+	case StickerMessageType:
+		return "sticker"
 	case ViewOnceMessageType:
 		return "view_once"
 	}

@@ -63,6 +63,17 @@ type SendRequest struct {
 	Poll     *whatsapp.WhatsappPoll     `json:"poll,omitempty"`     // Poll payload when present.
 	Location *whatsapp.WhatsappLocation `json:"location,omitempty"` // Location payload when present.
 	Contact  *whatsapp.WhatsappContact  `json:"contact,omitempty"`  // Contact payload when present.
+	Sticker  *WhatsappSticker           `json:"sticker,omitempty"`  // Sticker payload when present.
+}
+
+// WhatsappSticker holds the sticker source: either a public URL or
+// base64-encoded content (plain or as a data URI).
+type WhatsappSticker struct {
+	// Public URL from which the sticker content will be downloaded.
+	Url string `json:"url,omitempty"`
+
+	// Base64-encoded content or data URI (e.g. data:image/png;base64,...).
+	Content string `json:"content,omitempty"`
 }
 
 // SendAnyRequest extends SendRequest with the additional HTTP fields accepted
@@ -155,6 +166,11 @@ func (source *SendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage, e
 		if len(source.Location.Name) > 0 {
 			msg.Text = source.Location.Name
 		}
+		return
+	}
+
+	if source.Sticker != nil {
+		msg.Type = whatsapp.StickerMessageType
 		return
 	}
 

@@ -199,6 +199,7 @@ func (r *RabbitMQClient) AddToCache(msg RabbitMQMessage) bool {
 	}
 	if !added {
 		log.Printf("Cache is full, dropping message: ID=%s. Max cache size: %d", msg.ID, r.maxCacheSize)
+		MessagesCacheDropped.Inc()
 		return false
 	}
 
@@ -210,6 +211,7 @@ func (r *RabbitMQClient) AddToCache(msg RabbitMQMessage) bool {
 	if err != nil {
 		cacheLength = -1
 	}
+	CacheSizeCurrent.Add(1)
 	log.Printf("Message cached: ID=%s, Payload=%s (Cache size: %d/%d)", msg.ID, payloadStr, cacheLength, r.maxCacheSize)
 	return true
 }
@@ -258,6 +260,8 @@ func (r *RabbitMQClient) processCache() {
 					added, enqueueErr := r.messageCache.Enqueue(payload)
 					if enqueueErr != nil || !added {
 						log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
+						MessagesCacheDropped.Inc()
+						CacheSizeCurrent.Add(-1)
 					}
 					break
 				}
@@ -278,6 +282,8 @@ func (r *RabbitMQClient) processCache() {
 					added, enqueueErr := r.messageCache.Enqueue(payload)
 					if enqueueErr != nil || !added {
 						log.Printf("Cache is full (failed to put back), dropping cached message: %s.", msg.ID)
+						MessagesCacheDropped.Inc()
+						CacheSizeCurrent.Add(-1)
 					}
 					goto CACHE_LOOP_END
 				}
@@ -288,6 +294,7 @@ func (r *RabbitMQClient) processCache() {
 				}
 				log.Printf("Cached message ID %s published successfully to exchange '%s' with routing key '%s'. Cache size: %d/%d", msg.ID, msg.Exchange, msg.RoutingKey, cacheLength, r.maxCacheSize)
 				MessagesCacheProcessed.Inc()
+				CacheSizeCurrent.Add(-1)
 
 				if cacheLength == 0 {
 					goto CACHE_LOOP_END

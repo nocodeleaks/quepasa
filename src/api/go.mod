@@ -63,7 +63,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/stretchr/testify v1.11.1
 	go.mau.fi/util v0.9.9
-	go.mau.fi/whatsmeow v0.0.0-20260516102357-8d3700152a69
+	go.mau.fi/whatsmeow v0.0.0-20260525123251-933deb5f2ee9
 	google.golang.org/protobuf v1.36.11
 )
 

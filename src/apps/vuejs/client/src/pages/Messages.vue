@@ -160,9 +160,24 @@
             <div class="message-badges">
               <span v-if="msg.fromme" class="badge badge-sent">{{ t('messages_badge_sent') }}</span>
               <span v-else class="badge badge-received">{{ t('messages_badge_received') }}</span>
-              <span v-if="msg.status" class="badge badge-status">{{ msg.status }}</span>
+              <span v-if="msg.status === 'read'" class="badge badge-read">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/></svg>
+                {{ t('messages_badge_read') }}
+              </span>
+              <span v-else-if="msg.status" class="badge badge-status">{{ msg.status }}</span>
               <span v-if="msg.edited" class="badge badge-warning">{{ t('messages_badge_edited') }}</span>
-              <span v-if="msg.fromhistory" class="badge badge-secondary">{{ t('messages_badge_history') }}</span>
+              <span v-if="msg.fromhistory" class="badge badge-history">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                {{ t('messages_badge_history') }}
+              </span>
+              <span v-if="msg.isforwarded || msg.forwarded" class="badge badge-forward">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M12 8V4l8 8-8 8v-4H4V8z"/></svg>
+                {{ t('messages_badge_forwarded') }}
+              </span>
+              <span v-if="msg.isbroadcast || msg.broadcast" class="badge badge-broadcast">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/></svg>
+                {{ t('messages_badge_broadcast') }}
+              </span>
               <span v-if="msg.ads" class="badge badge-danger">{{ t('messages_badge_ad') }}</span>
             </div>
             <button class="btn-small" @click="archiveChat(msg)" :disabled="archiving[msg.chat?.id]">{{ archiving[msg.chat?.id] ? t('messages_archiving_btn') : t('messages_archive_btn') }}</button>
@@ -868,6 +883,21 @@ export default defineComponent({
             }
 
             const incoming = payload.message
+
+            // Read receipts: id is the literal string "readreceipt" and
+            // the actual referenced message id lives in the text field.
+            // Update the existing message status instead of adding a new card.
+            if (incoming.id === 'readreceipt') {
+              const targetId = incoming.text  // original message id
+              if (targetId) {
+                const idx = messages.value.findIndex(m => m.id === targetId)
+                if (idx !== -1) {
+                  messages.value[idx] = { ...messages.value[idx], status: 'read' }
+                }
+              }
+              return
+            }
+
             const exists = messages.value.some(m => m.id === incoming.id)
             if (!exists) {
               messages.value.unshift(incoming)
@@ -1329,6 +1359,13 @@ export default defineComponent({
   color: #059669;
 }
 
+.badge-read {
+  background: #eff6ff;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+}
+
 .badge-status {
   background: #eff6ff;
   color: #2563eb;
@@ -1337,6 +1374,27 @@ export default defineComponent({
 .badge-warning {
   background: #fefce8;
   color: #ca8a04;
+}
+
+.badge-history {
+  background: #f3f4f6;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-forward {
+  background: #fff7ed;
+  color: #c2410c;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-broadcast {
+  background: #fdf4ff;
+  color: #9333ea;
+  display: inline-flex;
+  align-items: center;
 }
 
 .badge-secondary {

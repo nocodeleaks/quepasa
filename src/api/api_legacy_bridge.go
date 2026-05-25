@@ -33,6 +33,7 @@ func legacyHandlers() legacy.Handlers {
 		"InviteController":                  InviteController,
 		"ContactsController":                ContactsController,
 		"ContactSearchController":           ContactSearchController,
+		"SaveContactController":             ContactSaveController,
 		"IsOnWhatsappController":            IsOnWhatsappController,
 		"GetUserIdentifierController":       GetUserIdentifierController,
 		"GetPhoneController":                GetPhoneController,

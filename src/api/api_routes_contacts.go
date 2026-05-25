@@ -14,6 +14,7 @@ func registerCanonicalContactRoutes(r chi.Router) {
 	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Post("/contacts/availability", CanonicalContactAvailabilityController)
 	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Post("/contacts/block", CanonicalContactBlockController)
 	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Delete("/contacts/block", CanonicalContactUnblockController)
+	r.With(withCanonicalParams(canonicalTokenParam), requireOwnedServerToken()).Post("/contacts/save", CanonicalContactSaveController)
 }
 
 func CanonicalContactsListController(w http.ResponseWriter, r *http.Request) {
@@ -36,4 +37,7 @@ func CanonicalContactBlockController(w http.ResponseWriter, r *http.Request) {
 }
 func CanonicalContactUnblockController(w http.ResponseWriter, r *http.Request) {
 	UnblockContactController(w, r)
+}
+func CanonicalContactSaveController(w http.ResponseWriter, r *http.Request) {
+	ContactSaveController(w, r)
 }

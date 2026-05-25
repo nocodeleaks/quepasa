@@ -29,7 +29,6 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'home', component: HomePage, meta: { requiresAuth: true } },
     { path: '/webhooks', name: 'webhooks', component: WebhooksPage, meta: { requiresAuth: true } },
-    { path: '/dispatching', name: 'dispatching', component: WebhooksPage, meta: { requiresAuth: true } },
     { path: '/rabbitmq', name: 'rabbitmq', component: RabbitMQPage, meta: { requiresAuth: true } },
     { path: '/connect', name: 'connect', component: ConnectPage, meta: { requiresAuth: true } },
     { path: '/server/:token', name: 'server', component: ServerPage, meta: { requiresAuth: true } },

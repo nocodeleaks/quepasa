@@ -114,6 +114,9 @@ func RegisterAPIControllers(r chi.Router, config Config, handlers Handlers) {
 		r.Post(endpoint+"/chat/archive", mustHandler(handlers, "ArchiveChatController"))
 		r.Put(endpoint+"/edit", mustHandler(handlers, "EditMessageController"))
 
+		r.Post(endpoint+"/message/react", mustHandler(handlers, "SendReactionController"))
+		r.Delete(endpoint+"/message/react", mustHandler(handlers, "RemoveReactionController"))
+
 		r.Get(endpoint+"/restore", mustHandler(handlers, "RestoreDiagnoseController"))
 		r.Post(endpoint+"/restore/auto", mustHandler(handlers, "RestoreAutoController"))
 		r.Post(endpoint+"/restore/manual", mustHandler(handlers, "RestoreManualController"))

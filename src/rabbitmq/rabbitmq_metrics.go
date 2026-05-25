@@ -7,7 +7,7 @@ import (
 // RabbitMQ-specific metrics initialized directly using generic factory functions
 var (
 	// Counters
-	MessagesPublished      = metrics.CreateCounterRecorder("quepasa_rabbitmq_messages_published_total", "Total messages published to RabbitMQ")
+	MessagesPublished      = metrics.CreateCounterVecRecorder("quepasa_rabbitmq_messages_published_total", "Total messages published to RabbitMQ", []string{"queue"})
 	MessagePublishErrors   = metrics.CreateCounterRecorder("quepasa_rabbitmq_message_publish_errors_total", "Total message publish errors to RabbitMQ")
 	MessagesCached         = metrics.CreateCounterRecorder("quepasa_rabbitmq_messages_cached_total", "Total messages added to cache when connection is down")
 	MessagesCacheProcessed = metrics.CreateCounterRecorder("quepasa_rabbitmq_messages_cache_processed_total", "Total messages processed from cache")

@@ -76,7 +76,7 @@ func PublishRabbitMQ(message *whatsapp.WhatsappMessage, request *RabbitMQRequest
 	client.PublishQuePasaMessage(routingKey, payload)
 
 	result.Duration = time.Since(startTime)
-	rabbitmq.MessagesPublished.Inc()
+	rabbitmq.MessagesPublished.WithLabelValues(routingKey).Inc()
 
 	if !client.IsConnectionReady() {
 		rabbitmq.MessagePublishErrors.Inc()

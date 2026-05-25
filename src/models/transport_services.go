@@ -16,7 +16,7 @@ type TransportServices struct {
 	RabbitMQRoutingKeyProd          string
 	RabbitMQRoutingKeyHistory       string
 	RabbitMQRoutingKeyEvents        string
-	RabbitMQMessagesPublishedInc    func()
+	RabbitMQMessagesPublishedInc    func(queue string)
 	RabbitMQMessagePublishErrorsInc func()
 	RabbitMQClientResolver          func(connectionString string) bool
 }

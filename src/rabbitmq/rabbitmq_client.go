@@ -402,7 +402,7 @@ func (r *RabbitMQClient) PublishMessageToExchange(exchangeName, routingKey strin
 	}
 
 	log.Printf("Message ID %s published successfully to exchange '%s' routing key '%s'", msg.ID, exchangeName, routingKey)
-	MessagesPublished.Inc()
+	MessagesPublished.WithLabelValues(routingKey).Inc()
 }
 
 // EnsureExchangeAndQueues ensures that the QuePasa standard exchange and queues exist

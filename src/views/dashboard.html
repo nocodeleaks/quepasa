@@ -694,34 +694,26 @@
         <div class="rmq-groups">
             <!-- Filas -->
             <div class="rmq-group">
-                <div class="rmq-group-title">📤 Filas publicadas</div>
+                <div class="rmq-group-title">📤 Publicados por fila (acumulado)</div>
                 <div class="rmq-row">
-                    <span class="rmq-row-label">Total publicado</span>
+                    <span class="rmq-row-label">Total</span>
                     <span class="rmq-row-value blue" id="rmqTotal">—</span>
                 </div>
                 <div class="rmq-row">
-                    <span class="rmq-row-label">Fila prod</span>
+                    <span class="rmq-row-label">prod</span>
                     <span class="rmq-row-value green" id="rmqProd">—</span>
                 </div>
                 <div class="rmq-row">
-                    <span class="rmq-row-label">Fila history</span>
+                    <span class="rmq-row-label">history</span>
                     <span class="rmq-row-value" id="rmqHistory">—</span>
                 </div>
                 <div class="rmq-row">
-                    <span class="rmq-row-label">Fila events</span>
+                    <span class="rmq-row-label">events</span>
                     <span class="rmq-row-value" id="rmqEvents">—</span>
                 </div>
                 <div class="rmq-row">
-                    <span class="rmq-row-label">Top tipo</span>
-                    <span class="rmq-row-value" id="rmqTopType">—</span>
-                </div>
-                <div class="rmq-row">
-                    <span class="rmq-row-label">Top fila</span>
+                    <span class="rmq-row-label">Fila mais ativa</span>
                     <span class="rmq-row-value" id="rmqTopQueue">—</span>
-                </div>
-                <div class="rmq-row">
-                    <span class="rmq-row-label">Top tipo (history)</span>
-                    <span class="rmq-row-value" id="rmqTopTypeHistory">—</span>
                 </div>
             </div>
 
@@ -998,39 +990,25 @@ function updateWebhook(m) {
 function updateRabbitMQ(m) {
     const published = m['quepasa_rabbitmq_messages_published_total'] || [];
     let total = 0, prod = 0, history = 0, events = 0;
-    const byType = {}, byQueue = {};
+    const byQueue = {};
 
     published.forEach(e => {
         const v = e.value || 0;
         total += v;
         const q = e.labels.queue || '';
-        const t = e.labels.message_type || '';
         if (q === 'prod')    prod    += v;
         if (q === 'history') history += v;
         if (q === 'events')  events  += v;
         byQueue[q] = (byQueue[q] || 0) + v;
-        byType[t]  = (byType[t]  || 0) + v;
     });
 
-    const topType  = Object.entries(byType).sort((a,b)=>b[1]-a[1])[0];
     const topQueue = Object.entries(byQueue).sort((a,b)=>b[1]-a[1])[0];
 
-    const histTypes = {};
-    published.forEach(e => {
-        if (e.labels.queue === 'history') {
-            const t = e.labels.message_type || '';
-            histTypes[t] = (histTypes[t] || 0) + e.value;
-        }
-    });
-    const topHistType = Object.entries(histTypes).sort((a,b)=>b[1]-a[1])[0];
-
-    set('rmqTotal',          fmt(total));
-    set('rmqProd',           fmt(prod));
-    set('rmqHistory',        fmt(history));
-    set('rmqEvents',         fmt(events));
-    set('rmqTopType',        topType      ? `${topType[0]} (${fmt(topType[1])})` : '—');
-    set('rmqTopQueue',       topQueue     ? `${topQueue[0]} (${fmt(topQueue[1])})` : '—');
-    set('rmqTopTypeHistory', topHistType  ? `${topHistType[0]} (${fmt(topHistType[1])})` : '—');
+    set('rmqTotal',    fmt(total));
+    set('rmqProd',     fmt(prod));
+    set('rmqHistory',  fmt(history));
+    set('rmqEvents',   fmt(events));
+    set('rmqTopQueue', topQueue ? `${topQueue[0]} (${fmt(topQueue[1])})` : '—');
 
     set('rmqCacheSize',      fmt(getVal(m, 'quepasa_rabbitmq_cache_size_current')));
     set('rmqCachedTotal',    fmt(getVal(m, 'quepasa_rabbitmq_messages_cached_total')));

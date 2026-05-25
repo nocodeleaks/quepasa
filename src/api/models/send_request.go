@@ -63,6 +63,10 @@ type SendRequest struct {
 	Poll     *whatsapp.WhatsappPoll     `json:"poll,omitempty"`     // Poll payload when present.
 	Location *whatsapp.WhatsappLocation `json:"location,omitempty"` // Location payload when present.
 	Contact  *whatsapp.WhatsappContact  `json:"contact,omitempty"`  // Contact payload when present.
+
+	// LinkPreview is populated internally after Open Graph metadata is fetched.
+	// Not exposed in JSON — set programmatically by the handler.
+	LinkPreview *whatsapp.WhatsappMessageUrl `json:"-"`
 }
 
 // SendAnyRequest extends SendRequest with the additional HTTP fields accepted
@@ -75,6 +79,18 @@ type SendAnyRequest struct {
 
 	// Base64-encoded or data-URI encoded payload.
 	Content string `json:"content,omitempty"`
+
+	// Preview controls whether a link preview should be generated for URLs in Text.
+	Preview bool `json:"preview,omitempty"`
+
+	// PreviewTitle overrides the fetched Open Graph title.
+	PreviewTitle string `json:"preview_title,omitempty"`
+
+	// PreviewDesc overrides the fetched Open Graph description.
+	PreviewDesc string `json:"preview_desc,omitempty"`
+
+	// PreviewThumb is a URL to a custom thumbnail image (overrides the OG image).
+	PreviewThumb string `json:"preview_thumb,omitempty"`
 }
 
 // GetLogger returns a request-scoped logger with chat id context attached.
@@ -162,6 +178,11 @@ func (source *SendRequest) ToWhatsappMessage() (msg *whatsapp.WhatsappMessage, e
 		msg.Type = whatsapp.TextMessageType
 	} else {
 		msg.Type = whatsapp.TextMessageType
+	}
+
+	// Attach link preview if populated by the handler
+	if source.LinkPreview != nil {
+		msg.Url = source.LinkPreview
 	}
 
 	return

@@ -193,10 +193,67 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 		request.FileName = filename
 	}
 
+	// Generate link preview when requested and message has text with a URL but no attachment
+	if request.Preview && len(request.Text) > 0 && len(request.Content) == 0 {
+		handleLinkPreview(request, response)
+	}
+
 	SendRequest(w, r, &request.SendRequest, server)
 }
 
 //endregion
+
+// handleLinkPreview fetches Open Graph metadata for the first URL found in
+// request.Text and populates request.SendRequest.LinkPreview. Custom override
+// fields (PreviewTitle, PreviewDesc, PreviewThumb) take precedence over the
+// fetched values. Errors are non-fatal and appended to response.Debug.
+func handleLinkPreview(request *apiModels.SendAnyRequest, response *apiModels.SendResponse) {
+	urlToPreview := library.ExtractURLFromText(request.Text)
+	if urlToPreview == "" {
+		response.Debug = append(response.Debug, "[debug][handleLinkPreview] no URL found in text, skipping preview")
+		return
+	}
+	response.Debug = append(response.Debug, "[debug][handleLinkPreview] found URL: "+urlToPreview)
+
+	ogData, err := library.FetchOpenGraph(urlToPreview)
+	if err != nil {
+		response.Debug = append(response.Debug, "[warn][handleLinkPreview] failed to fetch OG data: "+err.Error())
+		return
+	}
+
+	preview := &whatsapp.WhatsappMessageUrl{Reference: urlToPreview}
+
+	if request.PreviewTitle != "" {
+		preview.Title = request.PreviewTitle
+	} else if ogData.Title != "" {
+		preview.Title = ogData.Title
+	}
+
+	if request.PreviewDesc != "" {
+		preview.Description = request.PreviewDesc
+	} else if ogData.Description != "" {
+		preview.Description = ogData.Description
+	}
+
+	thumbnailURL := request.PreviewThumb
+	if thumbnailURL == "" {
+		thumbnailURL = ogData.ImageURL
+	}
+
+	if thumbnailURL != "" {
+		response.Debug = append(response.Debug, "[debug][handleLinkPreview] downloading thumbnail: "+thumbnailURL)
+		thumbData, err := library.DownloadImage(thumbnailURL)
+		if err != nil {
+			response.Debug = append(response.Debug, "[warn][handleLinkPreview] failed to download thumbnail: "+err.Error())
+		} else {
+			preview.SetThumbnail(thumbData)
+			response.Debug = append(response.Debug, fmt.Sprintf("[debug][handleLinkPreview] thumbnail downloaded: %d bytes", len(thumbData)))
+		}
+	}
+
+	request.SendRequest.LinkPreview = preview
+	response.Debug = append(response.Debug, "[debug][handleLinkPreview] preview ready, title: "+preview.Title)
+}
 
 // -------------------------- INTERNAL METHODS
 

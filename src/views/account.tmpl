@@ -1,10 +1,10 @@
 ﻿{{ define "content" }}
   <script src="/assets/copytoclipboard.js"></script>
-  <div class="container site-header">
+  <div class="container is-fluid site-header">
     <h1 class="title is-1">QuePasa (v{{ .Version }}) Bots</h1>
     <p class="subtitle">Welcome <b>{{ .User.Username }}</b></p>
   </div>
-  <div class="container">
+  <div class="container is-fluid">
     <h2 class="title is-2">({{ len .Servers }}) Your bots</h2>
 
     <a class="button is-primary" href="/apps/form/verify?mode=md">Add or Update Bot</a>

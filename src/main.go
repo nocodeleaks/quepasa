@@ -64,6 +64,7 @@ func main() {
 		Groups:            environment.Settings.WhatsApp.Groups,
 		Broadcasts:        environment.Settings.WhatsApp.Broadcasts,
 		ReadReceipts:      environment.Settings.WhatsApp.ReadReceipts,
+		DeliveryReceipts:  environment.Settings.WhatsApp.DeliveryReceipts,
 		Calls:             environment.Settings.WhatsApp.Calls,
 		ReadUpdate:        environment.Settings.WhatsApp.ReadUpdate,
 		HistorySync:       environment.Settings.WhatsApp.HistorySyncDays,

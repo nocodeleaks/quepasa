@@ -10,13 +10,14 @@ import (
 )
 
 type SessionConfigurationPatch struct {
-	Groups       *whatsapp.WhatsappBoolean
-	Broadcasts   *whatsapp.WhatsappBoolean
-	ReadReceipts *whatsapp.WhatsappBoolean
-	Calls        *whatsapp.WhatsappBoolean
-	ReadUpdate   *whatsapp.WhatsappBoolean
-	Direct       *whatsapp.WhatsappBoolean
-	Devel        *bool
+	Groups           *whatsapp.WhatsappBoolean
+	Broadcasts       *whatsapp.WhatsappBoolean
+	ReadReceipts     *whatsapp.WhatsappBoolean
+	DeliveryReceipts *whatsapp.WhatsappBoolean
+	Calls            *whatsapp.WhatsappBoolean
+	ReadUpdate       *whatsapp.WhatsappBoolean
+	Direct           *whatsapp.WhatsappBoolean
+	Devel            *bool
 }
 
 var ErrNilSession = errors.New("session is nil")
@@ -123,6 +124,9 @@ func BuildSessionRecord(token string, username string, patch *SessionConfigurati
 	}
 	if patch.ReadReceipts != nil {
 		info.ReadReceipts = *patch.ReadReceipts
+	}
+	if patch.DeliveryReceipts != nil {
+		info.DeliveryReceipts = *patch.DeliveryReceipts
 	}
 	if patch.Calls != nil {
 		info.Calls = *patch.Calls
@@ -475,6 +479,11 @@ func ToggleSessionOption(session *models.QpWhatsappSession, option string) (bool
 			return false, err
 		}
 		return session.GetReadReceipts(), nil
+	case "deliveryreceipts":
+		if err := models.ToggleDeliveryReceipts(session); err != nil {
+			return false, err
+		}
+		return session.GetDeliveryReceipts(), nil
 	case "calls":
 		if err := models.ToggleCalls(session); err != nil {
 			return false, err
@@ -520,6 +529,11 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 	if patch.ReadReceipts != nil && session.ReadReceipts != *patch.ReadReceipts {
 		session.ReadReceipts = *patch.ReadReceipts
 		update += fmt.Sprintf("readreceipts to: {%s}; ", *patch.ReadReceipts)
+	}
+
+	if patch.DeliveryReceipts != nil && session.DeliveryReceipts != *patch.DeliveryReceipts {
+		session.DeliveryReceipts = *patch.DeliveryReceipts
+		update += fmt.Sprintf("deliveryreceipts to: {%s}; ", *patch.DeliveryReceipts)
 	}
 
 	if patch.Calls != nil && session.Calls != *patch.Calls {

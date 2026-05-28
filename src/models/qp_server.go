@@ -193,6 +193,16 @@ func (source QpServer) GetReadReceipts() bool {
 }
 
 // used for view
+func (source QpServer) IsSetDeliveryReceipts() bool {
+	return source.DeliveryReceipts != whatsapp.UnSetBooleanType
+}
+
+// used for view
+func (source QpServer) GetDeliveryReceipts() bool {
+	return source.DeliveryReceipts.Boolean()
+}
+
+// used for view
 func (source QpServer) IsSetBroadcasts() bool {
 	return source.Broadcasts != whatsapp.UnSetBooleanType
 }

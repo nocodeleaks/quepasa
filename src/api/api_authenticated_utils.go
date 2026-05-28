@@ -261,12 +261,13 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 			"hasDispatching": snap.dispatchCount > 0,
 			"hasWebhooks":    snap.webhookCount > 0,
 			"hasRabbitMQ":    snap.rabbitmqCount > 0,
-			"groups":         false,
-			"broadcasts":     false,
-			"readReceipts":   false,
-			"calls":          false,
-			"readupdate":     false,
-			"direct":         true,
+			"groups":            false,
+			"broadcasts":        false,
+			"readReceipts":      false,
+			"deliveryReceipts":  false,
+			"calls":             false,
+			"readupdate":        false,
+			"direct":            true,
 		}
 	}
 
@@ -293,12 +294,13 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 		"hasDispatching": snap.dispatchCount > 0,
 		"hasWebhooks":    snap.webhookCount > 0,
 		"hasRabbitMQ":    snap.rabbitmqCount > 0,
-		"groups":         dbServer.Groups,
-		"broadcasts":     dbServer.Broadcasts,
-		"readReceipts":   dbServer.ReadReceipts,
-		"calls":          dbServer.Calls,
-		"readupdate":     dbServer.ReadUpdate,
-		"direct":         dbServer.Direct,
+		"groups":           dbServer.Groups,
+		"broadcasts":       dbServer.Broadcasts,
+		"readReceipts":     dbServer.ReadReceipts,
+		"deliveryReceipts": dbServer.DeliveryReceipts,
+		"calls":            dbServer.Calls,
+		"readupdate":       dbServer.ReadUpdate,
+		"direct":           dbServer.Direct,
 	}
 }
 

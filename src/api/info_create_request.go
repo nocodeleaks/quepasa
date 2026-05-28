@@ -7,8 +7,9 @@ import whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 type InfoCreateRequest struct {
 	Groups       *whatsapp.WhatsappBoolean `json:"groups,omitempty"`       // should handle groups messages
 	Broadcasts   *whatsapp.WhatsappBoolean `json:"broadcasts,omitempty"`   // should handle broadcast messages
-	ReadReceipts *whatsapp.WhatsappBoolean `json:"readreceipts,omitempty"` // should emit read receipts
-	Calls        *whatsapp.WhatsappBoolean `json:"calls,omitempty"`        // should handle calls
+	ReadReceipts     *whatsapp.WhatsappBoolean `json:"readreceipts,omitempty"`     // should emit read receipts
+	DeliveryReceipts *whatsapp.WhatsappBoolean `json:"deliveryreceipts,omitempty"` // should emit delivery receipts
+	Calls            *whatsapp.WhatsappBoolean `json:"calls,omitempty"`            // should handle calls
 	ReadUpdate   *whatsapp.WhatsappBoolean `json:"readupdate,omitempty"`   // should send markread requests when receiving messages
 	Direct       *whatsapp.WhatsappBoolean `json:"direct,omitempty"`       // should handle direct (individual) messages; default true
 	Devel        *bool                     `json:"devel,omitempty"`        // enable debug mode (devel)

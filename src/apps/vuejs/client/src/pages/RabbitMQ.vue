@@ -100,7 +100,11 @@
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newReadReceipts" />
-                <span>{{ t('webhooks_confirmations') }}</span>
+                <span>{{ t('webhooks_read_confirmations') }}</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="newDeliveryReceipts" />
+                <span>{{ t('webhooks_delivery_confirmations') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newCalls" />
@@ -179,9 +183,17 @@
                   class="flag-btn"
                   :class="getTriStateClass(item.readreceipts)"
                   @click="toggleRabbitFlag(item, 'readreceipts')"
-                  :title="t('webhooks_confirmations')"
+                  :title="t('webhooks_read_confirmations')"
                 >
                   <i class="fa fa-check-double"></i>
+                </button>
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(item.deliveryreceipts)"
+                  @click="toggleRabbitFlag(item, 'deliveryreceipts')"
+                  :title="t('webhooks_delivery_confirmations')"
+                >
+                  <i class="fa fa-check"></i>
                 </button>
                 <button
                   class="flag-btn"
@@ -239,6 +251,7 @@ type RabbitItem = {
   broadcasts?: number | boolean | null
   groups?: number | boolean | null
   readreceipts?: number | boolean | null
+  deliveryreceipts?: number | boolean | null
   calls?: number | boolean | null
   direct?: number | boolean | null
   extra?: unknown
@@ -263,6 +276,7 @@ export default defineComponent({
     const newBroadcasts = ref(true)
     const newGroups = ref(true)
     const newReadReceipts = ref(false)
+    const newDeliveryReceipts = ref(false)
     const newCalls = ref(false)
     const newDirect = ref(true)
     const newExtra = ref('')
@@ -317,6 +331,7 @@ export default defineComponent({
         broadcasts: toTriState(item.broadcasts),
         groups: toTriState(item.groups),
         readreceipts: toTriState(item.readreceipts),
+        deliveryreceipts: toTriState(item.deliveryreceipts),
         calls: toTriState(item.calls),
         direct: toTriState(item.direct),
         extra: item.extra ?? null,
@@ -365,6 +380,7 @@ export default defineComponent({
           broadcasts: toTriState(newBroadcasts.value),
           groups: toTriState(newGroups.value),
           readreceipts: toTriState(newReadReceipts.value),
+          deliveryreceipts: toTriState(newDeliveryReceipts.value),
           calls: toTriState(newCalls.value),
           direct: toTriState(newDirect.value),
           extra: parseExtra(newExtra.value),
@@ -378,6 +394,7 @@ export default defineComponent({
         newBroadcasts.value = true
         newGroups.value = true
         newReadReceipts.value = false
+        newDeliveryReceipts.value = false
         newCalls.value = false
         newDirect.value = true
         newExtra.value = ''
@@ -416,7 +433,7 @@ export default defineComponent({
       }
     }
 
-    async function toggleRabbitFlag(item: RabbitItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls' | 'direct') {
+    async function toggleRabbitFlag(item: RabbitItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'deliveryreceipts' | 'calls' | 'direct') {
       try {
         const payload = buildRabbitPayload(item)
 
@@ -459,6 +476,7 @@ export default defineComponent({
       newForwardInternal,
       newGroups,
       newReadReceipts,
+      newDeliveryReceipts,
       newTrackId,
       showConfirm,
       toggleRabbitFlag,

@@ -178,6 +178,11 @@ func (source QpServer) IsSetReadUpdate() bool {
 }
 
 // used for view
+func (source QpServer) GetReadUpdate() bool {
+	return source.ReadUpdate.Boolean()
+}
+
+// used for view
 func (source QpServer) GetCalls() bool {
 	return source.Calls.Boolean()
 }

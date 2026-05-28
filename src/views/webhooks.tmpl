@@ -52,7 +52,7 @@
                   <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=webhook-broadcasts" data-value="{{ .Broadcasts }}">
                     <input name="url" type="hidden" value="{{ .Url }}">
                     <button class="button {{ if .IsSetBroadcasts }}{{ if .GetBroadcasts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Broadcasts: {{ .Broadcasts }}">
-                      <span class="icon is-small is-inline"><i class="fa fa-comment-dots"></i></span>
+                      <span class="icon is-small is-inline"><i class="fa fa-bullhorn"></i></span>
                     </button>
                   </form>
                 </p>
@@ -60,7 +60,7 @@
                   <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=webhook-groups" data-value="{{ .Groups }}">
                     <input name="url" type="hidden" value="{{ .Url }}">
                     <button class="button {{ if .IsSetGroups }}{{ if .GetGroups }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Groups: {{ .Groups }}">
-                      <span class="icon is-small is-inline"><i class="fa fa-comment"></i></span>
+                      <span class="icon is-small is-inline"><i class="fa fa-users"></i></span>
                     </button>
                   </form>
                 </p>
@@ -68,11 +68,19 @@
                   <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=webhook-readreceipts" data-value="{{ .ReadReceipts }}">
                     <input name="url" type="hidden" value="{{ .Url }}">
                     <button class="button {{ if .IsSetReadReceipts }}{{ if .GetReadReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="ReadReceipts: {{ .ReadReceipts }}">
+                      <span class="icon is-small is-inline"><i class="fa fa-check-double"></i></span>
+                    </button>
+                  </form>
+                </p>
+                <p class="control">
+                  <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=webhook-deliveryreceipts" data-value="{{ .DeliveryReceipts }}">
+                    <input name="url" type="hidden" value="{{ .Url }}">
+                    <button class="button {{ if .IsSetDeliveryReceipts }}{{ if .GetDeliveryReceipts }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="DeliveryReceipts: {{ .DeliveryReceipts }}">
                       <span class="icon is-small is-inline"><i class="fa fa-check"></i></span>
                     </button>
                   </form>
                 </p>
-                <p class="control"> 
+                <p class="control">
                   <form class="" method="post" action="/apps/form/toggle?token={{ $.Server.Token }}&key=webhook-calls" data-value="{{ .Calls }}">
                     <input name="url" type="hidden" value="{{ .Url }}">
                     <button class="button {{ if .IsSetCalls }}{{ if .GetCalls }}is-info is-hovered{{ else }}is-danger is-hovered{{ end }}{{ end }}" title="Calls: {{ .Calls }}">

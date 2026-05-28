@@ -230,7 +230,7 @@
                 </ul>
               </li>
               <li><hr class="dropdown-divider"></li>
-              <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
+              <li><router-link :to="`/webhooks?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
               <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
               <li><hr class="dropdown-divider"></li>
               <template v-if="isConnected(srv)">

@@ -55,6 +55,8 @@ func legacyHandlers() legacy.Handlers {
 		"MarkChatAsUnreadController":        MarkChatAsUnreadController,
 		"ArchiveChatController":             ArchiveChatController,
 		"EditMessageController":             EditMessageController,
+		"SendReactionController":            SendReactionController,
+		"RemoveReactionController":          RemoveReactionController,
 		"RestoreDiagnoseController":         RestoreDiagnoseController,
 		"RestoreAutoController":             RestoreAutoController,
 		"RestoreManualController":           RestoreManualController,

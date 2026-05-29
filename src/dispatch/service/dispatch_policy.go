@@ -23,6 +23,11 @@ func (DefaultDispatchPolicy) ShouldDispatch(target Target, message *whatsapp.Wha
 		return false
 	}
 
+	if message.Id == "deliveryreceipt" && target.IsSetDeliveryReceipts() && !target.GetDeliveryReceipts() {
+		logentry.Debugf("ignoring delivery receipt message: %s", message.Text)
+		return false
+	}
+
 	if message.FromGroup() && target.IsSetGroups() && !target.GetGroups() {
 		logentry.Debug("ignoring group message")
 		return false

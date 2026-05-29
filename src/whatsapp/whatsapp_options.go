@@ -12,6 +12,9 @@ type WhatsappOptions struct {
 	// should emit read receipts
 	ReadReceipts WhatsappBoolean `db:"readreceipts" json:"readreceipts,omitempty"`
 
+	// should emit delivery receipts
+	DeliveryReceipts WhatsappBoolean `db:"deliveryreceipts" json:"deliveryreceipts,omitempty"`
+
 	// should handle calls
 	Calls WhatsappBoolean `db:"calls" json:"calls,omitempty"`
 

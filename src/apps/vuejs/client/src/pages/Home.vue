@@ -96,6 +96,7 @@
           <button class="fltbtn" :class="{ on: srv.groups }" @click.stop="toggleGroups(srv)" :title="t('groups')" :disabled="toggling === srv.token"><i class="fa fa-users"></i></button>
           <button class="fltbtn" :class="{ on: srv.broadcasts }" @click.stop="toggleBroadcasts(srv)" :title="t('broadcasts')" :disabled="toggling === srv.token"><i class="fa fa-bullhorn"></i></button>
           <button class="fltbtn" :class="{ on: srv.readReceipts }" @click.stop="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
+          <button class="fltbtn" :class="{ on: srv.deliveryReceipts }" @click.stop="toggleDeliveryReceipts(srv)" :title="t('delivery_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check"></i></button>
           <button class="fltbtn" :class="{ on: srv.calls }" @click.stop="toggleCalls(srv)" :title="t('calls')" :disabled="toggling === srv.token"><i class="fa fa-phone"></i></button>
           <button class="fltbtn" :class="{ on: srv.direct }" @click.stop="toggleDirect(srv)" :title="t('direct')" :disabled="toggling === srv.token"><i class="fa fa-comment"></i></button>
           <button class="fltbtn" :class="{ on: srv.readupdate }" @click.stop="toggleReadUpdate(srv)" :title="t('readupdate')" :disabled="toggling === srv.token"><i class="fa fa-eye"></i></button>
@@ -135,6 +136,7 @@
                   <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }}<span class="submenu-badge ms-auto" :class="srv.groups ? 'on' : 'off'">{{ srv.groups ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }}<span class="submenu-badge ms-auto" :class="srv.broadcasts ? 'on' : 'off'">{{ srv.broadcasts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.readReceipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}<span class="submenu-badge ms-auto" :class="srv.readReceipts ? 'on' : 'off'">{{ srv.readReceipts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
+                  <li><button class="dropdown-item" :class="{ active: srv.deliveryReceipts }" @click="toggleDeliveryReceipts(srv)"><i class="fa fa-check me-2"></i> {{ t('delivery_receipts') }}<span class="submenu-badge ms-auto" :class="srv.deliveryReceipts ? 'on' : 'off'">{{ srv.deliveryReceipts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }}<span class="submenu-badge ms-auto" :class="srv.calls ? 'on' : 'off'">{{ srv.calls ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.direct }" @click="toggleDirect(srv)"><i class="fa fa-comment me-2"></i> {{ t('direct') }}<span class="submenu-badge ms-auto" :class="srv.direct ? 'on' : 'off'">{{ srv.direct ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.readupdate }" @click="toggleReadUpdate(srv)"><i class="fa fa-eye me-2"></i> {{ t('readupdate') }}<span class="submenu-badge ms-auto" :class="srv.readupdate ? 'on' : 'off'">{{ srv.readupdate ? t('state_on_short') : t('state_off_short') }}</span></button></li>
@@ -182,6 +184,7 @@
           <button class="fltbtn" :class="{ on: srv.groups }" @click="toggleGroups(srv)" :title="t('groups')" :disabled="toggling === srv.token"><i class="fa fa-users"></i></button>
           <button class="fltbtn" :class="{ on: srv.broadcasts }" @click="toggleBroadcasts(srv)" :title="t('broadcasts')" :disabled="toggling === srv.token"><i class="fa fa-bullhorn"></i></button>
           <button class="fltbtn" :class="{ on: srv.readReceipts }" @click="toggleReadReceipts(srv)" :title="t('read_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check-double"></i></button>
+          <button class="fltbtn" :class="{ on: srv.deliveryReceipts }" @click="toggleDeliveryReceipts(srv)" :title="t('delivery_receipts')" :disabled="toggling === srv.token"><i class="fa fa-check"></i></button>
           <button class="fltbtn" :class="{ on: srv.calls }" @click="toggleCalls(srv)" :title="t('calls')" :disabled="toggling === srv.token"><i class="fa fa-phone"></i></button>
           <button class="fltbtn" :class="{ on: srv.direct }" @click="toggleDirect(srv)" :title="t('direct')" :disabled="toggling === srv.token"><i class="fa fa-comment"></i></button>
           <button class="fltbtn" :class="{ on: srv.readupdate }" @click="toggleReadUpdate(srv)" :title="t('readupdate')" :disabled="toggling === srv.token"><i class="fa fa-eye"></i></button>
@@ -224,13 +227,14 @@
                   <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }}<span class="submenu-badge ms-auto" :class="srv.groups ? 'on' : 'off'">{{ srv.groups ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }}<span class="submenu-badge ms-auto" :class="srv.broadcasts ? 'on' : 'off'">{{ srv.broadcasts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.readReceipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}<span class="submenu-badge ms-auto" :class="srv.readReceipts ? 'on' : 'off'">{{ srv.readReceipts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
+                  <li><button class="dropdown-item" :class="{ active: srv.deliveryReceipts }" @click="toggleDeliveryReceipts(srv)"><i class="fa fa-check me-2"></i> {{ t('delivery_receipts') }}<span class="submenu-badge ms-auto" :class="srv.deliveryReceipts ? 'on' : 'off'">{{ srv.deliveryReceipts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.calls }" @click="toggleCalls(srv)"><i class="fa fa-phone me-2"></i> {{ t('calls') }}<span class="submenu-badge ms-auto" :class="srv.calls ? 'on' : 'off'">{{ srv.calls ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.direct }" @click="toggleDirect(srv)"><i class="fa fa-comment me-2"></i> {{ t('direct') }}<span class="submenu-badge ms-auto" :class="srv.direct ? 'on' : 'off'">{{ srv.direct ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.readupdate }" @click="toggleReadUpdate(srv)"><i class="fa fa-eye me-2"></i> {{ t('readupdate') }}<span class="submenu-badge ms-auto" :class="srv.readupdate ? 'on' : 'off'">{{ srv.readupdate ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                 </ul>
               </li>
               <li><hr class="dropdown-divider"></li>
-              <li><router-link :to="`/dispatching?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
+              <li><router-link :to="`/webhooks?token=${srv.token}`" class="dropdown-item"><i class="fa fa-link me-2"></i> {{ t('dispatching') }}</router-link></li>
               <li><router-link :to="`/rabbitmq?token=${srv.token}`" class="dropdown-item"><i class="fa fa-database me-2"></i> {{ t('rabbitmq') }}</router-link></li>
               <li><hr class="dropdown-divider"></li>
               <template v-if="isConnected(srv)">
@@ -614,6 +618,19 @@ export default defineComponent({
       }
     }
 
+    async function toggleDeliveryReceipts(srv: any) {
+      try {
+        toggling.value = srv.token
+        await api.post('/api/session/option', { token: srv.token, option: 'deliveryreceipts' })
+        await load()
+        pushToast(t('delivery_receipts_updated'), 'success')
+      } catch (err: any) {
+        pushToast(err?.response?.data?.result || t('error_update_delivery_receipts'), 'error')
+      } finally {
+        toggling.value = ''
+      }
+    }
+
     async function toggleCalls(srv: any) {
       try {
         toggling.value = srv.token
@@ -706,7 +723,7 @@ export default defineComponent({
       filteredServers, currentPage, pageSize, pageSizeOptions, totalPages,
       load, getStatusClass, getConnectionClass, isConnected, formatUptime, formatWid,
       copyToken, toggleServer, toggleDebug, toggleGroups, toggleBroadcasts,
-      toggleReadReceipts, toggleCalls, toggleDirect, toggleReadUpdate, disconnectServer, deleteServer,
+      toggleReadReceipts, toggleDeliveryReceipts, toggleCalls, toggleDirect, toggleReadUpdate, disconnectServer, deleteServer,
       applySearch, clearSearch, goToPage, nextPage, prevPage, createNewServer,
       getTriStateClass, getTriStateTitle,
       t, locale, setLocale

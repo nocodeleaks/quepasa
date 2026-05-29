@@ -178,6 +178,11 @@ func (source QpServer) IsSetReadUpdate() bool {
 }
 
 // used for view
+func (source QpServer) GetReadUpdate() bool {
+	return source.ReadUpdate.Boolean()
+}
+
+// used for view
 func (source QpServer) GetCalls() bool {
 	return source.Calls.Boolean()
 }
@@ -190,6 +195,16 @@ func (source QpServer) IsSetReadReceipts() bool {
 // used for view
 func (source QpServer) GetReadReceipts() bool {
 	return source.ReadReceipts.Boolean()
+}
+
+// used for view
+func (source QpServer) IsSetDeliveryReceipts() bool {
+	return source.DeliveryReceipts != whatsapp.UnSetBooleanType
+}
+
+// used for view
+func (source QpServer) GetDeliveryReceipts() bool {
+	return source.DeliveryReceipts.Boolean()
 }
 
 // used for view

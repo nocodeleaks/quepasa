@@ -635,11 +635,6 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 		logentry.Infof("send success, type: %v, on: %s", msg.Type, msg.Timestamp)
 	}
 
-	// testing, mark read function
-	if source.GetHandlers().HandleReadUpdate() {
-		go source.GetHandlers().MarkRead(msg, types.ReceiptTypeRead)
-	}
-
 	return msg, err
 }
 

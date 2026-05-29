@@ -11,6 +11,7 @@ func buildSessionConfigurationPatch(request interface{}) *runtime.SessionConfigu
 			patch.Groups = req.Groups
 			patch.Broadcasts = req.Broadcasts
 			patch.ReadReceipts = req.ReadReceipts
+			patch.DeliveryReceipts = req.DeliveryReceipts
 			patch.Calls = req.Calls
 			patch.ReadUpdate = req.ReadUpdate
 			patch.Direct = req.Direct
@@ -21,6 +22,7 @@ func buildSessionConfigurationPatch(request interface{}) *runtime.SessionConfigu
 			patch.Groups = req.Groups
 			patch.Broadcasts = req.Broadcasts
 			patch.ReadReceipts = req.ReadReceipts
+			patch.DeliveryReceipts = req.DeliveryReceipts
 			patch.Calls = req.Calls
 			patch.ReadUpdate = req.ReadUpdate
 			patch.Direct = req.Direct

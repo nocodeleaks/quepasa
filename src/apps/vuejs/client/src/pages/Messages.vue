@@ -137,206 +137,171 @@
     </div>
 
     <div v-else class="messages-list">
-      <div v-for="msg in filteredMessages" :key="msg.id" :id="'msg-'+msg.id" class="message-card" :class="{ 'from-me': msg.fromme, 'has-exceptions': msg.exceptions?.length > 0 }">
-        <div class="message-header">
-          <div class="message-sender">
-            <div v-if="contactPicMap[msg.chat?.id]" class="sender-avatar sender-avatar-img">
-              <img :src="contactPicMap[msg.chat?.id]" class="avatar-img" @error="handleAvatarError(msg.chat?.id)" />
-            </div>
-            <div v-else class="sender-avatar" :style="{ background: getAvatarColor(msg.chat?.id || msg.from) }">
-              {{ getInitial(msg.chat?.title || msg.from) }}
-            </div>
-            <div class="sender-info">
-              <span class="sender-name">{{ getSenderDisplayName(msg) }}</span>
-              <span class="sender-phone">{{ msg.fromme ? (serverNumber || msg.chat?.id || msg.from) : (msg.chat?.id || msg.from) }}</span>
-              <small v-if="msg.chat?.lid || msg.chat?.LId" class="sender-lid">{{ t('messages_lid_label') }}: {{ msg.chat?.lid || msg.chat?.LId }}</small>
-              <small v-if="msg.chat?.title" class="chat-title">{{ t('messages_chat_label') }}: {{ msg.chat.title }}</small>
-            </div>
-          </div>
-          <div class="message-meta">
-            <div class="message-time">
-              {{ formatTime(msg.timestamp) }}
-            </div>
-            <div class="message-badges">
-              <span v-if="msg.fromme" class="badge badge-sent">{{ t('messages_badge_sent') }}</span>
-              <span v-else class="badge badge-received">{{ t('messages_badge_received') }}</span>
-              <span v-if="msg.status" class="badge badge-status">{{ msg.status }}</span>
-              <span v-if="msg.edited" class="badge badge-warning">{{ t('messages_badge_edited') }}</span>
-              <span v-if="msg.fromhistory" class="badge badge-secondary">{{ t('messages_badge_history') }}</span>
-              <span v-if="msg.ads" class="badge badge-danger">{{ t('messages_badge_ad') }}</span>
-            </div>
-            <button class="btn-small" @click="archiveChat(msg)" :disabled="archiving[msg.chat?.id]">{{ archiving[msg.chat?.id] ? t('messages_archiving_btn') : t('messages_archive_btn') }}</button>
-          </div>
-        </div>
+      <div v-for="msg in filteredMessages" :key="msg.id" :id="'msg-'+msg.id"
+        class="mc" :class="{ 'mc--me': msg.fromme, 'mc--err': msg.exceptions?.length > 0 }">
 
-        <!-- Participant (for groups) -->
-        <div v-if="msg.participant" class="message-participant">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-          </svg>
-          <div>
-            <div class="participant-field" style="display:flex;gap:8px;align-items:center">
-              <strong>{{ t('messages_number_label') }}:</strong>
-              <div style="display:flex;align-items:center;gap:8px">
-                <img v-if="contactPicMap[msg.participant?.id || msg.participant?.phone]" :src="contactPicMap[msg.participant?.id || msg.participant?.phone]" :alt="t('messages_avatar_alt')" class="participant-avatar" @error="handleAvatarError(msg.participant?.id || msg.participant?.phone)" />
-                <span>{{ msg.participant.phone }}</span>
+        <!-- HEADER -->
+        <div class="mc-header">
+          <div v-if="contactPicMap[msg.chat?.id]" class="mc-avatar mc-avatar--img">
+            <img :src="contactPicMap[msg.chat?.id]" @error="handleAvatarError(msg.chat?.id)" />
+          </div>
+          <div v-else class="mc-avatar" :style="{ background: getAvatarColor(msg.chat?.id || msg.from) }">
+            {{ getInitial(msg.chat?.title || msg.from) }}
+          </div>
+
+          <div class="mc-identity">
+            <div class="mc-identity-main">
+              <span class="mc-name">{{ getSenderDisplayName(msg) }}</span>
+              <span class="mc-phone">{{ msg.fromme ? (serverNumber || msg.chat?.id || msg.from) : (msg.chat?.id || msg.from) }}</span>
+              <span v-if="msg.chat?.title" class="mc-chat">{{ msg.chat.title }}</span>
+            </div>
+            <!-- participante ao lado direito -->
+            <div v-if="msg.participant" class="mc-participant">
+              <img v-if="contactPicMap[msg.participant?.id || msg.participant?.phone]"
+                :src="contactPicMap[msg.participant?.id || msg.participant?.phone]"
+                class="mc-participant-avatar"
+                @error="handleAvatarError(msg.participant?.id || msg.participant?.phone)" />
+              <div v-else class="mc-participant-avatar mc-participant-avatar--initial"
+                :style="{ background: getAvatarColor(msg.participant?.id || msg.participant?.phone) }">
+                {{ getInitial(msg.participant?.title || msg.participant?.phone) }}
+              </div>
+              <div class="mc-participant-info">
+                <span class="mc-participant-name">{{ getParticipantDisplayName(msg) }}</span>
+                <span class="mc-participant-phone">{{ msg.participant.phone }}</span>
+                <span v-if="msg.participant.id" class="mc-participant-lid">{{ msg.participant.id }}</span>
               </div>
             </div>
-            <div class="participant-field"><strong>{{ t('messages_lid_short_label') }}:</strong> {{ msg.participant.id }}</div>
-            <div class="participant-field"><strong>{{ t('messages_name_label') }}:</strong> {{ getParticipantDisplayName(msg) }}</div>
-            <div v-if="msg.participant?.title" class="participant-field"><strong>{{ t('messages_title_label') }}:</strong> {{ msg.participant.title }}</div>
-            <small v-if="msg.participant.lid || msg.participant.LId" class="participant-lid">{{ t('messages_lid_label') }}: {{ msg.participant.lid || msg.participant.LId }}</small>
+          </div>
+
+          <div class="mc-meta">
+            <span class="mc-time">{{ formatTime(msg.timestamp) }}</span>
+            <div class="mc-badges">
+              <span v-if="msg.fromme" class="badge badge-sent">{{ t('messages_badge_sent') }}</span>
+              <span v-else class="badge badge-received">{{ t('messages_badge_received') }}</span>
+              <span v-if="msg.status === 'read'" class="badge badge-read">✓✓ {{ t('messages_badge_read') }}</span>
+              <span v-else-if="msg.status" class="badge badge-status">{{ msg.status }}</span>
+              <span v-if="msg.fromhistory" class="badge badge-history">{{ t('messages_badge_history') }}</span>
+              <span v-if="msg.isforwarded || msg.forwarded" class="badge badge-forward">{{ t('messages_badge_forwarded') }}</span>
+              <span v-if="msg.isbroadcast || msg.broadcast" class="badge badge-broadcast">{{ t('messages_badge_broadcast') }}</span>
+              <span v-if="msg.edited" class="badge badge-warning">{{ t('messages_badge_edited') }}</span>
+              <span v-if="msg.ads" class="badge badge-danger">{{ t('messages_badge_ad') }}</span>
+            </div>
+            <button class="mc-btn-archive btn-small" @click="archiveChat(msg)" :disabled="archiving[msg.chat?.id]">
+              {{ archiving[msg.chat?.id] ? t('messages_archiving_btn') : t('messages_archive_btn') }}
+            </button>
           </div>
         </div>
 
-        <div class="message-body">
-          <!-- Text message / Debug JSON handling -->
-          <div v-if="msg.text" class="message-text">
+        <!-- BODY -->
+        <div class="mc-body">
+          <!-- resposta a -->
+          <div v-if="msg.inreply" class="mc-inreply">
+            ↩ {{ t('messages_in_reply') }} <a :href="'#msg-'+msg.inreply">{{ msg.inreply }}</a>
+          </div>
+
+          <!-- texto / json -->
+          <div v-if="msg.text" class="mc-text">
             <div v-if="isLikelyJson(msg.text)" class="json-message">
               <div class="json-controls">
                 <button class="btn-small" @click="toggleCollapse(msg.id)">{{ collapsed[msg.id] ? t('messages_json_hide') : t('messages_json_show') }}</button>
                 <button class="btn-small" @click="copyText(extractJsonFromText(msg.text))">{{ t('messages_json_copy') }}</button>
-                <button v-if="msg.debug && msg.debug.event === 'ProtocolMessage' && msg.debug.reason && msg.debug.reason.includes('history sync')" class="btn-small" @click.prevent="downloadHistory(msg)" :disabled="fetchingDownload[msg.id]">
+                <button v-if="msg.debug?.event === 'ProtocolMessage' && msg.debug?.reason?.includes('history sync')"
+                  class="btn-small" @click.prevent="downloadHistory(msg)" :disabled="fetchingDownload[msg.id]">
                   {{ fetchingDownload[msg.id] ? t('messages_downloading') : t('messages_download_media') }}
                 </button>
               </div>
               <pre v-if="collapsed[msg.id]" class="json-block">{{ prettyJson(msg.text) }}</pre>
               <div v-else class="json-collapsed">{{ t('messages_json_summary', [msg.id]) }}</div>
             </div>
-            <div v-else>
-              {{ msg.text }}
+            <span v-else>{{ msg.text }}</span>
+          </div>
+
+          <!-- anúncio -->
+          <div v-if="msg.ads" class="mc-ads">
+            <img v-if="adThumbnailUrl(msg.ads)" :src="adThumbnailUrl(msg.ads)" class="mc-ads-thumb" />
+            <div class="mc-ads-info">
+              <strong>{{ msg.ads.title }}</strong>
+              <span v-if="msg.ads.app || msg.ads.type" class="mc-ads-meta">
+                {{ [msg.ads.app, msg.ads.type].filter(Boolean).join(' · ') }}
+              </span>
+              <a v-if="msg.ads.sourceurl" :href="msg.ads.sourceurl" target="_blank" class="mc-ads-link">{{ t('messages_ad_link') }}</a>
             </div>
           </div>
 
-          <!-- URL Preview -->
-          <div v-if="msg.url" class="message-url">
-            <div class="url-preview">
+          <!-- url preview -->
+          <div v-if="msg.url" class="mc-url">
+            <img v-if="urlThumbnailUrl(msg.url)" :src="urlThumbnailUrl(msg.url)" class="mc-url-thumb" />
+            <div class="mc-url-info">
               <strong>{{ msg.url.title }}</strong>
-              <p v-if="msg.url.description">{{ msg.url.description }}</p>
-              <a :href="msg.url.reference" target="_blank" class="url-link">{{ msg.url.reference }}</a>
-            </div>
-            <div v-if="urlThumbnailUrl(msg.url)" class="url-thumbnail">
-                <img :src="urlThumbnailUrl(msg.url)" :alt="t('messages_url_thumbnail_alt')" />
+              <span v-if="msg.url.description" class="mc-url-desc">{{ msg.url.description }}</span>
+              <a :href="msg.url.reference" target="_blank" class="mc-url-link">{{ msg.url.reference }}</a>
             </div>
           </div>
 
-          <!-- Ads Info -->
-          <div v-if="msg.ads" class="message-ads">
-            <div class="ads-header">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-              </svg>
-              <span>{{ t('messages_badge_ad') }}: {{ msg.ads.title }} <small v-if="msg.ads.id">(#{{ msg.ads.id }})</small></span>
-            </div>
-            <div class="ads-meta">
-              <div v-if="msg.ads.sourceId"><strong>{{ t('messages_ad_source_label') }}</strong> {{ msg.ads.sourceId }}</div>
-              <div v-if="msg.ads.app"><strong>{{ t('messages_ad_app_label') }}</strong> {{ msg.ads.app }}</div>
-              <div v-if="msg.ads.type"><strong>{{ t('messages_ad_type_label') }}</strong> {{ msg.ads.type }}</div>
-            </div>
-            <div v-if="adThumbnailUrl(msg.ads)" class="ads-thumbnail">
-              <img :src="adThumbnailUrl(msg.ads)" :alt="t('messages_ad_thumbnail_alt')" />
-            </div>
-            <a v-if="msg.ads.sourceurl" :href="msg.ads.sourceurl" target="_blank" class="ads-link">{{ t('messages_ad_link') }}</a>
-          </div>
-
-          <!-- Media attachment -->
-          <div v-if="msg.attachment" class="message-attachment">
-            <div v-if="isImageMessage(msg)" class="attachment-image">
-              <img :src="getMediaUrl(msg)" :alt="getFilename(msg.attachment)" @error="handleImageError" />
-              <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" target="_blank" class="btn-download" :download="getFilename(msg.attachment)">{{ t('messages_open') }}</a>
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download') }}</a>
+          <!-- mídia -->
+          <div v-if="msg.attachment" class="mc-media">
+            <div v-if="isImageMessage(msg)">
+              <img :src="getMediaUrl(msg)" :alt="getFilename(msg.attachment)" @error="handleImageError" class="mc-img" />
+              <div class="mc-media-actions">
+                <a :href="getMediaUrl(msg)" target="_blank" class="btn-small">{{ t('messages_open') }}</a>
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-small">{{ t('messages_download') }}</a>
               </div>
             </div>
-
-            <div v-else-if="isAudioMessage(msg)" class="attachment-audio">
-              <audio controls :src="getMediaUrl(msg)"></audio>
-              <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download_audio') }}</a>
+            <div v-else-if="isAudioMessage(msg)">
+              <audio controls :src="getMediaUrl(msg)" class="mc-audio"></audio>
+              <div class="mc-media-actions">
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-small">{{ t('messages_download_audio') }}</a>
               </div>
             </div>
-
-            <div v-else-if="isVideoMessage(msg)" class="attachment-video">
-              <video controls :src="getMediaUrl(msg)"></video>
-              <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download_video') }}</a>
+            <div v-else-if="isVideoMessage(msg)">
+              <video controls :src="getMediaUrl(msg)" class="mc-video"></video>
+              <div class="mc-media-actions">
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-small">{{ t('messages_download_video') }}</a>
               </div>
             </div>
-
-            <div v-else-if="isPdf(msg.attachment)" class="attachment-file">
-              <div class="file-info">
-                <span class="file-name">{{ getFilename(msg.attachment) }}</span>
-                <span class="file-size">{{ formatSize(getFileLength(msg.attachment)) }}</span>
+            <div v-else class="mc-file">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" class="mc-file-icon"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              <div class="mc-file-info">
+                <span class="mc-file-name">{{ getFilename(msg.attachment) }}</span>
+                <span class="mc-file-meta">{{ getMimetype(msg.attachment) }}<template v-if="getFileLength(msg.attachment)"> · {{ formatSize(getFileLength(msg.attachment)) }}</template></span>
               </div>
-              <div class="attachment-actions">
-                <a :href="getMediaUrl(msg)" target="_blank" class="btn-download">{{ t('messages_open_pdf') }}</a>
-                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">{{ t('messages_download') }}</a>
+              <div class="mc-media-actions">
+                <a v-if="isPdf(msg.attachment)" :href="getMediaUrl(msg)" target="_blank" class="btn-small">{{ t('messages_open_pdf') }}</a>
+                <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-small">{{ t('messages_download') }}</a>
               </div>
-            </div>
-
-            <div v-else class="attachment-file">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-              </svg>
-              <div class="file-info">
-                <span class="file-name">{{ getFilename(msg.attachment) }}</span>
-                <span class="file-size">{{ formatSize(getFileLength(msg.attachment)) }}</span>
-              </div>
-              <a :href="getMediaUrl(msg)" :download="getFilename(msg.attachment)" class="btn-download">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                </svg>
-              </a>
-            </div>
-
-            <div class="attachment-status">
-              <span v-if="isAttachmentValid(msg.attachment)" class="badge badge-success">{{ t('messages_valid') }}</span>
-              <span v-else class="badge badge-danger">{{ t('messages_invalid') }}</span>
-            </div>
-            <div class="attachment-meta">
-              <span class="mime-type">{{ getMimetype(msg.attachment) }}</span>
             </div>
           </div>
 
-          <!-- In Reply -->
-          <div v-if="msg.inreply" class="message-reply">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/>
-            </svg>
-            <span>{{ t('messages_in_reply') }} <a :href="'#msg-'+msg.inreply">{{ msg.inreply }}</a></span>
-          </div>
-
-          <!-- Exceptions (dispatch errors) -->
-          <div v-if="msg.exceptions?.length > 0" class="message-exceptions">
-            <div class="exceptions-header">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
-              </svg>
-              <span>{{ t('messages_dispatch_errors') }}</span>
-            </div>
-            <ul class="exceptions-list">
+          <!-- erros -->
+          <div v-if="msg.exceptions?.length > 0" class="mc-exceptions">
+            ⚠ {{ t('messages_dispatch_errors') }}
+            <ul>
               <li v-for="(ex, i) in msg.exceptions" :key="i">{{ ex }}</li>
             </ul>
           </div>
         </div>
 
-        <div class="message-footer">
-          <span class="message-id">{{ t('messages_id_label') }}: {{ msg.id }}</span>
-          <span v-if="msg.trackid" class="message-trackid">{{ t('messages_track_label') }}: {{ msg.trackid }}</span>
-          <span class="message-type">{{ msg.type }}</span>
-          <div class="message-actions">
+        <!-- FOOTER -->
+        <div class="mc-footer">
+          <span class="mc-id">{{ msg.id }}</span>
+          <span v-if="msg.trackid" class="mc-trackid">{{ msg.trackid }}</span>
+          <div class="mc-actions">
+            <span class="mc-type">{{ msg.type }}</span>
             <template v-if="editing[msg.id]">
               <input v-model="editContent[msg.id]" class="edit-input" />
-              <button class="btn-small me-1" @click="saveEdit(msg)">{{ t('messages_save_edit') }}</button>
+              <button class="btn-small" @click="saveEdit(msg)">{{ t('messages_save_edit') }}</button>
               <button class="btn-small" @click="cancelEdit(msg)">{{ t('messages_cancel_edit') }}</button>
             </template>
             <template v-else>
-              <button v-if="msg.fromme" class="btn-small me-1" @click="startEdit(msg)">{{ t('messages_edit') }}</button>
-              <button v-if="msg.type !== 'system'" class="btn-small me-1" @click="revokeMessage(msg)">{{ t('messages_revoke_btn') }}</button>
-              <button class="btn-small" @click="sendPresence(msg)" :disabled="presenceLoading[msg.chat?.id]">{{ presenceLoading[msg.chat?.id] ? t('messages_sending') : t('messages_show_presence') }}</button>
+              <button v-if="msg.fromme" class="btn-small" @click="startEdit(msg)">{{ t('messages_edit') }}</button>
+              <button v-if="msg.type !== 'system'" class="btn-small btn-revoke" @click="revokeMessage(msg)">{{ t('messages_revoke_btn') }}</button>
+              <button class="btn-small" @click="sendPresence(msg)" :disabled="presenceLoading[msg.chat?.id]">
+                {{ presenceLoading[msg.chat?.id] ? t('messages_sending') : t('messages_show_presence') }}
+              </button>
             </template>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -419,9 +384,6 @@ export default defineComponent({
     // presence and archive state
     const presenceLoading = reactive<Record<string, boolean>>({})
     const archiving = reactive<Record<string, boolean>>({})
-
-    // contact search results (simple)
-    const contactSearchResults = ref<any[]>([])
 
     function extractJsonFromText(text: string) {
       const first = text.indexOf('{')
@@ -566,7 +528,7 @@ export default defineComponent({
             // do not fetch if already present
             if (contactPicMap[id]) continue
             const p = api.post('/api/media/pictures/info', { token, chatId: id })
-              .then(res => {
+              .then((res: any) => {
                 if (res && res.data && res.data.info && res.data.info.url) {
                   contactPicMap[id] = res.data.info.url
                 }
@@ -868,6 +830,21 @@ export default defineComponent({
             }
 
             const incoming = payload.message
+
+            // Read receipts: id is the literal string "readreceipt" and
+            // the actual referenced message id lives in the text field.
+            // Update the existing message status instead of adding a new card.
+            if (incoming.id === 'readreceipt') {
+              const targetId = incoming.text  // original message id
+              if (targetId) {
+                const idx = messages.value.findIndex(m => m.id === targetId)
+                if (idx !== -1) {
+                  messages.value[idx] = { ...messages.value[idx], status: 'read' }
+                }
+              }
+              return
+            }
+
             const exists = messages.value.some(m => m.id === incoming.id)
             if (!exists) {
               messages.value.unshift(incoming)
@@ -879,7 +856,7 @@ export default defineComponent({
               const chatId = incoming.chat?.id
               if (canLoadProfilePicture(chatId) && !contactPicMap[chatId]) {
                 api.post('/api/media/pictures/info', { token, chatId })
-                  .then(res => {
+                  .then((res: any) => {
                     if (res?.data?.info?.url) {
                       contactPicMap[chatId] = res.data.info.url
                     }
@@ -897,7 +874,7 @@ export default defineComponent({
       {
         token,
         subscribeToken: true,
-        onConnectError: (err) => {
+        onConnectError: (err: unknown) => {
           console.error('Messages: cable connection error', err)
           wsConnected.value = false
         },
@@ -1235,363 +1212,168 @@ export default defineComponent({
   margin: 0;
 }
 
-.messages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+/* ── LIST ── */
+.messages-list { display: flex; flex-direction: column; gap: 8px; }
 
-.message-card {
+/* ── CARD ── */
+.mc {
   background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  border-left: 3px solid transparent;
 }
+.mc--me  { border-left-color: #7C3AED; }
+.mc--err { border-left-color: #dc2626; }
 
-.message-card.from-me {
-  border-left: 4px solid #7C3AED;
-}
-
-.message-header {
+/* ── HEADER: avatar | identidade | meta ── */
+.mc-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
-
-.message-sender {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.sender-avatar {
-  width: 40px;
-  height: 40px;
+.mc-avatar {
+  width: 36px; height: 36px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 16px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 14px;
+  overflow: hidden;
 }
-
-.sender-info {
+.mc-avatar--img img { width: 36px; height: 36px; object-fit: cover; display: block; }
+.mc-identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.mc-identity-main {
   display: flex;
   flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
-
-.sender-name {
-  font-weight: 600;
-  color: #111827;
-}
-
-.sender-phone {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.message-meta {
+.mc-name  { font-weight: 600; font-size: 13px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-phone { font-size: 11px; color: #6b7280; font-family: monospace; }
+.mc-chat  { font-size: 11px; color: #7C3AED; }
+.mc-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
-}
-
-.message-time {
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.message-badges {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
-  justify-content: flex-end;
+  flex-shrink: 0;
 }
+.mc-time { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+.mc-badges { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; }
+.mc-btn-archive { white-space: nowrap; }
 
+/* ── BADGES ── */
 .badge {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: .02em;
 }
+.badge-sent      { background: #f5efff; color: #7C3AED; }
+.badge-received  { background: #ecfdf5; color: #059669; }
+.badge-read      { background: #eff6ff; color: #2563eb; }
+.badge-status    { background: #eff6ff; color: #2563eb; }
+.badge-warning   { background: #fefce8; color: #ca8a04; }
+.badge-history   { background: #f3f4f6; color: #6b7280; }
+.badge-forward   { background: #fff7ed; color: #c2410c; }
+.badge-broadcast { background: #fdf4ff; color: #9333ea; }
+.badge-danger    { background: #fef2f2; color: #dc2626; }
+.badge-success   { background: #f0fdf4; color: #16a34a; }
+.badge-secondary { background: #f3f4f6; color: #6b7280; }
 
-.badge-sent {
-  background: #f5efff;
-  color: #7C3AED;
+/* ── PARTICIPANTE ── */
+.mc-participant {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px;
+  background: #eef6ff; border: 1px solid #bfdbfe;
+  border-radius: 8px; flex-shrink: 0;
 }
+.mc-participant-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+}
+.mc-participant-avatar--initial {
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 11px;
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+}
+.mc-participant-info { display: flex; flex-direction: column; gap: 1px; }
+.mc-participant-name  { font-size: 12px; font-weight: 700; color: #2563eb; }
+.mc-participant-phone { font-size: 11px; color: #4b5563; font-family: monospace; }
+.mc-participant-lid   { font-size: 10px; color: #9ca3af; font-family: monospace; }
 
-.badge-received {
-  background: #ecfdf5;
-  color: #059669;
-}
+/* ── BODY ── */
+.mc-body { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.mc-inreply { font-size: 11px; color: #6b7280; }
+.mc-inreply a { color: #7C3AED; text-decoration: none; }
+.mc-text { font-size: 13px; color: #1f2937; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 
-.badge-status {
-  background: #eff6ff;
-  color: #2563eb;
+/* anúncio */
+.mc-ads {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px; background: #fff5f5;
+  border: 1px solid #fecaca; border-radius: 8px;
 }
+.mc-ads-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.mc-ads-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-ads-info strong { font-size: 12px; color: #be123c; }
+.mc-ads-meta { font-size: 11px; color: #6b7280; }
+.mc-ads-link { font-size: 11px; color: #dc2626; text-decoration: none; }
+.mc-ads-link:hover { text-decoration: underline; }
 
-.badge-warning {
-  background: #fefce8;
-  color: #ca8a04;
+/* url */
+.mc-url {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 8px; background: #f9fafb;
+  border: 1px solid #e5e7eb; border-radius: 8px;
 }
+.mc-url-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.mc-url-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mc-url-info strong { font-size: 12px; color: #111827; }
+.mc-url-desc { font-size: 11px; color: #6b7280; margin: 0; }
+.mc-url-link { font-size: 11px; color: #7C3AED; text-decoration: none; word-break: break-all; }
+.mc-url-link:hover { text-decoration: underline; }
 
-.badge-secondary {
-  background: #f3f4f6;
-  color: #6b7280;
-}
+/* mídia */
+.mc-img  { max-width: 240px; max-height: 240px; border-radius: 8px; display: block; cursor: pointer; }
+.mc-audio { width: 100%; max-width: 320px; }
+.mc-video { max-width: 100%; max-height: 240px; border-radius: 8px; display: block; }
+.mc-media-actions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
 
-.badge-danger {
-  background: #fef2f2;
-  color: #dc2626;
+.mc-file {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: #f3f4f6; border-radius: 8px;
 }
+.mc-file-icon { color: #6b7280; flex-shrink: 0; }
+.mc-file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mc-file-name { font-weight: 600; font-size: 12px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-file-meta { font-size: 10px; color: #9ca3af; font-family: monospace; }
 
-.message-participant {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  background: #f9fafb;
-  border-radius: 8px;
-  width: fit-content;
+/* erros */
+.mc-exceptions {
+  font-size: 12px; color: #dc2626; padding: 6px 8px;
+  background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px;
 }
+.mc-exceptions ul { margin: 4px 0 0; padding-left: 14px; color: #991b1b; }
+.mc-exceptions li { margin-bottom: 2px; }
 
-.message-participant svg {
-  flex-shrink: 0;
+/* ── FOOTER ── */
+.mc-footer {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-top: 8px; border-top: 1px solid #f3f4f6;
 }
-.message-participant .participant-field { font-size: 13px; color: #374151 }
-.message-participant .participant-lid { display:block; font-size:12px; color:#6b7280; margin-top:4px }
-
-.message-body {
-  margin-bottom: 12px;
-}
-
-.message-text {
-  color: #374151;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.message-attachment {
-  margin-top: 12px;
-}
-
-.attachment-meta {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.mime-type {
-  font-family: monospace;
-}
-
-.message-url {
-  margin-top: 12px;
-}
-
-.url-preview {
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border-left: 3px solid #7C3AED;
-}
-
-.url-preview strong {
-  display: block;
-  color: #111827;
-  margin-bottom: 4px;
-}
-
-.url-preview p {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0 0 8px;
-}
-
-.url-link {
-  font-size: 12px;
-  color: #7C3AED;
-  text-decoration: none;
-  word-break: break-all;
-}
-
-.url-link:hover {
-  text-decoration: underline;
-}
-
-.message-ads {
-  margin-top: 12px;
-  padding: 10px;
-  background: #fef2f2;
-  border-radius: 8px;
-  border-left: 3px solid #dc2626;
-}
-
-.ads-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #dc2626;
-  font-weight: 600;
-}
-
-.ads-link {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: #dc2626;
-  text-decoration: none;
-}
-
-.ads-link:hover {
-  text-decoration: underline;
-}
-
-.message-reply {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 8px;
-  padding: 6px 10px;
-  background: #f3f4f6;
-  border-radius: 8px;
-}
-
-.message-reply svg {
-  flex-shrink: 0;
-}
-
-.message-exceptions {
-  margin-top: 12px;
-  padding: 10px;
-  background: #fef2f2;
-  border-radius: 8px;
-}
-
-.exceptions-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #dc2626;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.exceptions-list {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 12px;
-  color: #991b1b;
-}
-
-.exceptions-list li {
-  margin-bottom: 4px;
-}
-
-.message-card.has-exceptions {
-  border-left: 4px solid #dc2626;
-}
-
-.attachment-image img {
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.attachment-audio audio {
-  width: 100%;
-  max-width: 400px;
-}
-
-.attachment-video video {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 12px;
-}
-
-.attachment-file {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f3f4f6;
-  border-radius: 12px;
-}
-
-.attachment-file svg {
-  color: #6b7280;
-}
-
-.file-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.file-name {
-  font-weight: 600;
-  color: #111827;
-}
-
-.file-size {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.btn-download {
-  padding: 8px;
-  background: #7C3AED;
-  border-radius: 8px;
-  color: white;
-}
-
-.message-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
-}
-
-.message-id {
-  font-size: 11px;
-  color: #9ca3af;
-  font-family: monospace;
-}
-
-.message-trackid {
-  font-size: 11px;
-  color: #9ca3af;
-  font-family: monospace;
-}
-
-.message-type {
-  font-size: 11px;
-  padding: 2px 6px;
-  background: #f3f4f6;
-  color: #6b7280;
-  border-radius: 4px;
-  font-family: monospace;
-  margin-left: auto;
-}
-.sender-lid{ display:block; font-size:12px; color:#6b7280 }
-.sender-avatar-img{ padding:0; overflow:hidden; }
-.sender-avatar-img .avatar-img{ width:40px; height:40px; border-radius:50%; object-fit:cover; display:block }
+.mc-id      { font-size: 10px; color: #d1d5db; font-family: monospace; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-trackid { font-size: 10px; color: #d1d5db; font-family: monospace; }
+.mc-actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.mc-type    { font-size: 10px; padding: 1px 5px; background: #f3f4f6; color: #9ca3af; border-radius: 3px; font-family: monospace; }
+.btn-revoke { background: #fef2f2 !important; border-color: #fecaca !important; color: #dc2626 !important; }
+.btn-revoke:hover:not(:disabled) { background: #fee2e2 !important; }
 
 /* Pagination Controls */
 .pagination-controls {
@@ -1758,17 +1540,27 @@ html[data-theme='dark'] .btn-small:hover {
   background: rgba(51, 65, 85, 0.96);
 }
 
-html[data-theme='dark'] .message-type {
-  background: rgba(30, 41, 59, 0.94);
-  color: #cbd5e1;
+html[data-theme='dark'] .mc {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(71, 85, 105, 0.3);
 }
-
-html[data-theme='dark'] .attachment-file {
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(71, 85, 105, 0.24);
-}
-
-html[data-theme='dark'] .btn-download {
-  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.24);
-}
+html[data-theme='dark'] .mc-name    { color: #f1f5f9; }
+html[data-theme='dark'] .mc-phone   { color: #94a3b8; }
+html[data-theme='dark'] .mc-chat    { color: #a78bfa; }
+html[data-theme='dark'] .mc-time    { color: #64748b; }
+html[data-theme='dark'] .mc-text    { color: #e2e8f0; }
+html[data-theme='dark'] .mc-footer  { border-top-color: rgba(71, 85, 105, 0.2); }
+html[data-theme='dark'] .mc-id,
+html[data-theme='dark'] .mc-trackid { color: #475569; }
+html[data-theme='dark'] .mc-type    { background: rgba(30, 41, 59, 0.9); color: #94a3b8; }
+html[data-theme='dark'] .mc-file    { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(71,85,105,0.2); }
+html[data-theme='dark'] .mc-file-name { color: #e2e8f0; }
+html[data-theme='dark'] .mc-participant { background: rgba(12, 74, 110, 0.3); border-color: rgba(56, 189, 248, 0.25); }
+html[data-theme='dark'] .mc-participant-name  { color: #38bdf8; }
+html[data-theme='dark'] .mc-participant-phone { color: #94a3b8; }
+html[data-theme='dark'] .mc-participant-lid   { color: #64748b; }
+html[data-theme='dark'] .mc-ads  { background: rgba(127, 29, 29, 0.18); border-color: rgba(239,68,68,0.2); }
+html[data-theme='dark'] .mc-url  { background: rgba(30, 41, 59, 0.6);  border-color: rgba(71,85,105,0.2); }
+html[data-theme='dark'] .mc-url-info strong { color: #f1f5f9; }
+html[data-theme='dark'] .mc-exceptions { background: rgba(127, 29, 29, 0.18); border-color: rgba(239,68,68,0.2); }
 </style>

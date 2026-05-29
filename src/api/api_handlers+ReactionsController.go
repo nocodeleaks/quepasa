@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
@@ -63,6 +64,14 @@ func SendReactionController(w http.ResponseWriter, r *http.Request) {
 		response.ParseError(fmt.Errorf("invalid request body: %w", err))
 		RespondInterface(w, response)
 		return
+	}
+
+	// Fall back to header/query/path parameters when not set in the JSON body
+	if request.ChatId == "" {
+		request.ChatId = library.GetRequestParameter(r, "chatid")
+	}
+	if request.MessageId == "" {
+		request.MessageId = library.GetRequestParameter(r, "messageid")
 	}
 
 	if request.ChatId == "" {
@@ -138,6 +147,14 @@ func RemoveReactionController(w http.ResponseWriter, r *http.Request) {
 		response.ParseError(fmt.Errorf("invalid request body: %w", err))
 		RespondInterface(w, response)
 		return
+	}
+
+	// Fall back to header/query/path parameters when not set in the JSON body
+	if request.ChatId == "" {
+		request.ChatId = library.GetRequestParameter(r, "chatid")
+	}
+	if request.MessageId == "" {
+		request.MessageId = library.GetRequestParameter(r, "messageid")
 	}
 
 	if request.ChatId == "" {

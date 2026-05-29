@@ -12,6 +12,7 @@ type EnvironmentSettingsPreview struct {
 	Groups            string `json:"groups"`
 	Broadcasts        string `json:"broadcasts"`
 	ReadReceipts      string `json:"read_receipts"`
+	DeliveryReceipts  string `json:"delivery_receipts"`
 	Calls             string `json:"calls"`
 	HistorySync       string `json:"history_sync"`
 	LogLevel          string `json:"log_level"`
@@ -30,6 +31,7 @@ func GetPreview() *EnvironmentSettingsPreview {
 		Groups:            formatBooleanExtended(Settings.WhatsApp.Groups),
 		Broadcasts:        formatBooleanExtended(Settings.WhatsApp.Broadcasts),
 		ReadReceipts:      formatBooleanExtended(Settings.WhatsApp.ReadReceipts),
+		DeliveryReceipts:  formatBooleanExtended(Settings.WhatsApp.DeliveryReceipts),
 		Calls:             formatBooleanExtended(Settings.WhatsApp.Calls),
 		HistorySync:       formatHistorySync(Settings.WhatsApp.HistorySyncDays),
 		LogLevel:          formatLogLevel(Settings.Whatsmeow.LogLevel),

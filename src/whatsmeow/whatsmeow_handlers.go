@@ -141,6 +141,20 @@ func (source *WhatsmeowHandlers) HandleReadReceipts() bool {
 	return serviceOptions.HandleReadReceipts(defaultValue)
 }
 
+func (source *WhatsmeowHandlers) HandleDeliveryReceipts() bool {
+	if source == nil {
+		return false
+	}
+
+	var defaultValue whatsapp.WhatsappBoolean
+	if source.WhatsappOptions != nil {
+		defaultValue = source.WhatsappOptions.DeliveryReceipts
+	}
+
+	serviceOptions := source.GetServiceOptions()
+	return serviceOptions.HandleDeliveryReceipts(defaultValue)
+}
+
 func (source *WhatsmeowHandlers) HandleCalls() bool {
 	if source == nil {
 		return false
@@ -846,6 +860,25 @@ func (source *WhatsmeowHandlers) Receipt(evt events.Receipt) {
 
 		sublogentry := logentry.WithField(LogFields.MessageId, id)
 		sublogentry.Debugf("updated status: %s", status)
+
+		if status.Uint32() == whatsapp.WhatsappMessageStatusDelivered.Uint32() {
+			if !source.HandleDeliveryReceipts() {
+				continue
+			}
+
+			sublogentry.Debugf("dispatching delivery receipt event, status: %s", status)
+
+			message := &whatsapp.WhatsappMessage{Content: evt}
+			message.Id = "deliveryreceipt"
+			message.Timestamp = evt.Timestamp
+			message.FromMe = false
+			message.Chat = *NewWhatsappChat(source, evt.Chat)
+			message.Type = whatsapp.SystemMessageType
+			message.Text = id
+
+			go source.WAHandlers.Receipt(message)
+			continue
+		}
 
 		if status.Uint32() != whatsapp.WhatsappMessageStatusRead.Uint32() {
 			continue

@@ -38,7 +38,7 @@ func RegisterAPIControllers(r chi.Router, includeUnversioned bool) {
 //	@Tags			Bot
 //	@Accept			json
 //	@Produce		json
-//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, direct, groups, broadcasts, readreceipts, calls, debug)
+//	@Param			action	query		string	true	"Command action"	Enums(start, stop, restart, direct, groups, broadcasts, readreceipts, deliveryreceipts, calls, debug)
 //	@Success		200		{object}	models.QpResponse
 //	@Failure		400		{object}	models.QpResponse
 //	@Security		ApiKeyAuth
@@ -100,6 +100,12 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			message := "readreceipts toggled: " + server.ReadReceipts.String()
 			response.ParseSuccess(message)
 		}
+	case "deliveryreceipts":
+		_, err := runtime.ToggleSessionOption(server, "deliveryreceipts")
+		if err == nil {
+			message := "deliveryreceipts toggled: " + server.DeliveryReceipts.String()
+			response.ParseSuccess(message)
+		}
 	case "calls":
 		_, err := runtime.ToggleSessionOption(server, "calls")
 		if err == nil {
@@ -113,7 +119,7 @@ func CommandController(w http.ResponseWriter, r *http.Request) {
 			response.ParseSuccess(message)
 		}
 	default:
-		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,direct,groups,broadcasts,readreceipts,calls,debug}", action)
+		err = fmt.Errorf("invalid action: {%s}, try {start,stop,restart,direct,groups,broadcasts,readreceipts,deliveryreceipts,calls,debug}", action)
 	}
 
 	if err != nil {

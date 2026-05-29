@@ -152,9 +152,7 @@
 
     <div class="details-section" v-if="server">
       <h2>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-        </svg>
+        <i class="fa fa-info-circle"></i>
         {{ t('server_info_title') }}
       </h2>
 
@@ -195,9 +193,7 @@
 
     <div class="options-section" v-if="server">
       <h2>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-          <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-        </svg>
+        <i class="fa fa-sliders-h"></i>
         {{ t('server_options_title') }}
       </h2>
 
@@ -205,9 +201,7 @@
         <div class="option-card history-sync-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
-              </svg>
+              <i class="fa fa-history option-icon"></i>
               <span class="option-title">{{ t('server_history_sync_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_history_sync_desc') }}</p>
@@ -218,9 +212,7 @@
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-              </svg>
+              <i class="fa fa-bullhorn option-icon"></i>
               <span class="option-title">{{ t('server_broadcasts_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_broadcasts_desc') }}</p>
@@ -235,9 +227,7 @@
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-              </svg>
+              <i class="fa fa-users option-icon"></i>
               <span class="option-title">{{ t('server_groups_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_groups_desc') }}</p>
@@ -252,9 +242,7 @@
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
-              </svg>
+              <i class="fa fa-check-double option-icon"></i>
               <span class="option-title">{{ t('server_readreceipts_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_readreceipts_desc') }}</p>
@@ -269,9 +257,22 @@
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
-              </svg>
+              <i class="fa fa-check option-icon"></i>
+              <span class="option-title">{{ t('server_deliveryreceipts_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_deliveryreceipts_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.deliveryreceipts"
+            @change="updateOption('deliveryreceipts', $event)"
+            :disabled="togglingOption === 'server-deliveryreceipts'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-phone option-icon"></i>
               <span class="option-title">{{ t('server_calls_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_calls_desc') }}</p>
@@ -286,9 +287,7 @@
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 11H7v-2h4v2zm6 0h-4v-2h4v2zm0-4H7V7h10v2z" />
-              </svg>
+              <i class="fa fa-comment option-icon"></i>
               <span class="option-title">{{ t('server_direct_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_direct_desc') }}</p>
@@ -303,9 +302,7 @@
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z" />
-              </svg>
+              <i class="fa fa-eye option-icon"></i>
               <span class="option-title">{{ t('server_readupdate_title') }}</span>
             </div>
             <p class="option-desc">{{ t('server_readupdate_desc') }}</p>
@@ -408,6 +405,7 @@ export default defineComponent({
       broadcasts: 0,
       groups: 0,
       readreceipts: 0,
+      deliveryreceipts: 0,
       calls: 0,
       direct: 0,
       readupdate: 0,
@@ -457,6 +455,7 @@ export default defineComponent({
         options.value.broadcasts = toTriState(summary.broadcasts)
         options.value.groups = toTriState(summary.groups)
         options.value.readreceipts = toTriState(summary.readReceipts ?? summary.readreceipts)
+        options.value.deliveryreceipts = toTriState(summary.deliveryReceipts ?? summary.deliveryreceipts)
         options.value.calls = toTriState(summary.calls)
         options.value.direct = toTriState(summary.direct)
         options.value.readupdate = toTriState(summary.readupdate)
@@ -1040,8 +1039,12 @@ export default defineComponent({
   margin-bottom: 6px;
 }
 
-.option-header svg {
+.option-header svg,
+.option-header .option-icon {
   color: var(--branding-primary, #7c3aed);
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
 }
 
 .option-title {

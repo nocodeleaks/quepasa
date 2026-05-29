@@ -92,7 +92,8 @@ code path.
 ## 📱 WhatsApp Configuration
 
 - **`READUPDATE`** - Global: Mark chat as read when receiving messages (default: `false`). Can be overridden per server.
-- **`READRECEIPTS`** - Handle read receipts (default: `false`)
+- **`READRECEIPTS`** - Dispatch read receipt events to webhooks/RabbitMQ (default: `false`)
+- **`DELIVERYRECEIPTS`** - Dispatch delivery receipt events to webhooks/RabbitMQ when a sent message is delivered (default: `false`)
 - **`CALLS`** - Handle calls (default: `false`)
 - **`GROUPS`** - Handle group messages (default: `false`)
 - **`BROADCASTS`** - Handle broadcast messages (default: `false`)
@@ -103,7 +104,7 @@ code path.
 
 ### Individual Server Configuration
 
-Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `READRECEIPTS`, and `BROADCASTS`:
+Each server can override global settings for `READUPDATE`, `GROUPS`, `CALLS`, `READRECEIPTS`, `DELIVERYRECEIPTS`, and `BROADCASTS`:
 - Set to `true` or `1` to enable for this specific server
 - Set to `false` or `-1` to disable for this specific server  
 - Leave unset to use global environment variable value

@@ -22,6 +22,9 @@ type Target interface {
 	IsSetReadReceipts() bool
 	GetReadReceipts() bool
 
+	IsSetDeliveryReceipts() bool
+	GetDeliveryReceipts() bool
+
 	IsSetGroups() bool
 	GetGroups() bool
 
@@ -110,7 +113,8 @@ func (service *DispatchService) DispatchHandlerFlow(request *HandlerFlowRequest)
 
 	isEvent := request.Payload.Type == whatsapp.UnhandledMessageType ||
 		request.Payload.Type == whatsapp.SystemMessageType ||
-		request.Payload.Id == "readreceipt"
+		request.Payload.Id == "readreceipt" ||
+		request.Payload.Id == "deliveryreceipt"
 
 	if isEvent {
 		if request.MarkEventTimestamp != nil {

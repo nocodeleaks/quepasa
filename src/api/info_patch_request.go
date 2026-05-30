@@ -6,8 +6,9 @@ import whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 type InfoPatchRequest struct {
 	Groups       *whatsapp.WhatsappBoolean `db:"groups" json:"groups,omitempty"`
 	Broadcasts   *whatsapp.WhatsappBoolean `db:"broadcasts" json:"broadcasts,omitempty"`
-	ReadReceipts *whatsapp.WhatsappBoolean `db:"readreceipts" json:"readreceipts,omitempty"`
-	Calls        *whatsapp.WhatsappBoolean `db:"calls" json:"calls,omitempty"`
+	ReadReceipts     *whatsapp.WhatsappBoolean `db:"readreceipts" json:"readreceipts,omitempty"`
+	DeliveryReceipts *whatsapp.WhatsappBoolean `db:"deliveryreceipts" json:"deliveryreceipts,omitempty"`
+	Calls            *whatsapp.WhatsappBoolean `db:"calls" json:"calls,omitempty"`
 	ReadUpdate   *whatsapp.WhatsappBoolean `db:"readupdate" json:"readupdate,omitempty"`
 	Direct       *whatsapp.WhatsappBoolean `db:"direct" json:"direct,omitempty"`
 	Username     *string                   `json:"username,omitempty" validate:"max=255"`

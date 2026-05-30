@@ -65,6 +65,14 @@ func (source QpWebhook) IsSetReadReceipts() bool {
 	return source.ReadReceipts != whatsapp.UnSetBooleanType
 }
 
+func (source QpWebhook) GetDeliveryReceipts() bool {
+	return source.DeliveryReceipts.Boolean()
+}
+
+func (source QpWebhook) IsSetDeliveryReceipts() bool {
+	return source.DeliveryReceipts != whatsapp.UnSetBooleanType
+}
+
 func (source QpWebhook) GetGroups() bool {
 	return source.Groups.Boolean()
 }

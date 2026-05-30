@@ -125,6 +125,23 @@ func ToggleReadReceipts(source whatsapp.IWhatsappOptions) error {
 	return source.Save(reason)
 }
 
+// ToggleDeliveryReceipts cycles the persisted delivery-receipt handling mode.
+func ToggleDeliveryReceipts(source whatsapp.IWhatsappOptions) error {
+	options := source.GetOptions()
+
+	switch options.DeliveryReceipts {
+	case whatsapp.UnSetBooleanType:
+		options.DeliveryReceipts = whatsapp.TrueBooleanType
+	case whatsapp.TrueBooleanType:
+		options.DeliveryReceipts = whatsapp.FalseBooleanType
+	default:
+		options.DeliveryReceipts = whatsapp.UnSetBooleanType
+	}
+
+	reason := fmt.Sprintf("toggle delivery receipts: %s", options.DeliveryReceipts)
+	return source.Save(reason)
+}
+
 // ToggleGroups cycles the persisted group-handling mode.
 func ToggleGroups(source whatsapp.IWhatsappOptions) error {
 	options := source.GetOptions()

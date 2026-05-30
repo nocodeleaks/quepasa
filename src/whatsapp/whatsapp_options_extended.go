@@ -14,6 +14,9 @@ type WhatsappOptionsExtended struct {
 	// should emit read receipts
 	ReadReceipts WhatsappBooleanExtended `json:"readreceipts,omitempty"`
 
+	// should emit delivery receipts
+	DeliveryReceipts WhatsappBooleanExtended `json:"deliveryreceipts,omitempty"`
+
 	// should handle calls
 	Calls WhatsappBooleanExtended `json:"calls,omitempty"`
 
@@ -40,6 +43,7 @@ func (source WhatsappOptionsExtended) IsDefault() bool {
 	return source.Groups.Equals(UnSetBooleanType) &&
 		source.Broadcasts.Equals(UnSetBooleanType) &&
 		source.ReadReceipts.Equals(UnSetBooleanType) &&
+		source.DeliveryReceipts.Equals(UnSetBooleanType) &&
 		source.Calls.Equals(UnSetBooleanType) &&
 		source.ReadUpdate.Equals(UnSetBooleanType) &&
 		source.Direct.Equals(UnSetBooleanType) &&
@@ -85,6 +89,21 @@ func (source WhatsappOptionsExtended) HandleReadReceipts(local WhatsappBoolean) 
 		}
 
 		return source.ReadReceipts.ToBoolean(WhatsappReadReceipts)
+	}
+}
+
+func (source WhatsappOptionsExtended) HandleDeliveryReceipts(local WhatsappBoolean) bool {
+	switch source.DeliveryReceipts {
+	case ForcedFalseBooleanType:
+		return false
+	case ForcedTrueBooleanType:
+		return true
+	default:
+		if local != UnSetBooleanType {
+			return local.Boolean()
+		}
+
+		return source.DeliveryReceipts.ToBoolean(WhatsappDeliveryReceipts)
 	}
 }
 

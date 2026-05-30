@@ -10,7 +10,8 @@ import (
 // WhatsApp environment variable names
 const (
 	ENV_READUPDATE      = "READUPDATE"      // mark chat read when send any msg
-	ENV_READRECEIPTS    = "READRECEIPTS"    // trigger dispatch methods for read receipts events
+	ENV_READRECEIPTS     = "READRECEIPTS"     // trigger dispatch methods for read receipts events
+	ENV_DELIVERYRECEIPTS = "DELIVERYRECEIPTS" // trigger dispatch methods for delivery receipts events
 	ENV_CALLS           = "CALLS"           // defines if will be accepted calls
 	ENV_GROUPS          = "GROUPS"          // handle groups
 	ENV_BROADCASTS      = "BROADCASTS"      // handle broadcasts
@@ -23,7 +24,8 @@ const (
 // WhatsAppSettings holds all WhatsApp configuration loaded from environment
 type WhatsAppSettings struct {
 	ReadUpdate      whatsapp.WhatsappBooleanExtended `json:"read_update"`
-	ReadReceipts    whatsapp.WhatsappBooleanExtended `json:"read_receipts"`
+	ReadReceipts     whatsapp.WhatsappBooleanExtended `json:"read_receipts"`
+	DeliveryReceipts whatsapp.WhatsappBooleanExtended `json:"delivery_receipts"`
 	Calls           whatsapp.WhatsappBooleanExtended `json:"calls"`
 	Groups          whatsapp.WhatsappBooleanExtended `json:"groups"`
 	Broadcasts      whatsapp.WhatsappBooleanExtended `json:"broadcasts"`
@@ -37,7 +39,8 @@ type WhatsAppSettings struct {
 func NewWhatsAppSettings() WhatsAppSettings {
 	return WhatsAppSettings{
 		ReadUpdate:      getWhatsappBooleanExtended(ENV_READUPDATE),
-		ReadReceipts:    getWhatsappBooleanExtended(ENV_READRECEIPTS),
+		ReadReceipts:     getWhatsappBooleanExtended(ENV_READRECEIPTS),
+		DeliveryReceipts: getWhatsappBooleanExtended(ENV_DELIVERYRECEIPTS),
 		Calls:           getWhatsappBooleanExtended(ENV_CALLS),
 		Groups:          getWhatsappBooleanExtended(ENV_GROUPS),
 		Broadcasts:      getWhatsappBooleanExtended(ENV_BROADCASTS),

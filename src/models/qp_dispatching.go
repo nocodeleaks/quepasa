@@ -73,6 +73,14 @@ func (source QpDispatching) IsSetReadReceipts() bool {
 	return source.ReadReceipts != whatsapp.UnSetBooleanType
 }
 
+func (source QpDispatching) GetDeliveryReceipts() bool {
+	return source.DeliveryReceipts.Boolean()
+}
+
+func (source QpDispatching) IsSetDeliveryReceipts() bool {
+	return source.DeliveryReceipts != whatsapp.UnSetBooleanType
+}
+
 func (source QpDispatching) GetGroups() bool {
 	return source.Groups.Boolean()
 }

@@ -100,7 +100,11 @@
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newReadReceipts" />
-                <span>{{ t('webhooks_confirmations') }}</span>
+                <span>{{ t('webhooks_read_confirmations') }}</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="newDeliveryReceipts" />
+                <span>{{ t('webhooks_delivery_confirmations') }}</span>
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" v-model="newCalls" />
@@ -193,9 +197,17 @@
                   class="flag-btn"
                   :class="getTriStateClass(webhook.readreceipts)"
                   @click="toggleWebhookFlag(webhook, 'readreceipts')"
-                  :title="t('webhooks_confirmations')"
+                  :title="t('webhooks_read_confirmations')"
                 >
                   <i class="fa fa-check-double"></i>
+                </button>
+                <button
+                  class="flag-btn"
+                  :class="getTriStateClass(webhook.deliveryreceipts)"
+                  @click="toggleWebhookFlag(webhook, 'deliveryreceipts')"
+                  :title="t('webhooks_delivery_confirmations')"
+                >
+                  <i class="fa fa-check"></i>
                 </button>
                 <button
                   class="flag-btn"
@@ -289,8 +301,12 @@
                 <TriStateToggle v-model="editData.groups" />
               </div>
               <div class="option-item">
-                <label>{{ t('webhooks_confirmations') }}</label>
+                <label>{{ t('webhooks_read_confirmations') }}</label>
                 <TriStateToggle v-model="editData.readreceipts" />
+              </div>
+              <div class="option-item">
+                <label>{{ t('webhooks_delivery_confirmations') }}</label>
+                <TriStateToggle v-model="editData.deliveryreceipts" />
               </div>
               <div class="option-item">
                 <label>{{ t('webhooks_calls') }}</label>
@@ -335,6 +351,7 @@ type WebhookItem = {
   broadcasts?: number | boolean | null
   groups?: number | boolean | null
   readreceipts?: number | boolean | null
+  deliveryreceipts?: number | boolean | null
   calls?: number | boolean | null
   direct?: number | boolean | null
   extra?: unknown
@@ -362,6 +379,7 @@ export default defineComponent({
     const newBroadcasts = ref(true)
     const newGroups = ref(true)
     const newReadReceipts = ref(false)
+    const newDeliveryReceipts = ref(false)
     const newCalls = ref(false)
     const newDirect = ref(true)
     const newExtra = ref('')
@@ -375,6 +393,7 @@ export default defineComponent({
       broadcasts: 0,
       groups: 0,
       readreceipts: 0,
+      deliveryreceipts: 0,
       calls: 0,
       direct: 0,
     })
@@ -429,6 +448,7 @@ export default defineComponent({
         broadcasts: toTriState(webhook.broadcasts),
         groups: toTriState(webhook.groups),
         readreceipts: toTriState(webhook.readreceipts),
+        deliveryreceipts: toTriState(webhook.deliveryreceipts),
         calls: toTriState(webhook.calls),
         direct: toTriState(webhook.direct),
         extra: webhook.extra ?? null,
@@ -477,6 +497,7 @@ export default defineComponent({
           broadcasts: toTriState(newBroadcasts.value),
           groups: toTriState(newGroups.value),
           readreceipts: toTriState(newReadReceipts.value),
+          deliveryreceipts: toTriState(newDeliveryReceipts.value),
           calls: toTriState(newCalls.value),
           direct: toTriState(newDirect.value),
           extra: parseExtra(newExtra.value),
@@ -490,6 +511,7 @@ export default defineComponent({
         newBroadcasts.value = true
         newGroups.value = true
         newReadReceipts.value = false
+        newDeliveryReceipts.value = false
         newCalls.value = false
         newDirect.value = true
         newExtra.value = ''
@@ -528,7 +550,7 @@ export default defineComponent({
       }
     }
 
-    async function toggleWebhookFlag(webhook: WebhookItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'calls' | 'direct') {
+    async function toggleWebhookFlag(webhook: WebhookItem, key: 'forwardinternal' | 'broadcasts' | 'groups' | 'readreceipts' | 'deliveryreceipts' | 'calls' | 'direct') {
       try {
         const payload = buildWebhookPayload(webhook)
 
@@ -554,6 +576,7 @@ export default defineComponent({
       editData.broadcasts = toTriState(webhook.broadcasts)
       editData.groups = toTriState(webhook.groups)
       editData.readreceipts = toTriState(webhook.readreceipts)
+      editData.deliveryreceipts = toTriState(webhook.deliveryreceipts)
       editData.calls = toTriState(webhook.calls)
       editData.direct = toTriState(webhook.direct)
       editData.extraStr = webhook.extra ? formatExtra(webhook.extra) : ''
@@ -578,6 +601,7 @@ export default defineComponent({
           broadcasts: editData.broadcasts,
           groups: editData.groups,
           readreceipts: editData.readreceipts,
+          deliveryreceipts: editData.deliveryreceipts,
           calls: editData.calls,
           direct: editData.direct,
           extra: parseExtra(editData.extraStr),
@@ -619,6 +643,7 @@ export default defineComponent({
       newForwardInternal,
       newGroups,
       newReadReceipts,
+      newDeliveryReceipts,
       newTrackId,
       newUrl,
       saveEdit,

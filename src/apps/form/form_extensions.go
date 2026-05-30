@@ -98,6 +98,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 					err = models.ToggleCalls(server)
 					break
 				}
+			case "server-deliveryreceipts":
+				{
+					err = models.ToggleDeliveryReceipts(server)
+					break
+				}
 
 			default:
 				{

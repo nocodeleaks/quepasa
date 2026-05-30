@@ -125,5 +125,5 @@ func isEventMessage(message *whatsapp.WhatsappMessage) bool {
 		return message.Edited && message.Attachment != nil
 	}
 
-	return message.Id == "readreceipt"
+	return message.Id == "readreceipt" || message.Id == "deliveryreceipt"
 }

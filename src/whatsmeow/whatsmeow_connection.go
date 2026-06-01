@@ -344,6 +344,32 @@ func (source *WhatsmeowConnection) logPrivacyTokenStatus(target types.JID) {
 	logentry.Debugf("privacy token found for %s (ts: %s)", target, token.Timestamp)
 }
 
+func (source *WhatsmeowConnection) hasPrivacyToken(target types.JID) bool {
+	if source == nil || source.Client == nil || source.Client.Store == nil {
+		return false
+	}
+	ctx := context.Background()
+	token, err := source.Client.Store.PrivacyTokens.GetPrivacyToken(ctx, target)
+	if err == nil && token != nil {
+		return true
+	}
+	// Token may be stored under the phone JID if the contact messaged us via @s.whatsapp.net.
+	// Check the phone equivalent when target is a LID.
+	if target.Server == types.HiddenUserServer && source.GetContactManager() != nil {
+		phone, err := source.GetContactManager().GetPhoneFromContactId(target.String())
+		if err == nil && len(phone) > 0 {
+			phoneJID, err := types.ParseJID(phone + "@" + types.DefaultUserServer)
+			if err == nil {
+				token, err = source.Client.Store.PrivacyTokens.GetPrivacyToken(ctx, phoneJID)
+				if err == nil && token != nil {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func (source *WhatsmeowConnection) subscribePresencePreWarm(target types.JID) {
 	if source == nil || source.Client == nil {
 		return
@@ -620,6 +646,13 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			finalJID := jid
 			if !retryJID.IsEmpty() {
 				finalJID = retryJID
+			}
+
+			// If the target LID has no privacy token, the server will never accept the message —
+			// this is a cold contact with Meta restrictions. Skip the expensive retries.
+			if finalJID.Server == types.HiddenUserServer && !source.hasPrivacyToken(finalJID) {
+				logentry.Warnf("skipping pre-warm + signal reset retry for %s: no privacy token (cold contact)", finalJID)
+				return msg, err
 			}
 
 			// Pre-warm the privacy token via SubscribePresence before resetting signal state.

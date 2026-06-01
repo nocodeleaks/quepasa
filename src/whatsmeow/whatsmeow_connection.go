@@ -344,6 +344,24 @@ func (source *WhatsmeowConnection) logPrivacyTokenStatus(target types.JID) {
 	logentry.Debugf("privacy token found for %s (ts: %s)", target, token.Timestamp)
 }
 
+func (source *WhatsmeowConnection) subscribePresencePreWarm(target types.JID) {
+	if source == nil || source.Client == nil {
+		return
+	}
+
+	logentry := source.GetLogger()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	logentry.Debugf("pre-warming privacy token via SubscribePresence for %s", target)
+	if err := source.Client.SubscribePresence(ctx, target); err != nil {
+		logentry.Warnf("SubscribePresence pre-warm failed for %s (continuing retry): %v", target, err)
+	}
+
+	// wait for the server to process and return the tctoken
+	<-ctx.Done()
+}
+
 // endregion
 func (source *WhatsmeowConnection) GetContextInfo(msg whatsapp.WhatsappMessage) *waE2E.ContextInfo {
 
@@ -604,8 +622,13 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 				finalJID = retryJID
 			}
 
+			// Pre-warm the privacy token via SubscribePresence before resetting signal state.
+			// This is the only whatsmeow operation that populates the tctoken path, which is
+			// what WhatsApp requires to route the message when error 463 occurs.
+			source.subscribePresencePreWarm(finalJID)
+
 			source.resetSignalStateForTargets(jid, retryJID)
-			logentry.Warnf("retrying send after signal state reset, target: %s", finalJID)
+			logentry.Warnf("retrying send after pre-warm + signal state reset, target: %s", finalJID)
 
 			msg.Chat.Id = finalJID.String()
 			msg.Id = source.Client.GenerateMessageID()
@@ -614,9 +637,9 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 			source.logPrivacyTokenStatus(finalJID)
 			resp, err = source.Client.SendMessage(context.Background(), finalJID, newMessage, extra)
 			if err != nil {
-				logentry.Errorf("final retry after signal state reset failed: %s", err)
+				logentry.Errorf("final retry after pre-warm + signal state reset failed: %s", err)
 			} else {
-				logentry.Infof("send succeeded after signal state reset retry: %s", finalJID)
+				logentry.Infof("send succeeded after pre-warm + signal state reset retry: %s", finalJID)
 			}
 		}
 

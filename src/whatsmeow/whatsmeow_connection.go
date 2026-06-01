@@ -257,7 +257,33 @@ func isASCII(s string) bool {
 }
 
 // region error 463
-// try to fix recipient session-routing issue
+//
+// Error 463 (NackCallerReachoutTimelocked) is a server-side rate-limit enforced by WhatsApp/Meta
+// when a message is sent to a "cold contact" — someone who has never initiated a conversation with
+// the sending number. The WhatsApp server requires a privacy token (tctoken) in the message node
+// to allow the first outbound contact. Without it, the server rejects with 463.
+//
+// The token is stored per sender↔recipient pair in whatsmeow_privacy_tokens (our_jid, their_jid).
+// It is populated only when:
+//   a) The recipient sends a message to us (server pushes a privacy_token notification), or
+//   b) SubscribePresence is called AND the server already has a relationship context for the pair.
+//
+// Key findings from production investigation (2026-06-01):
+//   - SubscribePresence without an existing token logs "without privacy token" and is ignored by
+//     the server — it does NOT create a token for truly cold contacts.
+//   - Privacy tokens discovered from other connected numbers (e.g. via shared groups) are NOT
+//     usable by a different sender — tokens are strictly per our_jid.
+//   - Pre-warming SubscribePresence proactively before send is ineffective for cold contacts for
+//     the same reason: the server will not issue a token without prior relationship context.
+//   - Once the recipient sends any message to us, the token is issued and subsequent sends succeed
+//     without any retry — the WhatsApp server already has the context.
+//   - The only reliable workaround is to ask the contact to message us first.
+//
+// TODO: Monitor whatsmeow and Baileys for upstream changes that may expose a proactive token
+//       acquisition path (e.g. a GraphQL MEX query to check reachout-timelock status, or an
+//       API to request token issuance). As of 2026-06, no such mechanism exists in whatsmeow.
+//       References: docs/ISSUE-error-463-reachout-timelock.md
+//
 func isSendError463(err error) bool {
 	if err == nil {
 		return false
@@ -626,6 +652,16 @@ func (source *WhatsmeowConnection) Send(msg *whatsapp.WhatsappMessage) (whatsapp
 		if isSendError463(err) && jid.Server == types.DefaultUserServer {
 			if resolvedRetryJID, ok := source.resolveLIDRetryJID(jid); ok {
 				retryJID = resolvedRetryJID
+
+				// No point trying the LID if it has no privacy token either — cold contact.
+				// hasPrivacyToken checks both the LID JID and the phone equivalent, because
+				// the token may be stored under either key depending on how the contact first
+				// interacted with us. See docs/ISSUE-error-463-reachout-timelock.md.
+				if !source.hasPrivacyToken(retryJID) {
+					logentry.Warnf("skipping all 463 retries for %s / %s: no privacy token (cold contact)", jid, retryJID)
+					return msg, err
+				}
+
 				logentry.Warnf("send failed with 463 for %s, retrying once via LID %s", jid, retryJID)
 
 				msg.Chat.Id = retryJID.String()

@@ -260,28 +260,34 @@ func isASCII(s string) bool {
 //
 // Error 463 (NackCallerReachoutTimelocked) is a server-side rate-limit enforced by WhatsApp/Meta
 // when a message is sent to a "cold contact" — someone who has never initiated a conversation with
-// the sending number. The WhatsApp server requires a privacy token (tctoken) in the message node
-// to allow the first outbound contact. Without it, the server rejects with 463.
+// the sending number. The WhatsApp server expects the outgoing node to carry the same privacy
+// tokens the official client sends (tctoken and/or cstoken); messages without them are counted
+// more aggressively as unsolicited outreach and rejected with 463.
 //
-// The token is stored per sender↔recipient pair in whatsmeow_privacy_tokens (our_jid, their_jid).
-// It is populated only when:
-//   a) The recipient sends a message to us (server pushes a privacy_token notification), or
-//   b) SubscribePresence is called AND the server already has a relationship context for the pair.
+// IMPORTANT (2026-06-02): whatsmeow now ships a native privacy-token lifecycle, and the version we
+// pin already includes it. The send path (whatsmeow/send.go) automatically:
+//   - attaches a stored tctoken when one exists (whatsmeow_privacy_tokens, per our_jid↔their_jid,
+//     ~28-day rolling window), else falls back to a locally derived cstoken
+//     (HMAC-SHA256(NCTSalt, recipientLID)) for new chats — no prior relationship required, but it
+//     needs a server-provisioned NCTSalt and a resolvable recipient LID;
+//   - issues a trusted_contact token TO the recipient after send (privacy IQ) on bucket boundaries.
+// The NCTSalt is pushed by the server via history sync / app-state (nct_salt_sync) and stored in
+// whatsmeow_nct_salt; a freshly paired session has none until history sync completes.
 //
 // Key findings from production investigation (2026-06-01):
 //   - SubscribePresence without an existing token logs "without privacy token" and is ignored by
-//     the server — it does NOT create a token for truly cold contacts.
+//     the server — it does NOT create a token for truly cold contacts. There is no presence-based
+//     token-fetch path in whatsmeow.
 //   - Privacy tokens discovered from other connected numbers (e.g. via shared groups) are NOT
 //     usable by a different sender — tokens are strictly per our_jid.
-//   - Pre-warming SubscribePresence proactively before send is ineffective for cold contacts for
-//     the same reason: the server will not issue a token without prior relationship context.
 //   - Once the recipient sends any message to us, the token is issued and subsequent sends succeed
 //     without any retry — the WhatsApp server already has the context.
-//   - The only reliable workaround is to ask the contact to message us first.
+//   - For a truly cold first send with no NCTSalt/LID context, there is still no guaranteed
+//     client-side fix; the reliable workaround is to have the contact message us first.
 //
-// TODO: Monitor whatsmeow and Baileys for upstream changes that may expose a proactive token
-//       acquisition path (e.g. a GraphQL MEX query to check reachout-timelock status, or an
-//       API to request token issuance). As of 2026-06, no such mechanism exists in whatsmeow.
+// TODO: The pre-warm + signal-reset retry below is now ineffective (see findings) and hasPrivacyToken
+//       only checks the stored tctoken — it is blind to the on-the-fly cstoken. Consider dropping the
+//       pre-warm/signal-reset stage and revisiting the cold-contact short-circuit.
 //       References: docs/ISSUE-error-463-reachout-timelock.md
 //
 func isSendError463(err error) bool {

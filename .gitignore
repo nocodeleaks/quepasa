@@ -68,3 +68,4 @@ src/.env.apoint-voip
 .landscape
 .motd_shown
 .claude/
+.s*

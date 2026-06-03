@@ -414,3 +414,6 @@ The fastest path is:
 - implement one layer at a time
 - validate with real calls
 - only then expose higher-level controls
+
+
+** new info discovered: https://github.com/SheIITear/baileys-caller

@@ -416,4 +416,6 @@ The fastest path is:
 - only then expose higher-level controls
 
 
-** new info discovered: https://github.com/SheIITear/baileys-caller
+## Additional Reference
+
+- New info discovered: https://github.com/SheIITear/baileys-caller

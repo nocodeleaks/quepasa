@@ -415,55 +415,9 @@ func SendWithMessageType(server *models.QpWhatsappServer, response *apiModels.Se
 		return
 	}
 
-	// Always try to convert to @s.whatsapp.net format for sending
-	// WhatsApp messages should preferably be sent to phone-based JIDs (@s.whatsapp.net)
-	// But fallback to @lid if phone conversion fails
-	originalChatId := waMsg.Chat.Id
-
-	if strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) {
-		logentry.Debugf("LID detected in chat ID: %s, attempting to get phone number", waMsg.Chat.Id)
-
-		phone, err := server.GetPhoneFromLID(waMsg.Chat.Id)
-		if err != nil || len(phone) == 0 {
-			if err != nil {
-				logentry.Warnf("failed to get phone from LID %s: %v, will try sending directly to LID", waMsg.Chat.Id, err)
-			} else {
-				logentry.Warnf("empty phone number returned for LID: %s, will try sending directly to LID", waMsg.Chat.Id)
-			}
-
-			// Try to send directly to LID first
-			sendResponse, err := runtime.SendSessionMessage(server, waMsg)
-			if err == nil {
-				// Success sending to LID directly
-				logentry.Infof("successfully sent message directly to LID: %s", originalChatId)
-				MessagesSent.Inc()
-
-				result := &apiModels.SendResponseMessage{}
-				result.Wid = server.GetWId()
-				result.Id = sendResponse.GetId()
-				result.ChatId = originalChatId
-				result.TrackId = waMsg.TrackId
-
-				response.ParseSuccess(result)
-				RespondInterface(w, response)
-				return
-			}
-
-			// Failed to send to LID, return error
-			logentry.Errorf("failed to find phone number for LID %s and failed to send message to LID: %v", originalChatId, err)
-			MessageSendErrors.Inc()
-			response.ParseError(fmt.Errorf("failed to resolve LID to phone number and failed to send message to LID: %v", err))
-			RespondInterface(w, response)
-			return
-		}
-
-		// Successfully converted to phone - use @s.whatsapp.net format
-		waMsg.Chat.Id = whatsapp.PhoneToWid(phone)
-		logentry.Debugf("converted LID %s to phone-based chat ID: %s (from phone %s)", originalChatId, waMsg.Chat.Id, phone)
-	} else if !strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
-		// If it's just a phone number without suffix, ensure it has @s.whatsapp.net
+	if !strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_LID_SUFFIX) &&
+		!strings.Contains(waMsg.Chat.Id, whatsapp.WHATSAPP_SERVERDOMAIN_USER_SUFFIX) {
 		waMsg.Chat.Id = whatsapp.PhoneToWid(waMsg.Chat.Id)
-	} else {
 	}
 
 	sendResponse, err := runtime.SendSessionMessage(server, waMsg)

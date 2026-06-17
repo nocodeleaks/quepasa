@@ -141,6 +141,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 						err = models.ToggleReadReceipts(webhook)
 						break
 					}
+				case "webhook-deliveryreceipts":
+					{
+						err = models.ToggleDeliveryReceipts(webhook)
+						break
+					}
 				case "webhook-calls":
 					{
 						err = models.ToggleCalls(webhook)
@@ -185,6 +190,11 @@ func FormToggleController(w http.ResponseWriter, r *http.Request) {
 				case "rabbitmq-readreceipts":
 					{
 						err = models.ToggleReadReceipts(rabbitmq)
+						break
+					}
+				case "rabbitmq-deliveryreceipts":
+					{
+						err = models.ToggleDeliveryReceipts(rabbitmq)
 						break
 					}
 				case "rabbitmq-calls":

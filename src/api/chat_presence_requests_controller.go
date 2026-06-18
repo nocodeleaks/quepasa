@@ -32,12 +32,15 @@ func Exec(ctx context.Context, request *ChatPresenceRequest, server *models.QpWh
 
 	logentry.Debugf("background chat presence update, with presence type: %s...", request.Type)
 
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
+
 	for time.Now().UTC().Before(endTime) {
 		select {
 		case <-ctx.Done():
 			logentry.Debug("background chat presence update received cancellation signal (replaced by new request)")
 			return // Don't send paused - new request will handle it
-		case <-time.After(checkInterval):
+		case <-ticker.C:
 			// Just wait - presence indicator was already sent by the controller
 			// We only refresh to check for cancellation
 		}

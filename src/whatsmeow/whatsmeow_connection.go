@@ -1287,15 +1287,17 @@ func (source *WhatsmeowConnection) Dispose(reason string) {
 	}
 
 	if source.Handlers != nil {
-		go source.Handlers.UnRegister("dispose")
+		handlers := source.Handlers
 		source.Handlers = nil
+		handlers.UnRegister("dispose")
 	}
 
 	if source.Client != nil {
-		if source.Client.IsConnected() {
-			go source.Client.Disconnect()
-		}
+		client := source.Client
 		source.Client = nil
+		if client.IsConnected() {
+			client.Disconnect()
+		}
 	}
 
 	source = nil

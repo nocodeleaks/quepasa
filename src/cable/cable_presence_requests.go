@@ -67,11 +67,14 @@ func (controller *cablePresenceRequestsController) exec(ctx context.Context, req
 	endTime := time.Now().UTC().Add(duration)
 	const checkInterval = 500 * time.Millisecond
 
+	ticker := time.NewTicker(checkInterval)
+	defer ticker.Stop()
+
 	for time.Now().UTC().Before(endTime) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(checkInterval):
+		case <-ticker.C:
 		}
 	}
 

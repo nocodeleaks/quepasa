@@ -20,6 +20,7 @@ __debug_bin*
 
 # any environment file
 .env
+**/.env.*
 
 # files for production
 src/.cache

@@ -79,13 +79,13 @@ type AsyncCounter struct {
 
 func (a *AsyncCounter) Inc() {
 	if a.enabled {
-		go a.recorder.Inc()
+		a.recorder.Inc()
 	}
 }
 
 func (a *AsyncCounter) Add(delta float64) {
 	if a.enabled {
-		go func() { a.recorder.Add(delta) }()
+		a.recorder.Add(delta)
 	}
 }
 
@@ -103,7 +103,7 @@ type AsyncHistogram struct {
 
 func (a *AsyncHistogram) Observe(value float64) {
 	if a.enabled {
-		go func() { a.recorder.Observe(value) }()
+		a.recorder.Observe(value)
 	}
 }
 
@@ -128,7 +128,7 @@ type AsyncCounterRecorder struct {
 
 func (a AsyncCounterRecorder) Inc() {
 	if a.enabled {
-		go a.recorder.Inc()
+		a.recorder.Inc()
 	}
 }
 
@@ -140,13 +140,13 @@ type AsyncGaugeRecorder struct {
 
 func (a AsyncGaugeRecorder) Add(value float64) {
 	if a.enabled {
-		go func() { a.recorder.Add(value) }()
+		a.recorder.Add(value)
 	}
 }
 
 func (a AsyncGaugeRecorder) Set(value float64) {
 	if a.enabled {
-		go func() { a.recorder.Set(value) }()
+		a.recorder.Set(value)
 	}
 }
 
@@ -158,7 +158,7 @@ type AsyncHistogramRecorder struct {
 
 func (a AsyncHistogramRecorder) Observe(value float64) {
 	if a.enabled {
-		go func() { a.recorder.Observe(value) }()
+		a.recorder.Observe(value)
 	}
 }
 

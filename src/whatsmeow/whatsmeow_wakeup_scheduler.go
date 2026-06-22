@@ -25,6 +25,7 @@ type WakeUpScheduler struct {
 	enabled         bool
 	onlinePresence  types.Presence
 	offlinePresence types.Presence
+	wakeTimer       *time.Timer
 }
 
 // NewWakeUpScheduler creates a new wake-up scheduler
@@ -176,14 +177,20 @@ func (ws *WakeUpScheduler) checkAndExecuteWakeUp() {
 func (ws *WakeUpScheduler) executeWakeUp(duration time.Duration, logentry *log.Entry) {
 	logentry.Infof("executing wake-up: setting presence to online for %v", duration)
 
-	// Set presence to online
 	ws.sendPresence(ws.onlinePresence, logentry, "scheduled wake-up")
 
-	// Schedule return to offline
-	time.AfterFunc(duration, func() {
+	ws.mu.Lock()
+	if ws.wakeTimer != nil {
+		ws.wakeTimer.Stop()
+	}
+	ws.wakeTimer = time.AfterFunc(duration, func() {
+		if !ws.IsEnabled() {
+			return
+		}
 		ws.sendPresence(ws.offlinePresence, logentry, "wake-up duration expired")
 		logentry.Infof("wake-up completed: presence set to offline after %v", duration)
 	})
+	ws.mu.Unlock()
 }
 
 // sendPresence sends presence update to WhatsApp
@@ -206,6 +213,10 @@ func (ws *WakeUpScheduler) Stop() {
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
 
+	if ws.wakeTimer != nil {
+		ws.wakeTimer.Stop()
+		ws.wakeTimer = nil
+	}
 	if ws.cancel != nil {
 		ws.cancel()
 		ws.cancel = nil

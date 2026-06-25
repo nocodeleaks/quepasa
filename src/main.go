@@ -1,0 +1,133 @@
+package main
+
+import (
+	_ "github.com/nocodeleaks/quepasa/api"
+	_ "github.com/nocodeleaks/quepasa/apps/form"
+	_ "github.com/nocodeleaks/quepasa/cable"
+	environment "github.com/nocodeleaks/quepasa/environment"
+	library "github.com/nocodeleaks/quepasa/library"
+	_ "github.com/nocodeleaks/quepasa/mcp"
+	_ "github.com/nocodeleaks/quepasa/metrics"
+	models "github.com/nocodeleaks/quepasa/models"
+	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
+	signalr "github.com/nocodeleaks/quepasa/signalr"
+	webserver "github.com/nocodeleaks/quepasa/webserver"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
+
+	_ "github.com/nocodeleaks/quepasa/swagger" // Swagger docs
+	qplog "github.com/nocodeleaks/quepasa/qplog"
+)
+
+// @title						QuePasa WhatsApp API
+// @version					5.0.0
+// @description				QuePasa is a Go-based WhatsApp bot platform that exposes HTTP APIs for WhatsApp messaging integration
+// @termsOfService				https://github.com/nocodeleaks/quepasa
+// @contact.name				QuePasa Support
+// @contact.url				https://github.com/nocodeleaks/quepasa
+// @license.name				GNU Affero General Public License v3.0
+// @license.url				https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
+// @BasePath					/
+// @schemes					http https
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						X-QUEPASA-TOKEN
+func main() {
+
+	loglevel := environment.Settings.General.LogLevelFromConfig(qplog.InfoLevel)
+	qplog.SetLevel(loglevel)
+
+	logentry := library.NewLogEntry("main")
+	logentry = logentry.WithLevel(loglevel)
+	logentry.Infof("current log level: %v", logentry.Level())
+
+	// checks for pending database migrations
+	err := models.MigrateToLatest(logentry)
+	if err != nil {
+		logentry.Fatalf("database migration error: %s", err.Error())
+	}
+
+	// Initialize centralized cache service (must be before starting services)
+	err = models.InitializeCacheService()
+	if err != nil {
+		logentry.Fatalf("cache service initialization error: %s", err.Error())
+	}
+
+	// should became before whatsmeow start
+	title := environment.Settings.General.AppTitle
+	if len(title) > 0 {
+		whatsapp.WhatsappWebAppSystem = title
+	}
+
+	whatsappOptions := &whatsapp.WhatsappOptionsExtended{
+		Groups:            environment.Settings.WhatsApp.Groups,
+		Broadcasts:        environment.Settings.WhatsApp.Broadcasts,
+		ReadReceipts:      environment.Settings.WhatsApp.ReadReceipts,
+		DeliveryReceipts:  environment.Settings.WhatsApp.DeliveryReceipts,
+		Calls:             environment.Settings.WhatsApp.Calls,
+		ReadUpdate:        environment.Settings.WhatsApp.ReadUpdate,
+		HistorySync:       environment.Settings.WhatsApp.HistorySyncDays,
+		Presence:          environment.Settings.WhatsApp.Presence,
+		DispatchUnhandled: environment.Settings.Whatsmeow.DispatchUnhandled,
+		LogLevel:          logentry.Level(),
+	}
+
+	whatsapp.Options = *whatsappOptions
+
+	options := whatsmeow.WhatsmeowOptions{
+		WhatsappOptionsExtended: whatsapp.Options,
+		WMLogLevel:              environment.Settings.Whatsmeow.LogLevel,
+		DBLogLevel:              environment.Settings.Whatsmeow.DBLogLevel,
+		UseRetryMessageStore:    environment.Settings.Whatsmeow.UseRetryMessageStore,
+	}
+
+	dbParameters := environment.Settings.Database.GetDBParameters()
+	whatsmeow.Start(options, dbParameters, logentry)
+
+	// Inject transport adapters so models remain transport-agnostic.
+	models.ApplyTransportServices(models.TransportServices{
+		RealtimePresenceChecker:       signalr.SignalRHub,
+		DispatchingLifecyclePublisher: runtime.NewDispatchingLifecyclePublisher(),
+		RabbitMQGetClient: func(connectionString string) models.RabbitMQPublisherClient {
+			return rabbitmq.GetRabbitMQClient(connectionString)
+		},
+		RabbitMQCloseClient: rabbitmq.CloseRabbitMQClient,
+		RabbitMQInjectQueueBackend: func() {
+			if rabbitmq.RabbitMQClientInstance != nil {
+				rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
+			}
+		},
+		RabbitMQExchangeName:         rabbitmq.QuePasaExchangeName,
+		RabbitMQRoutingKeyProd:       rabbitmq.QuePasaRoutingKeyProd,
+		RabbitMQRoutingKeyHistory:    rabbitmq.QuePasaRoutingKeyHistory,
+		RabbitMQRoutingKeyEvents:     rabbitmq.QuePasaRoutingKeyEvents,
+		RabbitMQMessagesPublishedInc: func(queue string) { rabbitmq.MessagesPublished.WithLabelValues(queue).Inc() },
+		RabbitMQMessagePublishErrorsInc: func() {
+			rabbitmq.MessagePublishErrors.Inc()
+		},
+		RabbitMQClientResolver: func(connectionString string) bool {
+			return rabbitmq.GetRabbitMQClient(connectionString) != nil
+		},
+	})
+
+	// must execute after whatsmeow started
+	for _, element := range models.Running {
+		if handler, ok := models.MigrationHandlers[element]; ok {
+			handler(element)
+		}
+	}
+
+	// Starting WhatsApp control service asynchronously
+	err = models.QPWhatsappStart(logentry)
+	if err != nil {
+		logentry.Fatalf("whatsapp service starting error: %s", err.Error())
+	}
+
+	err = webserver.WebServerStart(logentry)
+	if err != nil {
+		logentry.Info("end with errors")
+	} else {
+		logentry.Info("end")
+	}
+}

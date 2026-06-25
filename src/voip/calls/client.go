@@ -1,0 +1,72 @@
+package calls
+
+import (
+	"context"
+	"sync"
+
+	"github.com/nocodeleaks/quepasa/voip/calls/diag"
+	qplog "github.com/nocodeleaks/quepasa/qplog"
+	"go.mau.fi/whatsmeow"
+)
+
+// Client is the managed entry point to the WhatsApp 1:1 calling stack. It wraps a
+// connected *whatsmeow.Client and drives the whole call lifecycle — signaling, keying,
+// relay election, and media — under the hood, behind a small surface:
+// place a call with Call, handle inbound calls from an OnIncomingCall listener, and
+// attach a Player (outbound audio) and a sink (inbound audio) to each Call.
+//
+// The library never configures logging; pass WithLogger to surface its debug/trace.
+type Client struct {
+	wa   *whatsmeow.Client
+	log  qplog.Logger
+	diag *diag.Recorder
+	eng  *engine
+
+	mu             sync.Mutex
+	onIncomingCall func(*Call)
+}
+
+// NewClient wraps a connected whatsmeow client and installs the call event handlers.
+// Construct it before the whatsmeow client connects so the low-level <ack>/<call>
+// interception is in place before the receive loop starts.
+func NewClient(wa *whatsmeow.Client, opts ...Option) *Client {
+	cfg := resolveConfig(opts)
+	c := &Client{wa: wa, log: cfg.log, diag: cfg.diag}
+	c.eng = newEngine(c)
+	c.eng.install()
+	return c
+}
+
+// Call places a 1:1 call to target (a phone number, a phone JID, or an @lid JID),
+// returning the live Call once the offer is on the wire. Attach a Player and listeners
+// to the returned Call; media starts automatically once the peer answers and the relay
+// endpoint arrives.
+func (c *Client) Call(ctx context.Context, target string) (*Call, error) {
+	return c.eng.placeCall(ctx, target)
+}
+
+// OnIncomingCall registers the listener fired for each inbound call offer. The handler
+// receives a Call that has not been answered yet; call Answer or Reject on it. Only the
+// most recently registered listener is used.
+func (c *Client) OnIncomingCall(fn func(*Call)) {
+	c.mu.Lock()
+	c.onIncomingCall = fn
+	c.mu.Unlock()
+}
+
+// incomingCallHandler returns the registered inbound-call listener, or nil.
+func (c *Client) incomingCallHandler() func(*Call) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.onIncomingCall
+}
+
+// OwnPhone returns the phone number of the connected WhatsApp account (the
+// receiver of incoming calls), extracted from the whatsmeow device store.
+// Returns an empty string if the client or store is unavailable.
+func (c *Client) OwnPhone() string {
+	if c == nil || c.wa == nil || c.wa.Store == nil || c.wa.Store.ID == nil {
+		return ""
+	}
+	return c.wa.Store.ID.User
+}

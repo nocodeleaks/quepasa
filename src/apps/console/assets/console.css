@@ -1,0 +1,113 @@
+:root {
+  --console-bg: #f2f4f8;
+  --console-card: #ffffff;
+  --console-text: #1f2937;
+  --console-muted: #5b6474;
+  --console-accent: #14532d;
+  --console-accent-soft: #22c55e;
+  --console-border: #d6dce8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--console-text);
+  background:
+    radial-gradient(circle at 0 0, rgba(34, 197, 94, 0.12), transparent 35%),
+    radial-gradient(circle at 100% 100%, rgba(20, 83, 45, 0.1), transparent 40%),
+    var(--console-bg);
+}
+
+.console-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 36px;
+}
+
+.console-header {
+  background: var(--console-card);
+  border: 1px solid var(--console-border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.console-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(120deg, var(--console-accent), var(--console-accent-soft));
+}
+
+.console-header h1 {
+  margin: 14px 0 8px;
+  font-size: 30px;
+}
+
+.console-header p {
+  margin: 0;
+  color: var(--console-muted);
+}
+
+.console-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.console-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--console-card);
+  border: 1px solid var(--console-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.console-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--console-accent-soft);
+  box-shadow: 0 10px 20px rgba(17, 24, 39, 0.08);
+}
+
+.console-card h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.console-card p {
+  margin: 0;
+  color: var(--console-muted);
+}
+
+.console-footer {
+  margin-top: 18px;
+  text-align: right;
+}
+
+.console-footer a {
+  color: var(--console-accent);
+  font-weight: 600;
+}
+
+@media (max-width: 680px) {
+  .console-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .console-header h1 {
+    font-size: 24px;
+  }
+}

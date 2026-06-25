@@ -1,0 +1,77 @@
+module github.com/nocodeleaks/quepasa/rabbitmq
+
+replace github.com/nocodeleaks/quepasa/api => ../api
+
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
+replace github.com/nocodeleaks/quepasa/environment => ../environment
+
+replace github.com/nocodeleaks/quepasa/apps/form => ../apps/form
+
+replace github.com/nocodeleaks/quepasa/library => ../library
+
+replace github.com/nocodeleaks/quepasa/media => ../media
+
+replace github.com/nocodeleaks/quepasa/metrics => ../metrics
+
+replace github.com/nocodeleaks/quepasa/models => ../models
+
+replace github.com/nocodeleaks/quepasa/rabbitmq => ../rabbitmq
+
+replace github.com/nocodeleaks/quepasa/signalr => ../signalr
+
+replace github.com/nocodeleaks/quepasa/sipproxy => ../sipproxy
+
+replace github.com/nocodeleaks/quepasa/swagger => ../swagger
+
+replace github.com/nocodeleaks/quepasa/webserver => ../webserver
+
+replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
+
+replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
+
+go 1.25.0
+
+require (
+	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000
+	github.com/rabbitmq/amqp091-go v1.10.0
+)
+
+require (
+	filippo.io/edwards25519 v1.2.0 // indirect
+	github.com/beeper/argo-go v1.1.2 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/coder/websocket v1.8.15 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.3 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000 // indirect
+	github.com/prometheus/client_golang v1.16.0 // indirect
+	github.com/prometheus/client_model v0.4.0 // indirect
+	github.com/prometheus/common v0.44.0 // indirect
+	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/redis/go-redis/v9 v9.7.1 // indirect
+	github.com/rs/zerolog v1.35.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.27 // indirect
+	go.mau.fi/libsignal v0.2.2 // indirect
+	go.mau.fi/util v0.9.10 // indirect
+	go.mau.fi/whatsmeow v0.0.0-20260616120636-eaa388b4e537 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
+)

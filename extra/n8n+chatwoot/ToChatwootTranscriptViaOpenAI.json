@@ -1,0 +1,516 @@
+{
+  "name": "ToChatwootTranscriptViaOpenAI",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "64605b9f-1951-480b-8639-7503b2ca25c4",
+      "name": "Merge Token",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1460,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "81ed7a13-e25f-4979-a8ad-9ae25b4f2aa1",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.api_key}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d4ba3a13-c74c-4a57-810d-1c9ab7d8ad1d",
+      "name": "Convert Audio Binary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1620,
+        380
+      ],
+      "notesInFlow": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT settings->>'api_key' AS api_key FROM integrations_hooks WHERE app_id = 'openai' AND account_id = '{{ $json.extra.account }}' LIMIT 1",
+        "options": {}
+      },
+      "id": "88d34eb7-b996-4784-aa2b-2f6a563bd260",
+      "name": "Get Api Key",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1280,
+        360
+      ],
+      "notesInFlow": true,
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "9b69df10-0f79-46a4-910a-9fb1b6183d7e",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1780,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2c18cfcd-7efa-4822-a88e-2a5ce8b61586",
+              "name": "=resume",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc37250f-a3a3-4177-a6d6-97ad8bda24fd",
+      "name": "Resume Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2740,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-3.5-turbo-16k\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"1. Corrija o texto porque é um áudio transcrito. Deixe-o de forma clara. De espaços entre os parágrafos porque será enviado no WhatsApp.\\n2. A resposta deve ser apenas o texto sem você dizendo: aqui está.\\n3. O texto não é uma pergunta para você. É apenas para você corrigir com as etapas acima.\\n4. Faça um resumo dos principais tópicos do áudio logo abaixo do texto.\\n\\nTexto:\\n{{ $json.text }}\"\n    }\n  ],\n  \"max_tokens\": 500\n}",
+        "options": {}
+      },
+      "id": "6383c500-4220-4ffb-bd0b-b62c6ebd82c6",
+      "name": "Set Message Playload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2540,
+        140
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "04bbc2f9-c7d4-4b0c-861d-20350b7ed1de",
+              "leftValue": "={{ $env[\"C8Q_TOCHATWOOTTRANSCRIPTRESUME\"] ?? true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "08c305ca-9804-4726-8105-749cbd6b8014",
+      "name": "If Should Resume",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2140,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "72a5c39c-2651-45e9-9787-02d267b0a352",
+              "name": "conversation",
+              "value": "={{$json.conversation}}",
+              "type": "object"
+            },
+            {
+              "id": "70d692bb-cbb4-4c28-bb11-933feadabf95",
+              "name": "extra",
+              "value": "={{$json.extra}}",
+              "type": "object"
+            },
+            {
+              "id": "fcdfd613-6f96-4754-8e08-21ee5491d9fe",
+              "name": "payload.content",
+              "value": "={{$json.text}}",
+              "type": "string"
+            },
+            {
+              "id": "0c232292-a96f-46d4-8e45-5a947e295820",
+              "name": "payload.content_attributes.in_reply_to",
+              "value": "={{+$json.msgid}}",
+              "type": "number"
+            },
+            {
+              "id": "5feaaa7c-e22f-4870-aee5-7a8b48d3fd8c",
+              "name": "payload.message_type",
+              "value": "incoming",
+              "type": "string"
+            },
+            {
+              "id": "9f081859-57b0-4d84-b612-bb425513c7b0",
+              "name": "payload.private",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "5a5405c2-28bd-4774-865f-65d003963d69",
+              "name": "api_key",
+              "value": "={{$json.api_key}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3fc7d3a3-080e-4e81-9db7-84467d8effb0",
+      "name": "ChatWoot Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1960,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation.id}}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.extra.atoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {}
+      },
+      "id": "6b6072a3-190d-4e42-bd9a-90fc2670aa5e",
+      "name": "Post Incoming Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3340,
+        320
+      ],
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "06a56ebd-eb0f-4613-bec6-0efa4c150725",
+              "name": "payload.content",
+              "value": "={{ $json.resume ?? $json.payload.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "d601c3c7-5cf3-4d85-a341-7e54b5b90d2c",
+      "name": "Append Resume If Exists",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3140,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "2abeb6b1-da2b-4777-8e98-8b7b5c5cdf7a",
+      "name": "Get Resume",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2340,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "90d2f7a1-3120-43a9-8ed7-3af9e66440ad",
+      "name": "Merge Resume",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2940,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.1) Updates\n* in reply to\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "height": 167.46034452664873,
+        "width": 489.8474320052134
+      },
+      "id": "87ab5e9b-1307-4822-99d4-ae9244a8022b",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        75.09870067627912
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge Token": {
+      "main": [
+        [
+          {
+            "node": "Convert Audio Binary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Merge Token",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Api Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Audio Binary": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Api Key": {
+      "main": [
+        [
+          {
+            "node": "Merge Token",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "ChatWoot Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Payload": {
+      "main": [
+        [
+          {
+            "node": "Merge Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Message Playload": {
+      "main": [
+        [
+          {
+            "node": "Resume Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Resume": {
+      "main": [
+        [
+          {
+            "node": "Get Resume",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append Resume If Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatWoot Payload": {
+      "main": [
+        [
+          {
+            "node": "If Should Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Resume If Exists": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Resume": {
+      "main": [
+        [
+          {
+            "node": "Set Message Playload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Resume",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Resume": {
+      "main": [
+        [
+          {
+            "node": "Append Resume If Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 30
+  },
+  "versionId": "574af2b2-c341-4c47-94de-ff27ce498a59",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "id": "pi4APHD9F05Dv6FR",
+  "tags": []
+}

@@ -1,0 +1,333 @@
+package api
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+
+	api "github.com/nocodeleaks/quepasa/api/models"
+	models "github.com/nocodeleaks/quepasa/models"
+	runtime "github.com/nocodeleaks/quepasa/runtime"
+)
+
+//region CONTROLLER - Information
+
+// CreateInformationController handles POST requests for creating a new bot/server
+//
+//	@Summary		Create bot configuration
+//	@Description	Create a new bot/server with configuration before QR code scanning
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		InfoCreateRequest	true	"Server creation request"
+//	@Success		200		{object}	api.InformationResponse	"Server updated"
+//	@Success		201		{object}	api.InformationResponse	"Server created"
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [post]
+func CreateInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationPostRequest(w, r)
+}
+
+// GetInformationController handles GET requests for bot/server information
+//
+//	@Summary		Get bot information
+//	@Description	Get bot/server information and settings
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	api.InformationResponse
+//	@Failure		400	{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [get]
+func GetInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationGetRequest(w, r)
+}
+
+// UpdateInformationController handles PATCH requests for updating bot/server information
+//
+//	@Summary		Update bot information
+//	@Description	Update bot/server information and settings
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		object{settings=object}	false	"Settings update"
+//	@Success		200		{object}	api.InformationResponse
+//	@Failure		400		{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [patch]
+func UpdateInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationPatchRequest(w, r)
+}
+
+// DeleteInformationController handles DELETE requests for bot/server information
+//
+//	@Summary		Delete bot information
+//	@Description	Delete bot/server information and settings
+//	@Tags			Information
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	api.InformationResponse
+//	@Failure		400	{object}	models.QpResponse
+//	@Security		ApiKeyAuth
+//	@Router			/info [delete]
+func DeleteInformationController(w http.ResponseWriter, r *http.Request) {
+	InformationDeleteRequest(w, r)
+}
+
+//endregion
+
+// updateServerConfiguration applies configuration changes to an existing server
+// Returns update summary string and error if any
+func updateServerConfiguration(server *models.QpWhatsappServer, username string, request interface{}) (string, error) {
+	update := ""
+
+	// Update user if provided and different
+	if len(username) > 0 && server.QpServer.GetUser() != username {
+		userUpdate, err := runtime.ApplySessionUser(server, username)
+		if err != nil {
+			return "", err
+		}
+		update += userUpdate
+	}
+
+	patch := buildSessionConfigurationPatch(request)
+
+	patchUpdate, err := runtime.ApplySessionConfigurationPatch(server, patch)
+	if err != nil {
+		return "", err
+	}
+	update += patchUpdate
+
+	return update, nil
+}
+
+func InformationPostRequest(w http.ResponseWriter, r *http.Request) {
+	response := &api.InformationResponse{}
+
+	// Get token from header (authentication)
+	token := GetToken(r)
+	if len(token) == 0 {
+		err := fmt.Errorf("create information controller, missing token")
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Get username from authentication
+	username, err := ValidateUsername(r)
+	if err != nil {
+		err.Prepend("create information controller, username validation")
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Read and validate request body
+	body, ioErr := io.ReadAll(r.Body)
+	if ioErr != nil {
+		response.ParseError(ioErr)
+		RespondInterface(w, response)
+		return
+	}
+
+	var request *InfoCreateRequest
+	if len(body) > 0 {
+		jsonErr := json.Unmarshal(body, &request)
+		if jsonErr != nil {
+			jsonError := fmt.Errorf("error converting body to json: %v", jsonErr.Error())
+			response.ParseError(jsonError)
+			RespondInterface(w, response)
+			return
+		}
+	}
+
+	// Check if a live session already exists (AddOrUpdate pattern)
+	server, exists := runtime.FindLiveSessionByToken(token)
+
+	if exists {
+		// UPDATE: Server exists, use shared update logic
+		update, err := updateServerConfiguration(server, username, request)
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+
+		// Save if there were changes
+		if len(update) > 0 {
+			err := runtime.SaveSession(server, "server configuration updated via POST")
+			if err != nil {
+				response.ParseError(err)
+				RespondInterface(w, response)
+				return
+			}
+
+			logentry := server.GetLogger()
+			logentry.Infof("server configuration updated: %s", update)
+			response.PatchSuccess(server, "server configuration updated")
+		} else {
+			response.ParseSuccess(server)
+		}
+
+		// Return 200 for updates
+		RespondSuccess(w, response)
+		return
+
+	} else {
+		// CREATE: Server doesn't exist, create new one
+		patch := buildSessionConfigurationPatch(request)
+		info := runtime.BuildSessionRecord(token, username, patch)
+
+		server, err := runtime.CreateSessionRecord(info, "server created without connection via POST")
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+
+		response.ParseSuccess(server)
+
+		// Return 201 for creation
+		RespondInterfaceCode(w, response, http.StatusCreated)
+		return
+	}
+}
+
+func InformationGetRequest(w http.ResponseWriter, r *http.Request) {
+	response := &api.InformationResponse{}
+
+	// Check authentication
+	token := GetToken(r)
+	isMaster := IsMatchForMaster(r)
+
+	// Case 1: No authentication - Return basic server (application) info
+	if token == "" && !isMaster {
+		response.Success = true
+		response.Status = "application information"
+		response.Version = models.QpVersion
+		RespondSuccess(w, response)
+		return
+	}
+
+	// Case 2 & 3: With authentication - Get specific server
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterfaceCode(w, response, http.StatusNoContent)
+		return
+	}
+
+	// Populate response with server information
+	response.ParseSuccess(server)
+	response.Version = models.QpVersion
+	// Server uptime is in response.Server.Uptime (via MarshalJSON)
+
+	RespondSuccess(w, response)
+}
+
+func InformationPatchRequest(w http.ResponseWriter, r *http.Request) {
+	response := &api.InformationResponse{}
+
+	// reading body to avoid converting to json if empty
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(body) == 0 {
+		err = fmt.Errorf("empty body")
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	var request *InfoPatchRequest
+
+	// Try to decode the request body into the struct. If there is an error,
+	// respond to the client with the error message and a 400 status code.
+	err = json.Unmarshal(body, &request)
+	if err != nil {
+		jsonError := fmt.Errorf("error converting body to json: %v", err.Error())
+		response.ParseError(jsonError)
+		RespondInterface(w, response)
+		return
+	}
+
+	if request == nil {
+		jsonErr := fmt.Errorf("invalid request body: %s", string(body))
+		response.ParseError(jsonErr)
+		RespondInterface(w, response)
+		return
+	}
+
+	server, err := GetServer(r)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	// Get username from request (PATCH allows changing username)
+	username := ""
+	if request.Username != nil {
+		username = *request.Username
+	}
+
+	// Use shared update logic
+	update, err := updateServerConfiguration(server, username, request)
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	if len(update) > 0 {
+		err = runtime.SaveSession(server, "patching info")
+		if err != nil {
+			response.ParseError(err)
+			RespondInterface(w, response)
+			return
+		}
+
+		info := fmt.Sprintf("server updated: {%s}", update)
+		logentry := server.GetLogger()
+		logentry.Info(info)
+
+		response.PatchSuccess(server, "server updated")
+		RespondSuccess(w, response)
+	} else {
+		response.PatchSuccess(server, "no update required")
+		RespondSuccess(w, response)
+	}
+}
+
+func InformationDeleteRequest(w http.ResponseWriter, r *http.Request) {
+	response := &models.QpResponse{}
+
+	server, err := GetServer(r)
+	if err != nil {
+
+		if err == models.ErrServerNotFound {
+			RespondNoContent(w)
+			return
+		}
+
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	err = runtime.DeleteSessionRecord(server, "api")
+	if err != nil {
+		response.ParseError(err)
+		RespondInterface(w, response)
+		return
+	}
+
+	response.ParseSuccess("server deleted")
+	RespondSuccess(w, response)
+}

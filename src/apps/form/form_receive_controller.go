@@ -1,0 +1,70 @@
+package form
+
+import (
+	"fmt"
+	"html/template"
+	"net/http"
+
+	api "github.com/nocodeleaks/quepasa/api"
+	viewmodel "github.com/nocodeleaks/quepasa/apps/form/viewmodel"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
+)
+
+var funcMap = template.FuncMap{"safeURL": SafeURL}
+
+func SafeURL(url string) template.URL {
+	return template.URL(url)
+}
+
+// FormReceiveController renders route GET "/form/server/{token}/receive"
+func FormReceiveController(w http.ResponseWriter, r *http.Request) {
+	data := viewmodel.ReceivePageData{PageTitle: "Receive - Quepasa", FormAccountEndpoint: FormAccountEndpoint}
+
+	server, err := GetServerFromRequest(r)
+	if err != nil {
+		data.ErrorMessage = err.Error()
+	}
+
+	if server != nil {
+		data.Number = server.GetWId()
+		data.Token = server.Token
+		data.DownloadPrefix = GetDownloadPrefix(server.Token)
+
+		// Evitando tentativa de download de anexos sem o bot estar devidamente sincronizado
+		status := server.GetStatus()
+		if status != whatsapp.Ready {
+			data.ErrorMessage = fmt.Sprintf("server (%s) not ready yet ! current status: %s; %s", server.Wid.String, status.String(), data.ErrorMessage)
+		}
+
+		timestamp, err := api.GetTimestamp(r)
+		if err != nil {
+			data.ErrorMessage = fmt.Sprintf("%s; %s", err.Error(), data.ErrorMessage)
+		}
+
+		filters := api.GetReceiveMessageFilters(r)
+		data.TimestampFilter = r.URL.Query().Get("timestamp")
+		data.LastFilter = r.URL.Query().Get("last")
+		data.SearchFilter = filters.Search
+		data.CategoryFilter = filters.Category
+		data.TypeFilter = filters.Type
+		data.ExceptionsFilter = filters.Exceptions
+		data.FromMeFilter = filters.FromMe
+		data.FromHistoryFilter = filters.FromHistory
+		data.ChatIDFilter = filters.ChatID
+		data.MessageIDFilter = filters.MessageID
+		data.TrackIDFilter = filters.TrackID
+
+		messages := api.GetOrderedMessagesWithFilters(server, timestamp, filters)
+		data.Messages = messages
+	}
+
+	templates := template.New("receive")
+	templates = templates.Funcs(funcMap)
+	templates, err = templates.ParseFiles(
+		GetViewPath("layouts/main.tmpl"),
+		GetViewPath("bot/receive.tmpl"))
+	if err != nil {
+		data.ErrorMessage = err.Error()
+	}
+	templates.ExecuteTemplate(w, "main", data)
+}

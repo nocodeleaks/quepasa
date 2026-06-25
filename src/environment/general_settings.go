@@ -1,0 +1,122 @@
+package environment
+
+import qplog "github.com/nocodeleaks/quepasa/qplog"
+
+// General environment variable names
+const (
+	ENV_MIGRATIONS               = "MIGRATIONS"               // enable migrations (can also be a path)
+	ENV_TITLE                    = "APP_TITLE"                // application title for whatsapp id
+	ENV_REMOVEDIGIT9             = "REMOVEDIGIT9"             // remove digit 9 from phones
+	ENV_SYNOPSISLENGTH           = "SYNOPSISLENGTH"           // synopsis length for messages
+	ENV_CACHELENGTH              = "CACHELENGTH"              // cache max items
+	ENV_CACHEDAYS                = "CACHEDAYS"                // cache max days
+	ENV_CONVERT_WAVE_TO_OGG      = "CONVERT_WAVE_TO_OGG"      // convert wave to OGG
+	ENV_COMPATIBLE_MIME_AS_AUDIO = "COMPATIBLE_MIME_AS_AUDIO" // treat compatible MIME as audio
+	ENV_FORCE_AUDIO_AS_PTT       = "FORCE_AUDIO_AS_PTT"       // force all audio formats to be sent as PTT voice notes
+	ENV_ACCOUNTSETUP             = "ACCOUNTSETUP"             // enable or disable account creation
+	ENV_TESTING                  = "TESTING"                  // testing mode
+	ENV_LOGLEVEL                 = "LOGLEVEL"                 // general log level
+	ENV_CONVERT_PNG_TO_JPG       = "CONVERT_PNG_TO_JPG"       // convert PNG to JPG (not implemented yet)
+
+	// Login customization
+	ENV_LOGIN_LOGO         = "LOGIN_LOGO"         // URL for login page logo/icon
+	ENV_LOGIN_SUBTITLE     = "LOGIN_SUBTITLE"     // subtitle under logo
+	ENV_LOGIN_WARNING      = "LOGIN_WARNING"      // prominent warning text on login
+	ENV_LOGIN_FOOTER       = "LOGIN_FOOTER"       // footer text on login
+	ENV_LOGIN_LAYOUT       = "LOGIN_LAYOUT"       // layout type: center|split|simple
+	ENV_LOGIN_CUSTOM_CSS   = "LOGIN_CUSTOM_CSS"   // URL to custom CSS for login page
+	ENV_LOGIN_FONT_AWESOME = "LOGIN_FONT_AWESOME" // URL to Font Awesome CSS
+	ENV_LOGIN_GOOGLE_FONTS = "LOGIN_GOOGLE_FONTS" // URL to Google Fonts stylesheet
+)
+
+// GeneralConfig holds all general application configuration loaded from environment
+type GeneralSettings struct {
+	Migrations            string `json:"migrations"`
+	AppTitle              string `json:"app_title"`
+	RemoveDigit9          bool   `json:"remove_digit_9"`
+	SynopsisLength        uint32 `json:"synopsis_length"`
+	CacheLength           uint64 `json:"cache_length"`
+	CacheDays             uint32 `json:"cache_days"`
+	ConvertWaveToOGG      bool   `json:"convert_wave_to_ogg"`
+	CompatibleMIMEAsAudio bool   `json:"compatible_mime_as_audio"`
+	ForceAudioAsPTT       bool   `json:"force_audio_as_ptt"`
+	AccountSetup          bool   `json:"account_setup"`
+	Testing               bool   `json:"testing"`
+	LogLevel              string `json:"log_level"`
+	ConvertPNGToJPG       bool   `json:"convert_png_to_jpg"`
+
+	// Login customization
+	LoginLogo        string `json:"login_logo"`
+	LoginSubtitle    string `json:"login_subtitle"`
+	LoginWarning     string `json:"login_warning"`
+	LoginFooter      string `json:"login_footer"`
+	LoginLayout      string `json:"login_layout"`
+	LoginCustomCSS   string `json:"login_custom_css"`
+	LoginFontAwesome string `json:"login_font_awesome"`
+	LoginGoogleFonts string `json:"login_google_fonts"`
+}
+
+// NewGeneralSettings creates a new general settings by loading all values from environment
+func NewGeneralSettings() GeneralSettings {
+	return GeneralSettings{
+		Migrations:            getEnvOrDefaultString(ENV_MIGRATIONS, "true"),
+		AppTitle:              getEnvOrDefaultString(ENV_TITLE, ""),
+		RemoveDigit9:          getEnvOrDefaultBool(ENV_REMOVEDIGIT9, false),
+		SynopsisLength:        getEnvOrDefaultUint32(ENV_SYNOPSISLENGTH, 150),
+		CacheLength:           getEnvOrDefaultUint64(ENV_CACHELENGTH, 0),
+		CacheDays:             getEnvOrDefaultUint32(ENV_CACHEDAYS, 0),
+		ConvertWaveToOGG:      getEnvOrDefaultBool(ENV_CONVERT_WAVE_TO_OGG, true),
+		CompatibleMIMEAsAudio: getEnvOrDefaultBool(ENV_COMPATIBLE_MIME_AS_AUDIO, true),
+		ForceAudioAsPTT:       getEnvOrDefaultBool(ENV_FORCE_AUDIO_AS_PTT, true),
+		AccountSetup:          getEnvOrDefaultBool(ENV_ACCOUNTSETUP, true),
+		Testing:               getEnvOrDefaultBool(ENV_TESTING, false),
+		LogLevel:              getEnvOrDefaultString(ENV_LOGLEVEL, ""),
+		ConvertPNGToJPG:       getEnvOrDefaultBool(ENV_CONVERT_PNG_TO_JPG, false),
+
+		// Login customization
+		LoginLogo:        getEnvOrDefaultString(ENV_LOGIN_LOGO, ""),
+		LoginSubtitle:    getEnvOrDefaultString(ENV_LOGIN_SUBTITLE, ""),
+		LoginWarning:     getEnvOrDefaultString(ENV_LOGIN_WARNING, ""),
+		LoginFooter:      getEnvOrDefaultString(ENV_LOGIN_FOOTER, ""),
+		LoginLayout:      getEnvOrDefaultString(ENV_LOGIN_LAYOUT, "center"),
+		LoginCustomCSS:   getEnvOrDefaultString(ENV_LOGIN_CUSTOM_CSS, ""),
+		LoginFontAwesome: getEnvOrDefaultString(ENV_LOGIN_FONT_AWESOME, ""),
+		LoginGoogleFonts: getEnvOrDefaultString(ENV_LOGIN_GOOGLE_FONTS, ""),
+	}
+}
+
+// UseCompatibleMIMEsAsAudio returns combined result of ConvertWaveToOGG and CompatibleMIMEAsAudio
+func (config *GeneralSettings) UseCompatibleMIMEsAsAudio() bool {
+	return config.ConvertWaveToOGG && config.CompatibleMIMEAsAudio
+}
+
+// Migrate checks if database migrations should be enabled based on the Migrations setting
+func (config *GeneralSettings) Migrate() bool {
+	// If it's "false", return false. Otherwise (including custom paths), return true
+	return config.Migrations != "false"
+}
+
+// MigrationPath returns the custom path for database migrations if specified
+func (config *GeneralSettings) MigrationPath() string {
+	// If it's "true" or "false", return empty (use default behavior)
+	if config.Migrations == "true" || config.Migrations == "false" {
+		return ""
+	}
+	// Otherwise, return the custom path
+	return config.Migrations
+}
+
+// LogLevelFromConfig returns a parsed qplog.Level from the config.
+// If the environment variable is empty, returns the provided default level.
+func (config *GeneralSettings) LogLevelFromConfig(defaultLevel qplog.Level) qplog.Level {
+	if len(config.LogLevel) == 0 {
+		return defaultLevel
+	}
+
+	envLevel, err := qplog.ParseLevel(config.LogLevel)
+	if err != nil {
+		panic("Invalid log level: " + config.LogLevel +
+			". Valid levels are: panic, fatal, error, warn, info, debug, trace")
+	}
+	return envLevel
+}

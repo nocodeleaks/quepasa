@@ -1,0 +1,400 @@
+package models
+
+import (
+	"database/sql"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"path/filepath"
+	"runtime"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
+
+	migrate "github.com/joncalhoun/migrate"
+	library "github.com/nocodeleaks/quepasa/library"
+	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
+	log "github.com/nocodeleaks/quepasa/qplog"
+)
+
+type QpDatabase struct {
+	Parameters         library.DatabaseParameters `json:"parameters,omitempty"`
+	Connection         *sqlx.DB
+	Users              QpDataUsersInterface
+	Servers            QpDataServersInterface
+	Dispatching        QpDataDispatchingInterface
+	ConversationLabels QpDataConversationLabelsInterface
+}
+
+var (
+	Sync       sync.Once // Objeto de sinaleiro para garantir uma única chamada em todo o andamento do programa
+	Connection *sqlx.DB
+)
+
+var dbParameters = library.DatabaseParameters{
+	Driver:   "sqlite3",
+	DataBase: "quepasa",
+}
+
+// GetDB returns a database connection for the given
+// database environment variables
+func GetDB() *sqlx.DB {
+	Sync.Do(func() {
+
+		// generates the relative connection string
+		connectionString := dbParameters.GetConnectionString()
+
+		// Tenta realizar a conexão
+		dbconn, err := sqlx.Connect(dbParameters.Driver, connectionString)
+		if err != nil {
+			log.Fatalf("error at database connection: %s, msg: %s", dbParameters.Driver, err.Error())
+			return
+		}
+
+		dbconn.DB.SetMaxIdleConns(500)
+		dbconn.DB.SetMaxOpenConns(1000)
+		dbconn.DB.SetConnMaxLifetime(30 * time.Second)
+
+		// Definindo uma única conexão para todo o sistema
+		Connection = dbconn
+	})
+	return Connection
+}
+
+func GetDatabase() *QpDatabase {
+	db := GetDB()
+
+	var iusers = QpDataUserSql{db}
+	var iservers = QpDataServerSql{db}
+	var idispatching = QpDataServerDispatchingSql{db}
+	var iconversationlabels = QpDataConversationLabelSql{db}
+
+	return &QpDatabase{
+		dbParameters,
+		db,
+		iusers,
+		iservers,
+		idispatching,
+		iconversationlabels}
+}
+
+// NewQpDataUserSql creates a new QpDataUserSql instance with the given database connection
+func NewQpDataUserSql(db *sqlx.DB) QpDataUsersInterface {
+	return QpDataUserSql{db}
+}
+
+// NewQpDataServerDispatchingSql creates a new QpDataServerDispatchingSql instance with the given database connection
+func NewQpDataServerDispatchingSql(db *sqlx.DB) QpDataDispatchingInterface {
+	return QpDataServerDispatchingSql{db}
+}
+
+// NewQpDataServerSql creates a new QpDataServerSql instance with the given database connection
+func NewQpDataServerSql(db *sqlx.DB) QpDataServersInterface {
+	return QpDataServerSql{db}
+}
+
+// NewQpDataConversationLabelSql creates a new QpDataConversationLabelSql instance with the given database connection
+func NewQpDataConversationLabelSql(db *sqlx.DB) QpDataConversationLabelsInterface {
+	return QpDataConversationLabelSql{db}
+}
+
+// MigrateToLatest updates the database to the latest schema
+func MigrateToLatest(logentry log.Logger) (err error) {
+	if !ENV.Migrate() {
+		return
+	}
+
+	fullPath := ENV.MigrationPath()
+
+	logentry.Info("migrating database (if necessary)")
+	if len(fullPath) == 0 {
+		workDir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		if runtime.GOOS == "windows" {
+			logentry.Info("migrating database on windows operational system")
+
+			// windows ===================
+			leadingWindowsUnit, _ := filepath.Rel("z:\\", workDir)
+			migrationsDir := filepath.Join(leadingWindowsUnit, "migrations")
+			fullPath = fmt.Sprintf("/%s", strings.ReplaceAll(migrationsDir, "\\", "/"))
+		} else {
+			// linux ===================
+			migrationsDir := filepath.Join(workDir, "migrations")
+			fullPath = fmt.Sprintf("file://%s/", strings.Trim(migrationsDir, "/"))
+		}
+	}
+
+	logentry.Debugf("full path database: %s", fullPath)
+
+	migrations := Migrations(fullPath)
+	db := GetDB().DB
+	migrator := &QpMigrator{
+		Migrations: migrations,
+		LogStruct:  library.LogStruct{LogEntry: logentry},
+	}
+	err = migrator.Migrate(db, dbParameters.Driver)
+	if err != nil {
+		logentry.Fatal(err)
+	}
+
+	logentry.Debug("migrating finished")
+	return nil
+}
+
+func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
+	fullPath = strings.TrimRight(fullPath, "/\\")
+	log.Debugf("migrating files from: %s", fullPath)
+	files, err := os.ReadDir(fullPath)
+	if err != nil {
+		// Common case: binary is started from repo root, but migrations live in src/migrations.
+		// If <workdir>/migrations doesn't exist, fall back to <workdir>/src/migrations.
+		alt := filepath.Join(filepath.Dir(fullPath), "src", "migrations")
+		alt = strings.TrimRight(alt, "/\\")
+		if alt != fullPath {
+			if altFiles, altErr := os.ReadDir(alt); altErr == nil {
+				log.Infof("migrations path fallback: using %s", alt)
+				fullPath = alt
+				files = altFiles
+				err = nil
+			}
+		}
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "cannot find the file specified") {
+			log.Warnf("no migrations found at: %s", fullPath)
+		} else {
+			log.Fatal(err)
+		}
+	}
+
+	log.Debug("migrating creating array with definitions")
+	confMap := make(map[string]*QpMigration)
+
+	for _, file := range files {
+		info := file.Name()
+		dotSplitted := strings.Split(info, ".")      // file name splitted by dots
+		extension := dotSplitted[len(dotSplitted)-1] // file extension
+		if extension == "sql" {
+			id := strings.Split(info, "_")[0]
+
+			title := strings.TrimPrefix(dotSplitted[0], id+"_")
+			status := dotSplitted[1]
+			filepath := fullPath + "/" + info
+			if v, ok := confMap[id]; ok {
+				switch status {
+				case "up":
+					v.FileUp = filepath
+				case "down":
+					v.FileDown = filepath
+				default:
+					// unknown status - ignore
+				}
+			} else {
+				switch status {
+				case "up":
+					confMap[id] = &QpMigration{Id: id, Title: title, FileUp: filepath}
+				case "down":
+					confMap[id] = &QpMigration{Id: id, Title: title, FileDown: filepath}
+				default:
+					// unknown status - ignore
+				}
+			}
+		}
+	}
+
+	migrations = append(migrations, GetBase())
+
+	for _, migration := range confMap {
+		migrations = append(migrations, migration.ToSqlxMigration())
+	}
+
+	// ordering
+	sort.SliceStable(migrations, func(i, j int) bool {
+		return migrations[i].ID < migrations[j].ID
+	})
+
+	return
+}
+
+// Provides the first migration
+func GetBase() migrate.SqlxMigration {
+	migration := migrate.SqlxQueryMigration("1", `
+	CREATE TABLE IF NOT EXISTS "users" (
+		"username" CHAR (255) PRIMARY KEY NOT NULL,
+		"password" VARCHAR (255) NOT NULL,
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+	  );
+	  
+	  CREATE TABLE IF NOT EXISTS "servers" (
+		"token" CHAR (100) PRIMARY KEY UNIQUE NOT NULL,
+		"wid" VARCHAR (255) UNIQUE,
+		"verified" BOOLEAN NOT NULL DEFAULT FALSE,
+		"devel" BOOLEAN NOT NULL DEFAULT FALSE,
+		"metadata" TEXT DEFAULT NULL,
+		"groups" INT(1) NOT NULL DEFAULT 0,
+  		"broadcasts" INT(1) NOT NULL DEFAULT 0,
+  		"readreceipts" INT(1) NOT NULL DEFAULT 0,
+  		"deliveryreceipts" INT(1) NOT NULL DEFAULT 0,
+  		"calls" INT(1) NOT NULL DEFAULT 0,
+  		"readupdate" INT(1) NOT NULL DEFAULT 0,
+  		"direct" INT(1) NOT NULL DEFAULT 0,
+		"user" CHAR (255) DEFAULT NULL REFERENCES "users"("username"),
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+	  );
+
+	  CREATE TABLE IF NOT EXISTS "dispatching" (
+		"context" CHAR (100) NOT NULL REFERENCES "servers"("token"),
+		"connection_string" VARCHAR (255) NOT NULL,
+		"type" VARCHAR (50) NOT NULL DEFAULT 'webhook',
+		"forwardinternal" BOOLEAN NOT NULL DEFAULT FALSE,
+		"trackid" VARCHAR (100) NOT NULL DEFAULT '',
+		"readreceipts" INT(1) NOT NULL DEFAULT 0,
+		"deliveryreceipts" INT(1) NOT NULL DEFAULT 0,
+  		"groups" INT(1) NOT NULL DEFAULT 0,
+  		"broadcasts" INT(1) NOT NULL DEFAULT 0,
+  		"calls" INT(1) NOT NULL DEFAULT 0,
+  		"direct" INT(1) NOT NULL DEFAULT 0,
+		"extra" BLOB DEFAULT NULL,
+		"failure" TIMESTAMP DEFAULT NULL,
+		"success" TIMESTAMP DEFAULT NULL,
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "dispatching_pkey" PRIMARY KEY ("context", "connection_string")
+	  );
+
+	  CREATE TABLE IF NOT EXISTS "conversation_labels" (
+		"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+		"user" CHAR (255) NOT NULL REFERENCES "users"("username"),
+		"name" VARCHAR (100) NOT NULL COLLATE NOCASE,
+		"color" VARCHAR (32) DEFAULT '',
+		"active" BOOLEAN NOT NULL DEFAULT TRUE,
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "conversation_labels_user_name_key" UNIQUE ("user", "name")
+	  );
+
+	  CREATE TABLE IF NOT EXISTS "conversation_label_links" (
+		"server_token" CHAR (100) NOT NULL REFERENCES "servers"("token"),
+		"chat_id" VARCHAR (255) NOT NULL,
+		"label_id" INTEGER NOT NULL REFERENCES "conversation_labels"("id"),
+		"timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT "conversation_label_links_pkey" PRIMARY KEY ("server_token", "chat_id", "label_id")
+	  );
+
+	  CREATE INDEX IF NOT EXISTS "idx_conversation_label_links_server_chat" ON "conversation_label_links" ("server_token", "chat_id");
+	  
+	  -- IMPORTANT:
+	  -- This seed is only applied on brand-new/empty databases (base migration).
+	  -- It marks historical migrations as applied because the base schema already
+	  -- includes their end-state. Do NOT add new migration IDs here unless the
+	  -- base schema was also updated to include the same changes.
+	  INSERT OR IGNORE INTO migrations (id) VALUES
+	  ('202207131700'),
+	  ('202209281840'),
+	  ('202303011900'),
+	  ('202402291556'),
+	  ('202403021242'),
+	  ('202403141920'),
+	  ('202512151400'),
+	  ('202512231500'),
+	  ('202602241200'),
+	  ('202604221930'),
+	  ('202604251130'),
+	  ('202604281430'),
+	  ('202605121200'),
+	  ('202605121201'),
+	  ('202605191300'),
+	  ('202605191301');
+	  `, "")
+	return migration
+}
+
+type QpMigrator struct {
+	Migrations []migrate.SqlxMigration
+	library.LogStruct
+}
+
+func (source *QpMigrator) Printf(format string, args ...interface{}) (int, error) {
+	format = strings.ToLower(format)
+	format = strings.ReplaceAll(format, "\n", "")
+
+	logentry := source.GetLogger()
+	logentry.Debugf(format, args)
+
+	if len(args) > 0 && strings.Contains(format, "running") {
+		str := fmt.Sprintf("%s", args[0])
+		Running = append(Running, str)
+	}
+
+	return len([]byte(format)), nil
+}
+
+func (source *QpMigrator) Migrate(sqlDB *sql.DB, dialect string) error {
+	// SQLite migrations use DROP TABLE + RENAME to recreate tables (e.g. to change
+	// column constraints). When child tables have FK references to the parent being
+	// dropped, SQLite raises FOREIGN KEY constraint failed even though the data is
+	// consistent. PRAGMA foreign_keys must be OFF before the transaction begins —
+	// it cannot be changed inside an open transaction (silently ignored).
+	// Connection pool LIFO ensures the same connection (with FK=OFF) is reused by
+	// the migration transaction, while the library's out-of-transaction INSERT INTO
+	// migrations opens a fresh connection (which is fine — migrations has no FKs).
+	if dialect == "sqlite3" {
+		sqlDB.Exec("PRAGMA foreign_keys = OFF")
+		defer sqlDB.Exec("PRAGMA foreign_keys = ON")
+	}
+
+	migrator := &migrate.Sqlx{
+		Printf:     source.Printf,
+		Migrations: source.Migrations,
+	}
+
+	err := migrator.Migrate(sqlDB, dialect)
+	if err != nil {
+		rbErr := migrator.Rollback(sqlDB, dialect)
+		if rbErr != nil {
+			return rbErr
+		}
+		return err
+	}
+
+	return nil
+}
+
+var Running []string
+
+var MigrationHandlers = map[string]func(string){
+	"202303011900": MigrationHandler_202303011900,
+}
+
+func MigrationHandler_202303011900(id string) {
+	log.Infof("running migration handler for: %s", id)
+	db := GetDatabase()
+	servers := db.Servers.FindAll()
+	for _, server := range servers {
+		oldWid := server.GetWId()
+		if strings.HasSuffix(oldWid, "@migrated") {
+			phone := library.GetPhoneByWId(oldWid)
+			store, err := whatsmeow.WhatsmeowService.GetStoreForMigrated(phone)
+			if err != nil {
+				log.Warnf("error at getting store for phone: %s, cause: %s", phone, err.Error())
+				continue
+			}
+
+			server.SetWId(store.ID.String())
+			err = db.Servers.Update(server)
+			if err != nil {
+				log.Fatalf("error at update server: %s", err.Error())
+			}
+
+			log.Infof("wid updated with success: %s", server.Token)
+
+			// Removed legacy block that used db.Webhooks (deprecated)
+			// All webhooks and RabbitMQ are now handled via Dispatching
+		}
+	}
+}

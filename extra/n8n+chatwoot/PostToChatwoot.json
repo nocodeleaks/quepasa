@@ -1,0 +1,2004 @@
+{
+  "name": "PostToChatwoot",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.participant?.title}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Direct Message ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        208
+      ],
+      "id": "cdcbc507-c2f9-447c-972c-4f590e5730a2"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "=**{{$json.participant.title}}**: {{$json.payload.content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepend Title",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        368
+      ],
+      "id": "c536074f-746b-485f-9bc4-0bd31401fe9c"
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{$json.extra.qptoken}}",
+        "operation": "download",
+        "messageid": "={{ $json.payload.content_attributes?.items?.quepasa?.msgid ?? $json.payload.echo_id }}",
+        "fileName": "={{$json.attachment.filename}}"
+      },
+      "id": "0e19a23b-9002-44f4-b20d-5e4428f56159",
+      "name": "Quepasa Download Incoming",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        2624,
+        16
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "bb517ea4-8e95-4944-b30d-1d7b67121b34",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.attachment}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Has Incoming Attachment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        176
+      ],
+      "id": "d9a3d2ed-a7d9-43b8-94e3-d9d2c82a825e"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "47e7e948-ab04-4e0b-9765-f708ecc883cf",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        3072,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.error}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "861e3c50-5d02-4ec1-8fb5-cb2801999002",
+      "name": "(In) Error On Get Attach ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3248,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Fail Retry \nImportant to retry on fail because if you are using any external storage, it will try to save at this time.\nSo you need to ensure success ...",
+        "height": 347.0509255000625,
+        "width": 258.1602840291324
+      },
+      "id": "5c6d8c7d-b4f8-40d6-9919-9878390b1fb6",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6464,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "extra.qphost",
+              "value": "={{ $json.extra.qphost ?? \"http://127.0.0.1:31000\" }}"
+            },
+            {
+              "name": "extra.cwhost",
+              "value": "={{ $json.extra.cwhost ?? \"http://127.0.0.1:3000\" }}"
+            },
+            {
+              "name": "extra.qptoken",
+              "value": "={{ $json.extra.qptoken ?? $json.extra.identifier }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7cf5332b-41bc-472c-b0a8-3fca21b942bf",
+      "name": "Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        464,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for message operations\n* Reduced privileged token exposure\n\n### Previous Updates (1.0.25)\n* removed audio transcriptions\n* theated by captain workflow\n\n## Recommendations \n* Remember set timeout to 10 seconds",
+        "height": 375,
+        "width": 506
+      },
+      "id": "edb27490-8763-4ea8-af4f-b182862429fe",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.synopsis }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "c2f5b499-23eb-418a-8d0d-fa52059a0549",
+      "name": "If InReply | Reaction ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content_attributes.in_reply_to",
+              "value": "={{ $json.payload.content_attributes.in_reply_to.split('-')[2] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2f533d30-8627-4e9e-a374-98ae935ee1c2",
+      "name": "Prepend Reference",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{ $json.extra.cwhost }}/api/v1/accounts/{{ $json.extra.account }}/conversations/{{ $json.conversation.id }}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{ $json.payload }}",
+        "headerParametersJson": "={ \"api_access_token\": \"{{ $json.extra.atoken }}\" }"
+      },
+      "name": "Send Edited Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        -80
+      ],
+      "id": "08e83257-cd73-4823-9ab2-c47ad96ba2e9",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        },
+        "sendBinaryData": true,
+        "binaryPropertyName": "attachments[]:data",
+        "headerParametersJson": "={ \"api_access_token\": \"{{$json.extra.atoken}}\" }",
+        "queryParametersJson": "={{$json.payload}}"
+      },
+      "name": "Post Incoming Message Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        6544,
+        816
+      ],
+      "id": "9ad35271-12f2-4dba-9ce4-e67086e1bce5",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "mode": "jsonToBinary",
+        "convertAllData": false,
+        "sourceKey": "attachment.thumbnail.data",
+        "options": {
+          "dataIsBase64": true,
+          "fileName": "={{ $json.attachment.filename }}",
+          "mimeType": "image/jpeg"
+        }
+      },
+      "id": "a6aff601-968d-4037-b53a-e1652c0c816e",
+      "name": "Move Binary Data",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [
+        5216,
+        736
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const vcard = $json.vcard;\n\n// split the string on \\n or \\r characters\nconst lines = vcard.text.match(/[^\\r\\n]+/g);\n\nconst fn = lines.find(element => element.startsWith(\"FN:\"));\nif (fn) {\n  vcard.fn = fn.substring(3);\n}\n\nconst items = [];\n\nfunction HandlerPhone(item, phoneline){\n  // getting phone\n    item.phone = phoneline.split(\":\").pop();\n    if (item.phone) {\n      item.phone = item.phone.replace(/\\D/g, \"\");\n      if (item.phone.length === 0) item.phone = undefined;\n    }\n    \n    // getting phone old method\n    item.phone_old = phoneline.split('TEL')[1]?.split(':')[0]?.split('waid=')[1];\n    if (item.phone_old) {\n      item.phone_old = item.phone_old.replace(/\\D/g, \"\");\n      if (item.phone_old.length === 0) item.phone_old = undefined;\n    }\n    \n    // getting whatsapp id\n    const waidindex = phoneline.indexOf(\"waid=\");\n    if (waidindex > -1) {\n      item.waid = phoneline.substring(waidindex + 5).split(':')[0];\n      if (item.waid) {\n        item.waid = item.waid.replace(/\\D/g, \"\");\n        if (item.waid.length === 0) item.waid = undefined;\n      }\n    }    \n}\n\nfunction ForEachItem(element, index, array) {\n  element = element.substring(4);\n  const itemindex = element.split('.')[0];    \n  const telprefix = itemindex + \".TEL;\";\n  if (element.startsWith(telprefix)) {\n    element = element.substring(5);\n    \n    let item = items.find(s => s.index == itemindex);\n    if (!item) { item = { index: itemindex }; items.push(item); }\n\n    HandlerPhone(item, element);\n  }    \n}\n\nfunction ForEachTEL(element, index, array) {\n  element = element.substring(4);  \n    \n  const item = {}; \n  items.push(item);\n\n  HandlerPhone(item, element);  \n}\n\nconst itemlines = lines.filter(element => element.startsWith(\"item\"));\nitemlines.forEach(ForEachItem);\n\nconst tellines = lines.filter(element => element.startsWith(\"TEL;\"));\ntellines.forEach(ForEachTEL);\n\nvcard.items = items;\n\nif (vcard.items.length > 0) {\n  // setting default phone\n  vcard.phone = vcard.items[0].waid ?? vcard.items[0].phone ?? vcard.items[0].phone_old;\n}\n\nreturn $input.item;"
+      },
+      "id": "58d7de66-d5d1-4512-b9f0-491a75598314",
+      "name": "Get vCard Infos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        5280,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "message_type",
+              "value": "={{ 2 }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.import.message }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.extra.atoken }}"
+            }
+          ]
+        }
+      },
+      "name": "Post Success Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        7520,
+        336
+      ],
+      "id": "d153207c-fa32-4be9-ab8d-691f4ea876f1",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT messages.id as internal_id\nFROM messages INNER JOIN conversations \nON messages.conversation_id = conversations.id\nWHERE messages.account_id = '{{ $json.extra.account }}' AND messages.source_id = '{{ $json.payload.source_id }}' ORDER BY messages.id DESC LIMIT 1;\n",
+        "options": {}
+      },
+      "id": "8d1d6a1c-7304-4bad-975f-b20ad81d24ec",
+      "name": "Get Edited Message Id",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -160
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.payload.edited }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "95ad97fc-cdab-4cfa-9f60-43f18f371aa1",
+      "name": "If Edited Message ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        624,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{$json.payload}}",
+        "headerParametersJson": "={ \"api_access_token\": \"{{$json.extra.atoken}}\" }",
+        "queryParametersJson": "{}"
+      },
+      "name": "Post Incoming Message Without Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        5920,
+        160
+      ],
+      "id": "d975861f-caa2-4c52-b733-cff3886215a6",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $binary[\"data\"].fileExtension }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "vcf"
+            },
+            {
+              "value2": "url",
+              "output": 1
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "02fd64d3-180a-4771-8791-5cb17c719ca8",
+      "name": "Switch By Extension",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        4064,
+        368
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "650a8b4e-55b6-4a95-bc1c-070edbbc1f72",
+      "name": "Extension .url",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4592,
+        800
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e05641db-367a-456e-94ae-27857918bc2a",
+      "name": "Extension .vcf",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4656,
+        384
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7989e39b-f3c2-49e8-8040-6777b6fde84b",
+      "name": "Any Other Extensions",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4592,
+        1104
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "97e6afd2-8ef6-4fa5-b96b-d6f57deb6ea1",
+      "name": "Insert Contact Into Chatwoot",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5920,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "b6e7d1fa-71d0-4cf6-99dc-2da51322cfaf",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        7296,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.error }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "645c3f68-7f14-4350-91ec-526d4ad0aea4",
+      "name": "If Insert Contact Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        6400,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.error.message }}",
+              "operation": "contains",
+              "value2": "has already been taken"
+            }
+          ]
+        }
+      },
+      "id": "84e312cf-31cd-4456-b43a-b5c7a23a8e4b",
+      "name": "If Already Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        6576,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "import.message",
+              "value": "✅ Contato já existe"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "94fb62f0-2d26-45ef-9c8d-36a703f4ceb1",
+      "name": "Set Success For Already Exists",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6816,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "import.message",
+              "value": "✅ Contato importado com sucesso"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3f58ce9e-630e-4ec4-96e1-16079b3cc680",
+      "name": "Set Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6816,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "import.message",
+              "value": "=Falha na importação: {{ $json.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f7ccb2c7-85f3-4c7e-8cf3-15f6de67be55",
+      "name": "Set Fail",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        6816,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "653aa419-74dc-4683-a250-4c23c2d80c35",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        7104,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "=**Nome:** {{ $json.vcard.fn }}\n**Telefone:** {{ $json.vcard.phone }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8cadc9ec-2f77-4f87-a6a2-7ee12c5781c8",
+      "name": "Adjust Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        5504,
+        368
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ac551ff7-9435-4ade-a381-df09684b796e",
+      "name": "(Localization) Follow and Post",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5376,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$binary}}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "a0a229fe-006b-4780-a543-9b55ab064d92",
+      "name": "Post Incomming Text Only ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3856,
+        256
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {},
+      "id": "17ea570d-e32a-4f6c-86e0-a112b49164dc",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4064,
+        176
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "827fb084-6651-4c0c-841c-a36501ab2be6",
+      "name": "No Operation, do nothing2",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5056,
+        528
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6f35769e-75a2-4352-a571-dadf175c9016",
+      "name": "No Operation, do nothing3",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        832,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "9e049c5f-a449-43e4-a38b-c4d1f7cf3438",
+      "name": "Merge Edited Message Info",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1232,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "={{ $env['C8Q_MSGFOR_EDITED_CONTENT'] ?? '\\u26A0\\uFE0F ***Essa mensagem foi editada !***' }}\n\n-------------------------------------\n{{ $json.payload.content }}"
+            },
+            {
+              "name": "payload.content_attributes.in_reply_to_external_id",
+              "value": "={{ $json.payload.source_id }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "payload.content_attributes.in_reply_to",
+              "value": "={{ +$json.internal_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f9c623e3-cb77-4638-8fc9-0c8650a71ab8",
+      "name": "Prepend Edited Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0261a391-65e7-45b7-9186-f00cec3a5cb6",
+      "name": "No Operation, do nothing4",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        832,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.extra.atoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.vcard.fn }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "=+{{ $json.vcard.phone }}"
+            },
+            {
+              "name": "identifier",
+              "value": "={{ $json.vcard.phone }}@s.whatsapp.net"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "310610ee-6452-42cf-a323-227b7bfec5c7",
+      "name": "Try to Add Contact On Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        6176,
+        240
+      ],
+      "alwaysOutputData": true,
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "f512d7b7-6b02-418b-9d0b-72df76fed3c3",
+      "name": "No Operation, do nothing5",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.payload.content}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "eed79fb1-2881-4ac3-b247-cf4f139e9d02",
+      "name": "If Not Empty Content ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        288
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "acaafe34-e006-4f7d-846c-ed1ef4256853",
+      "name": "(In) Text Message Following With Attachment",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3632,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "={{ $env['C8Q_MSGFOR_UNKNOWN_CONTENT'] ?? '! \"Algum EMOJI\" | \"Alguma Reação que o sistema não entende ainda ..\"' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1aa6f998-a1f1-49cd-b40c-af7b53b5a3ba",
+      "name": "Set Unknown Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "={{ $env['C8Q_MSGFOR_ATTACHERROR_CONTENT'] ?? '** Falha ao baixar anexo !' }}\n\n-------------------------------------\nmessage id: {{ $('PAYLOAD').item.json.payload.content_attributes?.items?.quepasa?.msgid ?? $('PAYLOAD').item.json.payload.echo_id }}\nfilename: {{ $json[\"attachment\"][\"filename\"] ?? \"unknown\" }}\nerror: {{ $json.error }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9a306383-a6c9-4bbe-b229-68327014b066",
+      "name": "(In) Prepend Attach Error Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        3456,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "= {{ $env['C8Q_MSGFOR_LOCALIZATION_CONTENT'] ?? '** Localização **' }}\n\n-------------------------------------\n{{ $json.attachment.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7cba6c9a-5dd4-43a1-8615-1ae771fa4bbb",
+      "name": "Override Localization Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        4816,
+        800
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b1a48988-8177-4ca2-bd10-aeb3dce34be1",
+      "name": "From .vcf",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5856,
+        528
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4d850918-2896-429e-9a0e-b92cf11e0791",
+      "name": "From .url",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5856,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e4c92b92-7d5c-4835-8f9d-c4cd0e384533",
+              "leftValue": "={{ $json.participant.phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3ce769e-42fb-49a7-91b6-7c4ccb1f1712",
+      "name": "If Has Phone ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "=**({{ $json.participant.phone }}) {{$json.participant.title}}**: {{$json.payload.content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepend Title & Phone",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        224
+      ],
+      "id": "5e9f8db1-6b91-4528-9491-d480c5b2b75d"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "vcard.text",
+        "options": {
+          "keepSource": "json"
+        }
+      },
+      "id": "2566528f-367a-48ae-9dce-8ed377cad106",
+      "name": "Extract VCard",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        5056,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.extra }}",
+        "options": {}
+      },
+      "id": "65b851a9-8873-457b-ba11-8ff1d24ddd5a",
+      "name": "EXTRA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $('When Called By Another Workflow').item.json }}",
+        "options": {}
+      },
+      "id": "3d46faaf-2f5f-4371-b0de-f691aae769e5",
+      "name": "PAYLOAD",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "efb2f26e-8d25-4e23-a8e1-8101eee24685",
+              "leftValue": "={{$json.attachment.data}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1f742dc7-986c-4755-ba7b-fba243b9cb44",
+      "name": "If Has BASE64 Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2368,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "2e65357a-1dbd-4583-bfaf-f3f8bfbf41ea",
+      "name": "(In) Attachment",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "attachment.data",
+        "options": {
+          "fileName": "=ads-{{ $json.payload.source_id }}.jpeg",
+          "mimeType": "image/jpeg"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2624,
+        -160
+      ],
+      "id": "0260a19c-36f6-417d-a1a3-a5df38104671",
+      "name": "Convert to File",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "88a55070-1e21-4703-a588-c430857165cc",
+              "leftValue": "={{ $json.attachment.thumbnail }}",
+              "rightValue": "={{ $json.attachment.thumbnail }}",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fd0b2916-741a-4e10-bdd7-452f1e68fa4c",
+      "name": "If Has Thumbnail",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5024,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "account",
+              "value": "={{ $json.extra.account ?? \"-\" }}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{ $json.extra.inbox ?? \"-\" }}"
+            },
+            {
+              "key": "soc",
+              "value": "={{ String($json.extra.soc ?? \"-\")}}"
+            },
+            {
+              "key": "conversation",
+              "value": "={{ $json.conversation.id ?? \"-\" }}"
+            },
+            {
+              "key": "chat",
+              "value": "={{ $json.chat.id ?? \"-\" }}"
+            }
+          ]
+        }
+      },
+      "id": "e90dc65a-6574-4264-82f2-d8277281a4c6",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## DEBUG",
+        "height": 243,
+        "width": 361
+      },
+      "id": "76c26c56-bcd4-4887-814e-e795915435cb",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e109e933-7ac9-4861-9c01-f21dcf3c9699",
+      "name": "From any *",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5856,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "831355ad-4998-425b-b443-9cd7cd41aac5",
+              "name": "payload.external_created_at",
+              "value": "={{ null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4272,
+        176
+      ],
+      "id": "b2bb0944-0e09-4f44-b687-d7e83e33cae3",
+      "name": "Edit Fields",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "831355ad-4998-425b-b443-9cd7cd41aac5",
+              "name": "payload.external_created_at",
+              "value": "={{ null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6272,
+        816
+      ],
+      "id": "fac1eb88-c025-4873-bdaa-10067519fc80",
+      "name": "Edit Fields1",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Direct Message ?": {
+      "main": [
+        [
+          {
+            "node": "Has Incoming Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Has Phone ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepend Title": {
+      "main": [
+        [
+          {
+            "node": "Has Incoming Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Download Incoming": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "EXTRA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Incoming Attachment": {
+      "main": [
+        [
+          {
+            "node": "(In) Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Not Empty Content ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "(In) Error On Get Attach ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Error On Get Attach ?": {
+      "main": [
+        [
+          {
+            "node": "(In) Prepend Attach Error Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "(In) Text Message Following With Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Defaults": {
+      "main": [
+        [
+          {
+            "node": "If Edited Message ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If InReply | Reaction ?": {
+      "main": [
+        [
+          {
+            "node": "Prepend Reference",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Direct Message ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepend Reference": {
+      "main": [
+        [
+          {
+            "node": "Direct Message ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Binary Data": {
+      "main": [
+        [
+          {
+            "node": "(Localization) Follow and Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get vCard Infos": {
+      "main": [
+        [
+          {
+            "node": "Adjust Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Edited Message Id": {
+      "main": [
+        [
+          {
+            "node": "Merge Edited Message Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Edited Message ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch By Extension": {
+      "main": [
+        [
+          {
+            "node": "Extension .vcf",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extension .url",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Any Other Extensions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extension .url": {
+      "main": [
+        [
+          {
+            "node": "Override Localization Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extension .vcf": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract VCard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Other Extensions": {
+      "main": [
+        [
+          {
+            "node": "From any *",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Contact Into Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Try to Add Contact On Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Post Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Insert Contact Error": {
+      "main": [
+        [
+          {
+            "node": "If Already Exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Already Exists": {
+      "main": [
+        [
+          {
+            "node": "Set Success For Already Exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Success For Already Exists": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Success": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fail": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adjust Content": {
+      "main": [
+        [
+          {
+            "node": "Insert Contact Into Chatwoot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Incoming Message Without Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(Localization) Follow and Post": {
+      "main": [
+        [
+          {
+            "node": "From .url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Incomming Text Only ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch By Extension",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing2": {
+      "main": [
+        [
+          {
+            "node": "From .vcf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing3": {
+      "main": [
+        [
+          {
+            "node": "Get Edited Message Id",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Edited Message Info",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Edited Message Info": {
+      "main": [
+        [
+          {
+            "node": "Prepend Edited Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepend Edited Content": {
+      "main": [
+        [
+          {
+            "node": "Send Edited Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing4": {
+      "main": [
+        [
+          {
+            "node": "If InReply | Reaction ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try to Add Contact On Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "If Insert Contact Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing5": {
+      "main": [
+        [
+          {
+            "node": "Post Incomming Text Only ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Empty Content ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Unknown Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Text Message Following With Attachment": {
+      "main": [
+        [
+          {
+            "node": "Post Incomming Text Only ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Unknown Content": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Prepend Attach Error Content": {
+      "main": [
+        [
+          {
+            "node": "(In) Text Message Following With Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Override Localization Content": {
+      "main": [
+        [
+          {
+            "node": "If Has Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From .vcf": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From .url": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Phone ?": {
+      "main": [
+        [
+          {
+            "node": "Prepend Title & Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepend Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepend Title & Phone": {
+      "main": [
+        [
+          {
+            "node": "Has Incoming Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract VCard": {
+      "main": [
+        [
+          {
+            "node": "Get vCard Infos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRA": {
+      "main": [
+        [
+          {
+            "node": "PAYLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAYLOAD": {
+      "main": [
+        [
+          {
+            "node": "Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has BASE64 Data": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Download Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "(In) Attachment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "If Has BASE64 Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Move Binary Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "(Localization) Follow and Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From any *": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message Without Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 10,
+    "executionOrder": "v1"
+  },
+  "versionId": "5d86244c-a183-4761-9aee-3878d965f4e4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
+  },
+  "id": "1006",
+  "tags": []
+}

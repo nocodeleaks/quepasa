@@ -1,0 +1,13 @@
+{{ define "content" }}
+<div class="container site-header">
+  <div class="card">
+    <div class="card-body">
+      <h3>Uh oh! Something went wrong.</h3>
+      <br>
+      <p class="lead">{{ .Message }} [{{ .Status }} {{ .Code }}]</p>
+      <pre>{{ .ErrorData }}</pre>
+      <pre>{{ .Stack }}</pre>
+    </div>
+  </div>
+</div>
+{{ end }}

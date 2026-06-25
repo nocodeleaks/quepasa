@@ -1,0 +1,1205 @@
+<template>
+  <div class="server-page">
+    <div class="server-header">
+      <div class="header-top">
+        <button @click="$router.back()" class="back-link hide-mobile" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+          {{ t('back') }}
+        </button>
+      </div>
+
+      <div v-if="loading" class="loading-placeholder">
+        <div class="spinner"></div>
+        <span>{{ t('server_loading') }}</span>
+      </div>
+
+      <div v-else-if="server" class="server-info">
+        <div class="server-avatar" :class="statusClass">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
+            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
+          </svg>
+        </div>
+        <div class="server-details">
+          <h1>{{ formatWid(serverWid) || formatWid(server?.wid) || t('not_connected') }}</h1>
+          <div class="server-meta">
+            {{ t('server_status_label') }}
+            <span class="status-badge" :class="statusClass">{{ serverState || t('unknown') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="error" class="error-banner">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+        </svg>
+        <span>{{ error }}</span>
+      </div>
+    </div>
+
+    <div class="quick-actions" v-if="server">
+      <router-link :to="`/server/${encodedToken}/qrcode`" class="action-card" :class="{ disabled: isConnected }">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm4 0h2v2h-2zm2 2h2v2h-2zm0-4h2v2h-2zm2-2h2v2h-2z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_qr_title') }}</span>
+          <span class="action-desc">{{ t('server_qr_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/server/${encodedToken}/paircode`" class="action-card" :class="{ disabled: isConnected }">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_paircode_title') }}</span>
+          <span class="action-desc">{{ t('server_paircode_desc') }}</span>
+        </div>
+      </router-link>
+    </div>
+
+    <div class="quick-actions quick-actions-row" v-if="server">
+      <router-link :to="`/server/${encodedToken}/send`" class="action-card primary">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('send_message') }}</span>
+          <span class="action-desc">{{ t('server_send_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/server/${encodedToken}/messages`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_messages_title') }}</span>
+          <span class="action-desc">{{ t('server_messages_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/server/${encodedToken}/lid/send`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_lid_send_title') }}</span>
+          <span class="action-desc">{{ t('server_lid_send_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/server/${encodedToken}/lid/mappings`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_lid_mappings_title') }}</span>
+          <span class="action-desc">{{ t('server_lid_mappings_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/webhooks?token=${encodedToken}`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm5 14.59L15.59 18 12 14.41 8.41 18 7 16.59 10.59 13 7 9.41 8.41 8 12 11.59 15.59 8 17 9.41 13.41 13 17 16.59z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('webhooks_title') }}</span>
+          <span class="action-desc">{{ t('server_webhooks_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/rabbitmq?token=${encodedToken}`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M4 4h16v4H4V4zm0 6h10v4H4v-4zm0 6h16v4H4v-4zm12-6h4v4h-4v-4z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('rabbitmq') }}</span>
+          <span class="action-desc">{{ t('server_rabbitmq_desc') }}</span>
+        </div>
+      </router-link>
+
+      <router-link :to="`/server/${encodedToken}/groups`" class="action-card">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+          </svg>
+        </div>
+        <div class="action-info">
+          <span class="action-title">{{ t('server_groups_manage_title') }}</span>
+          <span class="action-desc">{{ t('server_groups_manage_desc') }}</span>
+        </div>
+      </router-link>
+    </div>
+
+    <div class="details-section" v-if="server">
+      <h2>
+        <i class="fa fa-info-circle"></i>
+        {{ t('server_info_title') }}
+      </h2>
+
+      <div class="details-grid">
+        <div class="detail-card">
+          <span class="detail-label">{{ t('server_token_label') }}</span>
+          <div class="detail-value token">
+            <code>{{ token }}</code>
+            <button
+              @click="copyToken"
+              class="copy-btn"
+              :class="{ copied: tokenCopied }"
+              type="button"
+              :title="t('server_copy_token')"
+              :aria-label="t('server_copy_token')"
+            >
+              <svg v-if="!tokenCopied" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <span class="detail-label">{{ t('server_wid_label') }}</span>
+          <span class="detail-value">{{ formatWid(serverWid) || formatWid(server?.wid) || "-" }}</span>
+        </div>
+
+        <div class="detail-card">
+          <span class="detail-label">{{ t('server_dispatch_label') }}</span>
+          <span class="detail-value">{{ server.dispatchCount ?? 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="options-section" v-if="server">
+      <h2>
+        <i class="fa fa-sliders-h"></i>
+        {{ t('server_options_title') }}
+      </h2>
+
+      <div class="options-list">
+        <div class="option-card history-sync-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-history option-icon"></i>
+              <span class="option-title">{{ t('server_history_sync_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_history_sync_desc') }}</p>
+          </div>
+          <span class="readonly-badge">{{ t('server_readonly') }}</span>
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-bullhorn option-icon"></i>
+              <span class="option-title">{{ t('server_broadcasts_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_broadcasts_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.broadcasts"
+            @change="updateOption('broadcasts', $event)"
+            :disabled="togglingOption === 'server-broadcasts'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-users option-icon"></i>
+              <span class="option-title">{{ t('server_groups_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_groups_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.groups"
+            @change="updateOption('groups', $event)"
+            :disabled="togglingOption === 'server-groups'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-check-double option-icon"></i>
+              <span class="option-title">{{ t('server_readreceipts_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_readreceipts_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.readreceipts"
+            @change="updateOption('readreceipts', $event)"
+            :disabled="togglingOption === 'server-readreceipts'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-check option-icon"></i>
+              <span class="option-title">{{ t('server_deliveryreceipts_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_deliveryreceipts_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.deliveryreceipts"
+            @change="updateOption('deliveryreceipts', $event)"
+            :disabled="togglingOption === 'server-deliveryreceipts'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-phone option-icon"></i>
+              <span class="option-title">{{ t('server_calls_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_calls_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.calls"
+            @change="updateOption('calls', $event)"
+            :disabled="togglingOption === 'server-calls'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-comment option-icon"></i>
+              <span class="option-title">{{ t('server_direct_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_direct_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.direct"
+            @change="updateOption('direct', $event)"
+            :disabled="togglingOption === 'server-direct'"
+          />
+        </div>
+
+        <div class="option-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-eye option-icon"></i>
+              <span class="option-title">{{ t('server_readupdate_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_readupdate_desc') }}</p>
+          </div>
+          <TriStateToggle
+            v-model="options.readupdate"
+            @change="updateOption('readupdate', $event)"
+            :disabled="togglingOption === 'server-readupdate'"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="danger-section" v-if="server">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+        </svg>
+        {{ t('server_danger_title') }}
+      </h2>
+
+      <div class="danger-actions">
+        <button @click="toggleServer" class="btn-warning-outline" :disabled="togglingServer">
+          <svg v-if="isServerActive" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+          </svg>
+          {{ togglingServer ? t('processing') : isServerActive ? t('server_deactivate') : t('server_activate') }}
+        </button>
+
+        <button @click="confirmDelete" class="btn-danger" :disabled="deleting">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+          </svg>
+          {{ deleting ? t('deleting') : t('server_delete') }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
+      <div class="modal-content">
+        <div class="modal-icon danger">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+          </svg>
+        </div>
+        <h3>{{ t('server_confirm_delete_title') }}</h3>
+        <p>{{ t('server_confirm_delete_msg') }}</p>
+        <div class="modal-actions">
+          <button @click="showDeleteModal = false" class="btn-secondary">{{ t('cancel') }}</button>
+          <button @click="deleteServer" class="btn-danger">{{ t('server_delete_btn') }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/services/api'
+import { useServerLifecycleRefresh } from '@/composables/useServerLifecycleRefresh'
+import { pushToast } from '@/services/toast'
+import TriStateToggle from '@/components/TriStateToggle.vue'
+import { useLocale } from '@/i18n'
+
+export default defineComponent({
+  components: {
+    TriStateToggle,
+  },
+  setup() {
+    const { t } = useLocale()
+    const route = useRoute()
+    const router = useRouter()
+    const token = computed(() => {
+      const rawToken = String(route.params.token ?? '').trim()
+      try {
+        return decodeURIComponent(rawToken)
+      } catch {
+        return rawToken
+      }
+    })
+    const encodedToken = computed(() => encodeURIComponent(token.value))
+
+    const server = ref<any>(null)
+    const serverState = ref('')
+    const serverConnected = ref(false)
+    const serverWid = ref('')
+    const loading = ref(true)
+    const error = ref('')
+    const tokenCopied = ref(false)
+    const showDeleteModal = ref(false)
+    const deleting = ref(false)
+    const togglingServer = ref(false)
+    const togglingOption = ref('')
+
+    const options = ref({
+      broadcasts: 0,
+      groups: 0,
+      readreceipts: 0,
+      deliveryreceipts: 0,
+      calls: 0,
+      direct: 0,
+      readupdate: 0,
+    })
+
+    const statusClass = computed(() => {
+      const state = serverState.value.toLowerCase()
+      if (state === 'ready') return 'connected'
+      if (state === 'connecting' || state === 'starting' || state === 'reconnecting') return 'connecting'
+      return 'disconnected'
+    })
+
+    const isConnected = computed(() => serverConnected.value === true)
+
+    const isServerActive = computed(() => {
+      const activeStates = ['ready', 'connecting', 'starting', 'reconnecting']
+      return activeStates.includes(serverState.value.toLowerCase())
+    })
+
+    function toTriState(value: any): number {
+      if (value === 1 || value === true) return 1
+      if (value === -1 || value === false) return -1
+      return 0
+    }
+
+    function formatWid(wid: string | null | undefined): string {
+      if (!wid) return ''
+
+      let phone = wid.split('@')[0]
+      phone = phone.split(':')[0]
+      return phone
+    }
+
+    async function load() {
+      loading.value = true
+      error.value = ''
+
+      try {
+        const res = await api.post('/api/sessions/get', { token: encodedToken.value })
+        const summary = res.data?.server || {}
+
+        server.value = summary
+        serverState.value = summary.state || ''
+        serverConnected.value = summary.state === 'Ready' || summary.stateCode === 11
+        serverWid.value = summary.wid || ''
+
+        options.value.broadcasts = toTriState(summary.broadcasts)
+        options.value.groups = toTriState(summary.groups)
+        options.value.readreceipts = toTriState(summary.readReceipts ?? summary.readreceipts)
+        options.value.deliveryreceipts = toTriState(summary.deliveryReceipts ?? summary.deliveryreceipts)
+        options.value.calls = toTriState(summary.calls)
+        options.value.direct = toTriState(summary.direct)
+        options.value.readupdate = toTriState(summary.readupdate)
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err.message || t('server_error_load')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    async function updateOption(optionName: string, value: number) {
+      togglingOption.value = `server-${optionName}`
+
+      try {
+        const payload: Record<string, number> = {}
+        payload[optionName] = value
+
+        await api.patch('/api/sessions', { token: encodedToken.value, ...payload })
+        await load()
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err.message || t('server_option_error')
+        await load()
+      } finally {
+        togglingOption.value = ''
+      }
+    }
+
+    async function copyToken() {
+      try {
+        await navigator.clipboard.writeText(token.value)
+        tokenCopied.value = true
+        pushToast(t('server_token_copied'), 'success')
+        setTimeout(() => {
+          tokenCopied.value = false
+        }, 2000)
+      } catch {
+        // ignore clipboard fallback failures
+      }
+    }
+
+    function confirmDelete() {
+      showDeleteModal.value = true
+    }
+
+    async function deleteServer() {
+      deleting.value = true
+
+      try {
+        await api.delete('/api/sessions', { data: { token: encodedToken.value } })
+        router.push('/')
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err.message || t('server_error_delete')
+      } finally {
+        deleting.value = false
+        showDeleteModal.value = false
+      }
+    }
+
+    async function toggleServer() {
+      togglingServer.value = true
+
+      try {
+        const endpoint = isServerActive.value ? 'disable' : 'enable'
+        await api.post(`/api/session/${endpoint}`, { token: encodedToken.value })
+        await load()
+      } catch (err: any) {
+        error.value = err?.response?.data?.result || err.message || t('server_error_toggle')
+      } finally {
+        togglingServer.value = false
+      }
+    }
+
+    useServerLifecycleRefresh({
+      token: token.value,
+      onRefresh: load,
+      onDeleted: () => {
+        pushToast(t('server_deleted'), 'info')
+        router.push('/')
+      },
+      onConnectError: () => {
+        // The detail page can still rely on manual refresh if websocket auth fails.
+      },
+    })
+
+    onMounted(() => {
+      load()
+    })
+
+    return {
+      t,
+      confirmDelete,
+      copyToken,
+      deleteServer,
+      error,
+      formatWid,
+      isConnected,
+      isServerActive,
+      load,
+      loading,
+      options,
+      server,
+      serverConnected,
+      serverState,
+      serverWid,
+      showDeleteModal,
+      statusClass,
+      deleting,
+      encodedToken,
+      token,
+      tokenCopied,
+      toggleServer,
+      togglingOption,
+      togglingServer,
+      updateOption,
+    }
+  },
+})
+</script>
+
+<style scoped>
+.server-page {
+  margin: 0 auto;
+}
+
+.server-header {
+  margin-bottom: 32px;
+}
+
+.header-top {
+  margin-bottom: 24px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.back-link:hover {
+  color: #374151;
+}
+
+.loading-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--branding-primary, #7c3aed);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.server-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.server-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.server-avatar.connected {
+  background: linear-gradient(135deg, var(--branding-primary, #7c3aed), var(--branding-secondary, #5b21b6));
+}
+
+.server-avatar.connecting {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.server-avatar.disconnected {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.server-details h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px;
+}
+
+.server-meta {
+  display: flex;
+  gap: 10px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.connected {
+  background: #f5efff;
+  color: var(--branding-secondary, #5b21b6);
+}
+
+.status-badge.connecting {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.disconnected {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  margin-top: 16px;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.quick-actions-row {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.quick-actions-row .action-card {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 10px;
+  gap: 10px;
+}
+
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: var(--branding-primary, #7c3aed);
+}
+
+.action-card.primary {
+  background: linear-gradient(135deg, var(--branding-primary, #7c3aed), var(--branding-secondary, #5b21b6));
+  color: white;
+}
+
+.action-card.primary:hover {
+  border-color: white;
+}
+
+.action-card.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.action-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(124, 58, 237, 0.08);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--branding-primary, #7c3aed);
+}
+
+.action-card.primary .action-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.action-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.action-card.primary .action-title {
+  color: white;
+}
+
+.action-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.action-card.primary .action-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.details-section,
+.danger-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.details-section h2,
+.danger-section h2,
+.options-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 20px;
+}
+
+.danger-section {
+  margin-top: 32px;
+}
+
+.details-section h2 svg {
+  color: #3b82f6;
+}
+
+.danger-section h2 svg {
+  color: #ef4444;
+}
+
+.options-section h2 svg {
+  color: var(--branding-primary, #7c3aed);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.detail-card {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.detail-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-value.token {
+  justify-content: space-between;
+}
+
+.detail-value code {
+  font-size: 12px;
+  background: #e5e7eb;
+  padding: 4px 8px;
+  border-radius: 6px;
+  word-break: break-all;
+}
+
+.copy-btn {
+  padding: 6px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.copy-btn:hover {
+  background: #e5e7eb;
+}
+
+.copy-btn.copied {
+  color: var(--branding-primary, #7c3aed);
+}
+
+.danger-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-danger,
+.btn-warning-outline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-warning-outline {
+  background: white;
+  border: 2px solid #f59e0b;
+  color: #f59e0b;
+}
+
+.btn-warning-outline:hover:not(:disabled) {
+  background: #fffbeb;
+}
+
+.btn-warning-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: #ef4444;
+  border: 2px solid #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-icon.danger {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.modal-content h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px;
+}
+
+.modal-content p {
+  color: #6b7280;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-secondary {
+  padding: 12px 24px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.options-section {
+  margin-top: 32px;
+}
+
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.option-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.option-info {
+  flex: 1;
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.option-header svg,
+.option-header .option-icon {
+  color: var(--branding-primary, #7c3aed);
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
+}
+
+.option-title {
+  font-weight: 600;
+  color: #374151;
+  font-size: 15px;
+}
+
+.option-desc {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.history-sync-card {
+  flex-wrap: wrap;
+}
+
+.readonly-badge {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+html[data-theme='dark'] .server-details h1,
+html[data-theme='dark'] .details-section h2,
+html[data-theme='dark'] .danger-section h2,
+html[data-theme='dark'] .options-section h2,
+html[data-theme='dark'] .action-title,
+html[data-theme='dark'] .detail-value,
+html[data-theme='dark'] .option-title,
+html[data-theme='dark'] .modal-content h3 {
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .server-meta,
+html[data-theme='dark'] .action-desc,
+html[data-theme='dark'] .detail-label,
+html[data-theme='dark'] .option-desc,
+html[data-theme='dark'] .loading-placeholder,
+html[data-theme='dark'] .modal-content p,
+html[data-theme='dark'] .readonly-badge {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .details-section,
+html[data-theme='dark'] .danger-section {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+  box-shadow: 0 22px 44px rgba(2, 6, 23, 0.28);
+}
+
+html[data-theme='dark'] .detail-card {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+html[data-theme='dark'] .detail-value code {
+  background: rgba(30, 41, 59, 0.94);
+  color: #dbeafe;
+}
+
+html[data-theme='dark'] .copy-btn {
+  color: #94a3b8;
+}
+
+html[data-theme='dark'] .copy-btn:hover {
+  background: rgba(51, 65, 85, 0.82);
+  color: #f8fafc;
+}
+
+html[data-theme='dark'] .btn-warning-outline {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+html[data-theme='dark'] .btn-warning-outline:hover:not(:disabled) {
+  background: rgba(120, 53, 15, 0.28);
+}
+
+html[data-theme='dark'] .modal-content {
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(71, 85, 105, 0.28);
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.42);
+}
+
+html[data-theme='dark'] .modal-icon.danger {
+  background: rgba(127, 29, 29, 0.28);
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .btn-secondary {
+  background: rgba(30, 41, 59, 0.94);
+  color: #e2e8f0;
+  border: 1px solid rgba(71, 85, 105, 0.28);
+}
+
+html[data-theme='dark'] .btn-secondary:hover {
+  background: rgba(51, 65, 85, 0.96);
+}
+
+html[data-theme='dark'] .option-card {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.22);
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .readonly-badge {
+  background: rgba(30, 41, 59, 0.94);
+  border: 1px solid rgba(71, 85, 105, 0.24);
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .server-page {
+    padding: 0;
+  }
+
+  .server-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin: 0;
+    border-radius: 0;
+    padding: 16px;
+  }
+
+  .danger-actions {
+    flex-direction: column;
+  }
+
+  .danger-actions button {
+    width: 100%;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

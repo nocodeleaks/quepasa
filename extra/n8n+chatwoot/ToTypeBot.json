@@ -1,0 +1,2470 @@
+{
+  "name": "ToTypeBot",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for bot status operations\n* Conversation toggle status now uses scoped AgentBot tokens\n\n### Previous Updates (1.0.7)\n* /private for internal messages\n\n## Recommendations\n* Remember set timeout to 15 seconds\n",
+        "height": 384,
+        "width": 655
+      },
+      "id": "61fd38d0-d4cf-40c0-9352-97c541b9f2e8",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -6000,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "payload.id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1ccd67fc-f765-42a8-ae6e-bd9f6b5d1665",
+      "name": "Ordering Counter",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6ae4e662-f6b2-40bc-b6e3-368b3a713795",
+      "name": "Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        48,
+        176
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "cdf7754c-dbda-4078-8da5-dd9bcff196dd",
+      "name": "Wait1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -4080,
+        480
+      ],
+      "webhookId": "9061e7cf-a643-47a3-a036-15a7fc8cfc3c"
+    },
+    {
+      "parameters": {
+        "content": "## Continue Session\n",
+        "height": 432.6956237665846,
+        "width": 1421.0604683933998
+      },
+      "id": "23462d81-d498-47ff-8b4e-d25a09d897fd",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3200,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Start Session\n",
+        "height": 575.8548488363981,
+        "width": 1417.4486604344295
+      },
+      "id": "6756ac06-52ec-433f-8c7a-44d036bacf0a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3200,
+        112
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "962207c7-12da-47d3-ae7d-d56b759333f7",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -6128,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "151225cf-4c88-44e3-956c-ef2616a93e25",
+              "leftValue": "={{ $('TYPEBOT').item.json.token }}",
+              "rightValue": "@broadcast",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2be8f459-9b0c-4339-b6b5-31e1cd021cb7",
+              "leftValue": "={{ $('TYPEBOT').item.json.bot }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "357aa8f8-d3ff-4b79-83ab-2091b00623fa",
+      "name": "Is Valid Parameters ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -5232,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## DEBUG",
+        "height": 278.9574374256098,
+        "width": 388.46252278582097
+      },
+      "id": "8cd8aaae-30d9-4e5e-9488-c14c4c8bb7dd",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -5312,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "account",
+              "value": "={{ $('EXTRA').item.json.account }}"
+            },
+            {
+              "key": "inbox",
+              "value": "={{ $('EXTRA').item.json.inbox }}"
+            },
+            {
+              "key": "chat_id",
+              "value": "={{ $('PAYLOAD').item.json.chat.id }}"
+            },
+            {
+              "key": "message_id",
+              "value": "={{ $('PAYLOAD').item.json.id }}"
+            },
+            {
+              "key": "conversation_id",
+              "value": "={{ $('PAYLOAD').item.json.conversation.id }}"
+            },
+            {
+              "key": "typebot_status",
+              "value": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_status ?? '' }}"
+            },
+            {
+              "key": "typebot_session",
+              "value": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_session ?? ''}}"
+            },
+            {
+              "key": "typebot_bot",
+              "value": "={{ $('TYPEBOT').item.json.bot }}"
+            }
+          ]
+        }
+      },
+      "id": "294ccaf2-68f8-4cb2-a609-7e58727db04b",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -5168,
+        384
+      ],
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.extra }}",
+        "options": {}
+      },
+      "id": "51d014b2-e251-4ac9-a87c-2f09fc1044ef",
+      "name": "EXTRA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5760,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $('When Called By Another Workflow').item.json.removeField('extra') }}",
+        "options": {}
+      },
+      "id": "16b889c0-0b81-45db-ab49-cd2c80b28ccf",
+      "name": "PAYLOAD",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5408,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c3057e51-7ad1-4fec-9ed0-575c34ade027",
+              "name": "token",
+              "value": "={{ $env[\"C8Q_TYPEBOT_TOKEN\"]?.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "6d8094e6-38e0-4976-a55a-aee0df0b170d",
+              "name": "host",
+              "value": "={{ ($env[\"C8Q_TYPEBOT_HOST\"] ?? \"http://localhost:8080\").replace(/\\/*$/, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "24b18c54-bc5e-48f5-b664-668bb23f37db",
+              "name": "bot",
+              "value": "={{ $('EXTRA').item.json.typebot?.trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1c027f8-6186-4978-85bf-fd72e9a7a6bf",
+      "name": "TYPEBOT",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5584,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10ed9f6f-20ab-447c-8e65-3bd72b78342e",
+              "name": "extra.atoken",
+              "value": "={{ $json.extra.atoken ?? $env[\"C8Q_SUPERUSER_TOKEN\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "6866905c-68b2-4d85-b448-527dd0d9650a",
+              "name": "extra.atoken",
+              "value": "={{ $json.extra.atoken ?? $env[\"C8Q_AGENT_TOKEN\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "d61861d8-1465-4608-9e8b-9fda7ef1eb97",
+      "name": "SuperUser & Agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5952,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "11227f50-6a0d-4c7b-a3d2-3114f507ca0b",
+              "leftValue": "={{ $json.key }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ac6a16de-8182-4956-b29d-aff402be4e7a",
+      "name": "Is Key Empty?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        -4848,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "key",
+        "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
+        "options": {}
+      },
+      "id": "88b1e056-3eb7-4426-9df6-7c299df9fd47",
+      "name": "Get Debouce on Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -4640,
+        544
+      ],
+      "credentials": {
+        "redis": {
+          "id": "90kNY1xmZzbhk7li",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "key",
+        "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
+        "options": {}
+      },
+      "id": "bfde31fd-21f4-4114-83cb-94ba79c808c8",
+      "name": "Get Typebot Session",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -5024,
+        624
+      ],
+      "credentials": {
+        "redis": {
+          "id": "90kNY1xmZzbhk7li",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "d82d693e-b9d4-445f-bbb8-87c091bc7f03",
+              "leftValue": "={{ $json.key }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1b31feb6-8509-4f35-8bb2-b29c97377faa",
+      "name": "Existe Key?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        -4464,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
+        "value": "={{$now.toMillis()}}",
+        "keyType": "string",
+        "expire": true,
+        "ttl": 5
+      },
+      "id": "d734c8ea-cfcb-49e5-8dc9-e3d254b73ed9",
+      "name": "Set Debounce Time Key",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -4272,
+        480
+      ],
+      "credentials": {
+        "redis": {
+          "id": "90kNY1xmZzbhk7li",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "key",
+        "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
+        "options": {}
+      },
+      "id": "1493b022-b257-4910-bab2-15a6c23694f5",
+      "name": "Redis2",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -3904,
+        480
+      ],
+      "credentials": {
+        "redis": {
+          "id": "90kNY1xmZzbhk7li",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "f4229894-5e81-49ee-9304-8e7b6c79b584",
+              "leftValue": "={{ $json.key }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0d31f843-5c84-499b-af42-0817cd535869",
+      "name": "If4",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        -3728,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "payload",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "713bb737-ae55-4025-810e-e0d73bdd1e08",
+      "name": "Split Itens to Send",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        256
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "6b7ef73a-a97f-4ded-97d2-afb2d08be18d",
+              "leftValue": "={{ $json.payload }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fb7da9ee-05cb-4429-827a-0f5e8b8e32aa",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$('EXTRA').item.json.qphost}}",
+        "token": "={{$('EXTRA').item.json.qptoken}}",
+        "method": "sendurl",
+        "text": "=",
+        "chatid": "={{ $('PAYLOAD').item.json.chat.id }}",
+        "url": "={{ $json.payload.content }}",
+        "filename": "={{ $json.payload.content.split('/').pop() }}",
+        "filelength": 0
+      },
+      "id": "3232a728-ec4a-4a68-acfc-4c70fe85ad88",
+      "name": "Quepasa Send Attach",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        688
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1d373c5-b778-4cdd-9722-35435f9b6534",
+              "leftValue": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_session }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "96ae621c-a2d7-4fde-99c4-6884985dbf1b",
+              "leftValue": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_status }}",
+              "rightValue": "end",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "be816cc0-6944-4e84-bec9-0be93de56308",
+              "leftValue": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "901159d1-d8bf-4ff6-ac15-12a01630b63e",
+      "name": "If Not Has Session Id ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3488,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "101ce665-4e37-43af-b825-1e20b55a7986",
+              "leftValue": "={{ $('PAYLOAD').item.json.conversation?.custom_attributes?.typebot_status }}",
+              "rightValue": "evaluating",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cc4edd1f-1d26-45be-8fe5-e1d3bc105ccb",
+      "name": "If Need To Update Status ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2864,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "33d9fa7b-0b8d-48eb-9203-3a024fdd7b7d",
+              "leftValue": "={{ $('PAYLOAD').item.json.conversation.status }}",
+              "rightValue": "open",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0ff5a4fe-6bdc-436c-9e72-d578a4e988b6",
+      "name": "If Conversation Is Not Openned",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2704,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}"
+      },
+      "id": "f484e11a-14af-49a6-8b77-d44ef483e38f",
+      "name": "Delete Typebot Session",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        256
+      ],
+      "credentials": {
+        "redis": {
+          "id": "90kNY1xmZzbhk7li",
+          "name": "Redis account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation.id}}/custom_attributes",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{ $json }}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.utoken}}\"} ",
+        "queryParametersJson": "{}"
+      },
+      "name": "Update Status For Conversation - start",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -2384,
+        368
+      ],
+      "id": "bd051cef-db2f-4530-83ae-64b2247db96a",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation.id}}/custom_attributes",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{ $json }}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"} ",
+        "queryParametersJson": "{}"
+      },
+      "name": "Update Status For Conversation - continue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        800
+      ],
+      "id": "728e508a-7a2f-49ba-93cc-fcc299692cd4",
+      "retryOnFail": false,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "continue",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "247b73e7-5016-4949-8082-beb37cb7faef",
+      "name": "Set Continue Status Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2672,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "end",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a232b610-5c4d-4b6c-8cbd-9012ce1cb121",
+      "name": "Set End Status Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1c39df9d-151f-493f-a149-4ba481ba241e",
+              "leftValue": "={{ (!$json.payload) || ($json.payload.length == 0) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d30d1488-7c34-4be4-8a85-b4ba56aec500",
+              "leftValue": "={{ $json.input }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "f6fe4e9c-15c8-4d6b-826c-3fabd7aaee12",
+      "name": "If Empty Payload Item",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "typebot_session",
+              "value": "={{ $json.sessionId ?? '' }}"
+            },
+            {
+              "key": "typebot_status",
+              "value": "start"
+            }
+          ]
+        }
+      },
+      "id": "d5d59ea8-1037-461e-a1b6-b4732e8408c7",
+      "name": "Execution Data New Session",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -2960,
+        480
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "start error",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7125314e-beab-4c8f-85d2-ae7b768f2367",
+      "name": "Set Start Error Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        1920
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "continue error",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "28b81d36-4f22-42d8-b0b8-ebaba7210392",
+      "name": "Set Continue Error Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        2128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "empty error",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d42df9a9-8eed-451f-bc50-ad00a38e8b3d",
+      "name": "Set Empty Error Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1696,
+        2336
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "423c7a99-a0b5-46da-8e7b-7226da0b860b",
+      "name": "Process Errors",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        2128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "16259246-a342-40dd-82dd-5b6505527282",
+      "name": "Start Session - IN",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -3152,
+        480
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6ac73ee9-5a42-43eb-a2e7-f84574e59b86",
+      "name": "Start Session - OUT",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1984,
+        208
+      ],
+      "notesInFlow": false
+    },
+    {
+      "parameters": {},
+      "id": "69faf1e6-eb06-4fed-ae68-b6aea1e98149",
+      "name": "Continue Session - IN",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -3088,
+        896
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d154f560-6fa6-4ad0-83b6-a106fafa4daa",
+      "name": "Continue Session - OUT",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=n8n:debounceStarted:{{$('PAYLOAD').item.json.conversation.id}}-{{$('EXTRA').item.json.account}}-{{$('EXTRA').item.json.inbox}}",
+        "value": "={{ $json.sessionId }}",
+        "keyType": "string"
+      },
+      "id": "11fdc1a1-4c7f-44d7-a888-797dcb8923bb",
+      "name": "Set Debouce Started Key",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -2560,
+        176
+      ],
+      "credentials": {
+        "redis": {
+          "id": "90kNY1xmZzbhk7li",
+          "name": "Redis account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "start",
+              "type": "string"
+            },
+            {
+              "id": "5f804ebb-155f-480d-a1ef-fb8465d7578d",
+              "name": "custom_attributes.typebot_session",
+              "value": "={{$json.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3b412878-b0a4-43ad-824f-4be226a5b28f",
+      "name": "Set Start Status Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2560,
+        368
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "386cd7cc-4d78-4c75-9255-73aef2af2b8b",
+      "name": "Process Payloads",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1552,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const itemJson = $input.item.json;\nconst messages = itemJson.messages;\nlet idCounter = 1; // Variável para controlar o id\n\n// Função auxiliar para aplicar formatação\nfunction formatText(text, node) {\n  let formatted = text;  \n  if (node.bold) formatted = `*${formatted}*`;\n  if (node.italic) formatted = `_${formatted}_`;  \n  return formatted;\n}\n\n// Mapeia as mensagens e guarda o id original para futura correspondência\nconst msgItem = messages.map((message) => {\n  let contentText = '';\n\n  // Se for imagem, áudio ou vídeo, usa a URL\n  if ([\"image\", \"audio\", \"video\"].includes(message.type)) {\n    contentText = message.content.url;\n  } else if (Array.isArray(message.content?.richText)) {\n    for (const richTextItem of message.content.richText) {\n      if (Array.isArray(richTextItem.children)) {\n        for (const child of richTextItem.children) {\n          if (child.type === \"inline-variable\") {\n            if (child.children && Array.isArray(child.children)) {\n              for (const inlineChild of child.children) {\n                if (inlineChild.text) {\n                  contentText += formatText(inlineChild.text, inlineChild);\n                }\n              }\n            }\n          } else {\n            if (child.text) {\n              contentText += `${formatText(child.text, child)}`;\n            }\n          }\n          if (child.children && Array.isArray(child.children)) {\n            for (const nestedChild of child.children) {\n              if (nestedChild.text) {\n                contentText += `${formatText(nestedChild.text, nestedChild)}`;\n              }\n              if (nestedChild.children && Array.isArray(nestedChild.children)) {\n                for (const nestedNestedChild of nestedChild.children) {\n                  if (nestedNestedChild.text) {\n                    contentText += `${formatText(nestedNestedChild.text, nestedNestedChild)}`;\n                  }\n                  if (nestedNestedChild.children && Array.isArray(nestedNestedChild.children)) {\n                    for (const nestedNestedNestedChild of nestedNestedChild.children) {\n                      if (nestedNestedNestedChild.text) {\n                        contentText += `${formatText(nestedNestedNestedChild.text, nestedNestedNestedChild)}`;\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      // Adiciona uma quebra de linha após cada parágrafo\n      contentText += \"\\n\";\n    }\n  }\n\n  // Substitui \"Invalid message. Please, try again.\" por \"Tipo de mensagem inválida!\"\n  if (contentText.trim() === \"Invalid message. Please, try again.\") {\n    contentText = \"Tipo de mensagem inválida!\";\n  }\n\n  const newItem = {\n    id: idCounter++, // ID temporário, que será reatribuído no final\n    originalId: message.id, // Guarda o id original para correspondência com clientSideActions\n    type: message.type,\n    content: contentText.trim(),\n    openchatwoot: itemJson.clientSideActions?.some(objeto => objeto.hasOwnProperty('chatwoot'))\n  };\n\n  return newItem;\n});\n\n// Processa as ações clientSideActions do tipo 'wait'\nif (itemJson.clientSideActions && Array.isArray(itemJson.clientSideActions)) {\n  itemJson.clientSideActions.forEach((action) => {\n    // Verifica se a ação contém o objeto wait com secondsToWaitFor e se lastBubbleBlockId está definido\n    if (action.wait && typeof action.wait.secondsToWaitFor === 'number' && action.lastBubbleBlockId) {\n      // Encontra o índice do item cujo originalId corresponde a lastBubbleBlockId\n      const index = msgItem.findIndex(item => item.originalId === action.lastBubbleBlockId);\n      if (index !== -1) {\n        // Cria um novo item para o wait action\n        const waitItem = {\n          id: idCounter++, // ID temporário\n          type: 'wait',\n          content: '', // Pode ser deixado em branco ou conter uma descrição, se necessário\n          secondsToWaitFor: action.wait.secondsToWaitFor\n        };\n        // Insere o waitItem logo após o item encontrado\n        msgItem.splice(index + 1, 0, waitItem);\n      }\n    }\n  });\n}\n\n// Reatribui os IDs de forma sequencial com base na ordem do array\nmsgItem.forEach((item, index) => {\n  item.id = index + 1;\n  delete item.originalId; // Remove a propriedade auxiliar\n});\n\nreturn { \"payload\": msgItem };\n"
+      },
+      "id": "39149948-57ad-4e27-a563-87261121ee4c",
+      "name": "Make Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Errors\n",
+        "height": 768.6054221850341,
+        "width": 780.623269857243,
+        "color": 3
+      },
+      "id": "7dc9ed1a-55ad-4476-8d50-7160098ba30f",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "id": "7f700834-6f73-4cad-b9ff-df2ddb0b9ca6",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        576
+      ],
+      "webhookId": "fcd2e4ee-0d8b-43cd-bb26-cc9e1a3e9c13"
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$('EXTRA').item.json.qphost}}",
+        "token": "={{$('EXTRA').item.json.qptoken}}",
+        "text": "={{ $json.payload.content }}",
+        "chatid": "={{ $('PAYLOAD').item.json.chat.id }}",
+        "filelength": 0
+      },
+      "id": "0d94b425-c3f5-4d34-b341-26380c7a2341",
+      "name": "Quepasa Send Text",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        496
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.payload?.openchatwoot ?? false }}",
+              "value2": true
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "d8d91a55-a6b7-495d-90d9-3e957411740b",
+      "name": "Reach A ChatWoot Node ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Open Conversation\n",
+        "height": 358.7496340085681,
+        "width": 752.0364364356966
+      },
+      "id": "74bf29c6-e8e1-4fe2-83da-e053ded33fd1",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Loop Multiple Messages Payloads\n",
+        "height": 1859.2074837131158,
+        "width": 2323.2885620467914
+      },
+      "id": "363477bd-01be-4950-8e4d-11332380f36b",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -192
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "5b188143-68c3-4c0e-9d8f-b907012d3a4d",
+      "name": "Go Loop",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation.id}}/custom_attributes",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{ $json }}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.utoken}}\"}",
+        "queryParametersJson": "{}"
+      },
+      "name": "Update Status For Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        256
+      ],
+      "id": "00660678-b22b-4ef2-a95e-8d622f89ad8e",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{ $('PAYLOAD').item.json.conversation.id }}/toggle_status ",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"status\": \"open\"}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"}",
+        "queryParametersJson": "{}"
+      },
+      "name": "Open Conversation in Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        720
+      ],
+      "id": "5a658aa6-4b7d-4f73-a5d3-f107c34c89cf"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "aede992e-424c-4785-b493-ad551740d2a2",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -2160,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('TYPEBOT').item.json.host }}/api/v1/typebots/{{ $('TYPEBOT').item.json.bot }}/startChat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('TYPEBOT').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"message\": {\n      \"type\": \"text\",\n      \"text\": {{ JSON.stringify($('PAYLOAD').item.json.text) }}\n  },\n  \"isOnlyRegistering\": false,\n  \"prefilledVariables\": {\n    \"chat_id\": \"{{ $('PAYLOAD').item.json.chat.id }}\",\n    \"chat_title\": \"{{ $('PAYLOAD').item.json.chat.title }}\",\n    \"chat_phone\": \"{{ $('PAYLOAD').item.json.chat.phone }}\",\n    \"conversation_id\": \"{{ $('PAYLOAD').item.json.conversation.id }}\",\n    \"account_id\": \"{{$('EXTRA').item.json.account}}\",\n    \"inbox_id\": \"{{$('EXTRA').item.json.inbox}}\"\n  }\n}",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "0d8f8133-c84a-4263-a641-1bf4de262d22",
+      "name": "TB-START",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -2784,
+        480
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('TYPEBOT').item.json.host }}/api/v1/sessions/{{ $('PAYLOAD').item.json.conversation.custom_attributes.typebot_session }}/continueChat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('TYPEBOT').item.json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('PAYLOAD').item.json.text || \"null\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b11b18-857e-41e3-b08b-cd615d26a9f5",
+      "name": "TB-CONTINUE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2272,
+        928
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{ $('PAYLOAD').item.json.conversation.id }}/toggle_status ",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\"status\": \"resolved\"}",
+        "headerParametersJson": "={\"api_access_token\":\"{{$('EXTRA').item.json.atoken}}\"}",
+        "queryParametersJson": "{}"
+      },
+      "name": "Resolve Conversation in Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        80
+      ],
+      "id": "7988883d-49df-4c33-8c05-c98f40a6e37f"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1269b1f-aafa-4adc-8246-eadacdf284c6",
+              "name": "custom_attributes",
+              "value": "={{ $('PAYLOAD').item.json.conversation.custom_attributes }}",
+              "type": "object"
+            },
+            {
+              "id": "64c0aa8e-6a4e-4a4b-9b4c-02b9e78eb863",
+              "name": "custom_attributes.typebot_status",
+              "value": "terminate",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6e6c5b6a-4177-487d-82d8-0378eb2f0f67",
+      "name": "Set Terminate Status Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.payload.secondsToWaitFor }}"
+      },
+      "id": "0dd415e7-6c32-4220-836e-1e8f9179cb31",
+      "name": "Wait Block",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        848
+      ],
+      "webhookId": "a5094ecc-3fa9-4468-b5d0-c0d17d7c604c"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($json.payload.type == \"text\") && (Boolean($json.payload.content) && $json.payload.content.length > 0) }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0774cf5a-7901-4024-a325-0e0d05d2fcc4",
+                    "leftValue": "={{ $json.payload.type }}",
+                    "rightValue": "video|audio|image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "attach"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d8ad17d0-a984-4004-95d0-48e9142d4683",
+                    "leftValue": "={{ $json.payload.type }}",
+                    "rightValue": "wait",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "wait"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "66e336a8-ff21-45d1-a307-21da5fbfe8d0",
+                    "leftValue": "={{ $json.payload.type }}",
+                    "rightValue": "embed|embeded",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "embed"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "3ecb45ce-bf70-4a02-93d1-cd578d41b782",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        320,
+        416
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "13af93e6-0dc6-48d3-bd63-a72b10a4b34e",
+      "name": "Next Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        1344
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "2b03e75e-a696-4827-8617-6028f11d3d4e",
+      "name": "Ignore Embed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        1008
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "320c38b5-69b4-4ce4-88ce-f37c9ed05722",
+      "name": "Open Conversation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/resolve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "resolve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dfb8fca6-f6eb-49a5-9922-528db0c0544e",
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/open",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "open"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "63545ada-0f3a-4a28-ade2-445b57b06a56",
+                    "leftValue": "={{ $json.payload.content }}",
+                    "rightValue": "/private",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "private"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "e9361bdb-2d9c-487e-885d-c0d65e07b6ce",
+      "name": "Switch Text Answer",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        800,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$('EXTRA').item.json.cwhost}}/api/v1/accounts/{{$('EXTRA').item.json.account}}/conversations/{{$('PAYLOAD').item.json.conversation.id}}/messages",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "private",
+              "value": "={{ true }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.payload.content.slice(9) }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$('EXTRA').item.json.atoken}}"
+            }
+          ]
+        }
+      },
+      "name": "Post Private Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        320
+      ],
+      "id": "f31cc858-844f-449d-a3fb-ece88803f2ad",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ordering Counter": {
+      "main": [
+        [
+          {
+            "node": "Go Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Reach A ChatWoot Node ?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Redis2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "SuperUser & Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid Parameters ?": {
+      "main": [
+        [
+          {
+            "node": "Get Typebot Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRA": {
+      "main": [
+        [
+          {
+            "node": "TYPEBOT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAYLOAD": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Valid Parameters ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TYPEBOT": {
+      "main": [
+        [
+          {
+            "node": "PAYLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SuperUser & Agent": {
+      "main": [
+        [
+          {
+            "node": "EXTRA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Key Empty?": {
+      "main": [
+        [
+          {
+            "node": "Get Debouce on Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Not Has Session Id ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Debouce on Redis": {
+      "main": [
+        [
+          {
+            "node": "Existe Key?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Typebot Session": {
+      "main": [
+        [
+          {
+            "node": "Is Key Empty?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existe Key?": {
+      "main": [
+        [
+          {
+            "node": "Set Debounce Time Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Debounce Time Key": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis2": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [],
+        [
+          {
+            "node": "If Not Has Session Id ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Itens to Send": {
+      "main": [
+        [
+          {
+            "node": "Ordering Counter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Go Loop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Itens to Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Send Attach": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Has Session Id ?": {
+      "main": [
+        [
+          {
+            "node": "Start Session - IN",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Continue Session - IN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Need To Update Status ?": {
+      "main": [
+        [
+          {
+            "node": "Set Continue Status Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TB-CONTINUE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Conversation Is Not Openned": {
+      "main": [
+        [
+          {
+            "node": "Open Conversation in Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status For Conversation - continue": {
+      "main": [
+        [
+          {
+            "node": "TB-CONTINUE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Continue Status Parameters": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation - continue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set End Status Parameters": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Conversation Is Not Openned",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Empty Payload Item": {
+      "main": [
+        [
+          {
+            "node": "Set Empty Error Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Start Error Parameters": {
+      "main": [
+        [
+          {
+            "node": "Process Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Continue Error Parameters": {
+      "main": [
+        [
+          {
+            "node": "Process Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Empty Error Parameters": {
+      "main": [
+        [
+          {
+            "node": "Process Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Errors": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Conversation Is Not Openned",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Session - IN": {
+      "main": [
+        [
+          {
+            "node": "Execution Data New Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Session - OUT": {
+      "main": [
+        [
+          {
+            "node": "Process Payloads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Session - IN": {
+      "main": [
+        [
+          {
+            "node": "If Need To Update Status ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Session - OUT": {
+      "main": [
+        [
+          {
+            "node": "Process Payloads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Debouce Started Key": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Data New Session": {
+      "main": [
+        [
+          {
+            "node": "TB-START",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Start Status Parameters": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation - start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Payloads": {
+      "main": [
+        [
+          {
+            "node": "Make Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Payload": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Send Text": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reach A ChatWoot Node ?": {
+      "main": [
+        [
+          {
+            "node": "Set End Status Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Go Loop": {
+      "main": [
+        [
+          {
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status For Conversation": {
+      "main": [
+        [
+          {
+            "node": "Delete Typebot Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status For Conversation - start": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Start Session - OUT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TB-START": {
+      "main": [
+        [
+          {
+            "node": "Set Start Status Parameters",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Debouce Started Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Start Error Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TB-CONTINUE": {
+      "main": [
+        [
+          {
+            "node": "Continue Session - OUT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Continue Error Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Conversation in Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Set Terminate Status Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Terminate Status Parameters": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Block": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Switch Text Answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Attach",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Block",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignore Embed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Empty Payload Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next Message": {
+      "main": [
+        [
+          {
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Embed": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Update Status For Conversation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Conversation Is Not Openned",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Text Answer": {
+      "main": [
+        [
+          {
+            "node": "Resolve Conversation in Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post Private Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Private Message": {
+      "main": [
+        [
+          {
+            "node": "Next Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "any",
+    "executionTimeout": 30
+  },
+  "versionId": "8778c3f5-39ce-4525-bf9a-f54b0e372467",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
+  },
+  "id": "JSpCXQiF7TT1zUgp",
+  "tags": []
+}

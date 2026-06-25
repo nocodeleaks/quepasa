@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Generated protobuf bindings are skipped from review.
+language: en-US
+reviews:
+  path_filters:
+    - "!**/*.pb.go"

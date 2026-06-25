@@ -1,0 +1,3218 @@
+{
+  "name": "ChatwootToQuepasa",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "from-chatwoot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "From ChatWoot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -3264,
+        1056
+      ],
+      "webhookId": "ae8993fc-1ab0-4de5-90ce-0eb59a2b5c7d",
+      "id": "4c534525-7c2e-48b2-8ad7-346b5b1da09e"
+    },
+    {
+      "parameters": {},
+      "name": "Message Created Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        704
+      ],
+      "id": "722a6ed0-84e0-497c-9e8c-b034a3b89759"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.payload.content}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "8fe35d8e-94a7-440b-95df-f08cb26fcd36",
+      "name": "Text Message ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        368,
+        656
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Conversation Created Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1744,
+        2128
+      ],
+      "id": "c5cf2838-9c21-4125-9cff-5b2f6430e72d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.message_type}}",
+              "value2": "outgoing"
+            },
+            {
+              "value1": "={{$json.body.message_type}}",
+              "value2": "template"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json.body.message_type}}",
+              "operation": "equal",
+              "value2": 1
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "name": "Is Outgoing Message ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        704
+      ],
+      "id": "dba4136b-3c6c-4f7e-97d7-a68d4c149515"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {}
+      },
+      "id": "94f0b547-9fd4-4e8c-b8fd-c03fb0711b8d",
+      "name": "Normal Exit (GNE)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        2144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"body\"][\"private\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Is Public ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        688
+      ],
+      "id": "f5c4715e-210e-437e-ae84-44f986a80549"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"sender\"][\"type\"]}}",
+              "operation": "notEqual",
+              "value2": "agent_bot"
+            },
+            {
+              "value1": "={{$json[\"body\"][\"sender\"][\"name\"]?.toLowerCase()}}",
+              "operation": "notContains",
+              "value2": "whatsapp outgoing"
+            }
+          ]
+        }
+      },
+      "name": "Is Not From Sincronize Bot?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        656
+      ],
+      "id": "a6cee4c1-a325-49bc-b53f-2dc1a12d6aa1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.payload.content?.trim()}}",
+              "operation": "startsWith",
+              "value2": "/"
+            }
+          ]
+        }
+      },
+      "id": "51b967bf-bda9-410f-8808-8c5353f300fc",
+      "name": "If Control Message",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        672,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $env['C8Q_QUEPASACHATCONTROL'] ?? 1003 }}",
+        "options": {}
+      },
+      "id": "f0af6f76-c584-4328-b716-8cfa89dc1cf2",
+      "name": "Quepasa Chat Control Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        160
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"messages\"][0][\"sender_type\"]}}",
+              "value2": "User"
+            }
+          ]
+        }
+      },
+      "id": "c249f351-2980-4d70-816a-1ba07918b34d",
+      "name": "Sent by agent ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        2128
+      ],
+      "notesInFlow": true,
+      "notes": "Quando vem vazio é porque a conversa foi criada sem mensagem, no caso criado pelo fluxo. ou seja, criada pelo cliente."
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.body.id}}/toggle_status",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "status",
+              "value": "open"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.extra.atoken}}"
+            }
+          ]
+        }
+      },
+      "name": "Open Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -1264,
+        2048
+      ],
+      "id": "5e2e010d-6992-4ac1-bbe2-4f7645035d4f",
+      "continueOnFail": true,
+      "notes": "Important to use \"source_id\" to respond messages"
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $env['C8Q_QUEPASAINBOXCONTROL'] ?? 1001 }}",
+        "mode": "each",
+        "options": {}
+      },
+      "id": "b7b60d5e-39e6-45ea-b93e-4659ad97c234",
+      "name": "Throw To Quepasa Inbox Control Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        128,
+        416
+      ],
+      "alwaysOutputData": true,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "f260289e-4c4b-4269-b66a-eab52faabf17",
+      "name": "Message Update Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        2688
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.body?.content_attributes?.deleted??false}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "c9bad5a4-3dee-46c2-9472-a426452ef424",
+      "name": "If Deleted ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        2688
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "26637357-5d7a-40e5-810d-187cbed3d330",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        944
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9a734a24-2be8-4e13-8887-16ba61ffbdf8",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## POSTING THROW QUEPASA\n",
+        "height": 660.7751562097109,
+        "width": 1150.6588837494833
+      },
+      "id": "9d4d22d4-d5e3-4134-b012-fd6a5a3f6c11",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "extra.qptoken",
+              "value": "={{ $json.query.qptoken ?? $json.query.identifier }}"
+            },
+            {
+              "name": "extra.qphost",
+              "value": "={{ $json.query.qphost ?? 'http://127.0.0.1:31000' }}"
+            },
+            {
+              "name": "extra.cwhost",
+              "value": "={{ $json.query.cwhost ?? 'http://127.0.0.1:3000' }}"
+            },
+            {
+              "name": "extra.n8nhost",
+              "value": "={{ $json.query.n8nhost ?? $env['C8Q_N8N_HOST'] ?? 'http://127.0.0.1:5678' }}"
+            },
+            {
+              "name": "extra.inbox",
+              "value": "={{ $json.query.inbox ?? $json.body.inbox_id ?? $json.body.inbox?.id }}"
+            },
+            {
+              "name": "extra.account",
+              "value": "={{ $json.query.account ?? $json.body.account_id ?? $json.body.account?.id ?? $json.body.messages[0]?.account_id }}"
+            },
+            {
+              "name": "extra.identifier",
+              "value": "={{ $json.query.identifier }}"
+            },
+            {
+              "name": "extra.atoken",
+              "value": "={{ $json.query.atoken ?? $env['C8Q_SUPERUSER_TOKEN'] }}"
+            },
+            {
+              "name": "extra.atoken",
+              "value": "={{ $json.query.atoken ?? $env['C8Q_AGENT_TOKEN'] }}"
+            },
+            {
+              "name": "extra.typebot",
+              "value": "={{ $json.query?.typebot ?? undefined }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fcdfaec5-56d9-4280-a079-b1195b467131",
+      "name": "Defaults",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -3088,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {}
+      },
+      "id": "76098fc5-6e3a-4d8e-9583-36393fffb7aa",
+      "name": "Normal Exit (CUP)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $env['C8Q_CHATWOOTPROFILEUPDATE'] ?? 1004 }}",
+        "options": {}
+      },
+      "id": "a0088766-1cf2-4837-9207-16d122ff062c",
+      "name": "Throw To Profile Update Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        1840
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT csat_survey_enabled FROM inboxes WHERE id = {{ $json.extra.inbox }}; ",
+        "additionalFields": {}
+      },
+      "id": "3d22f0d8-b69e-4c81-b1da-06899084b4bd",
+      "name": "Enabled CSAT ?",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        208,
+        1456
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "4e346464-2026-4472-a5ff-fbc3a33ffc31",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        384,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.status }}",
+              "value2": "resolved"
+            }
+          ]
+        }
+      },
+      "id": "c60a2848-e697-4a73-84f4-9546e1b645e0",
+      "name": "If Conversation Resolved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "qphost",
+              "value": "={{$json.extra?.qphost}}"
+            },
+            {
+              "name": "qptoken",
+              "value": "={{$json.extra?.qptoken}}"
+            },
+            {
+              "name": "cwhost",
+              "value": "={{$json.extra?.cwhost}}"
+            },
+            {
+              "name": "atoken",
+              "value": "={{$json.extra?.atoken}}"
+            },
+            {
+              "name": "account",
+              "value": "={{$json.extra?.account}}"
+            },
+            {
+              "name": "contactid",
+              "value": "={{$json.body?.meta?.sender?.id}}"
+            },
+            {
+              "name": "chatid",
+              "value": "={{$json.chatid}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8f917559-19f6-4efe-a887-b9a722cd5a95",
+      "name": "Set Update Contact Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        1840
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Conversation Status Changed  Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2048,
+        1648
+      ],
+      "id": "ec8fd6ef-5a4b-4cf4-a137-18cd3e4b8e8f"
+    },
+    {
+      "parameters": {
+        "content": "## POST RESOLVED MESSAGE\n* to disable, remove that link",
+        "height": 573,
+        "width": 2847
+      },
+      "id": "4cadb02f-6fea-47c5-be09-81b0c2e13a8a",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        1136
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "50e0b38f-39ee-4b7d-85ee-46a27af433d8",
+      "name": "No Operation, do nothing3",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        32,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.body.meta?.sender?.custom_attributes?.hasOwnProperty('skipevaluation') }}",
+              "value2": true
+            },
+            {
+              "value1": "={{ $json.body.meta?.sender?.custom_attributes?.skipevaluation ?? false }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "ac88b12a-7c27-44f9-a290-b99b11aed9eb",
+      "name": "Skip Evaluation By Contact",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1360
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "935a005a-64ff-48f6-a86f-c82d67bb4a4c",
+      "name": "Evaluation Message Payload Ready To Quepasa",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        976,
+        1376
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Post Resolved Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1552,
+        1488
+      ],
+      "id": "c2bcfa27-4778-46a2-b5da-6611da00203f"
+    },
+    {
+      "parameters": {
+        "jsCode": "const IsValidForWhatsapp = function (id){\n  if (typeof(id) === \"undefined\" || id === null) return false;\n  if (id.endsWith('@s.whatsapp.net')) return true;\n  if (id.endsWith('@g.us')) return true;\n  if (id.endsWith('@lid')) return true;\n  return false;\n}\n\nconst response = [];\nfor (const item of $input.all()) {\n  const body = item.json.body;\n  if (body) {     \n    \n    // obsolete, marked for remove, 2024/04/25\n    const token = item.json.extra.token;\n\n    // default extra content\n    const extra = item.json.extra;\n\n    let chatId = body.conversation.meta?.sender?.identifier;    \n    if (!IsValidForWhatsapp(chatId))\n    {\n      chatId = body.conversation.meta?.sender?.custom_attributes?.quepasa;\n      if (!chatId) {\n        chatId = body.conversation.meta?.sender?.phone_number;\n      }\n    }\n\n    // new aproach\n    if (body.content && body.id) {\n      const payload = {};\n      payload.chatid = chatId;\n      payload.conversationid = body.conversation.id;\n      payload.inreply = body.content_attributes?.in_reply_to_external_id;\n      \n      if (!payload.inreply && body.content_attributes?.in_reply_to)\n        payload.inreply = `${extra.account}-${extra.inbox}-${body.content_attributes.in_reply_to}`;\n\n      if (body.content_type === 'integrations' && body.content_attributes?.type === 'dyte')      \n        body.content += '\\r\\n *** https://app.dyte.in/meeting/stage/' + body.content_attributes?.data.room_name;      \n\n      // leading with \\ at SHIFT+ENTER\n      if (body.content)       \n      {\n        body.content = body.content.replace(/\\n\\\\/g,\"\\n\").replace(/ \\\\/g,\"\");\n        payload.content = body.content; \n      }\n      \n      // should create an extra message for caption ?\n      const textmsg = (!body.attachments) || (body.attachments.length > 1);\n            \n      if (body.content && textmsg) {                \n        payload.messageid = `${body.id}`; // ensure as string \n                \n        const sender = body.sender?.available_name || body.sender?.name || $env['C8Q_UNKNOWN_SENDER'] || 'Auto Atendimento';\n        \n        const customs = body.conversation.meta?.sender?.custom_attributes;\n        const pat = !((customs?.hasOwnProperty('skipagenttitle') ?? false) && (customs?.skipagenttitle ?? false));\n\n        if (pat) payload.sender = sender;\n\n        // appending to response as new item\n        response.push({ payload: { ...payload }, extra: extra });\n        payload.content = undefined;\n      }\n\n      if (body.attachments) {\n        let counter = 0;\n        for (const attach of body.attachments) \n        {\n          // fixed payload counter for multiples attachs, 2024/05/06\n          const attachmentPayload = { ...payload }; // Criando uma nova instância de payload\n          attachmentPayload.messageid = `${body.id}-A${counter++}`; // ensure as string, adding an attach counter          \n          attachmentPayload.attachment = attach.data_url;\n          \n          // appending to response as new item\n          response.push({ payload: attachmentPayload, extra: extra });                   \n        }\n      }  \n      \n      continue;\n    }    \n    \n    // for each message, *not common to be more than one\n    for (const message of body.conversation.messages) \n    {  \n      const payload = {};\n      payload.chatid = chatId;\n      payload.conversationid = body.conversation.id ?? message.conversation_id;\n      payload.inreply = message.content_attributes?.in_reply_to_external_id;\n\n      if (!payload.inreply && message.content_attributes?.in_reply_to)\n        payload.inreply = `${extra.account}-${extra.inbox}-${message.content_attributes.in_reply_to}`;\n      \n      // obsolete, marked for remove, 2024/04/25\n      payload.token = token;\n\n      // -------------------------------------\n      \n      if (message.content_type === 'integrations' && message.content_attributes?.type === 'dyte')      \n        message.content += '\\r\\n *** https://app.dyte.in/meeting/stage/' + message.content_attributes?.data.room_name;      \n\n      // leading with \\ at SHIFT+ENTER\n      if (message.content)       \n      {\n        message.content = message.content.replace(/\\n\\\\/g,\"\\n\").replace(/ \\\\/g,\"\");\n        payload.content = message.content; \n      }\n      \n      // should create an extra message for caption ?\n      const textmsg = (!message.attachments) || (message.attachments.length > 1);\n            \n      if (message.content && textmsg) {                \n        payload.messageid = `${message.id}`; // ensure as string \n                \n        const sender = message.sender?.available_name || message.sender?.name || $env['C8Q_UNKNOWN_SENDER'] || 'Auto Atendimento';\n        \n        const customs = body.conversation.meta?.sender?.custom_attributes;\n        const pat = !((customs?.hasOwnProperty('skipagenttitle') ?? false) && (customs?.skipagenttitle ?? false));\n\n        if (pat) payload.sender = sender;\n\n        // appending to response as new item\n        response.push({ payload: { ...payload }, extra: extra });\n        payload.content = undefined;\n      }\n\n      if (message.attachments) {\n        let counter = 0;\n        for (const attach of message.attachments) \n        {\n          // fixed payload counter for multiples attachs, 2024/05/06\n          const attachmentPayload = { ...payload }; // Criando uma nova instância de payload\n          attachmentPayload.messageid = `${message.id}-A${counter++}`; // ensure as string, adding an attach counter          \n          attachmentPayload.attachment = attach.data_url;\n          \n          // appending to response as new item\n          response.push({ payload: attachmentPayload, extra: extra });                   \n        }\n      }  \n    }\n  }\n}\n\nreturn response;"
+      },
+      "id": "6dabe297-67d1-4223-abf7-85eec5b95921",
+      "name": "Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        128,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{$json.extra.qptoken}}",
+        "operation": "revoke",
+        "messageid": "={{ $json.revoke.id }}"
+      },
+      "id": "55ee4761-fb40-4c0c-9d70-9bee87b635b9",
+      "name": "Quepasa Revoke",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        2624
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Revoke Result - Handle both success and error cases\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const result = {\n    messageId: null,\n    error: null,\n    success: false\n  };\n\n  // Try to get message ID from various sources\n  result.messageId = \n    item.json?.revoke?.id ||\n    item.json?.body?.source_id ||\n    item.json?.body?.id ||\n    item.json?.id ||\n    'unknown';\n\n  // Check if there was an error\n  if (item.error) {\n    result.error = {\n      message: item.error.message || 'Unknown error',\n      code: item.error.code || 'UNKNOWN_ERROR',\n      details: item.error\n    };\n    \n    // Categorize common WhatsApp/Quepasa errors\n    if (item.error.message?.includes('24') || item.error.message?.includes('hour') || item.error.message?.includes('time')) {\n      result.error.code = 'MESSAGE_TOO_OLD';\n      result.error.message = 'WhatsApp Limitation: Message too old (>24h) - MessageId: ' + result.messageId;\n    } else if (item.error.message?.includes('not found') || item.error.message?.includes('404')) {\n      result.error.code = 'MESSAGE_NOT_FOUND';\n      result.error.message = 'WhatsApp Error: Message not found - MessageId: ' + result.messageId;\n    } else if (item.error.message?.includes('unauthorized') || item.error.message?.includes('401')) {\n      result.error.code = 'UNAUTHORIZED';\n      result.error.message = 'Quepasa Auth Error: Unauthorized - MessageId: ' + result.messageId;\n    }\n  } else {\n    // Success case\n    result.success = true;\n  }\n\n  results.push(result);\n}\n\nreturn results.map(result => ({ json: result }));"
+      },
+      "id": "4cdea374-5fad-464f-8a44-4c4e737f8df0",
+      "name": "Process Revoke Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        2624
+      ],
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "extra",
+              "value": "={{ $json.extra }}"
+            },
+            {
+              "name": "payload.chatid",
+              "value": "={{ $json.body.meta.sender.identifier }}"
+            },
+            {
+              "name": "payload.messageid",
+              "value": "={{ $json.body.id }}-eval"
+            },
+            {
+              "name": "payload.content",
+              "value": "={{ $env['C8Q_MSGFOR_NO_CSAT'] ?? '-----------------------------------------------------\\r\\nSeu atendimento foi marcado como *concluído* !\\r\\nQualquer mensagem ou reação após este anúncio, irá iniciar uma *nova* conversa.\\r\\n-----------------------------------------------------' }}"
+            }
+          ],
+          "number": [
+            {
+              "name": "payload.conversationid",
+              "value": "={{ $json.body.id }}"
+            }
+          ],
+          "boolean": [
+            {
+              "name": "csat_survey_enabled",
+              "value": "={{ $json.csat_survey_enabled }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "91084c71-00df-4278-8278-7c08bee0c298",
+      "name": "Payload Without CSAT",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{extra.account}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "4ba47e72-79b1-4a96-8944-f2f865e2c33a",
+      "name": "Account Found ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "extra.account",
+              "value": "={{ $json.account_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "23426dea-5ba0-4ec0-b364-e1908ce6de15",
+      "name": "Set Account in Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        1488
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "310da9f0-cb3a-4ae2-9cd4-6a4657829910",
+      "name": "Merge Account Id",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.conversation?.meta.sender.identifier?.toLowerCase() }}",
+              "value2": "={{ $env[\"C8Q_QP_CONTACT\"] ?? 'control@quepasa.io' }}"
+            },
+            {
+              "value1": "={{ $json.body.meta?.sender.name?.toLowerCase() }}",
+              "operation": "contains",
+              "value2": "quepasa control"
+            },
+            {
+              "value1": "={{ $json.body.conversation?.meta.sender.name?.toLowerCase() }}",
+              "operation": "contains",
+              "value2": "quepasa control"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "3575f54f-7d32-48b4-ae1a-ecc15cd102f2",
+      "name": "From Quepasa Control ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Version 1.1.0\n\n### Security Updates\n* Replaced utoken with atoken (AgentBot token) for confirmation messages\n* Message delivery confirmations now use limited scope tokens\n\n### Previous Updates (1.0.45)\n* Returning Quepasa Error Messages to User\n\n## Recommendations \n* Remember set timeout to 30 seconds",
+        "height": 360,
+        "width": 591
+      },
+      "id": "5dd05abc-4b13-48b6-b9b1-4984c1267c4c",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3600,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.meta?.sender?.identifier ?? \"\" }}",
+              "operation": "notEqual",
+              "value2": "control@quepasa.io"
+            },
+            {
+              "value1": "={{ $json.body.meta?.sender?.identifier ?? \"\" }}",
+              "operation": "notEndsWith",
+              "value2": "@broadcast"
+            }
+          ]
+        }
+      },
+      "id": "c3977a0e-353e-4d07-ab88-2dc5595fe6e0",
+      "name": "If Not Control & Not Broadcast",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.extra.pat ? !!JSON.parse($json.extra.pat.toLowerCase()) : true }}",
+              "value2": true
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{  $json.payload.sender }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "2159790d-b99d-47e6-b7d4-9301716a8401",
+      "name": "Should Prepend Agent Title ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        896,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "payload.content",
+              "value": "={{ $json.payload.sender ? '*' + $json.payload.sender.trim() + '*: ' : '' }}\n{{ $json.payload.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Update Content With Agent Ttitle",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        464
+      ],
+      "id": "164719ed-7c48-458a-9305-f796ab15fc42"
+    },
+    {
+      "parameters": {},
+      "id": "1a8e29a4-6a42-452e-800c-c4de54dc77c0",
+      "name": "Follow after prepend",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.body.custom_attributes?.hasOwnProperty('skipevaluation') }}",
+              "value2": true
+            },
+            {
+              "value1": "={{ $json.body.custom_attributes?.skipevaluation ?? false }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "b80db6d8-89cf-4c5b-86c3-cf9aa736aa00",
+      "name": "Skip Evaluate By Conversation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        1344
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{ $json.extra.qptoken ?? $json.extra.identifier }}",
+        "messageid": "={{ $json.extra.account }}-{{ $json.extra.inbox }}-{{ $json.payload.messageid ?? Math.random() }}",
+        "method": "sendtext",
+        "text": "={{$json.payload.content}}",
+        "chatid": "={{$json.payload.chatid}}",
+        "trackid": "chatwoot",
+        "inreply": "={{$json.payload.inreply }}"
+      },
+      "id": "7b2929b1-5d52-4305-aa68-c23695ad6382",
+      "name": "Quepasa Send Text",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        1264
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": false,
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{ $json.extra.qphost }}",
+        "token": "={{ $json.extra.qptoken ?? $json.extra.identifier }}",
+        "resource": "information"
+      },
+      "id": "c1a644e7-9ceb-4a21-a72e-6239e6bd1cfd",
+      "name": "Get Info",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        3696,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 503
+        }
+      },
+      "name": "Disconnected Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        4368,
+        1152
+      ],
+      "id": "ad2be91e-a350-48e8-be2f-f045830b89d5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"body\"][\"private\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Is Public Update ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        2656
+      ],
+      "id": "00245c64-ebdf-445c-a0cb-3a9eff835a55"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.message_type}}",
+              "value2": "outgoing"
+            },
+            {
+              "value1": "={{$json.body.message_type}}",
+              "value2": "template"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{$json.body.message_type}}",
+              "operation": "equal",
+              "value2": 1
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "name": "Is Outgoing Message Update ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        2672
+      ],
+      "id": "d3fe8ad8-f8fb-49e7-9bb6-68c02b99fecc"
+    },
+    {
+      "parameters": {
+        "content": "## PROFILE UPDATE\n* throws at conversation status changed ",
+        "height": 290.45603652476376,
+        "width": 3095.2003130765215
+      },
+      "id": "06326265-2e35-4b94-8365-7dac4ce16217",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function hex2a(hexx) {\n    var hex = hexx.toString(); //force conversion\n    var str = '';\n    for (var i = 0; i < hex.length; i += 2)\n        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));\n    return str;\n}\n\nfor(let index in items) \n{ \n    if(items[index].json?.chatid){\n        continue;\n    }\n\n    let body = items[index].json[\"body\"];\n    if(body) \n    {\n        // trying to get from external identifier\n        let chatid = body.meta?.sender?.identifier;\n        if(!chatid)\n        {\n            // trying to get from quepasa custom property\n            chatid = body.meta?.sender?.custom_attributes?.quepasa;            \n            if(!chatid)\n            {\n                // trying to get from e-mail\n                chatid = body.meta?.sender?.email;            \n                if(!chatid)\n                {\n                    // trying to unhex from source_id\n                    if(body.contact_inbox?.source_id && body.contact_inbox.source_id.includes(\"@\")){\n                        chatid = hex2a(body.contact_inbox.source_id)\n                    }\n                    \n                    if(!chatid)\n                    {                    \n                        // trying to get from phone number \n                        chatid = body.meta?.sender?.phone_number;\n                        if (chatid) { \n                          chatid += '@s.whatsapp.net';\n                          if (chatid.startsWith('+')) chatid = chatid.substring(1);\n                        }\n                    }\n                }\n            }\n        }\n        items[index].json.chatid = chatid;\n    }\n}\n\nreturn items;"
+      },
+      "id": "f92db2ca-1cf1-4f9b-80ee-0e9a4ec11566",
+      "name": "Ensure ChatId From Custom|Email|Source|Phone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        1648
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT account_id FROM inboxes WHERE id = '{{ $json.extra.inbox }}'",
+        "additionalFields": {}
+      },
+      "id": "5a1deaf6-a1a9-470f-8f54-20022cf8b50e",
+      "name": "Get Account From Inbox",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        1488
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.payload.attachment}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Has Attachment ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2176,
+        1184
+      ],
+      "id": "23e55cc7-4f6c-4535-b17f-1b322a73eea6"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "d26a87ce-1617-4b56-b361-5649a33871d0",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3184,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.success }}",
+              "operation": "isEmpty"
+            }
+          ],
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "9db6ff61-81be-47e5-8583-78db5aec22ee",
+      "name": "Has Errors ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2976,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.server.verified }}"
+            }
+          ]
+        }
+      },
+      "id": "ed7aa526-0aec-423e-a080-8d1e2619325a",
+      "name": "Isn't Verified ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        4048,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.payload.conversationid}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.extra.atoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"private\": true, \"content\": \"❌ O WhatsApp não está verificado.\\n Por favor, reabra o aplicativo e faça a leitura do código QR novamente.\\n{{$json.message}}\", \"message_type\": 2, \"content_type\": \"text\"}",
+        "options": {}
+      },
+      "id": "f6e724aa-8eb5-41d2-8ad9-22e5f878f623",
+      "name": "Success ?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4208,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "bfc739b4-33e5-4c9b-9030-7cc810835e65",
+      "name": "Merge3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3888,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## NOTIFY BACK CHATWOOT\n",
+        "height": 661,
+        "width": 2026
+      },
+      "id": "98b8b837-15d3-442e-8917-04c073d2c991",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{$json.extra.qphost}}",
+        "token": "={{ $json.extra.qptoken ?? $json.extra.identifier }}",
+        "messageid": "={{ $json.extra.account }}-{{ $json.extra.inbox }}-{{ $json.payload.messageid ?? Math.random() }}",
+        "method": "sendurl",
+        "text": "={{$json.payload.content}}",
+        "chatid": "={{$json.payload.chatid}}",
+        "url": "={{$json.payload.attachment}}",
+        "filename": "={{decodeURI($json.payload.attachment.split('/').at(-1))}}",
+        "filelength": 0,
+        "trackid": "chatwoot",
+        "inreply": "={{$json.payload.inreply}}"
+      },
+      "id": "02cc1cc6-05ee-4277-8206-ebfaddba63ca",
+      "name": "Quepasa Send Attach",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        2736,
+        1120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE messages SET status = 3 WHERE id = {{ +$json.payload.messageid.toString().split('-').shift() }}; ",
+        "additionalFields": {}
+      },
+      "id": "0f2bfe5c-b804-40cd-a0f5-db1c6667edf8",
+      "name": "Update Message Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        976
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "42358489-b13c-46ee-9107-75056051aa2e",
+      "name": "No Operation, do nothing2",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3488,
+        1168
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "bd2b8cff-a0b8-48a4-83f6-475bfe680d42",
+              "leftValue": "={{ $json.payload.attachment }}",
+              "rightValue": "active_storage",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7d17a166-196e-46a7-8a56-d412638b5999",
+      "name": "If Remote Storage",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2384,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "id": "d250839e-4c91-446e-820c-abd22ba25420",
+      "name": "Wait For Uploading",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2560,
+        1024
+      ],
+      "webhookId": "4be09e3c-13a7-48f9-b649-d5942ef6e1e7"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f1cd8b50-3f69-46af-8fc2-d843edaa499e",
+              "leftValue": "={{$json.body.message_type}}",
+              "rightValue": "=template",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "932e441e-b894-4d12-a6b8-f40a21ebe2aa",
+      "name": "If Template",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1072,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "7734413d-6030-41a3-8105-ffd84050bddb",
+              "leftValue": "={{ $json.body?.conversation?.meta?.sender?.custom_attributes?.skipevaluation }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d50d06c3-22c6-4443-a7cc-a3d501569f9c",
+              "leftValue": "={{ $json.body?.conversation?.custom_attributes?.skipevaluation }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "7188b989-6f14-4943-a547-0912edb37553",
+      "name": "Skip Evaluation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "166140fa-1409-40d5-ac5e-41e774a81ffd",
+              "leftValue": "={{ $json.body?.conversation?.meta?.sender?.custom_attributes?.skipgreetings }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b70d24ba-4fdc-45a8-81f7-44601f8b6d72",
+      "name": "Skip Greetings",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "86e734b7-51b7-43b2-b8fe-4b68b48e1c76",
+      "name": "No Operation, do nothing4",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c7c65a3a-c4ff-4f18-bee8-4316727360e4",
+              "name": "body.content",
+              "value": "=*{{$json.body.conversation.meta.sender.name}}* seu atendimento de Ticket de nº *{{ $json.body.id }}* foi finalizado ! Caso tenha alguma dúvida só enviar uma nova mensagem !\n\nAproveite e avalie nosso atendimento. Sua opinião é muito importante para nós e nos ajudará a identificar áreas de melhorias a fim de continuar oferecendo um serviço de qualidade. 😎\n\nAvalie meu atendimento !\n{{ ($json.extra.cwpublic ?? $env[\"C8Q_CW_PUBLIC_URL\"] ?? $json.extra.cwhost).trimEnd('/') }}/survey/responses/{{$json.body.content.split('/').at(-1)}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "ad644b3e-89a2-44a4-ae8b-e45d72e7991e",
+      "name": "Custom Evaluation Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -432,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "do not forwarding bot messages",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Ok From Customer",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        944
+      ],
+      "id": "c5d522bc-c34f-42ba-b9f6-ef11f79de1ee"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "do not forwarding private messages",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Ok Is Private",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        944
+      ],
+      "id": "6c9f292d-3239-4b97-b43a-cd8de5ff6859"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "only for outbound messages",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Ok Is Incoming",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        784
+      ],
+      "id": "57a203bb-5daa-44d4-8ee8-4e39dd078dbd"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "skip evaluation",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Ok Skip Evaluation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -224
+      ],
+      "id": "a5a7f92d-98bf-4fb9-a82b-683f5f3953ce"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {}
+      },
+      "id": "828f4004-639d-42a7-b223-3c27614362fb",
+      "name": "Respond From Chat Control Workflow",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond From Inbox Control Workflow",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        336,
+        416
+      ],
+      "id": "8eedec5a-5ec4-4042-b06d-2cabae23aaba"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "quepasa send error",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "name": "Respond Error From Quepasa",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3184,
+        1168
+      ],
+      "id": "9897fcfc-bda5-4c40-b361-86670a5d29fb"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "sent throw quepasa",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Ok From Quepasa",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3184,
+        1360
+      ],
+      "id": "e8cf2a96-e69d-47ab-8acd-8db8a2e779f8"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.content_type }}",
+                    "rightValue": "input_csat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "csat"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "12cf0100-d8a8-402c-8611-d053e3be3724",
+                    "leftValue": "={{ $json.body.conversation.status }}",
+                    "rightValue": "=open",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "greetings"
+            }
+          ]
+        },
+        "options": {
+          "ignoreCase": true,
+          "looseTypeValidation": true
+        }
+      },
+      "id": "7e1c48e5-7a24-44e7-9a87-2c3ea90863c3",
+      "name": "Switch Template",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1008,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.csat_survey_enabled }}"
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{ $json.payload.content }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "5c35b3f8-5703-4a7d-9caa-4f46fe8692b0",
+      "name": "Use MSG For Resolved Conversations Without CSAT ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "adc2b2d4-6359-4568-b229-13f861b7ee1d",
+      "name": "Any Other Update",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        2832
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "fe7bf5fc-7779-47be-9fa4-6cada09bf38b",
+      "name": "Not Outgoing",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        2832
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ad271a9a-5bfd-436d-9ca8-b22034834e04",
+      "name": "Not Public",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        2832
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.success ? { \"success\": true, \"action\": \"message_revoked\", \"messageId\": $json.messageId, \"timestamp\": new Date().toISOString() } : { \"success\": false, \"error\": $json.error.message, \"errorCode\": $json.error.code, \"messageId\": $json.messageId, \"timestamp\": new Date().toISOString() } }}",
+        "options": {
+          "responseCode": "={{ $json.success ? 200 : 422 }}"
+        }
+      },
+      "id": "23f63f33-6e9b-42ac-8be7-1493590ae473",
+      "name": "Revoked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "66dcef39-8eb0-4658-991b-b4093f1f3d9c",
+      "name": "Normal Exit C",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        1536
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "22af0033-33fc-44f5-abad-7560d8be9c1a",
+      "name": "Normal Exit C1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        1536
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c20d987d-44bb-4a13-819b-895fb1556f6e",
+      "name": "Normal Exit C2",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "07ee2229-a009-4745-a1c9-4be098c01f52",
+      "name": "Normal Exit C3",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        96,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "2759f45d-469c-40dc-8bf0-1b33ebfcb006",
+      "name": "Normal Exit C4",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        976,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "390f56bb-9eea-4a60-ac92-fc402829f282",
+      "name": "Normal Exit C5",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3696,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "57fe46f8-7dd3-44da-ae01-cdcc2a70e946",
+      "name": "Normal Exit C6",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        4368,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "skip greetings",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Ok Skip Greetings",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        224
+      ],
+      "id": "ead168e7-7e28-4df8-8ff1-e8b545886394"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE messages SET content = NULL WHERE id = {{ +$json.body.id }}",
+        "additionalFields": {}
+      },
+      "id": "1b80468f-5442-4598-b77f-13bbf2b18532",
+      "name": "Clear Evaluation Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE messages SET content = NULL WHERE id = {{ +$json.body.id }}",
+        "additionalFields": {}
+      },
+      "id": "b45ebf58-e758-4ee9-a2a3-584a1585e78b",
+      "name": "Clear Greetings Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT uuid FROM conversations WHERE account_id = {{ $json.extra.account }} and display_id = {{ $json.body.conversation.id }};",
+        "options": {}
+      },
+      "id": "995dd296-c8c2-4291-9f62-a815b8c1a5d0",
+      "name": "Get Evaluation UUID",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        32,
+        -128
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "YFd6cwaRD0Dn4rgS",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE messages SET \"content_type\" = 0, \"content\" = '{{ $json.body.content }}' WHERE id = {{ +$json.body.id }}",
+        "options": {}
+      },
+      "id": "8a896090-566c-4cfc-8842-88cd0aa9a5e7",
+      "name": "Update Evaluation Message With Custom Content",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -176,
+        48
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "inbox",
+              "value": "={{ $json.extra?.inbox ?? '' }}"
+            },
+            {
+              "key": "conversation",
+              "value": "={{ $json.body?.event?.startsWith('conversation') ? $json.body.id : $json.body?.conversation?.id ?? '' }}"
+            },
+            {
+              "key": "message",
+              "value": "={{ $json.body?.event?.startsWith('message') ? $json.body.id : '' }}"
+            },
+            {
+              "key": "source",
+              "value": "={{ $json.body?.event?.startsWith('message') ? $json.body.source_id : '' }}"
+            },
+            {
+              "key": "account",
+              "value": "={{ $json.body?.account?.id ?? '' }}"
+            },
+            {
+              "key": "event",
+              "value": "={{ $json.body?.event ?? '' }}"
+            }
+          ]
+        }
+      },
+      "id": "8ff23b80-a660-4aaa-b1d6-ebc09759e2c4",
+      "name": "Execution Data",
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1,
+      "position": [
+        -2832,
+        800
+      ],
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## DEBUG",
+        "height": 278.9574374256098,
+        "width": 394.6908294938413
+      },
+      "id": "4d1b20b0-c26a-4568-9b85-36696902c848",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2976,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4f6e974e-b2da-4e8d-9145-bec03ab1554a",
+              "name": "revoke.id",
+              "value": "={{ ($json.body.source_id?.length) ? $json.body.source_id : `${$json.extra.account}-${$json.extra.inbox}-${$json.body.id}` }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "812feda7-6246-490c-a7a1-e7a8af9955db",
+      "name": "Set Revoke Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"body\"][\"event\"]}}",
+                    "rightValue": "message_created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "98bcafb6-4672-4e06-be60-2dcfc3842c2e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "message_created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5588e3f9-0ccc-4eb0-98eb-fad6372987f1",
+                    "leftValue": "={{$json[\"body\"][\"event\"]}}",
+                    "rightValue": "conversation_status_changed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conversation_status_changed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9a700703-c245-4578-92dd-18337eafa254",
+                    "leftValue": "={{$json[\"body\"][\"event\"]}}",
+                    "rightValue": "conversation_created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conversation_created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "20ffea44-3846-4aa7-a87d-68691792eab5",
+                    "leftValue": "={{$json[\"body\"][\"event\"]}}",
+                    "rightValue": "message_updated",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "message_updated"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2832,
+        1008
+      ],
+      "id": "c0e9da60-bbe0-4e0f-a2a9-4d27b661f025",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -2832,
+        1376
+      ],
+      "id": "b215bd38-aaae-4f86-9f3a-1f5326ab5715",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.extra.cwhost}}/api/v1/accounts/{{$json.extra.account}}/conversations/{{$json.payload.conversationid}}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.extra.atoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"private\": true,\n  \"edited\": false,\n  \"content\": \"! Quepasa Error\\nCode: {{$json.httpCode}}\\nMessages: {{ $json.messages }}\",\n  \"message_type\": \"outgoing\",\n  \"content_attributes\": {\n    \"in_reply_to\": {{ +$json.payload.messageid.split('-')[0] }}\n  },\n  \"content_type\": \"text\"\n}",
+        "options": {}
+      },
+      "id": "32446ae0-2b4e-475a-905f-73664e31ef7a",
+      "name": "Informing Error Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        3488,
+        1392
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "From ChatWoot": {
+      "main": [
+        [
+          {
+            "node": "Defaults",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Created Event": {
+      "main": [
+        [
+          {
+            "node": "Is Outgoing Message ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Message ?": {
+      "main": [
+        [
+          {
+            "node": "If Control Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Created Event": {
+      "main": [
+        [
+          {
+            "node": "Sent by agent ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Outgoing Message ?": {
+      "main": [
+        [
+          {
+            "node": "If Template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Ok Is Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Public ?": {
+      "main": [
+        [
+          {
+            "node": "Is Not From Sincronize Bot?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Ok Is Private",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Not From Sincronize Bot?": {
+      "main": [
+        [
+          {
+            "node": "From Quepasa Control ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Ok From Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Control Message": {
+      "main": [
+        [
+          {
+            "node": "Quepasa Chat Control Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Should Prepend Agent Title ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Chat Control Workflow": {
+      "main": [
+        [
+          {
+            "node": "Respond From Chat Control Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sent by agent ?": {
+      "main": [
+        [
+          {
+            "node": "Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Exit (GNE)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Normal Exit (GNE)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Update Event": {
+      "main": [
+        [
+          {
+            "node": "If Deleted ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Deleted ?": {
+      "main": [
+        [
+          {
+            "node": "Is Outgoing Message Update ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Any Other Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Has Attachment ?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Defaults": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Throw To Profile Update Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normal Exit (CUP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enabled CSAT ?": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Payload Without CSAT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Conversation Resolved": {
+      "main": [
+        [
+          {
+            "node": "If Not Control & Not Broadcast",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Exit C",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Update Contact Payload": {
+      "main": [
+        [
+          {
+            "node": "Throw To Profile Update Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Status Changed  Event": {
+      "main": [
+        [
+          {
+            "node": "Ensure ChatId From Custom|Email|Source|Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing3": {
+      "main": [
+        [
+          {
+            "node": "Enabled CSAT ?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Evaluation By Contact": {
+      "main": [
+        [
+          {
+            "node": "Normal Exit C3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluation Message Payload Ready To Quepasa": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Resolved Message": {
+      "main": [
+        [
+          {
+            "node": "If Conversation Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload": {
+      "main": [
+        [
+          {
+            "node": "Text Message ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payload Without CSAT": {
+      "main": [
+        [
+          {
+            "node": "Use MSG For Resolved Conversations Without CSAT ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Account Found ?": {
+      "main": [
+        [
+          {
+            "node": "Skip Evaluate By Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Account From Inbox",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Account Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Account in Query": {
+      "main": [
+        [
+          {
+            "node": "Merge Account Id",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Account Id": {
+      "main": [
+        [
+          {
+            "node": "Skip Evaluate By Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Quepasa Control ?": {
+      "main": [
+        [
+          {
+            "node": "Throw To Quepasa Inbox Control Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Control & Not Broadcast": {
+      "main": [
+        [
+          {
+            "node": "Account Found ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Exit C1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Prepend Agent Title ?": {
+      "main": [
+        [
+          {
+            "node": "Update Content With Agent Ttitle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Follow after prepend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Content With Agent Ttitle": {
+      "main": [
+        [
+          {
+            "node": "Follow after prepend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow after prepend": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Evaluate By Conversation": {
+      "main": [
+        [
+          {
+            "node": "Normal Exit C2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Evaluation By Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Send Text": {
+      "main": [
+        [
+          {
+            "node": "Has Errors ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Info": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Is Public Update ?": {
+      "main": [
+        [
+          {
+            "node": "Set Revoke Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Public",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Outgoing Message Update ?": {
+      "main": [
+        [
+          {
+            "node": "Is Public Update ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Outgoing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure ChatId From Custom|Email|Source|Phone": {
+      "main": [
+        [
+          {
+            "node": "Post Resolved Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Update Contact Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Account From Inbox": {
+      "main": [
+        [
+          {
+            "node": "Set Account in Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Attachment ?": {
+      "main": [
+        [
+          {
+            "node": "If Remote Storage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Errors ?": {
+      "main": [
+        [
+          {
+            "node": "Respond Error From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Ok From Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Message Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Informing Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Isn't Verified ?": {
+      "main": [
+        [
+          {
+            "node": "Success ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Exit C6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success ?": {
+      "main": [
+        [
+          {
+            "node": "Disconnected Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Isn't Verified ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Send Attach": {
+      "main": [
+        [
+          {
+            "node": "Has Errors ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing2": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Remote Storage": {
+      "main": [
+        [
+          {
+            "node": "Wait For Uploading",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Quepasa Send Attach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Uploading": {
+      "main": [
+        [
+          {
+            "node": "Quepasa Send Attach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Template": {
+      "main": [
+        [
+          {
+            "node": "Switch Template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Public ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Clear Evaluation Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Custom Evaluation Content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Evaluation UUID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Greetings": {
+      "main": [
+        [
+          {
+            "node": "Clear Greetings Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing4": {
+      "main": [
+        [
+          {
+            "node": "Is Public ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Custom Evaluation Content": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Evaluation Message With Custom Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Throw To Quepasa Inbox Control Workflow": {
+      "main": [
+        [
+          {
+            "node": "Respond From Inbox Control Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Error From Quepasa": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Switch Template": {
+      "main": [
+        [
+          {
+            "node": "Skip Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Greetings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use MSG For Resolved Conversations Without CSAT ?": {
+      "main": [
+        [
+          {
+            "node": "Evaluation Message Payload Ready To Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normal Exit C4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Revoke": {
+      "main": [
+        [
+          {
+            "node": "Process Revoke Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Revoke Result": {
+      "main": [
+        [
+          {
+            "node": "Revoked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Message Status": {
+      "main": [
+        [
+          {
+            "node": "Normal Exit C5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Greetings Message": {
+      "main": [
+        [
+          {
+            "node": "Respond Ok Skip Greetings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Evaluation Message": {
+      "main": [
+        [
+          {
+            "node": "Respond Ok Skip Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Revoke Id": {
+      "main": [
+        [
+          {
+            "node": "Quepasa Revoke",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Message Created Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversation Status Changed  Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversation Created Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message Update Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "any"
+  },
+  "versionId": "8791a321-16ae-4769-93ba-fd12c19b98fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b656f3b693bffcab3cd911d06103810eb449b13e83feb9fa4de77099c1eeaa89"
+  },
+  "id": "1008",
+  "tags": []
+}

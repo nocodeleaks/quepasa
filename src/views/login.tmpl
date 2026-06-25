@@ -1,0 +1,93 @@
+{{ define "content" }}
+<section class="hero is-fullheight has-background-light">
+  <div class="hero-body">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-10-tablet is-6-desktop is-4-widescreen">
+            <div class="has-text-centered mb-5">
+            <!-- Logo / Title -->
+            <figure class="image is-96x96 is-inline-block mb-3" aria-hidden="true">
+              <img src="/assets/favicon.png" alt="QuePasa logo">
+            </figure>
+            <h1 class="title is-3">QuePasa</h1>
+            <p class="subtitle is-6 has-text-grey">WhatsApp bot management console</p>
+            <p class="subtitle is-6 has-text-grey">Version v{{ .Version }}</p>
+            </div>
+          <div> &nbsp; </div>
+
+          <div class="card">
+            <div class="card-content">
+              <h2 class="title is-5 has-text-grey-dark">Please sign in</h2>
+              <p class="subtitle is-6 has-text-danger">This project is under development and not secure.</p>
+
+              <form class="login" method="post" action="/apps/form/login" novalidate>
+
+                <div class="field">
+                  <label class="label is-sr-only" for="email">Email</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="email"
+                      name="email"
+                      class="input is-medium"
+                      type="email"
+                      placeholder="Your email"
+                      required
+                      autocomplete="username"
+                      aria-label="Email">
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-envelope"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label is-sr-only" for="password">Password</label>
+                  <div class="control has-icons-left">
+                    <input
+                      id="password"
+                      name="password"
+                      class="input is-medium"
+                      type="password"
+                      placeholder="Your password"
+                      required
+                      autocomplete="current-password"
+                      aria-label="Password">
+                    <span class="icon is-small is-left" aria-hidden="true">
+                      <i class="fas fa-lock"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="field mt-4">
+                  <div class="control">
+                    <button type="submit" class="button is-primary is-medium is-fullwidth">
+                      Sign in
+                    </button>
+                  </div>
+                </div>
+
+                <div class="has-text-centered mt-3">
+                  <p class="is-size-7 has-text-grey">Don't have an account? <a href="/apps/form/setup">Create one</a></p>
+                </div>
+
+                {{ if .Apps }}
+                <div class="has-text-centered mt-3">
+                  <p class="is-size-7 has-text-grey">Available frontend apps:</p>
+                  {{ range .Apps }}
+                  <p class="is-size-7"><a href="{{ .URLPath }}/">{{ .Slug }}</a></p>
+                  {{ end }}
+                </div>
+                {{ end }}
+              </form>
+            </div>
+          </div>
+
+          <p class="has-text-centered is-size-7 has-text-grey mt-4">
+            Development build — use with caution.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}

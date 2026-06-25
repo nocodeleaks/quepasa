@@ -1,0 +1,525 @@
+{
+  "name": "ChatwootProfileUpdate",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "multiplex"
+      },
+      "name": "Quepasa + Contact",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        420,
+        -140
+      ],
+      "id": "3a3b243a-0c36-4e09-a537-10dbf2e4fa09"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "Quepasa",
+              "value": "={{$json}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Quepasa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -80
+      ],
+      "id": "4154595b-68b1-4ee9-9016-eea0254110f1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"success\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "0091ccf7-2a56-4782-ac00-d31932d2791e",
+      "name": "Success on get picture ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "PUT",
+        "url": "={{$json.cwhost}}/api/v1/accounts/{{$json.account}}/contacts/{{$json.contactid}}",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "avatar_url",
+              "value": "={{ $json[\"Quepasa\"][\"info\"][\"url\"] }}"
+            },
+            {
+              "name": "custom_attributes.pictureid",
+              "value": "={{ $json[\"Quepasa\"][\"info\"][\"id\"] }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.utoken}}"
+            }
+          ]
+        }
+      },
+      "name": "Chatwoot Update Profile Avatar URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        680,
+        -140
+      ],
+      "id": "930b0f7c-f500-462b-8646-7608f9a25a10",
+      "retryOnFail": true,
+      "notes": "Missing filter by:\nContact Id\nInbox Id\nStatus = open | pending"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.chatid}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "bb4002a5-bdd3-40b6-b0cd-7e3bef51399a",
+      "name": "If Found ChatId",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -940,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "Chat Id not found !"
+      },
+      "id": "bbdb3493-c664-4f98-a9de-1aa8afd47f2f",
+      "name": "Stop And Error",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Starting with following parameters\n\n* chatid\n* qphost\n* qptoken\n\n* cwhost\n* utoken\n* account\n\n* contactid",
+        "height": 309.0215131709718,
+        "width": 527.0811654526535
+      },
+      "id": "652b8fc3-1649-45a1-8763-7a0895b4c799",
+      "name": "Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        -800
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "PUT",
+        "url": "={{$json.cwhost}}/api/v1/accounts/{{$json.account}}/contacts/{{$json.contactid}}",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "identifier",
+              "value": "={{$json.chatid}}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{$json.utoken}}"
+            }
+          ]
+        }
+      },
+      "name": "Chatwoot Update Profile Email3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        60,
+        -660
+      ],
+      "id": "cbc90db4-0d08-4a7c-a1a0-3d1f88c9b2c2",
+      "retryOnFail": false,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "ecc11dde-1ef8-4d8d-b7de-0d81a5851fb8",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2040,
+        -420
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e3496963-8daa-4098-b947-38b1d807fea7",
+      "name": "NoOp1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {}
+      },
+      "id": "10c8dbf1-a973-40a0-b227-150eab751f44",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.identifier}}",
+              "operation": "isEmpty"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "815b09f9-f346-4ed6-a448-4d58cf1b2bab",
+      "name": "If Empty Identifier",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.identifier}}",
+              "operation": "notEqual",
+              "value2": "={{$json.chatid}}"
+            }
+          ]
+        }
+      },
+      "id": "64fcded6-5e37-49ac-b43b-5fafbd45c97d",
+      "name": "If Different Identifier ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        -540
+      ],
+      "notesInFlow": true,
+      "notes": "Used to sincronize old versions with Quepasa Id"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "aef879bd-d035-49e1-adc4-938da3273cc5",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -1640,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.qphost}}/picinfo/{{$json.chatid}}",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "X-QUEPASA-TOKEN",
+              "value": "={{$json.qptoken}}"
+            }
+          ]
+        }
+      },
+      "name": "Quepasa Picture Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        -60
+      ],
+      "id": "dbb97023-2a8a-4d39-8888-badf86c77c72",
+      "continueOnFail": true,
+      "notes": "Important to use \"source_id\" to respond messages"
+    },
+    {
+      "parameters": {
+        "content": "## (1.0.1) Recommendations \n* change postgres node version\n\n\n\n* Remember set timeout to 20 seconds ",
+        "height": 161.4940393151249,
+        "width": 505.65878958512553
+      },
+      "id": "f785ae9e-3d29-46ca-8367-eb46bf8071a4",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2260,
+        -980
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT account_id as account, identifier FROM contacts WHERE id = '{{ $json.contactid }}'",
+        "options": {}
+      },
+      "id": "28309d71-70af-496e-9e27-65811075d26b",
+      "name": "Get Contact Info",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [
+        -1840,
+        -320
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Quepasa + Contact": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Update Profile Avatar URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Quepasa": {
+      "main": [
+        [
+          {
+            "node": "Quepasa + Contact",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Success on get picture ?": {
+      "main": [
+        [
+          {
+            "node": "Set Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Found ChatId": {
+      "main": [
+        [
+          {
+            "node": "NoOp1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Empty Identifier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop And Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Contact Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NoOp1": {
+      "main": [
+        [
+          {
+            "node": "Quepasa + Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quepasa Picture Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot Update Profile Email3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot Update Profile Avatar URL": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Empty Identifier": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Update Profile Email3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Different Identifier ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Different Identifier ?": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot Update Profile Email3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "If Found ChatId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quepasa Picture Info": {
+      "main": [
+        [
+          {
+            "node": "Success on get picture ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact Info": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 20,
+    "executionOrder": "v1"
+  },
+  "versionId": "c812f754-bf93-4ce9-bf9a-283359089723",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2b4ab318d4f8eba20155e50db9998481bc305e3588e42ee69176091736c9d07e"
+  },
+  "id": "1004",
+  "tags": []
+}

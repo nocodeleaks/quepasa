@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuePasa Dashboard</title>
+    <style>
+        /* ── Design tokens ─────────────────────────────────────────── */
+        :root {
+            --bg:          #0d1117;
+            --surface:     #161b22;
+            --surface2:    #21262d;
+            --border:      #30363d;
+            --border2:     #484f58;
+            --text:        #e6edf3;
+            --text-muted:  #7d8590;
+            --text-dim:    #484f58;
+
+            --green:  #3fb950;
+            --blue:   #58a6ff;
+            --orange: #f0883e;
+            --red:    #f85149;
+            --yellow: #d29922;
+            --purple: #bc8cff;
+            --teal:   #39d353;
+            --cyan:   #79c0ff;
+
+            --green-bg:  rgba(63,185,80,.12);
+            --blue-bg:   rgba(88,166,255,.12);
+            --orange-bg: rgba(240,136,62,.12);
+            --red-bg:    rgba(248,81,73,.12);
+            --purple-bg: rgba(188,140,255,.12);
+
+            --radius-sm: 6px;
+            --radius:    10px;
+            --radius-lg: 14px;
+
+            --shadow: 0 4px 20px rgba(0,0,0,.4);
+        }
+
+        /* ── Reset / base ──────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ── Header ────────────────────────────────────────────────── */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13,17,23,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .header-brand .logo {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--green), var(--teal));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border2);
+            flex-shrink: 0;
+        }
+        .dot.online  { background: var(--green);  box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+        .dot.offline { background: var(--red);    box-shadow: 0 0 8px var(--red); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .5; }
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .interval-select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            padding: 5px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-refresh {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all .2s;
+        }
+        .btn-refresh:hover { background: var(--border); color: var(--text); }
+
+        /* ── Layout ────────────────────────────────────────────────── */
+        .page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 24px 48px;
+        }
+
+        /* ── KPI Strip ─────────────────────────────────────────────── */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: border-color .2s;
+        }
+        .kpi-card:hover { border-color: var(--border2); }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .kpi-body { min-width: 0; }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-top: 2px;
+        }
+
+        /* colour variants */
+        .kpi-green  .kpi-icon { background: var(--green-bg);  color: var(--green); }
+        .kpi-blue   .kpi-icon { background: var(--blue-bg);   color: var(--blue); }
+        .kpi-orange .kpi-icon { background: var(--orange-bg); color: var(--orange); }
+        .kpi-red    .kpi-icon { background: var(--red-bg);    color: var(--red); }
+        .kpi-purple .kpi-icon { background: var(--purple-bg); color: var(--purple); }
+
+        /* ── Section ───────────────────────────────────────────────── */
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-accent {
+            width: 3px;
+            height: 18px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: .875rem;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+        }
+
+        /* ── Metric grid ───────────────────────────────────────────── */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            transition: border-color .2s, background .2s;
+            position: relative;
+            min-width: 0; /* allows flex/grid children to shrink and truncate */
+            overflow: hidden;
+        }
+        .metric-card:hover {
+            border-color: var(--border2);
+            background: var(--surface2);
+        }
+
+        .metric-card-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 6px;
+            /* reserve space so badge doesn't overlap */
+            padding-right: 24px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .metric-card-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .metric-card-sub {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-top: 5px;
+            font-family: 'SF Mono', 'Fira Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* tooltip via title attr so full name is still accessible */
+        }
+
+        .metric-card-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+            opacity: .5;
+            line-height: 1;
+            pointer-events: none; /* don't block hover on card */
+        }
+
+        /* accent left border */
+        .metric-card.accent-green  { border-left: 3px solid var(--green); }
+        .metric-card.accent-blue   { border-left: 3px solid var(--blue); }
+        .metric-card.accent-orange { border-left: 3px solid var(--orange); }
+        .metric-card.accent-red    { border-left: 3px solid var(--red); }
+        .metric-card.accent-purple { border-left: 3px solid var(--purple); }
+        .metric-card.accent-cyan   { border-left: 3px solid var(--cyan); }
+        .metric-card.accent-yellow { border-left: 3px solid var(--yellow); }
+
+        .metric-card.accent-green  .metric-card-value { color: var(--green); }
+        .metric-card.accent-blue   .metric-card-value { color: var(--blue); }
+        .metric-card.accent-orange .metric-card-value { color: var(--orange); }
+        .metric-card.accent-red    .metric-card-value { color: var(--red); }
+        .metric-card.accent-purple .metric-card-value { color: var(--purple); }
+        .metric-card.accent-cyan   .metric-card-value { color: var(--cyan); }
+        .metric-card.accent-yellow .metric-card-value { color: var(--yellow); }
+
+        /* ── Chart grid ────────────────────────────────────────────── */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 18px 12px;
+            overflow: visible;
+        }
+
+        .chart-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 14px;
+        }
+
+        .chart-canvas-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        .chart-canvas {
+            height: 180px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            overflow: visible;
+            padding-bottom: 28px;
+            padding-top: 32px;
+            min-width: max-content;
+        }
+
+        .bar {
+            flex: 0 0 auto;
+            min-width: 36px;
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            position: relative;
+            transition: opacity .2s;
+        }
+        .bar:hover { opacity: .75; }
+
+        .bar-val {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        .bar-lbl {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            max-width: 72px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .no-data {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        /* ── RabbitMQ sub-groups ───────────────────────────────────── */
+        .rmq-groups {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .rmq-group {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+        }
+
+        .rmq-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rmq-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 8px;
+        }
+        .rmq-row:last-child { border-bottom: none; }
+
+        .rmq-row-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rmq-row-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .rmq-row-value.green  { color: var(--green); }
+        .rmq-row-value.orange { color: var(--orange); }
+        .rmq-row-value.red    { color: var(--red); }
+        .rmq-row-value.blue   { color: var(--blue); }
+        .rmq-row-value.yellow { color: var(--yellow); }
+
+        /* ── Go metrics table ──────────────────────────────────────── */
+        .go-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+        }
+
+        /* ── Footer ────────────────────────────────────────────────── */
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 0 0;
+            font-size: 11px;
+            color: var(--text-dim);
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── Error banner ──────────────────────────────────────────── */
+        .error-banner {
+            background: var(--red-bg);
+            border: 1px solid var(--red);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            color: var(--red);
+            font-size: 13px;
+            display: none;
+        }
+
+        /* ── Responsive ────────────────────────────────────────────── */
+        @media (max-width: 900px) {
+            .kpi-strip       { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid      { grid-template-columns: 1fr; }
+            .rmq-groups      { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 560px) {
+            .kpi-strip { grid-template-columns: 1fr 1fr; }
+            .page      { padding: 16px; }
+            .kpi-value { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────────────────── -->
+<header class="header">
+    <div class="header-brand">
+        <div class="logo">🐇</div>
+        QuePasa Dashboard
+    </div>
+
+    <div class="header-status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Conectando…</span>
+        &nbsp;·&nbsp;
+        Atualizado: <span id="lastUpdate">—</span>
+    </div>
+
+    <div class="header-controls">
+        <select class="interval-select" id="refreshIntervalSelector" title="Intervalo de atualização">
+            <option value="5">↺ 5s</option>
+            <option value="10">↺ 10s</option>
+            <option value="30">↺ 30s</option>
+            <option value="60">↺ 1min</option>
+            <option value="0">Parado</option>
+        </select>
+        <button class="btn-refresh" onclick="refreshData()" title="Atualizar agora">⟳</button>
+    </div>
+</header>
+
+<!-- ── Page ──────────────────────────────────────────────────────────── -->
+<main class="page">
+
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip">
+        <div class="kpi-card kpi-green">
+            <div class="kpi-icon">📨</div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpiSent">—</div>
+                <div class="kpi-label">Mensagens enviadas</div>
+            </div>
+        </div>
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-icon">📬</div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpiReceived">—</div>
+                <div class="kpi-label">Mensagens recebidas</div>
+            </div>
+        </div>
+        <div class="kpi-card kpi-orange">
+            <div class="kpi-icon">🌐</div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpiWebhooks">—</div>
+                <div class="kpi-label">Webhooks enviados</div>
+            </div>
+        </div>
+        <div class="kpi-card kpi-purple">
+            <div class="kpi-icon">📦</div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpiRabbitMQ">—</div>
+                <div class="kpi-label">RabbitMQ publicados</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── WhatsApp / WhatsMeow ───────────────────────────────────── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-accent" style="background:var(--green)"></div>
+            <span class="section-title">WhatsApp · WhatsMeow</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-card accent-green">
+                <div class="metric-card-badge">📨</div>
+                <div class="metric-card-label">Enviadas</div>
+                <div class="metric-card-value" id="msgSent">—</div>
+                <div class="metric-card-sub">quepasa_api_messages_sent_total</div>
+            </div>
+            <div class="metric-card accent-blue">
+                <div class="metric-card-badge">📬</div>
+                <div class="metric-card-label">Recebidas</div>
+                <div class="metric-card-value" id="msgReceived">—</div>
+                <div class="metric-card-sub">quepasa_whatsmeow_messages_received_total</div>
+            </div>
+            <div class="metric-card accent-red">
+                <div class="metric-card-badge">❌</div>
+                <div class="metric-card-label">Erros</div>
+                <div class="metric-card-value" id="msgErrors">—</div>
+                <div class="metric-card-sub">…message_receive_errors_total</div>
+            </div>
+            <div class="metric-card accent-yellow">
+                <div class="metric-card-badge">⚠️</div>
+                <div class="metric-card-label">Não tratadas</div>
+                <div class="metric-card-value" id="msgUnhandled">—</div>
+                <div class="metric-card-sub">…message_receive_unhandled_total</div>
+            </div>
+            <div class="metric-card accent-cyan">
+                <div class="metric-card-badge">🔄</div>
+                <div class="metric-card-label">Eventos de sync</div>
+                <div class="metric-card-value" id="msgSync">—</div>
+                <div class="metric-card-sub">…message_receive_sync_events_total</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Mensagens por tipo (chart) ─────────────────────────────── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-accent" style="background:var(--blue)"></div>
+            <span class="section-title">Mensagens por Tipo</span>
+        </div>
+        <div class="chart-card">
+            <div class="chart-canvas-wrapper">
+                <div class="chart-canvas" id="chartMsgTypes">
+                    <div class="no-data">Sem dados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Webhook ────────────────────────────────────────────────── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-accent" style="background:var(--orange)"></div>
+            <span class="section-title">Webhook</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="metric-grid" style="grid-template-columns:repeat(2,1fr)">
+                <div class="metric-card accent-blue">
+                    <div class="metric-card-badge">🌐</div>
+                    <div class="metric-card-label">Enviados</div>
+                    <div class="metric-card-value" id="whSent">—</div>
+                    <div class="metric-card-sub">quepasa_webhooks_sent_total</div>
+                </div>
+                <div class="metric-card accent-green">
+                    <div class="metric-card-badge">✅</div>
+                    <div class="metric-card-label">Sucesso</div>
+                    <div class="metric-card-value" id="whSuccess">—</div>
+                    <div class="metric-card-sub">quepasa_webhook_success_total</div>
+                </div>
+                <div class="metric-card accent-red">
+                    <div class="metric-card-badge">❌</div>
+                    <div class="metric-card-label">Erros</div>
+                    <div class="metric-card-value" id="whErrors">—</div>
+                    <div class="metric-card-sub">quepasa_webhook_send_errors_total</div>
+                </div>
+                <div class="metric-card accent-yellow">
+                    <div class="metric-card-badge">⏱️</div>
+                    <div class="metric-card-label">Timeouts</div>
+                    <div class="metric-card-value" id="whTimeouts">—</div>
+                    <div class="metric-card-sub">quepasa_webhook_timeouts_total</div>
+                </div>
+                <div class="metric-card accent-cyan">
+                    <div class="metric-card-badge">✈️</div>
+                    <div class="metric-card-label">Taxa de sucesso</div>
+                    <div class="metric-card-value" id="whRate">—</div>
+                    <div class="metric-card-sub">calculado</div>
+                </div>
+                <div class="metric-card accent-orange">
+                    <div class="metric-card-badge">⚡</div>
+                    <div class="metric-card-label">Latência média</div>
+                    <div class="metric-card-value" id="whLatency">—</div>
+                    <div class="metric-card-sub">quepasa_webhook_duration_seconds</div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-title">Histograma de duração</div>
+                <div class="chart-canvas-wrapper">
+                    <div class="chart-canvas" id="chartWebhookHist">
+                        <div class="no-data">Sem dados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RabbitMQ ───────────────────────────────────────────────── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-accent" style="background:var(--orange)"></div>
+            <span class="section-title">RabbitMQ</span>
+        </div>
+
+        <div class="rmq-groups">
+            <!-- Filas -->
+            <div class="rmq-group">
+                <div class="rmq-group-title">📤 Publicados por fila (acumulado)</div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Total</span>
+                    <span class="rmq-row-value blue" id="rmqTotal">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">prod</span>
+                    <span class="rmq-row-value green" id="rmqProd">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">history</span>
+                    <span class="rmq-row-value" id="rmqHistory">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">events</span>
+                    <span class="rmq-row-value" id="rmqEvents">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Fila mais ativa</span>
+                    <span class="rmq-row-value" id="rmqTopQueue">—</span>
+                </div>
+            </div>
+
+            <!-- Cache -->
+            <div class="rmq-group">
+                <div class="rmq-group-title">🗂️ Cache de mensagens</div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Cache atual</span>
+                    <span class="rmq-row-value blue" id="rmqCacheSize">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Total em cache</span>
+                    <span class="rmq-row-value" id="rmqCachedTotal">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Cache processado</span>
+                    <span class="rmq-row-value green" id="rmqCacheProcessed">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Cache descartado</span>
+                    <span class="rmq-row-value red" id="rmqCacheDropped">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Erros de publicação</span>
+                    <span class="rmq-row-value orange" id="rmqPubErrors">—</span>
+                </div>
+            </div>
+
+            <!-- Conexão -->
+            <div class="rmq-group">
+                <div class="rmq-group-title">🔌 Conexão</div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Conexões estabelecidas</span>
+                    <span class="rmq-row-value green" id="rmqConnsOk">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Conexões perdidas</span>
+                    <span class="rmq-row-value red" id="rmqConnsLost">—</span>
+                </div>
+                <div class="rmq-row">
+                    <span class="rmq-row-label">Tentativas de reconexão</span>
+                    <span class="rmq-row-value yellow" id="rmqReconn">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Go runtime ─────────────────────────────────────────────── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-accent" style="background:var(--cyan)"></div>
+            <span class="section-title">Go Runtime</span>
+        </div>
+        <div class="go-grid">
+            <div class="metric-card accent-cyan">
+                <div class="metric-card-badge">🔢</div>
+                <div class="metric-card-label">Versão Go</div>
+                <div class="metric-card-value" id="goVersion" style="font-size:1rem">—</div>
+                <div class="metric-card-sub">go_info</div>
+            </div>
+            <div class="metric-card accent-blue">
+                <div class="metric-card-badge">🧵</div>
+                <div class="metric-card-label">Goroutines</div>
+                <div class="metric-card-value" id="goGoroutines">—</div>
+                <div class="metric-card-sub">go_goroutines</div>
+            </div>
+            <div class="metric-card accent-blue">
+                <div class="metric-card-badge">⚙️</div>
+                <div class="metric-card-label">Threads SO</div>
+                <div class="metric-card-value" id="goThreads">—</div>
+                <div class="metric-card-sub">go_threads</div>
+            </div>
+            <div class="metric-card accent-green">
+                <div class="metric-card-badge">🧠</div>
+                <div class="metric-card-label">Heap alocado</div>
+                <div class="metric-card-value" id="goHeapAlloc">—</div>
+                <div class="metric-card-sub">heap_alloc_bytes (MB)</div>
+            </div>
+            <div class="metric-card accent-green">
+                <div class="metric-card-badge">📊</div>
+                <div class="metric-card-label">Heap em uso</div>
+                <div class="metric-card-value" id="goHeapInuse">—</div>
+                <div class="metric-card-sub">heap_inuse_bytes (MB)</div>
+            </div>
+            <div class="metric-card accent-purple">
+                <div class="metric-card-badge">💾</div>
+                <div class="metric-card-label">Memória sistema</div>
+                <div class="metric-card-value" id="goMemSys">—</div>
+                <div class="metric-card-sub">memstats_sys_bytes (MB)</div>
+            </div>
+            <div class="metric-card accent-yellow">
+                <div class="metric-card-badge">🗑️</div>
+                <div class="metric-card-label">Ciclos GC</div>
+                <div class="metric-card-value" id="goGCCount">—</div>
+                <div class="metric-card-sub">gc_duration_seconds_count</div>
+            </div>
+            <div class="metric-card accent-yellow">
+                <div class="metric-card-badge">⏱️</div>
+                <div class="metric-card-label">Duração GC</div>
+                <div class="metric-card-value" id="goGCDuration">—</div>
+                <div class="metric-card-sub">gc_duration_seconds_sum (ms)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span class="dot" id="footerDot"></span>
+        QuePasa Metrics Dashboard &nbsp;·&nbsp; <span id="footerTime">—</span>
+    </div>
+
+</main>
+
+<script>
+/* ── State ─────────────────────────────────────────────────────────── */
+let refreshTimer = null;
+let isLoading   = false;
+
+/* ── Prometheus parser ─────────────────────────────────────────────── */
+function parsePrometheusMetrics(text) {
+    const metrics = {};
+    for (const line of text.split('\n')) {
+        if (line.startsWith('#') || !line.trim()) continue;
+        const m = line.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)\{?([^}]*)\}?\s+([^\s]+)/);
+        if (!m) continue;
+        const [, name, rawLabels, value] = m;
+        if (!metrics[name]) metrics[name] = [];
+        const labels = {};
+        (rawLabels.match(/([a-zA-Z_][a-zA-Z0-9_]*)="([^"]*)"/g) || []).forEach(p => {
+            const [k, v] = p.split('=');
+            labels[k] = v.replace(/"/g, '');
+        });
+        metrics[name].push({ labels, value: parseFloat(value) });
+    }
+    return metrics;
+}
+
+function getVal(metrics, name, labelFilter = {}) {
+    if (!metrics[name]) return 0;
+    for (const m of metrics[name]) {
+        let ok = true;
+        for (const [k, v] of Object.entries(labelFilter)) {
+            if (m.labels[k] !== v) { ok = false; break; }
+        }
+        if (ok) return m.value;
+    }
+    return metrics[name].reduce((s, m) => s + m.value, 0);
+}
+
+function histAvg(metrics, base) {
+    const sum   = getVal(metrics, base + '_sum');
+    const count = getVal(metrics, base + '_count');
+    return count > 0 ? sum / count : 0;
+}
+
+/* ── Color helpers ─────────────────────────────────────────────────── */
+const TYPE_COLORS = {
+    text: '#58a6ff', system: '#3fb950', image: '#f0883e',
+    audio: '#bc8cff', video: '#f85149', document: '#79c0ff',
+    sticker: '#39d353', location: '#d29922', contact: '#ff7b72',
+};
+
+function typeColor(t) {
+    if (TYPE_COLORS[t]) return TYPE_COLORS[t];
+    let h = 0;
+    for (let i = 0; i < t.length; i++) h = ((h << 5) - h + t.charCodeAt(i)) | 0;
+    return `hsl(${Math.abs(h) % 360},60%,55%)`;
+}
+
+function fmt(n)  { return Number.isFinite(n) ? n.toLocaleString('pt-BR') : '—'; }
+function set(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = v;
+}
+
+// On first load, propagate the metric name from metric-card-sub text into
+// its title attribute so the full name shows on hover even when truncated.
+function initSubTitles() {
+    document.querySelectorAll('.metric-card-sub').forEach(el => {
+        if (!el.title) el.title = el.textContent.trim();
+    });
+}
+
+/* ── Chart renderer ────────────────────────────────────────────────── */
+function renderBars(containerId, entries, opts = {}) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = '';
+
+    if (!entries || entries.length === 0) {
+        el.innerHTML = '<div class="no-data">Sem dados</div>';
+        return;
+    }
+
+    const max = Math.max(...entries.map(e => e.v), 1);
+    const H   = opts.height || 120;
+
+    entries.forEach(({ label, v, color }) => {
+        const pct  = Math.max((v / max) * H, 3);
+        const bar  = document.createElement('div');
+        bar.className  = 'bar';
+        bar.style.cssText = `height:${pct}px;background:${color || '#58a6ff'};min-width:${opts.barW || 36}px`;
+        bar.title = `${label}: ${fmt(v)}`;
+
+        const val = document.createElement('div');
+        val.className   = 'bar-val';
+        val.textContent = opts.valFmt ? opts.valFmt(v) : fmt(v);
+
+        const lbl = document.createElement('div');
+        lbl.className   = 'bar-lbl';
+        lbl.textContent = label;
+
+        bar.append(val, lbl);
+        el.appendChild(bar);
+    });
+}
+
+/* ── Update functions ──────────────────────────────────────────────── */
+function updateKPIs(m) {
+    set('kpiSent',     fmt(getVal(m, 'quepasa_api_messages_sent_total')));
+    set('kpiReceived', fmt(getVal(m, 'quepasa_whatsmeow_messages_received_total')));
+    set('kpiWebhooks', fmt(getVal(m, 'quepasa_webhooks_sent_total')));
+    set('kpiRabbitMQ', fmt(getVal(m, 'quepasa_rabbitmq_messages_published_total')));
+}
+
+function updateWhatsApp(m) {
+    set('msgSent',      fmt(getVal(m, 'quepasa_api_messages_sent_total')));
+    set('msgReceived',  fmt(getVal(m, 'quepasa_whatsmeow_messages_received_total')));
+    set('msgErrors',    fmt(getVal(m, 'quepasa_whatsmeow_message_receive_errors_total')));
+    set('msgUnhandled', fmt(getVal(m, 'quepasa_whatsmeow_message_receive_unhandled_total')));
+    set('msgSync',      fmt(getVal(m, 'quepasa_whatsmeow_message_receive_sync_events_total')));
+}
+
+function updateMsgTypesChart(m) {
+    const raw = m['quepasa_whatsmeow_messages_by_type_total'] || [];
+    const entries = raw
+        .map(e => ({ label: e.labels.type || 'unknown', v: e.value, color: typeColor(e.labels.type || 'unknown') }))
+        .sort((a, b) => b.v - a.v);
+    renderBars('chartMsgTypes', entries);
+}
+
+function updateWebhook(m) {
+    const sent     = getVal(m, 'quepasa_webhooks_sent_total');
+    const success  = getVal(m, 'quepasa_webhook_success_total');
+    const errors   = getVal(m, 'quepasa_webhook_send_errors_total');
+    const timeouts = getVal(m, 'quepasa_webhook_timeouts_total');
+    const rate     = sent > 0 ? ((success / sent) * 100).toFixed(1) + '%' : '—';
+    const latMs    = histAvg(m, 'quepasa_webhook_duration_seconds');
+    const latStr   = latMs > 0 ? (latMs * 1000).toFixed(1) + ' ms' : '—';
+
+    set('whSent',    fmt(sent));
+    set('whSuccess', fmt(success));
+    set('whErrors',  fmt(errors));
+    set('whTimeouts',fmt(timeouts));
+    set('whRate',    rate);
+    set('whLatency', latStr);
+
+    // Histogram
+    const raw = m['quepasa_webhook_duration_seconds_bucket'] || [];
+    const bucketMap = {};
+    raw.forEach(e => {
+        const le = parseFloat(e.labels.le);
+        if (isFinite(le)) bucketMap[le] = e.value;
+    });
+    const sorted = Object.entries(bucketMap).sort((a,b) => a[0]-b[0]);
+    const entries = sorted.map(([le, cum], i) => {
+        const prev  = i > 0 ? sorted[i-1][1] : 0;
+        const count = cum - prev;
+        const ms    = parseFloat(le) >= 1 ? parseFloat(le).toFixed(1)+'s' : (parseFloat(le)*1000).toFixed(0)+'ms';
+        return { label: ms, v: count, color: '#f0883e' };
+    });
+    renderBars('chartWebhookHist', entries, { barW: 28, valFmt: v => v > 0 ? fmt(v) : '' });
+}
+
+function updateRabbitMQ(m) {
+    const published = m['quepasa_rabbitmq_messages_published_total'] || [];
+    let total = 0, prod = 0, history = 0, events = 0;
+    const byQueue = {};
+
+    published.forEach(e => {
+        const v = e.value || 0;
+        total += v;
+        const q = e.labels.queue || '';
+        if (q === 'prod')    prod    += v;
+        if (q === 'history') history += v;
+        if (q === 'events')  events  += v;
+        byQueue[q] = (byQueue[q] || 0) + v;
+    });
+
+    const topQueue = Object.entries(byQueue).sort((a,b)=>b[1]-a[1])[0];
+
+    set('rmqTotal',    fmt(total));
+    set('rmqProd',     fmt(prod));
+    set('rmqHistory',  fmt(history));
+    set('rmqEvents',   fmt(events));
+    set('rmqTopQueue', topQueue ? `${topQueue[0]} (${fmt(topQueue[1])})` : '—');
+
+    set('rmqCacheSize',      fmt(getVal(m, 'quepasa_rabbitmq_cache_size_current')));
+    set('rmqCachedTotal',    fmt(getVal(m, 'quepasa_rabbitmq_messages_cached_total')));
+    set('rmqCacheProcessed', fmt(getVal(m, 'quepasa_rabbitmq_messages_cache_processed_total')));
+    set('rmqCacheDropped',   fmt(getVal(m, 'quepasa_rabbitmq_messages_cache_dropped_total')));
+    set('rmqPubErrors',      fmt(getVal(m, 'quepasa_rabbitmq_message_publish_errors_total')));
+
+    set('rmqConnsOk',   fmt(getVal(m, 'quepasa_rabbitmq_connections_established_total')));
+    set('rmqConnsLost', fmt(getVal(m, 'quepasa_rabbitmq_connections_lost_total')));
+    set('rmqReconn',    fmt(getVal(m, 'quepasa_rabbitmq_reconnection_attempts_total')));
+}
+
+function updateGo(m) {
+    if (m['go_info'] && m['go_info'][0]) {
+        set('goVersion', m['go_info'][0].labels.version || '—');
+    }
+    set('goGoroutines', fmt(getVal(m, 'go_goroutines')));
+    set('goThreads',    fmt(getVal(m, 'go_threads')));
+
+    const gcMs = getVal(m, 'go_gc_duration_seconds_sum') * 1000;
+    set('goGCCount',    fmt(getVal(m, 'go_gc_duration_seconds_count')));
+    set('goGCDuration', gcMs > 0 ? gcMs.toFixed(2) : '—');
+
+    const mb = b => { const v = b / (1024*1024); return v > 0 ? v.toFixed(1) : '—'; };
+    set('goHeapAlloc', mb(getVal(m, 'go_memstats_heap_alloc_bytes')));
+    set('goHeapInuse', mb(getVal(m, 'go_memstats_heap_inuse_bytes')));
+    set('goMemSys',    mb(getVal(m, 'go_memstats_sys_bytes')));
+}
+
+function setOnline(online) {
+    ['statusDot','footerDot'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.className = 'dot ' + (online ? 'online' : 'offline');
+    });
+    set('statusText', online ? 'Online' : 'Offline');
+}
+
+/* ── Main update ───────────────────────────────────────────────────── */
+function updateDashboard(m) {
+    updateKPIs(m);
+    updateWhatsApp(m);
+    updateMsgTypesChart(m);
+    updateWebhook(m);
+    updateRabbitMQ(m);
+    updateGo(m);
+
+    const now = new Date().toLocaleTimeString('pt-BR');
+    set('lastUpdate', now);
+    set('footerTime', now);
+    setOnline(true);
+}
+
+/* ── Fetch ─────────────────────────────────────────────────────────── */
+async function fetchMetrics() {
+    if (isLoading) return;
+    isLoading = true;
+    try {
+        const res = await fetch('/metrics');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        updateDashboard(parsePrometheusMetrics(text));
+        const eb = document.getElementById('errorBanner');
+        if (eb) eb.style.display = 'none';
+    } catch (err) {
+        setOnline(false);
+        const eb = document.getElementById('errorBanner');
+        if (eb) { eb.style.display = 'block'; eb.textContent = `Erro ao carregar métricas: ${err.message}`; }
+    } finally {
+        isLoading = false;
+    }
+}
+
+function refreshData() { fetchMetrics(); }
+
+/* ── Init ──────────────────────────────────────────────────────────── */
+function applyInterval(val) {
+    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+    if (val > 0) refreshTimer = setInterval(fetchMetrics, val * 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSubTitles();
+    fetchMetrics();
+    const sel = document.getElementById('refreshIntervalSelector');
+    sel.addEventListener('change', () => applyInterval(Number(sel.value)));
+    applyInterval(Number(sel.value));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+name: Publish Docker Image
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches:
+      - main
+      - develop
+      - new-ui          # adicionada branch new-ui
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: codeleaks/quepasa
+  DOCKER_BUILD_RECORD_UPLOAD: false
+  DOCKER_BUILD_SUMMARY: false
+  NODE_ENV: production
+  APP_ENV: production
+  QUEPASA_CONTAINER_NAME: "quepasa"
+  QUEPASA_HOST_NAME: "quepasa"
+  QUEPASA_MEMORY_LIMIT: 512M
+  QUEPASA_EXTERNAL_PORT: 31000
+  QUEPASA_INTERNAL_PORT: 31000
+  WEBAPIPORT: 31000
+  USER: ${{ secrets.DOCKER_USERNAME }}
+  PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  MIGRATIONS: './migrations'
+  WEBSOCKETSSL: false
+
+jobs:
+  push_main:
+    if: github.ref == 'refs/heads/main'
+    name: Push Docker + GitHub Release (condicional)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo (full history)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # 1) Build & push apenas com `latest`
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            ${{ env.IMAGE_NAME }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=schedule
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+          flavor: |
+            latest=true
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image (latest)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      # 2) Só prossiga se for push na main
+      - name: Extract old QpVersion
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: extract_old
+        run: |
+          OLD=$(git show HEAD~1:src/models/qp_defaults.go 2>/dev/null \
+            | grep -Po '(?<=const QpVersion = ")[^"]+' || true)
+          echo "old=$OLD" >> $GITHUB_OUTPUT
+
+      - name: Extract new QpVersion
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: extract_new
+        run: |
+          NEW=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "new=$NEW" >> $GITHUB_OUTPUT
+          echo "VERSION=$NEW" >> $GITHUB_ENV
+
+      # 3) Se QpVersion mudou, crie tag, Release e tagueie a imagem
+      - name: Configure Git for tagging
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create & push Git tag ${{ env.VERSION }}
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        run: |
+          git tag -fa "${{ env.VERSION }}" -m "Release ${{ env.VERSION }}"
+          git push -f origin "${{ env.VERSION }}"
+
+      - name: Create GitHub Release ${{ env.VERSION }}
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        uses: softprops/action-gh-release@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ env.VERSION }}
+          name: "Release ${{ env.VERSION }}"
+          body: |
+            📦 Imagem Docker `${{ env.IMAGE_NAME }}:${{ env.VERSION }}` publicada!
+            Commit: ${{ github.sha }}
+
+      - name: Build & push Docker image with version tag
+        if: ${{ steps.extract_old.outputs.old != steps.extract_new.outputs.new }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+
+  push_develop:
+    if: github.ref == 'refs/heads/develop'
+    name: Build & Push Dev Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v5
+
+      - name: Extract QpVersion
+        id: extract_version
+        run: |
+          VERSION=$(grep -Po '(?<=const QpVersion = ")[^"]+' src/models/qp_defaults.go)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image (dev)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ env.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-latest

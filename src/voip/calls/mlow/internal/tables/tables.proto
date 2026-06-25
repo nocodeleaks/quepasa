@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package mlow.tables;
+
+option go_package = "github.com/purpshell/meowcaller/mlow/internal/tables";
+
+// The embedded MLow heap window: the runtime-built table regions plus the
+// table-base pointers. Stored zlib-compressed.
+message HeapWindow {
+  repeated Region regions = 1;
+  uint32 g_cc = 2;
+  uint32 g_nrg = 3;
+  uint32 g_pitch = 4;
+  uint32 g_clk = 5;
+}
+
+// One contiguous heap region: its absolute base address and bytes.
+message Region {
+  uint32 base = 1;
+  bytes data = 2;
+}
+
+// The MLow per-frame LSF runtime CDF tables (func 3559 output, the lsf_* fields
+// of the smpl_tables JSON dump). Stored zlib-compressed protobuf so the Rust
+// reference and the Go port decode the byte-identical blob. u16 CDF entries are
+// widened to uint32 on the wire (protobuf has no u16) and narrowed back on load.
+message SmplLsfTables {
+  repeated Cdf lsf_sel = 1;             // [sel] -> CDF
+  LsfGrid lsf_grid = 2;
+  repeated LsfStage2S1 lsf_stage2 = 3;  // [stage1]
+  repeated uint32 lsf_extra = 4;        // the 3-symbol extra CDF
+}
+
+// One u16 cumulative CDF.
+message Cdf {
+  repeated uint32 v = 1;
+}
+
+// The four stage-1 grid CDFs, selected by (match, stage1 != 0).
+message LsfGrid {
+  repeated uint32 match1 = 1;
+  repeated uint32 match1_alt = 2;
+  repeated uint32 match0 = 3;
+  repeated uint32 match0_alt = 4;
+}
+
+// lsf_stage2 nesting: [stage1][config][grid][coeff] -> CDF.
+message LsfStage2S1 {
+  repeated LsfStage2S2 config = 1;
+}
+message LsfStage2S2 {
+  repeated LsfStage2S3 grid = 1;
+}
+message LsfStage2S3 {
+  repeated Cdf coeff = 1;
+}
+
+// Generic nested-float wrappers (protobuf has no nested repeated): F<N> is a
+// depth-N `[[...float]]`. Shared with the reference tables.proto.
+message F1 { repeated float v = 1; }
+message F2 { repeated F1 d = 1; }
+message F3 { repeated F2 d = 1; }
+message F4 { repeated F3 d = 1; }
+message F5 { repeated F4 d = 1; }
+
+// Generic uint32 / int32 nests (index & CMF tables: pitch, lsf_cb).
+message U1 { repeated uint32 v = 1; }
+message I1 { repeated int32 v = 1; }
+message I2 { repeated I1 d = 1; }
+message I3 { repeated I2 d = 1; }
+message I4 { repeated I3 d = 1; }
+
+// MLow synthesis tables (the runtime smpl_synth_tables dump). Stored zlib+protobuf.
+message SmplSynthTables {
+  F5 valtables = 1;        // [stage1][config][grid][coeff] -> residual values
+  F3 centroids = 2;        // [stage1][grid] -> 16 base NLSF
+  F4 matrices = 3;         // [stage1][grid] -> 16x16 decorrelation matrix
+  F2 min_spacing = 4;      // [stage1] -> 17 stabilize spacings
+  F2 grid16_w = 5;
+  repeated float grid16_alpha = 6;
+  F3 grid16_matrices = 7;  // [sig][config] -> 256-entry flat matrix
+}
+
+// MLow LSF quantizer codebook (the runtime lsf_cb_dump, encoder). Stored zlib+protobuf.
+message LsfCb {
+  repeated LsfCbSt1 st1 = 1;     // [2]
+  repeated LsfCbSt2L1 st2 = 2;   // [2][2][17]
+  I4 min_qi = 3;                 // [2][2][17][16]
+  I4 max_qi = 4;                 // [2][2][17][16]
+  F2 qstep = 5;                  // [2][2]
+  repeated float mean_v = 6;     // [16]
+  repeated float mean_uv = 7;    // [16]
+  repeated float reg_cond = 8;   // [2]
+  repeated float min_dist_v = 9;  // [17]
+  repeated float min_dist_uv = 10; // [17]
+}
+message LsfCbSt1 {
+  F2 cbhalf = 1;                 // [16][16]
+  F2 c_inv = 2;                  // [16][16]
+  repeated float bits_cond = 3;  // [17]
+  F3 rotcond = 4;                // [2][16][16]
+  F2 cb_cinv = 5;                // [16][16]
+  F3 we = 6;                     // [16][16][16]
+  repeated float bits = 7;       // [16]
+  F3 wie = 8;                    // [16][16][16]
+}
+message LsfCbSt2L1 { repeated LsfCbSt2L2 d = 1; }
+message LsfCbSt2L2 { repeated LsfCbSt2 d = 1; }
+message LsfCbSt2 {
+  repeated int32 num_qlvls = 1;  // [16]
+  F2 qlvls = 2;                  // [16][n]
+  F2 num_bits = 3;               // [16][n]
+}

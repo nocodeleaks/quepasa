@@ -1,0 +1,65 @@
+package whatsapp
+
+import (
+	"encoding/json"
+
+	library "github.com/nocodeleaks/quepasa/library"
+)
+
+type WhatsappChat struct {
+	// (Identifier) whatsapp contact id, based on phone number or timestamp
+	Id string `json:"id"`
+
+	// (Local Identifier) new whatsapp unique contact id
+	LId string `json:"lid,omitempty"`
+
+	// phone number in E164 format
+	Phone string `json:"phone,omitempty"`
+
+	Title string `json:"title,omitempty"`
+
+	Labels []WhatsappChatLabel `json:"labels,omitempty"`
+}
+
+func (source *WhatsappChat) GetChatId() string {
+	return source.Id
+}
+
+var WASYSTEMCHAT = WhatsappChat{Id: "system", Title: "Internal System Message"}
+
+type WhatsappChatLabel struct {
+	ID     int64  `json:"id"`
+	Name   string `json:"name"`
+	Color  string `json:"color,omitempty"`
+	Active bool   `json:"active"`
+}
+
+// get phone number if exists
+func (source *WhatsappChat) GetPhone() string {
+	// Return the Phone field if it's already populated
+	if len(source.Phone) > 0 {
+		return source.Phone
+	}
+
+	// Fallback to extracting from ID
+	phone, _ := library.GetPhoneIfValid(source.Id)
+	return phone
+}
+
+// MarshalJSON customizes JSON marshaling to omit lid when it's the same as id
+func (source WhatsappChat) MarshalJSON() ([]byte, error) {
+	type Alias WhatsappChat
+	aux := struct {
+		Alias
+		Lid string `json:"lid,omitempty"`
+	}{
+		Alias: Alias(source),
+	}
+
+	// Only include lid if it's different from id
+	if source.LId != source.Id && len(source.LId) > 0 {
+		aux.Lid = source.LId
+	}
+
+	return json.Marshal(aux)
+}

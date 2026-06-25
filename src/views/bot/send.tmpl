@@ -1,0 +1,99 @@
+{{ define "content" }}
+<section class="section">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-10-tablet is-8-desktop is-6-widescreen">
+
+        <div class="has-text-centered mb-5">
+          <figure class="image is-64x64 is-inline-block mb-2" aria-hidden="true">
+            <img src="/assets/favicon.png" alt="QuePasa logo">
+          </figure>
+          <h1 class="title is-4">Send Message</h1>
+          {{ if .Server }}<p class="subtitle is-6 has-text-grey">Bot: {{ .Server.GetWId }}</p>{{ end }}
+        </div>
+
+        {{ if .ErrorMessage }}
+        <div class="notification is-warning">
+          {{ .ErrorMessage }}
+        </div>
+        {{ end }}
+
+        {{ if .MessageId }}
+        <div class="notification is-success">
+          Last message send successful: {{ .MessageId }}
+        </div>
+        {{ end }}
+
+        <div class="card">
+          <div class="card-content">
+            <form enctype="multipart/form-data" method="post" action="/apps/form/server/{{ .Server.Token }}/send">
+
+              <div class="field">
+                <label class="label" for="recipient">Recipient</label>
+                <div class="control has-icons-left">
+                  <input class="input" id="recipient" name="recipient" type="text" placeholder="Phone number or group ID" autofocus value="">
+                  <span class="icon is-small is-left" aria-hidden="true">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label" for="id">Message Id <span class="has-text-grey is-size-7">(optional)</span></label>
+                <div class="control has-icons-left">
+                  <input class="input" id="id" name="id" type="text" placeholder="" value="">
+                  <span class="icon is-small is-left" aria-hidden="true">
+                    <i class="fas fa-hashtag"></i>
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label" for="message">Message Text</label>
+                <div class="control">
+                  <textarea class="textarea" id="message" name="message" placeholder="Type your message here..." rows="4"></textarea>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label" for="attachment">Attachment</label>
+                <div class="control">
+                  <div class="file has-name is-fullwidth">
+                    <label class="file-label">
+                      <input class="file-input" type="file" name="attachment" id="attachment" onchange="updateFileName(this)">
+                      <span class="file-cta">
+                        <span class="file-icon">
+                          <i class="fas fa-upload"></i>
+                        </span>
+                        <span class="file-label">Choose a file…</span>
+                      </span>
+                      <span class="file-name" id="file-name-label">No file selected</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field mt-5">
+                <div class="control">
+                  <button type="submit" class="button is-info is-medium is-fullwidth">
+                    <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                    <span>Send</span>
+                  </button>
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function updateFileName(input) {
+    var label = document.getElementById('file-name-label');
+    label.textContent = input.files.length > 0 ? input.files[0].name : 'No file selected';
+  }
+</script>
+{{ end }}

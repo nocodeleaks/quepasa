@@ -61,7 +61,28 @@ require (
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
-	github.com/sirupsen/logrus v1.9.3
+)
+
+require (
+	github.com/emiago/sipgo v0.33.0 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.3.2 // indirect
+	github.com/huin/goupnp v1.3.0 // indirect
+	github.com/icholy/digest v1.1.0 // indirect
+	github.com/nocodeleaks/quepasa/sipproxy v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/voip v0.0.0-00010101000000-000000000000 // indirect
+	github.com/pion/datachannel v1.6.0 // indirect
+	github.com/pion/dtls/v2 v2.2.7 // indirect
+	github.com/pion/dtls/v3 v3.1.2 // indirect
+	github.com/pion/logging v0.2.4 // indirect
+	github.com/pion/opus v0.1.0 // indirect
+	github.com/pion/randutil v0.1.0 // indirect
+	github.com/pion/sctp v1.9.4 // indirect
+	github.com/pion/stun v0.6.1 // indirect
+	github.com/pion/transport/v2 v2.2.1 // indirect
+	github.com/pion/transport/v4 v4.0.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 )
 
 require (
@@ -145,3 +166,5 @@ require (
 )
 
 replace github.com/nocodeleaks/quepasa/qplog => ./qplog
+
+replace github.com/nocodeleaks/quepasa/voip => ./voip

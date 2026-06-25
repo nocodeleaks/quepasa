@@ -469,7 +469,14 @@ const docTemplate = `{
                         "enum": [
                             "start",
                             "stop",
-                            "restart"
+                            "restart",
+                            "direct",
+                            "groups",
+                            "broadcasts",
+                            "readreceipts",
+                            "deliveryreceipts",
+                            "calls",
+                            "debug"
                         ],
                         "type": "string",
                         "description": "Command action",
@@ -487,6 +494,57 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/contact/save": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Saves a contact to WhatsApp address book. Set synctophone=true to also sync to the device's contacts (equivalent to \"Sync contact with phone\" in WhatsApp Web)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Save contact",
+                "parameters": [
+                    {
+                        "description": "Contact save request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ContactSaveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.QpResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
                         "schema": {
                             "$ref": "#/definitions/models.QpResponse"
                         }
@@ -2830,7 +2888,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n- Contact (field \"contact\") — send contact with phone/name in the \"contact\" object\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n- contact: JSON object with contact data (phone, name, vcard)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nContact object fields:\n- phone (string, required): Contact phone number\n- name (string, required): Contact display name\n- vcard (string, optional): Full vCard string (auto-generated if not provided)\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nContact:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"contact\": {\n\"phone\": \"5511999999999\",\n\"name\": \"John Doe\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `",
+                "description": "Endpoint to send messages via WhatsApp. Accepts sending of:\n- Plain text (field \"text\")\n- Files by URL (field \"url\") — server will download and send as attachment\n- Base64 content (field \"content\") — use format data:\u003cmime\u003e;base64,\u003cdata\u003e\n- Polls (field \"poll\") — send the poll JSON in the \"poll\" field\n- Location (field \"location\") — send location with latitude/longitude in the \"location\" object\n- Contact (field \"contact\") — send contact with phone/name in the \"contact\" object\n- Sticker (field \"sticker\") — send a sticker from URL or base64 content; auto-converted to WebP 512×512 via FFmpeg\n\nMain fields:\n- chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)\n- text: message text\n- url: public URL to download a file\n- content: embedded base64 content (e.g.: data:image/png;base64,...)\n- fileName: file name (optional, used when name cannot be inferred)\n- poll: JSON object with the poll (question, options, selections)\n- location: JSON object with location data (latitude, longitude, name, address, url)\n- contact: JSON object with contact data (phone, name, vcard)\n- sticker: JSON object with sticker source (url or content as base64/data URI)\n\nLocation object fields:\n- latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)\n- longitude (float64, required): Location longitude in degrees (e.g.: -46.633308)\n- name (string, optional): Location name/description\n- address (string, optional): Location full address\n- url (string, optional): URL with link to the map\n\nContact object fields:\n- phone (string, required): Contact phone number\n- name (string, required): Contact display name\n- vcard (string, optional): Full vCard string (auto-generated if not provided)\n\nSticker object fields:\n- url (string): Public URL of the sticker image/video to download and convert\n- content (string): Base64-encoded content or data URI (e.g.: data:image/png;base64,...)\nNote: images and videos are automatically converted to WebP 512×512 using FFmpeg.\nAnimated formats (video, gif, apng) produce animated WebP stickers (max 10s, 15fps).\nStatic images produce static WebP stickers.\n\nExamples:\nText:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"text\": \"Hello, world!\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nPoll:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"poll\": {\n\"question\": \"Which languages do you know?\",\n\"options\": [\"JavaScript\",\"Python\",\"Go\",\"Java\",\"C#\",\"Ruby\"],\n\"selections\": 3\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nLocation:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"location\": {\n\"latitude\": -23.550520,\n\"longitude\": -46.633308,\n\"name\": \"Avenida Paulista, São Paulo\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nContact:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"contact\": {\n\"phone\": \"5511999999999\",\n\"name\": \"John Doe\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nBase64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"content\": \"data:image/png;base64,....\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nFile by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"url\": \"https://example.com/path/to/file.jpg\"\n}\n` + "`" + `` + "`" + `` + "`" + `\nSticker by URL:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"sticker\": {\n\"url\": \"https://example.com/sticker.png\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `\nSticker by base64:\n` + "`" + `` + "`" + `` + "`" + `json\n{\n\"chatId\": \"5511999999999@s.whatsapp.net\",\n\"sticker\": {\n\"content\": \"data:image/png;base64,....\"\n}\n}\n` + "`" + `` + "`" + `` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -2840,10 +2898,10 @@ const docTemplate = `{
                 "tags": [
                     "Send"
                 ],
-                "summary": "Send any type of message (text, file, poll, base64 content, location, contact)",
+                "summary": "Send any type of message (text, file, poll, base64 content, location, contact, sticker)",
                 "parameters": [
                     {
-                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, or 'contact' for contact object.",
+                        "description": "Request body. Use 'content' for base64, 'url' for remote files, 'poll' for poll JSON, 'location' for location object, 'contact' for contact object, or 'sticker' for sticker object.",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -2879,12 +2937,10 @@ const docTemplate = `{
                                             "type": "string"
                                         },
                                         "latitude": {
-                                            "type": "number",
-                                            "format": "float64"
+                                            "type": "number"
                                         },
                                         "longitude": {
-                                            "type": "number",
-                                            "format": "float64"
+                                            "type": "number"
                                         },
                                         "name": {
                                             "type": "string"
@@ -2908,6 +2964,17 @@ const docTemplate = `{
                                         },
                                         "selections": {
                                             "type": "integer"
+                                        }
+                                    }
+                                },
+                                "sticker": {
+                                    "type": "object",
+                                    "properties": {
+                                        "content": {
+                                            "type": "string"
+                                        },
+                                        "url": {
+                                            "type": "string"
                                         }
                                     }
                                 },
@@ -3437,6 +3504,27 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ContactSaveRequest": {
+            "type": "object",
+            "properties": {
+                "firstname": {
+                    "description": "Optional: first name (defaults to FullName if empty)",
+                    "type": "string"
+                },
+                "fullname": {
+                    "description": "Required: full name",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "Required: phone number (e.g. 5516998824990)",
+                    "type": "string"
+                },
+                "synctophone": {
+                    "description": "Optional: sync to phone address book (default false)",
+                    "type": "boolean"
+                }
+            }
+        },
         "api.ContactSearchRequest": {
             "type": "object",
             "properties": {
@@ -3680,9 +3768,25 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "deliveryreceipts": {
+                    "description": "should emit delivery receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "devel": {
                     "description": "enable debug mode (devel)",
                     "type": "boolean"
+                },
+                "direct": {
+                    "description": "should handle direct (individual) messages; default true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "groups": {
                     "description": "should handle groups messages",
@@ -4131,6 +4235,10 @@ const docTemplate = `{
         "environment.APISettings": {
             "type": "object",
             "properties": {
+                "default_version": {
+                    "description": "default version for unversioned API alias",
+                    "type": "string"
+                },
                 "master_key": {
                     "type": "string"
                 },
@@ -4140,6 +4248,10 @@ const docTemplate = `{
                 },
                 "prefix": {
                     "type": "string"
+                },
+                "relaxed_sessions": {
+                    "description": "true = any authenticated user can create sessions (default)",
+                    "type": "boolean"
                 },
                 "signing_secret": {
                     "type": "string"
@@ -4158,6 +4270,35 @@ const docTemplate = `{
                 "webhook_timeout": {
                     "description": "webhook timeout in milliseconds",
                     "type": "integer"
+                }
+            }
+        },
+        "environment.BrandingSettings": {
+            "type": "object",
+            "properties": {
+                "accentColor": {
+                    "type": "string"
+                },
+                "companyName": {
+                    "type": "string"
+                },
+                "companyUrl": {
+                    "type": "string"
+                },
+                "favicon": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "primaryColor": {
+                    "type": "string"
+                },
+                "secondaryColor": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
@@ -4218,6 +4359,9 @@ const docTemplate = `{
                 "api": {
                     "$ref": "#/definitions/environment.APISettings"
                 },
+                "branding": {
+                    "$ref": "#/definitions/environment.BrandingSettings"
+                },
                 "cache": {
                     "$ref": "#/definitions/environment.CacheSettings"
                 },
@@ -4274,6 +4418,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "db_log_level": {
+                    "type": "string"
+                },
+                "default_api_version": {
+                    "type": "string"
+                },
+                "delivery_receipts": {
                     "type": "string"
                 },
                 "groups": {
@@ -4344,6 +4494,31 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "log_level": {
+                    "type": "string"
+                },
+                "login_custom_css": {
+                    "type": "string"
+                },
+                "login_font_awesome": {
+                    "type": "string"
+                },
+                "login_footer": {
+                    "type": "string"
+                },
+                "login_google_fonts": {
+                    "type": "string"
+                },
+                "login_layout": {
+                    "type": "string"
+                },
+                "login_logo": {
+                    "description": "Login customization",
+                    "type": "string"
+                },
+                "login_subtitle": {
+                    "type": "string"
+                },
+                "login_warning": {
                     "type": "string"
                 },
                 "migrations": {
@@ -4531,6 +4706,9 @@ const docTemplate = `{
                 "calls": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
+                "delivery_receipts": {
+                    "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
+                },
                 "groups": {
                     "$ref": "#/definitions/whatsapp.WhatsappBooleanExtended"
                 },
@@ -4651,6 +4829,22 @@ const docTemplate = `{
                     "description": "destination URL (webhook) or connection string (rabbitmq)",
                     "type": "string"
                 },
+                "deliveryreceipts": {
+                    "description": "should emit delivery receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "direct": {
+                    "description": "should handle direct (individual) messages (@s.whatsapp.net and @lid); default true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "extra": {
                     "description": "extra info to append on payload"
                 },
@@ -4700,6 +4894,14 @@ const docTemplate = `{
                 "type": {
                     "description": "webhook or rabbitmq",
                     "type": "string"
+                },
+                "voipmode": {
+                    "description": "VoIPMode controls inbound WhatsApp call handling for this instance:\ndisabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on\nSIP failure), or additional (SIP as extra device, leave call ringing).\nPersisted in server metadata, not as a dedicated DB column.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.VoIPMode"
+                        }
+                    ]
                 }
             }
         },
@@ -4729,6 +4931,22 @@ const docTemplate = `{
                 "connection_string": {
                     "description": "RabbitMQ Connection Settings",
                     "type": "string"
+                },
+                "deliveryreceipts": {
+                    "description": "should emit delivery receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "direct": {
+                    "description": "should handle direct (individual) messages (@s.whatsapp.net and @lid); default true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "exchange_name": {
                     "description": "RabbitMQ exchange name for routing",
@@ -4787,6 +5005,14 @@ const docTemplate = `{
                 "trackid": {
                     "description": "identifier of remote system to avoid loop",
                     "type": "string"
+                },
+                "voipmode": {
+                    "description": "VoIPMode controls inbound WhatsApp call handling for this instance:\ndisabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on\nSIP failure), or additional (SIP as extra device, leave call ringing).\nPersisted in server metadata, not as a dedicated DB column.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.VoIPMode"
+                        }
+                    ]
                 }
             }
         },
@@ -4827,8 +5053,24 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "deliveryreceipts": {
+                    "description": "should emit delivery receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "devel": {
                     "type": "boolean"
+                },
+                "direct": {
+                    "description": "should handle direct (individual) messages (@s.whatsapp.net and @lid); default true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "groups": {
                     "description": "should handle groups messages",
@@ -4872,6 +5114,14 @@ const docTemplate = `{
                 "verified": {
                     "type": "boolean"
                 },
+                "voipmode": {
+                    "description": "VoIPMode controls inbound WhatsApp call handling for this instance:\ndisabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on\nSIP failure), or additional (SIP as extra device, leave call ringing).\nPersisted in server metadata, not as a dedicated DB column.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.VoIPMode"
+                        }
+                    ]
+                },
                 "wid": {
                     "description": "Whatsapp session id",
                     "type": "string",
@@ -4913,6 +5163,22 @@ const docTemplate = `{
                 },
                 "calls": {
                     "description": "should handle calls",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "deliveryreceipts": {
+                    "description": "should emit delivery receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
+                "direct": {
+                    "description": "should handle direct (individual) messages (@s.whatsapp.net and @lid); default true",
                     "allOf": [
                         {
                             "$ref": "#/definitions/whatsapp.WhatsappBoolean"
@@ -4968,6 +5234,14 @@ const docTemplate = `{
                 "url": {
                     "description": "destination",
                     "type": "string"
+                },
+                "voipmode": {
+                    "description": "VoIPMode controls inbound WhatsApp call handling for this instance:\ndisabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on\nSIP failure), or additional (SIP as extra device, leave call ringing).\nPersisted in server metadata, not as a dedicated DB column.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.VoIPMode"
+                        }
+                    ]
                 }
             }
         },
@@ -4990,8 +5264,24 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "deliveryreceipts": {
+                    "description": "should emit delivery receipts",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
+                },
                 "devel": {
                     "type": "boolean"
+                },
+                "direct": {
+                    "description": "should handle direct (individual) messages (@s.whatsapp.net and @lid); default true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.WhatsappBoolean"
+                        }
+                    ]
                 },
                 "dispatching": {
                     "type": "array",
@@ -5047,6 +5337,14 @@ const docTemplate = `{
                 },
                 "verified": {
                     "type": "boolean"
+                },
+                "voipmode": {
+                    "description": "VoIPMode controls inbound WhatsApp call handling for this instance:\ndisabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on\nSIP failure), or additional (SIP as extra device, leave call ringing).\nPersisted in server metadata, not as a dedicated DB column.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/whatsapp.VoIPMode"
+                        }
+                    ]
                 },
                 "wid": {
                     "description": "Whatsapp session id",
@@ -5135,6 +5433,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "whatsapp.VoIPMode": {
+            "type": "string",
+            "enum": [
+                "disabled",
+                "exclusive",
+                "additional"
+            ],
+            "x-enum-varnames": [
+                "VoIPModeDisabled",
+                "VoIPModeExclusive",
+                "VoIPModeAdditional"
+            ]
         },
         "whatsapp.WhatsappAttachment": {
             "type": "object",
@@ -5422,6 +5733,10 @@ const docTemplate = `{
                     "description": "Msg in reply of another ? Message ID",
                     "type": "string"
                 },
+                "invideonote": {
+                    "description": "Is this video message a video note (PTV Message)?",
+                    "type": "boolean"
+                },
                 "location": {
                     "description": "Location if exists",
                     "allOf": [
@@ -5582,7 +5897,8 @@ const docTemplate = `{
                 10,
                 11,
                 12,
-                13
+                13,
+                14
             ],
             "x-enum-varnames": [
                 "UnhandledMessageType",
@@ -5598,7 +5914,8 @@ const docTemplate = `{
                 "SystemMessageType",
                 "GroupMessageType",
                 "RevokeMessageType",
-                "PollMessageType"
+                "PollMessageType",
+                "StickerMessageType"
             ]
         },
         "whatsapp.WhatsappMessageUrl": {
@@ -5655,7 +5972,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "5.0.0",
+	Version:          "5.26.0625.0",
 	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},

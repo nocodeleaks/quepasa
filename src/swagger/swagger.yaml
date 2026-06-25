@@ -36,6 +36,21 @@ definitions:
         description: 'Required: Chat to mark as read/unread'
         type: string
     type: object
+  api.ContactSaveRequest:
+    properties:
+      firstname:
+        description: 'Optional: first name (defaults to FullName if empty)'
+        type: string
+      fullname:
+        description: 'Required: full name'
+        type: string
+      phone:
+        description: 'Required: phone number (e.g. 5516998824990)'
+        type: string
+      synctophone:
+        description: 'Optional: sync to phone address book (default false)'
+        type: boolean
+    type: object
   api.ContactSearchRequest:
     properties:
       has_lid:
@@ -194,9 +209,17 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
+      deliveryreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit delivery receipts
       devel:
         description: enable debug mode (devel)
         type: boolean
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct (individual) messages; default true
       groups:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -498,6 +521,9 @@ definitions:
     type: object
   environment.APISettings:
     properties:
+      default_version:
+        description: default version for unversioned API alias
+        type: string
       master_key:
         type: string
       password:
@@ -505,6 +531,9 @@ definitions:
         type: string
       prefix:
         type: string
+      relaxed_sessions:
+        description: true = any authenticated user can create sessions (default)
+        type: boolean
       signing_secret:
         type: string
       timeout:
@@ -518,6 +547,25 @@ definitions:
       webhook_timeout:
         description: webhook timeout in milliseconds
         type: integer
+    type: object
+  environment.BrandingSettings:
+    properties:
+      accentColor:
+        type: string
+      companyName:
+        type: string
+      companyUrl:
+        type: string
+      favicon:
+        type: string
+      logo:
+        type: string
+      primaryColor:
+        type: string
+      secondaryColor:
+        type: string
+      title:
+        type: string
     type: object
   environment.CacheSettings:
     properties:
@@ -556,6 +604,8 @@ definitions:
     properties:
       api:
         $ref: '#/definitions/environment.APISettings'
+      branding:
+        $ref: '#/definitions/environment.BrandingSettings'
       cache:
         $ref: '#/definitions/environment.CacheSettings'
       database:
@@ -593,6 +643,10 @@ definitions:
       calls:
         type: string
       db_log_level:
+        type: string
+      default_api_version:
+        type: string
+      delivery_receipts:
         type: string
       groups:
         type: string
@@ -639,6 +693,23 @@ definitions:
       force_audio_as_ptt:
         type: boolean
       log_level:
+        type: string
+      login_custom_css:
+        type: string
+      login_font_awesome:
+        type: string
+      login_footer:
+        type: string
+      login_google_fonts:
+        type: string
+      login_layout:
+        type: string
+      login_logo:
+        description: Login customization
+        type: string
+      login_subtitle:
+        type: string
+      login_warning:
         type: string
       migrations:
         type: string
@@ -761,6 +832,8 @@ definitions:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       calls:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
+      delivery_receipts:
+        $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       groups:
         $ref: '#/definitions/whatsapp.WhatsappBooleanExtended'
       history_sync_days:
@@ -839,6 +912,15 @@ definitions:
       connection_string:
         description: destination URL (webhook) or connection string (rabbitmq)
         type: string
+      deliveryreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit delivery receipts
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct (individual) messages (@s.whatsapp.net and
+          @lid); default true
       extra:
         description: extra info to append on payload
       failure:
@@ -870,6 +952,14 @@ definitions:
       type:
         description: webhook or rabbitmq
         type: string
+      voipmode:
+        allOf:
+        - $ref: '#/definitions/whatsapp.VoIPMode'
+        description: |-
+          VoIPMode controls inbound WhatsApp call handling for this instance:
+          disabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on
+          SIP failure), or additional (SIP as extra device, leave call ringing).
+          Persisted in server metadata, not as a dedicated DB column.
     type: object
   models.QpMetadata:
     additionalProperties: {}
@@ -887,6 +977,15 @@ definitions:
       connection_string:
         description: RabbitMQ Connection Settings
         type: string
+      deliveryreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit delivery receipts
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct (individual) messages (@s.whatsapp.net and
+          @lid); default true
       exchange_name:
         description: RabbitMQ exchange name for routing
         type: string
@@ -924,6 +1023,14 @@ definitions:
       trackid:
         description: identifier of remote system to avoid loop
         type: string
+      voipmode:
+        allOf:
+        - $ref: '#/definitions/whatsapp.VoIPMode'
+        description: |-
+          VoIPMode controls inbound WhatsApp call handling for this instance:
+          disabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on
+          SIP failure), or additional (SIP as extra device, leave call ringing).
+          Persisted in server metadata, not as a dedicated DB column.
     type: object
   models.QpResponse:
     properties:
@@ -947,8 +1054,17 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
+      deliveryreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit delivery receipts
       devel:
         type: boolean
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct (individual) messages (@s.whatsapp.net and
+          @lid); default true
       groups:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
@@ -974,6 +1090,14 @@ definitions:
         type: string
       verified:
         type: boolean
+      voipmode:
+        allOf:
+        - $ref: '#/definitions/whatsapp.VoIPMode'
+        description: |-
+          VoIPMode controls inbound WhatsApp call handling for this instance:
+          disabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on
+          SIP failure), or additional (SIP as extra device, leave call ringing).
+          Persisted in server metadata, not as a dedicated DB column.
       wid:
         description: Whatsapp session id
         maxLength: 255
@@ -1004,6 +1128,15 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
+      deliveryreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit delivery receipts
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct (individual) messages (@s.whatsapp.net and
+          @lid); default true
       extra:
         description: extra info to append on payload
       failure:
@@ -1035,6 +1168,14 @@ definitions:
       url:
         description: destination
         type: string
+      voipmode:
+        allOf:
+        - $ref: '#/definitions/whatsapp.VoIPMode'
+        description: |-
+          VoIPMode controls inbound WhatsApp call handling for this instance:
+          disabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on
+          SIP failure), or additional (SIP as extra device, leave call ringing).
+          Persisted in server metadata, not as a dedicated DB column.
     type: object
   models.QpWhatsappServer:
     properties:
@@ -1046,8 +1187,17 @@ definitions:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappBoolean'
         description: should handle calls
+      deliveryreceipts:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should emit delivery receipts
       devel:
         type: boolean
+      direct:
+        allOf:
+        - $ref: '#/definitions/whatsapp.WhatsappBoolean'
+        description: should handle direct (individual) messages (@s.whatsapp.net and
+          @lid); default true
       dispatching:
         items:
           $ref: '#/definitions/models.QpDispatching'
@@ -1082,6 +1232,14 @@ definitions:
         type: string
       verified:
         type: boolean
+      voipmode:
+        allOf:
+        - $ref: '#/definitions/whatsapp.VoIPMode'
+        description: |-
+          VoIPMode controls inbound WhatsApp call handling for this instance:
+          disabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on
+          SIP failure), or additional (SIP as extra device, leave call ringing).
+          Persisted in server metadata, not as a dedicated DB column.
       wid:
         description: Whatsapp session id
         maxLength: 255
@@ -1158,6 +1316,16 @@ definitions:
           empty).
         type: string
     type: object
+  whatsapp.VoIPMode:
+    enum:
+    - disabled
+    - exclusive
+    - additional
+    type: string
+    x-enum-varnames:
+    - VoIPModeDisabled
+    - VoIPModeExclusive
+    - VoIPModeAdditional
   whatsapp.WhatsappAttachment:
     properties:
       checksum:
@@ -1371,6 +1539,9 @@ definitions:
       inreply:
         description: Msg in reply of another ? Message ID
         type: string
+      invideonote:
+        description: Is this video message a video note (PTV Message)?
+        type: boolean
       location:
         allOf:
         - $ref: '#/definitions/whatsapp.WhatsappLocation'
@@ -1479,6 +1650,7 @@ definitions:
     - 11
     - 12
     - 13
+    - 14
     type: integer
     x-enum-varnames:
     - UnhandledMessageType
@@ -1495,6 +1667,7 @@ definitions:
     - GroupMessageType
     - RevokeMessageType
     - PollMessageType
+    - StickerMessageType
   whatsapp.WhatsappMessageUrl:
     properties:
       description:
@@ -1534,7 +1707,7 @@ info:
     url: https://github.com/nocodeleaks/quepasa/blob/main/LICENSE.md
   termsOfService: https://github.com/nocodeleaks/quepasa
   title: QuePasa WhatsApp API
-  version: 5.0.0
+  version: 5.26.0625.0
 paths:
   /account:
     post:
@@ -1816,6 +1989,13 @@ paths:
         - start
         - stop
         - restart
+        - direct
+        - groups
+        - broadcasts
+        - readreceipts
+        - deliveryreceipts
+        - calls
+        - debug
         in: query
         name: action
         required: true
@@ -1836,6 +2016,40 @@ paths:
       summary: Execute bot commands
       tags:
       - Bot
+  /contact/save:
+    post:
+      consumes:
+      - application/json
+      description: Saves a contact to WhatsApp address book. Set synctophone=true
+        to also sync to the device's contacts (equivalent to "Sync contact with phone"
+        in WhatsApp Web)
+      parameters:
+      - description: Contact save request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ContactSaveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/models.QpResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Save contact
+      tags:
+      - Contacts
   /contact/search:
     post:
       consumes:
@@ -3328,6 +3542,7 @@ paths:
         - Polls (field "poll") — send the poll JSON in the "poll" field
         - Location (field "location") — send location with latitude/longitude in the "location" object
         - Contact (field "contact") — send contact with phone/name in the "contact" object
+        - Sticker (field "sticker") — send a sticker from URL or base64 content; auto-converted to WebP 512×512 via FFmpeg
 
         Main fields:
         - chatId: chat identifier (can be WID, LID or number with suffix @s.whatsapp.net)
@@ -3338,6 +3553,7 @@ paths:
         - poll: JSON object with the poll (question, options, selections)
         - location: JSON object with location data (latitude, longitude, name, address, url)
         - contact: JSON object with contact data (phone, name, vcard)
+        - sticker: JSON object with sticker source (url or content as base64/data URI)
 
         Location object fields:
         - latitude (float64, required): Location latitude in degrees (e.g.: -23.550520)
@@ -3350,6 +3566,13 @@ paths:
         - phone (string, required): Contact phone number
         - name (string, required): Contact display name
         - vcard (string, optional): Full vCard string (auto-generated if not provided)
+
+        Sticker object fields:
+        - url (string): Public URL of the sticker image/video to download and convert
+        - content (string): Base64-encoded content or data URI (e.g.: data:image/png;base64,...)
+        Note: images and videos are automatically converted to WebP 512×512 using FFmpeg.
+        Animated formats (video, gif, apng) produce animated WebP stickers (max 10s, 15fps).
+        Static images produce static WebP stickers.
 
         Examples:
         Text:
@@ -3405,10 +3628,28 @@ paths:
         "url": "https://example.com/path/to/file.jpg"
         }
         ```
+        Sticker by URL:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "sticker": {
+        "url": "https://example.com/sticker.png"
+        }
+        }
+        ```
+        Sticker by base64:
+        ```json
+        {
+        "chatId": "5511999999999@s.whatsapp.net",
+        "sticker": {
+        "content": "data:image/png;base64,...."
+        }
+        }
+        ```
       parameters:
       - description: Request body. Use 'content' for base64, 'url' for remote files,
-          'poll' for poll JSON, 'location' for location object, or 'contact' for contact
-          object.
+          'poll' for poll JSON, 'location' for location object, 'contact' for contact
+          object, or 'sticker' for sticker object.
         in: body
         name: request
         schema:
@@ -3433,10 +3674,8 @@ paths:
                 address:
                   type: string
                 latitude:
-                  format: float64
                   type: number
                 longitude:
-                  format: float64
                   type: number
                 name:
                   type: string
@@ -3453,6 +3692,13 @@ paths:
                   type: string
                 selections:
                   type: integer
+              type: object
+            sticker:
+              properties:
+                content:
+                  type: string
+                url:
+                  type: string
               type: object
             text:
               type: string
@@ -3473,7 +3719,7 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Send any type of message (text, file, poll, base64 content, location,
-        contact)
+        contact, sticker)
       tags:
       - Send
   /senddocument:

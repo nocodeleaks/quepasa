@@ -42,6 +42,13 @@ jobs:
         go-version: ${{env.GOVERSION}}
         cache-dependency-path: src/**/go.sum
 
+    - name: Verify generated swagger artifacts
+      working-directory: ./src
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@v1.16.3
+        $(go env GOPATH)/bin/swag init --output ./swagger
+        git diff --exit-code -- src/swagger/docs.go src/swagger/swagger.json src/swagger/swagger.yaml
+
     - name: Build
       working-directory: ./src
       env: 

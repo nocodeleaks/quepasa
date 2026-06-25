@@ -14,6 +14,9 @@ import (
 func ValidateItemBecauseUNOAPIConflict(item QpCacheItem, from string, previous any) bool {
 	// debugging messages in cache
 	if strings.HasPrefix(from, "message") {
+		if !log.AtLeastVerbose(log.New().Level(), log.DebugLevel) {
+			return true
+		}
 
 		prevItem := previous.(QpCacheItem)
 

@@ -41,7 +41,7 @@ require (
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
 	github.com/philippseith/signalr v0.6.3
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.3 // indirect
 )
 
 require (
@@ -53,14 +53,50 @@ require (
 	github.com/teivah/onecontext v1.3.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
 )
 
 require (
+	github.com/nocodeleaks/quepasa/dispatch v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/qplog v0.0.0-00010101000000-000000000000
+)
+
+require (
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	go.uber.org/goleak v1.3.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/nocodeleaks/quepasa/cache v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000 // indirect
+	github.com/prometheus/client_golang v1.16.0 // indirect
+	github.com/prometheus/client_model v0.4.0 // indirect
+	github.com/prometheus/common v0.44.0 // indirect
+	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
+	github.com/redis/go-redis/v9 v9.7.1 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )
 
 replace github.com/nocodeleaks/quepasa/qplog => ../qplog
+
+replace github.com/nocodeleaks/quepasa/main => ..
+
+replace github.com/nocodeleaks/quepasa/cable => ../cable
+
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
+replace github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+
+replace github.com/nocodeleaks/quepasa/events => ../events
+
+replace github.com/nocodeleaks/quepasa/mcp => ../mcp
+
+replace github.com/nocodeleaks/quepasa/runtime => ../runtime
+
+replace github.com/nocodeleaks/quepasa/voip => ../voip

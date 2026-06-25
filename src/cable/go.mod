@@ -52,11 +52,11 @@ require (
 	github.com/nocodeleaks/quepasa/library v0.0.0
 	github.com/nocodeleaks/quepasa/media v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/models v0.0.0
+	github.com/nocodeleaks/quepasa/qplog v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/runtime v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0
 	github.com/nocodeleaks/quepasa/whatsmeow v0.0.0-00010101000000-000000000000
-	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
@@ -68,12 +68,18 @@ require (
 	github.com/coder/websocket v1.8.15 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.0 // indirect
+	github.com/emiago/sipgo v0.33.0 // indirect
 	github.com/go-chi/chi v1.5.5 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gopxl/beep/v2 v2.1.1 // indirect
 	github.com/gosimple/slug v1.13.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
+	github.com/huin/goupnp v1.3.0 // indirect
+	github.com/icholy/digest v1.1.0 // indirect
 	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
@@ -89,7 +95,19 @@ require (
 	github.com/nocodeleaks/quepasa/events v0.0.0 // indirect
 	github.com/nocodeleaks/quepasa/metrics v0.0.0-00010101000000-000000000000 // indirect
 	github.com/nocodeleaks/quepasa/rabbitmq v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/sipproxy v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nocodeleaks/quepasa/voip v0.0.0-00010101000000-000000000000 // indirect
 	github.com/petermattis/goid v0.0.0-20260330135022-df67b199bc81 // indirect
+	github.com/pion/datachannel v1.6.0 // indirect
+	github.com/pion/dtls/v2 v2.2.7 // indirect
+	github.com/pion/dtls/v3 v3.1.2 // indirect
+	github.com/pion/logging v0.2.4 // indirect
+	github.com/pion/opus v0.1.0 // indirect
+	github.com/pion/randutil v0.1.0 // indirect
+	github.com/pion/sctp v1.9.4 // indirect
+	github.com/pion/stun v0.6.1 // indirect
+	github.com/pion/transport/v2 v2.2.1 // indirect
+	github.com/pion/transport/v4 v4.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
@@ -98,6 +116,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/redis/go-redis/v9 v9.7.1 // indirect
 	github.com/rs/zerolog v1.35.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
@@ -114,3 +133,9 @@ require (
 )
 
 replace github.com/nocodeleaks/quepasa/qplog => ../qplog
+
+replace github.com/nocodeleaks/quepasa/main => ..
+
+replace github.com/nocodeleaks/quepasa/mcp => ../mcp
+
+replace github.com/nocodeleaks/quepasa/voip => ../voip

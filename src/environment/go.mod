@@ -29,12 +29,13 @@ go 1.25.0
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/nocodeleaks/quepasa/library v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/qplog v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/whatsapp v0.0.0-00010101000000-000000000000
-	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 )
@@ -44,3 +45,19 @@ replace github.com/nocodeleaks/quepasa/library => ../library
 replace github.com/nocodeleaks/quepasa/whatsapp => ../whatsapp
 
 replace github.com/nocodeleaks/quepasa/qplog => ../qplog
+
+replace github.com/nocodeleaks/quepasa/main => ..
+
+replace github.com/nocodeleaks/quepasa/cable => ../cable
+
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
+replace github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+
+replace github.com/nocodeleaks/quepasa/events => ../events
+
+replace github.com/nocodeleaks/quepasa/mcp => ../mcp
+
+replace github.com/nocodeleaks/quepasa/runtime => ../runtime
+
+replace github.com/nocodeleaks/quepasa/voip => ../voip

@@ -35,8 +35,9 @@ require (
 	github.com/huin/goupnp v1.3.0
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/pion/stun v0.6.1
-	github.com/sirupsen/logrus v1.9.3
 )
+
+require github.com/sirupsen/logrus v1.9.3 // indirect
 
 require (
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
@@ -60,3 +61,19 @@ require (
 )
 
 replace github.com/nocodeleaks/quepasa/qplog => ../qplog
+
+replace github.com/nocodeleaks/quepasa/main => ..
+
+replace github.com/nocodeleaks/quepasa/cable => ../cable
+
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
+replace github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+
+replace github.com/nocodeleaks/quepasa/events => ../events
+
+replace github.com/nocodeleaks/quepasa/mcp => ../mcp
+
+replace github.com/nocodeleaks/quepasa/runtime => ../runtime
+
+replace github.com/nocodeleaks/quepasa/voip => ../voip

@@ -4,9 +4,9 @@ require (
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/nocodeleaks/quepasa/environment v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/events v0.0.0-00010101000000-000000000000
+	github.com/nocodeleaks/quepasa/qplog v0.0.0-00010101000000-000000000000
 	github.com/nocodeleaks/quepasa/webserver v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.16.0
-	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
@@ -20,6 +20,7 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
@@ -58,3 +59,17 @@ replace github.com/nocodeleaks/quepasa/whatsmeow => ../whatsmeow
 go 1.25.0
 
 replace github.com/nocodeleaks/quepasa/qplog => ../qplog
+
+replace github.com/nocodeleaks/quepasa/main => ..
+
+replace github.com/nocodeleaks/quepasa/cable => ../cable
+
+replace github.com/nocodeleaks/quepasa/cache => ../cache
+
+replace github.com/nocodeleaks/quepasa/dispatch => ../dispatch
+
+replace github.com/nocodeleaks/quepasa/mcp => ../mcp
+
+replace github.com/nocodeleaks/quepasa/runtime => ../runtime
+
+replace github.com/nocodeleaks/quepasa/voip => ../voip

@@ -87,7 +87,9 @@ func main() {
 	whatsmeow.Start(options, dbParameters, logentry)
 
 	// Inject WhatsApp driver to break models -> whatsmeow cycle (PLAN P1.1)
-	ports.GlobalWhatsappDriverFactory = &whatsmeow.WhatsmeowDriverAdapter{}
+	whatsmeowDriverAdapter := &whatsmeow.WhatsmeowDriverAdapter{}
+	ports.GlobalWhatsappDriverFactory = whatsmeowDriverAdapter
+	ports.GlobalWhatsappDriverService = whatsmeowDriverAdapter
 
 	// Inject transport adapters so models remain transport-agnostic.
 	models.ApplyTransportServices(models.TransportServices{

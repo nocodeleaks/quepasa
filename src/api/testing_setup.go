@@ -47,6 +47,7 @@ func createTestSchema(db *sqlx.DB) error {
 		CREATE TABLE IF NOT EXISTS users (
 			username TEXT PRIMARY KEY,
 			password TEXT NOT NULL,
+			ui TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 
@@ -62,8 +63,10 @@ func createTestSchema(db *sqlx.DB) error {
 			groups INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
+			deliveryreceipts INTEGER DEFAULT 0,
 			calls INTEGER DEFAULT 1,
 			readupdate INTEGER DEFAULT 1,
+			direct INTEGER DEFAULT 0,
 			FOREIGN KEY (user) REFERENCES users(username)
 		);
 
@@ -79,7 +82,9 @@ func createTestSchema(db *sqlx.DB) error {
 			groups INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
+			deliveryreceipts INTEGER DEFAULT 0,
 			calls INTEGER DEFAULT 1,
+			direct INTEGER DEFAULT 0,
 			PRIMARY KEY (context, connection_string)
 		);
 

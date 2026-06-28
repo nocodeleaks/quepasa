@@ -17,7 +17,7 @@ import (
 
 	migrate "github.com/joncalhoun/migrate"
 	library "github.com/nocodeleaks/quepasa/library"
-	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
+	"github.com/nocodeleaks/quepasa/ports"
 	log "github.com/nocodeleaks/quepasa/qplog"
 )
 
@@ -379,13 +379,13 @@ func MigrationHandler_202303011900(id string) {
 		oldWid := server.GetWId()
 		if strings.HasSuffix(oldWid, "@migrated") {
 			phone := library.GetPhoneByWId(oldWid)
-			store, err := whatsmeow.WhatsmeowService.GetStoreForMigrated(phone)
+			wid, err := ports.GlobalWhatsappDriverService.ResolveMigratedWid(phone)
 			if err != nil {
 				log.Warnf("error at getting store for phone: %s, cause: %s", phone, err.Error())
 				continue
 			}
 
-			server.SetWId(store.ID.String())
+			server.SetWId(wid)
 			err = db.Servers.Update(server)
 			if err != nil {
 				log.Fatalf("error at update server: %s", err.Error())

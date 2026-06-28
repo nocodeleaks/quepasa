@@ -6,6 +6,80 @@ Scope: Concrete, prioritized backlog derived from a full architecture review.
 
 ## Checkpoints executados
 
+- 2026-06-28 — Checkpoint 14 (P4.2, **CORS explícito + nota de auth multi-tenant**):
+  substituído o bloco CORS comentado (allow-all) em `api/api.go` por
+  `APICORSMiddleware` (novo `api/api_cors.go`) com política allow-list dirigida
+  por env `CORS_ALLOWED_ORIGINS` (em `environment/api_settings.go`): default vazio
+  = sem cross-origin (same-origin, comportamento atual preservado); origem exata
+  → reflete + `Allow-Credentials`; `*` → allow-all sem credentials; preflight
+  OPTIONS respondido com 204. 6 casos de teste em `api/api_cors_test.go`; suíte
+  **342 passed / 0 failed**. Documentado em `docker/docker.md`. **Flag de
+  segurança (não alterado):** `RELAXED_SESSIONS` default **true** = qualquer user
+  autenticado cria sessão sem masterkey — permissivo para multi-tenant; decisão do
+  mantenedor flipar o default (não alterei para não quebrar deploys). Pendente do
+  P4.2: auditoria de isolamento por-token e rotação/escopo da MASTERKEY.
+- 2026-06-28 — Checkpoint 13 (P3.1, **rede do bridge SIP + BUG G.711 encontrado**):
+  criado `voip/voip_codec_characterization_test.go` (módulo `voip` antes sem
+  testes): contratos de frame μ-law, L16 round-trip near-lossless, resampler,
+  RTP build/parse + guards, golden hash μ-law. 8 testes; suíte total **336
+  passed / 0 failed**. **Achado de alta severidade:** a implementação manual de
+  G.711 μ-law (`voip_codec.go`) tem curva de nível **invertida** — round-trip
+  atenua fala normal 10×–250× (amp 0.9 → 0.0017); afeta o caminho SIP PCMU que a
+  maioria dos provedores usa. Causa: scan de expoente do encoder ao contrário +
+  decoder subtrai `bias<<exp` em vez de `bias`. Tentativa de fix pontual piorou
+  (amp 0.5 → silêncio) → revertida; é reimplemento G.711 canônico (com vetores de
+  referência) + falta A-law, **não** um tweak. Documentado em
+  `docs/ISSUE-g711-mulaw-inverted-companding.md`; teste-testemunha
+  `TestUlawRoundTripKnownLevelBug` congela o bug e falhará quando corrigido.
+  Decisão do mantenedor necessária (lib G.711 vetada vs reimplementar).
+- 2026-06-28 — Checkpoint 12 (P3.1, **parcial — rede de regressão do codec mlow**):
+  criado `voip/calls/mlow/characterization_test.go` (primeira suíte de testes do
+  módulo, antes `none`). Cobre: determinismo do encode (mesmo PCM → bytes
+  idênticos), contrato de frame (exatamente 960 samples @16kHz, rejeita
+  0/480/959/961/1920), **golden hash** congelando o bitstream exato de um tom
+  440Hz (len=69, sha256 `ef4d5def…d38e`), e shape do round-trip encode→decode
+  (960 samples finitos, energia não-trivial, silêncio fica quieto). 4 testes,
+  todos verdes; suíte total **328 passed / 0 failed**. Pendente do P3.1: matriz de
+  transcodificação Opus/mlow ↔ G.729/ulaw/alaw via `sipproxy` e
+  `voip/calls/mlow/README.md` de proveniência.
+- 2026-06-28 — Checkpoint 11 (P1.1, **CONCLUÍDO — aresta `models -> whatsmeow`
+  eliminada**): `go list -deps` provou que o "ciclo" do P1.1 nunca existiu
+  (whatsmeow não importa models; era bloat de go.mod). Coupling real = 4
+  call-sites unidirecionais `models -> whatsmeow`. Completado o padrão `ports`
+  existente: nova interface `ports.WhatsappDriverService` (GetContactManagerForWid,
+  ResolveMigratedWid, ListDevices) + DTO `WhatsappDeviceInfo`, implementada por
+  `WhatsmeowDriverAdapter`, injetada em `main.go`. Os 4 call-sites reescritos.
+  Resultado: `models` com **0 imports** (diretos+transitivos) de `whatsmeow`;
+  build `Success`, **324 passed / 0 failed**, vet limpo. Resta o global
+  transicional `GlobalWhatsappDriverService` → alvo do P1.2.
+- 2026-06-28 — Checkpoint 9 (P4.1 prep, **baseline de testes**): após o colapso de
+  módulo, o `go test ./...` (antes nunca rodado por completo — CI só faz `go build`)
+  expôs débito de teste pré-existente. Corrigidos: (a) **bug de produção real** em
+  `models/qp_cache_fuck_unoapi.go` — o early-return do P0.4 pulava a *decisão de
+  dedup* inteira em nível não-debug (não só o log), quebrando a deduplicação de
+  mensagens/ads em produção; separado logging pesado (reflection, gated por debug)
+  da decisão (sempre roda); (b) stubs de teste desatualizados sem `UpdateUI`
+  (`api`, `runtime`); (c) literal `QpWhatsappServer{Token:...}` → embed `QpServer`
+  (`mcp`); (d) fixtures SQLite sem colunas `deliveryreceipts`/`direct`
+  (`models`, `cable`); (e) format `%s` com ponteiro nil em `api/api_extensions.go`.
+  Resultado: **315 passed / 9 failed** (antes: 3 pacotes nem compilavam). As 9
+  restantes (7 auth canônica em `api`, 2 websocket em `cable`) são débito
+  pré-existente interrelacionado — testes que nunca compilaram, com drift de
+  semântica de auth (`RelaxedSessions`/masterkey) e handshake websocket; **não
+  causadas** pelo colapso (nenhum código de auth/ws foi tocado). `go build ./...`
+  segue **Success**.
+- 2026-06-28 — Checkpoint 10 (P4.1, **baseline 100% verde**): investigadas as 9
+  falhas restantes — **não era drift de auth**, e sim a mesma classe de débito de
+  schema. O 401 da api e o `bad handshake` (401) do websocket cable eram **erros
+  de DB embrulhados**: as fixtures SQLite de teste não tinham a coluna `ui` em
+  `users` (par do `UpdateUI`/migração `202605201000_add_ui_to_users`). Diagnóstico
+  confirmado por teste descartável: `Users.Find()` faz `SELECT ... ui ...` →
+  `no such column: ui` → `FindPersistedUser` falha → 401 antes do upgrade
+  websocket. Corrigido `users.ui` em `api/testing_setup.go` e
+  `cable/cable_integration_test.go`, e `servers/dispatching` ganharam
+  `deliveryreceipts`/`direct` faltantes. Resultado final: **324 passed / 0 failed**
+  em 42 pacotes; `go build ./...` e `go vet` limpos no código de produção.
+  Baseline de testes agora verde — rede de segurança pronta para P1.
 - 2026-06-28 — Checkpoint 8 (P0.2, **concluído — colapso para módulo único**):
   Decisão revisada de `go.work` para **módulo único**. Os 23 `go.mod` reduzidos a
   **1** (`src/go.mod`, módulo `github.com/nocodeleaks/quepasa`); removidos todos os
@@ -170,7 +244,34 @@ arquivo com divergência.
 
 ## Priority 1 — Break the core dependency cycle (enables everything else)
 
-### P1.1 — Break `models <-> whatsmeow` mutual dependency
+### P1.1 — Break `models -> whatsmeow` dependency ✅ CONCLUÍDO (2026-06-28)
+
+**Correção de premissa.** Após o colapso de módulo (P0.2), o `go list -deps`
+revelou que **não existia ciclo** `models <-> whatsmeow`: `whatsmeow` **nunca**
+importou `models` a nível de pacote (0 imports). A aparência de ciclo vinha
+exclusivamente da sobredeclaração de `go.mod` (o `whatsmeow/go.mod` *requeria*
+`models` sem nenhum `.go` importá-lo). A única coupling real era unidirecional:
+`models -> whatsmeow`, em **4 call-sites** de código.
+
+**Execução.** Completado o padrão `ports` que já existia (`WhatsappDriverFactory`
++ `WhatsmeowDriverAdapter`). Estendida a interface de domínio com
+`WhatsappDriverService` (em `ports/whatsapp_driver.go`): `GetContactManagerForWid`,
+`ResolveMigratedWid(phone) (string,…)` e `ListDevices() ([]WhatsappDeviceInfo,…)`
+— os três abstraem tipos do whatsmeow (store/device) para que o domínio não os
+veja. `WhatsmeowDriverAdapter` implementa-os; `main.go` injeta o mesmo adapter em
+`GlobalWhatsappDriverFactory` e `GlobalWhatsappDriverService`. Reescritos os 4
+call-sites em `models` (`qp_contact_manager.go`, `qp_database.go`,
+`qp_whatsapp_service_restore.go` ×2).
+
+**Resultado.** `models` não importa mais `whatsmeow` (0 direto, **0 transitivo**
+por `go list -deps`). Build `Success`, **324 passed / 0 failed**, vet limpo. A
+aresta `models -> whatsmeow` foi eliminada. Resta apenas o global transicional
+`ports.GlobalWhatsappDriverService` (injetado no startup) — a remoção desse
+global é P1.2 (wiring por construtor).
+
+---
+
+#### Contexto histórico original (premissa incorreta, mantido para rastreio)
 
 **Problem.** `models` imports `whatsmeow` and `whatsmeow` imports `models`. The
 domain layer and the WhatsApp driver are mutually entangled. The cycle is

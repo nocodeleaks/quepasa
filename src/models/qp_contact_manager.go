@@ -3,8 +3,8 @@ package models
 import (
 	"fmt"
 
+	"github.com/nocodeleaks/quepasa/ports"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
-	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
 )
 
 // Compile-time check to ensure QpContactManager implements whatsapp.WhatsappContactManagerInterface
@@ -42,7 +42,7 @@ func (cm *QpContactManager) getContactManager() (whatsapp.WhatsappContactManager
 // Works with both active connection and stopped server (uses cached data automatically via factory)
 func (cm *QpContactManager) GetContacts() ([]whatsapp.WhatsappChat, error) {
 	// Use factory that handles fallback to store-only access automatically
-	contactManager, err := whatsmeow.GetContactManagerForWid(cm.GetWId(), cm.GetConnection())
+	contactManager, err := ports.GlobalWhatsappDriverService.GetContactManagerForWid(cm.GetWId(), cm.GetConnection())
 	if err != nil {
 		return nil, err
 	}

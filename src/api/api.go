@@ -31,22 +31,14 @@ func Configure(r chi.Router) {
 	r.Group(func(r chi.Router) {
 		timeout := environment.Settings.API.GetAPITimeout()
 
+		// Apply an explicit, allow-list-based CORS policy (driven by
+		// CORS_ALLOWED_ORIGINS) before anything else so preflight runs without
+		// auth. Default is no cross-origin access (same-origin only).
+		r.Use(APICORSMiddleware)
+
 		// Apply one timeout policy to all HTTP API routes.
 		r.Use(middleware.Timeout(timeout))
 		r.Use(APIEventMiddleware)
-
-		/* CORS TESTING
-		r.Use(cors.Handler(cors.Options{
-			//AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-			//AllowedOrigins: []string{"https://*", "http://*"},
-			AllowOriginFunc: func(r *http.Request, origin string) bool { return true },
-			//AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			//AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-			//ExposedHeaders:   []string{"Link"},
-			//AllowCredentials: false,
-			// MaxAge: 300, // Maximum value not ignored by any of major browsers
-		}))
-		*/
 
 		// Mount API routes under the configured prefix.
 		// The prefix is controlled exclusively by the API_PREFIX environment variable

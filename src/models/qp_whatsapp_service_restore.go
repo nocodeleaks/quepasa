@@ -1,11 +1,10 @@
 package models
 
 import (
-	"context"
 	"fmt"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
+	"github.com/nocodeleaks/quepasa/ports"
 )
 
 // WhatsmeowOrphanDevice represents a device registered in the whatsmeow database
@@ -92,12 +91,11 @@ func (source *QPWhatsappService) DiagnoseOrphaned() (*RestoreReport, error) {
 	// The whatsmeow container holds all WhatsApp session keys. Each entry in
 	// whatsmeow_device corresponds to one phone-number+device-slot pair that
 	// was once successfully paired via QR code or pair code.
-	wmService := whatsmeow.WhatsmeowService
-	if wmService == nil {
+	if ports.GlobalWhatsappDriverService == nil {
 		return nil, fmt.Errorf("whatsmeow service is not initialised; cannot diagnose orphans")
 	}
 
-	wmDevices, err := wmService.Container.GetAllDevices(context.TODO())
+	wmDevices, err := ports.GlobalWhatsappDriverService.ListDevices()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list whatsmeow devices: %w", err)
 	}
@@ -120,10 +118,7 @@ func (source *QPWhatsappService) DiagnoseOrphaned() (*RestoreReport, error) {
 
 	// ── Step 2: Find whatsmeow devices not claimed by any server ─────────────
 	for _, dev := range wmDevices {
-		if dev == nil || dev.ID == nil {
-			continue
-		}
-		jid := dev.ID.String()
+		jid := dev.JID
 		if _, claimed := claimedWids[jid]; claimed {
 			// This device is already linked to a QuePasa server — skip it.
 			continue
@@ -298,18 +293,17 @@ func (source *QPWhatsappService) linkAndRestore(token string, jid string) error 
 // This check prevents linking a server to a non-existent session, which would
 // result in a broken connection that can never authenticate.
 func (source *QPWhatsappService) validateWhatsmeowJID(jid string) error {
-	wmService := whatsmeow.WhatsmeowService
-	if wmService == nil {
+	if ports.GlobalWhatsappDriverService == nil {
 		return fmt.Errorf("whatsmeow service is not initialised")
 	}
 
-	devices, err := wmService.Container.GetAllDevices(context.TODO())
+	devices, err := ports.GlobalWhatsappDriverService.ListDevices()
 	if err != nil {
 		return fmt.Errorf("failed to query whatsmeow devices: %w", err)
 	}
 
 	for _, dev := range devices {
-		if dev != nil && dev.ID != nil && dev.ID.String() == jid {
+		if dev.JID == jid {
 			return nil // JID found and valid
 		}
 	}

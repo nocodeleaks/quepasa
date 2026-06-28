@@ -16,7 +16,8 @@ const (
 	ENV_API_DEFAULT_VER  = "API_DEFAULT_VERSION" // default version for unversioned API alias
 	ENV_USER             = "USER"                // default user for database seeding
 	ENV_PASSWORD         = "PASSWORD"            // default password for database seeding
-	ENV_RELAXED_SESSIONS = "RELAXED_SESSIONS"    // when true, authenticated requests can create sessions without master key
+	ENV_RELAXED_SESSIONS = "RELAXED_SESSIONS"     // when true, authenticated requests can create sessions without master key
+	ENV_CORS_ORIGINS     = "CORS_ALLOWED_ORIGINS" // comma-separated browser origins allowed by CORS; empty = same-origin only
 )
 
 // APISettings holds all API configuration loaded from environment
@@ -31,6 +32,7 @@ type APISettings struct {
 	User            string `json:"user"`             // default user for database seeding
 	Password        string `json:"password"`         // default password for database seeding
 	RelaxedSessions bool   `json:"relaxed_sessions"` // true = any authenticated user can create sessions (default)
+	AllowedOrigins  []string `json:"allowed_origins"` // CORS allow-list; empty = no cross-origin (same-origin only)
 }
 
 // NewAPISettings creates a new API settings by loading all values from environment
@@ -46,6 +48,7 @@ func NewAPISettings() APISettings {
 		User:            getEnvOrDefaultString(ENV_USER, ""),
 		Password:        getEnvOrDefaultString(ENV_PASSWORD, ""),
 		RelaxedSessions: getEnvOrDefaultBool(ENV_RELAXED_SESSIONS, true),
+		AllowedOrigins:  parseOriginList(getEnvOrDefaultString(ENV_CORS_ORIGINS, "")),
 	}
 }
 
@@ -65,4 +68,19 @@ func normalizeAPIDefaultVersion(version string) string {
 // GetAPITimeout returns the API timeout as time.Duration
 func (settings APISettings) GetAPITimeout() time.Duration {
 	return time.Duration(settings.Timeout) * time.Millisecond
+}
+
+// parseOriginList splits a comma-separated CORS origin list, trimming blanks.
+func parseOriginList(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	origins := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if o := strings.TrimSpace(p); o != "" {
+			origins = append(origins, o)
+		}
+	}
+	return origins
 }

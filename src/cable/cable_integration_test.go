@@ -317,6 +317,7 @@ func newCableTestDatabase(t *testing.T) *sqlx.DB {
 		CREATE TABLE IF NOT EXISTS users (
 			username TEXT PRIMARY KEY,
 			password TEXT NOT NULL,
+			ui TEXT,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 		CREATE TABLE IF NOT EXISTS servers (

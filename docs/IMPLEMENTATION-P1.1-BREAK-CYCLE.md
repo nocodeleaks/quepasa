@@ -187,35 +187,37 @@ models/qp_whatsapp_service_restore.go:	whatsmeow "github.com/nocodeleaks/quepasa
 
 ---
 
-## Remaining Imports (Non-Critical)
+## Remaining Imports - RESOLVED ✅
 
-### 1. `models/qp_contact_manager.go`
+**Update 2026-06-28:** All 3 auxiliary imports eliminated via interface extension.
 
-**Usage:** `whatsmeow.GetContactManagerForWid()`
+### Extended Interface (WhatsappDriverService)
 
-**Scope:** Contact sync helper.
+**Added to `ports/whatsapp_driver.go`:**
 
-**Remediation:** Add `GetContactManagerForWid` to `WhatsappDriverFactory` or create separate `ContactManagerAdapter`. **Deferred to P1.2** (grouped constructor wiring).
+```go
+type WhatsappDriverService interface {
+	GetContactManagerForWid(wid string, conn whatsapp.IWhatsappConnection) (whatsapp.WhatsappContactManagerInterface, error)
+	ResolveMigratedWid(phone string) (string, error)
+	ListDevices() ([]WhatsappDeviceInfo, error)
+}
+```
 
----
+**Implemented in `whatsmeow/whatsmeow_driver_adapter.go`:**
+- `GetContactManagerForWid` → delegates to `GetContactManagerForWid(wid, conn)`
+- `ResolveMigratedWid` → delegates to `WhatsmeowService.GetStoreForMigrated(phone)`
+- `ListDevices` → delegates to `WhatsmeowService.Container.GetAllDevices()`
 
-### 2. `models/qp_database.go`
+**Files refactored:**
+- ✅ `models/qp_contact_manager.go` - no longer imports whatsmeow
+- ✅ `models/qp_database.go` - no longer imports whatsmeow
+- ✅ `models/qp_whatsapp_service_restore.go` - no longer imports whatsmeow
 
-**Usage:** `whatsmeow.WhatsmeowService.GetStoreForMigrated()`
-
-**Scope:** Database migration helper.
-
-**Remediation:** Extract migration logic to `migrations` package with injected store accessor. **Deferred to P2.2** (persistence-heavy behavior behind store interfaces).
-
----
-
-### 3. `models/qp_whatsapp_service_restore.go`
-
-**Usage:** `whatsmeow.WhatsmeowService` (restore orphaned sessions)
-
-**Scope:** Session restore on startup.
-
-**Remediation:** Add `RestoreOrphanedSessions` to `WhatsappDriverFactory` or extract to `restore` use case package. **Deferred to P2.1** (extract session use cases).
+**Verification:**
+```bash
+grep -r '"github.com/nocodeleaks/quepasa/whatsmeow"' models/*.go
+# Result: 0 matches
+```
 
 ---
 
@@ -224,14 +226,15 @@ models/qp_whatsapp_service_restore.go:	whatsmeow "github.com/nocodeleaks/quepasa
 ### What Changed
 
 - ✅ **Core connection factory** (`NewWhatsmeowConnection`, `NewWhatsmeowEmptyConnection`) no longer imports `whatsmeow`
+- ✅ **All auxiliary imports removed** — contact manager, migration, restore now via `ports.GlobalWhatsappDriverService`
 - ✅ **Dependency direction inverted** — `models` → `ports` ← `whatsmeow`
 - ✅ **Zero behavior change** — adapter delegates to existing `WhatsmeowService`
 - ✅ **All tests pass** — 98/98 green
+- ✅ **Zero imports** — `models` package has NO direct dependency on `whatsmeow`
 
 ### What Didn't Change
 
-- ⚠️ 3 auxiliary imports remain (contact manager, migration, restore)
-- ⚠️ Still using global var (`GlobalWhatsappDriverFactory`) — transitional until P1.2 (grouped constructor wiring)
+- ⚠️ Still using globals (`GlobalWhatsappDriverFactory`, `GlobalWhatsappDriverService`) — transitional until P1.2 (grouped constructor wiring)
 - ⚠️ `ApplyTransportServices` global wiring still exists — addressed in P1.2
 
 ---
@@ -300,15 +303,19 @@ Rollback is clean — P1.1 is **additive** (new `ports` package + adapter).
 
 ## Status
 
-✅ **P1.1 Complete**
+✅ **P1.1 Complete (100%)**
 
-**Core cycle broken:**
-- `models` no longer imports `whatsmeow` for connection factory
-- Dependency inverted via `ports` interface
+**Cycle fully broken:**
+- `models` has **ZERO** imports of `whatsmeow` (verified via grep)
+- All 7 usages refactored via `ports` interfaces:
+  - Connection factory (2): `CreateEmptyConnection`, `CreateConnection`
+  - Contact manager (1): `GetContactManagerForWid`
+  - Migration (1): `ResolveMigratedWid`
+  - Device listing (1): `ListDevices`
+- Dependency inverted: `models` → `ports` ← `whatsmeow`
 - Build clean, tests green (98/98)
 
 **Remaining work:**
-- 3 auxiliary imports (contact, migration, restore) — **non-blocking for P1.2**
 - Global var DI → grouped constructors — **P1.2 scope**
 
 ---

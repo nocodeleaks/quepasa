@@ -26,6 +26,8 @@
    - **DOMAIN**: Set your domain (e.g., `quepasa.yourdomain.com`)
    - **EMAIL**: Set your administrator email
    - **MASTERKEY**: Change the default master key for security
+   - **CORS_ALLOWED_ORIGINS**: Comma-separated browser origins allowed cross-origin (e.g. `https://app.example,https://admin.example`). Leave empty for same-origin only. Use `*` only for trusted/dev setups (disables credentials).
+   - **RELAXED_SESSIONS**: `true` (default) lets any authenticated user create sessions without the master key. Set `false` for stricter multi-tenant control.
    - **PASSWORD**: Set a strong password
    - **DBDRIVER** / **DBDATABASE**: Define how the **Whatsmeow SQL store** is persisted
    - **DBPASSWORD**: Set a secure password only when using PostgreSQL/MySQL (`DBDRIVER=postgres` or `mysql`)

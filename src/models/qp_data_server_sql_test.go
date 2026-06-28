@@ -27,6 +27,7 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 		groups INTEGER,
 		broadcasts INTEGER,
 		readreceipts INTEGER,
+		deliveryreceipts INTEGER,
 		calls INTEGER,
 		readupdate INTEGER,
 		direct INTEGER,
@@ -38,8 +39,8 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 	}
 
 	if _, err := db.Exec(
-		`INSERT INTO servers (token, wid, verified, devel, metadata, groups, broadcasts, readreceipts, calls, readupdate, direct, user)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO servers (token, wid, verified, devel, metadata, groups, broadcasts, readreceipts, deliveryreceipts, calls, readupdate, direct, user)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		"token-1",
 		"5511999999999@s.whatsapp.net",
 		true,
@@ -48,6 +49,7 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 		int(whatsapp.TrueBooleanType),
 		int(whatsapp.FalseBooleanType),
 		int(whatsapp.UnSetBooleanType),
+		int(whatsapp.FalseBooleanType),
 		int(whatsapp.TrueBooleanType),
 		int(whatsapp.FalseBooleanType),
 		int(whatsapp.UnSetBooleanType),

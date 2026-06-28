@@ -1,12 +1,18 @@
 package models
 
 import (
-	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
-	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
+	"github.com/nocodeleaks/quepasa/ports"
+	"github.com/nocodeleaks/quepasa/whatsapp"
 )
 
+// NewWhatsmeowEmptyConnection creates an empty unpaired connection via the injected driver.
+// Breaking models -> whatsmeow import per ADR-0003 and PLAN P1.1.
 func NewWhatsmeowEmptyConnection(callback func(string)) (conn whatsapp.IWhatsappConnection, err error) {
-	conn, err = whatsmeow.WhatsmeowService.CreateEmptyConnection()
+	if ports.GlobalWhatsappDriverFactory == nil {
+		panic("GlobalWhatsappDriverFactory not injected — call ports.SetWhatsappDriver() in main.go")
+	}
+
+	conn, err = ports.GlobalWhatsappDriverFactory.CreateEmptyConnection()
 	if err != nil {
 		return
 	}
@@ -15,6 +21,11 @@ func NewWhatsmeowEmptyConnection(callback func(string)) (conn whatsapp.IWhatsapp
 	return
 }
 
+// NewWhatsmeowConnection creates a connection from options via the injected driver.
 func NewWhatsmeowConnection(options *whatsapp.WhatsappConnectionOptions) (whatsapp.IWhatsappConnection, error) {
-	return whatsmeow.WhatsmeowService.CreateConnection(options)
+	if ports.GlobalWhatsappDriverFactory == nil {
+		panic("GlobalWhatsappDriverFactory not injected — call ports.SetWhatsappDriver() in main.go")
+	}
+
+	return ports.GlobalWhatsappDriverFactory.CreateConnection(options)
 }

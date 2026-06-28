@@ -405,7 +405,7 @@ func GetUsername(r *http.Request) (string, ApiException) {
 	}
 
 	ex := &ApiExceptionBase{}
-	ex.Prependf("user not found: %s", user)
+	ex.Prepend("user not found")
 	return "", ex
 }
 

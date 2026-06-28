@@ -490,6 +490,8 @@ func (s *stubRuntimeUsersData) UpdatePassword(username string, password string) 
 	return nil
 }
 
+func (s *stubRuntimeUsersData) UpdateUI(username string, ui string) error { return nil }
+
 func (s *stubRuntimeUsersData) Delete(username string) error {
 	s.deleteUsername = username
 	return nil

@@ -58,7 +58,7 @@ func TestHealthToolExecuteWithMasterKey(t *testing.T) {
 func TestHealthToolExecuteWithBotToken(t *testing.T) {
 	tool := &HealthTool{}
 	mockServer := &models.QpWhatsappServer{
-		Token: "test-bot-token",
+		QpServer: &models.QpServer{Token: "test-bot-token"},
 	}
 	ctx := &MCPToolContext{
 		Server:   mockServer,

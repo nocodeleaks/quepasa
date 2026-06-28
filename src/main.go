@@ -9,6 +9,7 @@ import (
 	_ "github.com/nocodeleaks/quepasa/mcp"
 	_ "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
+	"github.com/nocodeleaks/quepasa/ports"
 	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 	signalr "github.com/nocodeleaks/quepasa/signalr"
@@ -84,6 +85,9 @@ func main() {
 
 	dbParameters := environment.Settings.Database.GetDBParameters()
 	whatsmeow.Start(options, dbParameters, logentry)
+
+	// Inject WhatsApp driver to break models -> whatsmeow cycle (PLAN P1.1)
+	ports.GlobalWhatsappDriverFactory = &whatsmeow.WhatsmeowDriverAdapter{}
 
 	// Inject transport adapters so models remain transport-agnostic.
 	models.ApplyTransportServices(models.TransportServices{

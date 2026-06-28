@@ -110,4 +110,6 @@ func (s *stubAPIUsersData) UpdatePassword(username string, password string) erro
 	return nil
 }
 
+func (s *stubAPIUsersData) UpdateUI(username string, ui string) error { return nil }
+
 func (s *stubAPIUsersData) Delete(string) error { return nil }

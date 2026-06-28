@@ -330,8 +330,10 @@ func newCableTestDatabase(t *testing.T) *sqlx.DB {
 			groups INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
+			deliveryreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,
 			readupdate INTEGER DEFAULT 1,
+			direct INTEGER DEFAULT 0,
 			FOREIGN KEY (user) REFERENCES users(username)
 		);
 		CREATE TABLE IF NOT EXISTS dispatching (
@@ -345,6 +347,7 @@ func newCableTestDatabase(t *testing.T) *sqlx.DB {
 			groups INTEGER DEFAULT 1,
 			broadcasts INTEGER DEFAULT 1,
 			readreceipts INTEGER DEFAULT 1,
+			deliveryreceipts INTEGER DEFAULT 1,
 			calls INTEGER DEFAULT 1,
 			PRIMARY KEY (context, connection_string)
 		);

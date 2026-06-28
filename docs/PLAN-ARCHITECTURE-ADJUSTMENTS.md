@@ -6,6 +6,18 @@ Scope: Concrete, prioritized backlog derived from a full architecture review.
 
 ## Checkpoints executados
 
+- 2026-06-28 — Checkpoint 8 (P0.2, **concluído — colapso para módulo único**):
+  Decisão revisada de `go.work` para **módulo único**. Os 23 `go.mod` reduzidos a
+  **1** (`src/go.mod`, módulo `github.com/nocodeleaks/quepasa`); removidos todos os
+  `go.mod`/`go.sum` de submódulo, todos os `replace ../` internos, e os arquivos
+  `go.work`/`go.work.sum` (raiz e `src/`). `go mod tidy` reconciliou as deps
+  externas. Validação: `go build ./...` **Success**, `go vet` limpo no código de
+  produção. Imports `github.com/nocodeleaks/quepasa/<pkg>` resolvem como subdirs —
+  zero churn de import. Docker (`docker/Dockerfile` copia `/src/` e roda
+  `go build main.go`) e CI (`go build ./...`) não dependiam de paths por módulo →
+  seguros. Falhas de teste observadas (`mcp`, `runtime`, `api` test-compile;
+  colunas `deliveryreceipts` em fixtures) são **pré-existentes** (git mostra só
+  `go.*` alterado; CI nunca rodou `go test`), não causadas pelo colapso.
 - 2026-06-25 — Checkpoint 3 (P0.1, concluído): `go mod tidy` executado com sucesso em todos os módulos Go sob `src/` com `go.mod`; normalização de `replace` locais para caminhos coerentes concluída e árvore de módulos limpa de sobredeclarações artificiais de dependência em cada módulo.
 - 2026-06-25 — Checkpoint 1 (P0.1, parcial): `go mod tidy` rodado em módulos com resolução local viável (`environment`, `library`, `media`, `metrics`, `sipproxy`, `webserver`, `whatsapp`, `whatsmeow`). Em módulos com cadeias de `replace` ainda incompletas o tidy falhou em resolver versões placeholder (`.../000000000000`).
 - 2026-06-25 — Checkpoint 2 (P0.3): Unificação da identidade de versão para `5.26.0625.0` no fluxo canônico (`src/models/qp_defaults.go`, `src/main.go`, `src/swagger/docs.go`, `src/swagger/swagger.json`, `src/swagger/swagger.yaml`, `README.md`).
@@ -89,18 +101,17 @@ cd src && for m in */; do m=${m%/}; \
 `replace ../x`) but multiplies maintenance surface: 23 `go.mod`, ~20 `replace`
 lines each, and version drift.
 
-**Action — pick one.** See "Open Decision" below.
+**Decisão final (2026-06-28): módulo único.** Os 23 `go.mod` foram colapsados em
+**1** (`src/go.mod`, módulo `github.com/nocodeleaks/quepasa`). A etapa intermediária
+de `go.work` (apontando para `./src`) foi descartada — `go.work`/`go.work.sum`
+removidos. Motivo: o deployable é um único binário, nenhum submódulo é versionado
+ou publicado separadamente, e o split multi-módulo só gerava custo de manutenção
+(replace transversais, drift de versão) sem isolamento real.
 
-**Atualização (checkpoint atual):** decisão temporária desta execução é `go.work`
-apontando apenas para `./src` em modo workspace, para validar o plano com build estável e
-sem ambiguidade de módulos. A consolidação para módulo único permanece como alternativa
-para próxima tranche técnica.
+**Verification.** `go build ./...` **Success**; `go vet` limpo no código de
+produção; Docker e CI não dependiam de paths por módulo. Concluído.
 
-**Verification.** `go build ./...` and the full test suite pass; CI `go.yml`
-green.
-
-**Effort.** 1–2 days (single module) once P0.1 reveals the true graph.
-**Risk.** Medium (build/CI), but mechanical and easily reverted.
+**Effort.** Executado. **Risk.** Baixo na prática — reversível por git.
 
 ### P0.3 — Unify version identity
 
@@ -236,28 +247,37 @@ Largest non-generated files to watch: `api_handlers+GroupsController.go` (759),
 
 ## Priority 3 — De-risk `voip`
 
-### P3.1 — Risk-assess and quarantine the `mlow` codec
+### P3.1 — Harden the `mlow` codec and the transcoding chain (OFICIAL, não quarentena)
 
-**Problem.** `voip` is 19k LOC — the largest module — and ~8k of it is a
-from-scratch implementation of the `mlow` audio codec
-(`voip/calls/mlow/*`: CELP encoder, LSF quantization, pitch, VAD, range coder).
-It is the highest-complexity, lowest-coverage, most-niche code in the repo and
-is furthest from the core messaging product.
+**Decisão (2026-06-28): voz é capability primordial.** `mlow` permanece **oficial
+e no build padrão**. Não há quarentena. Já existe toggle `use_mlow_codec_v1`
+(`voip/calls/codec.go`, default `true`) com fallback **Opus**, ligado por env
+`CALLS` (default true).
+
+**Problem reframe.** O risco não é "manter ou cortar `mlow`" — é a **cadeia de
+transcodificação** entre os codecs de cada lado:
+- WhatsApp usa **Opus** (e o codec interno **mlow**);
+- provedores SIP usam majoritariamente **G.729** e **µ-law/A-law (ulaw/alaw)**.
+
+`voip` (19k LOC, ~8k de DSP em `voip/calls/mlow/*`: CELP, LSF quant, pitch, VAD,
+range coder) é o código mais complexo e menos coberto do repo. Qualquer refactor
+pode degradar áudio silenciosamente.
 
 **Action.**
-- Confirm whether native call-audio handling is a committed product capability.
-  If not, isolate it behind a build tag / optional module so the core build does
-  not carry it.
-- If it stays: add **golden-vector tests** (known input PCM -> expected
-  bitstream) and document codec provenance/spec in `voip/calls/mlow/README.md`.
-- Keep `voip` a leaf (it already only imports `environment`, `qplog`,
-  `sipproxy`) — do not let business coordination leak into it (Roadmap Phase F).
+- Adicionar **golden-vector tests** determinísticos para `mlow`
+  (PCM conhecido -> bitstream esperado) e para a ponte de transcodificação
+  WhatsApp(Opus/mlow) ↔ `sipproxy` ↔ SIP(G.729/ulaw/alaw).
+- Documentar proveniência/spec do codec em `voip/calls/mlow/README.md`.
+- Manter `voip` como leaf (importa só `environment`, `qplog`, `sipproxy`) — não
+  deixar coordenação de negócio vazar pra dentro (Roadmap Phase F).
+- Validar matriz de codecs: confirmar caminhos ulaw/alaw e G.729 com testes de
+  ida e volta.
 
-**Verification.** Codec has deterministic regression tests; core build can be
-produced without `mlow` if optional.
+**Verification.** `mlow` e a cadeia de transcodificação têm regressão
+determinística; nenhuma mudança de codec passa sem teste.
 
-**Effort.** 2–4 days. **Risk.** Low for the assessment; Medium if making it
-optional.
+**Effort.** 3–5 dias (testes + matriz de codecs). **Risk.** Médio — área crítica
+de produto, mexer com rede de segurança de testes.
 
 ---
 
@@ -278,15 +298,25 @@ translation layer and the `voip` engine/codec before the P1.1 and P3.1 moves.
 
 ### P4.2 — Review API auth and CORS posture
 
-**Problem.** Single shared `X-QUEPASA-TOKEN` header model; CORS config is
-commented out in `api/api.go`. Acceptable for single-tenant self-host, weak for
-multi-tenant exposure.
+**Decisão (2026-06-28): multi-tenant.** Threat model confirmado como
+multi-tenant → P4.2 é **trabalho real, em escopo**.
 
-**Action.** Decide the deployment threat model. If multi-tenant, scope tokens
-per session and add an explicit CORS policy rather than the commented block.
+**Problem.** Já existe `MASTERKEY` (env `MASTERKEY`, gerencia TODAS as
+instâncias) + token por-instância `X-QUEPASA-TOKEN`. CORS está **comentado** em
+`api/api.go`. Num cenário multi-tenant exposto, isso exige hardening: vazamento
+da `MASTERKEY` compromete todas as sessões; sem CORS, sem proteção de origem no
+browser.
 
-**Effort.** ~1 day. **Risk.** Low–Medium (security-sensitive — change
-deliberately).
+**Action.**
+- Definir política CORS explícita (substituir o bloco comentado em `api/api.go`).
+- Auditar isolamento por-token: garantir que token da sessão A não alcança dados
+  da sessão B.
+- Revisar exposição/escopo da `MASTERKEY` (rotação, restrição de origem/IP,
+  nunca em rota pública sem proteção adicional).
+- Considerar rate-limiting por token.
+
+**Effort.** ~1–2 dias. **Risk.** Médio (security-sensitive — mudar com cuidado e
+validação)
 
 ---
 
@@ -306,12 +336,14 @@ Each step should satisfy the Cross-Cutting Validation Checklist in
 
 ---
 
-## Open Decision (needs maintainer input)
+## Decisões resolvidas (2026-06-28)
 
-- **Module strategy (P0.2):** collapse to a single Go module (recommended) vs.
-  keep multi-module via `go.work` vs. status quo with tidied `go.mod`s.
-- **voip/mlow (P3.1):** committed product capability vs. optional/quarantined.
-- **Threat model (P4.2):** single-tenant self-host vs. multi-tenant exposure.
+- **Module strategy (P0.2):** ✅ **módulo único** — executado (23 → 1 `go.mod`).
+- **voip/mlow (P3.1):** ✅ **capability oficial** — voz é primordial; `mlow` fica
+  no build padrão. Trabalho vira blindar com golden-tests + matriz de
+  transcodificação Opus/mlow ↔ G.729/ulaw/alaw, não quarentena.
+- **Threat model (P4.2):** ✅ **multi-tenant** — hardening de auth/CORS/MASTERKEY
+  em escopo.
 
 ## Related Documents
 

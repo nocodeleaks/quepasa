@@ -38,6 +38,9 @@ func AuthenticatedSessionController(w http.ResponseWriter, r *http.Request) {
 		if oauthClaims, ok := claims["oauth_claims"]; ok {
 			response["oauthClaims"] = oauthClaims
 		}
+		if oauthSubject, ok := claims["oauth_subject"].(string); ok && oauthSubject != "" {
+			response["oauthSubject"] = oauthSubject
+		}
 		response["claims"] = authenticatedSessionClaimsResponse(claims)
 	}
 

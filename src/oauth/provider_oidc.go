@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,9 +16,10 @@ import (
 // identity provider. It performs discovery via .well-known/openid-configuration
 // and follows the standard authorization code flow.
 type GenericOIDCProvider struct {
-	cfg       *OAuthConfig
-	discovery *oidcDiscovery
-	mu        sync.RWMutex
+	cfg         *OAuthConfig
+	discovery   *oidcDiscovery
+	mu          sync.RWMutex
+	tokenClaims sync.Map
 }
 
 type oidcDiscovery struct {
@@ -92,6 +94,7 @@ func (p *GenericOIDCProvider) Exchange(code string, codeVerifier string) (string
 
 	var tokenResp struct {
 		AccessToken string `json:"access_token"`
+		IDToken     string `json:"id_token"`
 		TokenType   string `json:"token_type"`
 		ExpiresIn   int    `json:"expires_in"`
 	}
@@ -101,6 +104,10 @@ func (p *GenericOIDCProvider) Exchange(code string, codeVerifier string) (string
 
 	if tokenResp.AccessToken == "" {
 		return "", fmt.Errorf("empty access_token in response")
+	}
+
+	if claims := mergeOIDCClaims(parseJWTClaims(tokenResp.AccessToken), parseJWTClaims(tokenResp.IDToken)); len(claims) > 0 {
+		p.tokenClaims.Store(tokenResp.AccessToken, claims)
 	}
 
 	return tokenResp.AccessToken, nil
@@ -136,6 +143,12 @@ func (p *GenericOIDCProvider) GetUserInfo(accessToken string) (*OAuthUserInfo, e
 		return nil, err
 	}
 
+	if cachedClaims, ok := p.tokenClaims.Load(accessToken); ok {
+		if tokenClaims, ok := cachedClaims.(map[string]interface{}); ok {
+			claims = mergeOIDCClaims(claims, tokenClaims)
+		}
+	}
+
 	email := oidcStringClaim(claims["email"])
 	if email == "" {
 		return nil, fmt.Errorf("userinfo missing email claim")
@@ -158,6 +171,45 @@ func oidcStringClaim(value interface{}) string {
 		return typed.String()
 	}
 	return ""
+}
+
+func parseJWTClaims(token string) map[string]interface{} {
+	parts := strings.Split(token, ".")
+	if len(parts) < 2 {
+		return nil
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil
+	}
+
+	var claims map[string]interface{}
+	decoder := json.NewDecoder(strings.NewReader(string(payload)))
+	decoder.UseNumber()
+	if err := decoder.Decode(&claims); err != nil {
+		return nil
+	}
+
+	return claims
+}
+
+func mergeOIDCClaims(primary map[string]interface{}, fallback map[string]interface{}) map[string]interface{} {
+	if len(primary) == 0 {
+		return fallback
+	}
+	if len(fallback) == 0 {
+		return primary
+	}
+
+	merged := make(map[string]interface{}, len(primary)+len(fallback))
+	for key, value := range fallback {
+		merged[key] = value
+	}
+	for key, value := range primary {
+		merged[key] = value
+	}
+	return merged
 }
 
 func (p *GenericOIDCProvider) getDiscovery() (*oidcDiscovery, error) {

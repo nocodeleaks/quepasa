@@ -53,11 +53,14 @@ func TestCanonicalAuthSessionExposesOAuthClaims(t *testing.T) {
 	defer CleanupTestDatabase(t)
 	CreateTestUser(t, "owner@example.com", "Password123!")
 
+	const oauthSubject = "11111111-2222-4333-8444-555555555555"
+
 	router := newCanonicalTestRouter()
 	claims := jwt.MapClaims{
-		"user_id": "owner@example.com",
+		"user_id":       "owner@example.com",
+		"oauth_subject": oauthSubject,
 		"oauth_claims": map[string]any{
-			"sub":          "d21cfb04-9d37-473b-837c-67591a26feed",
+			"sub":          oauthSubject,
 			"custom_scope": "scope-value",
 		},
 	}
@@ -76,13 +79,17 @@ func TestCanonicalAuthSessionExposesOAuthClaims(t *testing.T) {
 	}
 
 	var payload struct {
-		OAuthClaims map[string]any `json:"oauthClaims"`
+		OAuthClaims  map[string]any `json:"oauthClaims"`
+		OAuthSubject string         `json:"oauthSubject"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("decode auth session response: %v", err)
 	}
-	if payload.OAuthClaims["sub"] != "d21cfb04-9d37-473b-837c-67591a26feed" {
+	if payload.OAuthClaims["sub"] != oauthSubject {
 		t.Fatalf("expected oauth sub claim, got %#v", payload.OAuthClaims)
+	}
+	if payload.OAuthSubject != oauthSubject {
+		t.Fatalf("expected oauth subject, got %q", payload.OAuthSubject)
 	}
 	if payload.OAuthClaims["custom_scope"] != "scope-value" {
 		t.Fatalf("expected custom oauth claim, got %#v", payload.OAuthClaims)

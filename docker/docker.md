@@ -35,6 +35,14 @@
    - **WEBSOCKETSSL**: Set to `true` if using HTTPS/SSL
    - **LOGLEVEL**: Adjust logging level (ERROR, WARN, INFO, DEBUG, TRACE)
    - **TZ**: Set your timezone
+   - **OAuth (optional)**: Enable external authentication via OIDC provider (e.g. Keycloak, Auth0, Google):
+     - `OAUTH_ENABLED=true`
+     - `OAUTH_PROVIDER_URL=https://identity.example.com`
+     - `OAUTH_CLIENT_ID=quepasa-client`
+     - `OAUTH_CLIENT_SECRET=<secret>`
+     - `OAUTH_REDIRECT_URI=https://quepasa.yourdomain.com/oauth/callback`
+     - `OAUTH_SCOPES=openid,email,profile` (optional, defaults to standard OIDC)
+     - See `docs/USAGE-oauth-authentication.md` for details.
 
 4. **Optional: Review docker-compose.yml**
    - The compose file now uses environment variables from `.env`

@@ -63,6 +63,38 @@ Important:
 - This mode is a valid authentication mode for protected SPA/canonical routes.
 - In `POST /api/sessions`, this same header can also be used as the desired token for the new session only when `RELAXED_SESSIONS=true` and request identity is valid.
 
+## 2b) X-QUEPASA-USERKEY Mode (Personal API Key — User Scope)
+
+Use for automation that should act as a **user** across **all of that user's
+sessions**, without the admin master key and without a per-session token.
+
+Header:
+
+```http
+X-QUEPASA-USERKEY: qp_<64-hex-chars>
+```
+
+Behavior:
+
+- The key is hashed (SHA-256) and resolved to its owning user. Only the hash is
+  stored server-side; the plaintext is shown exactly once at rotation.
+- The request is authenticated at **user scope** (like JWT): the user may operate
+  on any session they own (ownership is still enforced per session token).
+- Distinct from `X-QUEPASA-TOKEN`, which is pinned to a single session, and from
+  `X-QUEPASA-MASTERKEY`, which is the system administrator's gate.
+
+Lifecycle (authenticated as the user — JWT, or the current key):
+
+```http
+GET    /api/account/apikey   → { "configured": bool, "rotated_at": ... }
+POST   /api/account/apikey   → { "apikey": "qp_...", ... }   # rotate; shown ONCE
+DELETE /api/account/apikey   → { "revoked": true }           # revoke
+```
+
+Rotation invalidates the previous key immediately. Note: because a valid key can
+call the rotation endpoint, treat the key as a secret; revoke via JWT/admin if
+compromised.
+
 ## 3) X-QUEPASA-MASTERKEY Mode (Privileged Gate)
 
 Use when endpoint policy requires elevated authorization.

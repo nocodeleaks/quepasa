@@ -1,11 +1,71 @@
 # PLAN: Architecture Adjustments
 
-Status: In Progress
-Date: 2026-06-25
+Status: **CONCLUÍDO** (2026-06-29)
+Date: 2026-06-25 (execução 2026-06-28/29)
 Scope: Concrete, prioritized backlog derived from a full architecture review.
+
+## Resumo final (2026-06-29)
+
+Todo o trabalho solicitado **implementado e validado** (build `Success`,
+**358 passed / 0 failed**, vet limpo). Nada commitado (a pedido).
+
+- **P0** ✅ concluído (módulo único, versão, dedup hot-path, swagger CI).
+- **P1.1** ✅ concluído (aresta `models -> whatsmeow` eliminada via `ports`).
+- **P1.2** ✅ concluído (composition root agrupado em `wiring.go`).
+- **P2** ✅ endereçado (use-cases maduros em `runtime/session_service.go`).
+- **P3.1** ✅ concluído (codecs G.711 μ-law/A-law reimplementados canônicos).
+- **P4.1** ✅ concluído (cobertura voip + whatsmeow helpers puros).
+- **P4.2** ✅ concluído (CORS explícito + key por-usuário com rotação).
+
+**Decisões do mantenedor resolvidas:**
+1. ✅ G.711 reimplementar canônico (checkpoints 17/18: μ-law + A-law ITU-T corretos).
+2. ✅ `RELAXED_SESSIONS` = **manter default `true`** (cada user cria sessão).
+3. ✅ MASTERKEY = admin; key-por-user = rotável, escopo sessões do user (implementado).
 
 ## Checkpoints executados
 
+- 2026-06-28 — Checkpoint 18 (P4.2, **key por-usuário com rotação**): novo modo de
+  auth `X-QUEPASA-USERKEY` — chave pessoal por usuário que dá acesso a **todas as
+  sessões DELE** (escopo de usuário, como JWT), separada da MASTERKEY (admin) e do
+  token por-sessão. Implementado: migração `202606281200_add_apikey_to_users`
+  (colunas `apikey` = SHA-256 hex + `apikey_rotated_at`); `GenerateAPIKey`/
+  `HashAPIKey` (key `qp_`+64hex, 256 bits, só hash persistido); data layer
+  `FindByAPIKey`/`SetAPIKey`/`ClearAPIKey`; runtime `FindUserByAPIKey`/
+  `RotateUserAPIKey`/`RevokeUserAPIKey`; 3º caminho no `AuthenticatedAPIHandler`
+  (header→hash→user→`withUserAuth`); endpoints `GET/POST/DELETE /account/apikey`
+  (rotação invalida a anterior na hora, plaintext mostrado uma vez). 7 testes
+  novos (helper, round-trip SQL, auth integração: válida/errada/revogada).
+  Documentado em `USAGE-authentication-modes.md`. Suíte **358 passed / 0 failed**,
+  build/vet ok. Resta do P4.2: decisão de flipar `RELAXED_SESSIONS`.
+- 2026-06-28 — Checkpoint 17 (P3.1, **codecs G.711 reimplementados corretamente**):
+  μ-law reescrito para ITU-T G.711 canônico (`ulawExpLUT` + decode subtrai BIAS
+  uma vez) e **A-law adicionado** (`AlawEncode/AlawDecode` + samples), para
+  provedores SIP que negociam PCMA. Validado: bytes de silêncio μ-law `0xFF` /
+  A-law `0xD5`; round-trip fiel e monotônico em todos os níveis (corr > 0.95);
+  golden hashes atualizados; teste-testemunha do bug convertido em
+  `TestG711RoundTripPreservesSignal`. voip **13 passed**, suíte **351 passed /
+  0 failed**. Bug era **latente** (G.711 sem caller; bridge usa L16+asterisk).
+  `ISSUE-g711-...md` → RESOLVED. Pendente separado (decisão): negociação SDP para
+  usar G.711 direto no leg SIP (muda packetização/clock/PT).
+- 2026-06-28 — Checkpoint 16 (P4.1 + avaliação P2): **(a)** avaliado P2 — a camada
+  de use-cases já existe e está madura em `runtime/session_service.go` (Start/Stop/
+  Restart/Send/Create session + CRUD de user extraídos); Phase B em grande parte
+  feita, mais extração forçada seria churn arriscado (ADR-0001) → P2 considerado
+  endereçado/iterativo. **(b)** P4.1: cobertura de helpers puros do `whatsmeow`
+  (seams de tradução, área de dor LID/phone) em
+  `whatsmeow_extensions_characterization_test.go`: `ExtractContactName`
+  (prioridade Full>Business>Push>First), `CleanJID` (strip device/sessão),
+  `IsValidForButtons` e `ConvertButtonsToText` (protocolo `$buttons:`). 4 testes;
+  suíte **346 passed / 0 failed**, build ok.
+- 2026-06-28 — Checkpoint 15 (P1.2, **composição agrupada — main slim**): extraído
+  o bloco de injeção global de ~30 linhas de `main.go` para `src/wiring.go`
+  (composition root), agrupado por subsistema: `wireWhatsappDriver()` (ports
+  driver), `newTransportServices()` (realtime+dispatch) e `applyRabbitMQTransport()`
+  (broker). `main()` agora chama 2 passos nomeados. init() de `signalr`/`rabbitmq`
+  preservado (importados por `wiring.go`). Refactor puro, zero mudança de
+  comportamento: build `Success`, vet limpo, suíte **342 passed / 0 failed**.
+  Primeiro passo do Phase D; remoção total dos globais (→ construtor) continua
+  pendente como trabalho maior.
 - 2026-06-28 — Checkpoint 14 (P4.2, **CORS explícito + nota de auth multi-tenant**):
   substituído o bloco CORS comentado (allow-all) em `api/api.go` por
   `APICORSMiddleware` (novo `api/api_cors.go`) com política allow-list dirigida

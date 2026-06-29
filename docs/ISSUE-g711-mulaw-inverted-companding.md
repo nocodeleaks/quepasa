@@ -1,5 +1,34 @@
 # ISSUE: G.711 μ-law companding is inverted (SIP PCMU audio collapses)
 
+Status: **RESOLVED 2026-06-28** — μ-law reimplemented to ITU-T G.711, A-law added.
+Severity: High (latent — see "Production impact" below)
+Area: `src/voip/voip_codec.go`
+
+## Resolution (2026-06-28)
+
+`muLawEncodeSample`/`muLawDecodeSample` were replaced with the canonical ITU-T
+G.711 algorithm (exponent lookup table `ulawExpLUT`; decode removes a single
+`BIAS`). A complete **A-law** codec (`AlawEncode`/`AlawDecode`,
+`aLawEncodeSample`/`aLawDecodeSample`) was added for SIP providers that negotiate
+PCMA. Verified:
+
+- silence reference bytes: μ-law `0xFF`, A-law `0xD5`;
+- round-trip is now faithful and monotonic at all speech levels (0.05→0.0497,
+  0.50→0.5116, 0.90→0.8866) with correlation > 0.95;
+- golden hashes + reference tests in `voip_codec_characterization_test.go`.
+
+**Production impact:** the bug was **latent**. `UlawEncode`/`UlawDecode` had no
+production caller — `voip_bridge.go` sends **L16/16000** to asterisk, which
+transcodes to the endpoint's codec. The fixed G.711 codecs are now correct and
+ready for the day QuePasa negotiates PCMU/PCMA directly. **Remaining (separate
+feature, needs a decision):** SDP codec negotiation to use G.711 directly on the
+SIP leg instead of L16+asterisk-transcode — changes packet sizing (160 vs 640
+bytes/20 ms), RTP clock (8 vs 16 kHz) and payload type (0/8 vs 118).
+
+---
+
+## Original report (for history)
+
 Status: Open — found 2026-06-28 while building P3.1 codec regression tests
 Severity: High (affects the primary SIP audio path)
 Area: `src/voip/voip_codec.go`

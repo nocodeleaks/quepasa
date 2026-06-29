@@ -88,6 +88,7 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		readupdate = :readupdate,
 		direct = :direct,
 		user = :user,
+		contextid = :contextid,
 		metadata = :metadata
 	WHERE token = :token`
 	params := map[string]any{
@@ -103,6 +104,7 @@ func (source QpDataServerSql) Update(element *QpServer) error {
 		"readupdate":       element.ReadUpdate,
 		"direct":           element.Direct,
 		"user":             element.User,
+		"contextid":        element.ContextId,
 		"metadata":         element.Metadata,
 	}
 	_, err := source.db.NamedExec(query, params)

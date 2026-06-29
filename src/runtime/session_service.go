@@ -18,6 +18,7 @@ type SessionConfigurationPatch struct {
 	ReadUpdate       *whatsapp.WhatsappBoolean
 	Direct           *whatsapp.WhatsappBoolean
 	Devel            *bool
+	ContextId        *string
 }
 
 var ErrNilSession = errors.New("session is nil")
@@ -593,6 +594,11 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 	if patch.Devel != nil && session.Devel != *patch.Devel {
 		session.Devel = *patch.Devel
 		update += fmt.Sprintf("devel to: {%t}; ", *patch.Devel)
+	}
+
+	if patch.ContextId != nil && session.GetContextId() != *patch.ContextId {
+		session.SetContextId(*patch.ContextId)
+		update += fmt.Sprintf("contextid to: {%s}; ", *patch.ContextId)
 	}
 
 	return update, nil

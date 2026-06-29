@@ -13,4 +13,5 @@ type InfoCreateRequest struct {
 	ReadUpdate   *whatsapp.WhatsappBoolean `json:"readupdate,omitempty"`   // should send markread requests when receiving messages
 	Direct       *whatsapp.WhatsappBoolean `json:"direct,omitempty"`       // should handle direct (individual) messages; default true
 	Devel        *bool                     `json:"devel,omitempty"`        // enable debug mode (devel)
+	ContextId    *string                   `json:"contextid,omitempty"`    // multi-tenant context (tenant/sharing scope)
 }

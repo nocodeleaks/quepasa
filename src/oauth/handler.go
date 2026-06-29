@@ -5,7 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -34,6 +37,8 @@ type JWTAuthEncoder interface {
 }
 
 var globalJWTAuth JWTAuthEncoder
+
+const oauthReturnURLCookieName = "oauth_return_url"
 
 // OAuthLoginHandler initiates the OAuth authorization flow by redirecting the
 // user to the external provider's login page.
@@ -79,6 +84,17 @@ func OAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 		Secure:   r.TLS != nil,
 		SameSite: http.SameSiteLaxMode,
 	})
+	if returnURL := getOAuthReturnURL(r); returnURL != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     oauthReturnURLCookieName,
+			Value:    returnURL,
+			Path:     "/",
+			MaxAge:   600,
+			HttpOnly: true,
+			Secure:   r.TLS != nil,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
 
 	authURL := globalProvider.GetAuthURL(state, codeChallenge)
 	http.Redirect(w, r, authURL, http.StatusFound)
@@ -129,6 +145,18 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	// Clear code_verifier cookie.
 	http.SetCookie(w, &http.Cookie{
 		Name:   "oauth_code_verifier",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	returnURL := "/"
+	if returnCookie, err := r.Cookie(oauthReturnURLCookieName); err == nil && returnCookie.Value != "" {
+		if normalized := normalizeOAuthReturnURL(r, returnCookie.Value); normalized != "" {
+			returnURL = normalized
+		}
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:   oauthReturnURLCookieName,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
@@ -194,8 +222,67 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("oauth: successful login for user %s", user.Username)
 
-	// Redirect to the application root. The frontend will pick up the JWT cookie.
-	http.Redirect(w, r, "/", http.StatusFound)
+	// Redirect to the frontend that initiated the login. The frontend will pick up the JWT cookie.
+	http.Redirect(w, r, returnURL, http.StatusFound)
+}
+
+func getOAuthReturnURL(r *http.Request) string {
+	for _, key := range []string{"return_url", "redirect", "next"} {
+		if value := normalizeOAuthReturnURL(r, r.URL.Query().Get(key)); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func normalizeOAuthReturnURL(r *http.Request, raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+
+	if parsed.IsAbs() {
+		if parsed.Scheme != "http" && parsed.Scheme != "https" {
+			return ""
+		}
+		if sameHost(parsed.Host, r.Host) {
+			return parsed.RequestURI()
+		}
+		if isLoopbackHost(parsed.Hostname()) && isLoopbackHost(hostnameOnly(r.Host)) {
+			return parsed.String()
+		}
+		return ""
+	}
+
+	if parsed.Host != "" || strings.HasPrefix(raw, "//") || !strings.HasPrefix(parsed.Path, "/") {
+		return ""
+	}
+	return parsed.RequestURI()
+}
+
+func sameHost(a, b string) bool {
+	return strings.EqualFold(a, b)
+}
+
+func hostnameOnly(host string) string {
+	if name, _, err := net.SplitHostPort(host); err == nil {
+		return name
+	}
+	return host
+}
+
+func isLoopbackHost(host string) bool {
+	host = strings.Trim(strings.ToLower(host), "[]")
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func generateState() (string, error) {

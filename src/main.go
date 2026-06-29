@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/nocodeleaks/quepasa/api"
+	api "github.com/nocodeleaks/quepasa/api"
 	_ "github.com/nocodeleaks/quepasa/apps/form"
 	_ "github.com/nocodeleaks/quepasa/cable"
 	environment "github.com/nocodeleaks/quepasa/environment"
@@ -9,10 +9,7 @@ import (
 	_ "github.com/nocodeleaks/quepasa/mcp"
 	_ "github.com/nocodeleaks/quepasa/metrics"
 	models "github.com/nocodeleaks/quepasa/models"
-	"github.com/nocodeleaks/quepasa/ports"
-	rabbitmq "github.com/nocodeleaks/quepasa/rabbitmq"
-	runtime "github.com/nocodeleaks/quepasa/runtime"
-	signalr "github.com/nocodeleaks/quepasa/signalr"
+	oauth "github.com/nocodeleaks/quepasa/oauth"
 	webserver "github.com/nocodeleaks/quepasa/webserver"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "github.com/nocodeleaks/quepasa/whatsmeow"
@@ -86,36 +83,11 @@ func main() {
 	dbParameters := environment.Settings.Database.GetDBParameters()
 	whatsmeow.Start(options, dbParameters, logentry)
 
-	// Inject WhatsApp driver to break models -> whatsmeow cycle (PLAN P1.1)
-	whatsmeowDriverAdapter := &whatsmeow.WhatsmeowDriverAdapter{}
-	ports.GlobalWhatsappDriverFactory = whatsmeowDriverAdapter
-	ports.GlobalWhatsappDriverService = whatsmeowDriverAdapter
+	// Inject WhatsApp driver to break models -> whatsmeow cycle (PLAN P1.1).
+	wireWhatsappDriver()
 
-	// Inject transport adapters so models remain transport-agnostic.
-	models.ApplyTransportServices(models.TransportServices{
-		RealtimePresenceChecker:       signalr.SignalRHub,
-		DispatchingLifecyclePublisher: runtime.NewDispatchingLifecyclePublisher(),
-		RabbitMQGetClient: func(connectionString string) models.RabbitMQPublisherClient {
-			return rabbitmq.GetRabbitMQClient(connectionString)
-		},
-		RabbitMQCloseClient: rabbitmq.CloseRabbitMQClient,
-		RabbitMQInjectQueueBackend: func() {
-			if rabbitmq.RabbitMQClientInstance != nil {
-				rabbitmq.InjectCacheBackendIntoClient(rabbitmq.RabbitMQClientInstance)
-			}
-		},
-		RabbitMQExchangeName:         rabbitmq.QuePasaExchangeName,
-		RabbitMQRoutingKeyProd:       rabbitmq.QuePasaRoutingKeyProd,
-		RabbitMQRoutingKeyHistory:    rabbitmq.QuePasaRoutingKeyHistory,
-		RabbitMQRoutingKeyEvents:     rabbitmq.QuePasaRoutingKeyEvents,
-		RabbitMQMessagesPublishedInc: func(queue string) { rabbitmq.MessagesPublished.WithLabelValues(queue).Inc() },
-		RabbitMQMessagePublishErrorsInc: func() {
-			rabbitmq.MessagePublishErrors.Inc()
-		},
-		RabbitMQClientResolver: func(connectionString string) bool {
-			return rabbitmq.GetRabbitMQClient(connectionString) != nil
-		},
-	})
+	// Inject transport adapters so models remain transport-agnostic (PLAN P1.2).
+	models.ApplyTransportServices(newTransportServices())
 
 	// must execute after whatsmeow started
 	for _, element := range models.Running {
@@ -128,6 +100,13 @@ func main() {
 	err = models.QPWhatsappStart(logentry)
 	if err != nil {
 		logentry.Fatalf("whatsapp service starting error: %s", err.Error())
+	}
+
+	// Initialize OAuth (if enabled via env OAUTH_ENABLED=true).
+	oauth.LoadOAuthConfig()
+	oauth.InitializeOAuthProvider(api.GetAuthenticatedTokenAuth())
+	if oauth.IsEnabled() {
+		logentry.Infof("oauth: enabled with provider %s", oauth.GetOAuthConfig().ProviderURL)
 	}
 
 	err = webserver.WebServerStart(logentry)

@@ -16,6 +16,7 @@ const (
 	HeaderMasterKey = "X-QUEPASA-MASTERKEY"
 	HeaderChatID    = "X-QUEPASA-CHATID"
 	HeaderUser      = "X-QUEPASA-USER"
+	HeaderUserKey   = "X-QUEPASA-USERKEY" // per-user personal API key (scopes a user's own sessions)
 )
 
 /*

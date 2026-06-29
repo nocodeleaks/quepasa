@@ -41,6 +41,20 @@ func AuthenticatedAPIHandler(next http.Handler) http.Handler {
 			return
 		}
 
+		// Personal API key: authenticates a user across all of their own sessions,
+		// independently of the admin master key. Rotatable per user.
+		if userKey := strings.TrimSpace(r.Header.Get(library.HeaderUserKey)); userKey != "" {
+			if user, keyErr := runtime.FindUserByAPIKey(userKey); keyErr == nil && user != nil && strings.TrimSpace(user.Username) != "" {
+				r = withUserAuth(r, user.Username)
+				publishAuthenticatedAPIEvent(r, "success", "validated_user_api_key")
+				next.ServeHTTP(w, r)
+				return
+			}
+			publishAuthenticatedAPIEvent(r, "unauthorized", "invalid_user_api_key")
+			RespondErrorCode(w, models.ErrFormUnauthenticated, http.StatusUnauthorized)
+			return
+		}
+
 		scopedToken := strings.TrimSpace(r.Header.Get(library.HeaderToken))
 		if scopedToken == "" {
 			reason := "invalid_token"
@@ -102,6 +116,9 @@ func RegisterAuthenticatedControllers(r chi.Router) {
 	r.Post("/servers/search", AuthenticatedServersSearchController)
 	r.Get("/account", AuthenticatedAccountController)
 	r.Get("/account/masterkey", AuthenticatedMasterKeyController)
+	r.Get("/account/apikey", AuthenticatedApiKeyController)
+	r.Post("/account/apikey", AuthenticatedApiKeyController)
+	r.Delete("/account/apikey", AuthenticatedApiKeyController)
 	r.Get("/ui", AuthenticatedUIController)
 	r.Patch("/ui", AuthenticatedUIController)
 	r.Post("/master/verify", AuthenticatedMasterVerifyController)

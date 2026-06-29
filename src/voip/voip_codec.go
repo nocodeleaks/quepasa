@@ -33,6 +33,27 @@ const ulawBias = 0x84
 // ulawClip is the maximum 15-bit magnitude used by the encoder.
 const ulawClip = 32635
 
+// ulawExpLUT maps (sample>>7)&0xFF to the μ-law segment (exponent) per
+// ITU-T G.711. Replaces the previously inverted exponent scan.
+var ulawExpLUT = [256]byte{
+	0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+	6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+	6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+	6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+	6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+}
+
 // UlawEncode converts one 16 kHz float32 PCM frame into:
 //  1. an 8 kHz decimated int16 frame (half the samples), and
 //  2. the μ-law bytes of that decimated frame.
@@ -89,17 +110,12 @@ func muLawEncodeSample(sample int) byte {
 	}
 	sample += ulawBias
 
-	// Exponent: position of the highest set bit above bit 7.
-	exp := byte(0)
-	for mask := 0x4000; sample < int(mask) && exp < 7; exp++ {
-		mask >>= 1
-	}
+	// Segment (exponent) via the standard ITU-T G.711 lookup, then 4-bit mantissa.
+	exp := int(ulawExpLUT[(sample>>7)&0xFF])
+	mantissa := (sample >> (exp + 3)) & 0x0F
 
-	// Mantissa: next 3 significant bits after the exponent.
-	mantissa := byte((sample >> (int(exp) + 3)) & 0x0F)
-
-	// Combine: ~sign | (exp << 4) | mantissa
-	return ^(sign | (exp << 4) | mantissa)
+	// Combine and invert: ~(sign | (exp << 4) | mantissa).
+	return byte(^(int(sign) | (exp << 4) | mantissa))
 }
 
 // UlawDecode converts μ-law bytes to a 16 kHz float32 PCM frame.  Each input
@@ -141,12 +157,12 @@ func muLawDecodeSample(b byte) int16 {
 	b = ^b
 
 	sign := b & 0x80
-	exp := (b >> 4) & 0x07
-	mantissa := b & 0x0F
+	exp := int((b >> 4) & 0x07)
+	mantissa := int(b & 0x0F)
 
-	// Reconstruct the 13-bit magnitude.
-	sample := int(((int(mantissa) << 3) + ulawBias) << int(exp))
-	sample -= ulawBias << int(exp)
+	// Reconstruct per ITU-T G.711: ((mantissa<<3) + BIAS) << exp, then remove the
+	// single BIAS that was added at encode time (NOT BIAS<<exp).
+	sample := (((mantissa << 3) + ulawBias) << exp) - ulawBias
 
 	if sign != 0 {
 		sample = -sample
@@ -157,6 +173,130 @@ func muLawDecodeSample(b byte) int16 {
 		sample = -32768
 	}
 	return int16(sample)
+}
+
+// ---------------------------------------------------------------------------
+// G.711 A-law encode / decode (PCMA, RTP payload type 8)
+// ---------------------------------------------------------------------------
+//
+// A-law is the companding standard used by most non-North-American SIP
+// providers. This is the canonical ITU-T G.711 algorithm (Sun reference),
+// operating on 16-bit linear PCM via a 13-bit internal segment representation.
+
+// alawSegEnd are the segment upper bounds used by the A-law encoder search.
+var alawSegEnd = [8]int{0x1F, 0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF}
+
+func alawSegmentSearch(val int) int {
+	for i := 0; i < 8; i++ {
+		if val <= alawSegEnd[i] {
+			return i
+		}
+	}
+	return 8
+}
+
+// aLawEncodeSample encodes a signed 16-bit linear sample to one A-law byte.
+func aLawEncodeSample(pcm int) byte {
+	// Reduce 16-bit to the 13-bit domain the segment table expects.
+	pcm >>= 3
+
+	var mask int
+	if pcm >= 0 {
+		mask = 0xD5 // sign bit set, even bits inverted (A-law toggles 0x55)
+	} else {
+		mask = 0x55
+		pcm = -pcm - 1
+	}
+
+	seg := alawSegmentSearch(pcm)
+	if seg >= 8 {
+		return byte(0x7F ^ mask) // out of range → max magnitude
+	}
+
+	aval := seg << 4
+	if seg < 2 {
+		aval |= (pcm >> 1) & 0x0F
+	} else {
+		aval |= (pcm >> seg) & 0x0F
+	}
+	return byte(aval ^ mask)
+}
+
+// aLawDecodeSample decodes one A-law byte to a signed 16-bit linear sample.
+func aLawDecodeSample(a byte) int16 {
+	a ^= 0x55
+	t := int(a&0x0F) << 4
+	seg := int((a & 0x70) >> 4)
+	switch seg {
+	case 0:
+		t += 8
+	case 1:
+		t += 0x108
+	default:
+		t += 0x108
+		t <<= seg - 1
+	}
+	if a&0x80 != 0 {
+		return int16(t)
+	}
+	return int16(-t)
+}
+
+// AlawEncode mirrors UlawEncode for A-law: decimate one 16 kHz float32 frame to
+// 8 kHz and compand to A-law bytes. Output length is len(frame)/2.
+func AlawEncode(frame []float32, scratch []byte) []byte {
+	half := len(frame) / 2
+	if cap(scratch) < half {
+		scratch = make([]byte, half)
+	}
+	out := scratch[:half]
+
+	for i := 0; i < half; i++ {
+		// Same 3-tap triangular anti-alias decimation as UlawEncode.
+		c := i * 2
+		s := 0.5 * frame[c]
+		if c > 0 {
+			s += 0.25 * frame[c-1]
+		} else {
+			s += 0.25 * frame[c]
+		}
+		if c+1 < len(frame) {
+			s += 0.25 * frame[c+1]
+		} else {
+			s += 0.25 * frame[c]
+		}
+
+		v := int(math.Round(float64(s) * 32767.0))
+		if v > 32767 {
+			v = 32767
+		} else if v < -32768 {
+			v = -32768
+		}
+		out[i] = aLawEncodeSample(v)
+	}
+	return out
+}
+
+// AlawDecode mirrors UlawDecode for A-law: expand A-law bytes and interpolate
+// 8 kHz → 16 kHz. Output length is 2 × len(data).
+func AlawDecode(data []byte, out []float32) []float32 {
+	n := len(data) * 2
+	if cap(out) < n {
+		out = make([]float32, n)
+	}
+	out = out[:n]
+
+	for i, b := range data {
+		f := float32(aLawDecodeSample(b)) / 32768.0
+		out[i*2] = f
+		if i+1 < len(data) {
+			next := float32(aLawDecodeSample(data[i+1])) / 32768.0
+			out[i*2+1] = 0.5 * (f + next)
+		} else {
+			out[i*2+1] = f
+		}
+	}
+	return out
 }
 
 // ---------------------------------------------------------------------------

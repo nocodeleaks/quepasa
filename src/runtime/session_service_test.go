@@ -492,6 +492,12 @@ func (s *stubRuntimeUsersData) UpdatePassword(username string, password string) 
 
 func (s *stubRuntimeUsersData) UpdateUI(username string, ui string) error { return nil }
 
+func (s *stubRuntimeUsersData) FindByAPIKey(string) (*models.QpUser, error) { return nil, nil }
+
+func (s *stubRuntimeUsersData) SetAPIKey(string, string) error { return nil }
+
+func (s *stubRuntimeUsersData) ClearAPIKey(string) error { return nil }
+
 func (s *stubRuntimeUsersData) Delete(username string) error {
 	s.deleteUsername = username
 	return nil

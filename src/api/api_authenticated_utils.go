@@ -22,6 +22,31 @@ type authenticatedAPIContextKey string
 
 const scopedSessionAuthKey authenticatedAPIContextKey = "authenticated_scoped_session_auth"
 
+// userAuthKey carries a user-level authentication (personal API key): the request
+// acts as the user across ALL of their sessions, unlike scopedSessionAuth which
+// is pinned to a single session token.
+const userAuthKey authenticatedAPIContextKey = "authenticated_user_auth"
+
+func withUserAuth(r *http.Request, username string) *http.Request {
+	ctx := context.WithValue(r.Context(), userAuthKey, strings.TrimSpace(username))
+	return r.WithContext(ctx)
+}
+
+func getUserAuth(r *http.Request) (string, bool) {
+	if r == nil {
+		return "", false
+	}
+	username, ok := r.Context().Value(userAuthKey).(string)
+	if !ok {
+		return "", false
+	}
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return "", false
+	}
+	return username, true
+}
+
 type scopedSessionAuth struct {
 	Token    string
 	Username string
@@ -88,6 +113,10 @@ func ensureTokenScope(r *http.Request, token string) error {
 func GetAuthenticatedUser(r *http.Request) (*models.QpUser, error) {
 	if scopedAuth, ok := getScopedSessionAuth(r); ok {
 		return findPersistedUser(scopedAuth.Username)
+	}
+
+	if username, ok := getUserAuth(r); ok {
+		return findPersistedUser(username)
 	}
 
 	_, claims, err := jwtauth.FromContext(r.Context())

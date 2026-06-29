@@ -318,6 +318,8 @@ func newCableTestDatabase(t *testing.T) *sqlx.DB {
 			username TEXT PRIMARY KEY,
 			password TEXT NOT NULL,
 			ui TEXT,
+			apikey TEXT,
+			apikey_rotated_at TIMESTAMP,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 		CREATE TABLE IF NOT EXISTS servers (

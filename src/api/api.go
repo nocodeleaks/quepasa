@@ -28,6 +28,9 @@ func init() {
 func Configure(r chi.Router) {
 	apiPrefix := environment.Settings.API.Prefix
 
+	// OAuth routes (public, no timeout, outside /api prefix).
+	RegisterOAuthRoutes(r)
+
 	r.Group(func(r chi.Router) {
 		timeout := environment.Settings.API.GetAPITimeout()
 

@@ -151,16 +151,23 @@ func MigrateToLatest(logentry log.Logger) (err error) {
 func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
 	fullPath = strings.TrimRight(fullPath, "/\\")
 	log.Debugf("migrating files from: %s", fullPath)
-	files, err := os.ReadDir(fullPath)
+
+	// Strip file:// prefix if present (migrate library uses URLs, os.ReadDir needs filesystem paths).
+	// Ensure the resulting path is absolute.
+	fsPath := strings.TrimPrefix(fullPath, "file://")
+	if !filepath.IsAbs(fsPath) && strings.HasPrefix(fullPath, "file://") {
+		fsPath = "/" + fsPath
+	}
+	files, err := os.ReadDir(fsPath)
 	if err != nil {
 		// Common case: binary is started from repo root, but migrations live in src/migrations.
 		// If <workdir>/migrations doesn't exist, fall back to <workdir>/src/migrations.
-		alt := filepath.Join(filepath.Dir(fullPath), "src", "migrations")
+		alt := filepath.Join(filepath.Dir(fsPath), "src", "migrations")
 		alt = strings.TrimRight(alt, "/\\")
-		if alt != fullPath {
+		if alt != fsPath {
 			if altFiles, altErr := os.ReadDir(alt); altErr == nil {
 				log.Infof("migrations path fallback: using %s", alt)
-				fullPath = alt
+				fsPath = alt
 				files = altFiles
 				err = nil
 			}
@@ -168,7 +175,7 @@ func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "cannot find the file specified") {
-			log.Warnf("no migrations found at: %s", fullPath)
+			log.Warnf("no migrations found at: %s", fsPath)
 		} else {
 			log.Fatal(err)
 		}
@@ -186,7 +193,7 @@ func Migrations(fullPath string) (migrations []migrate.SqlxMigration) {
 
 			title := strings.TrimPrefix(dotSplitted[0], id+"_")
 			status := dotSplitted[1]
-			filepath := fullPath + "/" + info
+			filepath := fsPath + "/" + info
 			if v, ok := confMap[id]; ok {
 				switch status {
 				case "up":

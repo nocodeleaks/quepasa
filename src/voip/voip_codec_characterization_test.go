@@ -64,26 +64,69 @@ func TestUlawSilenceIsConstant(t *testing.T) {
 	}
 }
 
-// TestUlawRoundTripKnownLevelBug DOCUMENTS A KNOWN BUG, it does not assert
-// correctness. The hand-written G.711 μ-law companding in voip_codec.go is
-// non-standard: muLawEncodeSample scans the exponent in the wrong direction and
-// muLawDecodeSample subtracts (bias<<exp) instead of bias. The net effect is an
-// inverted level curve — loud samples round-trip to LESS energy than quiet ones,
-// collapsing normal speech levels toward silence on the PCMU wire.
-//
-// This test freezes that inversion as a witness: when μ-law is corrected to
-// ITU-T G.711 (ideally against official reference vectors), this assertion will
-// FAIL — at which point flip it into a real fidelity check. See PLAN P3.1.
-func TestUlawRoundTripKnownLevelBug(t *testing.T) {
-	quiet := UlawDecode(UlawEncode(sine16k(440, 0.05, codecFrameSamples), nil), nil)
-	loud := UlawDecode(UlawEncode(sine16k(440, 0.90, codecFrameSamples), nil), nil)
+// TestG711RoundTripPreservesSignal asserts that the corrected ITU-T G.711 codecs
+// (μ-law and A-law) carry speech-level signal faithfully: energy is preserved
+// within companding loss, the level curve is monotonic (loud > quiet), and the
+// decoded waveform correlates strongly with the input. This replaces the former
+// known-bug witness once the inverted companding was fixed.
+func TestG711RoundTripPreservesSignal(t *testing.T) {
+	codecs := map[string]struct {
+		enc func([]float32, []byte) []byte
+		dec func([]byte, []float32) []float32
+	}{
+		"ulaw": {UlawEncode, UlawDecode},
+		"alaw": {AlawEncode, AlawDecode},
+	}
 
-	// Correct G.711 would make `loud` carry far more energy than `quiet`.
-	// Current (buggy) behaviour: the opposite. Asserting the bug keeps it visible.
-	if energy(loud) >= energy(quiet) {
-		t.Fatalf("μ-law level curve now monotonic (loud=%.4f >= quiet=%.4f): the "+
-			"G.711 bug appears FIXED — convert this into a fidelity test",
-			energy(loud), energy(quiet))
+	for name, c := range codecs {
+		t.Run(name, func(t *testing.T) {
+			in := sine16k(440, 0.5, codecFrameSamples)
+			out := c.dec(c.enc(in, nil), nil)
+
+			eIn, eOut := energy(in), energy(out)
+			if ratio := eOut / eIn; ratio < 0.7 || ratio > 1.3 {
+				t.Fatalf("%s energy ratio out of range: %.3f", name, ratio)
+			}
+
+			var dot float64
+			for i := range in {
+				dot += float64(in[i]) * float64(out[i])
+			}
+			if corr := dot / math.Sqrt(eIn*eOut); corr < 0.95 {
+				t.Fatalf("%s correlation too low: %.3f", name, corr)
+			}
+
+			// Monotonic level curve: louder in → louder out.
+			quiet := c.dec(c.enc(sine16k(440, 0.05, codecFrameSamples), nil), nil)
+			loud := c.dec(c.enc(sine16k(440, 0.90, codecFrameSamples), nil), nil)
+			if energy(loud) <= energy(quiet) {
+				t.Fatalf("%s level curve not monotonic: loud=%.4f <= quiet=%.4f",
+					name, energy(loud), energy(quiet))
+			}
+		})
+	}
+}
+
+// TestG711SilenceReferenceBytes locks the canonical encodings of digital silence:
+// μ-law 0 → 0xFF, A-law 0 → 0xD5 (ITU-T G.711). These are fixed wire constants.
+func TestG711SilenceReferenceBytes(t *testing.T) {
+	if got := UlawEncode(make([]float32, 2), nil)[0]; got != 0xFF {
+		t.Fatalf("μ-law silence byte: got %#x, want 0xFF", got)
+	}
+	if got := AlawEncode(make([]float32, 2), nil)[0]; got != 0xD5 {
+		t.Fatalf("A-law silence byte: got %#x, want 0xD5", got)
+	}
+}
+
+// TestAlawFrameSizes locks the A-law rate-conversion contract (16→8 kHz on
+// encode, 8→16 kHz on decode), mirroring μ-law.
+func TestAlawFrameSizes(t *testing.T) {
+	enc := AlawEncode(sine16k(440, 0.5, codecFrameSamples), nil)
+	if len(enc) != codecFrameSamples/2 {
+		t.Fatalf("A-law encoded length: got %d, want %d", len(enc), codecFrameSamples/2)
+	}
+	if dec := AlawDecode(enc, nil); len(dec) != codecFrameSamples {
+		t.Fatalf("A-law decoded length: got %d, want %d", len(dec), codecFrameSamples)
 	}
 }
 
@@ -197,15 +240,22 @@ func TestParseRTPRejectsInvalid(t *testing.T) {
 // here means the companding/decimation output moved — confirm it was intended,
 // then update the constants.
 func TestUlawGoldenHash(t *testing.T) {
-	const goldenHash = "35671d139404b30787df75c022e0d36e21f4374a9e645937848f67773987447b"
+	const goldenHash = "d035180ea8d49367bcf7535850180ccb47de1f9500ae2f14d63c3e8067b53e43"
 
 	out := UlawEncode(sine16k(440, 0.3, codecFrameSamples), nil)
 	sum := sha256.Sum256(out)
-	got := hex.EncodeToString(sum[:])
-	if goldenHash == "REPLACE_ME" {
-		t.Fatalf("CAPTURE GOLDEN: len=%d sha256=%s", len(out), got)
-	}
-	if got != goldenHash {
+	if got := hex.EncodeToString(sum[:]); got != goldenHash {
 		t.Fatalf("μ-law bitstream changed:\n  got  %s\n  want %s", got, goldenHash)
+	}
+}
+
+// TestAlawGoldenHash freezes the exact A-law bytes for a known tone.
+func TestAlawGoldenHash(t *testing.T) {
+	const goldenHash = "64bed2a8c97fa4e1b51db80c5f1eb97a290b7dba65eed269e529904f47c633e7"
+
+	out := AlawEncode(sine16k(440, 0.3, codecFrameSamples), nil)
+	sum := sha256.Sum256(out)
+	if got := hex.EncodeToString(sum[:]); got != goldenHash {
+		t.Fatalf("A-law bitstream changed:\n  got  %s\n  want %s", got, goldenHash)
 	}
 }

@@ -113,3 +113,9 @@ func (s *stubAPIUsersData) UpdatePassword(username string, password string) erro
 func (s *stubAPIUsersData) UpdateUI(username string, ui string) error { return nil }
 
 func (s *stubAPIUsersData) Delete(string) error { return nil }
+
+func (s *stubAPIUsersData) FindByAPIKey(string) (*models.QpUser, error) { return nil, nil }
+
+func (s *stubAPIUsersData) SetAPIKey(string, string) error { return nil }
+
+func (s *stubAPIUsersData) ClearAPIKey(string) error { return nil }

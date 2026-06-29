@@ -288,6 +288,45 @@ func FindPersistedUser(username string) (*models.QpUser, error) {
 	return models.WhatsappService.DB.Users.Find(strings.TrimSpace(username))
 }
 
+// FindUserByAPIKey resolves a user from the plaintext personal API key by hashing
+// it and looking up the stored hash. Returns an error when no user matches.
+func FindUserByAPIKey(plaintextKey string) (*models.QpUser, error) {
+	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Users == nil {
+		return nil, fmt.Errorf("user service not initialized")
+	}
+	hash := models.HashAPIKey(plaintextKey)
+	if hash == "" {
+		return nil, fmt.Errorf("empty api key")
+	}
+	return models.WhatsappService.DB.Users.FindByAPIKey(hash)
+}
+
+// RotateUserAPIKey generates a fresh personal API key for the user, persists its
+// hash (invalidating any previous key immediately), and returns the plaintext key
+// to be shown to the caller exactly once.
+func RotateUserAPIKey(username string) (plaintextKey string, err error) {
+	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Users == nil {
+		return "", fmt.Errorf("user service not initialized")
+	}
+	username = strings.TrimSpace(username)
+	plaintext, hash, err := models.GenerateAPIKey()
+	if err != nil {
+		return "", err
+	}
+	if err = models.WhatsappService.DB.Users.SetAPIKey(username, hash); err != nil {
+		return "", err
+	}
+	return plaintext, nil
+}
+
+// RevokeUserAPIKey removes the user's personal API key.
+func RevokeUserAPIKey(username string) error {
+	if models.WhatsappService == nil || models.WhatsappService.DB == nil || models.WhatsappService.DB.Users == nil {
+		return fmt.Errorf("user service not initialized")
+	}
+	return models.WhatsappService.DB.Users.ClearAPIKey(strings.TrimSpace(username))
+}
+
 // ExistsPersistedUser checks if a persisted user exists in the database.
 // Delegates to models.WhatsappService.DB.Users.Exists when available.
 func ExistsPersistedUser(username string) (bool, error) {

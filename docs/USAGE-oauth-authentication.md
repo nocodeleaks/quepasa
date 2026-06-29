@@ -61,6 +61,13 @@ form-authenticated users.
 QuePasa automatically discovers OIDC endpoints via the provider's
 `.well-known/openid-configuration` document. No manual endpoint configuration needed.
 
+## PKCE Support
+
+QuePasa implements **PKCE** (Proof Key for Code Exchange, RFC 7636) automatically.
+All authorization requests include `code_challenge` (S256 method) and the token
+exchange includes `code_verifier`. This is required by most modern OIDC providers
+(including Duende IdentityServer / Skoruba admin) and recommended for all OAuth flows.
+
 ## Example: Keycloak
 
 ```bash

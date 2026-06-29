@@ -48,6 +48,8 @@ func createTestSchema(db *sqlx.DB) error {
 			username TEXT PRIMARY KEY,
 			password TEXT NOT NULL,
 			ui TEXT,
+			apikey TEXT,
+			apikey_rotated_at TIMESTAMP,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 

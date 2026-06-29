@@ -175,3 +175,44 @@ func (source QpDataUserSql) Delete(username string) (err error) {
 
 	return nil
 }
+
+// FindByAPIKey resolves a user from the SHA-256 hash of their personal API key.
+func (source QpDataUserSql) FindByAPIKey(apikeyHash string) (result *QpUser, err error) {
+	if apikeyHash == "" {
+		return nil, fmt.Errorf("empty api key hash")
+	}
+	user := &QpUser{}
+	err = source.db.Get(user,
+		"SELECT username, password, ui, apikey, apikey_rotated_at, timestamp FROM users WHERE apikey = ? LIMIT 1",
+		apikeyHash)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+// SetAPIKey stores (or rotates) the user's API key hash and stamps the rotation time.
+func (source QpDataUserSql) SetAPIKey(username string, apikeyHash string) (err error) {
+	result, err := source.db.Exec(
+		"UPDATE users SET apikey = ?, apikey_rotated_at = CURRENT_TIMESTAMP WHERE username = ?",
+		apikeyHash, username)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("user (%s) not found for api key set", username)
+	}
+	return nil
+}
+
+// ClearAPIKey revokes the user's API key.
+func (source QpDataUserSql) ClearAPIKey(username string) (err error) {
+	_, err = source.db.Exec(
+		"UPDATE users SET apikey = NULL, apikey_rotated_at = NULL WHERE username = ?",
+		username)
+	return err
+}

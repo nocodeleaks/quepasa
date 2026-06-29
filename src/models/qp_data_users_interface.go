@@ -10,4 +10,11 @@ type QpDataUsersInterface interface {
 	UpdatePassword(username string, password string) error
 	UpdateUI(username string, ui string) error
 	Delete(username string) error
+
+	// FindByAPIKey resolves a user from the SHA-256 hash of their personal API key.
+	FindByAPIKey(apikeyHash string) (*QpUser, error)
+	// SetAPIKey stores (or rotates) the user's API key hash and stamps the rotation time.
+	SetAPIKey(username string, apikeyHash string) error
+	// ClearAPIKey revokes the user's API key.
+	ClearAPIKey(username string) error
 }

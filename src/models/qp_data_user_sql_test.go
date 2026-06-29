@@ -69,6 +69,9 @@ func setupUserSQLTestDB(t *testing.T) *sqlx.DB {
 		CREATE TABLE users (
 			username TEXT PRIMARY KEY,
 			password TEXT NOT NULL,
+			ui TEXT,
+			apikey TEXT,
+			apikey_rotated_at TIMESTAMP,
 			timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
 	`

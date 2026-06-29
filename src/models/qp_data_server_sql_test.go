@@ -24,6 +24,7 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 		verified BOOLEAN,
 		devel BOOLEAN,
 		metadata TEXT,
+		contextid TEXT,
 		groups INTEGER,
 		broadcasts INTEGER,
 		readreceipts INTEGER,
@@ -39,13 +40,14 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 	}
 
 	if _, err := db.Exec(
-		`INSERT INTO servers (token, wid, verified, devel, metadata, groups, broadcasts, readreceipts, deliveryreceipts, calls, readupdate, direct, user)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO servers (token, wid, verified, devel, metadata, contextid, groups, broadcasts, readreceipts, deliveryreceipts, calls, readupdate, direct, user)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		"token-1",
 		"5511999999999@s.whatsapp.net",
 		true,
 		false,
 		nil,
+		"context-1",
 		int(whatsapp.TrueBooleanType),
 		int(whatsapp.FalseBooleanType),
 		int(whatsapp.UnSetBooleanType),
@@ -72,6 +74,9 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 	}
 	if byToken.GetUser() != "tester@example.com" {
 		t.Fatalf("expected user tester@example.com, got %q", byToken.GetUser())
+	}
+	if byToken.GetContextId() != "context-1" {
+		t.Fatalf("expected contextid context-1, got %q", byToken.GetContextId())
 	}
 
 	byUser, err := store.FindForUser("token-1", "tester@example.com")

@@ -48,6 +48,47 @@ func TestCanonicalAuthConfigIsPublicButSessionRemainsProtected(t *testing.T) {
 	}
 }
 
+func TestCanonicalAuthSessionExposesOAuthClaims(t *testing.T) {
+	SetupTestService(t)
+	defer CleanupTestDatabase(t)
+	CreateTestUser(t, "owner@example.com", "Password123!")
+
+	router := newCanonicalTestRouter()
+	claims := jwt.MapClaims{
+		"user_id": "owner@example.com",
+		"oauth_claims": map[string]any{
+			"sub":          "d21cfb04-9d37-473b-837c-67591a26feed",
+			"custom_scope": "scope-value",
+		},
+	}
+	_, tokenString, err := GetAuthenticatedTokenAuth().Encode(claims)
+	if err != nil {
+		t.Fatalf("encode authenticated token: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/session", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected /api/auth/session to return 200, got %d with body %s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		OAuthClaims map[string]any `json:"oauthClaims"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode auth session response: %v", err)
+	}
+	if payload.OAuthClaims["sub"] != "d21cfb04-9d37-473b-837c-67591a26feed" {
+		t.Fatalf("expected oauth sub claim, got %#v", payload.OAuthClaims)
+	}
+	if payload.OAuthClaims["custom_scope"] != "scope-value" {
+		t.Fatalf("expected custom oauth claim, got %#v", payload.OAuthClaims)
+	}
+}
+
 func TestCanonicalUsersLifecycleAndEnvironment(t *testing.T) {
 	SetupTestService(t)
 	defer CleanupTestDatabase(t)

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/jwtauth"
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
 	runtime "github.com/nocodeleaks/quepasa/runtime"
@@ -25,13 +26,51 @@ func AuthenticatedSessionController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondSuccess(w, map[string]interface{}{
+	response := map[string]interface{}{
 		"user": map[string]interface{}{
 			"username": user.Username,
 			"email":    user.Username,
 		},
 		"version": models.QpVersion,
-	})
+	}
+
+	if _, claims, err := jwtauth.FromContext(r.Context()); err == nil {
+		if oauthClaims, ok := claims["oauth_claims"]; ok {
+			response["oauthClaims"] = oauthClaims
+		}
+		response["claims"] = authenticatedSessionClaimsResponse(claims)
+	}
+
+	RespondSuccess(w, response)
+}
+
+func authenticatedSessionClaimsResponse(claims map[string]interface{}) []map[string]string {
+	response := make([]map[string]string, 0, len(claims))
+	for key, value := range claims {
+		if key == "exp" {
+			continue
+		}
+		response = append(response, map[string]string{
+			"type":  key,
+			"value": responseClaimValue(value),
+		})
+	}
+	return response
+}
+
+func responseClaimValue(value interface{}) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case nil:
+		return ""
+	default:
+		data, err := json.Marshal(typed)
+		if err != nil {
+			return fmt.Sprint(typed)
+		}
+		return string(data)
+	}
 }
 
 // AuthenticatedServersController returns the user's servers, including disconnected records

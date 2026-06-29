@@ -28,6 +28,7 @@ func TestBuildFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	}
 	server.SetWId("5511999999999@s.whatsapp.net")
 	server.SetUser("tester@example.com")
+	server.SetContextId("context-123")
 
 	summary := buildFallbackServerSummary(server, serverRuntimeSnapshot{
 		state:         whatsapp.Disconnected,
@@ -50,6 +51,9 @@ func TestBuildFallbackServerSummaryIncludesStableDefaults(t *testing.T) {
 	}
 	if summary["user"] != server.GetUser() {
 		t.Fatalf("expected user %q, got %#v", server.GetUser(), summary["user"])
+	}
+	if summary["contextid"] != server.GetContextId() {
+		t.Fatalf("expected contextid %q, got %#v", server.GetContextId(), summary["contextid"])
 	}
 }
 

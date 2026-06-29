@@ -129,25 +129,35 @@ func (p *GenericOIDCProvider) GetUserInfo(accessToken string) (*OAuthUserInfo, e
 		return nil, fmt.Errorf("userinfo failed: %d %s", resp.StatusCode, string(body))
 	}
 
-	var claims struct {
-		Sub               string `json:"sub"`
-		Email             string `json:"email"`
-		PreferredUsername string `json:"preferred_username"`
-		Name              string `json:"name"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&claims); err != nil {
+	var claims map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	decoder.UseNumber()
+	if err := decoder.Decode(&claims); err != nil {
 		return nil, err
 	}
 
-	if claims.Email == "" {
+	email := oidcStringClaim(claims["email"])
+	if email == "" {
 		return nil, fmt.Errorf("userinfo missing email claim")
 	}
 
 	return &OAuthUserInfo{
-		Email:    claims.Email,
-		Username: claims.PreferredUsername,
-		Name:     claims.Name,
+		Subject:  oidcStringClaim(claims["sub"]),
+		Email:    email,
+		Username: oidcStringClaim(claims["preferred_username"]),
+		Name:     oidcStringClaim(claims["name"]),
+		Claims:   claims,
 	}, nil
+}
+
+func oidcStringClaim(value interface{}) string {
+	switch typed := value.(type) {
+	case string:
+		return strings.TrimSpace(typed)
+	case json.Number:
+		return typed.String()
+	}
+	return ""
 }
 
 func (p *GenericOIDCProvider) getDiscovery() (*oidcDiscovery, error) {

@@ -58,6 +58,7 @@ func createTestSchema(db *sqlx.DB) error {
 			token TEXT PRIMARY KEY,
 			wid TEXT UNIQUE,
 			user TEXT NOT NULL,
+			contextid TEXT,
 			verified BOOLEAN DEFAULT 0,
 			devel BOOLEAN DEFAULT 0,
 			metadata TEXT,

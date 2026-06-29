@@ -13,9 +13,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 	models "github.com/nocodeleaks/quepasa/models"
+	log "github.com/nocodeleaks/quepasa/qplog"
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
-	log "github.com/nocodeleaks/quepasa/qplog"
 )
 
 type authenticatedAPIContextKey string
@@ -273,30 +273,31 @@ func recoverAPIValue[T any](fallback T, operation string, fields log.Fields, fn 
 func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSnapshot) map[string]interface{} {
 	if dbServer == nil {
 		return map[string]interface{}{
-			"token":          "",
-			"wid":            "",
-			"state":          snap.state.String(),
-			"stateCode":      snap.state.EnumIndex(),
-			"verified":       false,
-			"devel":          false,
-			"user":           "",
-			"timestamp":      time.Time{},
-			"startTime":      snap.timestamps.Start,
-			"lastUpdate":     snap.timestamps.Update,
-			"uptimeSeconds":  int64(0),
-			"dispatchCount":  snap.dispatchCount,
-			"webhookCount":   snap.webhookCount,
-			"rabbitmqCount":  snap.rabbitmqCount,
-			"hasDispatching": snap.dispatchCount > 0,
-			"hasWebhooks":    snap.webhookCount > 0,
-			"hasRabbitMQ":    snap.rabbitmqCount > 0,
-			"groups":            false,
-			"broadcasts":        false,
-			"readReceipts":      false,
-			"deliveryReceipts":  false,
-			"calls":             false,
-			"readupdate":        false,
-			"direct":            true,
+			"token":            "",
+			"wid":              "",
+			"state":            snap.state.String(),
+			"stateCode":        snap.state.EnumIndex(),
+			"verified":         false,
+			"devel":            false,
+			"user":             "",
+			"contextid":        "",
+			"timestamp":        time.Time{},
+			"startTime":        snap.timestamps.Start,
+			"lastUpdate":       snap.timestamps.Update,
+			"uptimeSeconds":    int64(0),
+			"dispatchCount":    snap.dispatchCount,
+			"webhookCount":     snap.webhookCount,
+			"rabbitmqCount":    snap.rabbitmqCount,
+			"hasDispatching":   snap.dispatchCount > 0,
+			"hasWebhooks":      snap.webhookCount > 0,
+			"hasRabbitMQ":      snap.rabbitmqCount > 0,
+			"groups":           false,
+			"broadcasts":       false,
+			"readReceipts":     false,
+			"deliveryReceipts": false,
+			"calls":            false,
+			"readupdate":       false,
+			"direct":           true,
 		}
 	}
 
@@ -306,23 +307,24 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 	}
 
 	return map[string]interface{}{
-		"token":          dbServer.Token,
-		"wid":            dbServer.GetWId(),
-		"state":          snap.state.String(),
-		"stateCode":      snap.state.EnumIndex(),
-		"verified":       dbServer.Verified,
-		"devel":          dbServer.Devel,
-		"user":           dbServer.GetUser(),
-		"timestamp":      dbServer.Timestamp,
-		"startTime":      snap.timestamps.Start,
-		"lastUpdate":     snap.timestamps.Update,
-		"uptimeSeconds":  uptimeSeconds,
-		"dispatchCount":  snap.dispatchCount,
-		"webhookCount":   snap.webhookCount,
-		"rabbitmqCount":  snap.rabbitmqCount,
-		"hasDispatching": snap.dispatchCount > 0,
-		"hasWebhooks":    snap.webhookCount > 0,
-		"hasRabbitMQ":    snap.rabbitmqCount > 0,
+		"token":            dbServer.Token,
+		"wid":              dbServer.GetWId(),
+		"state":            snap.state.String(),
+		"stateCode":        snap.state.EnumIndex(),
+		"verified":         dbServer.Verified,
+		"devel":            dbServer.Devel,
+		"user":             dbServer.GetUser(),
+		"contextid":        dbServer.GetContextId(),
+		"timestamp":        dbServer.Timestamp,
+		"startTime":        snap.timestamps.Start,
+		"lastUpdate":       snap.timestamps.Update,
+		"uptimeSeconds":    uptimeSeconds,
+		"dispatchCount":    snap.dispatchCount,
+		"webhookCount":     snap.webhookCount,
+		"rabbitmqCount":    snap.rabbitmqCount,
+		"hasDispatching":   snap.dispatchCount > 0,
+		"hasWebhooks":      snap.webhookCount > 0,
+		"hasRabbitMQ":      snap.rabbitmqCount > 0,
 		"groups":           dbServer.Groups,
 		"broadcasts":       dbServer.Broadcasts,
 		"readReceipts":     dbServer.ReadReceipts,

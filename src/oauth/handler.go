@@ -199,10 +199,18 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, tokenString, err := globalJWTAuth.Encode(jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"user_id": user.Username,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-	})
+	}
+	if userInfo.Subject != "" {
+		claims["oauth_subject"] = userInfo.Subject
+	}
+	if len(userInfo.Claims) > 0 {
+		claims["oauth_claims"] = userInfo.Claims
+	}
+
+	_, tokenString, err := globalJWTAuth.Encode(claims)
 	if err != nil {
 		log.Errorf("oauth: encode JWT: %v", err)
 		http.Error(w, "Failed to issue token", http.StatusInternalServerError)

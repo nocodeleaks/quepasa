@@ -27,9 +27,11 @@ type OAuthProvider interface {
 // OAuthUserInfo carries the minimal user profile QuePasa needs to create/link
 // a local account after successful OAuth authentication.
 type OAuthUserInfo struct {
-	Email    string // primary identifier; becomes local username if not exists
-	Username string // optional; provider's username/handle
-	Name     string // optional; display name
+	Subject  string                 // provider subject/user id
+	Email    string                 // primary identifier; becomes local username if not exists
+	Username string                 // optional; provider's username/handle
+	Name     string                 // optional; display name
+	Claims   map[string]interface{} // opaque provider claims useful for app-specific frontends
 }
 
 // OAuthConfig holds the runtime OAuth settings loaded from environment variables.

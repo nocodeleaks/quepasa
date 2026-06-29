@@ -5,8 +5,8 @@ Sessions created by different users can be shared within the same **context** (t
 
 ## Use Case
 
-In multi-tenant deployments (e.g., Sufficit), a single QuePasa instance serves multiple
-organizations or teams (contexts). Each context is identified by a unique `contextid`.
+In multi-tenant deployments, a single QuePasa instance serves multiple organizations
+or teams (contexts). Each context is identified by a unique `contextid`.
 
 Users in the same context can share WhatsApp sessions. Users in different contexts
 cannot see or interact with each other's sessions.
@@ -86,21 +86,20 @@ Existing sessions have `contextid = NULL` (unscoped, backward-compatible).
 ## Security Notes
 
 - `contextid` is **not** an authorization mechanism by itself. Access control must be
-  enforced by the integration layer (e.g., Sufficit directives).
+  enforced by the integration layer.
 - QuePasa does not validate `contextid` format or existence. The calling application
   is responsible for ensuring `contextid` integrity.
 - Current implementation stores `contextid` but does not enforce isolation at the
-  API layer. Isolation logic should be implemented in the integration (e.g., via
-  Sufficit directives checking both user and contextid).
+  API layer. Isolation logic should be implemented in the integration (checking both
+  user and contextid).
 
-## Example: Sufficit Integration
+## Example: External Integration
 
-Sufficit uses **directives** for per-context permissions. When a user requests a
-session via QuePasa:
+When integrating with an external permission system:
 
-1. Sufficit checks user's directive for the given `contextid`.
-2. If authorized, Sufficit passes `contextid` in the QuePasa API call.
+1. External system checks user's permission for the given `contextid`.
+2. If authorized, external system passes `contextid` in the QuePasa API call.
 3. QuePasa stores the session with `contextid` set.
-4. Later, Sufficit lists sessions filtered by `contextid` (future API enhancement).
+4. Later, external system lists sessions filtered by `contextid` (future API enhancement).
 
 This allows multi-tenant session sharing without mixing contexts.

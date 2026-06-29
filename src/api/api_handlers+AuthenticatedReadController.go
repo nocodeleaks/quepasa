@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
 	models "github.com/nocodeleaks/quepasa/models"
+	"github.com/nocodeleaks/quepasa/oauth"
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"github.com/skip2/go-qrcode"
@@ -40,6 +41,10 @@ func AuthenticatedSessionController(w http.ResponseWriter, r *http.Request) {
 		}
 		if oauthSubject, ok := claims["oauth_subject"].(string); ok && oauthSubject != "" {
 			response["oauthSubject"] = oauthSubject
+		}
+		if cfg := oauth.GetOAuthConfig(); cfg != nil && cfg.ResourceURL != "" {
+			_, hasAccessToken := oauth.AccessTokenForSession(authenticatedOAuthProxySessionToken(r))
+			response["oauthResourceAuthenticated"] = hasAccessToken
 		}
 		response["claims"] = authenticatedSessionClaimsResponse(claims)
 	}

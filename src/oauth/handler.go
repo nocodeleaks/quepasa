@@ -216,6 +216,7 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to issue token", http.StatusInternalServerError)
 		return
 	}
+	StoreAccessTokenForSession(tokenString, accessToken, 24*time.Hour)
 
 	// Set JWT as an HTTP-only cookie (same pattern as form login).
 	http.SetCookie(w, &http.Cookie{

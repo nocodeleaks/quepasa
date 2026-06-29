@@ -43,6 +43,7 @@ type OAuthConfig struct {
 	ClientSecret string   // OAuth client secret
 	RedirectURI  string   // callback URL registered with the provider (e.g. https://quepasa.example.com/oauth/callback)
 	Scopes       []string // requested scopes (e.g. openid, email, profile)
+	ResourceURL  string   // optional resource server base URL for authenticated OAuth proxying
 }
 
 const (
@@ -52,6 +53,7 @@ const (
 	envOAuthClientSecret = "OAUTH_CLIENT_SECRET"
 	envOAuthRedirectURI  = "OAUTH_REDIRECT_URI"
 	envOAuthScopes       = "OAUTH_SCOPES"
+	envOAuthResourceURL  = "OAUTH_RESOURCE_BASE_URL"
 )
 
 var globalOAuthConfig *OAuthConfig
@@ -71,6 +73,7 @@ func LoadOAuthConfig() *OAuthConfig {
 		ClientSecret: strings.TrimSpace(os.Getenv(envOAuthClientSecret)),
 		RedirectURI:  strings.TrimSpace(os.Getenv(envOAuthRedirectURI)),
 		Scopes:       parseScopes(os.Getenv(envOAuthScopes)),
+		ResourceURL:  strings.TrimRight(strings.TrimSpace(os.Getenv(envOAuthResourceURL)), "/"),
 	}
 
 	globalOAuthConfig = cfg

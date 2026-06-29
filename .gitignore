@@ -22,6 +22,9 @@ __debug_bin*
 .env
 **/.env.*
 
+# local front end apps for testing or development
+src/apps/.*
+
 # files for production
 src/.cache
 .cache/
@@ -63,8 +66,6 @@ main.exe
 .dist/win-quepasa-service.exe
 **/.token
 .telegram.token
-apoint-voip-server.json
-src/.env.apoint-voip
 .bash_history
 .landscape
 .motd_shown

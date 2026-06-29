@@ -20,7 +20,7 @@ COPY --from=frontend_builder /frontend/dist ./apps/vuejs/dist
 
 RUN chmod 755 docker-entrypoint.sh
 RUN sed -i 's/\r//' docker-entrypoint.sh
-RUN go build -o service main.go
+RUN go build -o service .
 
 # Run stage
 FROM golang:latest AS src

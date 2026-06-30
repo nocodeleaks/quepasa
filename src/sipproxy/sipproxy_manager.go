@@ -79,6 +79,12 @@ func GetSIPProxyManager(settings SIPProxySettings) *SIPProxyManager {
 
 // SendSIPInvite inicia uma chamada SIP usando a arquitetura modular
 func (m *SIPProxyManager) SendSIPInvite(callID, fromPhone, toPhone string) error {
+	return m.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, nil)
+}
+
+// SendSIPInviteWithHeaders inicia uma chamada SIP anexando headers adicionais
+// ao INVITE. Headers vazios sao ignorados.
+func (m *SIPProxyManager) SendSIPInviteWithHeaders(callID, fromPhone, toPhone string, headers map[string]string) error {
 	m.logger.Infof("🚀 DEBUG: SendSIPInvite recebeu parâmetros:")
 	m.logger.Infof("   📞 CallID recebido: %s", callID)
 	m.logger.Infof("   🔵 From recebido: %s", fromPhone)
@@ -101,7 +107,7 @@ func (m *SIPProxyManager) SendSIPInvite(callID, fromPhone, toPhone string) error
 	m.logger.Infof("   🟢 To que será passado: %s", toPhone)
 
 	// Usar o call manager sipgo para iniciar a chamada
-	return m.callManagerSipgo.InitiateCallSipgo(callID, fromPhone, toPhone)
+	return m.callManagerSipgo.InitiateCallSipgoWithHeaders(callID, fromPhone, toPhone, headers)
 }
 
 // SetLocalRTPPort registers the local UDP RTP port to advertise in the SDP
@@ -373,10 +379,10 @@ func (m *SIPProxyManager) BridgeInboundWhatsAppCall(
 
 	// Store call data for tracking.
 	callData := &SIPProxyCallData{
-		CallID:    callID,
-		From:      fromPhone,
-		To:        toPhone,
-		Status:    "initiated",
+		CallID: callID,
+		From:   fromPhone,
+		To:     toPhone,
+		Status: "initiated",
 	}
 
 	m.mutex.Lock()

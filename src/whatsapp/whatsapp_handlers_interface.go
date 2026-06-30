@@ -25,3 +25,10 @@ type IWhatsappHandlers interface {
 
 	IsInterfaceNil() bool
 }
+
+// IWhatsappSessionHandler is implemented by handlers bound to a persisted
+// WhatsApp section/session. It is intentionally optional so transient QR
+// connections and external handlers do not need to carry section state.
+type IWhatsappSessionHandler interface {
+	GetSessionToken() string
+}

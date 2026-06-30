@@ -78,6 +78,10 @@ type VoipManager struct {
 
 	// activeCalls maps call-id → *bridgeContext for tear-down.
 	activeCalls sync.Map // map[string]*bridgeContext
+
+	// sectionID is an opaque QuePasa section/session identifier propagated to
+	// SIP gateways so they can route calls by WhatsApp section.
+	sectionID string
 }
 
 // bridgeContext holds per-call resources for cleanup on hangup.
@@ -236,7 +240,7 @@ func (m *VoipManager) handleAdditional(call *calls.Call, callID, fromPhone, toPh
 
 	// Send the SIP INVITE so the SIP endpoint rings in parallel. We do NOT
 	// answer the WhatsApp call: no native media bridge is established here.
-	if err := m.proxy.SendSIPInvite(callID, fromPhone, toPhone); err != nil {
+	if err := m.proxy.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, m.sipHeaders()); err != nil {
 		m.log.ErrorE().Err(err).
 			Str("call_id", callID).
 			Msg("VoipManager[additional]: SendSIPInvite failed; call still rings on native devices")
@@ -335,6 +339,22 @@ func (m *VoipManager) guardSIPAcceptance(call *calls.Call, callID string) {
 	}()
 }
 
+func (m *VoipManager) sipHeaders() map[string]string {
+	if m == nil {
+		return nil
+	}
+
+	sectionID := strings.TrimSpace(m.sectionID)
+	if sectionID == "" {
+		return nil
+	}
+
+	return map[string]string{
+		"X-QuePasa-SectionId": sectionID,
+		"X-QuePasa-Token":     sectionID,
+	}
+}
+
 // wireSIPBridge creates the RTP stream, sends SIP INVITE, and wires audio.
 // This is called from the call's OnReady callback once media is flowing.
 func (m *VoipManager) wireSIPBridge(call *calls.Call, callID, fromPhone, toPhone string) error {
@@ -367,7 +387,7 @@ func (m *VoipManager) wireSIPBridge(call *calls.Call, callID, fromPhone, toPhone
 	m.proxy.SetLocalRTPPort(callID, stream.WhatsAppPort)
 
 	// --- 3. Send SIP INVITE to the SIP server ---
-	if err := m.proxy.SendSIPInvite(callID, fromPhone, toPhone); err != nil {
+	if err := m.proxy.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, m.sipHeaders()); err != nil {
 		return fmt.Errorf("wireSIPBridge: SendSIPInvite: %w", err)
 	}
 
@@ -549,7 +569,7 @@ func adaptSIPProxySettings(env environment.SIPProxySettings) sipproxy.SIPProxySe
 //
 // The returned *VoipManager must be kept alive by the caller (store it on the
 // connection) so its OnIncomingCall closure is not garbage-collected.
-func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode) (*VoipManager, error) {
+func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sectionID string) (*VoipManager, error) {
 	// Backward-compatibility: if no per-instance mode is set but the legacy
 	// global switch is on, behave like exclusive mode.
 	if !mode.IsActive() {
@@ -571,6 +591,7 @@ func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode) (*Voip
 
 	mgr := NewVoipManagerWithLogger(client, meowLogger)
 	mgr.mode = mode
+	mgr.sectionID = strings.TrimSpace(sectionID)
 	mgr.sipAcceptTimeout = 15 * time.Second
 
 	// Try to connect to the sipproxy manager singleton.

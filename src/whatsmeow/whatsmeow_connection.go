@@ -15,8 +15,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	library "github.com/nocodeleaks/quepasa/library"
-	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	voip "github.com/nocodeleaks/quepasa/voip"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	whatsmeow "go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
@@ -276,6 +276,7 @@ func isASCII(s string) bool {
 //     (HMAC-SHA256(NCTSalt, recipientLID)) for new chats — no prior relationship required, but it
 //     needs a server-provisioned NCTSalt and a resolvable recipient LID;
 //   - issues a trusted_contact token TO the recipient after send (privacy IQ) on bucket boundaries.
+//
 // The NCTSalt is pushed by the server via history sync / app-state (nct_salt_sync) and stored in
 // whatsmeow_nct_salt; a freshly paired session has none until history sync completes.
 //
@@ -291,10 +292,10 @@ func isASCII(s string) bool {
 //     client-side fix; the reliable workaround is to have the contact message us first.
 //
 // TODO: The pre-warm + signal-reset retry below is now ineffective (see findings) and hasPrivacyToken
-//       only checks the stored tctoken — it is blind to the on-the-fly cstoken. Consider dropping the
-//       pre-warm/signal-reset stage and revisiting the cold-contact short-circuit.
-//       References: docs/ISSUE-error-463-reachout-timelock.md
 //
+//	only checks the stored tctoken — it is blind to the on-the-fly cstoken. Consider dropping the
+//	pre-warm/signal-reset stage and revisiting the cold-contact short-circuit.
+//	References: docs/ISSUE-error-463-reachout-timelock.md
 func isSendError463(err error) bool {
 	if err == nil {
 		return false
@@ -1116,6 +1117,19 @@ func (conn *WhatsmeowConnection) UpdateHandler(handlers whatsapp.IWhatsappHandle
 	}
 }
 
+func (conn *WhatsmeowConnection) GetSessionToken() string {
+	if conn == nil || conn.Handlers == nil || conn.Handlers.WAHandlers == nil || conn.Handlers.WAHandlers.IsInterfaceNil() {
+		return ""
+	}
+
+	sessionHandler, ok := conn.Handlers.WAHandlers.(whatsapp.IWhatsappSessionHandler)
+	if !ok {
+		return ""
+	}
+
+	return strings.TrimSpace(sessionHandler.GetSessionToken())
+}
+
 func (conn *WhatsmeowConnection) UpdatePairedCallBack(callback func(string)) {
 	conn.paired = callback
 }
@@ -1454,7 +1468,13 @@ func (conn *WhatsmeowConnection) SendChatPresence(chatId string, presenceType ui
 
 // initializeHandlers creates and configures handlers with proper options
 func (conn *WhatsmeowConnection) initializeHandlers(waOptions *whatsapp.WhatsappOptions, wmOptions WhatsmeowOptions) error {
-	conn.Handlers = NewWhatsmeowHandlers(conn, wmOptions, waOptions)
+	if conn.Handlers == nil {
+		conn.Handlers = NewWhatsmeowHandlers(conn, wmOptions, waOptions)
+	} else {
+		conn.Handlers.WhatsmeowConnection = conn
+		conn.Handlers.WhatsmeowOptions = wmOptions
+		conn.Handlers.WhatsappOptions = waOptions
+	}
 
 	// Per-instance VoIP Manager: the mode comes from the instance options
 	// (disabled/exclusive/additional). When disabled, the legacy global
@@ -1463,7 +1483,7 @@ func (conn *WhatsmeowConnection) initializeHandlers(waOptions *whatsapp.Whatsapp
 	if waOptions != nil {
 		voipMode = waOptions.VoIPMode
 	}
-	if mgr, err := voip.MaybeEnableManager(conn.Client, voipMode); err != nil {
+	if mgr, err := voip.MaybeEnableManager(conn.Client, voipMode, conn.GetSessionToken()); err != nil {
 		conn.GetLogger().Errorf("failed to enable VoIP Manager: %s", err.Error())
 	} else if mgr != nil {
 		conn.voipManager = mgr

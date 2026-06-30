@@ -26,6 +26,15 @@ func (handler *DispatchingHandler) Server() *QpWhatsappServer {
 	return handler.server
 }
 
+// GetSessionToken returns the QuePasa section/session token bound to this
+// handler. Transport layers can use it as a stable opaque section identifier.
+func (handler *DispatchingHandler) GetSessionToken() string {
+	if handler == nil || handler.server == nil {
+		return ""
+	}
+	return handler.server.Token
+}
+
 // AppendMsgToCache adds a message to the cache and triggers async handlers.
 func (handler *DispatchingHandler) AppendMsgToCache(msg *whatsapp.WhatsappMessage, from string) {
 	handler.appendMsgToCache(msg, from)

@@ -167,18 +167,18 @@ func (source *WhatsmeowServiceModel) CreateConnection(options *whatsapp.Whatsapp
 	// Initialize wake-up scheduler
 	conn.WakeUpScheduler = NewWakeUpScheduler(conn)
 
-	// Initialize handlers with proper options after connection is created
-	err = conn.initializeHandlers(options.WhatsappOptions, source.Options)
-	if err != nil {
-		return
-	}
-
-	// If an external handler was provided, configure it immediately
+	conn.Handlers = NewWhatsmeowHandlers(conn, source.Options, options.WhatsappOptions)
 	if options.ExternalHandler != nil {
 		logentry.Info("configuring external handler on connection creation")
 		conn.UpdateHandler(options.ExternalHandler)
 	} else {
 		logentry.Info("no external handler provided - events will only be logged internally")
+	}
+
+	// Initialize handlers with proper options after connection is created
+	err = conn.initializeHandlers(options.WhatsappOptions, source.Options)
+	if err != nil {
+		return
 	}
 
 	client.PrePairCallback = conn.PairedCallBack

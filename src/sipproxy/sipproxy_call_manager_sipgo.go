@@ -56,9 +56,9 @@ type SIPCallManagerSipgo struct {
 	callAcceptedHandlers map[string][]SIPCallAcceptedCallback
 	callRejectedHandlers map[string][]SIPCallRejectedCallback
 	// Global fallback handlers (for backward compatibility)
-	onCallRejected  SIPCallRejectedCallback // Callback for call rejection
-	onCallAccepted  SIPCallAcceptedCallback // Callback for call acceptance
-	handlerMutex    sync.RWMutex           // Protect handler maps
+	onCallRejected SIPCallRejectedCallback // Callback for call rejection
+	onCallAccepted SIPCallAcceptedCallback // Callback for call acceptance
+	handlerMutex   sync.RWMutex            // Protect handler maps
 	// localRTPPorts maps callID → the local UDP port the audio bridge listens
 	// on for this call's SIP RTP. CreateSDPOffer advertises this exact port so
 	// the SIP server sends its RTP to the socket the bridge actually reads.
@@ -205,6 +205,12 @@ func NewSIPCallManagerSipgo(logger qplog.Logger, config SIPProxySettings, networ
 
 // InitiateCallSipgo starts a new SIP call using sipgo
 func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone string) error {
+	return scm.InitiateCallSipgoWithHeaders(callID, fromPhone, toPhone, nil)
+}
+
+// InitiateCallSipgoWithHeaders starts a new SIP call using sipgo and attaches
+// additional SIP headers to the outbound INVITE.
+func (scm *SIPCallManagerSipgo) InitiateCallSipgoWithHeaders(callID, fromPhone, toPhone string, extraHeaders map[string]string) error {
 	scm.logger.Infof("🚀 Initiating SIP call using sipgo: %s → %s (CallID: %s)", fromPhone, toPhone, callID)
 
 	// =========================================================================
@@ -274,6 +280,18 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgo(callID, fromPhone, toPhone str
 	localIP := scm.networkManager.GetLocalIP()
 	localPort := scm.networkManager.GetLocalPort()
 	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: fromPhone, Host: localIP, Port: localPort}})
+
+	for name, value := range extraHeaders {
+		name = strings.TrimSpace(name)
+		value = strings.TrimSpace(value)
+		if name == "" || value == "" {
+			continue
+		}
+		header := sip.NewHeader(name, value)
+		if header != nil {
+			headers = append(headers, header)
+		}
+	}
 
 	// Content-Type MUST be application/sdp so the SIP server treats the body as
 	// the SDP offer. Without it, asterisk ignores the offer, puts its own offer

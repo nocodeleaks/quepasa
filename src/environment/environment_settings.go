@@ -29,6 +29,7 @@ type EnvironmentSettings struct {
 	RabbitMQ  RabbitMQSettings
 	MCP       MCPSettings
 	Branding  BrandingSettings
+	OAuth     OAuthSettings
 }
 
 // Settings is the global singleton instance for accessing all environment configurations.
@@ -82,6 +83,7 @@ func init() {
 		RabbitMQ:  NewRabbitMQSettings(),
 		MCP:       NewMCPSettings(),
 		Branding:  NewBrandingSettings(),
+		OAuth:     NewOAuthSettings(),
 	}
 
 	logentry.Println("Environment Manager ready - All configurations loaded!")
@@ -103,6 +105,22 @@ func getEnvOrDefaultString(key, defaultValue string) string {
 	return defaultValue
 }
 
+// LookupString fetches an environment variable through the centralized
+// environment module and returns a trimmed value plus whether it was set.
+func LookupString(key string) (string, bool) {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return "", false
+	}
+	return strings.TrimSpace(value), true
+}
+
+// GetString fetches an environment variable through the centralized
+// environment module, returning defaultValue when it is unset or blank.
+func GetString(key, defaultValue string) string {
+	return getEnvOrDefaultString(key, defaultValue)
+}
+
 // getEnvOrDefaultBool fetches a boolean environment variable, returning a default value.
 // It logs a warning if the environment variable exists but cannot be parsed as a boolean.
 func getEnvOrDefaultBool(key string, defaultValue bool) bool {
@@ -114,6 +132,12 @@ func getEnvOrDefaultBool(key string, defaultValue bool) bool {
 		qplog.Warnf("Invalid boolean value for environment variable %s: '%s'. Using default: %t", key, valueStr, defaultValue)
 	}
 	return defaultValue
+}
+
+// GetBool fetches a boolean environment variable through the centralized
+// environment module, returning defaultValue when unset or invalid.
+func GetBool(key string, defaultValue bool) bool {
+	return getEnvOrDefaultBool(key, defaultValue)
 }
 
 // Helper function to get optional uint32 from environment (redeclared locally to avoid conflicts)
@@ -142,6 +166,12 @@ func getEnvOrDefaultUint64(key string, defaultValue uint64) uint64 {
 		qplog.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
 	}
 	return defaultValue
+}
+
+// GetUint64 fetches an unsigned 64-bit integer environment variable through
+// the centralized environment module, returning defaultValue when unset or invalid.
+func GetUint64(key string, defaultValue uint64) uint64 {
+	return getEnvOrDefaultUint64(key, defaultValue)
 }
 
 // getEnvOrDefaultUint32 fetches an unsigned 32-bit integer environment variable, returning a default value.

@@ -2,11 +2,11 @@ package api
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	events "github.com/nocodeleaks/quepasa/events"
 	library "github.com/nocodeleaks/quepasa/library"
 	models "github.com/nocodeleaks/quepasa/models"
@@ -16,7 +16,7 @@ import (
 // authenticatedTokenAuth reuses the same signing secret as the form login flow so a browser
 // session authenticated through the existing UI can call authenticated API endpoints without a
 // second token system.
-var authenticatedTokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
+var authenticatedTokenAuth = jwtauth.New("HS256", []byte(environment.Settings.API.SigningSecret), nil)
 
 // GetAuthenticatedTokenAuth returns the JWT authentication token used by authenticated API routes.
 func GetAuthenticatedTokenAuth() *jwtauth.JWTAuth {

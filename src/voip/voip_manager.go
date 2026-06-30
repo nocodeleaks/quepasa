@@ -28,16 +28,15 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/emiago/sipgo/sip"
-	qplog "github.com/nocodeleaks/quepasa/qplog"
-	calls "github.com/nocodeleaks/quepasa/voip/calls"
 	environment "github.com/nocodeleaks/quepasa/environment"
+	qplog "github.com/nocodeleaks/quepasa/qplog"
 	sipproxy "github.com/nocodeleaks/quepasa/sipproxy"
+	calls "github.com/nocodeleaks/quepasa/voip/calls"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"go.mau.fi/whatsmeow"
 	types "go.mau.fi/whatsmeow/types"
@@ -84,8 +83,8 @@ type VoipManager struct {
 // bridgeContext holds per-call resources for cleanup on hangup.
 type bridgeContext struct {
 	callID     string
-	sinkConn   *net.UDPConn  // SIP-bound UDP socket
-	sourceConn *net.UDPConn  // WhatsApp-side UDP socket
+	sinkConn   *net.UDPConn      // SIP-bound UDP socket
+	sourceConn *net.UDPConn      // WhatsApp-side UDP socket
 	source     *VoipBridgeSource // jitter-buffer reader (Close logs diagnostics)
 	sink       *VoipBridgeSink   // paced sender (Close stops its goroutine)
 }
@@ -524,11 +523,11 @@ func adaptSIPProxySettings(env environment.SIPProxySettings) sipproxy.SIPProxySe
 	_ = localIP             // intentionally unused for now; network manager resolves
 
 	return sipproxy.SIPProxySettings{
-		ServerHost:   env.Host,
-		ServerPort:   int(env.Port),
-		ListenerPort: int(env.LocalPort),
-		Protocol:     env.Protocol,
-		UserAgent:    env.UserAgent,
+		ServerHost:     env.Host,
+		ServerPort:     int(env.Port),
+		ListenerPort:   int(env.LocalPort),
+		Protocol:       env.Protocol,
+		UserAgent:      env.UserAgent,
 		SDPSessionName: env.SDPSessionName,
 		SIPProxyNetworkManagerSettings: sipproxy.SIPProxyNetworkManagerSettings{
 			StunServer: env.STUNServer,
@@ -554,7 +553,7 @@ func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode) (*Voip
 	// Backward-compatibility: if no per-instance mode is set but the legacy
 	// global switch is on, behave like exclusive mode.
 	if !mode.IsActive() {
-		if isVoIPEnabled(os.Getenv(EnvVoIPEnabled)) {
+		if environment.NewSIPProxySettings().LegacyVoIP {
 			mode = whatsapp.VoIPModeExclusive
 		} else {
 			return nil, nil

@@ -2,10 +2,10 @@ package cable
 
 import (
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/go-chi/jwtauth"
+	environment "github.com/nocodeleaks/quepasa/environment"
 	models "github.com/nocodeleaks/quepasa/models"
 	runtime "github.com/nocodeleaks/quepasa/runtime"
 )
@@ -13,7 +13,7 @@ import (
 // cableTokenAuth intentionally reuses the same signing secret and token lookup
 // behavior already used by the form and SPA HTTP layers. That keeps websocket
 // authentication aligned with the browser session cookie named "jwt".
-var cableTokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
+var cableTokenAuth = jwtauth.New("HS256", []byte(environment.Settings.API.SigningSecret), nil)
 
 // CableVerifier exposes the JWT verifier middleware so the route wiring stays
 // small and the auth policy remains centralized in this package.

@@ -20,6 +20,7 @@ const (
 	ENV_SIPPROXY_TIMEOUT        = "SIPPROXY_TIMEOUT"        // SIP transaction timeout
 	ENV_SIPPROXY_RETRIES        = "SIPPROXY_RETRIES"        // SIP INVITE retry attempts
 	ENV_SIPPROXY_SDPSESSIONNAME = "SIPPROXY_SDPSESSIONNAME" // SDP session name
+	ENV_VOIP_ENABLED            = "VOIP_ENABLED"            // legacy global VoIP manager switch
 )
 
 // SIPProxySettings holds all SIP proxy configuration loaded from environment
@@ -39,6 +40,7 @@ type SIPProxySettings struct {
 	Timeout        uint32 `json:"timeout"`
 	Retries        uint32 `json:"retries"`
 	SDPSessionName string `json:"sdp_session_name"` // Optional SDP session name for media
+	LegacyVoIP     bool   `json:"legacy_voip"`      // Backward-compatible VOIP_ENABLED switch
 }
 
 // NewSIPProxySettings creates a new SIP proxy settings by loading all values from environment
@@ -62,5 +64,6 @@ func NewSIPProxySettings() SIPProxySettings {
 		Timeout:        getEnvOrDefaultUint32(ENV_SIPPROXY_TIMEOUT, 30),
 		Retries:        getEnvOrDefaultUint32(ENV_SIPPROXY_RETRIES, 3),
 		SDPSessionName: getEnvOrDefaultString(ENV_SIPPROXY_SDPSESSIONNAME, "QuePasa SDP"),
+		LegacyVoIP:     getEnvOrDefaultBool(ENV_VOIP_ENABLED, false),
 	}
 }

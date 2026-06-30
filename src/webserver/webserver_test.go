@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
 func TestResolveFrontendAppRequestKeepsConsoleWhenVueJSAlsoExists(t *testing.T) {
@@ -111,18 +113,17 @@ func TestDiscoverFrontendAppsUsesClientIndexDuringDevProxy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	originalDevFrontend := os.Getenv("QUEPASA_DEV_FRONTEND")
 	t.Cleanup(func() {
 		_ = os.Chdir(originalWD)
-		_ = os.Setenv("QUEPASA_DEV_FRONTEND", originalDevFrontend)
 	})
 
 	mustMkdirAll(t, filepath.Join(tempDir, "apps", "vuejs", "client"))
 	mustWriteFile(t, filepath.Join(tempDir, "apps", "vuejs", "package.json"), "{}")
 	mustWriteFile(t, filepath.Join(tempDir, "apps", "vuejs", "client", "index.html"), "<html>source</html>")
-	if err := os.Setenv("QUEPASA_DEV_FRONTEND", "1"); err != nil {
-		t.Fatalf("setenv: %v", err)
-	}
+	t.Setenv("QUEPASA_DEV_FRONTEND", "1")
+	previousDevFrontend := environment.Settings.WebServer.DevFrontend
+	environment.Settings.WebServer.DevFrontend = true
+	t.Cleanup(func() { environment.Settings.WebServer.DevFrontend = previousDevFrontend })
 
 	if err := os.Chdir(tempDir); err != nil {
 		t.Fatalf("chdir: %v", err)

@@ -290,18 +290,17 @@ func serveIndexWithConfig(w http.ResponseWriter, req *http.Request, indexFile st
 
 // useFrontendDevProxy enables the Vite reverse proxy explicitly for local SPA work.
 func useFrontendDevProxy() bool {
-	value := strings.ToLower(strings.TrimSpace(os.Getenv("QUEPASA_DEV_FRONTEND")))
-	return value == "1" || value == "true"
+	return environment.Settings.WebServer.DevFrontend
 }
 
 // frontendDevTarget resolves the Vite dev-server origin used by the reverse proxy.
 func frontendDevTarget() string {
-	host := strings.TrimSpace(os.Getenv("QUEPASA_FRONTEND_HOST"))
+	host := strings.TrimSpace(environment.Settings.WebServer.FrontendHost)
 	if host == "" {
 		host = "http://127.0.0.1"
 	}
 
-	port := strings.TrimSpace(os.Getenv("QUEPASA_FRONTEND_DEV_PORT"))
+	port := strings.TrimSpace(environment.Settings.WebServer.FrontendDevPort)
 	if port == "" {
 		port = "5173"
 	}

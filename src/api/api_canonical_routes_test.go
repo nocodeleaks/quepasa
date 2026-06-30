@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -558,16 +557,11 @@ func setRelaxedSessionsForTest(t *testing.T, value bool) func() {
 func setCanonicalAccountSetupEnv(t *testing.T, value string) func() {
 	t.Helper()
 
-	oldValue, hadValue := os.LookupEnv(models.ENV_ACCOUNTSETUP)
-	if err := os.Setenv(models.ENV_ACCOUNTSETUP, value); err != nil {
-		t.Fatalf("set %s: %v", models.ENV_ACCOUNTSETUP, err)
-	}
+	oldValue := environment.Settings.General.AccountSetup
+	environment.Settings.General.AccountSetup = value != "false"
+	t.Setenv(models.ENV_ACCOUNTSETUP, value)
 
 	return func() {
-		if !hadValue {
-			_ = os.Unsetenv(models.ENV_ACCOUNTSETUP)
-			return
-		}
-		_ = os.Setenv(models.ENV_ACCOUNTSETUP, oldValue)
+		environment.Settings.General.AccountSetup = oldValue
 	}
 }

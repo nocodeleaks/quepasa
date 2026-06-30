@@ -1,14 +1,12 @@
 package form
 
 import (
-	"os"
-
 	"github.com/go-chi/jwtauth"
-	models "github.com/nocodeleaks/quepasa/models"
+	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
 // Token of authentication / encryption
-var TokenAuth = jwtauth.New("HS256", []byte(os.Getenv(models.ENV_SIGNING_SECRET)), nil)
+var TokenAuth = jwtauth.New("HS256", []byte(environment.Settings.API.SigningSecret), nil)
 
 // GetTokenAuth returns the JWT authentication token
 // This is used in the form authenticated controllers

@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	environment "github.com/nocodeleaks/quepasa/environment"
@@ -46,34 +45,24 @@ type OAuthConfig struct {
 	ResourceURL  string   // optional resource server base URL for authenticated OAuth proxying
 }
 
-const (
-	envOAuthEnabled      = "OAUTH_ENABLED"
-	envOAuthProviderURL  = "OAUTH_PROVIDER_URL"
-	envOAuthClientID     = "OAUTH_CLIENT_ID"
-	envOAuthClientSecret = "OAUTH_CLIENT_SECRET"
-	envOAuthRedirectURI  = "OAUTH_REDIRECT_URI"
-	envOAuthScopes       = "OAUTH_SCOPES"
-	envOAuthResourceURL  = "OAUTH_RESOURCE_BASE_URL"
-)
-
 var globalOAuthConfig *OAuthConfig
 
 // LoadOAuthConfig reads OAuth settings from the environment. Call once at startup.
 func LoadOAuthConfig() *OAuthConfig {
-	enabled := strings.ToLower(strings.TrimSpace(os.Getenv(envOAuthEnabled))) == "true"
-	if !enabled {
+	settings := environment.NewOAuthSettings()
+	if !settings.Enabled {
 		globalOAuthConfig = &OAuthConfig{Enabled: false}
 		return globalOAuthConfig
 	}
 
 	cfg := &OAuthConfig{
 		Enabled:      true,
-		ProviderURL:  strings.TrimSpace(os.Getenv(envOAuthProviderURL)),
-		ClientID:     strings.TrimSpace(os.Getenv(envOAuthClientID)),
-		ClientSecret: strings.TrimSpace(os.Getenv(envOAuthClientSecret)),
-		RedirectURI:  strings.TrimSpace(os.Getenv(envOAuthRedirectURI)),
-		Scopes:       parseScopes(os.Getenv(envOAuthScopes)),
-		ResourceURL:  strings.TrimRight(strings.TrimSpace(os.Getenv(envOAuthResourceURL)), "/"),
+		ProviderURL:  settings.ProviderURL,
+		ClientID:     settings.ClientID,
+		ClientSecret: settings.ClientSecret,
+		RedirectURI:  settings.RedirectURI,
+		Scopes:       settings.Scopes,
+		ResourceURL:  settings.ResourceURL,
 	}
 
 	globalOAuthConfig = cfg
@@ -94,25 +83,10 @@ func IsEnabled() bool {
 	return cfg != nil && cfg.Enabled && cfg.ProviderURL != "" && cfg.ClientID != ""
 }
 
-func parseScopes(raw string) []string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return []string{"openid", "email", "profile"} // OIDC defaults
-	}
-	parts := strings.Split(raw, ",")
-	scopes := make([]string, 0, len(parts))
-	for _, s := range parts {
-		if s = strings.TrimSpace(s); s != "" {
-			scopes = append(scopes, s)
-		}
-	}
-	return scopes
-}
-
 // GetBaseURL returns the QuePasa base URL for building callback URIs. Falls back
 // to environment QUEPASA_BASE_URL or builds from API host/port.
 func GetBaseURL() string {
-	if base := strings.TrimSpace(os.Getenv("QUEPASA_BASE_URL")); base != "" {
+	if base := strings.TrimSpace(environment.Settings.WebServer.BaseURL); base != "" {
 		return strings.TrimRight(base, "/")
 	}
 	// Fallback: reconstruct from webserver settings.

@@ -1,9 +1,10 @@
 package sipproxy
 
 import (
-	"os"
 	"strconv"
 	"strings"
+
+	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
 // RTP Media Port Configuration.
@@ -23,12 +24,8 @@ var (
 	RTP_MEDIA_PORT_RANGE = RTP_MEDIA_PORT_MAX - RTP_MEDIA_PORT_MIN
 )
 
-// envRTPMediaPorts is the environment variable defining the RTP port range as
-// "start-end" (start of range and maximum).
-const envRTPMediaPorts = "SIPPROXY_MEDIAPORTS"
-
 func init() {
-	loadRTPMediaPortRange(os.Getenv(envRTPMediaPorts))
+	loadRTPMediaPortRange(environment.Settings.SIPProxy.MediaPorts)
 }
 
 // loadRTPMediaPortRange parses a "start-end" spec and applies it to the RTP port

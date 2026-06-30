@@ -1,7 +1,6 @@
 package models
 
 import (
-	"os"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -85,16 +84,7 @@ func setupUserSQLTestDB(t *testing.T) *sqlx.DB {
 func setUserSQLTestEnv(t *testing.T, key string, value string) func() {
 	t.Helper()
 
-	oldValue, hadValue := os.LookupEnv(key)
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatalf("set %s: %v", key, err)
-	}
+	t.Setenv(key, value)
 
-	return func() {
-		if !hadValue {
-			_ = os.Unsetenv(key)
-			return
-		}
-		_ = os.Setenv(key, oldValue)
-	}
+	return func() {}
 }

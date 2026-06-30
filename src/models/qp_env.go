@@ -3,13 +3,13 @@ package models
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings" // Certifique-se de que "strings" está importado
 
+	environment "github.com/nocodeleaks/quepasa/environment"
 	library "github.com/nocodeleaks/quepasa/library"
-	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"github.com/nocodeleaks/quepasa/qplog"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 )
 
 // Environment variable names
@@ -17,8 +17,8 @@ const (
 	ENV_WEBAPIPORT = "WEBAPIPORT"
 	ENV_WEBAPIHOST = "WEBAPIHOST"
 
-	ENV_DBDRIVER   = "DBDRIVER" // SQL driver for the Whatsmeow store (sqlite3, postgres, mysql). Default: sqlite3.
-	ENV_DBHOST     = "DBHOST"   // Hostname for postgres/mysql. Ignored when DBDRIVER=sqlite3.
+	ENV_DBDRIVER   = "DBDRIVER"   // SQL driver for the Whatsmeow store (sqlite3, postgres, mysql). Default: sqlite3.
+	ENV_DBHOST     = "DBHOST"     // Hostname for postgres/mysql. Ignored when DBDRIVER=sqlite3.
 	ENV_DBDATABASE = "DBDATABASE" // Database name for postgres/mysql, or sqlite base file path/name for the Whatsmeow store.
 	ENV_DBPORT     = "DBPORT"     // TCP port for postgres/mysql. Ignored when DBDRIVER=sqlite3.
 	ENV_DBUSER     = "DBUSER"     // Username for postgres/mysql. Ignored when DBDRIVER=sqlite3.
@@ -76,36 +76,19 @@ var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
 
 // getEnvOrDefaultString fetches an environment variable, returning a default value if not set.
 func getEnvOrDefaultString(key, defaultValue string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return strings.TrimSpace(value) // Aplicado TrimSpace
-	}
-	return defaultValue
+	return environment.GetString(key, defaultValue)
 }
 
 // getEnvOrDefaultBool fetches a boolean environment variable, returning a default value.
 // It logs a warning if the environment variable exists but cannot be parsed as a boolean.
 func getEnvOrDefaultBool(key string, defaultValue bool) bool {
-	if valueStr, ok := os.LookupEnv(key); ok {
-		trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
-		if parsedValue, err := strconv.ParseBool(trimmedValueStr); err == nil {
-			return parsedValue
-		}
-		qplog.Warnf("Invalid boolean value for environment variable %s: '%s'. Using default: %t", key, valueStr, defaultValue)
-	}
-	return defaultValue
+	return environment.GetBool(key, defaultValue)
 }
 
 // getEnvOrDefaultUint64 fetches an unsigned 64-bit integer environment variable, returning a default value.
 // It logs a warning if the environment variable exists but cannot be parsed as a uint64.
 func getEnvOrDefaultUint64(key string, defaultValue uint64) uint64 {
-	if valueStr, ok := os.LookupEnv(key); ok {
-		trimmedValueStr := strings.TrimSpace(valueStr) // Aplicado TrimSpace
-		if parsedValue, err := strconv.ParseUint(trimmedValueStr, 10, 64); err == nil {
-			return parsedValue
-		}
-		qplog.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Using default: %d", key, valueStr, defaultValue)
-	}
-	return defaultValue
+	return environment.GetUint64(key, defaultValue)
 }
 
 // --- DATABASE CONFIGURATION ---
@@ -162,8 +145,7 @@ func (*Environment) Migrate() bool {
 // Returns an empty string if migrations are enabled via boolean flag or no custom path is set.
 func (*Environment) MigrationPath() string {
 	// Pega o valor bruto da variável de ambiente primeiro para aplicar TrimSpace.
-	rawValue := os.Getenv(ENV_MIGRATIONS)
-	trimmedValue := strings.TrimSpace(rawValue) // Aplicado TrimSpace
+	trimmedValue := environment.GetString(ENV_MIGRATIONS, "") // Aplicado TrimSpace
 
 	// Se o valor trimado for vazio, ou se puder ser parseado como um booleano, retorna string vazia.
 	// Isso mantém a lógica de que um valor booleano significa "sem caminho personalizado".
@@ -188,7 +170,7 @@ func (*Environment) AppTitle() string {
 // Reads NORMALIZE_BR_PHONE first; falls back to the legacy REMOVEDIGIT9 variable for
 // backward compatibility.
 func (*Environment) ShouldNormalizeBRPhone() bool {
-	if v, ok := os.LookupEnv(ENV_NORMALIZE_BR_PHONE); ok {
+	if v, ok := environment.LookupString(ENV_NORMALIZE_BR_PHONE); ok {
 		b, err := strconv.ParseBool(v)
 		if err == nil {
 			return b
@@ -267,28 +249,28 @@ func ParseWhatsappBoolean(value string) whatsapp.WhatsappBooleanExtended {
 
 // Broadcasts returns the WhatsappBooleanExtended setting for broadcasts.
 func (*Environment) Broadcasts() whatsapp.WhatsappBooleanExtended {
-	v := os.Getenv(ENV_BROADCASTS)
+	v := environment.GetString(ENV_BROADCASTS, "")
 	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
 // Groups returns the WhatsappBooleanExtended setting for groups.
 func (*Environment) Groups() whatsapp.WhatsappBooleanExtended {
-	v := os.Getenv(ENV_GROUPS)
+	v := environment.GetString(ENV_GROUPS, "")
 	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
 // ReadReceipts returns the WhatsappBooleanExtended setting for read receipts.
 func (*Environment) ReadReceipts() whatsapp.WhatsappBooleanExtended {
-	v := os.Getenv(ENV_READRECEIPTS)
+	v := environment.GetString(ENV_READRECEIPTS, "")
 	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
 
 // Calls returns the WhatsappBooleanExtended setting for calls.
 func (*Environment) Calls() whatsapp.WhatsappBooleanExtended {
-	v := os.Getenv(ENV_CALLS)
+	v := environment.GetString(ENV_CALLS, "")
 	// Chama ParseWhatsappBoolean que já trima a string
 	return ParseWhatsappBoolean(v)
 }
@@ -303,8 +285,7 @@ func (*Environment) ReadUpdate() bool {
 // A nil return indicates that the system should use its internal default logic
 // for history sync days, rather than a forced value.
 func (*Environment) HistorySync() *uint32 {
-	rawValue := os.Getenv(ENV_HISTORYSYNCDAYS)
-	stringValue := strings.TrimSpace(rawValue) // Aplicado TrimSpace
+	stringValue := environment.GetString(ENV_HISTORYSYNCDAYS, "") // Aplicado TrimSpace
 
 	if stringValue == "" {
 		return nil
@@ -312,7 +293,7 @@ func (*Environment) HistorySync() *uint32 {
 
 	value, err := strconv.ParseUint(stringValue, 10, 32)
 	if err != nil {
-		qplog.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Returning nil (use system default logic). Error: %v", ENV_HISTORYSYNCDAYS, rawValue, err) // Loga o valor original para debug
+		qplog.Warnf("Invalid unsigned integer value for environment variable %s: '%s'. Returning nil (use system default logic). Error: %v", ENV_HISTORYSYNCDAYS, stringValue, err) // Loga o valor original para debug
 		return nil
 	}
 

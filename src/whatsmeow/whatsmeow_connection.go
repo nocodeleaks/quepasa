@@ -1483,7 +1483,7 @@ func (conn *WhatsmeowConnection) initializeHandlers(waOptions *whatsapp.Whatsapp
 	if waOptions != nil {
 		voipMode = waOptions.VoIPMode
 	}
-	if mgr, err := voip.MaybeEnableManager(conn.Client, voipMode, conn.GetSessionToken()); err != nil {
+	if mgr, err := voip.MaybeEnableManager(conn.Client, voipMode, conn.GetSessionToken(), conn); err != nil {
 		conn.GetLogger().Errorf("failed to enable VoIP Manager: %s", err.Error())
 	} else if mgr != nil {
 		conn.voipManager = mgr

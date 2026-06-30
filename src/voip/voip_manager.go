@@ -82,6 +82,38 @@ type VoipManager struct {
 	// sectionID is an opaque QuePasa section/session identifier propagated to
 	// SIP gateways so they can route calls by WhatsApp section.
 	sectionID string
+
+	// callerInfoResolver optionally enriches SIP INVITEs with contact metadata
+	// from the QuePasa connection that owns this VoIP manager.
+	callerInfoResolver CallerInfoResolver
+}
+
+// CallerInfo contains the QuePasa/WhatsApp contact data that is useful for a
+// downstream SIP gateway to identify and route an incoming call.
+type CallerInfo struct {
+	JID          string
+	LID          string
+	Phone        string
+	PhoneE164    string
+	Title        string
+	FullName     string
+	BusinessName string
+	PushName     string
+	FirstName    string
+}
+
+// CallerInfoResolver is implemented by connection owners that can resolve local
+// WhatsApp contact metadata for a call peer.
+type CallerInfoResolver interface {
+	ResolveVoIPCallerInfo(peer types.JID) CallerInfo
+}
+
+type callSIPMetadata struct {
+	CallID     string
+	FromPhone  string
+	ToPhone    string
+	Peer       types.JID
+	CallerInfo CallerInfo
 }
 
 // bridgeContext holds per-call resources for cleanup on hangup.
@@ -152,11 +184,13 @@ func (m *VoipManager) handleIncoming(call *calls.Call) {
 	// Extract phone numbers for SIP routing.
 	fromPhone := jidToPhone(peer)
 	toPhone := m.getOwnPhone()
+	sipMeta := m.callSIPMetadata(callID, peer, fromPhone, toPhone)
 
 	m.log.InfoE().
 		Str("call_id", callID).
 		Str("from_phone", fromPhone).
 		Str("to_phone", toPhone).
+		Str("caller_title", sipMeta.CallerInfo.Title).
 		Msg("VoipManager: call routing info")
 
 	// Register OnEnd for cleanup (applies to all modes).
@@ -170,10 +204,10 @@ func (m *VoipManager) handleIncoming(call *calls.Call) {
 
 	switch m.mode {
 	case whatsapp.VoIPModeAdditional:
-		m.handleAdditional(call, callID, fromPhone, toPhone)
+		m.handleAdditional(call, callID, fromPhone, toPhone, sipMeta)
 	default:
 		// VoIPModeExclusive (and any active fallback) behaves exclusively.
-		m.handleExclusive(call, callID, fromPhone, toPhone)
+		m.handleExclusive(call, callID, fromPhone, toPhone, sipMeta)
 	}
 }
 
@@ -181,7 +215,7 @@ func (m *VoipManager) handleIncoming(call *calls.Call) {
 // SIP is the only endpoint. If the SIP server rejects the INVITE or never
 // answers within sipAcceptTimeout, the WhatsApp call is hung up so it is NOT
 // left marked as "answered".
-func (m *VoipManager) handleExclusive(call *calls.Call, callID, fromPhone, toPhone string) {
+func (m *VoipManager) handleExclusive(call *calls.Call, callID, fromPhone, toPhone string, sipMeta callSIPMetadata) {
 	// Register OnReady BEFORE answering — OnReady fires on the first inbound
 	// RTP frame and may arrive immediately after Answer() returns.
 	call.OnReady(func() {
@@ -189,7 +223,7 @@ func (m *VoipManager) handleExclusive(call *calls.Call, callID, fromPhone, toPho
 			Str("call_id", callID).
 			Msg("VoipManager[exclusive]: media path ready, wiring SIP bridge")
 
-		if err := m.wireSIPBridge(call, callID, fromPhone, toPhone); err != nil {
+		if err := m.wireSIPBridge(call, callID, fromPhone, toPhone, sipMeta); err != nil {
 			m.log.ErrorE().Err(err).
 				Str("call_id", callID).
 				Msg("VoipManager[exclusive]: failed to wire SIP bridge")
@@ -226,7 +260,7 @@ func (m *VoipManager) handleExclusive(call *calls.Call, callID, fromPhone, toPho
 //
 // Because we never call Answer(), the native media path (OnReady) is not
 // established by QuePasa; we only fire the SIP INVITE so the SIP side rings.
-func (m *VoipManager) handleAdditional(call *calls.Call, callID, fromPhone, toPhone string) {
+func (m *VoipManager) handleAdditional(call *calls.Call, callID, fromPhone, toPhone string, sipMeta callSIPMetadata) {
 	m.log.InfoE().
 		Str("call_id", callID).
 		Msg("VoipManager[additional]: forwarding to SIP without answering (call keeps ringing on other devices)")
@@ -240,7 +274,7 @@ func (m *VoipManager) handleAdditional(call *calls.Call, callID, fromPhone, toPh
 
 	// Send the SIP INVITE so the SIP endpoint rings in parallel. We do NOT
 	// answer the WhatsApp call: no native media bridge is established here.
-	if err := m.proxy.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, m.sipHeaders()); err != nil {
+	if err := m.proxy.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, m.sipHeaders(sipMeta)); err != nil {
 		m.log.ErrorE().Err(err).
 			Str("call_id", callID).
 			Msg("VoipManager[additional]: SendSIPInvite failed; call still rings on native devices")
@@ -339,25 +373,62 @@ func (m *VoipManager) guardSIPAcceptance(call *calls.Call, callID string) {
 	}()
 }
 
-func (m *VoipManager) sipHeaders() map[string]string {
+func (m *VoipManager) callSIPMetadata(callID string, peer types.JID, fromPhone, toPhone string) callSIPMetadata {
+	meta := callSIPMetadata{
+		CallID:    callID,
+		FromPhone: fromPhone,
+		ToPhone:   toPhone,
+		Peer:      peer,
+		CallerInfo: CallerInfo{
+			JID:   peer.String(),
+			Phone: fromPhone,
+		},
+	}
+	if m == nil || m.callerInfoResolver == nil {
+		return meta
+	}
+
+	info := m.callerInfoResolver.ResolveVoIPCallerInfo(peer)
+	if info.JID == "" {
+		info.JID = peer.String()
+	}
+	if info.Phone == "" {
+		info.Phone = fromPhone
+	}
+	meta.CallerInfo = info
+	return meta
+}
+
+func (m *VoipManager) sipHeaders(meta callSIPMetadata) map[string]string {
 	if m == nil {
 		return nil
 	}
 
-	sectionID := strings.TrimSpace(m.sectionID)
-	if sectionID == "" {
+	headers := make(map[string]string)
+	addSIPHeader(headers, "X-QuePasa-SectionId", m.sectionID)
+	addSIPHeader(headers, "X-QuePasa-Token", m.sectionID)
+	addSIPHeader(headers, "X-QuePasa-CallId", meta.CallID)
+	addSIPHeader(headers, "X-QuePasa-Direction", "inbound-whatsapp")
+	addSIPHeader(headers, "X-QuePasa-Account-Phone", meta.ToPhone)
+	addSIPHeader(headers, "X-QuePasa-Caller-Phone", firstNonEmpty(meta.CallerInfo.Phone, meta.FromPhone))
+	addSIPHeader(headers, "X-QuePasa-Caller-E164", meta.CallerInfo.PhoneE164)
+	addSIPHeader(headers, "X-QuePasa-Caller-JID", firstNonEmpty(meta.CallerInfo.JID, meta.Peer.String()))
+	addSIPHeader(headers, "X-QuePasa-Caller-LID", meta.CallerInfo.LID)
+	addSIPHeader(headers, "X-QuePasa-Caller-Title", meta.CallerInfo.Title)
+	addSIPHeader(headers, "X-QuePasa-Caller-FullName", meta.CallerInfo.FullName)
+	addSIPHeader(headers, "X-QuePasa-Caller-BusinessName", meta.CallerInfo.BusinessName)
+	addSIPHeader(headers, "X-QuePasa-Caller-PushName", meta.CallerInfo.PushName)
+	addSIPHeader(headers, "X-QuePasa-Caller-FirstName", meta.CallerInfo.FirstName)
+
+	if len(headers) == 0 {
 		return nil
 	}
-
-	return map[string]string{
-		"X-QuePasa-SectionId": sectionID,
-		"X-QuePasa-Token":     sectionID,
-	}
+	return headers
 }
 
 // wireSIPBridge creates the RTP stream, sends SIP INVITE, and wires audio.
 // This is called from the call's OnReady callback once media is flowing.
-func (m *VoipManager) wireSIPBridge(call *calls.Call, callID, fromPhone, toPhone string) error {
+func (m *VoipManager) wireSIPBridge(call *calls.Call, callID, fromPhone, toPhone string, sipMeta callSIPMetadata) error {
 	if m.proxy == nil {
 		return fmt.Errorf("voip manager: sipproxy not configured")
 	}
@@ -387,7 +458,7 @@ func (m *VoipManager) wireSIPBridge(call *calls.Call, callID, fromPhone, toPhone
 	m.proxy.SetLocalRTPPort(callID, stream.WhatsAppPort)
 
 	// --- 3. Send SIP INVITE to the SIP server ---
-	if err := m.proxy.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, m.sipHeaders()); err != nil {
+	if err := m.proxy.SendSIPInviteWithHeaders(callID, fromPhone, toPhone, m.sipHeaders(sipMeta)); err != nil {
 		return fmt.Errorf("wireSIPBridge: SendSIPInvite: %w", err)
 	}
 
@@ -525,6 +596,48 @@ func jidToPhone(jid types.JID) string {
 	return user
 }
 
+func addSIPHeader(headers map[string]string, name, value string) {
+	if headers == nil {
+		return
+	}
+	name = strings.TrimSpace(name)
+	value = sanitizeSIPHeaderValue(value)
+	if name == "" || value == "" {
+		return
+	}
+	headers[name] = value
+}
+
+func sanitizeSIPHeaderValue(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	value = strings.Map(func(r rune) rune {
+		switch r {
+		case '\r', '\n', '\t':
+			return ' '
+		default:
+			return r
+		}
+	}, value)
+	value = strings.Join(strings.Fields(value), " ")
+	if len(value) > 512 {
+		value = value[:512]
+	}
+	return value
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
+}
+
 // PlaceCall is a thin pass-through to place an outbound 1:1 call, exposed so
 // the manager can also exercise the outbound path during validation.
 func (m *VoipManager) PlaceCall(ctx context.Context, target string) (*calls.Call, error) {
@@ -569,7 +682,7 @@ func adaptSIPProxySettings(env environment.SIPProxySettings) sipproxy.SIPProxySe
 //
 // The returned *VoipManager must be kept alive by the caller (store it on the
 // connection) so its OnIncomingCall closure is not garbage-collected.
-func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sectionID string) (*VoipManager, error) {
+func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sectionID string, callerInfoResolver CallerInfoResolver) (*VoipManager, error) {
 	// Backward-compatibility: if no per-instance mode is set but the legacy
 	// global switch is on, behave like exclusive mode.
 	if !mode.IsActive() {
@@ -592,6 +705,7 @@ func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sectio
 	mgr := NewVoipManagerWithLogger(client, meowLogger)
 	mgr.mode = mode
 	mgr.sectionID = strings.TrimSpace(sectionID)
+	mgr.callerInfoResolver = callerInfoResolver
 	mgr.sipAcceptTimeout = 15 * time.Second
 
 	// Try to connect to the sipproxy manager singleton.

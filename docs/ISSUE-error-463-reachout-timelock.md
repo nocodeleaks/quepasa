@@ -81,6 +81,50 @@ if shouldSendTCTokenInChatAction(to) && shouldSendNewTCToken(cli.getTCTokenSende
 
 `issuePrivacyToken` sends an IQ in the `privacy` namespace with a `trusted_contact` token entry to `ServerJID`. `ensureTCToken` also opportunistically prunes expired tokens (`deleteExpiredPrivacyTokens`, throttled to once per 24h).
 
+## Server-pushed enforcement notification: `NotifyAccountReachoutTimelock`
+
+In addition to the per-message 463 NACK, whatsmeow also exposes a **proactive, account-level notification** that the server pushes when reach-out-timelock enforcement is (de)activated for the account — independent of any specific send. It arrives as a `mex` notification (`xwa2_notify_account_reachout_timelock`) and is dispatched as the typed event `events.NotifyAccountReachoutTimelock` (`whatsmeow/notification.go`, `whatsmeow/types/events/events.go:635`):
+
+```go
+type NotifyAccountReachoutTimelock struct {
+    Mex                 MexNotificationData `json:"-"`
+    EnforcementType     string              `json:"enforcement_type,omitempty"`
+    IsActive            bool                `json:"is_active,omitempty"`
+    TimeEnforcementEnds jsontime.UnixString `json:"time_enforcement_ends,omitzero"`
+}
+```
+
+**Observed example (2026-06-30):**
+
+```json
+{
+  "enforcement_type": "RESTRICT_ALL_COMPANIONS",
+  "is_active": true,
+  "time_enforcement_ends": "1783343326"
+}
+```
+
+`time_enforcement_ends` is a Unix timestamp — `1783343326` = **2026-07-06 13:08:46 UTC**, i.e. the enforcement was set for roughly a week from the time the event fired.
+
+`enforcement_type: RESTRICT_ALL_COMPANIONS` indicates the lock applies to **all linked devices (companions)** on the account, not just a single send/contact — this is the account-wide signal that 463s are about to (or are already) being handed out broadly, as opposed to the per-recipient cold-contact case covered by the rest of this doc.
+
+**Variant: empty payload (observed 2026-06-30):**
+
+```json
+{}
+```
+
+i.e. `enforcement_type`, `is_active`, and `time_enforcement_ends` are all absent — every field on `NotifyAccountReachoutTimelock` has `omitempty`/`omitzero`, so this is the server sending the notification with all-zero values (`EnforcementType: ""`, `IsActive: false`, `TimeEnforcementEnds: zero`) rather than a parse failure on our side. Read literally, an empty payload with `is_active` defaulting to `false` would mean "enforcement lifted / not active" — but since the fields are indistinguishable from "not sent," this can't be relied on as a clear signal. Anything that ends up handling this event needs to treat the all-empty case as **unknown/no-op**, not as an authoritative "timelock cleared."
+
+**Current status:** this event is **not handled** by our code — it currently surfaces only via the generic `unhandled` event logger (`[Type: *events.NotifyAccountReachoutTimelock] ...`). There is no listener wired up in `src/whatsmeow/whatsmeow_connection.go`.
+
+**Potential value of handling it:**
+- It's a direct, authoritative signal from WhatsApp that the account is (or stops being) under
+  reach-out enforcement — could be used to short-circuit outbound sends to cold contacts while
+  `is_active` is true, instead of discovering it per-message via 463s.
+- `time_enforcement_ends` gives an expected lift time, useful for backoff/alerting.
+- Could feed into the NCTSalt-readiness/cold-outbound gating discussed in the Open TODOs below.
+
 ## Production investigation (2026-06-01)
 
 ### What was confirmed
@@ -173,6 +217,7 @@ For a truly cold **first** send with no NCTSalt/LID context, there is still **no
 - **Add an NCTSalt readiness gate** before driving cold outbound on a freshly paired session (`Store.NCTSalt.GetNCTSalt`).
 - **Consider bumping whatsmeow** — newer pins exist (e.g. `v0.0.0-20260529...`); track upstream for further token changes.
 - **Token expiration handling** is now native: ~28-day rolling window with automatic pruning (`deleteExpiredPrivacyTokens`).
+- **Handle `events.NotifyAccountReachoutTimelock`** — currently unhandled, only logged generically. Consider tracking `is_active`/`time_enforcement_ends` per account to gate or warn on cold outbound while enforcement is active (see dedicated section above).
 
 ## How sibling libraries handle it
 
@@ -188,5 +233,6 @@ For a truly cold **first** send with no NCTSalt/LID context, there is still **no
 - [WAHA issue #1992 — cold contact 463](https://github.com/devlikeapro/waha/issues/1992)
 - [WAHA issue #2050 — tctoken lifecycle not implemented in GOWS](https://github.com/devlikeapro/waha/issues/2050)
 - whatsmeow source (our pinned version): `tctoken.go`, `cstoken.go`, `send.go`, `appstate.go`, `message.go`
+- whatsmeow source for the account-level notification: `notification.go`, `types/events/events.go` (`NotifyAccountReachoutTimelock`)
 - [Our LID vs phone investigation — ISSUE-lid-vs-phone.md](./ISSUE-lid-vs-phone.md)
 - Implementation: `src/whatsmeow/whatsmeow_connection.go` — region `error 463`

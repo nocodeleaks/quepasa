@@ -72,3 +72,4 @@ main.exe
 .claude/
 .s*
 **/quepasa
+.github/hooks

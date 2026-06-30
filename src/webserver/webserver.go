@@ -112,6 +112,12 @@ func newRouter() chi.Router {
 // ServeApps configures apps fallback behavior without interfering with existing matched routes.
 // App bundles are served from ./apps/<slug>.
 func ServeApps(r chi.Router) {
+	if defaultAppPath := defaultFrontendAppPath(); defaultAppPath != "" {
+		r.Get("/", func(w http.ResponseWriter, req *http.Request) {
+			http.Redirect(w, req, defaultAppPath, http.StatusFound)
+		})
+	}
+
 	ServeDiscoveredApps(r)
 
 	if useFrontendDevProxy() {
@@ -306,6 +312,49 @@ func frontendDevTarget() string {
 	}
 
 	return host + ":" + port
+}
+
+func defaultFrontendAppPath() string {
+	return normalizeDefaultFrontendAppPath(environment.Settings.WebServer.DefaultApp)
+}
+
+func normalizeDefaultFrontendAppPath(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	if strings.Contains(value, "://") || strings.HasPrefix(value, "//") {
+		return ""
+	}
+
+	value = strings.TrimPrefix(value, "/")
+	if value == "" {
+		return ""
+	}
+
+	if value == "apps" {
+		return "/apps/"
+	}
+
+	if !strings.HasPrefix(value, "apps/") {
+		value = "apps/" + value
+	}
+
+	cleaned := path.Clean("/" + value)
+	if cleaned == "/" || cleaned == "/apps" || !strings.HasPrefix(cleaned, "/apps/") {
+		return ""
+	}
+
+	appPath := strings.TrimPrefix(cleaned, "/apps/")
+	if !strings.Contains(appPath, "/") {
+		return cleaned + "/"
+	}
+
+	if strings.HasSuffix(value, "/") {
+		return cleaned + "/"
+	}
+	return cleaned
 }
 
 // shouldServeAppsPath filters requests that may be safely handled by the apps

@@ -36,6 +36,7 @@ This document describes all environment variables used by the QuePasa applicatio
 - **`WEBSERVER_HOST`** - Web server bind host (fallback: `WEBAPIHOST`)
 - **`WEBSERVER_PORT`** - Web server port (default: `31000`, fallback: `WEBAPIPORT`)
 - **`WEBSOCKETSSL`** - Use SSL for WebSocket QR code (default: `false`)
+- **`QUEPASA_DEFAULT_APP`** - Optional default app used when accessing `/`; accepts a slug like `console` or a local path like `/apps/console/`. When empty, `/` keeps the normal fallback behavior.
 - **`SIGNING_SECRET`** - Token for hash signing cookies
 - **`MASTERKEY`** - Master key for super admin methods
 - **`HTTPLOGS`** - Log HTTP requests (default: `false`)
@@ -194,6 +195,7 @@ Enable distributed cache by combining:
 - **`WEBSERVER_HOST`** - Web server bind host (fallback: `WEBAPIHOST`)
 - **`WEBSERVER_PORT`** - Web server port (default: `31000`, fallback: `WEBAPIPORT`)
 - **`WEBSERVER_LOGS`** - Enable web server HTTP logs (default: `false`, fallback: `HTTPLOGS`)
+- **`QUEPASA_DEFAULT_APP`** - Optional redirect target for `/`, normalized under `/apps/`. Examples: `vuejs`, `console`, `/apps/form/account`.
 
 ## 📱 Whatsmeow Configuration
 

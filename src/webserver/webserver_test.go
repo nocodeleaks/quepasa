@@ -1,10 +1,13 @@
 package webserver
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	environment "github.com/nocodeleaks/quepasa/environment"
 )
 
@@ -137,6 +140,51 @@ func TestDiscoverFrontendAppsUsesClientIndexDuringDevProxy(t *testing.T) {
 	wantIndex := filepath.Join(tempDir, "apps", "vuejs", "client", "index.html")
 	if apps[0].IndexFile != wantIndex {
 		t.Fatalf("expected client index %q, got %q", wantIndex, apps[0].IndexFile)
+	}
+}
+
+func TestNormalizeDefaultFrontendAppPath(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "empty", value: "", want: ""},
+		{name: "slug", value: "vuejs", want: "/apps/vuejs/"},
+		{name: "hidden slug", value: ".custom", want: "/apps/.custom/"},
+		{name: "apps path", value: "/apps/.custom/", want: "/apps/.custom/"},
+		{name: "apps child path", value: "apps/form/account", want: "/apps/form/account"},
+		{name: "external url rejected", value: "https://example.com/apps/vuejs", want: ""},
+		{name: "protocol relative rejected", value: "//example.com/apps/vuejs", want: ""},
+		{name: "path traversal rejected", value: "../api", want: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeDefaultFrontendAppPath(tt.value); got != tt.want {
+				t.Fatalf("normalizeDefaultFrontendAppPath(%q) = %q, want %q", tt.value, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestServeAppsRedirectsRootWhenDefaultAppConfigured(t *testing.T) {
+	previous := environment.Settings.WebServer.DefaultApp
+	environment.Settings.WebServer.DefaultApp = "console"
+	t.Cleanup(func() { environment.Settings.WebServer.DefaultApp = previous })
+
+	r := chi.NewRouter()
+	ServeApps(r)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusFound {
+		t.Fatalf("expected status %d, got %d", http.StatusFound, rec.Code)
+	}
+	if got := rec.Header().Get("Location"); got != "/apps/console/" {
+		t.Fatalf("expected redirect to /apps/console/, got %q", got)
 	}
 }
 

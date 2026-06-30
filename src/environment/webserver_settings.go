@@ -6,6 +6,7 @@ const (
 	ENV_WEBSERVER_HOST            = "WEBSERVER_HOST"            // web server host (fallback: WEBAPIHOST)
 	ENV_WEBSERVER_LOGS            = "WEBSERVER_LOGS"            // web server HTTP logs (fallback: HTTPLOGS)
 	ENV_QUEPASA_BASE_URL          = "QUEPASA_BASE_URL"          // canonical external base URL
+	ENV_QUEPASA_DEFAULT_APP       = "QUEPASA_DEFAULT_APP"       // optional default app path/slug for root redirects
 	ENV_QUEPASA_DEV_FRONTEND      = "QUEPASA_DEV_FRONTEND"      // enable frontend dev reverse proxy
 	ENV_QUEPASA_FRONTEND_HOST     = "QUEPASA_FRONTEND_HOST"     // frontend dev origin host
 	ENV_QUEPASA_FRONTEND_DEV_PORT = "QUEPASA_FRONTEND_DEV_PORT" // frontend dev origin port
@@ -17,6 +18,7 @@ type WebServerSettings struct {
 	Host            string `json:"host"`
 	Logs            bool   `json:"logs"`
 	BaseURL         string `json:"base_url"`
+	DefaultApp      string `json:"default_app"`
 	DevFrontend     bool   `json:"dev_frontend"`
 	FrontendHost    string `json:"frontend_host"`
 	FrontendDevPort string `json:"frontend_dev_port"`
@@ -30,6 +32,7 @@ func NewWebServerSettings() WebServerSettings {
 		Host:            getWebServerHost(),
 		Logs:            getWebServerLogs(),
 		BaseURL:         getEnvOrDefaultString(ENV_QUEPASA_BASE_URL, ""),
+		DefaultApp:      getEnvOrDefaultString(ENV_QUEPASA_DEFAULT_APP, ""),
 		DevFrontend:     getEnvOrDefaultBool(ENV_QUEPASA_DEV_FRONTEND, false),
 		FrontendHost:    getEnvOrDefaultString(ENV_QUEPASA_FRONTEND_HOST, "http://127.0.0.1"),
 		FrontendDevPort: getEnvOrDefaultString(ENV_QUEPASA_FRONTEND_DEV_PORT, "5173"),

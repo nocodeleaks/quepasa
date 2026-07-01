@@ -79,13 +79,19 @@ type VoipManager struct {
 	// activeCalls maps call-id → *bridgeContext for tear-down.
 	activeCalls sync.Map // map[string]*bridgeContext
 
-	// sectionID is an opaque QuePasa section/session identifier propagated to
-	// SIP gateways so they can route calls by WhatsApp section.
-	sectionID string
+	// sectionID identifies the WhatsApp section routed by SIP gateways. It is
+	// not the QuePasa session token; use sessionToken for authentication/session
+	// correlation.
+	sectionID    string
+	sessionToken string
 
 	// callerInfoResolver optionally enriches SIP INVITEs with contact metadata
 	// from the QuePasa connection that owns this VoIP manager.
 	callerInfoResolver CallerInfoResolver
+
+	// modeResolver lets a live manager honor per-section call handling changes
+	// without reconnecting the WhatsApp session.
+	modeResolver func() (whatsapp.VoIPMode, whatsapp.WhatsappBoolean)
 }
 
 // CallerInfo contains the QuePasa/WhatsApp contact data that is useful for a
@@ -173,6 +179,21 @@ func (m *VoipManager) Enable() error {
 //  3. Send SIP INVITE to the SIP server.
 //  4. On media-ready, wire VoipBridgeSink/VoipBridgeSource for bidirectional audio.
 func (m *VoipManager) handleIncoming(call *calls.Call) {
+	if call == nil {
+		return
+	}
+
+	mode, ok := m.effectiveMode()
+	if !ok {
+		m.log.InfoE().
+			Str("call_id", call.ID()).
+			Msg("VoipManager: inbound call ignored by current call handling mode")
+		return
+	}
+	m.mu.Lock()
+	m.mode = mode
+	m.mu.Unlock()
+
 	callID := call.ID()
 	peer := call.Peer()
 
@@ -406,7 +427,8 @@ func (m *VoipManager) sipHeaders(meta callSIPMetadata) map[string]string {
 
 	headers := make(map[string]string)
 	addSIPHeader(headers, "X-QuePasa-SectionId", m.sectionID)
-	addSIPHeader(headers, "X-QuePasa-Token", m.sectionID)
+	addSIPHeader(headers, "X-QuePasa-Token", m.sessionToken)
+	addSIPHeader(headers, "X-QuePasa-SessionId", m.sessionToken)
 	addSIPHeader(headers, "X-QuePasa-CallId", meta.CallID)
 	addSIPHeader(headers, "X-QuePasa-Direction", "inbound-whatsapp")
 	addSIPHeader(headers, "X-QuePasa-Account-Phone", meta.ToPhone)
@@ -573,6 +595,36 @@ func (m *VoipManager) SetSIPProxy(proxy *sipproxy.SIPProxyManager) {
 	m.mu.Unlock()
 }
 
+// ShouldHandleCalls reports whether this manager should currently own inbound
+// WhatsApp call events. It is evaluated dynamically because UI/API changes can
+// switch a live section from forwarding to ignore/deny without reconnecting.
+func (m *VoipManager) ShouldHandleCalls() bool {
+	_, ok := m.effectiveMode()
+	return ok
+}
+
+func (m *VoipManager) effectiveMode() (whatsapp.VoIPMode, bool) {
+	if m == nil {
+		return whatsapp.VoIPModeDisabled, false
+	}
+
+	mode := m.mode
+	calls := whatsapp.UnSetBooleanType
+	if m.modeResolver != nil {
+		mode, calls = m.modeResolver()
+	}
+
+	if mode.IsActive() {
+		return mode, true
+	}
+
+	if environment.NewSIPProxySettings().LegacyVoIP && calls == whatsapp.UnSetBooleanType {
+		return whatsapp.VoIPModeExclusive, true
+	}
+
+	return whatsapp.VoIPModeDisabled, false
+}
+
 // getOwnPhone extracts the phone number of the WhatsApp account (the receiver)
 // from the calls client's underlying whatsmeow store.
 func (m *VoipManager) getOwnPhone() string {
@@ -682,7 +734,7 @@ func adaptSIPProxySettings(env environment.SIPProxySettings) sipproxy.SIPProxySe
 //
 // The returned *VoipManager must be kept alive by the caller (store it on the
 // connection) so its OnIncomingCall closure is not garbage-collected.
-func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sectionID string, callerInfoResolver CallerInfoResolver) (*VoipManager, error) {
+func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sessionToken, sectionID string, callerInfoResolver CallerInfoResolver, modeResolver ...func() (whatsapp.VoIPMode, whatsapp.WhatsappBoolean)) (*VoipManager, error) {
 	// Backward-compatibility: if no per-instance mode is set but the legacy
 	// global switch is on, behave like exclusive mode.
 	if !mode.IsActive() {
@@ -705,7 +757,11 @@ func MaybeEnableManager(client *whatsmeow.Client, mode whatsapp.VoIPMode, sectio
 	mgr := NewVoipManagerWithLogger(client, meowLogger)
 	mgr.mode = mode
 	mgr.sectionID = strings.TrimSpace(sectionID)
+	mgr.sessionToken = strings.TrimSpace(sessionToken)
 	mgr.callerInfoResolver = callerInfoResolver
+	if len(modeResolver) > 0 {
+		mgr.modeResolver = modeResolver[0]
+	}
 	mgr.sipAcceptTimeout = 15 * time.Second
 
 	// Try to connect to the sipproxy manager singleton.

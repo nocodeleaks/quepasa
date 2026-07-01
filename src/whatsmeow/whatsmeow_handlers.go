@@ -12,8 +12,8 @@ import (
 
 	qpevents "github.com/nocodeleaks/quepasa/events"
 	library "github.com/nocodeleaks/quepasa/library"
-	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	log "github.com/nocodeleaks/quepasa/qplog"
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	types "go.mau.fi/whatsmeow/types"
@@ -788,7 +788,7 @@ func (source *WhatsmeowHandlers) CallMessage(evt types.BasicCallMeta) {
 	// connection, in which case the calls stack owns the call lifecycle and will
 	// answer natively and bridge to SIP. Rejecting here would race the calls
 	// and kill the call before it can be answered.
-	if source.voipManager != nil {
+	if source.voipManager != nil && source.voipManager.ShouldHandleCalls() {
 		logentry.Infof("VoIP Manager active: skipping reject for call from %s (calls will answer and bridge to SIP)", evt.From)
 		return
 	}

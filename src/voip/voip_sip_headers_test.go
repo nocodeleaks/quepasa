@@ -4,11 +4,12 @@ import (
 	"strings"
 	"testing"
 
+	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	types "go.mau.fi/whatsmeow/types"
 )
 
 func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
-	mgr := &VoipManager{sectionID: "section-123"}
+	mgr := &VoipManager{sectionID: "5521967609095:2", sessionToken: "token-123"}
 	meta := callSIPMetadata{
 		CallID:    "CALL-123",
 		FromPhone: "5511999999999",
@@ -28,8 +29,9 @@ func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
 
 	headers := mgr.sipHeaders(meta)
 
-	assertHeader(t, headers, "X-QuePasa-SectionId", "section-123")
-	assertHeader(t, headers, "X-QuePasa-Token", "section-123")
+	assertHeader(t, headers, "X-QuePasa-SectionId", "5521967609095:2")
+	assertHeader(t, headers, "X-QuePasa-Token", "token-123")
+	assertHeader(t, headers, "X-QuePasa-SessionId", "token-123")
 	assertHeader(t, headers, "X-QuePasa-CallId", "CALL-123")
 	assertHeader(t, headers, "X-QuePasa-Direction", "inbound-whatsapp")
 	assertHeader(t, headers, "X-QuePasa-Account-Phone", "5521967609095")
@@ -44,7 +46,7 @@ func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
 }
 
 func TestSIPHeadersSanitizeValues(t *testing.T) {
-	mgr := &VoipManager{sectionID: "section-123\r\nInjected: bad"}
+	mgr := &VoipManager{sectionID: "5521967609095:2\r\nInjected: bad", sessionToken: "token-123\r\nInjected: bad"}
 	meta := callSIPMetadata{
 		CallID:    "CALL-123",
 		FromPhone: "5511999999999",
@@ -56,12 +58,43 @@ func TestSIPHeadersSanitizeValues(t *testing.T) {
 
 	headers := mgr.sipHeaders(meta)
 
-	assertHeader(t, headers, "X-QuePasa-SectionId", "section-123 Injected: bad")
+	assertHeader(t, headers, "X-QuePasa-SectionId", "5521967609095:2 Injected: bad")
+	assertHeader(t, headers, "X-QuePasa-Token", "token-123 Injected: bad")
 	assertHeader(t, headers, "X-QuePasa-Caller-Title", "Nome X-Bad: 1 Teste")
 	for name, value := range headers {
 		if strings.ContainsAny(value, "\r\n\t") {
 			t.Fatalf("header %s contains unsafe whitespace: %q", name, value)
 		}
+	}
+}
+
+func TestVoipManagerShouldHandleCallsHonorsLiveCallMode(t *testing.T) {
+	mgr := &VoipManager{
+		mode: whatsapp.VoIPModeExclusive,
+	}
+	if !mgr.ShouldHandleCalls() {
+		t.Fatal("exclusive mode should handle calls")
+	}
+
+	mgr.modeResolver = func() (whatsapp.VoIPMode, whatsapp.WhatsappBoolean) {
+		return whatsapp.VoIPModeDisabled, whatsapp.TrueBooleanType
+	}
+	if mgr.ShouldHandleCalls() {
+		t.Fatal("ignore mode must not forward calls to SIP")
+	}
+
+	mgr.modeResolver = func() (whatsapp.VoIPMode, whatsapp.WhatsappBoolean) {
+		return whatsapp.VoIPModeDisabled, whatsapp.FalseBooleanType
+	}
+	if mgr.ShouldHandleCalls() {
+		t.Fatal("deny mode must not forward calls to SIP")
+	}
+
+	mgr.modeResolver = func() (whatsapp.VoIPMode, whatsapp.WhatsappBoolean) {
+		return whatsapp.VoIPModeExclusive, whatsapp.UnSetBooleanType
+	}
+	if !mgr.ShouldHandleCalls() {
+		t.Fatal("forward mode should reactivate SIP forwarding without reconnecting")
 	}
 }
 

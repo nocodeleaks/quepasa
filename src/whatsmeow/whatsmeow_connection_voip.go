@@ -2,12 +2,32 @@ package whatsmeow
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	voip "github.com/nocodeleaks/quepasa/voip"
 	whatsapp "github.com/nocodeleaks/quepasa/whatsapp"
 	types "go.mau.fi/whatsmeow/types"
 )
+
+// GetVoIPSectionID returns the stable WhatsApp section identifier used by SIP
+// gateways. It is intentionally separate from the QuePasa session token.
+func (conn *WhatsmeowConnection) GetVoIPSectionID() string {
+	if conn == nil || conn.Client == nil || conn.Client.Store == nil || conn.Client.Store.ID == nil {
+		return ""
+	}
+
+	jid := conn.Client.Store.ID
+	user := strings.TrimSpace(jid.User)
+	if user == "" {
+		return ""
+	}
+
+	if jid.Device > 0 {
+		return fmt.Sprintf("%s:%d", user, jid.Device)
+	}
+	return user
+}
 
 // ResolveVoIPCallerInfo returns local QuePasa contact metadata for a WhatsApp
 // caller. It intentionally reads only local whatsmeow stores so call setup does

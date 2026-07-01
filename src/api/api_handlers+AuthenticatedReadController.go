@@ -538,6 +538,11 @@ func AuthenticatedServerGroupsController(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// serve from persistent cache (redis) unless a refresh is requested
+	if serveCachedGroups(w, r, token) {
+		return
+	}
+
 	groups, err := server.GetGroupManager().GetJoinedGroups()
 	if err != nil {
 		RespondServerError(server, w, err)
@@ -547,6 +552,13 @@ func AuthenticatedServerGroupsController(w http.ResponseWriter, r *http.Request)
 	response := &apiModels.GroupsResponse{}
 	response.Total = len(groups)
 	response.Groups = groups
+	response.ParseSuccess("groups")
+	if data, merr := json.Marshal(response); merr == nil {
+		cacheGroupsBytes(token, data)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(data)
+		return
+	}
 	RespondSuccess(w, response)
 }
 

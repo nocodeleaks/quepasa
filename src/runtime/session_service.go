@@ -18,6 +18,8 @@ type SessionConfigurationPatch struct {
 	ReadUpdate       *whatsapp.WhatsappBoolean
 	Direct           *whatsapp.WhatsappBoolean
 	Devel            *bool
+	StoreRetentionDays *int64
+	DispatchTypes      *string
 }
 
 var ErrNilSession = errors.New("session is nil")
@@ -139,6 +141,12 @@ func BuildSessionRecord(token string, username string, patch *SessionConfigurati
 	}
 	if patch.Devel != nil {
 		info.Devel = *patch.Devel
+	}
+	if patch.StoreRetentionDays != nil {
+		info.SetStoreRetentionDays(patch.StoreRetentionDays)
+	}
+	if patch.DispatchTypes != nil {
+		info.SetDispatchTypes(patch.DispatchTypes)
 	}
 
 	return info

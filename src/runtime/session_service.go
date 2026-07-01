@@ -564,6 +564,16 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 		update += fmt.Sprintf("devel to: {%t}; ", *patch.Devel)
 	}
 
+	if patch.StoreRetentionDays != nil {
+		session.SetStoreRetentionDays(patch.StoreRetentionDays)
+		update += fmt.Sprintf("store_retention_days to: {%d}; ", *patch.StoreRetentionDays)
+	}
+
+	if patch.DispatchTypes != nil {
+		session.SetDispatchTypes(patch.DispatchTypes)
+		update += fmt.Sprintf("dispatch_types to: {%s}; ", *patch.DispatchTypes)
+	}
+
 	return update, nil
 }
 

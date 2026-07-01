@@ -99,6 +99,7 @@ func registerCanonicalPublicRoutes(r chi.Router) {
 	registerCanonicalSystemRoutes(r)
 	registerCanonicalPublicAuthRoutes(r)
 	registerCanonicalPublicUserRoutes(r)
+	registerCanonicalSettingsRoutes(r) // master-gated internally, like /system/environment
 }
 
 func registerCanonicalProtectedRoutes(r chi.Router) {

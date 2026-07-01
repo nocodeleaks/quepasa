@@ -34,12 +34,20 @@ func (r ResolvedMessageSettings) DispatchAllowed(msgType string) bool {
 	return r.DispatchTypes[msgType]
 }
 
-// ResolveMessageSettings resolves the effective settings for a server.
-// M2: env only (server unused now; M3 adds the per-caixa override).
+// ResolveMessageSettings resolves the effective settings for a server:
+// per-caixa override (server value beats env), falling back to env when NULL.
 func ResolveMessageSettings(server *QpWhatsappServer) ResolvedMessageSettings {
 	m := environment.Settings.Messages
-	return ResolvedMessageSettings{
-		RetentionDays: m.RetentionDays,
-		DispatchTypes: m.DispatchTypes,
+	retention := m.RetentionDays
+	types := m.DispatchTypes
+	if server != nil {
+		cfg := server.QpServer
+		if cfg != nil && cfg.StoreRetentionDays.Valid {
+			retention = int(cfg.StoreRetentionDays.Int64)
+		}
+		if cfg != nil && cfg.DispatchTypes.Valid && cfg.DispatchTypes.String != "" {
+			types = environment.ParseDispatchTypes(cfg.DispatchTypes.String)
+		}
 	}
+	return ResolvedMessageSettings{RetentionDays: retention, DispatchTypes: types}
 }

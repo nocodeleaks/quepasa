@@ -24,3 +24,26 @@ func TestResolvedStoreAndDispatch(t *testing.T) {
 		t.Fatal("empty dispatch types = all allowed")
 	}
 }
+
+// serverForResolveTest wraps a QpServer into a *QpWhatsappServer; QpWhatsappServer
+// embeds *QpServer, so the config fields are reachable via server.QpServer.
+func serverForResolveTest(s *QpServer) *QpWhatsappServer {
+	return &QpWhatsappServer{QpServer: s}
+}
+
+func TestResolvePerServerOverride(t *testing.T) {
+	s := &QpServer{}
+	five := int64(5)
+	s.SetStoreRetentionDays(&five)
+	types := "audio"
+	s.SetDispatchTypes(&types)
+	sv := serverForResolveTest(s)
+	r := ResolveMessageSettings(sv)
+	if r.RetentionDays != 5 {
+		t.Fatalf("override retention = %d, want 5", r.RetentionDays)
+	}
+	if !r.DispatchAllowed("audio") || r.DispatchAllowed("text") {
+		t.Fatalf("override dispatch types not applied: %+v", r.DispatchTypes)
+	}
+	_ = ResolveMessageSettings(nil) // nil must not panic
+}

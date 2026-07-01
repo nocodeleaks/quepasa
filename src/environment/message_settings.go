@@ -51,6 +51,9 @@ func parseDispatchTypes(v string) map[string]bool {
 	return set
 }
 
+// ParseDispatchTypes exposes the CSV→set parser for per-server overrides.
+func ParseDispatchTypes(v string) map[string]bool { return parseDispatchTypes(v) }
+
 func NewMessageSettings() MessageSettings {
 	return MessageSettings{
 		RetentionDays: parseStoreRetention(getEnvOrDefaultString(ENV_STORE_RETENTION_DAYS, "")),

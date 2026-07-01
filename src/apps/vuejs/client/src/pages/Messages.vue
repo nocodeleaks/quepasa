@@ -503,7 +503,7 @@ export default defineComponent({
         messages.value = res.data?.messages || []
         serverNumber.value = res.data?.server.wid || ''
         totalMessages.value = res.data?.total ?? (res.data?.messages ? res.data.messages.length : null)
-        totalPages.value = res.data?.total_pages || 0
+        totalPages.value = res.data?.totalPages ?? res.data?.total_pages ?? 0
 
         // Try to fetch contacts as a fallback for participant names
         try {

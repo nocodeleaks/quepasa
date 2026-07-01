@@ -30,6 +30,53 @@ func (s WhatsappMessageType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
 
+// UnmarshalJSON reverses MarshalJSON so JSON-backed stores (redis/disk) can read
+// the string form back. Also tolerates numeric encodings for backward compat.
+func (t *WhatsappMessageType) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		var n uint
+		if nerr := json.Unmarshal(data, &n); nerr == nil {
+			*t = WhatsappMessageType(n)
+			return nil
+		}
+		return err
+	}
+	switch s {
+	case "image":
+		*t = ImageMessageType
+	case "document":
+		*t = DocumentMessageType
+	case "audio":
+		*t = AudioMessageType
+	case "video":
+		*t = VideoMessageType
+	case "text":
+		*t = TextMessageType
+	case "location":
+		*t = LocationMessageType
+	case "contact":
+		*t = ContactMessageType
+	case "call":
+		*t = CallMessageType
+	case "system":
+		*t = SystemMessageType
+	case "group":
+		*t = GroupMessageType
+	case "revoke":
+		*t = RevokeMessageType
+	case "poll":
+		*t = PollMessageType
+	case "sticker":
+		*t = StickerMessageType
+	case "view_once":
+		*t = ViewOnceMessageType
+	default:
+		*t = UnhandledMessageType
+	}
+	return nil
+}
+
 func (Type WhatsappMessageType) String() string {
 	switch Type {
 	case ImageMessageType:

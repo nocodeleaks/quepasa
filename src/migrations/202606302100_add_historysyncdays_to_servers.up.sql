@@ -1,0 +1,1 @@
+ALTER TABLE `servers` ADD COLUMN `historysyncdays` INTEGER NOT NULL DEFAULT 0;

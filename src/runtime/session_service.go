@@ -17,6 +17,7 @@ type SessionConfigurationPatch struct {
 	Calls            *whatsapp.WhatsappBoolean
 	ReadUpdate       *whatsapp.WhatsappBoolean
 	Direct           *whatsapp.WhatsappBoolean
+	HistorySyncDays  *uint32
 	Devel            *bool
 	ContextId        *string
 }
@@ -591,6 +592,11 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 		update += fmt.Sprintf("direct to: {%s}; ", *patch.Direct)
 	}
 
+	if patch.HistorySyncDays != nil && session.HistorySyncDays != *patch.HistorySyncDays {
+		session.HistorySyncDays = *patch.HistorySyncDays
+		update += fmt.Sprintf("historysyncdays to: {%d}; ", *patch.HistorySyncDays)
+	}
+
 	if patch.Devel != nil && session.Devel != *patch.Devel {
 		session.Devel = *patch.Devel
 		update += fmt.Sprintf("devel to: {%t}; ", *patch.Devel)
@@ -604,13 +610,25 @@ func ApplySessionConfigurationPatch(session *models.QpWhatsappSession, patch *Se
 	return update, nil
 }
 
+// resolveHistorySyncDays returns the provided days when > 0, otherwise falls back to the
+// per-server persisted historysyncdays (0 lets the whatsmeow/env default apply downstream).
+func resolveHistorySyncDays(token string, provided uint32) uint32 {
+	if provided > 0 {
+		return provided
+	}
+	if record, err := models.WhatsappService.DB.Servers.FindByToken(strings.TrimSpace(token)); err == nil && record != nil {
+		return record.HistorySyncDays
+	}
+	return provided
+}
+
 // GetSessionPairingQRCode creates a pairing context for the given token and returns the raw
 // WhatsApp QR code string. The API layer is responsible for encoding to image if needed.
 func GetSessionPairingQRCode(token, username string, historySyncDays uint32) (string, error) {
 	pairing := &models.QpWhatsappPairing{
 		Token:           strings.TrimSpace(token),
 		Username:        strings.TrimSpace(username),
-		HistorySyncDays: historySyncDays,
+		HistorySyncDays: resolveHistorySyncDays(token, historySyncDays),
 	}
 
 	conn, err := pairing.GetConnection()
@@ -636,7 +654,7 @@ func PairSessionWithPhone(token, username, phone string, historySyncDays uint32)
 	pairing := &models.QpWhatsappPairing{
 		Token:           strings.TrimSpace(token),
 		Username:        strings.TrimSpace(username),
-		HistorySyncDays: historySyncDays,
+		HistorySyncDays: resolveHistorySyncDays(token, historySyncDays),
 	}
 
 	conn, err := pairing.GetConnection()

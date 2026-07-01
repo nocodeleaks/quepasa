@@ -206,7 +206,11 @@
             </div>
             <p class="option-desc">{{ t('server_history_sync_desc') }}</p>
           </div>
-          <span class="readonly-badge">{{ t('server_readonly') }}</span>
+          <div class="history-sync-edit">
+            <input type="number" min="0" v-model.number="historyDays" class="history-days-input" :disabled="togglingOption === 'server-historysyncdays'" />
+            <span class="history-days-unit">{{ t('server_history_sync_unit') }}</span>
+            <button class="history-save-btn" @click="updateOption('historysyncdays', Math.max(0, Math.floor(historyDays || 0)))" :disabled="togglingOption === 'server-historysyncdays'" :title="t('save')"><i class="fa fa-check"></i></button>
+          </div>
         </div>
 
         <div class="option-card">
@@ -411,6 +415,8 @@ export default defineComponent({
       readupdate: 0,
     })
 
+    const historyDays = ref<number>(0)
+
     const statusClass = computed(() => {
       const state = serverState.value.toLowerCase()
       if (state === 'ready') return 'connected'
@@ -459,6 +465,7 @@ export default defineComponent({
         options.value.calls = toTriState(summary.calls)
         options.value.direct = toTriState(summary.direct)
         options.value.readupdate = toTriState(summary.readupdate)
+        historyDays.value = Number(summary.historysyncdays) || 0
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || t('server_error_load')
       } finally {
@@ -546,6 +553,7 @@ export default defineComponent({
 
     return {
       t,
+      historyDays,
       confirmDelete,
       copyToken,
       deleteServer,
@@ -1062,6 +1070,48 @@ export default defineComponent({
 
 .history-sync-card {
   flex-wrap: wrap;
+}
+
+.history-sync-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.history-days-input {
+  width: 72px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: right;
+  background: #f9fafb;
+  color: #111827;
+}
+.history-days-unit {
+  color: #6b7280;
+  font-size: 13px;
+}
+.history-save-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: #7c3aed;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.history-save-btn:hover:not(:disabled) {
+  background: #6d28d9;
+}
+.history-save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .readonly-badge {

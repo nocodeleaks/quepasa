@@ -112,27 +112,21 @@
               <i class="fa fa-ellipsis-v"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <!-- Actions submenu -->
+              <!-- Open (fora de Acoes, antes) -->
+              <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-external-link-alt me-2"></i> {{ t('open') }}</router-link></li>
+              <!-- Actions submenu (inclui os antigos Filtros) -->
               <li class="dropdown-submenu" @mouseenter="activeSubmenu = srv.token + '-card-actions'" @mouseleave="activeSubmenu = ''">
                 <a class="dropdown-item dropdown-submenu-toggle" href="#" @click.stop.prevent="activeSubmenu = activeSubmenu === srv.token + '-card-actions' ? '' : srv.token + '-card-actions'">
                   <i class="fa fa-bolt me-2"></i> {{ t('actions') }} <i class="fa fa-chevron-right ms-auto"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-submenu-menu" :class="{ show: activeSubmenu === srv.token + '-card-actions' }">
-                  <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-external-link-alt me-2"></i> {{ t('open') }}</router-link></li>
                   <template v-if="isConnected(srv)">
                     <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/lid/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('menu_lid_send') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/lid/mappings`" class="dropdown-item"><i class="fa fa-random me-2"></i> {{ t('menu_lid_mappings') }}</router-link></li>
+                    <li><hr class="dropdown-divider"></li>
                   </template>
-                </ul>
-              </li>
-              <!-- Filters submenu -->
-              <li class="dropdown-submenu" @mouseenter="activeSubmenu = srv.token + '-card'" @mouseleave="activeSubmenu = ''">
-                <a class="dropdown-item dropdown-submenu-toggle" href="#" @click.stop.prevent="activeSubmenu = activeSubmenu === srv.token + '-card' ? '' : srv.token + '-card'">
-                  <i class="fa fa-sliders me-2"></i> {{ t('filters') }} <i class="fa fa-chevron-right ms-auto"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-submenu-menu" :class="{ show: activeSubmenu === srv.token + '-card' }">
                   <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }}<span class="submenu-badge ms-auto" :class="srv.groups ? 'on' : 'off'">{{ srv.groups ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }}<span class="submenu-badge ms-auto" :class="srv.broadcasts ? 'on' : 'off'">{{ srv.broadcasts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.readReceipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}<span class="submenu-badge ms-auto" :class="srv.readReceipts ? 'on' : 'off'">{{ srv.readReceipts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
@@ -203,27 +197,21 @@
               <i class="fa fa-ellipsis-v"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <!-- Actions submenu -->
+              <!-- Open (fora de Acoes, antes) -->
+              <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-external-link-alt me-2"></i> {{ t('open') }}</router-link></li>
+              <!-- Actions submenu (inclui os antigos Filtros) -->
               <li class="dropdown-submenu" @mouseenter="activeSubmenu = srv.token + '-row-actions'" @mouseleave="activeSubmenu = ''">
                 <a class="dropdown-item dropdown-submenu-toggle" href="#" @click.stop.prevent="activeSubmenu = activeSubmenu === srv.token + '-row-actions' ? '' : srv.token + '-row-actions'">
                   <i class="fa fa-bolt me-2"></i> {{ t('actions') }} <i class="fa fa-chevron-right ms-auto"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-submenu-menu" :class="{ show: activeSubmenu === srv.token + '-row-actions' }">
-                  <li><router-link :to="`/server/${srv.token}`" class="dropdown-item"><i class="fa fa-external-link-alt me-2"></i> {{ t('open') }}</router-link></li>
                   <template v-if="isConnected(srv)">
                     <li><router-link :to="`/server/${srv.token}/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('send_message') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/messages`" class="dropdown-item"><i class="fa fa-inbox me-2"></i> {{ t('messages') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/lid/send`" class="dropdown-item"><i class="fa fa-paper-plane me-2"></i> {{ t('menu_lid_send') }}</router-link></li>
                     <li><router-link :to="`/server/${srv.token}/lid/mappings`" class="dropdown-item"><i class="fa fa-random me-2"></i> {{ t('menu_lid_mappings') }}</router-link></li>
+                    <li><hr class="dropdown-divider"></li>
                   </template>
-                </ul>
-              </li>
-              <!-- Filters submenu -->
-              <li class="dropdown-submenu" @mouseenter="activeSubmenu = srv.token + '-row'" @mouseleave="activeSubmenu = ''">
-                <a class="dropdown-item dropdown-submenu-toggle" href="#" @click.stop.prevent="activeSubmenu = activeSubmenu === srv.token + '-row' ? '' : srv.token + '-row'">
-                  <i class="fa fa-sliders me-2"></i> {{ t('filters') }} <i class="fa fa-chevron-right ms-auto"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-submenu-menu" :class="{ show: activeSubmenu === srv.token + '-row' }">
                   <li><button class="dropdown-item" :class="{ active: srv.groups }" @click="toggleGroups(srv)"><i class="fa fa-users me-2"></i> {{ t('groups') }}<span class="submenu-badge ms-auto" :class="srv.groups ? 'on' : 'off'">{{ srv.groups ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.broadcasts }" @click="toggleBroadcasts(srv)"><i class="fa fa-bullhorn me-2"></i> {{ t('broadcasts') }}<span class="submenu-badge ms-auto" :class="srv.broadcasts ? 'on' : 'off'">{{ srv.broadcasts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
                   <li><button class="dropdown-item" :class="{ active: srv.readReceipts }" @click="toggleReadReceipts(srv)"><i class="fa fa-check-double me-2"></i> {{ t('read_receipts') }}<span class="submenu-badge ms-auto" :class="srv.readReceipts ? 'on' : 'off'">{{ srv.readReceipts ? t('state_on_short') : t('state_off_short') }}</span></button></li>
@@ -1023,11 +1011,24 @@ export default defineComponent({
 .scard.connecting { border-top: 3px solid #f59e0b; }
 .scard.disconnected { border-top: 3px solid #e5e7eb; }
 
+/* 3 pontinhos na linha do numero, direita, sem borda */
+.scard-actions .dropdown {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  z-index: 2;
+}
+.scard-btn-more {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .scard-head {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.7rem 0.8rem 0.5rem;
+  padding: 0.7rem 40px 0.5rem 0.8rem;
 }
 .scard-avatar {
   flex-shrink: 0;

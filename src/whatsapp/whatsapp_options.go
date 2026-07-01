@@ -24,6 +24,9 @@ type WhatsappOptions struct {
 	// should handle direct (individual) messages (@s.whatsapp.net and @lid); default true
 	Direct WhatsappBoolean `db:"direct" json:"direct,omitempty"`
 
+	// number of days of history to sync on first pairing; 0 = system default (env HISTORYSYNCDAYS)
+	HistorySyncDays uint32 `db:"historysyncdays" json:"historysyncdays,omitempty"`
+
 	// VoIPMode controls inbound WhatsApp call handling for this instance:
 	// disabled (default reject/relay), exclusive (SIP only, hang up WhatsApp on
 	// SIP failure), or additional (SIP as extra device, leave call ringing).

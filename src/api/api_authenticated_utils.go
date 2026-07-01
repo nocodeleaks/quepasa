@@ -332,6 +332,7 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 		"calls":            dbServer.Calls,
 		"readupdate":       dbServer.ReadUpdate,
 		"direct":           dbServer.Direct,
+		"historysyncdays":  dbServer.HistorySyncDays,
 	}
 }
 

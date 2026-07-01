@@ -27,6 +27,7 @@ func buildSessionConfigurationPatch(request interface{}) *runtime.SessionConfigu
 			patch.Calls = req.Calls
 			patch.ReadUpdate = req.ReadUpdate
 			patch.Direct = req.Direct
+			patch.HistorySyncDays = req.HistorySyncDays
 			patch.Devel = req.Devel
 			patch.ContextId = req.ContextId
 		}

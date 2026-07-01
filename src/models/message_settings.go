@@ -40,6 +40,17 @@ func ResolveMessageSettings(server *QpWhatsappServer) ResolvedMessageSettings {
 	m := environment.Settings.Messages
 	retention := m.RetentionDays
 	types := m.DispatchTypes
+
+	// global tier (beats env)
+	g := GetGlobalMessageConfig()
+	if g.StoreRetentionDays != nil {
+		retention = *g.StoreRetentionDays
+	}
+	if g.DispatchTypes != nil {
+		types = environment.ParseDispatchTypes(*g.DispatchTypes)
+	}
+
+	// per-caixa tier (beats global)
 	if server != nil {
 		cfg := server.QpServer
 		if cfg != nil && cfg.StoreRetentionDays.Valid {

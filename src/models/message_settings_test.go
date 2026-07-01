@@ -47,3 +47,28 @@ func TestResolvePerServerOverride(t *testing.T) {
 	}
 	_ = ResolveMessageSettings(nil) // nil must not panic
 }
+
+func TestResolveGlobalTier(t *testing.T) {
+	g := 3
+	gt := "video"
+	SetGlobalMessageConfigForTest(GlobalMessageConfig{StoreRetentionDays: &g, DispatchTypes: &gt})
+	defer SetGlobalMessageConfigForTest(GlobalMessageConfig{}) // reset
+
+	// global beats env
+	r := ResolveMessageSettings(nil)
+	if r.RetentionDays != 3 {
+		t.Fatalf("global retention = %d, want 3", r.RetentionDays)
+	}
+	if !r.DispatchAllowed("video") || r.DispatchAllowed("text") {
+		t.Fatal("global dispatch types not applied")
+	}
+
+	// per-caixa beats global
+	s := &QpServer{}
+	nine := int64(9)
+	s.SetStoreRetentionDays(&nine)
+	r = ResolveMessageSettings(&QpWhatsappServer{QpServer: s})
+	if r.RetentionDays != 9 {
+		t.Fatalf("per-caixa should beat global: got %d, want 9", r.RetentionDays)
+	}
+}

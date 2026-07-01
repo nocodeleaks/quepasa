@@ -808,6 +808,15 @@ const pt: Messages = {
   sip_proxy_running: 'Proxy SIP configurado e em execução',
   sip_proxy_configured_not_running: 'Proxy SIP configurado, mas não está em execução',
   sip_proxy_not_configured: 'Proxy SIP não configurado',
+
+  // Página de configurações globais (somente master)
+  settings_title: 'Configurações Globais',
+  settings_desc: 'Padrões globais do sistema aplicados a todas as sessões que não os sobrescrevem.',
+  settings_global_note: 'padrão do sistema: ',
+  settings_saved: 'Configurações salvas',
+  settings_error_load: 'Não foi possível carregar as configurações',
+  settings_error_save: 'Não foi possível salvar as configurações',
+  account_settings: 'Configurações Globais',
 }
 
 export default pt

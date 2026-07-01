@@ -806,6 +806,15 @@ const en = {
   sip_proxy_running: 'SIP proxy configured and running',
   sip_proxy_configured_not_running: 'SIP proxy configured but not running',
   sip_proxy_not_configured: 'SIP proxy is not configured',
+
+  // Global settings page (master only)
+  settings_title: 'Global Settings',
+  settings_desc: 'System-wide defaults applied to every session that does not override them.',
+  settings_global_note: 'system default: ',
+  settings_saved: 'Settings saved',
+  settings_error_load: 'Could not load settings',
+  settings_error_save: 'Could not save settings',
+  account_settings: 'Global Settings',
 }
 
 export default en

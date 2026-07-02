@@ -42,7 +42,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/tcolgate/mp3 v0.0.0-20170426193717-e79c5a46d300
 	go.mau.fi/util v0.9.10
-	go.mau.fi/whatsmeow v0.0.0-20260616120636-eaa388b4e537
+	go.mau.fi/whatsmeow v0.0.0-20260630180629-b572e5bcb92b
 	golang.org/x/crypto v0.53.0
 	golang.org/x/net v0.56.0
 	google.golang.org/protobuf v1.36.11

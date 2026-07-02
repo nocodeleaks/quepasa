@@ -589,8 +589,10 @@ export default defineComponent({
       if (msg?.attachment && (msg.attachment.url || msg.attachment.Url)) {
         return msg.attachment.url || msg.attachment.Url
       }
-      // Use SPA download endpoint with token in path
-      return `/api/media/messages?token=${encodeURIComponent(token.trim())}&messageid=${encodeURIComponent(msg.id)}`
+      // Canonical media download endpoint (served at root; token in query).
+      // NOTE: the previous "/api/media/messages" path was never registered (404),
+      // which broke audio playback and file/media downloads from the listing.
+      return `/download?token=${encodeURIComponent(token.trim())}&messageid=${encodeURIComponent(msg.id)}`
     }
 
 

@@ -4,8 +4,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	environment "github.com/nocodeleaks/quepasa/environment"
-	webserver "github.com/nocodeleaks/quepasa/webserver"
 	log "github.com/nocodeleaks/quepasa/qplog"
+	webserver "github.com/nocodeleaks/quepasa/webserver"
 )
 
 func init() {
@@ -57,6 +57,7 @@ func Configure(r chi.Router) {
 				RegisterAPIControllers(router, defaultVersion == CurrentAPIVersion)
 			})
 			r.Group(RegisterAPIV3Controllers)
+			r.Group(RegisterSpamAdminControllers)
 			r.Group(RegisterAuthenticatedPublicControllers)
 			r.Group(RegisterAuthenticatedControllers)
 		})

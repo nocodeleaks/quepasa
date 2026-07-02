@@ -1,10 +1,14 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	apiModels "github.com/nocodeleaks/quepasa/api/models"
+	"github.com/nocodeleaks/quepasa/runtime"
 )
+
+var errSpamMasterKeyRequired = errors.New("master key required for spam endpoint")
 
 // -------------------------- PUBLIC METHODS
 //region TYPES OF SPAMMING
@@ -23,7 +27,16 @@ import (
 //	@Security		ApiKeyAuth
 //	@Router			/spam [post]
 func Spam(w http.ResponseWriter, r *http.Request) {
-	server, err := GetServerFromMaster(r)
+	if !IsMatchForMaster(r) {
+		MessageSendErrors.Inc()
+
+		response := &apiModels.SendResponse{}
+		response.ParseError(errSpamMasterKeyRequired)
+		RespondInterfaceCode(w, response, http.StatusLocked)
+		return
+	}
+
+	server, err := runtime.GetSpamSession()
 	if err != nil {
 		MessageSendErrors.Inc()
 

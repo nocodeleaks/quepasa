@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -36,6 +37,9 @@ func SetupTestDatabase(t *testing.T) *sqlx.DB {
 
 	testDB = db
 	testDBInitDone = true
+	models.Connection = db
+	models.Sync = sync.Once{}
+	models.Sync.Do(func() {})
 
 	return db
 }
@@ -70,7 +74,17 @@ func createTestSchema(db *sqlx.DB) error {
 			calls INTEGER DEFAULT 1,
 			readupdate INTEGER DEFAULT 1,
 			direct INTEGER DEFAULT 0,
+			historysyncdays INTEGER NOT NULL DEFAULT 0,
 			FOREIGN KEY (user) REFERENCES users(username)
+		);
+
+		CREATE TABLE IF NOT EXISTS spam_sections (
+			token TEXT PRIMARY KEY NOT NULL REFERENCES servers(token) ON DELETE CASCADE,
+			position INTEGER NOT NULL DEFAULT 0,
+			enabled BOOLEAN NOT NULL DEFAULT 1,
+			label TEXT NOT NULL DEFAULT '',
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
 
 		-- Dispatching table (webhooks and rabbitmq)
@@ -143,6 +157,9 @@ func SetupTestService(t *testing.T) {
 		// Initialize Servers interface
 		models.WhatsappService.DB.Servers = models.NewQpDataServerSql(testDB)
 
+		// Initialize Spam Sections interface
+		models.WhatsappService.DB.SpamSections = models.NewQpDataSpamSectionsSql(testDB)
+
 		// Initialize Conversation Labels interface
 		models.WhatsappService.DB.ConversationLabels = models.NewQpDataConversationLabelSql(testDB)
 	}
@@ -157,6 +174,8 @@ func CleanupTestDatabase(t *testing.T) {
 		testDB = nil
 		testDBInitDone = false
 	}
+	models.Connection = nil
+	models.Sync = sync.Once{}
 
 	// Clear WhatsappService servers
 	if models.WhatsappService != nil && models.WhatsappService.Servers != nil {

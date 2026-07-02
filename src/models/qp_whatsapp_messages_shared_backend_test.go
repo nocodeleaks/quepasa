@@ -66,13 +66,13 @@ func TestSharedBackend_TwoWIDsSameGroupMessage(t *testing.T) {
 	wid2 := newMessages(backend, "tokenWID2")
 
 	// WID1 receives the message first.
-	ok1 := wid1.Append(newGroupMsg(msgID, msgText, "555180124284:27@s.whatsapp.net"), "live")
+	ok1, _ := wid1.Append(newGroupMsg(msgID, msgText, "555180124284:27@s.whatsapp.net"), "live")
 	if !ok1 {
 		t.Fatal("WID1: Append() returned false — first receiver must always trigger")
 	}
 
 	// WID2 receives the same message ~80 ms later (as observed in production logs).
-	ok2 := wid2.Append(newGroupMsg(msgID, msgText, "555192508186:28@s.whatsapp.net"), "live")
+	ok2, _ := wid2.Append(newGroupMsg(msgID, msgText, "555192508186:28@s.whatsapp.net"), "live")
 	if !ok2 {
 		t.Fatal("WID2: Append() returned false — different WID must trigger independently, not be silenced as duplicate")
 	}
@@ -92,13 +92,13 @@ func TestSharedBackend_SameWIDSameMessageIsDeduped(t *testing.T) {
 
 	wid := newMessages(backend, "tokenWID3")
 
-	ok1 := wid.Append(newGroupMsg(msgID, msgText, "555180124284:27@s.whatsapp.net"), "live")
+	ok1, _ := wid.Append(newGroupMsg(msgID, msgText, "555180124284:27@s.whatsapp.net"), "live")
 	if !ok1 {
 		t.Fatal("first Append() must succeed")
 	}
 
 	// Exact same message arriving again on the same WID — must be suppressed.
-	ok2 := wid.Append(newGroupMsg(msgID, msgText, "555180124284:27@s.whatsapp.net"), "live")
+	ok2, _ := wid.Append(newGroupMsg(msgID, msgText, "555180124284:27@s.whatsapp.net"), "live")
 	if ok2 {
 		t.Fatal("second Append() of identical content on same WID must return false (dedup)")
 	}
@@ -146,7 +146,7 @@ func TestSharedBackend_ThreeWIDsSameGroupMessage(t *testing.T) {
 
 	for i, token := range tokens {
 		m := newMessages(backend, token)
-		ok := m.Append(newGroupMsg(msgID, msgText, wids[i]), "live")
+		ok, _ := m.Append(newGroupMsg(msgID, msgText, wids[i]), "live")
 		if !ok {
 			t.Fatalf("WID %s (token %s): Append() returned false — every connected number must trigger independently", wids[i], token)
 		}
@@ -173,12 +173,12 @@ func TestSharedBackend_WithoutPrefixCollides(t *testing.T) {
 	wid2 := &QpWhatsappMessages{}
 	wid2.SetBackend(backend)
 
-	ok1 := wid1.Append(newGroupMsg(msgID, msgText, "555111@s.whatsapp.net"), "live")
+	ok1, _ := wid1.Append(newGroupMsg(msgID, msgText, "555111@s.whatsapp.net"), "live")
 	if !ok1 {
 		t.Fatal("first Append() must succeed")
 	}
 
-	ok2 := wid2.Append(newGroupMsg(msgID, msgText, "555222@s.whatsapp.net"), "live")
+	ok2, _ := wid2.Append(newGroupMsg(msgID, msgText, "555222@s.whatsapp.net"), "live")
 	// Without prefix isolation this returns false — document that here.
 	if ok2 {
 		t.Log("NOTE: without key prefix, second WID was NOT suppressed (backend may have changed behaviour)")

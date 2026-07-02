@@ -227,6 +227,15 @@ func (source *DispatchingHandler) Receipt(msg *whatsapp.WhatsappMessage) {
 //#endregion
 //region MESSAGE CONTROL REGION HANDLE A LOCK
 
+// dispatchDecision: store-independent dispatch gate — realtime always, history only
+// when new (dedup), and only for allowed message types.
+func dispatchDecision(r ResolvedMessageSettings, from string, wasNew bool, msgType string) bool {
+	// realtime messages always dispatch; history dispatches only when new, so a
+	// reconnect resync does not re-fire webhooks for messages already delivered.
+	dispatch := from != "history" || wasNew
+	return dispatch && r.DispatchAllowed(msgType)
+}
+
 // caches and triggers async hooks
 func (source *DispatchingHandler) appendMsgToCache(msg *whatsapp.WhatsappMessage, from string) {
 
@@ -235,16 +244,22 @@ func (source *DispatchingHandler) appendMsgToCache(msg *whatsapp.WhatsappMessage
 		msg.Wid = source.server.GetWId()
 	}
 
-	// saving on local normalized cache, do not affect remote msgs
-	valid := source.QpWhatsappMessages.Append(msg, from)
+	r := ResolveMessageSettings(source.server)
 
-	// cache changed, continue to external dispatchers
-	if valid {
+	wasNew := true // store=none never stored → treat as new for the dispatch gate
+	if r.Store() {
+		// saving on local normalized cache, do not affect remote msgs
+		valid, isNew := source.QpWhatsappMessages.AppendWithExpiry(msg, from, r.ExpiryFor())
+		if !valid {
+			return
+		}
+		wasNew = isNew
 
 		// should cleanup old messages ?
-		length := ENV.CacheLength()
-		source.QpWhatsappMessages.CleanUp(length)
+		source.QpWhatsappMessages.CleanUp(ENV.CacheLength())
+	}
 
+	if dispatchDecision(r, from, wasNew, msg.Type.String()) {
 		source.Trigger(msg)
 	}
 }

@@ -92,7 +92,9 @@ type SendAnyRequest struct {
 	Content string `json:"content,omitempty"`
 
 	// Preview controls whether a link preview should be generated for URLs in Text.
-	Preview bool `json:"preview,omitempty"`
+	// Pointer so that an omitted field defaults to ON (nil), matching the documented
+	// behaviour ("preview" default: true). Read it via ShouldGeneratePreview().
+	Preview *bool `json:"preview,omitempty"`
 
 	// PreviewTitle overrides the fetched Open Graph title.
 	PreviewTitle string `json:"preview_title,omitempty"`
@@ -102,6 +104,17 @@ type SendAnyRequest struct {
 
 	// PreviewThumb is a URL to a custom thumbnail image (overrides the OG image).
 	PreviewThumb string `json:"preview_thumb,omitempty"`
+}
+
+// ShouldGeneratePreview reports whether a link preview/thumbnail should be
+// generated. Defaults to true when the field is omitted (Preview == nil), which
+// matches the documented default and avoids silently dropping link previews for
+// clients that never send the flag.
+func (source *SendAnyRequest) ShouldGeneratePreview() bool {
+	if source.Preview == nil {
+		return true
+	}
+	return *source.Preview
 }
 
 // GetLogger returns a request-scoped logger with chat id context attached.

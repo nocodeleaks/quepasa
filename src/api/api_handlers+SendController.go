@@ -221,7 +221,7 @@ func SendAnyWithServer(w http.ResponseWriter, r *http.Request, server *models.Qp
 	}
 
 	// Generate link preview when requested and message has text with a URL but no attachment
-	if request.Preview && len(request.Text) > 0 && len(request.Content) == 0 {
+	if request.ShouldGeneratePreview() && len(request.Text) > 0 && len(request.Content) == 0 {
 		handleLinkPreview(request, response)
 	}
 

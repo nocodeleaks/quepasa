@@ -338,6 +338,7 @@ func newCableTestDatabase(t *testing.T) *sqlx.DB {
 			calls INTEGER DEFAULT 1,
 			readupdate INTEGER DEFAULT 1,
 			direct INTEGER DEFAULT 0,
+			historysyncdays INTEGER NOT NULL DEFAULT 0,
 			FOREIGN KEY (user) REFERENCES users(username)
 		);
 		CREATE TABLE IF NOT EXISTS dispatching (

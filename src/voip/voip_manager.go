@@ -114,6 +114,11 @@ type CallerInfoResolver interface {
 	ResolveVoIPCallerInfo(peer types.JID) CallerInfo
 }
 
+type sectionInfoResolver interface {
+	GetVoIPSectionID() string
+	GetSessionToken() string
+}
+
 type callSIPMetadata struct {
 	CallID     string
 	FromPhone  string
@@ -426,9 +431,8 @@ func (m *VoipManager) sipHeaders(meta callSIPMetadata) map[string]string {
 	}
 
 	headers := make(map[string]string)
-	addSIPHeader(headers, "X-QuePasa-SectionId", m.sectionID)
-	addSIPHeader(headers, "X-QuePasa-Token", m.sessionToken)
-	addSIPHeader(headers, "X-QuePasa-SessionId", m.sessionToken)
+	sessionID := m.currentSessionID(meta.ToPhone)
+	addSIPHeader(headers, "X-QuePasa-SessionId", sessionID)
 	addSIPHeader(headers, "X-QuePasa-CallId", meta.CallID)
 	addSIPHeader(headers, "X-QuePasa-Direction", "inbound-whatsapp")
 	addSIPHeader(headers, "X-QuePasa-Account-Phone", meta.ToPhone)
@@ -446,6 +450,20 @@ func (m *VoipManager) sipHeaders(meta callSIPMetadata) map[string]string {
 		return nil
 	}
 	return headers
+}
+
+func (m *VoipManager) currentSessionID(fallback string) string {
+	if m == nil {
+		return strings.TrimSpace(fallback)
+	}
+
+	sessionID := strings.TrimSpace(m.sectionID)
+	if resolver, ok := m.callerInfoResolver.(sectionInfoResolver); ok && resolver != nil {
+		if value := strings.TrimSpace(resolver.GetVoIPSectionID()); value != "" {
+			sessionID = value
+		}
+	}
+	return firstNonEmpty(sessionID, fallback)
 }
 
 // wireSIPBridge creates the RTP stream, sends SIP INVITE, and wires audio.

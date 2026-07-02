@@ -32,6 +32,7 @@ func TestQpDataServerSqlFindByTokenAndUserReturnServerRows(t *testing.T) {
 		calls INTEGER,
 		readupdate INTEGER,
 		direct INTEGER,
+		historysyncdays INTEGER DEFAULT 0,
 		user TEXT,
 		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`

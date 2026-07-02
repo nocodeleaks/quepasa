@@ -29,12 +29,10 @@ func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
 
 	headers := mgr.sipHeaders(meta)
 
-	assertHeader(t, headers, "X-QuePasa-SectionId", "5521967609095:2")
-	assertHeader(t, headers, "X-QuePasa-Token", "token-123")
-	assertHeader(t, headers, "X-QuePasa-SessionId", "token-123")
+	assertHeader(t, headers, "X-QuePasa-SessionId", "5545343444095:2")
 	assertHeader(t, headers, "X-QuePasa-CallId", "CALL-123")
 	assertHeader(t, headers, "X-QuePasa-Direction", "inbound-whatsapp")
-	assertHeader(t, headers, "X-QuePasa-Account-Phone", "5521967609095")
+	assertHeader(t, headers, "X-QuePasa-Account-Phone", "5545343444095")
 	assertHeader(t, headers, "X-QuePasa-Caller-Phone", "5511999999999")
 	assertHeader(t, headers, "X-QuePasa-Caller-E164", "+5511999999999")
 	assertHeader(t, headers, "X-QuePasa-Caller-JID", "5511999999999@s.whatsapp.net")
@@ -46,7 +44,7 @@ func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
 }
 
 func TestSIPHeadersSanitizeValues(t *testing.T) {
-	mgr := &VoipManager{sectionID: "5521967609095:2\r\nInjected: bad", sessionToken: "token-123\r\nInjected: bad"}
+	mgr := &VoipManager{sectionID: "5545343444095:2\r\nInjected: bad", sessionToken: "token-123\r\nInjected: bad"}
 	meta := callSIPMetadata{
 		CallID:    "CALL-123",
 		FromPhone: "5511999999999",
@@ -58,14 +56,46 @@ func TestSIPHeadersSanitizeValues(t *testing.T) {
 
 	headers := mgr.sipHeaders(meta)
 
-	assertHeader(t, headers, "X-QuePasa-SectionId", "5521967609095:2 Injected: bad")
-	assertHeader(t, headers, "X-QuePasa-Token", "token-123 Injected: bad")
+	assertHeader(t, headers, "X-QuePasa-SessionId", "5545343444095:2 Injected: bad")
 	assertHeader(t, headers, "X-QuePasa-Caller-Title", "Nome X-Bad: 1 Teste")
 	for name, value := range headers {
 		if strings.ContainsAny(value, "\r\n\t") {
 			t.Fatalf("header %s contains unsafe whitespace: %q", name, value)
 		}
 	}
+}
+
+func TestSIPHeadersResolveSectionInfoAtInviteTime(t *testing.T) {
+	mgr := &VoipManager{
+		callerInfoResolver: fakeSectionInfoResolver{
+			sectionID:    "5545343444095:18",
+			sessionToken: "token-live",
+		},
+	}
+	meta := callSIPMetadata{
+		CallID:    "CALL-123",
+		FromPhone: "5511999999999",
+		ToPhone:   "5545343444095",
+		Peer:      types.NewJID("5511999999999", types.DefaultUserServer),
+	}
+
+	headers := mgr.sipHeaders(meta)
+
+	assertHeader(t, headers, "X-QuePasa-SessionId", "5545343444095:18")
+}
+
+func TestSIPHeadersFallbackToAccountPhoneWhenSectionIsUnavailable(t *testing.T) {
+	mgr := &VoipManager{}
+	meta := callSIPMetadata{
+		CallID:    "CALL-123",
+		FromPhone: "5511999999999",
+		ToPhone:   "5521967609095",
+		Peer:      types.NewJID("5511999999999", types.DefaultUserServer),
+	}
+
+	headers := mgr.sipHeaders(meta)
+
+	assertHeader(t, headers, "X-QuePasa-SessionId", "5545343444095")
 }
 
 func TestVoipManagerShouldHandleCallsHonorsLiveCallMode(t *testing.T) {
@@ -96,6 +126,23 @@ func TestVoipManagerShouldHandleCallsHonorsLiveCallMode(t *testing.T) {
 	if !mgr.ShouldHandleCalls() {
 		t.Fatal("forward mode should reactivate SIP forwarding without reconnecting")
 	}
+}
+
+type fakeSectionInfoResolver struct {
+	sectionID    string
+	sessionToken string
+}
+
+func (resolver fakeSectionInfoResolver) ResolveVoIPCallerInfo(peer types.JID) CallerInfo {
+	return CallerInfo{JID: peer.String(), Phone: peer.User}
+}
+
+func (resolver fakeSectionInfoResolver) GetVoIPSectionID() string {
+	return resolver.sectionID
+}
+
+func (resolver fakeSectionInfoResolver) GetSessionToken() string {
+	return resolver.sessionToken
 }
 
 func assertHeader(t *testing.T, headers map[string]string, name, want string) {

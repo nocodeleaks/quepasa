@@ -28,6 +28,7 @@ type QpDatabase struct {
 	Servers            QpDataServersInterface
 	Dispatching        QpDataDispatchingInterface
 	ConversationLabels QpDataConversationLabelsInterface
+	SpamSections       QpDataSpamSectionsInterface
 }
 
 var (
@@ -72,14 +73,17 @@ func GetDatabase() *QpDatabase {
 	var iservers = QpDataServerSql{db}
 	var idispatching = QpDataServerDispatchingSql{db}
 	var iconversationlabels = QpDataConversationLabelSql{db}
+	var ispamsections = QpDataSpamSectionsSql{db}
 
 	return &QpDatabase{
-		dbParameters,
-		db,
-		iusers,
-		iservers,
-		idispatching,
-		iconversationlabels}
+		Parameters:         dbParameters,
+		Connection:         db,
+		Users:              iusers,
+		Servers:            iservers,
+		Dispatching:        idispatching,
+		ConversationLabels: iconversationlabels,
+		SpamSections:       ispamsections,
+	}
 }
 
 // NewQpDataUserSql creates a new QpDataUserSql instance with the given database connection
@@ -100,6 +104,11 @@ func NewQpDataServerSql(db *sqlx.DB) QpDataServersInterface {
 // NewQpDataConversationLabelSql creates a new QpDataConversationLabelSql instance with the given database connection
 func NewQpDataConversationLabelSql(db *sqlx.DB) QpDataConversationLabelsInterface {
 	return QpDataConversationLabelSql{db}
+}
+
+// NewQpDataSpamSectionsSql creates a new QpDataSpamSectionsSql instance with the given database connection
+func NewQpDataSpamSectionsSql(db *sqlx.DB) QpDataSpamSectionsInterface {
+	return QpDataSpamSectionsSql{db}
 }
 
 // MigrateToLatest updates the database to the latest schema

@@ -117,33 +117,117 @@ func (source *WhatsmeowConnection) DownloadData(imsg whatsapp.IWhatsappMessage) 
 	msg := imsg.GetSource()
 	logentry := source.GetLogger().WithField(LogFields.MessageId, imsg.GetId())
 
-	// Try direct downloadable message first
-	downloadable, ok := msg.(whatsmeow.DownloadableMessage)
-	if ok {
-		logentry.Trace("Message implements DownloadableMessage directly, using Client.Download()")
-		return source.Client.Download(context.Background(), downloadable)
-	}
-
-	waMsg, ok := msg.(*waE2E.Message)
-	if ok {
-		downloadable = GetDownloadableMessage(waMsg)
-		if downloadable != nil {
-			logentry.Trace("waMsg implements DownloadableMessage, using Client.Download()")
-			return source.Client.Download(context.Background(), downloadable)
-		}
-	}
-
-	// If internal content as VCard or Localization
 	attach := imsg.GetAttachment()
+
+	// Serve already-cached bytes if present (downloaded once earlier).
 	if attach != nil {
-		data := attach.GetContent()
-		if data != nil {
-			logentry.Trace("no waMsg, found attachment, returning content")
-			return *data, err
+		if cached := attach.GetContent(); cached != nil {
+			logentry.Trace("returning cached attachment content")
+			return *cached, nil
 		}
 	}
-	// If we reach here, it means we have a waE2E.Message but no DownloadableMessage interface
-	return nil, fmt.Errorf("message (%s) is not downloadable", imsg.GetId())
+
+	// Collect candidate downloadables, most-likely first:
+	//  1. the live whatsmeow Source (present when the message is still in memory);
+	//  2. rebuilt from the persisted metadata, trying each media type (Image/Document).
+	// Trying all is what fixes "image sent as document": its Source is a
+	// DocumentMessage but the media is often encrypted with Image keys, so the
+	// Source download fails HMAC and we must fall back to the Image reconstruction.
+	var candidates []whatsmeow.DownloadableMessage
+	if dl, ok := msg.(whatsmeow.DownloadableMessage); ok {
+		candidates = append(candidates, dl)
+	} else if waMsg, ok := msg.(*waE2E.Message); ok {
+		if dl := GetDownloadableMessage(waMsg); dl != nil {
+			candidates = append(candidates, dl)
+		}
+	}
+	for _, cand := range candidateDownloadables(imsg, attach) {
+		if dl := GetDownloadableMessage(cand); dl != nil {
+			candidates = append(candidates, dl)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("message (%s) is not downloadable", imsg.GetId())
+	}
+
+	for _, dl := range candidates {
+		d, derr := source.Client.Download(context.Background(), dl)
+		if derr == nil {
+			return d, nil
+		}
+		logentry.Tracef("download candidate failed, trying next: %v", derr)
+		err = derr
+	}
+	return nil, fmt.Errorf("failed to download media for message (%s): %w", imsg.GetId(), err)
+}
+
+// buildDownloadableFromAttachment rebuilds a whatsmeow media message from the
+// persisted attachment metadata (DirectPath/MediaKey/SHAs + mimetype/length), so
+// media can be re-downloaded even when the original in-memory whatsmeow Source is
+// gone. Returns nil when there isn't enough metadata to reconstruct.
+// candidateDownloadables returns rebuilt messages to try for download, most-likely
+// first. Media encryption keys are derived per media type (Image vs Document keys),
+// and "image sent as document" is ambiguous (may be encrypted either way), so we
+// offer the real stored message type AND the mime-derived type; the caller tries
+// each until one passes the HMAC/decrypt check.
+func candidateDownloadables(imsg whatsapp.IWhatsappMessage, att *whatsapp.WhatsappAttachment) []*waE2E.Message {
+	if att == nil || len(att.DirectPath) == 0 || len(att.MediaKey) == 0 {
+		return nil
+	}
+	seen := map[whatsapp.WhatsappMessageType]bool{}
+	var candidates []*waE2E.Message
+	add := func(t whatsapp.WhatsappMessageType) {
+		if seen[t] {
+			return
+		}
+		seen[t] = true
+		if m := buildDownloadableForType(t, att); m != nil {
+			candidates = append(candidates, m)
+		}
+	}
+	// primary: the real stored message type; fallback: derived from the mimetype
+	if wm, ok := imsg.(*whatsapp.WhatsappMessage); ok && wm.Type != whatsapp.UnhandledMessageType {
+		add(wm.Type)
+	}
+	add(whatsapp.GetMessageType(att))
+	return candidates
+}
+
+func buildDownloadableForType(msgType whatsapp.WhatsappMessageType, att *whatsapp.WhatsappAttachment) *waE2E.Message {
+	switch msgType {
+	case whatsapp.ImageMessageType:
+		return &waE2E.Message{ImageMessage: &waE2E.ImageMessage{
+			DirectPath: proto.String(att.DirectPath), MediaKey: att.MediaKey,
+			FileEncSHA256: att.FileEncSHA256, FileSHA256: att.FileSHA256,
+			Mimetype: proto.String(att.Mimetype), FileLength: proto.Uint64(att.FileLength),
+		}}
+	case whatsapp.VideoMessageType:
+		return &waE2E.Message{VideoMessage: &waE2E.VideoMessage{
+			DirectPath: proto.String(att.DirectPath), MediaKey: att.MediaKey,
+			FileEncSHA256: att.FileEncSHA256, FileSHA256: att.FileSHA256,
+			Mimetype: proto.String(att.Mimetype), FileLength: proto.Uint64(att.FileLength),
+		}}
+	case whatsapp.AudioMessageType:
+		return &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+			DirectPath: proto.String(att.DirectPath), MediaKey: att.MediaKey,
+			FileEncSHA256: att.FileEncSHA256, FileSHA256: att.FileSHA256,
+			Mimetype: proto.String(att.Mimetype), FileLength: proto.Uint64(att.FileLength),
+		}}
+	case whatsapp.StickerMessageType:
+		return &waE2E.Message{StickerMessage: &waE2E.StickerMessage{
+			DirectPath: proto.String(att.DirectPath), MediaKey: att.MediaKey,
+			FileEncSHA256: att.FileEncSHA256, FileSHA256: att.FileSHA256,
+			Mimetype: proto.String(att.Mimetype), FileLength: proto.Uint64(att.FileLength),
+		}}
+	default:
+		return &waE2E.Message{DocumentMessage: &waE2E.DocumentMessage{
+			DirectPath: proto.String(att.DirectPath), MediaKey: att.MediaKey,
+			FileEncSHA256: att.FileEncSHA256, FileSHA256: att.FileSHA256,
+			Mimetype: proto.String(att.Mimetype), FileLength: proto.Uint64(att.FileLength),
+			FileName: proto.String(att.FileName),
+		}}
+	}
 }
 
 func (conn *WhatsmeowConnection) Download(imsg whatsapp.IWhatsappMessage, cache bool) (att *whatsapp.WhatsappAttachment, err error) {

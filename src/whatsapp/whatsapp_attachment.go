@@ -32,6 +32,15 @@ type WhatsappAttachment struct {
 	// Public access url helper content
 	Url string `json:"url,omitempty"`
 
+	// Media re-download metadata. Persisted (unlike the in-memory whatsmeow
+	// Source, which the serialized redis/postgres backends drop on round-trip)
+	// so media stays downloadable from any backend and after a restart. Combined
+	// with Mimetype+FileLength these let us rebuild a whatsmeow downloadable.
+	DirectPath    string `json:"directpath,omitempty"`
+	MediaKey      []byte `json:"mediakey,omitempty"`
+	FileEncSHA256 []byte `json:"fileencsha256,omitempty"`
+	FileSHA256    []byte `json:"filesha256,omitempty"`
+
 	WaveForm []byte `json:"waveform,omitempty"`
 
 	// Checksum for the message, used to verify integrity

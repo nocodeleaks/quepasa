@@ -481,6 +481,15 @@ const en = {
   server_options_title: 'Server Options',
   server_history_sync_title: 'History Synchronization',
   server_history_sync_desc: 'This setting is not yet exposed in the canonical API. Use the classic interface if you need to change this value.',
+  server_store_retention_title: 'Message Retention',
+  server_store_retention_desc: 'How long to keep stored messages for this session.',
+  server_store_retention_inherit: 'Inherit',
+  server_store_retention_none: 'Never store',
+  server_store_retention_forever: 'Forever',
+  server_store_retention_days: 'N days',
+  server_store_retention_unit: 'days',
+  server_dispatch_types_title: 'Dispatch Types',
+  server_dispatch_types_desc: 'Message types dispatched to the webhook. None selected = inherit/all.',
   server_readonly: 'Read-only',
   server_broadcasts_title: 'Broadcast Messages',
   server_broadcasts_desc: 'Receive broadcast list messages. When enabled, broadcast messages appear in the webhook.',
@@ -797,6 +806,15 @@ const en = {
   sip_proxy_running: 'SIP proxy configured and running',
   sip_proxy_configured_not_running: 'SIP proxy configured but not running',
   sip_proxy_not_configured: 'SIP proxy is not configured',
+
+  // Global settings page (master only)
+  settings_title: 'Global Settings',
+  settings_desc: 'System-wide defaults applied to every session that does not override them.',
+  settings_global_note: 'system default: ',
+  settings_saved: 'Settings saved',
+  settings_error_load: 'Could not load settings',
+  settings_error_save: 'Could not save settings',
+  account_settings: 'Global Settings',
 }
 
 export default en

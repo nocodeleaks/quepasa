@@ -209,6 +209,48 @@
           <span class="readonly-badge">{{ t('server_readonly') }}</span>
         </div>
 
+        <div class="option-card history-sync-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-database option-icon"></i>
+              <span class="option-title">{{ t('server_store_retention_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_store_retention_desc') }}</p>
+          </div>
+          <div class="history-sync-edit">
+            <select v-model="storeRetentionMode" class="history-days-input retention-select" :disabled="togglingOption === 'server-store_retention_days'">
+              <option value="inherit">{{ t('server_store_retention_inherit') }}</option>
+              <option value="none">{{ t('server_store_retention_none') }}</option>
+              <option value="forever">{{ t('server_store_retention_forever') }}</option>
+              <option value="days">{{ t('server_store_retention_days') }}</option>
+            </select>
+            <template v-if="storeRetentionMode === 'days'">
+              <input type="number" min="1" v-model.number="storeRetentionDays" class="history-days-input" :disabled="togglingOption === 'server-store_retention_days'" />
+              <span class="history-days-unit">{{ t('server_store_retention_unit') }}</span>
+            </template>
+            <button class="history-save-btn" @click="saveStoreRetention" :disabled="togglingOption === 'server-store_retention_days'" :title="t('save')"><i class="fa fa-check"></i></button>
+          </div>
+        </div>
+
+        <div class="option-card history-sync-card">
+          <div class="option-info">
+            <div class="option-header">
+              <i class="fa fa-filter option-icon"></i>
+              <span class="option-title">{{ t('server_dispatch_types_title') }}</span>
+            </div>
+            <p class="option-desc">{{ t('server_dispatch_types_desc') }}</p>
+            <div class="dispatch-types-grid">
+              <label v-for="dt in dispatchTypeOptions" :key="dt" class="dispatch-type-item">
+                <input type="checkbox" :value="dt" v-model="dispatchTypes" :disabled="togglingOption === 'server-dispatch_types'" />
+                <span>{{ dt }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="history-sync-edit">
+            <button class="history-save-btn" @click="updateOption('dispatch_types', dispatchTypes.join(','))" :disabled="togglingOption === 'server-dispatch_types'" :title="t('save')"><i class="fa fa-check"></i></button>
+          </div>
+        </div>
+
         <div class="option-card">
           <div class="option-info">
             <div class="option-header">
@@ -411,6 +453,24 @@ export default defineComponent({
       readupdate: 0,
     })
 
+    // store_retention_days: null=inherit, -1=none, 0=forever, N=days
+    const storeRetentionMode = ref<'inherit' | 'none' | 'forever' | 'days'>('inherit')
+    const storeRetentionDays = ref<number>(30)
+
+    const dispatchTypeOptions = [
+      'text', 'image', 'audio', 'video', 'document', 'sticker', 'location',
+      'contact', 'call', 'system', 'group', 'revoke', 'poll', 'view_once', 'unhandled',
+    ]
+    const dispatchTypes = ref<string[]>([])
+
+    function saveStoreRetention() {
+      let value: number | null = null
+      if (storeRetentionMode.value === 'none') value = -1
+      else if (storeRetentionMode.value === 'forever') value = 0
+      else if (storeRetentionMode.value === 'days') value = Math.max(1, Math.floor(storeRetentionDays.value || 1))
+      updateOption('store_retention_days', value)
+    }
+
     const statusClass = computed(() => {
       const state = serverState.value.toLowerCase()
       if (state === 'ready') return 'connected'
@@ -459,6 +519,23 @@ export default defineComponent({
         options.value.calls = toTriState(summary.calls)
         options.value.direct = toTriState(summary.direct)
         options.value.readupdate = toTriState(summary.readupdate)
+
+        const retention = summary.store_retention_days
+        if (retention === null || retention === undefined) {
+          storeRetentionMode.value = 'inherit'
+        } else if (retention === -1) {
+          storeRetentionMode.value = 'none'
+        } else if (retention === 0) {
+          storeRetentionMode.value = 'forever'
+        } else {
+          storeRetentionMode.value = 'days'
+          storeRetentionDays.value = Number(retention)
+        }
+
+        dispatchTypes.value = String(summary.dispatch_types || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0)
       } catch (err: any) {
         error.value = err?.response?.data?.result || err.message || t('server_error_load')
       } finally {
@@ -466,11 +543,11 @@ export default defineComponent({
       }
     }
 
-    async function updateOption(optionName: string, value: number) {
+    async function updateOption(optionName: string, value: number | string | null) {
       togglingOption.value = `server-${optionName}`
 
       try {
-        const payload: Record<string, number> = {}
+        const payload: Record<string, number | string | null> = {}
         payload[optionName] = value
 
         await api.patch('/api/sessions', { token: encodedToken.value, ...payload })
@@ -546,6 +623,11 @@ export default defineComponent({
 
     return {
       t,
+      storeRetentionMode,
+      storeRetentionDays,
+      saveStoreRetention,
+      dispatchTypeOptions,
+      dispatchTypes,
       confirmDelete,
       copyToken,
       deleteServer,
@@ -1062,6 +1144,71 @@ export default defineComponent({
 
 .history-sync-card {
   flex-wrap: wrap;
+}
+
+.history-sync-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.history-days-input {
+  width: 72px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: right;
+  background: #f9fafb;
+  color: #111827;
+}
+.history-days-unit {
+  color: #6b7280;
+  font-size: 13px;
+}
+.retention-select {
+  width: auto;
+  min-width: 120px;
+  text-align: left;
+  cursor: pointer;
+}
+.dispatch-types-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.dispatch-type-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+html[data-theme='dark'] .dispatch-type-item {
+  color: #cbd5e1;
+}
+.history-save-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: #7c3aed;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.history-save-btn:hover:not(:disabled) {
+  background: #6d28d9;
+}
+.history-save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .readonly-badge {

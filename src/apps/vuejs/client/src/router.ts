@@ -44,6 +44,7 @@ const router = createRouter({
     { path: '/environment', name: 'environment', component: EnvironmentPage, meta: { requiresAuth: true, requiresMaster: true } },
     { path: '/users', name: 'users', component: UsersPage, meta: { requiresAuth: true, requiresMaster: true } },
     { path: '/users/create', name: 'users.create', component: UserCreatePage, meta: { requiresAuth: true, requiresMaster: true } },
+    { path: '/settings', name: 'settings', component: () => import('@/pages/Settings.vue'), meta: { requiresAuth: true, requiresMaster: true } },
     { path: '/master', name: 'master', component: MasterLoginPage, meta: { requiresAuth: true } },
     { path: '/setup', name: 'setup', component: SetupPage },
     { path: '/login', name: 'login', component: LoginPage },

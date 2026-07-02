@@ -276,24 +276,24 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 		uptimeSeconds = int64(time.Since(snap.timestamps.Start).Seconds())
 	}
 
-	return map[string]interface{}{
-		"token":          dbServer.Token,
-		"wid":            dbServer.GetWId(),
-		"state":          snap.state.String(),
-		"stateCode":      snap.state.EnumIndex(),
-		"verified":       dbServer.Verified,
-		"devel":          dbServer.Devel,
-		"user":           dbServer.GetUser(),
-		"timestamp":      dbServer.Timestamp,
-		"startTime":      snap.timestamps.Start,
-		"lastUpdate":     snap.timestamps.Update,
-		"uptimeSeconds":  uptimeSeconds,
-		"dispatchCount":  snap.dispatchCount,
-		"webhookCount":   snap.webhookCount,
-		"rabbitmqCount":  snap.rabbitmqCount,
-		"hasDispatching": snap.dispatchCount > 0,
-		"hasWebhooks":    snap.webhookCount > 0,
-		"hasRabbitMQ":    snap.rabbitmqCount > 0,
+	summary := map[string]interface{}{
+		"token":            dbServer.Token,
+		"wid":              dbServer.GetWId(),
+		"state":            snap.state.String(),
+		"stateCode":        snap.state.EnumIndex(),
+		"verified":         dbServer.Verified,
+		"devel":            dbServer.Devel,
+		"user":             dbServer.GetUser(),
+		"timestamp":        dbServer.Timestamp,
+		"startTime":        snap.timestamps.Start,
+		"lastUpdate":       snap.timestamps.Update,
+		"uptimeSeconds":    uptimeSeconds,
+		"dispatchCount":    snap.dispatchCount,
+		"webhookCount":     snap.webhookCount,
+		"rabbitmqCount":    snap.rabbitmqCount,
+		"hasDispatching":   snap.dispatchCount > 0,
+		"hasWebhooks":      snap.webhookCount > 0,
+		"hasRabbitMQ":      snap.rabbitmqCount > 0,
 		"groups":           dbServer.Groups,
 		"broadcasts":       dbServer.Broadcasts,
 		"readReceipts":     dbServer.ReadReceipts,
@@ -302,6 +302,19 @@ func buildFallbackServerSummary(dbServer *models.QpServer, snap serverRuntimeSna
 		"readupdate":       dbServer.ReadUpdate,
 		"direct":           dbServer.Direct,
 	}
+
+	if dbServer.StoreRetentionDays.Valid {
+		summary["store_retention_days"] = dbServer.StoreRetentionDays.Int64
+	} else {
+		summary["store_retention_days"] = nil
+	}
+	if dbServer.DispatchTypes.Valid {
+		summary["dispatch_types"] = dbServer.DispatchTypes.String
+	} else {
+		summary["dispatch_types"] = ""
+	}
+
+	return summary
 }
 
 func resolveSummaryWid(dbServer *models.QpServer, liveServer *models.QpWhatsappServer) string {

@@ -128,6 +128,15 @@ func (backend *MessagesBackend) List() ([]cache.MessageRecordEntry, error) {
 	return items, nil
 }
 
+func (backend *MessagesBackend) Query(f cache.MessageQuery) ([]cache.MessageRecordEntry, int, error) {
+	entries, err := backend.List()
+	if err != nil {
+		return nil, 0, err
+	}
+	items, total := cache.FilterAndPaginate(entries, f)
+	return items, total, nil
+}
+
 func (backend *MessagesBackend) Close() error {
 	return backend.client.Close()
 }

@@ -483,6 +483,15 @@ const pt: Messages = {
   server_options_title: 'Opções do Servidor',
   server_history_sync_title: 'Sincronização de Histórico',
   server_history_sync_desc: 'Essa configuração ainda não está exposta na API canônica. Use a interface clássica se precisar alterar esse valor.',
+  server_store_retention_title: 'Retenção de Mensagens',
+  server_store_retention_desc: 'Por quanto tempo manter as mensagens armazenadas desta caixa.',
+  server_store_retention_inherit: 'Herdar',
+  server_store_retention_none: 'Nunca armazenar',
+  server_store_retention_forever: 'Sempre',
+  server_store_retention_days: 'N dias',
+  server_store_retention_unit: 'dias',
+  server_dispatch_types_title: 'Tipos de Disparo',
+  server_dispatch_types_desc: 'Tipos de mensagem enviados ao webhook. Nenhum selecionado = herdar/todos.',
   server_readonly: 'Somente leitura',
   server_broadcasts_title: 'Mensagens de Broadcast',
   server_broadcasts_desc: 'Receber mensagens enviadas para listas de transmissão. Quando ativo, mensagens de broadcast aparecem no webhook.',
@@ -799,6 +808,15 @@ const pt: Messages = {
   sip_proxy_running: 'Proxy SIP configurado e em execução',
   sip_proxy_configured_not_running: 'Proxy SIP configurado, mas não está em execução',
   sip_proxy_not_configured: 'Proxy SIP não configurado',
+
+  // Página de configurações globais (somente master)
+  settings_title: 'Configurações Globais',
+  settings_desc: 'Padrões globais do sistema aplicados a todas as sessões que não os sobrescrevem.',
+  settings_global_note: 'padrão do sistema: ',
+  settings_saved: 'Configurações salvas',
+  settings_error_load: 'Não foi possível carregar as configurações',
+  settings_error_save: 'Não foi possível salvar as configurações',
+  account_settings: 'Configurações Globais',
 }
 
 export default pt

@@ -5,5 +5,6 @@ type MessagesBackend interface {
 	Set(key string, record MessageRecord) error
 	Delete(key string) error
 	List() ([]MessageRecordEntry, error)
+	Query(f MessageQuery) (items []MessageRecordEntry, total int, err error)
 	Close() error
 }

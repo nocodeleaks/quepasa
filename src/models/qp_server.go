@@ -35,7 +35,11 @@ type QpServer struct {
 	Metadata QpMetadata     `db:"metadata" json:"metadata,omitempty"`
 
 	User      sql.NullString `db:"user" json:"user,omitempty" validate:"max=36" swaggertype:"string"`
-	Timestamp time.Time      `db:"timestamp" json:"timestamp,omitempty"`
+
+	StoreRetentionDays sql.NullInt64  `db:"store_retention_days"`
+	DispatchTypes      sql.NullString `db:"dispatch_types"`
+
+	Timestamp time.Time `db:"timestamp" json:"timestamp,omitempty"`
 }
 
 func (source QpServer) MarshalJSON() ([]byte, error) {
@@ -149,6 +153,28 @@ func (source *QpServer) SetUser(user string) {
 		source.User = sql.NullString{}
 	} else {
 		source.User = sql.NullString{String: user, Valid: true}
+	}
+}
+
+func (source *QpServer) SetStoreRetentionDays(v *int64) {
+	if source == nil {
+		return
+	}
+	if v == nil {
+		source.StoreRetentionDays = sql.NullInt64{}
+	} else {
+		source.StoreRetentionDays = sql.NullInt64{Int64: *v, Valid: true}
+	}
+}
+
+func (source *QpServer) SetDispatchTypes(v *string) {
+	if source == nil {
+		return
+	}
+	if v == nil {
+		source.DispatchTypes = sql.NullString{}
+	} else {
+		source.DispatchTypes = sql.NullString{String: *v, Valid: true}
 	}
 }
 

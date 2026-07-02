@@ -16,6 +16,11 @@ const (
 	ENV_API_DEFAULT_VER  = "API_DEFAULT_VERSION" // default version for unversioned API alias
 	ENV_USER             = "USER"                // default user for database seeding
 	ENV_PASSWORD         = "PASSWORD"            // default password for database seeding
+	// Preferred over USER/PASSWORD when set: many deployments already provide the
+	// admin credentials through QUEPASA_BASIC_AUTH_USER/PASSWORD, and USER in
+	// particular collides with the OS-provided environment variable.
+	ENV_BASIC_AUTH_USER  = "QUEPASA_BASIC_AUTH_USER"
+	ENV_BASIC_AUTH_PASS  = "QUEPASA_BASIC_AUTH_PASSWORD"
 	ENV_RELAXED_SESSIONS = "RELAXED_SESSIONS"    // when true, authenticated requests can create sessions without master key
 )
 
@@ -43,8 +48,8 @@ func NewAPISettings() APISettings {
 		Prefix:          getEnvOrDefaultString(ENV_API_PREFIX, "api"),
 		Timeout:         getEnvOrDefaultUint32(ENV_API_TIMEOUT, 30000),
 		DefaultVersion:  normalizeAPIDefaultVersion(getEnvOrDefaultString(ENV_API_DEFAULT_VER, CurrentDefaultAPIVersion)),
-		User:            getEnvOrDefaultString(ENV_USER, ""),
-		Password:        getEnvOrDefaultString(ENV_PASSWORD, ""),
+		User:            getEnvOrDefaultString(ENV_BASIC_AUTH_USER, getEnvOrDefaultString(ENV_USER, "")),
+		Password:        getEnvOrDefaultString(ENV_BASIC_AUTH_PASS, getEnvOrDefaultString(ENV_PASSWORD, "")),
 		RelaxedSessions: getEnvOrDefaultBool(ENV_RELAXED_SESSIONS, true),
 	}
 }

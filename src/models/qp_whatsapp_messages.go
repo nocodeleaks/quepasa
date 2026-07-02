@@ -123,18 +123,27 @@ func (source *QpWhatsappMessages) Count() uint64 {
 
 //#region MESSAGES
 
-func (source *QpWhatsappMessages) Append(value *whatsapp.WhatsappMessage, from string) bool {
+func (source *QpWhatsappMessages) Append(value *whatsapp.WhatsappMessage, from string) (valid bool, wasNew bool) {
+	return source.AppendWithExpiry(value, from, GetCacheExpiration())
+}
+
+// AppendWithExpiry stores a message with an explicit expiry (used by the store
+// retention gate). wasNew reports whether the record did not exist before (drives
+// the dispatch dedup so a reconnect resync does not re-fire webhooks).
+func (source *QpWhatsappMessages) AppendWithExpiry(value *whatsapp.WhatsappMessage, from string, expiresAt time.Time) (valid bool, wasNew bool) {
 
 	// ensure that is an uppercase string before save
 	normalizedId := strings.ToUpper(value.Id)
 	value.Id = normalizedId
 
-	expiration := GetCacheExpiration()
+	expiration := expiresAt
 	previousRecord, found, err := source.readRecord(normalizedId)
 	if err != nil {
 		qplog.Errorf("failed to read existing message cache record: %v", err)
-		return false
+		return false, false
 	}
+
+	wasNew = !found
 
 	if len(value.Status) == 0 && previousRecord.Message != nil && len(previousRecord.Message.Status) > 0 {
 		value.Status = previousRecord.Message.Status
@@ -146,7 +155,7 @@ func (source *QpWhatsappMessages) Append(value *whatsapp.WhatsappMessage, from s
 		UpdatedAt: time.Now(),
 	}
 
-	valid := true
+	valid = true
 	if found {
 		previous := QpCacheItem{Key: normalizedId, Value: previousRecord.Message, Expiration: previousRecord.ExpiresAt}
 		current := QpCacheItem{Key: normalizedId, Value: value, Expiration: expiration}
@@ -154,10 +163,10 @@ func (source *QpWhatsappMessages) Append(value *whatsapp.WhatsappMessage, from s
 	}
 
 	if !source.writeRecord(normalizedId, record) {
-		return false
+		return false, wasNew
 	}
 
-	return valid
+	return valid, wasNew
 }
 
 func (source *QpWhatsappMessages) GetSlice() (items []*whatsapp.WhatsappMessage) {

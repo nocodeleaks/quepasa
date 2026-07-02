@@ -35,7 +35,7 @@ func TestQpWhatsappMessagesAppend(t *testing.T) {
 		Status:    whatsapp.WhatsappMessageStatusImported,
 	}
 
-	success := messages.Append(msg, "test")
+	success, _ := messages.Append(msg, "test")
 	if !success {
 		t.Errorf("Append() should succeed")
 	}
@@ -284,7 +284,7 @@ func TestQpWhatsappMessagesNilBackend(t *testing.T) {
 	}
 
 	// Should not panic, but should fail gracefully
-	success := messages.Append(msg, "test")
+	success, _ := messages.Append(msg, "test")
 	if success {
 		t.Errorf("Append() should fail with nil backend")
 	}

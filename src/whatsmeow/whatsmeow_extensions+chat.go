@@ -143,12 +143,21 @@ func NewWhatsappChatRaw(client *whatsmeow.Client, contactManager whatsapp.Whatsa
 			}
 		}
 	case whatsapp.WHATSAPP_SERVERDOMAIN_LID:
-		// For @lid contacts, get the corresponding phone number
-		phone, err := contactManager.GetPhoneFromContactId(chat.Id)
-		if err == nil && len(phone) > 0 {
+		// For @lid contacts, use the raw phone-number JID (the same jid.User form a
+		// native @s.whatsapp.net contact yields) as the chat id, so downstream
+		// consumers (webhooks, integrations) key on the stable phone identity and do
+		// not create a duplicate contact per @lid. Keep the @lid in LId.
+		// Use the raw store pn (GetPNForLID) — NOT GetPhoneFromContactId, whose E.164
+		// formatting ("+"/local-9th-digit) would not match the native id.
+		chat.LId = chat.Id
+		if client != nil && client.Store != nil && client.Store.LIDs != nil {
+			if pnJID, e := client.Store.LIDs.GetPNForLID(context.Background(), jid.ToNonAD()); e == nil && !pnJID.IsEmpty() && len(pnJID.User) > 0 {
+				chat.Id = pnJID.User + "@" + whatsapp.WHATSAPP_SERVERDOMAIN_USER
+			}
+		}
+		// Formatted phone for display/reference (matches native contacts' Phone).
+		if phone, err := contactManager.GetPhoneFromContactId(chat.LId); err == nil && len(phone) > 0 {
 			chat.Phone = phone
-			// LId is already the chat.Id for @lid contacts
-			chat.LId = chat.Id
 		}
 	}
 

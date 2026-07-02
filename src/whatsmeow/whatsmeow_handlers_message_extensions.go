@@ -348,6 +348,29 @@ func HandleButtonsResponseMessage(log log.Logger, out *whatsapp.WhatsappMessage,
 	}
 }
 
+// downloadableInfo is the subset of a whatsmeow media message needed to persist
+// re-download metadata (avoids importing the whatsmeow package here). All media
+// types (Image/Video/Audio/Document/Sticker/Ptv) implement these getters.
+type downloadableInfo interface {
+	GetDirectPath() string
+	GetMediaKey() []byte
+	GetFileEncSHA256() []byte
+	GetFileSHA256() []byte
+}
+
+// fillAttachmentDownloadInfo copies the media re-download metadata onto the
+// attachment so media stays downloadable after the whatsmeow Source is gone
+// (message loaded from the serialized redis/postgres store).
+func fillAttachmentDownloadInfo(att *whatsapp.WhatsappAttachment, in downloadableInfo) {
+	if att == nil || in == nil {
+		return
+	}
+	att.DirectPath = in.GetDirectPath()
+	att.MediaKey = in.GetMediaKey()
+	att.FileEncSHA256 = in.GetFileEncSHA256()
+	att.FileSHA256 = in.GetFileSHA256()
+}
+
 func HandleImageMessage(logentry log.Logger, out *whatsapp.WhatsappMessage, in *waE2E.ImageMessage) {
 	logentry.Debug("received an image message")
 	out.Type = whatsapp.ImageMessageType
@@ -359,6 +382,7 @@ func HandleImageMessage(logentry log.Logger, out *whatsapp.WhatsappMessage, in *
 		Mimetype:   in.GetMimetype(),
 		FileLength: in.GetFileLength(),
 	}
+	fillAttachmentDownloadInfo(out.Attachment, in)
 
 	// handling thumbnail
 	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
@@ -383,6 +407,7 @@ func HandleStickerMessage(log log.Logger, out *whatsapp.WhatsappMessage, in *waE
 		Mimetype:   in.GetMimetype(),
 		FileLength: in.GetFileLength(),
 	}
+	fillAttachmentDownloadInfo(out.Attachment, in)
 
 	// handling thumbnail
 	out.Attachment.SetThumbnail(in.GetPngThumbnail())
@@ -399,6 +424,7 @@ func HandleVideoMessage(log log.Logger, out *whatsapp.WhatsappMessage, in *waE2E
 		Mimetype:   in.GetMimetype(),
 		FileLength: in.GetFileLength(),
 	}
+	fillAttachmentDownloadInfo(out.Attachment, in)
 
 	// handling thumbnail
 	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
@@ -422,6 +448,7 @@ func HandleDocumentMessage(logentry log.Logger, out *whatsapp.WhatsappMessage, i
 		FileLength: in.GetFileLength(),
 		FileName:   in.GetFileName(),
 	}
+	fillAttachmentDownloadInfo(out.Attachment, in)
 
 	// handling thumnail
 	out.Attachment.SetThumbnail(in.GetJPEGThumbnail())
@@ -442,6 +469,7 @@ func HandleAudioMessage(log log.Logger, out *whatsapp.WhatsappMessage, in *waE2E
 		FileLength: in.GetFileLength(),
 		Seconds:    in.GetSeconds(),
 	}
+	fillAttachmentDownloadInfo(out.Attachment, in)
 
 	info := in.ContextInfo
 	if info != nil {

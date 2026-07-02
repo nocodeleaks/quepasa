@@ -5,9 +5,9 @@
       <div class="page-title-row">
         <h1 class="page-title">{{ t('home_title') }}</h1>
         <div v-if="!loading && hasServers" class="metric-chips">
-          <span class="mchip mchip-total">{{ servers.length }} {{ t('total') }}</span>
-          <span class="mchip mchip-online">{{ connectedCount }} {{ t('connected') }}</span>
-          <span class="mchip mchip-offline">{{ disconnectedCount }} {{ t('disconnected') }}</span>
+          <button type="button" class="mchip mchip-total" :class="{ active: statusFilter === 'total' }" @click="statusFilter = 'total'">{{ servers.length }} {{ t('total') }}</button>
+          <button type="button" class="mchip mchip-online" :class="{ active: statusFilter === 'connected' }" @click="statusFilter = 'connected'">{{ connectedCount }} {{ t('connected') }}</button>
+          <button type="button" class="mchip mchip-offline" :class="{ active: statusFilter === 'disconnected' }" @click="statusFilter = 'disconnected'">{{ disconnectedCount }} {{ t('disconnected') }}</button>
         </div>
       </div>
       <button @click="createNewServer" class="btn-new" :disabled="creating">
@@ -311,11 +311,20 @@ export default defineComponent({
     const debouncedQuery = ref('')
     let searchTimeout: any = null
 
-    // Filtered servers (without pagination)
+    // Status filter (Total | Connected | Disconnected); Total selected by default.
+    const statusFilter = ref<'total' | 'connected' | 'disconnected'>('total')
+
+    // Filtered servers (status filter + search, without pagination)
     const filteredServers = computed(() => {
+      let list = servers.value
+      if (statusFilter.value === 'connected') {
+        list = list.filter(s => s.state?.toLowerCase() === 'ready')
+      } else if (statusFilter.value === 'disconnected') {
+        list = list.filter(s => s.state?.toLowerCase() !== 'ready')
+      }
       const q = debouncedQuery.value.trim().toLowerCase()
-      if (!q) return servers.value
-      return servers.value.filter(s => {
+      if (!q) return list
+      return list.filter(s => {
         const token = (s.token || '').toLowerCase()
         const wid = (s.wid || '').toLowerCase()
         const state = (s.state || '').toLowerCase()
@@ -336,7 +345,7 @@ export default defineComponent({
     })
 
     // Reset to page 1 when search or page size changes
-    watch([debouncedQuery, pageSize], () => {
+    watch([debouncedQuery, pageSize, statusFilter], () => {
       currentPage.value = 1
     })
 
@@ -719,7 +728,7 @@ export default defineComponent({
 
     return {
       servers, loading, error, connectedCount, disconnectedCount, viewMode,
-      searchQuery, displayServers, copiedToken, toggling, hasServers, creating, activeSubmenu, uiLoaded,
+      searchQuery, statusFilter, displayServers, copiedToken, toggling, hasServers, creating, activeSubmenu, uiLoaded,
       filteredServers, currentPage, pageSize, pageSizeOptions, totalPages,
       load, getStatusClass, getConnectionClass, isConnected, formatUptime, formatWid,
       copyToken, toggleServer, toggleDebug, toggleGroups, toggleBroadcasts,
@@ -772,7 +781,15 @@ export default defineComponent({
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  opacity: 0.55;
+  transition: opacity 0.12s ease, box-shadow 0.12s ease;
 }
+.mchip:hover { opacity: 0.8; }
+.mchip.active { opacity: 1; box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.18) inset; }
 .mchip-total  { background: rgba(226, 232, 240, 0.7); color: #475569; }
 .mchip-online { background: rgba(187, 247, 208, 0.7); color: #15803d; }
 .mchip-offline{ background: rgba(226, 232, 240, 0.7); color: #6b7280; }

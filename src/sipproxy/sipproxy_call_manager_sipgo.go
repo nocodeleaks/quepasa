@@ -279,7 +279,7 @@ func (scm *SIPCallManagerSipgo) InitiateCallSipgoWithHeaders(callID, fromPhone, 
 	// Fix Contact header with correct IP from network manager
 	localIP := scm.networkManager.GetLocalIP()
 	localPort := scm.networkManager.GetLocalPort()
-	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{User: fromPhone, Host: localIP, Port: localPort}})
+	headers = append(headers, &sip.ContactHeader{Address: sip.Uri{Scheme: "sip", User: fromPhone, Host: localIP, Port: localPort}})
 
 	for name, value := range extraHeaders {
 		name = strings.TrimSpace(name)

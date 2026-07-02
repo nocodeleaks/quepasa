@@ -1,0 +1,570 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Fira+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  color: #0f172a;
+  background: #eef4fb;
+  font-family: "Fira Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 32rem),
+    linear-gradient(315deg, rgba(5, 150, 105, 0.1), transparent 34rem),
+    #eef4fb;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.spam-shell {
+  display: grid;
+  grid-template-columns: 19rem minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 100dvh;
+  padding: 1rem;
+}
+
+.rail {
+  position: sticky;
+  top: 1rem;
+  height: calc(100dvh - 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  color: #e2e8f0;
+  background: #101827;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1.25rem;
+  box-shadow: 0 1.5rem 4rem rgba(15, 23, 42, 0.22);
+}
+
+.brand-lock,
+.rail-stat,
+.topbar,
+.panel,
+.unlock-panel,
+.empty-panel,
+.notice {
+  border: 1px solid #d7e2f0;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1rem 3rem rgba(15, 23, 42, 0.08);
+}
+
+.brand-lock {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+}
+
+.brand-mark {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 0.9rem;
+}
+
+.brand-lock strong,
+.brand-lock span {
+  display: block;
+}
+
+.brand-lock span,
+.rail-stat span {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.rail-stat {
+  padding: 0.9rem;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.95rem;
+}
+
+.rail-stat strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: "Fira Code", monospace;
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.ghost-action,
+.primary-action,
+.search-box button,
+.soft-command,
+.icon-command {
+  min-height: 2.75rem;
+  border-radius: 0.8rem;
+  border: 1px solid #cbd8ea;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.ghost-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.ghost-action.danger {
+  margin-top: auto;
+  color: #fecaca;
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.2rem;
+  border-radius: 1.25rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.1rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+h1,
+h2 {
+  margin: 0;
+  color: #172033;
+  line-height: 1.1;
+}
+
+h1 {
+  font-family: "Fira Code", monospace;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  letter-spacing: 0;
+}
+
+h2 {
+  font-size: 1.35rem;
+}
+
+.topbar span,
+.unlock-panel p,
+.hint-box span,
+.section-copy span {
+  color: #52627a;
+}
+
+code {
+  font-family: "Fira Code", monospace;
+  font-size: 0.86rem;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+
+.state-pill,
+.queued-badge,
+.connection-state,
+.notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.state-pill {
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.state-pill.ok,
+.notice.ok {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.state-pill.blocked,
+.notice.error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.empty-panel,
+.unlock-panel {
+  display: grid;
+  place-items: center;
+  min-height: 26rem;
+  padding: 2rem;
+  text-align: center;
+  border-radius: 1.25rem;
+}
+
+.unlock-panel {
+  align-content: center;
+  gap: 1rem;
+  max-width: 36rem;
+}
+
+.unlock-panel label {
+  display: grid;
+  width: 100%;
+  gap: 0.45rem;
+  color: #334155;
+  text-align: left;
+  font-weight: 700;
+}
+
+.unlock-panel input,
+.search-box input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 0.9rem;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #cbd8ea;
+  border-radius: 0.8rem;
+  outline: none;
+}
+
+.unlock-panel input:focus,
+.search-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.18);
+}
+
+.primary-action,
+.search-box button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  color: #ffffff;
+  background: #2563eb;
+  border-color: #2563eb;
+  font-weight: 700;
+}
+
+.notice {
+  padding: 0.85rem 1rem;
+  border-radius: 0.95rem;
+  font-weight: 600;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: minmax(20rem, 0.9fr) minmax(0, 1.4fr);
+  gap: 1rem;
+}
+
+.panel {
+  min-width: 0;
+  padding: 1rem;
+  border-radius: 1.25rem;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.search-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  margin: 1rem 0;
+}
+
+.result-list,
+.queue-table {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.section-card,
+.queue-row {
+  display: grid;
+  align-items: center;
+  gap: 0.8rem;
+  background: #f8fbff;
+  border: 1px solid #dbe7f5;
+  border-radius: 1rem;
+}
+
+.section-card {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 0.8rem;
+}
+
+.status-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.status-dot.ready {
+  background: #059669;
+  box-shadow: 0 0 0 0.3rem rgba(5, 150, 105, 0.13);
+}
+
+.section-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.section-copy strong {
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+
+.icon-command {
+  display: inline-grid;
+  width: 2.85rem;
+  height: 2.85rem;
+  place-items: center;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.icon-command.add {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.icon-command.danger {
+  color: #b91c1c;
+  background: #fff;
+}
+
+.queued-badge {
+  min-height: 2.4rem;
+  padding: 0 0.75rem;
+  color: #075985;
+  background: #e0f2fe;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.hint-box {
+  display: grid;
+  place-items: center;
+  gap: 0.2rem;
+  min-height: 12rem;
+  padding: 1.2rem;
+  color: #64748b;
+  text-align: center;
+  border: 1px dashed #cbd8ea;
+  border-radius: 1rem;
+}
+
+.hint-box.wide {
+  grid-column: 1 / -1;
+}
+
+.queue-row {
+  grid-template-columns: 6rem minmax(12rem, 1fr) minmax(8rem, 12rem) auto;
+  padding: 0.8rem;
+}
+
+.queue-head {
+  min-height: auto;
+  padding: 0.5rem 0.8rem;
+  color: #64748b;
+  background: transparent;
+  border-color: transparent;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.order-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.order-cell strong {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-radius: 0.75rem;
+  font-family: "Fira Code", monospace;
+}
+
+.stack-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stack-actions button {
+  display: grid;
+  width: 1.8rem;
+  height: 1.55rem;
+  place-items: center;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #dbe7f5;
+  border-radius: 0.5rem;
+}
+
+.connection-state {
+  min-height: 2.4rem;
+  padding: 0 0.75rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.connection-state.ready {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.connection-state.disabled {
+  color: #64748b;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.soft-command {
+  padding: 0 0.9rem;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .spam-shell,
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    position: static;
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .brand-lock,
+  .ghost-action.danger {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .spam-shell {
+    padding: 0.6rem;
+  }
+
+  .topbar,
+  .search-box,
+  .queue-row {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    align-items: stretch;
+  }
+
+  .queue-head {
+    display: none;
+  }
+
+  .row-actions {
+    justify-content: stretch;
+  }
+
+  .row-actions .soft-command,
+  .row-actions .icon-command {
+    flex: 1;
+  }
+}

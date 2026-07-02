@@ -8,18 +8,23 @@ import (
 	types "go.mau.fi/whatsmeow/types"
 )
 
+const (
+	testAccountPhone = "5500000000000"
+	testCallerPhone  = "5511000000000"
+)
+
 func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
-	mgr := &VoipManager{sectionID: "5521967609095:2", sessionToken: "token-123"}
+	mgr := &VoipManager{sectionID: testAccountPhone + ":2", sessionToken: "token-123"}
 	meta := callSIPMetadata{
 		CallID:    "CALL-123",
-		FromPhone: "5511999999999",
-		ToPhone:   "5521967609095",
-		Peer:      types.NewJID("5511999999999", types.DefaultUserServer),
+		FromPhone: testCallerPhone,
+		ToPhone:   testAccountPhone,
+		Peer:      types.NewJID(testCallerPhone, types.DefaultUserServer),
 		CallerInfo: CallerInfo{
-			JID:          "5511999999999@s.whatsapp.net",
+			JID:          testCallerPhone + "@s.whatsapp.net",
 			LID:          "111222333@lid",
-			Phone:        "5511999999999",
-			PhoneE164:    "+5511999999999",
+			Phone:        testCallerPhone,
+			PhoneE164:    "+" + testCallerPhone,
 			Title:        "Cliente Principal",
 			FullName:     "Cliente Principal",
 			BusinessName: "Empresa Cliente",
@@ -29,13 +34,13 @@ func TestSIPHeadersIncludeCallerMetadata(t *testing.T) {
 
 	headers := mgr.sipHeaders(meta)
 
-	assertHeader(t, headers, "X-QuePasa-SessionId", "5545343444095:2")
+	assertHeader(t, headers, "X-QuePasa-SessionId", testAccountPhone+":2")
 	assertHeader(t, headers, "X-QuePasa-CallId", "CALL-123")
 	assertHeader(t, headers, "X-QuePasa-Direction", "inbound-whatsapp")
-	assertHeader(t, headers, "X-QuePasa-Account-Phone", "5545343444095")
-	assertHeader(t, headers, "X-QuePasa-Caller-Phone", "5511999999999")
-	assertHeader(t, headers, "X-QuePasa-Caller-E164", "+5511999999999")
-	assertHeader(t, headers, "X-QuePasa-Caller-JID", "5511999999999@s.whatsapp.net")
+	assertHeader(t, headers, "X-QuePasa-Account-Phone", testAccountPhone)
+	assertHeader(t, headers, "X-QuePasa-Caller-Phone", testCallerPhone)
+	assertHeader(t, headers, "X-QuePasa-Caller-E164", "+"+testCallerPhone)
+	assertHeader(t, headers, "X-QuePasa-Caller-JID", testCallerPhone+"@s.whatsapp.net")
 	assertHeader(t, headers, "X-QuePasa-Caller-LID", "111222333@lid")
 	assertHeader(t, headers, "X-QuePasa-Caller-Title", "Cliente Principal")
 	assertHeader(t, headers, "X-QuePasa-Caller-FullName", "Cliente Principal")
@@ -88,14 +93,14 @@ func TestSIPHeadersFallbackToAccountPhoneWhenSectionIsUnavailable(t *testing.T) 
 	mgr := &VoipManager{}
 	meta := callSIPMetadata{
 		CallID:    "CALL-123",
-		FromPhone: "5511999999999",
-		ToPhone:   "5521967609095",
-		Peer:      types.NewJID("5511999999999", types.DefaultUserServer),
+		FromPhone: testCallerPhone,
+		ToPhone:   testAccountPhone,
+		Peer:      types.NewJID(testCallerPhone, types.DefaultUserServer),
 	}
 
 	headers := mgr.sipHeaders(meta)
 
-	assertHeader(t, headers, "X-QuePasa-SessionId", "5545343444095")
+	assertHeader(t, headers, "X-QuePasa-SessionId", testAccountPhone)
 }
 
 func TestVoipManagerShouldHandleCallsHonorsLiveCallMode(t *testing.T) {

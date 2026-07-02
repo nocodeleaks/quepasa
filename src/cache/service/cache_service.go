@@ -9,6 +9,7 @@ import (
 	"github.com/nocodeleaks/quepasa/cache"
 	cache_disk "github.com/nocodeleaks/quepasa/cache/disk"
 	cache_memory "github.com/nocodeleaks/quepasa/cache/memory"
+	cache_postgres "github.com/nocodeleaks/quepasa/cache/postgres"
 	cache_redis "github.com/nocodeleaks/quepasa/cache/redis"
 	environment "github.com/nocodeleaks/quepasa/environment"
 )
@@ -103,6 +104,29 @@ func initMessagesBackend() (cache.MessagesBackend, error) {
 		if err != nil {
 			return nil, fmt.Errorf("disk messages backend: %w", err)
 		}
+		return backend, nil
+
+	case cache.BackendPostgres:
+		var rc *cache.RedisConfig
+		if environment.Settings.Redis.Enabled() {
+			rc = &cache.RedisConfig{
+				Host:     environment.Settings.Redis.Host,
+				Port:     environment.Settings.Redis.Port,
+				Username: environment.Settings.Redis.Username,
+				Password: environment.Settings.Redis.Password,
+				Database: environment.Settings.Redis.Database,
+			}
+		}
+		hotDays := environment.Settings.Cache.HotWindowDays
+		if hotDays == 0 {
+			hotDays = 90
+		}
+		hot := time.Duration(hotDays) * 24 * time.Hour
+		backend, err := cache_postgres.New(environment.Settings.Database.GetDBParameters(), rc, hot)
+		if err != nil {
+			return nil, fmt.Errorf("postgres messages backend: %w", err)
+		}
+		backend.StartCleanup(time.Hour)
 		return backend, nil
 
 	default:

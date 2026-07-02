@@ -29,6 +29,7 @@ type EnvironmentSettings struct {
 	RabbitMQ  RabbitMQSettings
 	MCP       MCPSettings
 	Branding  BrandingSettings
+	Messages  MessageSettings
 }
 
 // Settings is the global singleton instance for accessing all environment configurations.
@@ -82,6 +83,7 @@ func init() {
 		RabbitMQ:  NewRabbitMQSettings(),
 		MCP:       NewMCPSettings(),
 		Branding:  NewBrandingSettings(),
+		Messages:  NewMessageSettings(),
 	}
 
 	logentry.Println("Environment Manager ready - All configurations loaded!")
